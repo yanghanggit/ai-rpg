@@ -56,7 +56,7 @@ def _build_craft_prompt(materials: List[MaterialItem]) -> str:
 
 ## 要求
 
-- **name**：消耗品全名，采用「物品.消耗.XXXX」命名格式，体现材料特性与用途，简洁有辨识度
+- **name**：消耗品全名，采用「消耗品.XXXX」命名格式，体现材料特性与用途，简洁有辨识度
 - **description**：物品描述，30-60字，说明外观、气味或使用感受，体现材料的来源与效果想象
 - **target_type**：目标类型，从以下选项中选择一个：{target_type_options}
   - self_only：仅作用于自身（恢复、强化自身）
@@ -74,7 +74,7 @@ def _build_craft_prompt(materials: List[MaterialItem]) -> str:
 
 ```json
 {{
-  "name": "物品.消耗.XXX",
+  "name": "消耗品.XXX",
   "description": "...",
   "target_type": "self_only",
   "affixes": ["[燃烧]:可能引发持续扣血", "![穿甲]:无视目标防御"]

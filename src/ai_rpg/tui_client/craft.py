@@ -4,7 +4,7 @@
 未来可扩展：装备、特殊道具等更多类型。
 """
 
-from typing import Dict, List, Literal
+from typing import Dict, List, Literal, Set
 
 from loguru import logger
 from textual import on, work
@@ -71,6 +71,7 @@ class CraftScreen(BaseGameScreen):
         self._material_list: List[Dict[str, object]] = []  # {"name": str, "count": int}
         self._selected: List[str] = []  # names added in selection order
         self._step: Literal["selecting", "confirming"] = "selecting"
+        self._known_consumable_names: Set[str] = set()  # snapshot before crafting
 
     def compose(self) -> ComposeResult:
         yield RichLog(id="craft-log", highlight=True, markup=True, wrap=True)
@@ -215,6 +216,7 @@ class CraftScreen(BaseGameScreen):
                 user_name, game_name, [storage_entity]
             )
             materials: List[Dict[str, object]] = []
+            known: Set[str] = set()
             for entity in details_resp.entities_serialization:
                 for comp in entity.components:
                     if comp.name == StorageComponent.__name__:
@@ -226,7 +228,10 @@ class CraftScreen(BaseGameScreen):
                                         "count": item.get("count", 1),
                                     }
                                 )
+                            elif item.get("type") == "ConsumableItem":
+                                known.add(str(item.get("name", "")))
             self._material_list = materials
+            self._known_consumable_names = known
         except Exception as e:
             logger.warning(f"CraftScreen._load_data: 加载材料失败 error={e}")
             log.write(f"[yellow]⚠ 加载材料列表失败: {e}[/]")
@@ -244,6 +249,7 @@ class CraftScreen(BaseGameScreen):
 
         user_name = app.session.user_name
         game_name = app.session.game_name
+        storage_entity = app.session.blueprint.storage_entity
         materials = list(self._selected)
 
         log = self.query_one(RichLog)
@@ -271,8 +277,9 @@ class CraftScreen(BaseGameScreen):
 
         try:
             await watch_task_until_done(task_id)
-            log.write("[bold green]✅ 合成完成，请查看随身背包或储物箱[/]")
+            log.write("[bold green]✅ 合成完成[/]")
             logger.info(f"CraftScreen._do_craft: 任务完成 task_id={task_id}")
+            await self._show_craft_result(log, user_name, game_name, storage_entity)
         except TaskFailedError as e:
             log.write(f"[bold red]❌ 合成失败: {e}[/]")
             logger.error(f"CraftScreen._do_craft: 任务失败 task_id={task_id} error={e}")
@@ -282,3 +289,50 @@ class CraftScreen(BaseGameScreen):
 
         inp.disabled = False
         inp.focus()
+
+    async def _show_craft_result(
+        self,
+        log: RichLog,
+        user_name: str,
+        game_name: str,
+        storage_entity: str,
+    ) -> None:
+        """重新加载储物箱，展示本次新合成的消耗品详情。"""
+        try:
+            result_resp = await fetch_entities_details(
+                user_name, game_name, [storage_entity]
+            )
+        except Exception as e:
+            logger.warning(f"CraftScreen._show_craft_result: 获取储物箱失败 error={e}")
+            log.write("[dim]（无法获取合成结果详情，请手动查看储物箱）[/]")
+            return
+
+        shown = False
+        for entity in result_resp.entities_serialization:
+            for comp in entity.components:
+                if comp.name != StorageComponent.__name__:
+                    continue
+                for item in comp.data.get("items", []):
+                    if item.get("type") != "ConsumableItem":
+                        continue
+                    name = str(item.get("name", ""))
+                    if name in self._known_consumable_names:
+                        continue
+                    if not shown:
+                        log.write(
+                            "[bold yellow]── 合成结果 ──────────────────────────────────────────────[/]"
+                        )
+                        shown = True
+                    desc = str(item.get("description", ""))
+                    target = str(item.get("target_type", ""))
+                    affixes: List[str] = [str(a) for a in item.get("affixes", [])]
+                    log.write(f"  [bold magenta]道具[/]：{display_name(name)}")
+                    if desc:
+                        log.write(f"  [dim]{desc}[/]")
+                    log.write(f"  [cyan]目标类型[/]：{target}")
+                    if affixes:
+                        log.write(f"  [cyan]词缀[/]：{', '.join(affixes)}")
+                    log.write("")
+
+        if not shown:
+            log.write("[dim]（已入库储物箱，请查看消耗品列表）[/]")

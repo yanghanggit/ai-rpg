@@ -41,7 +41,7 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
     # 创建英雄营地场景和角色
     actor_wanderer = create_wanderer()
     actor_wanderer.custom_item = CostumeItem(
-        name="旅行者风尘斗篷",
+        name="时装.旅行者风尘斗篸",
         description="一件覆盖全身的宽幅斗篷，布料经风沙磨砺后呈不均匀的赭石色，边缘绣有简单的几何暗纹。披上后显得愈发像一名经历颇丰的旅人。",
     )
 
@@ -51,7 +51,7 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
     # 创建学者角色
     actor_scholar = create_scholar()
     actor_scholar.custom_item = CostumeItem(
-        name="学者墨纹长袍",
+        name="时装.学者墨纹长袍",
         description="一件深灰色长袍，袖口与衣摆绣有已褪色的墨色卷轴图案。穿上后气质沉稳，颇有远行学者的风范。",
     )
 
@@ -80,43 +80,43 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
         storage_entity="世界储物箱",
         items=[
             GearItem(
-                name="缺口猎刀",
+                name="装备.缺口猎刀",
                 description="一把刀身偏短的猎刀，刃背厚实，靠近刀尖三分之一处有一道浅缺口，像是曾经硬撬过什么。握柄以粗布条缠绕，布已泛黄，但缠法整齐，显然出自熟练的手。",
                 stat_bonuses=CharacterStats(
                     hp=0, max_hp=0, attack=2, defense=0, energy=0, speed=0
                 ),
             ),
             GearItem(
-                name="沙漠旅行者轻甲",
+                name="装备.沙漠旅行者轻甲",
                 description="一套轻便的皮质护甲，由多块经过硬化处理的皮革拼接而成，覆盖躯干、肩部与小腿。设计简洁，不妨碍快速移动，表面留有风沙打磨的痕迹。",
                 stat_bonuses=CharacterStats(
                     hp=0, max_hp=0, attack=0, defense=2, energy=0, speed=0
                 ),
             ),
             ConsumableItem(
-                name="裂口草药包",
+                name="消耗品.裂口草药包",
                 description="几片晒干的草叶压在一小块粗布里，散发着轻微的苦涩气味。不知用途，但直觉告诉你可以往伤口上敷。使用后应能小量恢复生命值。",
                 count=2,
                 target_type=TargetType.SELF_ONLY,
             ),
             ConsumableItem(
-                name="沙蝎毒液瓶",
+                name="消耗品.沙蝎毒液瓶",
                 description="一个封口严密的小玻璃瓶，瓶内液体呈深黄色，偶尔能看到细小气泡浮起。标签已模糊，隐约能辨认出一个骷髅图案。向单个敌人投掷可造成毒性伤害。",
                 count=2,
                 target_type=TargetType.ENEMY_SINGLE,
             ),
             MaterialItem(
-                name="沙漠草叶",
+                name="材料.沙漠草叶",
                 description="在沙漠边缘采集的干燥草叶，叶脉间残留淡淡苦涩气味。据说直接敷于伤口有止血消炎之效。",
                 count=3,
             ),
             MaterialItem(
-                name="毒蝶触须",
+                name="材料.毒蝶触须",
                 description="一小段细长的蝶须，表面残留黄色液迹，低温时凝固为粉末状。密封保存，含微量化学毒素。",
                 count=2,
             ),
             MaterialItem(
-                name="废旧皮革",
+                name="材料.废旧皮革",
                 description="一块拳头大小的硬化皮革碎片，边缘粗糙，切割痕迹清晰可辨。可用于绑扎或简单防护。",
                 count=2,
             ),

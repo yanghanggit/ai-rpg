@@ -20,8 +20,9 @@ from ..models import (
     PlanAction,
     StorageComponent,
     GenerateDungeonAction,
+    CraftConsumableAction,
 )
-from ..models.items import ItemType
+from ..models.items import ItemType, MaterialItem
 
 
 ###################################################################################################################################################################
@@ -465,4 +466,82 @@ def activate_update_appearance(
 
     logger.debug(f"激活外观更新: {target_entity.name} <- {item_name}")
     target_entity.replace(UpdateAppearanceAction, target_entity.name, item_name)
+    return True, ""
+
+
+###################################################################################################################################################################
+def activate_craft_consumable(
+    tcg_game: TCGGame,
+    material_names: List[str],
+) -> Tuple[bool, str]:
+    """
+    在家园状态下激活工坊合成消耗品动作。
+
+    Args:
+        tcg_game: TCG 游戏实例
+        material_names: 参与合成的材料名称列表（精确匹配，允许重复代表多份）
+
+    Returns:
+        Tuple[bool, str]: (是否成功, 失败时的错误详情)
+    """
+    if not tcg_game.is_player_in_home_stage:
+        error_detail = "玩家不在家园场景中，无法激活合成动作"
+        logger.error(f"激活合成消耗品失败: {error_detail}")
+        return False, error_detail
+
+    if not material_names:
+        error_detail = "材料列表为空，至少需要一种材料"
+        logger.error(f"激活合成消耗品失败: {error_detail}")
+        return False, error_detail
+
+    player_entity = tcg_game.get_player_entity()
+    assert player_entity is not None, "玩家实体不存在！"
+
+    storage_entity = tcg_game.get_storage_entity()
+    assert storage_entity is not None, "全局储物箱实体不存在！"
+    assert storage_entity.has(StorageComponent), "全局储物箱实体缺少 StorageComponent"
+
+    storage = storage_entity.get(StorageComponent)
+
+    # 校验每种材料在储物箱中存在且类型为 MATERIAL_ITEM（按 count 追踪可用数量）
+    available: dict[str, int] = {}
+    for item in storage.items:
+        if item.type == ItemType.MATERIAL_ITEM:
+            available[item.name] = available.get(item.name, 0) + item.count
+
+    demand: dict[str, int] = {}
+    for name in material_names:
+        demand[name] = demand.get(name, 0) + 1
+
+    for name, required in demand.items():
+        if available.get(name, 0) < required:
+            error_detail = f"储物箱中材料 {name!r} 数量不足（需要 {required}，当前 {available.get(name, 0)}）"
+            logger.error(f"激活合成消耗品失败: {error_detail}")
+            return False, error_detail
+
+    # 收集材料对象（count = 本次使用量），预填入 action
+    material_items: List[MaterialItem] = []
+    for mat_name, used in demand.items():
+        source = next(
+            (
+                item
+                for item in storage.items
+                if item.name == mat_name and item.type == ItemType.MATERIAL_ITEM
+            ),
+            None,
+        )
+        assert source is not None and isinstance(source, MaterialItem)
+        copied = source.model_copy(deep=True)
+        copied.count = used
+        material_items.append(copied)
+
+    if player_entity.has(CraftConsumableAction):
+        error_detail = "合成动作已存在，请勿重复激活"
+        logger.warning(f"激活合成消耗品失败: {error_detail}")
+        return False, error_detail
+
+    logger.debug(f"激活合成消耗品: {player_entity.name}, 材料={material_names}")
+    player_entity.replace(
+        CraftConsumableAction, player_entity.name, list(material_names), material_items
+    )
     return True, ""

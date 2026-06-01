@@ -3,6 +3,7 @@
 from typing import Dict, List, final
 from ..entitas.components import Component
 from .cards import Card
+from .items import MaterialItem
 from .registry import register_action_component_type, register_component_type
 
 
@@ -178,3 +179,19 @@ class PostArbitrationAction(Component):
 
     name: str
     current_turn_actor_name: str  # 本次出牌者名称，用于 LLM 上下文
+
+
+############################################################################################################
+@final
+@register_action_component_type
+@register_component_type
+class CraftConsumableAction(Component):
+    """触发玩家在工坊用储物箱内的材料合成消耗品，由 LLM（WorkshopComponent agent）推理生成结果。"""
+
+    name: str
+    material_names: List[
+        str
+    ]  # 参与合成的材料名称列表（精确匹配 StorageComponent 中的 MaterialItem）
+    material_items: List[MaterialItem] = (
+        []
+    )  # 预填充的材料对象列表（count = 本次使用量）

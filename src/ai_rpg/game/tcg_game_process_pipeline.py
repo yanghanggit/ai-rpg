@@ -41,6 +41,7 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     )
     from ..systems.home_npc_plan_system import HomeNpcPlanSystem
     from ..systems.home_player_context_system import HomePlayerContextSystem
+    from ..systems.craft_consumable_action_system import CraftConsumableActionSystem
 
     ##
     tcg_game = cast(TCGGame, game)
@@ -65,6 +66,7 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     processors.add(AnnounceActionSystem(tcg_game))
     processors.add(TransStageActionSystem(tcg_game))
     processors.add(UpdateAppearanceActionSystem(tcg_game))
+    processors.add(CraftConsumableActionSystem(tcg_game))
 
     # 清除动作相关的临时状态、标记等，准备下一轮输入
     processors.add(ActionCleanupSystem(tcg_game))

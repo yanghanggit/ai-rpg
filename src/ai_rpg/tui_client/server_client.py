@@ -39,6 +39,8 @@ from ..models import (
     HomeItemMoveToInventoryResponse,
     HomeItemMoveToStorageRequest,
     HomeItemMoveToStorageResponse,
+    HomeWearCostumeRequest,
+    HomeWearCostumeResponse,
     LoginRequest,
     LoginResponse,
     LogoutRequest,
@@ -481,3 +483,21 @@ async def home_item_move_to_storage(
         )
         response.raise_for_status()
         return HomeItemMoveToStorageResponse.model_validate(response.json())
+
+
+async def home_wear_costume(
+    user_name: str, game_name: str, item_name: str, target_name: str = ""
+) -> HomeWearCostumeResponse:
+    """为指定角色穿戴或移除时装，返回后台任务ID。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.post(
+            server_config.base_url + "/api/home/costume/wear/v1/",
+            json=HomeWearCostumeRequest(
+                user_name=user_name,
+                game_name=game_name,
+                item_name=item_name,
+                target_name=target_name,
+            ).model_dump(),
+        )
+        response.raise_for_status()
+        return HomeWearCostumeResponse.model_validate(response.json())

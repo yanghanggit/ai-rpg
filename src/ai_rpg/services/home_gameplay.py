@@ -19,6 +19,7 @@ from .home_actions import (
     activate_switch_stage,
     activate_stage_plan,
     activate_generate_dungeon,
+    activate_update_appearance,
     add_party_member,
     remove_party_member,
     move_item_to_inventory,
@@ -46,6 +47,8 @@ from ..models import (
     HomeItemMoveToInventoryResponse,
     HomeItemMoveToStorageRequest,
     HomeItemMoveToStorageResponse,
+    HomeWearCostumeRequest,
+    HomeWearCostumeResponse,
     TaskStatus,
 )
 
@@ -487,6 +490,55 @@ async def home_item_move_to_storage_endpoint(
             moved.append(name)
     return HomeItemMoveToStorageResponse(
         message=f"已将 {', '.join(moved)} 从随身背包移入储物箱"
+    )
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+@home_gameplay_api_router.post(
+    path="/api/home/costume/wear/v1/", response_model=HomeWearCostumeResponse
+)
+async def home_wear_costume_endpoint(
+    payload: HomeWearCostumeRequest,
+    game_server: CurrentGameServer,
+) -> HomeWearCostumeResponse:
+    """为指定角色穿戴或移除时装，触发外观更新 home pipeline 任务。"""
+    logger.info(
+        f"/api/home/costume/wear/v1/: user={payload.user_name} item={payload.item_name!r} target={payload.target_name!r}"
+    )
+
+    current_room = game_server.get_room(payload.user_name)
+    if current_room is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"找不到游戏房间: user={payload.user_name}",
+        )
+    async with current_room._lock:
+        tcg_game = await _validate_player_at_home(payload.user_name, game_server)
+        success, error_detail = activate_update_appearance(
+            tcg_game, payload.item_name, payload.target_name
+        )
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=error_detail,
+            )
+
+    wear_costume_task = game_server.create_task()
+    asyncio.create_task(
+        _execute_home_pipeline_task(
+            wear_costume_task.task_id,
+            payload.user_name,
+            game_server,
+        )
+    )
+    logger.info(
+        f"📝 创建外观更新任务: task_id={wear_costume_task.task_id}, user={payload.user_name}"
+    )
+    return HomeWearCostumeResponse(
+        task_id=wear_costume_task.task_id,
+        status=TaskStatus.RUNNING.value,
+        message="外观更新任务已启动，请通过会话消息查询结果",
     )
 
 

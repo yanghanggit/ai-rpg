@@ -15,7 +15,7 @@ Unit tests for src/ai_rpg/systems/home_actor_plan_system.py
 """
 
 import json
-from typing import Any, Optional, cast
+from typing import Any, Optional, cast, Dict
 from unittest.mock import AsyncMock, patch
 from src.ai_rpg.deepseek import DeepSeekClient
 from src.ai_rpg.entitas.entity import Entity
@@ -53,7 +53,7 @@ from src.ai_rpg.systems.home_planning_utils import is_player_active
 class _FakeClient:
     """Minimal stub mimicking DeepSeekClient for _execute_actor_actions tests."""
 
-    def __init__(self, name: str, response_json: dict[str, Any]) -> None:
+    def __init__(self, name: str, response_json: Dict[str, Any]) -> None:
         self.name = name
         json_str = json.dumps(response_json)
         self.response_content: str = json_str
@@ -123,9 +123,9 @@ def _make_player_system(
     return HomePlayerContextSystem(game, use_compressed_prompt=use_compressed_prompt)
 
 
-def _action_plan_json(**overrides: Any) -> dict[str, Any]:
+def _action_plan_json(**overrides: Any) -> Dict[str, Any]:
     """Build a minimal valid ActionPlanResponse JSON dict."""
-    base: dict[str, Any] = {
+    base: Dict[str, Any] = {
         "mind": "",
         "query": "",
         "speak": {},
@@ -427,7 +427,7 @@ class TestExecuteActorActions:
         game: TCGGame,
         system: HomeNpcPlanSystem,
         actor: Entity,
-        response: dict[str, Any],
+        response: Dict[str, Any],
     ) -> None:
         fake = _FakeClient(actor.name, response)
         system._execute_actor_actions(actor, cast(DeepSeekClient, fake))

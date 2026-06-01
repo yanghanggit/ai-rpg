@@ -1,10 +1,8 @@
 """出牌后路由系统模块。"""
 
-from typing import Final, final
-
+from typing import Final, final, Dict, List
 from loguru import logger
 from overrides import override
-
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import (
     ActorComponent,
@@ -26,7 +24,7 @@ class MoveToDiscardPileSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     @override
-    def get_trigger(self) -> dict[Matcher, GroupEvent]:
+    def get_trigger(self) -> Dict[Matcher, GroupEvent]:
         return {Matcher(PlayCardsAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
@@ -41,7 +39,7 @@ class MoveToDiscardPileSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     @override
-    async def react(self, entities: list[Entity]) -> None:
+    async def react(self, entities: List[Entity]) -> None:
         """将出牌从 Hand 移入 DiscardPile。"""
         if not self._game.current_dungeon.is_ongoing:
             logger.debug("MoveToDiscardPileSystem: 战斗未进行中，跳过出牌路由")

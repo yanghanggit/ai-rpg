@@ -385,7 +385,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
 
     #######################################################################################################################################
     @override
-    def get_trigger(self) -> dict[Matcher, GroupEvent]:
+    def get_trigger(self) -> Dict[Matcher, GroupEvent]:
         return {Matcher(PlayCardsAction): GroupEvent.ADDED}
 
     #######################################################################################################################################
@@ -395,7 +395,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
 
     #######################################################################################################################################
     @override
-    async def react(self, entities: list[Entity]) -> None:
+    async def react(self, entities: List[Entity]) -> None:
 
         if not self._game.current_dungeon.is_ongoing:
             logger.debug("PlayCardsArbitrationSystem: 战斗未进行中，跳过仲裁")

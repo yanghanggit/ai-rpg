@@ -1,4 +1,4 @@
-from typing import final, override
+from typing import final, override, Dict, List
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.rpg_entity_manager import InteractionError
 from ..models import WhisperAction, WhisperEvent
@@ -51,7 +51,7 @@ class WhisperActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     @override
-    def get_trigger(self) -> dict[Matcher, GroupEvent]:
+    def get_trigger(self) -> Dict[Matcher, GroupEvent]:
         return {Matcher(WhisperAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
@@ -61,7 +61,7 @@ class WhisperActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     @override
-    async def react(self, entities: list[Entity]) -> None:
+    async def react(self, entities: List[Entity]) -> None:
         for entity in entities:
             self._process_whisper_action(entity)
 

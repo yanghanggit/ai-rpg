@@ -1,6 +1,6 @@
 """消耗牌处理系统模块。"""
 
-from typing import Final, final
+from typing import Final, final, Dict
 
 from loguru import logger
 from overrides import override
@@ -26,7 +26,7 @@ class ExhaustCardsActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     @override
-    def get_trigger(self) -> dict[Matcher, GroupEvent]:
+    def get_trigger(self) -> Dict[Matcher, GroupEvent]:
         return {Matcher(PlayCardsAction): GroupEvent.ADDED}
 
     ####################################################################################################################################

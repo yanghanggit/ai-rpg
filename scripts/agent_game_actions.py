@@ -65,6 +65,7 @@ from ai_rpg.services.dungeon_lifecycle import (
     exit_dungeon_and_return_home,
 )
 from pathlib import Path
+from typing import List
 
 
 ###############################################################################
@@ -415,7 +416,7 @@ async def play_cards_specified_game(
     player_session: PlayerSession,
     actor: str,
     card: str,
-    targets: list[str],
+    targets: List[str],
     save_dir: Path,
 ) -> TCGGame:
     """从存档复位，让指定角色打出指定手牌，并归档新状态。
@@ -792,7 +793,7 @@ async def remove_party_member_game(
 async def get_party_roster_game(
     world: World,
     player_session: PlayerSession,
-) -> list[str]:
+) -> List[str]:
     """从存档复位，返回当前远征队名单（只读，不写新存档）。
 
     Args:

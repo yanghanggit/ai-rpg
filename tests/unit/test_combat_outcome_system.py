@@ -1,5 +1,7 @@
 """CombatOutcomeSystem 单元测试。"""
 
+from typing import List
+
 import pytest
 from unittest.mock import MagicMock
 
@@ -302,7 +304,7 @@ class TestExecute:
         self, context: Context, mock_game: MagicMock, system: CombatOutcomeSystem
     ) -> None:
         """clear_round_state 应在 add_human_message 之前调用。"""
-        call_order: list[str] = []
+        call_order: List[str] = []
         mock_game.clear_round_state.side_effect = lambda: call_order.append("clear")
         mock_game.add_human_message.side_effect = lambda *a, **kw: call_order.append(
             "broadcast"

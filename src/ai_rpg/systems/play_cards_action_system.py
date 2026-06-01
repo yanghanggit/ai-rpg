@@ -1,6 +1,6 @@
 """出牌动作系统模块。"""
 
-from typing import Final, final
+from typing import Final, final, Dict, List
 from loguru import logger
 from overrides import override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
@@ -57,7 +57,7 @@ class PlayCardsActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     @override
-    def get_trigger(self) -> dict[Matcher, GroupEvent]:
+    def get_trigger(self) -> Dict[Matcher, GroupEvent]:
         return {Matcher(PlayCardsAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
@@ -71,7 +71,7 @@ class PlayCardsActionSystem(ReactiveProcessor):
 
     #######################################################################################################################################
     @override
-    async def react(self, entities: list[Entity]) -> None:
+    async def react(self, entities: List[Entity]) -> None:
         """处理出牌动作。"""
         if not self._game.current_dungeon.is_ongoing:
             # 必须是 进行中的阶段！

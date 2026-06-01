@@ -3,7 +3,7 @@
 为参战角色动态评估并追加状态效果（增益/减益）；监听 AddStatusEffectsAction.ADDED。
 """
 
-from typing import Final, List, final
+from typing import Final, List, final, Dict
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
@@ -182,7 +182,7 @@ class AddActorStatusEffectsActionSystem(ReactiveProcessor):
 
     #######################################################################################################################################
     @override
-    def get_trigger(self) -> dict[Matcher, GroupEvent]:
+    def get_trigger(self) -> Dict[Matcher, GroupEvent]:
         return {Matcher(AddStatusEffectsAction): GroupEvent.ADDED}
 
     #######################################################################################################################################

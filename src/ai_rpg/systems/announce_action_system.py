@@ -1,4 +1,4 @@
-from typing import Set, final, override
+from typing import Set, final, override, Dict, List
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import AnnounceAction, AnnounceEvent, HomeComponent, DungeonComponent
 from ..game.tcg_game import TCGGame
@@ -49,7 +49,7 @@ class AnnounceActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     @override
-    def get_trigger(self) -> dict[Matcher, GroupEvent]:
+    def get_trigger(self) -> Dict[Matcher, GroupEvent]:
         return {Matcher(AnnounceAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
@@ -59,7 +59,7 @@ class AnnounceActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     @override
-    async def react(self, entities: list[Entity]) -> None:
+    async def react(self, entities: List[Entity]) -> None:
         for entity in entities:
             self._process_announce_action(entity)
 

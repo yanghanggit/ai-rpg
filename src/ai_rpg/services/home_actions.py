@@ -4,7 +4,7 @@
 这些函数负责验证前置条件并设置相应的动作组件，实际执行由游戏管道处理。
 """
 
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 from loguru import logger
 from ..game.tcg_game import TCGGame
 from ..models import (
@@ -504,12 +504,12 @@ def activate_craft_consumable(
     storage = storage_entity.get(StorageComponent)
 
     # 校验每种材料在储物箱中存在且类型为 MATERIAL_ITEM（按 count 追踪可用数量）
-    available: dict[str, int] = {}
+    available: Dict[str, int] = {}
     for item in storage.items:
         if item.type == ItemType.MATERIAL_ITEM:
             available[item.name] = available.get(item.name, 0) + item.count
 
-    demand: dict[str, int] = {}
+    demand: Dict[str, int] = {}
     for name in material_names:
         demand[name] = demand.get(name, 0) + 1
 

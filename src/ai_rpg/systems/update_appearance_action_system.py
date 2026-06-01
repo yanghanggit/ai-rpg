@@ -1,6 +1,6 @@
 """外观更新动作系统模块。"""
 
-from typing import final, override
+from typing import final, override, Dict, List
 from loguru import logger
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
@@ -29,7 +29,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     @override
-    def get_trigger(self) -> dict[Matcher, GroupEvent]:
+    def get_trigger(self) -> Dict[Matcher, GroupEvent]:
         return {Matcher(UpdateAppearanceAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
@@ -39,7 +39,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     @override
-    async def react(self, entities: list[Entity]) -> None:
+    async def react(self, entities: List[Entity]) -> None:
 
         # 处理每个触发外观更新动作的实体
         for entity in entities:

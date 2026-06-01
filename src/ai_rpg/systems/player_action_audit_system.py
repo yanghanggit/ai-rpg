@@ -1,4 +1,4 @@
-from typing import Final, final, override, List
+from typing import Final, final, override, List, Dict
 from loguru import logger
 from pydantic import BaseModel, field_validator
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
@@ -86,7 +86,7 @@ class PlayerActionAuditSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     @override
-    def get_trigger(self) -> dict[Matcher, GroupEvent]:
+    def get_trigger(self) -> Dict[Matcher, GroupEvent]:
         # 监听玩家实体上SpeakAction、WhisperAction和AnnounceAction组件的添加事件
         return {
             Matcher(SpeakAction): GroupEvent.ADDED,
@@ -107,7 +107,7 @@ class PlayerActionAuditSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     @override
-    async def react(self, entities: list[Entity]) -> None:
+    async def react(self, entities: List[Entity]) -> None:
 
         # 获取玩家行动审计系统实体
         world_system_entities = self._game.get_group(

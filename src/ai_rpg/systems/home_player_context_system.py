@@ -5,7 +5,7 @@
 写入对话历史，与 NPC 路径保持一致的 context 格式。
 """
 
-from typing import Dict, Final, final
+from typing import Dict, Final, final, Dict, List
 from ..models.messages import AIMessage
 from overrides import override
 from ..entitas import Entity, Matcher, GroupEvent, ReactiveProcessor
@@ -52,7 +52,7 @@ class HomePlayerContextSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     @override
-    def get_trigger(self) -> dict[Matcher, GroupEvent]:
+    def get_trigger(self) -> Dict[Matcher, GroupEvent]:
         return {Matcher(PlanAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
@@ -66,7 +66,7 @@ class HomePlayerContextSystem(ReactiveProcessor):
 
     #######################################################################################################################################
     @override
-    async def react(self, entities: list[Entity]) -> None:
+    async def react(self, entities: List[Entity]) -> None:
         # 自增全局家园规划回合计数器（本系统注册在 HomeActorPlanSystem 之前，负责 turn 推进）
         self._game._world.home_planning_turn_index += 1
         planning_turn = self._game._world.home_planning_turn_index

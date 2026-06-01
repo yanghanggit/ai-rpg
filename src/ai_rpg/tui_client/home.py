@@ -4,11 +4,8 @@ from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.widgets import Input, RichLog, Static
-
 from .base import BaseGameScreen
-
 import asyncio
-
 from loguru import logger
 import json
 
@@ -23,8 +20,7 @@ from .server_client import (
 from ..models.session_message import MessageType
 from ..models.agent_event import EventHead
 from .utils import display_name
-
-from typing import Any
+from typing import Any, Dict
 
 MENU_TEXT = """\
 [bold yellow]可用操作（输入编号执行）：[/]
@@ -49,7 +45,7 @@ MENU_TEXT = """\
 """
 
 
-def _format_agent_event(data: dict[str, Any]) -> str:
+def _format_agent_event(data: Dict[str, Any]) -> str:
     """将 AGENT_EVENT 的 data dict 渲染为 Rich markup 字符串。"""
     head = data.get("head", EventHead.NONE)
     try:

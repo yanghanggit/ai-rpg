@@ -6,6 +6,7 @@
 """
 
 import asyncio
+from typing import List
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from .game_server_dependencies import CurrentGameServer
@@ -445,7 +446,7 @@ async def home_item_move_to_inventory_endpoint(
         )
     async with current_room._lock:
         tcg_game = await _validate_player_at_home(payload.user_name, game_server)
-        moved: list[str] = []
+        moved: List[str] = []
         for name in payload.item_names:
             success, error_detail = move_item_to_inventory(tcg_game, name)
             if not success:
@@ -479,7 +480,7 @@ async def home_item_move_to_storage_endpoint(
         )
     async with current_room._lock:
         tcg_game = await _validate_player_at_home(payload.user_name, game_server)
-        moved: list[str] = []
+        moved: List[str] = []
         for name in payload.item_names:
             success, error_detail = move_item_to_storage(tcg_game, name)
             if not success:

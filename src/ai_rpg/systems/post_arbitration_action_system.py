@@ -6,7 +6,7 @@
 
 from enum import StrEnum, unique
 import random
-from typing import Final, List, Set, final
+from typing import Final, List, Set, final, Dict
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
@@ -286,7 +286,7 @@ class PostArbitrationActionSystem(ReactiveProcessor):
 
     #######################################################################################################################################
     @override
-    def get_trigger(self) -> dict[Matcher, GroupEvent]:
+    def get_trigger(self) -> Dict[Matcher, GroupEvent]:
         return {Matcher(PostArbitrationAction): GroupEvent.ADDED}
 
     #######################################################################################################################################
@@ -299,7 +299,7 @@ class PostArbitrationActionSystem(ReactiveProcessor):
 
     #######################################################################################################################################
     @override
-    async def react(self, entities: list[Entity]) -> None:
+    async def react(self, entities: List[Entity]) -> None:
         if not self._game.current_dungeon.is_ongoing:
             logger.debug("PostArbitrationActionSystem: 战斗未进行中，跳过")
             return

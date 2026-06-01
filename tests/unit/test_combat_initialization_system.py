@@ -1,6 +1,6 @@
 """CombatInitializationSystem 单元测试。"""
 
-from typing import Set
+from typing import List, Set
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -558,7 +558,7 @@ class TestExecute:
         self, context: Context, mock_game: MagicMock, system: CombatInitializationSystem
     ) -> None:
         """战场上下文注入应在状态转换之前发生（顺序验证）。"""
-        call_order: list[str] = []
+        call_order: List[str] = []
 
         self._configure_mock_game_for_execute(mock_game, context)
         mock_game.current_dungeon.transition_to_ongoing.side_effect = (

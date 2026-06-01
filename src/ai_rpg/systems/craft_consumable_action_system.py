@@ -102,7 +102,7 @@ class CraftConsumableActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     @override
-    def get_trigger(self) -> dict[Matcher, GroupEvent]:
+    def get_trigger(self) -> Dict[Matcher, GroupEvent]:
         return {Matcher(CraftConsumableAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
@@ -112,7 +112,7 @@ class CraftConsumableActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     @override
-    async def react(self, entities: list[Entity]) -> None:
+    async def react(self, entities: List[Entity]) -> None:
         workshop_entities = self._game.get_group(
             Matcher(all_of=[WorldComponent, WorkshopComponent])
         ).entities.copy()

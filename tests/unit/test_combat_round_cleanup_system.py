@@ -3,6 +3,8 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
+from rpds import List
+
 from src.ai_rpg.deepseek import AIMessage, DeepSeekClient
 from src.ai_rpg.entitas.context import Context
 from src.ai_rpg.entitas.entity import Entity
@@ -46,7 +48,7 @@ def _make_round_end_effect(name: str, duration: int) -> StatusEffect:
 
 
 def _make_actor_with_effects(
-    context: Context, name: str, effects: list[StatusEffect]
+    context: Context, name: str, effects: List[StatusEffect]
 ) -> Entity:
     """创建挂载 ActorComponent + StatusEffectsComponent 的角色实体。"""
     entity = context.create_entity()
@@ -284,7 +286,7 @@ class TestExecute:
 def _make_actor_with_stats_and_effects(
     context: Context,
     name: str,
-    effects: list[StatusEffect],
+    effects: List[StatusEffect],
 ) -> Entity:
     """创建挂载 ActorComponent + CharacterStatsComponent + StatusEffectsComponent 的实体。"""
     entity = context.create_entity()
@@ -377,9 +379,9 @@ class TestProcessRoundEndEffects:
         )
         game.get_entity_by_name.return_value = entity
 
-        captured_clients: list[DeepSeekClient] = []
+        captured_clients: List[DeepSeekClient] = []
 
-        async def capture_clients(clients: list[DeepSeekClient]) -> None:
+        async def capture_clients(clients: List[DeepSeekClient]) -> None:
             captured_clients.extend(clients)
 
         with patch(
@@ -404,7 +406,7 @@ class TestProcessRoundEndEffects:
         )
         game.get_entity_by_name.return_value = entity
 
-        async def fake_batch_chat(clients: list[DeepSeekClient]) -> None:
+        async def fake_batch_chat(clients: List[DeepSeekClient]) -> None:
             for client in clients:
                 client._response_ai_message = AIMessage(
                     content='{"hp": 17, "combat_log": "中毒发作，扣除3HP"}'
@@ -436,9 +438,9 @@ class TestProcessRoundEndEffects:
             e1 if name == "英雄" else e2
         )
 
-        captured_clients: list[DeepSeekClient] = []
+        captured_clients: List[DeepSeekClient] = []
 
-        async def capture_clients(clients: list[DeepSeekClient]) -> None:
+        async def capture_clients(clients: List[DeepSeekClient]) -> None:
             captured_clients.extend(clients)
 
         with patch(
@@ -463,7 +465,7 @@ class TestProcessRoundEndEffects:
         )
         game.get_entity_by_name.return_value = entity
 
-        async def fake_batch_chat(clients: list[DeepSeekClient]) -> None:
+        async def fake_batch_chat(clients: List[DeepSeekClient]) -> None:
             for client in clients:
                 client._response_ai_message = AIMessage(
                     content='{"hp": 0, "combat_log": "中毒致死"}'
@@ -489,7 +491,7 @@ class TestProcessRoundEndEffects:
         )
         game.get_entity_by_name.return_value = entity
 
-        async def fake_batch_chat_bad(clients: list[DeepSeekClient]) -> None:
+        async def fake_batch_chat_bad(clients: List[DeepSeekClient]) -> None:
             for client in clients:
                 client._response_ai_message = AIMessage(content="这不是有效的JSON")
 
@@ -514,7 +516,7 @@ class TestProcessRoundEndEffects:
         game.current_dungeon.latest_round.is_completed = True
 
         system = CombatRoundCleanupSystem(game)
-        call_order: list[str] = []
+        call_order: List[str] = []
 
         original_round_end = system.process_round_end_effects
         original_tick = system.tick_status_effects_duration

@@ -8,7 +8,7 @@ Tests for RPGGame context message management methods:
 """
 
 import pytest
-from typing import Any, cast
+from typing import Any, List, cast
 
 from src.ai_rpg.models.messages import AIMessage, HumanMessage
 from src.ai_rpg.entitas.entity import Entity
@@ -284,7 +284,7 @@ class TestRemoveMessages:
 
 
 class TestRemoveMessageRange:
-    def _fill(self, game: Any, actor: Entity, n: int = 5) -> list[Any]:
+    def _fill(self, game: Any, actor: Entity, n: int = 5) -> List[Any]:
         """Helper: add n HumanMessages and return all context objects."""
         for i in range(n):
             game.add_human_message(actor, f"msg{i}")

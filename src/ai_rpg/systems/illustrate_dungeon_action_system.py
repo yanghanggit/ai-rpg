@@ -1,4 +1,4 @@
-from typing import Final, List, final, override
+from typing import Final, List, final, override, Dict
 from pathlib import Path
 from loguru import logger
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
@@ -137,7 +137,7 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     @override
-    def get_trigger(self) -> dict[Matcher, GroupEvent]:
+    def get_trigger(self) -> Dict[Matcher, GroupEvent]:
         return {
             Matcher(IllustrateDungeonAction): GroupEvent.ADDED,
         }

@@ -11,7 +11,7 @@
 - 处理场景转换失败的各种情况并提供反馈
 """
 
-from typing import final, override
+from typing import final, override, Dict, List
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import TransStageAction, HomeComponent
 from loguru import logger
@@ -28,7 +28,7 @@ class TransStageActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     @override
-    def get_trigger(self) -> dict[Matcher, GroupEvent]:
+    def get_trigger(self) -> Dict[Matcher, GroupEvent]:
         return {Matcher(TransStageAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
@@ -38,7 +38,7 @@ class TransStageActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     @override
-    async def react(self, entities: list[Entity]) -> None:
+    async def react(self, entities: List[Entity]) -> None:
         for entity in entities:
             self._process_trans_stage_action(entity)
 

@@ -53,7 +53,7 @@ class HomeNpcPlanSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     @override
-    def get_trigger(self) -> dict[Matcher, GroupEvent]:
+    def get_trigger(self) -> Dict[Matcher, GroupEvent]:
         return {Matcher(PlanAction): GroupEvent.ADDED}
 
     ####################################################################################################################################

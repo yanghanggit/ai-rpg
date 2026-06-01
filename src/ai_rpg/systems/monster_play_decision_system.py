@@ -1,5 +1,5 @@
 import random
-from typing import Final, List, final, override
+from typing import Final, List, final, override, Dict
 from loguru import logger
 from pydantic import BaseModel
 from ..deepseek import DeepSeekClient
@@ -214,7 +214,7 @@ class MonsterPlayDecisionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     @override
-    def get_trigger(self) -> dict[Matcher, GroupEvent]:
+    def get_trigger(self) -> Dict[Matcher, GroupEvent]:
         return {
             Matcher(PlayCardsAction): GroupEvent.ADDED,
             Matcher(MonsterTurnAction): GroupEvent.ADDED,
@@ -234,7 +234,7 @@ class MonsterPlayDecisionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     @override
-    async def react(self, entities: list[Entity]) -> None:
+    async def react(self, entities: List[Entity]) -> None:
 
         # 验证战斗状态
         if not self._game.current_dungeon.is_ongoing:
@@ -342,7 +342,7 @@ class MonsterPlayDecisionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     def _mock_inject_pass_turn_context(
-        self, entities: list[Entity], current_round_number: int
+        self, entities: List[Entity], current_round_number: int
     ) -> None:
         """[mock] 第一回合向怪物注入 context，强制引导 LLM 选择 pass_turn。"""
         if current_round_number != 1:

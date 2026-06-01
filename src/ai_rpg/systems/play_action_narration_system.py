@@ -7,7 +7,7 @@
 该系统是可选的：即使不加入 pipeline，PlayCardsArbitrationSystem 也有兆底逻辑。
 """
 
-from typing import Final, List, final
+from typing import Final, List, final, Dict
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
@@ -71,7 +71,7 @@ class PlayActionNarrationSystem(ReactiveProcessor):
 
     #######################################################################################################################################
     @override
-    def get_trigger(self) -> dict[Matcher, GroupEvent]:
+    def get_trigger(self) -> Dict[Matcher, GroupEvent]:
         return {Matcher(PlayCardsAction): GroupEvent.ADDED}
 
     #######################################################################################################################################
@@ -85,7 +85,7 @@ class PlayActionNarrationSystem(ReactiveProcessor):
 
     #######################################################################################################################################
     @override
-    async def react(self, entities: list[Entity]) -> None:
+    async def react(self, entities: List[Entity]) -> None:
         if not self._game.current_dungeon.is_ongoing:
             logger.debug("PlayActionNarrationSystem: 战斗未进行中，跳过")
             return

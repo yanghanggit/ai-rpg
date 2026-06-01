@@ -1,6 +1,6 @@
 """玩家当前状态 Screen"""
 
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from loguru import logger
 from ..models import (
@@ -27,7 +27,7 @@ from .utils import display_name, render_item
 
 
 # 组件渲染顺序（靠前的优先展示）
-_COMPONENT_ORDER: list[str] = [
+_COMPONENT_ORDER: List[str] = [
     ActorComponent.__name__,
     CharacterStatsComponent.__name__,
     AppearanceComponent.__name__,
@@ -50,7 +50,7 @@ def _render_component(name: str, data: Dict[str, Any], context: Dict[str, Any]) 
     ):
         return ""
 
-    lines: list[str] = [f"  [bold cyan]◆ {name}[/]"]
+    lines: List[str] = [f"  [bold cyan]◆ {name}[/]"]
 
     if name == ActorComponent.__name__:
         ac = ActorComponent(**data)

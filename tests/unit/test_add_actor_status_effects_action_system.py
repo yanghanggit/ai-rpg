@@ -20,7 +20,7 @@ from src.ai_rpg.systems.add_actor_status_effects_action_system import (
     _generate_add_status_effects_prompt,
     _generate_compressed_add_status_effects_prompt,
 )
-
+from typing import List
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -469,9 +469,9 @@ class TestAddActorStatusEffectsActionSystemReact:
             (e for e in [actor1, actor2] if e.name == name), None
         )
 
-        captured_clients: list[object] = []
+        captured_clients: List[object] = []
 
-        async def _capture_batch(clients: list[object]) -> None:
+        async def _capture_batch(clients: List[object]) -> None:
             captured_clients.extend(clients)
 
         with (

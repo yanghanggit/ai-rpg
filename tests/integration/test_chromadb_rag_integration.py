@@ -10,7 +10,7 @@ ChromaDB RAG系统集成测试
 3. 测试所有核心 RAG 功能
 """
 
-from typing import Dict, List, Generator, cast
+from typing import Dict, List, Generator, cast, Tuple
 import pytest
 import asyncio
 import time
@@ -97,7 +97,7 @@ def _init_test_rag_system() -> bool:
     )
 
 
-def _test_search(query: str, top_k: int = 5) -> tuple[list[str], list[float]]:
+def _test_search(query: str, top_k: int = 5) -> Tuple[List[str], List[float]]:
     """测试专用的语义搜索函数"""
     collection = _get_test_collection()
     return search_documents(query, collection, multilingual_model, top_k)
@@ -318,7 +318,7 @@ class TestChromaDBRAGIntegration:
         ]
 
         # 创建异步任务包装器
-        async def async_search(query: str) -> tuple[str, list[str], list[float]]:
+        async def async_search(query: str) -> Tuple[str, List[str], List[float]]:
             """异步搜索包装器"""
             docs, scores = await asyncio.to_thread(
                 _test_search,
@@ -341,14 +341,14 @@ class TestChromaDBRAGIntegration:
         logger.info(f"⚡ 并行搜索耗时: {parallel_time:.2f}秒")
 
         # 验证并行搜索结果
-        successful_results: list[tuple[str, list[str], list[float]]] = []
+        successful_results: List[Tuple[str, List[str], List[float]]] = []
         for result in results:
             if isinstance(result, Exception):
                 logger.error(f"搜索失败: {result}")
                 pytest.fail(f"并行搜索中出现异常: {result}")
             else:
                 successful_results.append(
-                    cast(tuple[str, list[str], list[float]], result)
+                    cast(Tuple[str, List[str], List[float]], result)
                 )
 
         assert len(successful_results) == len(test_queries), "所有查询都应该成功"

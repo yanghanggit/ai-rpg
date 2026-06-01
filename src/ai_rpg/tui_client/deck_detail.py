@@ -4,7 +4,6 @@ from loguru import logger
 from textual import work
 from textual.app import ComposeResult
 from textual.widgets import RichLog
-
 from .base import BaseGameScreen
 from .server_client import (
     fetch_dungeon_room,
@@ -20,6 +19,7 @@ from ..models import (
     DiscardPileComponent,
 )
 from ..models.cards import Card
+from typing import List
 
 _TARGET_LABEL = {
     "enemy_single": "[red]敌方单体[/]",
@@ -159,7 +159,7 @@ class DeckDetailScreen(BaseGameScreen):
                     f"[dim]牌库 {deck_count} 张 | 已出牌 {played_count} 张 | 消耗堆 {discard_count} 张 | 可重抽 {draw_count} 张[/]"
                 )
 
-                def _render_cards(cards: list[Card], log: RichLog) -> None:
+                def _render_cards(cards: List[Card], log: RichLog) -> None:
                     for i, card in enumerate(cards, start=1):
                         hit_str = (
                             f"x[yellow]{card.hit_count}[/]"

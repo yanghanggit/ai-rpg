@@ -19,7 +19,7 @@
 3. 调用方执行 exit_dungeon_and_return_home 返回家园
 """
 
-from typing import final, override
+from typing import final, override, Dict, List
 from loguru import logger
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import RetreatAction, PartyMemberComponent, DeathComponent
@@ -66,7 +66,7 @@ class RetreatActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     @override
-    def get_trigger(self) -> dict[Matcher, GroupEvent]:
+    def get_trigger(self) -> Dict[Matcher, GroupEvent]:
         return {Matcher(RetreatAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
@@ -77,7 +77,7 @@ class RetreatActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     @override
-    async def react(self, entities: list[Entity]) -> None:
+    async def react(self, entities: List[Entity]) -> None:
         """处理撤退动作
 
         仅在战斗进行中（is_ongoing）时执行撤退处理。

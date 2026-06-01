@@ -1,6 +1,6 @@
 """过牌动作系统模块。"""
 
-from typing import Final, final
+from typing import Final, final, Dict, List
 from loguru import logger
 from overrides import override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
@@ -43,7 +43,7 @@ class PassTurnActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     @override
-    def get_trigger(self) -> dict[Matcher, GroupEvent]:
+    def get_trigger(self) -> Dict[Matcher, GroupEvent]:
         return {Matcher(PassTurnAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
@@ -58,7 +58,7 @@ class PassTurnActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     @override
-    async def react(self, entities: list[Entity]) -> None:
+    async def react(self, entities: List[Entity]) -> None:
 
         if not self._game.current_dungeon.is_ongoing:
             logger.debug("PassTurnActionSystem: 战斗未进行中，跳过过牌处理")

@@ -2,7 +2,6 @@
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-
 from src.ai_rpg.entitas.context import Context
 from src.ai_rpg.entitas.entity import Entity
 from src.ai_rpg.game.tcg_game import TCGGame
@@ -22,6 +21,7 @@ from src.ai_rpg.systems.post_arbitration_action_system import (
     PostArbitrationActionSystem,
     _fmt_duration,
 )
+from typing import Dict, List
 
 
 # ---------------------------------------------------------------------------
@@ -87,15 +87,15 @@ def _make_mock_chat_client(
 
 def _build_response_json(
     target: str,
-    effects: list[StatusEffect] | None = None,
-    cards: list[Card] | None = None,
+    effects: List[StatusEffect] | None = None,
+    cards: List[Card] | None = None,
 ) -> str:
     """构建标准的 StagePostArbitrationResponse JSON 字符串。"""
     import json
 
-    directives: list[dict[str, object]] = []
+    directives: List[Dict[str, object]] = []
     if effects or cards:
-        d: dict[str, object] = {"target": target}
+        d: Dict[str, object] = {"target": target}
         d["add_effects"] = [
             {
                 "name": e.name,

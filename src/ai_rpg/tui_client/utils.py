@@ -1,6 +1,6 @@
 """tui_client 无状态工具方法"""
 
-from typing import Any, Dict
+from typing import Any, Dict, List, Tuple
 
 # 这些类别前缀保留在显示名中（不剥离首段）
 _KEEP_PREFIXES = {"地下城"}
@@ -33,7 +33,7 @@ _TARGET_MAP = {
     "ally_all": "全体友方",
 }
 
-_STAT_LABELS: list[tuple[str, str]] = [
+_STAT_LABELS: List[Tuple[str, str]] = [
     ("attack", "攻击+{}"),
     ("defense", "防御+{}"),
     ("hp", "HP+{}"),

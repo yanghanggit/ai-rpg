@@ -17,7 +17,7 @@ Date: 2025-07-30
 
 import os
 import sys
-from typing import final
+from typing import final, List, Dict
 from pydantic import BaseModel
 
 # 将 src 目录添加到模块搜索路径
@@ -155,9 +155,9 @@ def _setup_chromadb_rag_environment() -> None:
         logger.success("✅ RAG系统初始化完成!")
         return
 
-    documents_list: list[str] = []
-    metadatas_list: list[dict[str, str]] = []
-    ids_list: list[str] = []
+    documents_list: List[str] = []
+    metadatas_list: List[Dict[str, str]] = []
+    ids_list: List[str] = []
 
     doc_index = 0
     for category, docs in RPG_KNOWLEDGE_BASE.items():

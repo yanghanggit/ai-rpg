@@ -8,9 +8,8 @@ Unit tests for src/ai_rpg/game/stage_transition.py
 """
 
 import pytest
-from typing import Any
+from typing import Any, Dict
 from unittest.mock import MagicMock
-
 from src.ai_rpg.entitas.entity import Entity
 from src.ai_rpg.models import (
     ActorComponent,
@@ -90,7 +89,7 @@ class TestFormatFunctions:
 class TestValidateStageTransitionPrerequisites:
     """使用 MagicMock game 独立测试前置条件校验逻辑。"""
 
-    def _mock_game(self, actor_to_stage: dict[Any, Any]) -> Any:
+    def _mock_game(self, actor_to_stage: Dict[Any, Any]) -> Any:
         """构造一个 mock game，resolve_stage_entity 按传入映射返回场景。"""
         game = MagicMock()
         game.resolve_stage_entity.side_effect = lambda e: actor_to_stage.get(e)

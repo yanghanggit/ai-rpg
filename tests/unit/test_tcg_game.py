@@ -13,7 +13,7 @@ Unit tests for src/ai_rpg/game/tcg_game.py
   - get_current_turn_actor
 """
 
-from typing import Any, cast
+from typing import Any, List, cast
 import pytest
 from src.ai_rpg.entitas.entity import Entity
 from src.ai_rpg.game.player_session import PlayerSession
@@ -137,7 +137,7 @@ def _make_actor_model(
 def _make_stage_model(
     name: str,
     stage_type: StageType = StageType.HOME,
-    actors: list[Actor] | None = None,
+    actors: List[Actor] | None = None,
 ) -> Stage:
     return Stage(
         name=name,

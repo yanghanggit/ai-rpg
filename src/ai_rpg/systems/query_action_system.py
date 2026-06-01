@@ -11,7 +11,7 @@
 - top_k 可在构造时配置，默认 3 条
 """
 
-from typing import Final, final, override
+from typing import Final, final, override, Dict, List
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import (
     QueryAction,
@@ -78,7 +78,7 @@ class QueryActionSystem(ReactiveProcessor):
 
     #############################################################################################################################
     @override
-    def get_trigger(self) -> dict[Matcher, GroupEvent]:
+    def get_trigger(self) -> Dict[Matcher, GroupEvent]:
         return {Matcher(QueryAction): GroupEvent.ADDED}
 
     #############################################################################################################################
@@ -88,7 +88,7 @@ class QueryActionSystem(ReactiveProcessor):
 
     #############################################################################################################################
     @override
-    async def react(self, entities: list[Entity]) -> None:
+    async def react(self, entities: List[Entity]) -> None:
         for entity in entities:
             self._process_action(entity)
 

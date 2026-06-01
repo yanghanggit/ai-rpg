@@ -341,7 +341,7 @@ async def dungeon_combat_play_cards(
     game_name: str,
     actor_name: str,
     card_name: str,
-    targets: list[str],
+    targets: List[str],
 ) -> DungeonCombatPlayCardsResponse:
     """让指定角色打出指定卡牌，返回后台任务ID。"""
     async with httpx.AsyncClient(timeout=10) as client:

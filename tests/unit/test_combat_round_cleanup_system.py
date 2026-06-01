@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from rpds import List
+from typing import List
 
 from src.ai_rpg.deepseek import AIMessage, DeepSeekClient
 from src.ai_rpg.entitas.context import Context

@@ -197,7 +197,7 @@ class AddActorStatusEffectsActionSystem(ReactiveProcessor):
 
     #######################################################################################################################################
     @override
-    async def react(self, entities: list[Entity]) -> None:
+    async def react(self, entities: List[Entity]) -> None:
         """并发为所有实体调用 LLM 评估并追加状态效果。"""
 
         # 仅在战斗进行中时触发

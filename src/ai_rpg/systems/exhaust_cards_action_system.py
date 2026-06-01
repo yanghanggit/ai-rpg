@@ -1,6 +1,6 @@
 """消耗牌处理系统模块。"""
 
-from typing import Final, final, Dict
+from typing import Final, final, Dict, List
 
 from loguru import logger
 from overrides import override
@@ -41,7 +41,7 @@ class ExhaustCardsActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     @override
-    async def react(self, entities: list[Entity]) -> None:
+    async def react(self, entities: List[Entity]) -> None:
         """处理消耗牌路由。
 
         将 exhaust=True 的自有牌从 DiscardPile 移至 ExhaustPile。

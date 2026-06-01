@@ -67,7 +67,7 @@ class HomeNpcPlanSystem(ReactiveProcessor):
 
     #######################################################################################################################################
     @override
-    async def react(self, entities: list[Entity]) -> None:
+    async def react(self, entities: List[Entity]) -> None:
 
         # turn counter 由 HomePlayerContextSystem（注册在前）负责自增，此处直接读取。
         planning_turn = self._game._world.home_planning_turn_index

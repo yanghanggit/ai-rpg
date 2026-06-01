@@ -297,7 +297,7 @@ class DungeonOverviewScreen(BaseGameScreen):
                 resp = await fetch_entities_details(
                     user_name, game_name, [player_actor]
                 )
-                members: list[str] = []
+                members: List[str] = []
                 for entity in resp.entities_serialization:
                     for comp in entity.components:
                         if comp.name == "PartyRosterComponent":

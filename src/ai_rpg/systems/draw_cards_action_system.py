@@ -191,7 +191,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
     ######################################################################################################################################
     @override
-    async def react(self, entities: list[Entity]) -> None:
+    async def react(self, entities: List[Entity]) -> None:
 
         if not self._game.current_dungeon.is_ongoing:
             logger.debug("当前战斗状态非 ONGOING，DrawCardsActionSystem 不执行")

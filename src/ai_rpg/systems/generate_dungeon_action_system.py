@@ -340,7 +340,7 @@ class GenerateDungeonActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     @override
-    async def react(self, entities: list[Entity]) -> None:
+    async def react(self, entities: List[Entity]) -> None:
 
         world_system_entities = self._game.get_group(
             Matcher(all_of=[WorldComponent, DungeonGenerationComponent])

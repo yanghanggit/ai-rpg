@@ -146,7 +146,7 @@ class TCGGame(RPGGame):
         self._create_world_entities(self._world.blueprint.world_systems)
 
         ## 第1.5步，创建全局储物箱实体（挂载在 WorldComponent）
-        initial_items = copy.deepcopy(self._world.blueprint.items)
+        initial_items = copy.deepcopy(self._world.blueprint.storage)
         self._create_storage_entity(initial_items)
 
         ## 第2步，创建actor（含牌组与关键词组件挂载）
@@ -201,9 +201,12 @@ class TCGGame(RPGGame):
         assert not player_actor_entity.has(
             InventoryComponent
         ), "玩家角色实体不应该已经有 InventoryComponent"
-        player_actor_entity.replace(InventoryComponent, player_actor_entity.name, [])
+        initial_inventory = copy.deepcopy(self._world.blueprint.inventory)
+        player_actor_entity.replace(
+            InventoryComponent, player_actor_entity.name, initial_inventory
+        )
         logger.debug(
-            f"为玩家角色实体 {player_actor_entity.name} 添加 InventoryComponent"
+            f"为玩家角色实体 {player_actor_entity.name} 添加 InventoryComponent，初始道具 {len(initial_inventory)} 件"
         )
 
         return self

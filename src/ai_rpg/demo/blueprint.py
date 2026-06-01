@@ -78,7 +78,7 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
             create_workshop(),
         ],
         storage_entity="世界储物箱",
-        items=[
+        storage=[
             GearItem(
                 name="装备.缺口猎刀",
                 description="一把刀身偏短的猎刀，刃背厚实，靠近刀尖三分之一处有一道浅缺口，像是曾经硬撬过什么。握柄以粗布条缠绕，布已泛黄，但缠法整齐，显然出自熟练的手。",
@@ -119,6 +119,20 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
                 name="材料.废旧皮革",
                 description="一块拳头大小的硬化皮革碎片，边缘粗糙，切割痕迹清晰可辨。可用于绑扎或简单防护。",
                 count=2,
+            ),
+        ],
+        inventory=[
+            ConsumableItem(
+                name="消耗品.遗迹急救药剂",
+                description="一小瓶从废弃营地的医疗箱里翻出的透明液体，瓶身有细小裂纹但封口尚好。液体微微泛绿，入口有刺激的苦涩感。应急时饮下，能迅速止血并小幅恢复体力。",
+                count=1,
+                target_type=TargetType.SELF_ONLY,
+            ),
+            ConsumableItem(
+                name="消耗品.沙尘爆裂罐",
+                description="一个用陶土粗制的密封罐，内填混有研磨沙粒的易燃粉末。罐身表面有细小裂纹，隐约能感觉到内部气压。用力摔向地面后会猛烈爆散，碎片与沙砾横飞，对场上所有敌人造成伤害。",
+                count=1,
+                target_type=TargetType.ENEMY_ALL,
             ),
         ],
     )

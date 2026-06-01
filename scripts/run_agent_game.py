@@ -115,6 +115,7 @@ from agent_game_actions import (
     move_item_to_storage_game,
     update_appearance_game,
     craft_consumable_game,
+    use_consumable_game,
 )
 
 ###########################################################################################################################################
@@ -476,6 +477,65 @@ def pass_turn(snapshot: str, actor: str) -> None:
     logger.info(f"本次存档目录：{_save_dir}")
 
     asyncio.run(pass_turn_game(world, player_session, actor, _save_dir))
+
+
+###############################################################################################################################################
+@main.command("use-consumable")
+@click.option(
+    "--snapshot",
+    required=True,
+    help="存档目录路径",
+)
+@click.option(
+    "--actor",
+    required=True,
+    help="使用消耗品的角色全名（如 角色.旅行者.无名氏）",
+)
+@click.option(
+    "--item",
+    required=True,
+    help="要使用的消耗品名称（须存在于该角色背包中）",
+)
+@click.option(
+    "--targets",
+    multiple=True,
+    default=(),
+    help="目标角色名，可重复使用（如 --targets 角色.常物.野猪）；SELF_ONLY/ENEMY_ALL 时可省略",
+)
+def use_consumable(
+    snapshot: str, actor: str, item: str, targets: tuple[str, ...]
+) -> None:
+    """从存档复位，让指定角色使用背包内的消耗品，并写入新存档。
+
+    适用于【地下城模式】战斗进行中（is_ongoing）。
+    使用消耗品不消耗 energy，可在玩家行动阶段内任意次数使用。
+    --item 须与背包中消耗品名称完全一致，否则报错不归档。
+    """
+
+    snapshot_path = Path(snapshot)
+    if not snapshot_path.exists():
+        raise click.BadParameter(
+            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+        )
+
+    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
+    _setup_logger(_log_file)
+
+    world, player_session = restore_world(snapshot_path)
+    _save_dir = (
+        WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
+    )
+
+    logger.info(f"本次运行日志文件：{_log_file}")
+    logger.info(f"读取存档：{snapshot_path}")
+    logger.info(f"本次存档目录：{_save_dir}")
+
+    asyncio.run(
+        use_consumable_game(
+            world, player_session, actor, item, list(targets), _save_dir
+        )
+    )
 
 
 ###############################################################################################################################################

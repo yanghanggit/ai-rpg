@@ -212,6 +212,51 @@ def _validate_play_turn(
 
 
 ###################################################################################################################################################################
+def _validate_actor_turn(
+    tcg_game: TCGGame,
+    actor_name: str,
+) -> Tuple["Entity | None", str]:
+    """校验当前是否轮到指定角色行动，并返回其实体。
+
+    与 _validate_play_turn 相同，但不要求角色持有 HandComponent。
+    适用于消耗品等不依赖手牌的行动。
+
+    Returns:
+        (entity, "") 校验通过；(None, error_msg) 校验失败。
+    """
+    latest_round = tcg_game.current_dungeon.latest_round
+    if latest_round is None:
+        return None, "当前没有进行中的回合"
+
+    current_snapshot = (
+        latest_round.actor_order_snapshots[-1]
+        if latest_round.actor_order_snapshots
+        else []
+    )
+    if actor_name not in current_snapshot:
+        return (
+            None,
+            f"角色 {actor_name} 不在本回合行动快照中: {current_snapshot}",
+        )
+
+    next_actor = latest_round.current_turn_actor_name
+    if next_actor != actor_name:
+        return None, f"现在不是 {actor_name} 的回合，当前应由 {next_actor} 出牌"
+
+    entity = tcg_game.get_actor_entity(actor_name)
+    if entity is None:
+        return None, f"找不到角色 {actor_name}"
+
+    if not (entity.has(PartyMemberComponent) or entity.has(MonsterComponent)):
+        return None, f"角色 {actor_name} 不是战斗角色（非 PartyMember 或 Monster）"
+
+    if entity.has(DeathComponent):
+        return None, f"角色 {actor_name} 已死亡，无法行动"
+
+    return entity, ""
+
+
+###################################################################################################################################################################
 async def activate_play_cards_specified(
     tcg_game: TCGGame,
     actor_name: str,
@@ -391,7 +436,7 @@ def activate_use_consumable(
     Returns:
         tuple[bool, str]: (是否成功, 结果消息)
     """
-    entity, error_msg = _validate_play_turn(tcg_game, actor_name)
+    entity, error_msg = _validate_actor_turn(tcg_game, actor_name)
     if entity is None:
         logger.error(f"activate_use_consumable: {error_msg}")
         return False, error_msg

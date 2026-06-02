@@ -72,6 +72,7 @@ def create_actor(
         campaign_setting=campaign_setting,
         system_rules=system_rules,
         character_profile=character_sheet.profile,
+        base_body=character_sheet.base_body,
     )
 
     return actor
@@ -83,7 +84,7 @@ def build_actor_system_message(
     campaign_setting: str,
     system_rules: str,
     character_profile: str,
-    # appearance: str,
+    base_body: str,
 ) -> str:
     """
     组装角色 system_message。
@@ -96,7 +97,7 @@ def build_actor_system_message(
         campaign_setting: 战役设定描述
         system_rules: 全局游戏机制规则
         character_profile: 角色背景和特征描述
-        appearance: 角色外观描述
+        base_body: 角色基础体型外观描述
 
     Returns:
         拼接完成的 system_message 字符串
@@ -115,7 +116,11 @@ def build_actor_system_message(
 
 ## 角色设定
 
-{character_profile}"""
+{character_profile}
+
+## 基础体型
+
+{base_body}"""
 
 
 #######################################################################################################################################

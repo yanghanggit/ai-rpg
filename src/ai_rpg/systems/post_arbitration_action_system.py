@@ -146,50 +146,6 @@ def _generate_stage_post_arbitration_prompt(
 
     actors_summary = _build_actors_summary(game, actor_entities)
 
-    phase_desc = f"""
-## 状态效果字段说明
-
-每个状态效果必须指定 `phase` 字段，决定生效阶段与可影响属性：
-
-| phase | 对应阶段 | 可影响属性 | 典型效果举例 |
-|---|---|---|---|
-| `{EffectPhase.DRAW}` | 抽牌阶段 | attack、defense（间接影响下回合卡牌数値） | 「虚弱」攻击力−2，damage_dealt 偏低；「沉重」防御力−1，防御较弱 |
-| `{EffectPhase.ARBITRATION}` | 仲裁结算阶段 | hp、damage_dealt | 「破甲」防御降低；「荆棘」反伤；「眩晕」影响出牌；「虚弱」伤害减少 |
-| `{EffectPhase.ROUND_END}` | 回合末阶段 | hp | 「中毒」每回合末扣血；「燃烧」持续火焰伤害；「再生」每回合末回血 |
-
-**speed**：影响出手顺序，只允许 +1 / 0 / -1，默认 0。
-**defense**：影响防御值（正值增防、负值破甲），整数，默认 0。
-禁止修改 max_hp。
-"""
-
-    card_field_desc = f"""
-## 塞牌字段说明
-
-塞入的卡牌会被加入目标的当前手牌；数值应与场内角色血量及战斗烈度相匹配。
-
-| 字段 | 说明 |
-| --- | --- |
-| name | 卡牌名称（<8字），体现效果意图 |
-| description | 第三人称，描述角色借助**上下文中已存在的**场景具体物件的即时客观动作（1句，如"抓起地面的断柱碎块掷向对方"）；不可凭空引入非场景物件 |
-| affixes | 可选。延迟词缀列表，格式 `[名称]:触发倾向描述`（如 `[碎石粉尘]:可能引起视线模糊`），出牌后独立推理生成持续状态效果；无持续效果时输出 [] |
-| modifiers | 可选。即时修正词缀列表，格式 `[名称]:即时修正描述`（如 `[穿甲]:无视目标防御`），直接注入本次仲裁计算；无即时修正时输出 [] |
-| playable | 可选。布尔值，是否允许出牌；默认 true，场景叙事明确暗示该物件具有禁出属性时填 false |
-| exhaust | 可选。布尔值，出牌后是否永久消耗（归入消耗堆，不再回到抽牌循环）；默认 false，场景叙事明确暗示该物件使用后消失时填 true |
-| damage_dealt | 单次命中造成的伤害（整数；攻击类取合理正值，无伤害取 0） |
-| hit_count | 攻击次数（默认 1；多段攻击可设 2~4，每段独立作用） |
-| target_type | 出牌目标类型（见下表） |
-
-| target_type | 含义 |
-|---|---|
-| `{TargetType.ENEMY_SINGLE}` | 攻击单体敌方（默认） |
-| `{TargetType.ENEMY_ALL}` | 攻击全体敌方 |
-| `{TargetType.ENEMY_RANDOM_MULTI}` | 每段独立随机命中一名敌方（需配合较高 hit_count） |
-| `{TargetType.ALLY_SINGLE}` | 治疗/增益单体友方 |
-| `{TargetType.ALLY_ALL}` | 治疗/增益全体友方 |
-| `{TargetType.SELF_ONLY}` | 仅作用于自身（防御、自损诅咒等） |
-
-**注意**：只有当前持有手牌的角色才能被塞牌。"""
-
     return f"""# 第 {current_round_number} 回合 — 仲裁后场景干预
 
 **{current_turn_actor_name}** 刚刚完成出牌，仲裁结算已在上下文中记录。
@@ -210,14 +166,51 @@ def _generate_stage_post_arbitration_prompt(
 - ❌ 禁止：勇气、恐惧、神圣、复仇、祝福、诅咒等角色内在情绪或来源不明的魔法效果
 - 不滥用：若上下文中无明显可利用的环境要素，**必须输出空数组**
 - 状态效果与卡牌可同时施加于同一目标
-{phase_desc}
-{card_field_desc}
 
-**description 规范**：
-- 状态效果 description：第三人称，描述环境要素如何作用于角色身体（如："沙尘被战斗扰动卷入眼中，视线受阻，造成伤害减少"）
-- 塞牌 description：第三人称，描述角色借助场景具体物件的客观动作（如："抓起地面裸露的岩板碎片朝对方投出"），不绑定具体场景名词，使描述通用可复用
+## 状态效果字段说明
 
-**注意**：`source` 字段由系统自动设置，无需在 JSON 中填写。
+每个状态效果必须指定 `phase` 字段，决定生效阶段与可影响属性：
+
+| phase | 对应阶段 | 可影响属性 | 典型效果举例 |
+|---|---|---|---|
+| `{EffectPhase.DRAW}` | 抽牌阶段 | attack、defense（间接影响下回合卡牌数値） | 「虚弱」攻击力−2，damage_dealt 偏低；「沉重」防御力−1，防御较弱 |
+| `{EffectPhase.ARBITRATION}` | 仲裁结算阶段 | hp、damage_dealt | 「破甲」防御降低；「荆棘」反伤；「眩晕」影响出牌；「虚弱」伤害减少 |
+| `{EffectPhase.ROUND_END}` | 回合末阶段 | hp | 「中毒」每回合末扣血；「燃烧」持续火焰伤害；「再生」每回合末回血 |
+
+**speed**：影响出手顺序，只允许 +1 / 0 / -1，默认 0。
+**defense**：影响防御值（正值增防、负值破甲），整数，默认 0。
+**duration**：-1=永久，>0=剩余回合数，默认 3。禁止修改 max_hp。
+**counter**：整数初始值；`{EffectPhase.ARBITRATION}` 阶段特殊计数器词条（如"前3次受击"设 3），默认 0。
+**description**：第三人称，描述环境要素如何作用于角色身体（如："沙尘被战斗扰动卷入眼中，视线受阻，造成伤害减少"）。
+
+## 塞牌字段说明
+
+塞入的卡牌会被加入目标的当前手牌；数值应与场内角色血量及战斗烈度相匹配。
+
+| 字段 | 说明 |
+| --- | --- |
+| name | 卡牌名称（<8字），体现效果意图 |
+| description | 第三人称，描述角色借助场景具体物件的客观动作（如："抓起地面的断柱碎块用力掷向对方"），不绑定具体场景名词，使描述通用可复用；不可凭空引入上下文中不存在的物件 |
+| affixes | 可选。延迟词缀列表，格式 `[名称]:触发倾向描述`（如 `[碎石粉尘]:可能引起视线模糊`），出牌后独立推理生成持续状态效果；无持续效果时输出 [] |
+| modifiers | 可选。即时修正词缀列表，格式 `[名称]:即时修正描述`（如 `[穿甲]:无视目标防御`），直接注入本次仲裁计算；无即时修正时输出 [] |
+| playable | 可选。布尔值，是否允许出牌；默认 true，场景叙事明确暗示该物件具有禁出属性时填 false |
+| exhaust | 可选。布尔值，出牌后是否永久消耗（归入消耗堆，不再回到抽牌循环）；默认 false，场景叙事明确暗示该物件使用后消失时填 true |
+| damage_dealt | 单次命中造成的伤害（整数；攻击类取合理正值，无伤害取 0） |
+| hit_count | 攻击次数（默认 1；多段攻击可设 2~4，每段独立作用） |
+| target_type | 出牌目标类型（见下表） |
+
+| target_type | 含义 |
+|---|---|
+| `{TargetType.ENEMY_SINGLE}` | 攻击单体敌方（默认） |
+| `{TargetType.ENEMY_ALL}` | 攻击全体敌方 |
+| `{TargetType.ENEMY_RANDOM_MULTI}` | 每段独立随机命中一名敌方（需配合较高 hit_count） |
+| `{TargetType.ALLY_SINGLE}` | 治疗/增益单体友方 |
+| `{TargetType.ALLY_ALL}` | 治疗/增益全体友方 |
+| `{TargetType.SELF_ONLY}` | 仅作用于自身（防御、自损诅咒等） |
+
+## 输出格式
+
+`source` 字段由系统自动设置，无需填写。
 
 ```json
 {{
@@ -251,10 +244,7 @@ def _generate_stage_post_arbitration_prompt(
 }}
 ```
 
-`phase` 填 `{EffectPhase.DRAW}` / `{EffectPhase.ARBITRATION}` / `{EffectPhase.ROUND_END}` 其中之一。
-- `duration`：-1=永久，>0=剩余回合数，默认 3
-- `counter`：整数初始值；`{EffectPhase.ARBITRATION}` 阶段特殊计数器词条（如"前3次受击"设 3），默认 0
-无干预时输出空的 per_actor 数组，只输出JSON."""
+**无干预时输出空的 per_actor 数组，只输出 JSON。**"""
 
 
 #######################################################################################################################################
@@ -314,21 +304,21 @@ class PostArbitrationActionSystem(ReactiveProcessor):
             await self._process_stage(stage_entity)
 
         # 批次二：Actor 实体 — 角色级仲裁后反应（暂未实现）
-        actor_entities = [e for e in entities if e.has(ActorComponent)]
-        for actor_entity in actor_entities:
-            await self._process_actor(actor_entity)
+        # actor_entities = [e for e in entities if e.has(ActorComponent)]
+        # for actor_entity in actor_entities:
+        #     await self._process_actor(actor_entity)
 
     #######################################################################################################################################
-    async def _process_actor(self, actor_entity: Entity) -> None:
-        """Actor 路径：角色级仲裁后反应（暂未实现）
+    # async def _process_actor(self, actor_entity: Entity) -> None:
+    #     """Actor 路径：角色级仲裁后反应（暂未实现）
 
-        未来由 actor 自身的 LLM agent 决定是否执行仲裁后的角色反应。
-        触发点需在 PlayCardsArbitrationSystem._apply_arbitration_result 中
-        对 actor_entity 添加 PostArbitrationAction 才会激活此路径。
-        """
-        logger.debug(
-            f"PostArbitrationActionSystem: [{actor_entity.name}] Actor 路径暂未实现，跳过"
-        )
+    #     未来由 actor 自身的 LLM agent 决定是否执行仲裁后的角色反应。
+    #     触发点需在 PlayCardsArbitrationSystem._apply_arbitration_result 中
+    #     对 actor_entity 添加 PostArbitrationAction 才会激活此路径。
+    #     """
+    #     logger.debug(
+    #         f"PostArbitrationActionSystem: [{actor_entity.name}] Actor 路径暂未实现，跳过"
+    #     )
 
     #######################################################################################################################################
     async def _process_stage(self, stage_entity: Entity) -> None:

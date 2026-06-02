@@ -134,7 +134,7 @@ def create_combat_pipeline(
     )
     from ..systems.combat_archive_system import CombatArchiveSystem
     from ..systems.deck_generation_system import DeckGenerationSystem
-    from ..systems.deck_return_system import DeckReturnSystem
+    from ..systems.combat_pile_teardown_system import CombatPileTeardownSystem
     from ..systems.stage_description_system import (
         StageDescriptionSystem,
     )
@@ -202,7 +202,7 @@ def create_combat_pipeline(
     processors.add(CombatArchiveSystem(tcg_game))
 
     # 牌库归还系统（战斗结束后将三个子堆自有牌归还 DeckComponent）
-    processors.add(DeckReturnSystem(tcg_game))
+    processors.add(CombatPileTeardownSystem(tcg_game))
 
     # 通用性的系统，用于后处理部分：清除动作相关的临时状态、标记等，准备下一轮输入
     processors.add(ActionCleanupSystem(tcg_game))

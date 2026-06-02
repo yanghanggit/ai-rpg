@@ -293,22 +293,23 @@ class DeckGenerationSystem(ExecuteProcessor):
                     f"[{entity.name}] 牌库生成卡牌数量（{len(cards)}）与预期（{num_cards}）不符"
                 )
 
-            # 追加至 DeckComponent，洗牌后整体移入 DrawPileComponent
+            # 锁定原始牌库：清除上场战斗残留，写入本场新生成的牌（战斗期间只读）
             deck_comp = entity.get(DeckComponent)
             assert deck_comp is not None, f"{entity.name} 缺少 DeckComponent"
+            deck_comp.cards.clear()
             deck_comp.cards.extend(cards)
 
-            # 洗牌
+            # 洗牌（作用于原始牌库顺序，副本继承此顺序）
             random.shuffle(deck_comp.cards)
 
-            # 移入 DrawPileComponent
+            # 副本移入 DrawPileComponent：model_copy() 保留 uuid，战斗流转不影响原始牌库
             draw_pile = entity.get(DrawPileComponent)
             assert draw_pile is not None, f"{entity.name} 缺少 DrawPileComponent"
-            draw_pile.cards.extend(deck_comp.cards)
-            deck_comp.cards.clear()
+            draw_pile.cards.extend([c.model_copy() for c in deck_comp.cards])
 
             logger.debug(
-                f"[{entity.name}] 牌库生成完成：{len(draw_pile.cards)} 张卡牌已洗牌填入 DrawPile"
+                f"[{entity.name}] 牌库生成完成：{len(draw_pile.cards)} 张副本已洗牌填入 DrawPile"
+                f"，DeckComponent 锁定 {len(deck_comp.cards)} 张原始牌"
                 f"：{[c.name for c in draw_pile.cards]}"
             )
 

@@ -166,7 +166,7 @@ class TestExhaustCardsActionSystemExhaustFalse:
 class TestExhaustCardsActionSystemForeignCard:
     """exhaust=True 的外来牌（source != entity.name）：
     MoveToDiscardPileSystem 将其写入 DiscardPile，ExhaustCardsActionSystem 应将其
-    移入 ExhaustPile（source 过滤由 DeckReturnSystem 在战斗结束时统一处理）。"""
+    移入 ExhaustPile（战斗结束后由 CombatPileTeardownSystem 统一清理子堆，无需 source 过滤）。"""
 
     @pytest.mark.asyncio
     async def test_foreign_exhaust_card_moves_to_exhaust_pile(

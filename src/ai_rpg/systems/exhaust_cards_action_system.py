@@ -54,7 +54,7 @@ class ExhaustCardsActionSystem(ReactiveProcessor):
             play_cards_action = entity.get(PlayCardsAction)
             played_card = play_cards_action.card
 
-            # 只处理消耗牌（exhaust=True），source 过滤由 DeckReturnSystem 统一负责
+            # 只处理消耗牌（exhaust=True）；战斗结束后由 CombatPileTeardownSystem 统一清理子堆
             if not played_card.exhaust:
                 continue
 

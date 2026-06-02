@@ -311,6 +311,9 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
                 adjusted_cards.append(
                     Card(
+                        uuid=original_cards[
+                            i
+                        ].uuid,  # 保留副本 uuid，确保跨系统身份一致
                         name=original_cards[i].name,  # 保持原名
                         description=entry.description,
                         affixes=entry.affixes,

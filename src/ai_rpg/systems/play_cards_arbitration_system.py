@@ -82,9 +82,8 @@ def _generate_post_arbitration_task_hint(
     targets_str = "、".join(t.split(".")[-1] for t in play_cards_action.targets) or "无"
     action_desc = play_cards_action.action if play_cards_action.action else "（未提供）"
 
-    deferred_affixes = _get_deferred_affixes(card.affixes)
     status_hint_line = (
-        f"- 潜在状态效果：{chr(10).join(deferred_affixes)}" if deferred_affixes else ""
+        f"- 潜在状态效果：{chr(10).join(card.affixes)}" if card.affixes else ""
     )
 
     card_info = (
@@ -138,18 +137,6 @@ def _fmt_effects(effects: List[StatusEffect]) -> str:
     return "\n".join(
         f"  - {e.name}（{_fmt_duration(e.duration)}）: {e.description}" for e in effects
     )
-
-
-#######################################################################################################################################
-def _get_immediate_affixes(affixes: List[str]) -> List[str]:
-    """返回以 ! 开头的即时词缀，剥除 ! 前缀后返回。即时词缀参与主仲裁推理，不进入 AddStatusEffectsAction。"""
-    return [a[1:] for a in affixes if a.startswith("!")]
-
-
-#######################################################################################################################################
-def _get_deferred_affixes(affixes: List[str]) -> List[str]:
-    """返回不以 ! 开头的延迟词缀，原样返回。延迟词缀在仲裁后触发 AddStatusEffectsAction 创建 StatusEffect。"""
-    return [a for a in affixes if not a.startswith("!")]
 
 
 #######################################################################################################################################
@@ -228,10 +215,10 @@ def _generate_combat_arbitration_prompt(
 
     rm = _build_random_multi_sections(play_cards_action)
 
-    immediate_affixes = _get_immediate_affixes(play_cards_action.card.affixes)
-    immediate_affixes_line = (
-        "\n- 即时词缀：\n" + "\n".join(f"  - {a}" for a in immediate_affixes)
-        if immediate_affixes
+    modifiers = play_cards_action.card.modifiers
+    modifiers_line = (
+        "\n- 即时修正词缀：\n" + "\n".join(f"  - {a}" for a in modifiers)
+        if modifiers
         else ""
     )
 
@@ -246,7 +233,7 @@ def _generate_combat_arbitration_prompt(
 - 卡牌：{play_cards_action.card.name}
 - damage_dealt：{play_cards_action.card.damage_dealt}（单次伤害）
 - hit_count：{play_cards_action.card.hit_count}（攻击次数）
-{action_line}{immediate_affixes_line}{rm.hit_assignment}
+{action_line}{modifiers_line}{rm.hit_assignment}
 
 ## 目标
 
@@ -344,10 +331,10 @@ def _generate_compressed_combat_arbitration_prompt(
 
     rm = _build_random_multi_sections(play_cards_action)
 
-    immediate_affixes = _get_immediate_affixes(play_cards_action.card.affixes)
-    immediate_affixes_line = (
-        "\n- 即时词缀：\n" + "\n".join(f"  - {a}" for a in immediate_affixes)
-        if immediate_affixes
+    modifiers = play_cards_action.card.modifiers
+    modifiers_line = (
+        "\n- 即时修正词缀：\n" + "\n".join(f"  - {a}" for a in modifiers)
+        if modifiers
         else ""
     )
 
@@ -362,7 +349,7 @@ def _generate_compressed_combat_arbitration_prompt(
 - 卡牌：{play_cards_action.card.name}
 - damage_dealt：{play_cards_action.card.damage_dealt}（单次伤害）
 - hit_count：{play_cards_action.card.hit_count}（攻击次数）
-{action_line}{immediate_affixes_line}{rm.hit_assignment}
+{action_line}{modifiers_line}{rm.hit_assignment}
 
 ## 目标
 
@@ -658,7 +645,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             affected_entity_names: final_stats 中所有受影响实体的全名列表
         """
         # 卡牌无延迟词缀时跳过，不触发后续 LLM 推理
-        if not _get_deferred_affixes(play_cards_action.card.affixes):
+        if not play_cards_action.card.affixes:
             logger.debug(
                 f"[{actor_entity.name}] 出牌卡牌无延迟词缀，跳过 AddStatusEffectsAction"
             )

@@ -175,8 +175,12 @@ class DeckDetailScreen(BaseGameScreen):
                             else ""
                         )
                         hint_str = (
-                            f"\n        [yellow]效果：{'、'.join(card.affixes)}[/]"
+                            f"\n        [yellow]词缀：{'\u3001'.join(card.affixes)}[/]"
                             if card.affixes
+                            else ""
+                        ) + (
+                            f"\n        [cyan]即时：{'\u3001'.join(card.modifiers)}[/]"
+                            if card.modifiers
                             else ""
                         )
                         source_str = (

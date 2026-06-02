@@ -40,6 +40,7 @@ class DeckCardEntry(BaseModel):
     name: str
     description: str
     affixes: List[str] = []
+    modifiers: List[str] = []
     playable: bool = True
     exhaust: bool = False
     damage_dealt: int
@@ -118,10 +119,8 @@ HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:
   【重要】禁止提及任何当前场景的地物（如断柱、沙地、余晖、岩板等）、地名或即时情境细节。
   ❌ 错误示例：「借助断柱的支撑旋身，踢击敌人」
   ✓ 正确示例：「旋身借力，以连续踢击攻击单一敌人」
-- affixes：词缀声明列表，两类格式：
-  - 延迟词缀（默认）：`[名称]:触发倾向描述`，仲裁后独立推理生成持续状态效果（如 `[燃烧]:可能引发持续扣血`）
-  - 即时词缀（前缀 !）：`![名称]:即时修正描述`，直接注入本次仲裁计算（如 `![穿甲]:无视目标防御`）
-  - 纯即时伤害无任何词缀时输出 []
+- affixes：延迟词缀列表，格式 `[名称]:触发倾向描述`，出牌后独立推理生成持续状态效果（如 `[燃烧]:可能引发持续扣血`）；无持续效果时输出 []
+- modifiers：即时修正词缀列表，格式 `[名称]:即时修正描述`，直接注入本次仲裁计算（如 `[穿甲]:无视目标防御`）；无即时修正时输出 []
 - playable：布尔值，是否允许出牌；默认 true
 - exhaust：布尔值，出牌后是否永久消耗（归入消耗堆，不进入弃牌循环）；默认 false
 - damage_dealt：单次攻击造成的伤害值（基于攻击力合理推算，整数）
@@ -132,7 +131,7 @@ HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:
 
 输出 JSON，cards 数组共 {num_cards} 张：
 
-{{"name":"...","description":"...","affixes":[],"playable":true,"exhaust":false,"damage_dealt":0,"hit_count":1,"target_type":"enemy_single"}}"""
+{"name":"...","description":"...","affixes":[],"modifiers":[],"playable":true,"exhaust":false,"damage_dealt":0,"hit_count":1,"target_type":"enemy_single"}"""
 
 
 #######################################################################################################################################
@@ -279,6 +278,7 @@ class DeckGenerationSystem(ExecuteProcessor):
                         name=entry.name,
                         description=entry.description,
                         affixes=entry.affixes,
+                        modifiers=entry.modifiers,
                         playable=entry.playable,
                         exhaust=entry.exhaust,
                         damage_dealt=entry.damage_dealt,

@@ -55,7 +55,9 @@ def write_hand_table(log: RichLog, cards: List[Card], entity_name: str) -> None:
         if card.description:
             detail_parts.append(f"[dim]{card.description}[/]")
         if card.affixes:
-            detail_parts.append(f"[yellow]效果：{'、'.join(card.affixes)}[/]")
+            detail_parts.append(f"[yellow]词缀：{'\u3001'.join(card.affixes)}[/]")
+        if card.modifiers:
+            detail_parts.append(f"[cyan]即时：{'\u3001'.join(card.modifiers)}[/]")
         if not card.playable:
             detail_parts.append("[bold orange1]【不可出牌】[/]")
         if card.exhaust:

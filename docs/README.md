@@ -12,7 +12,7 @@
 ## 项目简介
 
 **ai-rpg** 是一款融合 TCG 卡牌战斗机制的 AI 驱动 RPG 游戏。  
-核心技术栈：Python · ECS（自研 entitas） · LangChain · ChromaDB · FastAPI
+核心技术栈：Python · ECS（自研 entitas）· ChromaDB · FastAPI
 
 关键概念：`Entity` / `Component` / `System` / `Pipeline` / `ReactiveProcessor` / `LLM Agent`
 
@@ -20,7 +20,4 @@
 
 ## 知识领域索引
 
-| 领域 | 内容摘要 | 入口文档 |
-| ------ | ---------- | ---------- |
-| **ECS 管线设计** | 三条游戏流程管线（家园/战斗/地牢生成）的架构、系统执行顺序与设计模式 | [ecs-pipeline/overview.md](ecs-pipeline/overview.md) |
-| **Keyword 卡牌关键词约束系统** | 角色卡牌生成风格约束的数据模型、ECS 组件、采样策略与 Prompt 注入机制 | [ecs-pipeline/keyword-system.md](ecs-pipeline/keyword-system.md) |
+待添加

@@ -8,7 +8,13 @@ from ..models import (
     CombatArchiveEvent,
     PartyMemberComponent,
 )
-from ..models.messages import AIMessage, HumanMessage, SystemMessage, get_buffer_string
+from ..models.messages import (
+    AIMessage,
+    HumanMessage,
+    SystemMessage,
+    ToolMessage,
+    get_buffer_string,
+)
 
 
 #######################################################################################################################################
@@ -274,7 +280,7 @@ class CombatArchiveSystem(ExecuteProcessor):
     #######################################################################################################################################
     def _extract_combat_message_range(
         self, entity: Entity
-    ) -> List[SystemMessage | HumanMessage | AIMessage]:
+    ) -> List[SystemMessage | HumanMessage | AIMessage | ToolMessage]:
         """提取并删除角色的战斗消息范围。
 
         通过查找战斗开始和结束的标记消息，提取期间的所有消息并从

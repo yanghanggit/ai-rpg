@@ -11,6 +11,7 @@ from ..models.messages import (
     AIMessage,
     HumanMessage,
     SystemMessage,
+    ToolMessage,
     get_buffer_string,
 )
 from ..game.config import DEBUG_CACHE_DIR
@@ -18,7 +19,7 @@ from ..game.config import DEBUG_CACHE_DIR
 
 ###########################################################################################################################################
 def compute_cache_key(
-    context: List[AIMessage | HumanMessage | SystemMessage],
+    context: List[AIMessage | HumanMessage | SystemMessage | ToolMessage],
     prompt: str,
     entity_name: str,
 ) -> str:

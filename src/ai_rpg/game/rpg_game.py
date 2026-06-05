@@ -1,5 +1,11 @@
 from typing import Any, Dict, Final, List, Sequence, Set
-from ..models.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from ..models.messages import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+    ToolMessage,
+)
 from loguru import logger
 from overrides import override
 from ..entitas import Entity
@@ -219,7 +225,7 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         entity: Entity,
         attributes: Dict[str, Any],
         reverse_order: bool = True,
-    ) -> List[SystemMessage | HumanMessage | AIMessage]:
+    ) -> List[SystemMessage | HumanMessage | AIMessage | ToolMessage]:
         """根据属性字典过滤实体上下文中的消息
 
         Args:
@@ -230,7 +236,9 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         Returns:
             匹配的消息列表
         """
-        found_messages: List[SystemMessage | HumanMessage | AIMessage] = []
+        found_messages: List[SystemMessage | HumanMessage | AIMessage | ToolMessage] = (
+            []
+        )
         context = self.get_agent_context(entity).context
 
         # 空字典不匹配任何消息
@@ -296,9 +304,9 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
     def remove_message_range(
         self,
         entity: Entity,
-        begin_message: SystemMessage | HumanMessage | AIMessage,
-        end_message: SystemMessage | HumanMessage | AIMessage,
-    ) -> List[SystemMessage | HumanMessage | AIMessage]:
+        begin_message: SystemMessage | HumanMessage | AIMessage | ToolMessage,
+        end_message: SystemMessage | HumanMessage | AIMessage | ToolMessage,
+    ) -> List[SystemMessage | HumanMessage | AIMessage | ToolMessage]:
         """从实体上下文中删除指定范围的消息（包含两端）
 
         Args:

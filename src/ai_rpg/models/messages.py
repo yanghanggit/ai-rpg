@@ -46,9 +46,17 @@ class AIMessage(BaseMessage):
 
 
 ############################################################################################################
+class ToolMessage(BaseMessage):
+    """工具调用结果消息（将工具执行结果回传给 LLM）"""
+
+    type: Literal["tool"] = "tool"
+    tool_call_id: str  # 对应 LLM 发出的 ToolCall.id
+
+
+############################################################################################################
 # 显式判别联合：反序列化时强制以 type 字段区分子类，未知 type 值会立即报错
 ContextMessage = Annotated[
-    Union[SystemMessage, HumanMessage, AIMessage],
+    Union[SystemMessage, HumanMessage, AIMessage, ToolMessage],
     Field(discriminator="type"),
 ]
 
@@ -88,6 +96,8 @@ def get_buffer_string(
             role = ai_prefix
         elif isinstance(msg, SystemMessage):
             role = "System"
+        elif isinstance(msg, ToolMessage):
+            role = "Tool"
         else:
             raise ValueError(f"不支持的消息类型: {type(msg)}")
         lines.append(f"{role}: {msg.content}")

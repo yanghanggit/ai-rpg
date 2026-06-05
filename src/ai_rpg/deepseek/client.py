@@ -17,13 +17,14 @@ import asyncio
 import os
 import time
 import traceback
-from typing import Any, Dict, Final, List, Optional, Sequence, final
+from typing import Any, Dict, Final, List, Literal, Optional, Sequence, final
 import httpx
 import requests
 from dotenv import load_dotenv
 from loguru import logger
+from pydantic import BaseModel
 
-from ..models.messages import AIMessage, BaseMessage
+from ..models.messages import AIMessage, BaseMessage, ToolMessage
 from .config import MODEL_FLASH
 
 load_dotenv()
@@ -38,7 +39,38 @@ _ROLE_MAP: Final[Dict[str, str]] = {
     "system": "system",
     "human": "user",
     "ai": "assistant",
+    "tool": "tool",
 }
+
+
+############################################################################################################
+class ToolFunction(BaseModel):
+    """工具函数参数的 JSON Schema 描述（对应 DeepSeek/OpenAI tools[].function）"""
+
+    name: str  # 工具名称，应与业务逻辑函数名一致
+    description: str  # 面向 LLM 的工具功能说明
+    parameters: Dict[str, Any]  # 参数的 JSON Schema（object 类型）
+
+
+############################################################################################################
+class ToolDefinition(BaseModel):
+    """单个工具定义，对应 DeepSeek/OpenAI tools 数组的一个元素"""
+
+    type: Literal["function"] = "function"  # 固定为 "function"
+    function: ToolFunction  # 函数描述内容
+
+
+############################################################################################################
+class ToolCall(BaseModel):
+    """LLM 返回的单次工具调用指令（finish_reason == \"tool_calls\" 时存在）"""
+
+    class Function(BaseModel):
+        name: str  # 被调用的工具名称
+        arguments: str  # JSON 序列化的参数字符串
+
+    id: str  # 本次调用的唯一 ID，需在 ToolMessage 中回传
+    type: str = "function"  # 固定为 "function"
+    function: Function  # 函数调用信息
 
 
 ############################################################################################################
@@ -171,20 +203,27 @@ class DeepSeekClient:
         timeout: Optional[int] = None,
         temperature: Optional[float] = None,
         compressed_prompt: Optional[str] = None,
+        tools: Optional[Sequence[ToolDefinition]] = None,
+        tool_choice: Optional[Literal["auto", "none"]] = None,
     ) -> None:
         """初始化 DeepSeek 直连客户端
 
         Args:
             name: 客户端标识名称
-            prompt: 发送给 AI 的提示词（完整版，用于推理）
+            prompt: 发送给 AI 的提示词（完整版，用于推理）；传空字符串表示 continuation 模式（不追加 user 消息）
             context: 历史对话上下文（使用本模块的消息类型）
             model: 使用的模型，默认 _MODEL_FLASH；可选 _MODEL_PRO
             thinking: True 开启思考模式（thinking enabled），默认 False
             timeout: 请求超时（秒），默认 30
             compressed_prompt: 写入对话历史的压缩版提示词；若为 None 则使用 prompt
+            tools: 工具定义列表；传入后自动启用 tool calling
+            tool_choice: 工具选择策略，默认：有 tools 时为 "auto"，否则为 "none"
         """
         assert name != "", "name should not be empty"
-        assert prompt != "", "prompt should not be empty"
+        _tools: List[ToolDefinition] = list(tools) if tools else []
+        assert (
+            prompt != "" or len(_tools) > 0
+        ), "prompt should not be empty when no tools are provided"
 
         self._name: Final[str] = name
         self._prompt: Final[str] = prompt
@@ -195,6 +234,10 @@ class DeepSeekClient:
         self._model: Final[str] = model
         self._thinking: Final[bool] = thinking
         self._timeout: Final[int] = timeout if timeout is not None else 30
+        self._tools: Final[List[ToolDefinition]] = _tools
+        self._tool_choice: Final[Literal["auto", "none"]] = (
+            tool_choice if tool_choice is not None else ("auto" if _tools else "none")
+        )
 
         assert self._timeout > 0, "timeout should be positive"
 
@@ -204,6 +247,8 @@ class DeepSeekClient:
         self._response_ai_message: Optional[AIMessage] = None
         self._prompt_cache_hit_tokens: int = 0
         self._prompt_cache_miss_tokens: int = 0
+        self._finish_reason: str = ""
+        self._tool_calls: List[ToolCall] = []
         self._temperature: Final[float] = (
             temperature if temperature is not None else 1.0
         )
@@ -262,14 +307,54 @@ class DeepSeekClient:
         return val if isinstance(val, str) else str(val)
 
     ################################################################################################################################################################################
+    @property
+    def finish_reason(self) -> str:
+        """最近一次响应的 finish_reason；调用 chat() 前为空字符串"""
+        return self._finish_reason
+
+    ################################################################################################################################################################################
+    @property
+    def tool_calls(self) -> List[ToolCall]:
+        """最近一次响应中 LLM 发起的 tool 调用列表；无 tool call 时为空列表"""
+        return self._tool_calls
+
+    ################################################################################################################################################################################
     def _build_payload(self) -> Dict[str, Any]:
         """将 context + prompt 转换为 DeepSeek API payload"""
-        messages: List[Dict[str, str]] = []
+        messages: List[Dict[str, Any]] = []
         for msg in self._context:
-            role = _ROLE_MAP.get(msg.type, "user")
-            content = msg.content if isinstance(msg.content, str) else str(msg.content)
-            messages.append({"role": role, "content": content})
-        messages.append({"role": "user", "content": self._prompt})
+            if isinstance(msg, ToolMessage):
+                # ToolMessage 需要额外携带 tool_call_id 字段
+                messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": msg.tool_call_id,
+                        "content": msg.content,
+                    }
+                )
+            elif isinstance(msg, AIMessage):
+                # AIMessage 含 tool_calls 时需带上 tool_calls 字段，content 可为 null
+                raw_tool_calls = msg.additional_kwargs.get("tool_calls")
+                if raw_tool_calls:
+                    messages.append(
+                        {
+                            "role": "assistant",
+                            "content": msg.content or None,
+                            "tool_calls": raw_tool_calls,
+                        }
+                    )
+                else:
+                    messages.append({"role": "assistant", "content": msg.content})
+            else:
+                role = _ROLE_MAP.get(msg.type, "user")
+                content = (
+                    msg.content if isinstance(msg.content, str) else str(msg.content)
+                )
+                messages.append({"role": role, "content": content})
+
+        # prompt 为空字符串时表示 continuation 模式，不追加 user 消息
+        if self._prompt != "":
+            messages.append({"role": "user", "content": self._prompt})
 
         payload: Dict[str, Any] = {
             "messages": messages,
@@ -284,8 +369,8 @@ class DeepSeekClient:
             "stream_options": None,
             "temperature": self._temperature,
             "top_p": 1,
-            "tools": None,
-            "tool_choice": "none",
+            "tools": [t.model_dump() for t in self._tools] if self._tools else None,
+            "tool_choice": self._tool_choice,
             "logprobs": False,
             "top_logprobs": None,
         }
@@ -299,13 +384,34 @@ class DeepSeekClient:
             logger.warning(f"{self._name}: empty choices in response")
             return
 
-        message = choices[0].get("message", {})
+        choice = choices[0]
+        self._finish_reason = choice.get("finish_reason") or ""
+
+        message = choice.get("message", {})
         content: str = message.get("content") or ""
         additional_kwargs: Dict[str, Any] = {}
 
         reasoning = message.get("reasoning_content")
         if reasoning:
             additional_kwargs["reasoning_content"] = reasoning
+
+        # 解析 LLM 发起的工具调用指令
+        raw_tool_calls = message.get("tool_calls")
+        if raw_tool_calls:
+            additional_kwargs["tool_calls"] = raw_tool_calls
+            self._tool_calls = [
+                ToolCall(
+                    id=tc["id"],
+                    type=tc.get("type", "function"),
+                    function=ToolCall.Function(
+                        name=tc["function"]["name"],
+                        arguments=tc["function"]["arguments"],
+                    ),
+                )
+                for tc in raw_tool_calls
+            ]
+        else:
+            self._tool_calls = []
 
         self._response_ai_message = AIMessage(
             content=content,

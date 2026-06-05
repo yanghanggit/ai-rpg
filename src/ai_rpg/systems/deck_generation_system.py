@@ -1,26 +1,27 @@
 """
 牌库生成系统模块
 
-在每场战斗开始时（is_ongoing 且尚无任何回合）为所有存活战斗参与者各生成一批卡牌，
+响应 GenerateDeckAction 事件，为触发的参战角色调用 LLM 生成一批卡牌，
 洗牌后填入其 DrawPileComponent，作为本场战斗的初始牌库。
 
 主要组件：
-- DeckGenerationSystem: 核心系统类（ExecuteProcessor）
+- DeckGenerationSystem: 核心系统类（ReactiveProcessor）
 - DeckCardEntry / DeckGenerateResponse: 卡牌生成 LLM 响应的 Pydantic 解析模型
 """
 
 import random
-from typing import Final, List, final, override
+from typing import Dict, Final, List, final, override
 from loguru import logger
 from pydantic import BaseModel
 from ..deepseek import DeepSeekClient
-from ..entitas import Entity, ExecuteProcessor, Matcher
+from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
     ActorComponent,
     DeckComponent,
     DrawPileComponent,
     DeathComponent,
+    GenerateDeckAction,
     CharacterStats,
     CharacterStatsComponent,
     KeywordComponent,
@@ -136,65 +137,52 @@ HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:
 
 #######################################################################################################################################
 @final
-class DeckGenerationSystem(ExecuteProcessor):
+class DeckGenerationSystem(ReactiveProcessor):
     """
-    在每场战斗开始时（is_ongoing 且 current_rounds 为空）为所有存活战斗参与者
-    并行调用 LLM 生成初始牌库卡牌，洗牌后填入各角色的 DrawPileComponent。
+    响应 GenerateDeckAction，为每个触发角色并行调用 LLM 生成初始牌库卡牌，
+    洗牌后填入各角色的 DrawPileComponent。
 
-    触发条件（精确一次）：
-        is_ongoing == True  AND  len(current_rounds) == 0
+    触发条件：实体挂载 GenerateDeckAction（由 CombatInitializationSystem 在战斗初始化时注入）。
     """
 
-    def __init__(self, game: TCGGame, cards_per_combat: int = 3) -> None:
+    def __init__(self, game: TCGGame) -> None:
+        super().__init__(game)
         self._game: Final[TCGGame] = game
-        self._cards_per_combat: Final[int] = (
-            cards_per_combat  # 每场战斗为每个角色生成的卡牌数（开发阶段固定值）
-        )
-
-    ####################################################################################################################################
-    def _get_combat_actor_entities(self) -> List[Entity]:
-        """返回当前战斗中所有存活、且已挂载 DeckComponent 的角色实体。"""
-        return [
-            entity
-            for entity in self._game.get_group(
-                Matcher(
-                    ActorComponent,
-                    DeckComponent,
-                    DrawPileComponent,
-                    CharacterStatsComponent,
-                    KeywordComponent,
-                )
-            ).entities
-            if not entity.has(DeathComponent)
-        ]
 
     ####################################################################################################################################
     @override
-    async def execute(self) -> None:
-        dungeon = self._game.current_dungeon
+    def get_trigger(self) -> Dict[Matcher, GroupEvent]:
+        return {Matcher(GenerateDeckAction): GroupEvent.ADDED}
 
-        # 触发条件：战斗进行中且尚未创建任何回合（只触发一次）
-        if not dungeon.is_ongoing:
-            return
-        current_rounds = dungeon.current_rounds
-        if current_rounds is None or len(current_rounds) > 0:
-            return
-
-        actor_entities = self._get_combat_actor_entities()
-        if not actor_entities:
-            logger.warning("DeckGenerationSystem: 没有找到任何战斗角色实体，跳过")
-            return
-
-        logger.debug(
-            f"DeckGenerationSystem: 为 {len(actor_entities)} 个角色生成初始牌库"
+    ####################################################################################################################################
+    @override
+    def filter(self, entity: Entity) -> bool:
+        return (
+            entity.has(GenerateDeckAction)
+            and entity.has(ActorComponent)
+            and entity.has(DeckComponent)
+            and entity.has(DrawPileComponent)
+            and entity.has(CharacterStatsComponent)
+            and entity.has(KeywordComponent)
+            and not entity.has(DeathComponent)
         )
+
+    ####################################################################################################################################
+    @override
+    async def react(self, entities: List[Entity]) -> None:
+
+        logger.debug(f"DeckGenerationSystem: 为 {len(entities)} 个角色生成初始牌库")
 
         # 构建并行 LLM 请求
         chat_clients: List[DeepSeekClient] = []
-        for entity in actor_entities:
+        num_cards_map: Dict[str, int] = {}  # entity.name -> cards_per_combat
+        for entity in entities:
 
-            # 获取角色战斗属性
-            num_cards = self._cards_per_combat
+            # 从 GenerateDeckAction 读取本角色的卡牌数
+            generate_deck_action = entity.get(GenerateDeckAction)
+            assert generate_deck_action is not None
+            num_cards = generate_deck_action.num_cards
+            num_cards_map[entity.name] = num_cards
 
             # 获取角色关键词
             combat_stats = self._game.compute_character_stats(entity)
@@ -234,18 +222,18 @@ class DeckGenerationSystem(ExecuteProcessor):
                 entity1 is not None
             ), f"DeckGenerationSystem: 无法找到实体 {chat_client.name} 以处理生成结果"
 
-            self._process_generation_response(entity1, chat_client)
+            self._process_generation_response(
+                entity1, chat_client, num_cards_map[chat_client.name]
+            )
 
     #######################################################################################################################################
     def _process_generation_response(
         self,
         entity: Entity,
         chat_client: DeepSeekClient,
+        num_cards: int,
     ) -> None:
         """解析 LLM 响应，将生成卡牌洗牌填入 DrawPileComponent。解析失败时跳过（DrawPile 保持空）。"""
-
-        # 获取预期生成卡牌数量
-        num_cards = self._cards_per_combat
 
         try:
 

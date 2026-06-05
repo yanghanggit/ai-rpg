@@ -463,8 +463,7 @@ class TestExecute:
         stage_entity._name = "测试场景"
         stage_entity.add(StageDescriptionComponent, "测试场景", "阴暗潮湿的石牢")
 
-        player_entity = context.create_entity()
-        player_entity._name = "英雄"
+        player_entity = _make_actor_entity(context, "英雄", is_ally=True)
 
         actor_entity = _make_actor_entity(context, "哥布林", is_monster=True)
 

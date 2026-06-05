@@ -8,6 +8,7 @@ from ..entitas import ExecuteProcessor, Entity
 from ..game.tcg_game import TCGGame
 from ..models import (
     AddStatusEffectsAction,
+    GenerateDeckAction,
     StageDescriptionComponent,
     PartyMemberComponent,
     MonsterComponent,
@@ -159,6 +160,9 @@ class CombatInitializationSystem(ExecuteProcessor):
             self._game.current_dungeon.is_ongoing
         ), "战斗状态转换失败，当前状态非 ONGOING！"
 
+        # 为所有参战角色添加 GenerateDeckAction，触发初始牌库生成
+        self._trigger_actor_deck_generation(actor_entities)
+
         # 为所有参战角色添加 AddStatusEffectsAction，触发初始状态效果生成
         self._initialize_actor_status_effects(actor_entities)
 
@@ -176,6 +180,25 @@ class CombatInitializationSystem(ExecuteProcessor):
             actor_entity.replace(ExhaustPileComponent, actor_entity.name, [])
             logger.debug(
                 f"[{actor_entity.name}] 战斗临时牌堆初始化完成（DrawPile / DiscardPile / ExhaustPile）"
+            )
+
+    ###################################################################################################################################################################
+    def _trigger_actor_deck_generation(self, actor_entities: Set[Entity]) -> None:
+        """为所有参战角色挂载 GenerateDeckAction，触发 DeckGenerationSystem 生成初始牌库。"""
+        for actor_entity in actor_entities:
+            if actor_entity.has(PartyMemberComponent):
+                cards_per_combat = 3
+            else:
+                # MonsterComponent 与 PartyMemberComponent 全局互斥，此处默认怪物
+                assert actor_entity.has(
+                    MonsterComponent
+                ), f"角色 {actor_entity.name} 既无 PartyMemberComponent 也无 MonsterComponent！"
+                cards_per_combat = 1
+            actor_entity.replace(
+                GenerateDeckAction, actor_entity.name, cards_per_combat
+            )
+            logger.debug(
+                f"[{actor_entity.name}] 已添加 GenerateDeckAction（cards_per_combat={cards_per_combat}）"
             )
 
     ###################################################################################################################################################################

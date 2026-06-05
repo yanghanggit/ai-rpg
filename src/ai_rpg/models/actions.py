@@ -210,3 +210,14 @@ class UseConsumableItemAction(Component):
     name: str
     item: ConsumableItem  # 使用的消耗品对象（从 InventoryComponent 检索后填入）
     targets: List[str]  # 技能目标角色名列表（由 target_type 解析后填入）
+
+
+############################################################################################################
+@final
+@register_action_component_type
+@register_component_type
+class GenerateDeckAction(Component):
+    """触发为角色生成战斗初始牌库，由 DeckGenerationSystem 响应处理。"""
+
+    name: str
+    num_cards: int  # 本场战斗为该角色生成的卡牌数（PartyMember=3，Monster=1）

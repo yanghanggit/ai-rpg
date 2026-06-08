@@ -25,9 +25,9 @@ from ..game import TCGGame
 from .home_planning_utils import (
     ActionPlanResponse,
     _PLAYER_ACTIVE_ACTION_TYPES,
-    _build_action_planning_prompt,
-    _build_compressed_planning_prompt,
-    _format_mind_notification,
+    build_action_planning_prompt,
+    build_compressed_planning_prompt,
+    format_mind_notification,
 )
 
 
@@ -97,7 +97,7 @@ class HomePlayerContextSystem(ReactiveProcessor):
         stage_narrative = current_stage.get(StageDescriptionComponent).narrative
         available_stage_names = [e.name for e in available_home_stages]
 
-        full_prompt = _build_action_planning_prompt(
+        full_prompt = build_action_planning_prompt(
             current_stage=current_stage.name,
             current_stage_narration=stage_narrative,
             other_actors_appearances=other_actors_appearances,
@@ -105,7 +105,7 @@ class HomePlayerContextSystem(ReactiveProcessor):
             planning_turn_index=planning_turn_index,
         )
         if self._use_compressed_prompt:
-            compressed_prompt = _build_compressed_planning_prompt(
+            compressed_prompt = build_compressed_planning_prompt(
                 current_stage=current_stage.name,
                 current_stage_narration=stage_narrative,
                 other_actors_appearances=other_actors_appearances,
@@ -142,7 +142,7 @@ class HomePlayerContextSystem(ReactiveProcessor):
             self._game.notify_entities(
                 {player_entity},
                 MindEvent(
-                    message=_format_mind_notification(
+                    message=format_mind_notification(
                         player_entity.name, mock_response.mind
                     ),
                     actor=player_entity.name,

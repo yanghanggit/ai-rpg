@@ -23,9 +23,9 @@ from ..utils import extract_json_from_code_block
 from ..game import TCGGame
 from .home_planning_utils import (
     ActionPlanResponse,
-    _build_action_planning_prompt,
-    _build_compressed_planning_prompt,
-    _format_mind_notification,
+    build_action_planning_prompt,
+    build_compressed_planning_prompt,
+    format_mind_notification,
     is_player_active,
 )
 
@@ -116,7 +116,7 @@ class HomeNpcPlanSystem(ReactiveProcessor):
         stage_narrative = current_stage.get(StageDescriptionComponent).narrative
         available_stage_names = [e.name for e in available_home_stages]
 
-        prompt = _build_action_planning_prompt(
+        prompt = build_action_planning_prompt(
             current_stage=current_stage.name,
             current_stage_narration=stage_narrative,
             other_actors_appearances=other_actors_appearances,
@@ -124,7 +124,7 @@ class HomeNpcPlanSystem(ReactiveProcessor):
             planning_turn_index=planning_turn_index,
         )
         if self._use_compressed_prompt:
-            compressed_prompt = _build_compressed_planning_prompt(
+            compressed_prompt = build_compressed_planning_prompt(
                 current_stage=current_stage.name,
                 current_stage_narration=stage_narrative,
                 other_actors_appearances=other_actors_appearances,
@@ -154,7 +154,7 @@ class HomeNpcPlanSystem(ReactiveProcessor):
         self._game.notify_entities(
             {npc_entity},
             MindEvent(
-                message=_format_mind_notification(npc_entity.name, passive_mind),
+                message=format_mind_notification(npc_entity.name, passive_mind),
                 actor=npc_entity.name,
                 content=passive_mind,
             ),
@@ -202,7 +202,7 @@ class HomeNpcPlanSystem(ReactiveProcessor):
                 self._game.notify_entities(
                     set({actor_entity}),
                     MindEvent(
-                        message=_format_mind_notification(
+                        message=format_mind_notification(
                             actor_entity.name, validated_response.mind
                         ),
                         actor=actor_entity.name,
@@ -333,7 +333,7 @@ class HomeNpcPlanSystem(ReactiveProcessor):
             chat_clients.append(
                 DeepSeekClient(
                     name=actor_entity.name,
-                    prompt=_build_action_planning_prompt(
+                    prompt=build_action_planning_prompt(
                         current_stage=current_stage.name,
                         current_stage_narration=stage_narrative,
                         other_actors_appearances=other_actors_appearances,
@@ -341,7 +341,7 @@ class HomeNpcPlanSystem(ReactiveProcessor):
                         planning_turn_index=planning_turn_index,
                     ),
                     compressed_prompt=(
-                        _build_compressed_planning_prompt(
+                        build_compressed_planning_prompt(
                             current_stage=current_stage.name,
                             current_stage_narration=stage_narrative,
                             other_actors_appearances=other_actors_appearances,

@@ -39,13 +39,13 @@ from .dungeon_actions import (
     activate_retreat,
 )
 from .dungeon_tasks import (
-    _execute_init_combat_task,
-    _execute_retreat_task,
-    _execute_draw_cards_task,
-    _execute_play_cards_task,
+    execute_init_combat_task,
+    execute_retreat_task,
+    execute_draw_cards_task,
+    execute_play_cards_task,
     # _execute_exhaust_card_task,
-    _execute_pass_turn_task,
-    _execute_use_consumable_task,
+    execute_pass_turn_task,
+    execute_use_consumable_task,
 )
 from ..game.game_server import GameServer
 
@@ -187,7 +187,7 @@ async def dungeon_combat_retreat(
     # 在锁外创建后台 task，让任务在后台独立持锁执行
     retreat_task = game_server.create_task()
     asyncio.create_task(
-        _execute_retreat_task(
+        execute_retreat_task(
             retreat_task.task_id,
             payload.user_name,
             game_server,
@@ -333,7 +333,7 @@ async def dungeon_combat_init(
     # 创建战斗初始化后台任务（在锁外创建，让任务在后台独立持锁执行）
     init_combat_task = game_server.create_task()
     asyncio.create_task(
-        _execute_init_combat_task(
+        execute_init_combat_task(
             init_combat_task.task_id,
             payload.user_name,
             game_server,
@@ -474,7 +474,7 @@ async def dungeon_combat_draw_cards(
     # 创建后台任务（在锁外创建，让任务在后台独立持锁执行）
     draw_task = game_server.create_task()
     asyncio.create_task(
-        _execute_draw_cards_task(
+        execute_draw_cards_task(
             draw_task.task_id,
             payload.user_name,
             game_server,
@@ -551,7 +551,7 @@ async def dungeon_combat_play_cards(
     # 在锁外创建后台 task，让任务在后台独立持锁执行
     play_cards_task = game_server.create_task()
     asyncio.create_task(
-        _execute_play_cards_task(
+        execute_play_cards_task(
             play_cards_task.task_id,
             payload.user_name,
             payload.actor_name,
@@ -624,7 +624,7 @@ async def dungeon_combat_pass_turn(
 
     pass_turn_task = game_server.create_task()
     asyncio.create_task(
-        _execute_pass_turn_task(
+        execute_pass_turn_task(
             pass_turn_task.task_id,
             payload.user_name,
             payload.actor_name,
@@ -699,7 +699,7 @@ async def dungeon_combat_use_consumable(
 
     use_consumable_task = game_server.create_task()
     asyncio.create_task(
-        _execute_use_consumable_task(
+        execute_use_consumable_task(
             use_consumable_task.task_id,
             payload.user_name,
             payload.actor_name,

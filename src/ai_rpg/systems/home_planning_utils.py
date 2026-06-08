@@ -31,7 +31,7 @@ _PLAYER_ACTIVE_ACTION_TYPES: Final = (
 
 
 #######################################################################################################################################
-def _format_mind_notification(actor_name: str, mind_content: str) -> str:
+def format_mind_notification(actor_name: str, mind_content: str) -> str:
     """格式化内心活动通知消息。
 
     Args:
@@ -79,7 +79,7 @@ class ActionPlanResponse(BaseModel):
 
 
 #######################################################################################################################################
-def _build_action_planning_prompt(
+def build_action_planning_prompt(
     current_stage: str,
     current_stage_narration: str,
     other_actors_appearances: Dict[str, str],
@@ -182,7 +182,7 @@ def _build_action_planning_prompt(
 
 
 #######################################################################################################################################
-def _build_compressed_planning_prompt(
+def build_compressed_planning_prompt(
     current_stage: str,
     current_stage_narration: str,
     other_actors_appearances: Dict[str, str],

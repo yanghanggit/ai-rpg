@@ -8,7 +8,7 @@ from textual.widgets import RichLog
 from .base import BaseGameScreen
 from .server_client import fetch_entities_details, fetch_stages_state
 from .utils import display_name
-from typing import Dict, List, Set
+from typing import Dict, Set
 
 STAGES_HEADER = """\
 [bold cyan]╔══════════════════════════════════════════════════╗[/]
@@ -78,7 +78,7 @@ class StagesScreen(BaseGameScreen):
             log.write(f"[bold red]❌ 场景状态查询失败: {e}[/]")
             return
 
-        all_stage_names = List(stages_resp.mapping.keys())
+        all_stage_names = list(stages_resp.mapping.keys())
 
         # ── 2. 一次性获取全部场景实体详情（PlayerOnlyStageComponent + 场景描述） ──
         player_only_stages: Set[str] = set()

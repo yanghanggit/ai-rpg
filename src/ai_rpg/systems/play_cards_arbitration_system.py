@@ -19,7 +19,7 @@ from ..models import (
     CharacterStatsComponent,
     CombatArbitrationEvent,
     StatusEffect,
-    EffectPhase,
+    CombatPhase,
     PostArbitrationAction,
     AddStatusEffectsAction,
 )
@@ -433,7 +433,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
 
         actor_arbitration_effects: List[StatusEffect] = (
             self._game.get_status_effects_by_phase(
-                actor_entity, EffectPhase.ARBITRATION
+                actor_entity, CombatPhase.ARBITRATION
             )
         )
 
@@ -443,7 +443,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             assert target_entity is not None, f"无法找到目标实体: {target_name}"
             target_arbitration_effects[target_name] = (
                 self._game.get_status_effects_by_phase(
-                    target_entity, EffectPhase.ARBITRATION
+                    target_entity, CombatPhase.ARBITRATION
                 )
             )
 

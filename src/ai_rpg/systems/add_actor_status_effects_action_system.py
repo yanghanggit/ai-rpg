@@ -15,7 +15,7 @@ from ..models import (
     AddStatusEffectsAction,
     StatusEffectsComponent,
     StatusEffect,
-    EffectPhase,
+    CombatPhase,
     DeathComponent,
     MonsterComponent,
 )
@@ -125,9 +125,9 @@ def _generate_add_status_effects_prompt(
 
 | phase | 触发时机 | 典型效果 |
 |---|---|---|
-| `{EffectPhase.DRAW}` | 本回合抽牌时 | 「虚弱」生成的卡牌伤害偏低 |
-| `{EffectPhase.ARBITRATION}` | 每次出牌结算时 | 「破甲」防御降低；「荆棘」反伤；条件计数型词条（`counter` 字段） |
-| `{EffectPhase.ROUND_END}` | 每回合末自动 tick | 「中毒」扣血；「燃烧」持续伤害；「再生」回血（DOT/HOT） |"""
+| `{CombatPhase.DRAW}` | 本回合抽牌时 | 「虚弱」生成的卡牌伤害偏低 |
+| `{CombatPhase.ARBITRATION}` | 每次出牌结算时 | 「破甲」防御降低；「荆棘」反伤；条件计数型词条（`counter` 字段） |
+| `{CombatPhase.ROUND_END}` | 每回合末自动 tick | 「中毒」扣血；「燃烧」持续伤害；「再生」回血（DOT/HOT） |"""
 
     return f"""# 第 {current_round_number} 回合 — 追加状态效果
 
@@ -161,10 +161,10 @@ def _generate_add_status_effects_prompt(
 ```
 
 - `duration`：-1=永久，>0=剩余回合数，默认 3
-- `phase`：`{EffectPhase.DRAW}` / `{EffectPhase.ARBITRATION}` / `{EffectPhase.ROUND_END}` 三选一（见上表）
+- `phase`：`{CombatPhase.DRAW}` / `{CombatPhase.ARBITRATION}` / `{CombatPhase.ROUND_END}` 三选一（见上表）
 - `speed`：+1 / 0 / -1；持续叠加到角色出手速度，与 phase 无关，默认 0
 - `defense`：整数；持续叠加到角色防御值（正值增防，负值破甲），与 phase 无关，默认 0
-- `counter`：整数初始值；`{EffectPhase.ARBITRATION}` 阶段特殊计数器词条（如"前3次受击"设 3），默认 0
+- `counter`：整数初始值；`{CombatPhase.ARBITRATION}` 阶段特殊计数器词条（如"前3次受击"设 3），默认 0
 - 禁止修改 `max_hp`"""
 
 
@@ -292,7 +292,7 @@ class AddActorStatusEffectsActionSystem(ReactiveProcessor):
             name=mock_effect_name,
             description="前3次受击伤害锁定为1；每次受击后 counter 递减1，counter 归零后效果失效",
             duration=-1,
-            phase=EffectPhase.ARBITRATION,
+            phase=CombatPhase.ARBITRATION,
             counter=3,
             source="[mock]",
         )

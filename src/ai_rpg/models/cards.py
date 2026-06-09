@@ -1,34 +1,15 @@
 """卡牌与状态效果模型定义
 
 包含战斗中使用的状态效果（StatusEffect）与卡牌（Card）相关核心模型：
-EffectPhase、StatusEffect、Card、DiceValue、Keyword
+CombatPhase、StatusEffect、Card、DiceValue、Keyword
 """
 
-from enum import IntEnum, StrEnum, unique
+from enum import IntEnum, unique
 from typing import List, final
 from uuid import uuid4
 from pydantic import BaseModel, Field, field_validator
 from .target_type import TargetType
-
-
-###############################################################################################################################################
-@final
-@unique
-class EffectPhase(StrEnum):
-    """状态效果生效阶段
-
-    标记一个状态效果应在战斗流程的哪个阶段起效。
-
-    - draw        : 抽牌阶段（DrawCardsActionSystem）——影响本回合卡牌生成，如"混乱"使牌质下降
-    - arbitration : 仲裁阶段（PlayCardsArbitrationSystem）——作为注入仲裁 LLM 的上下文参数，
-                    LLM 自由解读其对出牌结算过程的影响（伤害/防御修正、反伤、眩晕等），与出牌绑定
-    - round_end   : 回合末阶段（CombatRoundCleanupSystem）——每回合末自动 tick，
-                    实体自身 LLM 推理 HP 变化（DOT 如中毒/燃烧持续扣血，HOT 如再生持续回血）
-    """
-
-    DRAW = "draw"
-    ARBITRATION = "arbitration"
-    ROUND_END = "round_end"
+from .combat_phase import CombatPhase
 
 
 ###############################################################################################################################################
@@ -49,7 +30,7 @@ class StatusEffect(BaseModel):
         str  # 效果描述（静态规则说明，不随状态变化，由 LLM 创建时写入后不再修改）
     )
     duration: int = 3  # 持续回合数；-1=永久，>0=剩余回合
-    phase: EffectPhase = EffectPhase.ARBITRATION  # 生效阶段，默认仲裁阶段
+    phase: CombatPhase = CombatPhase.ARBITRATION  # 生效阶段，默认仲裁阶段
     counter: int = (
         0  # 特殊计数器；仅 ARBITRATION 阶段效果使用；由仲裁 LLM 按游戏事件更新（倒计型从初始值递减，累加型从 0 递增）；普通效果保持 0
     )

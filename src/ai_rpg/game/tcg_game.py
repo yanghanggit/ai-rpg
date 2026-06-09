@@ -45,7 +45,7 @@ from ..models import (
     StageType,
     DeathComponent,
     StatusEffect,
-    EffectPhase,
+    CombatPhase,
     StatusEffectsComponent,
     World,
     WorldComponent,
@@ -567,7 +567,7 @@ class TCGGame(RPGGame):
 
     ###############################################################################################################################################
     def get_status_effects_by_phase(
-        self, entity: Entity, phase: EffectPhase
+        self, entity: Entity, phase: CombatPhase
     ) -> List[StatusEffect]:
         """返回实体在指定战斗阶段生效的状态效果列表。
 

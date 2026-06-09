@@ -17,7 +17,7 @@ from ..models import (
     CharacterStatsComponent,
     CombatArbitrationEvent,
     StatusEffect,
-    EffectPhase,
+    CombatPhase,
     AddStatusEffectsAction,
     PostArbitrationAction,
 )
@@ -336,14 +336,14 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
 
         actor_arbitration_effects: List[StatusEffect] = (
             self._game.get_status_effects_by_phase(
-                actor_entity, EffectPhase.ARBITRATION
+                actor_entity, CombatPhase.ARBITRATION
             )
         )
 
         target_arbitration_effects: Dict[str, List[StatusEffect]] = {
             target_name: self._game.get_status_effects_by_phase(
                 self._game.get_entity_by_name(target_name),  # type: ignore[arg-type]
-                EffectPhase.ARBITRATION,
+                CombatPhase.ARBITRATION,
             )
             for target_name in dict.fromkeys(action.targets)
         }

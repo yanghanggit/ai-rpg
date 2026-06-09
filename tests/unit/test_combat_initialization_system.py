@@ -67,8 +67,23 @@ def context() -> Context:
 
 @pytest.fixture()
 def mock_game() -> MagicMock:
-    """MagicMock TCGGame，避免初始化重量级 TCGGame 依赖。"""
-    return MagicMock(spec=TCGGame)
+    """MagicMock TCGGame，避免初始化重量级 TCGGame 依赖。
+
+    accumulate_status_effects_action 的 side_effect 模拟真实合并逻辑，
+    以便单元测试仍能断言实体上的 AddStatusEffectsAction 组件状态。
+    """
+    game = MagicMock(spec=TCGGame)
+
+    def _accumulate(entity: Entity, task_hints: List[str]) -> None:
+        existing_hints: List[str] = (
+            entity.get(AddStatusEffectsAction).task_hints
+            if entity.has(AddStatusEffectsAction)
+            else []
+        )
+        entity.replace(AddStatusEffectsAction, entity.name, existing_hints + task_hints)
+
+    game.accumulate_status_effects_action.side_effect = _accumulate
+    return game
 
 
 @pytest.fixture()

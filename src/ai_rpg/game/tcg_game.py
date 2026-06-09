@@ -20,6 +20,7 @@ from ..models import (
     ActorComponent,
     ActorType,
     NPCComponent,
+    AddStatusEffectsAction,
     AppearanceComponent,
     CharacterStats,
     CharacterStatsComponent,
@@ -740,6 +741,23 @@ class TCGGame(RPGGame):
             entity.name,
             max(0, self.get_energy(entity) - amount),
         )
+
+    ###############################################################################################################################################
+    def accumulate_status_effects_action(
+        self, entity: Entity, task_hints: List[str]
+    ) -> None:
+        """为实体追加 AddStatusEffectsAction，自动合并已有的 task_hints。
+        Args:
+            entity: 目标实体
+            task_hints: 本次追加的提示词列表，每条对应一个待生成的状态效果
+        """
+        existing = (
+            entity.get(AddStatusEffectsAction)
+            if entity.has(AddStatusEffectsAction)
+            else None
+        )
+        merged = (existing.task_hints if existing is not None else []) + task_hints
+        entity.replace(AddStatusEffectsAction, entity.name, merged)
 
     ###############################################################################################################################################
     def process_zero_health_entities(self) -> None:

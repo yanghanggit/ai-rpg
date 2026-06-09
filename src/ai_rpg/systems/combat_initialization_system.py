@@ -7,7 +7,6 @@ from loguru import logger
 from ..entitas import ExecuteProcessor, Entity
 from ..game.tcg_game import TCGGame
 from ..models import (
-    AddStatusEffectsAction,
     GenerateDeckAction,
     StageDescriptionComponent,
     PartyMemberComponent,
@@ -222,9 +221,8 @@ class CombatInitializationSystem(ExecuteProcessor):
             )
 
             # 添加 AddStatusEffectsAction，触发 AddStatusEffectsActionSystem 评估初始状态效果
-            actor_entity.replace(
-                AddStatusEffectsAction,
-                actor_entity.name,
+            self._game.accumulate_status_effects_action(
+                actor_entity,
                 _generate_init_status_effects_task_hint(),
             )
 

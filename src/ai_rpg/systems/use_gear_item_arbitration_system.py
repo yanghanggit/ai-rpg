@@ -15,7 +15,6 @@ from ..models import (
     RoundStatsComponent,
     CharacterStats,
     CombatArbitrationEvent,
-    AddStatusEffectsAction,
 )
 
 
@@ -225,5 +224,5 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
                 action=action,
                 entity_name=entity_name,
             )
-            entity.replace(AddStatusEffectsAction, entity_name, task_hints)
+            self._game.accumulate_status_effects_action(entity, task_hints)
             logger.debug(f"[{entity_name}] 装备仲裁后添加 AddStatusEffectsAction")

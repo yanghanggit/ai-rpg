@@ -18,7 +18,6 @@ from ..models import (
     CombatArbitrationEvent,
     StatusEffect,
     CombatPhase,
-    AddStatusEffectsAction,
     PostArbitrationAction,
 )
 from ..utils import extract_json_from_code_block
@@ -513,5 +512,5 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                 action=action,
                 entity_name=entity_name,
             )
-            entity.replace(AddStatusEffectsAction, entity_name, task_hints)
+            self._game.accumulate_status_effects_action(entity, task_hints)
             logger.debug(f"[{entity_name}] 消耗品仲裁后添加 AddStatusEffectsAction")

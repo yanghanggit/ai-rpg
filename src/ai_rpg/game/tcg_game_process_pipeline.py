@@ -185,7 +185,7 @@ def create_combat_pipeline(
     processors.add(PlayCardsArbitrationSystem(tcg_game))
     processors.add(UseConsumableItemArbitrationSystem(tcg_game))
     processors.add(UseGearItemArbitrationSystem(tcg_game))
-    processors.add(AddActorStatusEffectsActionSystem(tcg_game, max_effects=2))
+    processors.add(AddActorStatusEffectsActionSystem(tcg_game))
 
     # 仲裁结算后，由 stage agent（地牢主视角）决定是否对场内角色追加状态效果或塞牌
     processors.add(

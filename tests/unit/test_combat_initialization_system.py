@@ -160,12 +160,13 @@ class TestGenerateInitStatusEffectsTaskHint:
 
     def test_returns_non_empty_string(self) -> None:
         result = _generate_init_status_effects_task_hint()
-        assert isinstance(result, str)
+        assert isinstance(result, list)
         assert len(result) > 0
+        assert all(isinstance(h, str) and len(h) > 0 for h in result)
 
     def test_mentions_combat_initialization(self) -> None:
         result = _generate_init_status_effects_task_hint()
-        assert "战斗初始化" in result
+        assert any("战斗初始化" in h for h in result)
 
 
 # ---------------------------------------------------------------------------
@@ -280,12 +281,13 @@ class TestInitializeActorStatusEffects:
     def test_action_task_hint_is_non_empty(
         self, context: Context, system: CombatInitializationSystem
     ) -> None:
-        """AddStatusEffectsAction 的 task_hint 应为非空字符串。"""
+        """AddStatusEffectsAction 的 task_hints 应为非空字符串列表。"""
         actor = _make_actor_entity(context, "英雄", is_ally=True)
         system._initialize_actor_status_effects({actor})
         action = actor.get(AddStatusEffectsAction)
-        assert isinstance(action.task_hint, str)
-        assert len(action.task_hint) > 0
+        assert isinstance(action.task_hints, list)
+        assert len(action.task_hints) > 0
+        assert all(isinstance(h, str) and len(h) > 0 for h in action.task_hints)
 
     def test_multiple_actors_all_initialized(
         self, context: Context, system: CombatInitializationSystem

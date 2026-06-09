@@ -34,8 +34,7 @@ class AddStatusEffectsResponse(BaseModel):
 def _generate_compressed_add_status_effects_prompt(
     current_status_effects: List[StatusEffect],
     current_round_number: int,
-    task_hint: str,
-    max_effects: int,
+    task_hints: List[str],
 ) -> str:
     """生成压缩版追加状态效果提示词（仅动态感知部分，省略静态 phase 说明与 JSON 示例）"""
 
@@ -59,35 +58,39 @@ def _generate_compressed_add_status_effects_prompt(
             ]
         )
 
+    hints_block = "\n".join(f"{i + 1}. {h}" for i, h in enumerate(task_hints))
+    max_effects = len(task_hints)
+
     return f"""# 第 {current_round_number} 回合 — 追加状态效果
 
 回顾上下文历史，结合当前已有状态效果，追加本回合应有的新状态效果。
 
-> {task_hint}
+## 任务提示（每条提示对应一个状态效果，严格 1:1）
+
+{hints_block}
 
 ## 当前状态效果
 
 {effects_list}
 
-**要求**：不重复现有效果，最多追加 {max_effects} 个；无新增时输出空数组。"""
+**要求**：不重复现有效果，恰好追加 {max_effects} 个（与上方提示条数一一对应）；无新增时输出空数组。"""
 
 
 #######################################################################################################################################
 def _generate_add_status_effects_prompt(
     current_status_effects: List[StatusEffect],
     current_round_number: int,
-    task_hint: str,
-    max_effects: int,
+    task_hints: List[str],
 ) -> str:
     """生成追加状态效果提示词
 
     要求 agent 回顾上下文历史并结合当前已有状态，追加本回合应有的新状态效果。
+    每条 task_hint 对应一个待生成的状态效果（严格 1:1）。
 
     Args:
         current_status_effects: 当前已有的状态效果列表
         current_round_number: 当前回合数
-        task_hint: 任务说明，补充本次评估的背景与意图
-        max_effects: 最多追加的状态效果数量，默认2
+        task_hints: 任务提示列表，每条对应一个待生成的状态效果
 
     Returns:
         格式化的提示词字符串
@@ -114,6 +117,9 @@ def _generate_add_status_effects_prompt(
             ]
         )
 
+    hints_block = "\n".join(f"{i + 1}. {h}" for i, h in enumerate(task_hints))
+    max_effects = len(task_hints)
+
     phase_desc = f"""
 ## 生效阶段（phase）
 
@@ -127,14 +133,16 @@ def _generate_add_status_effects_prompt(
 
 回顾上下文历史，结合当前已有状态效果，追加本回合应有的新状态效果。
 
-> {task_hint}
+## 任务提示（每条提示对应一个状态效果，严格 1:1）
+
+{hints_block}
 
 ## 当前状态效果
 
 {effects_list}
 {phase_desc}
 
-**要求**：不重复现有效果，最多追加 {max_effects} 个；无新增时输出空数组，只输出 JSON。
+**要求**：不重复现有效果，恰好追加 {max_effects} 个（与上方提示条数一一对应）；只输出 JSON。
 
 ```json
 {{
@@ -171,13 +179,10 @@ class AddActorStatusEffectsActionSystem(ReactiveProcessor):
     def __init__(
         self,
         game: TCGGame,
-        max_effects: int = 2,
         use_compressed_prompt: bool = True,
     ) -> None:
         super().__init__(game)
-        assert max_effects > 0, "max_effects 必须为正整数"
         self._game: Final[TCGGame] = game
-        self._max_effects: Final[int] = max_effects
         self._use_compressed_prompt: Final[bool] = use_compressed_prompt
 
     #######################################################################################################################################
@@ -232,8 +237,7 @@ class AddActorStatusEffectsActionSystem(ReactiveProcessor):
             prompt = _generate_add_status_effects_prompt(
                 current_status_effects=combat_status_effects.status_effects,
                 current_round_number=current_round_number,
-                task_hint=add_status_effects_action.task_hint,
-                max_effects=self._max_effects,
+                task_hints=add_status_effects_action.task_hints,
             )
 
             compressed_message: str | None = None
@@ -241,8 +245,7 @@ class AddActorStatusEffectsActionSystem(ReactiveProcessor):
                 compressed_message = _generate_compressed_add_status_effects_prompt(
                     current_status_effects=combat_status_effects.status_effects,
                     current_round_number=current_round_number,
-                    task_hint=add_status_effects_action.task_hint,
-                    max_effects=self._max_effects,
+                    task_hints=add_status_effects_action.task_hints,
                 )
 
             # 创建聊天客户端

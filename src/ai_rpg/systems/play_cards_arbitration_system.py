@@ -66,8 +66,9 @@ def _generate_post_arbitration_task_hint(
     actor_name: str,
     play_cards_action: PlayCardsAction,
     entity_name: str,
-) -> str:
-    """生成仲裁结算后的 AddStatusEffectsAction task_hint，区分出牌者视角与目标视角。
+) -> List[str]:
+    """生成仲裁结算后的 AddStatusEffectsAction task_hints，区分出牌者视角与目标视角。
+    每条 affix 对应一个 hint，公共上下文（卡牌/视角/目标）作为每条 hint 的前缀。
 
     Args:
         actor_name: 出牌者实体全名
@@ -75,38 +76,38 @@ def _generate_post_arbitration_task_hint(
         entity_name: 当前需要评估状态效果的实体全名
 
     Returns:
-        结构化的 task_hint 字符串
+        task_hints 列表，每条对应一个待生成的状态效果
     """
     card = play_cards_action.card
     actor_short_name = actor_name.split(".")[-1]
     targets_str = "、".join(t.split(".")[-1] for t in play_cards_action.targets) or "无"
     action_desc = play_cards_action.action if play_cards_action.action else "（未提供）"
 
-    status_hint_line = (
-        f"- 潜在状态效果：{chr(10).join(card.affixes)}" if card.affixes else ""
-    )
-
-    card_info = (
+    card_context = (
         f"- 卡牌：{card.name}（{card.description}）\n"
         f"- 单次伤害：{card.damage_dealt}，攻击次数：{card.hit_count}\n"
         f"- 行动描述：{action_desc}"
-        + (f"\n{status_hint_line}" if status_hint_line else "")
     )
 
     if entity_name == actor_name:
-        return (
+        header = (
             f"仲裁结算完成。你本回合的出牌信息如下：\n"
-            f"{card_info}\n"
+            f"{card_context}\n"
             f"- 攻击目标：{targets_str}\n"
-            f"请根据以上出牌结果，结合战斗上下文，评估是否追加状态效果。"
+            f"请根据以上出牌结果，结合战斗上下文，"
         )
     else:
-        return (
+        header = (
             f"仲裁结算完成。你本回合被命中的信息如下：\n"
             f"- 出牌者：{actor_short_name}\n"
-            f"{card_info}\n"
-            f"请根据以上受击情况，结合战斗上下文，评估是否追加状态效果。"
+            f"{card_context}\n"
+            f"请根据以上受击情况，结合战斗上下文，"
         )
+
+    return [
+        f"{header}评估是否追加与以下词缀对应的状态效果：{affix}"
+        for affix in card.affixes
+    ]
 
 
 #######################################################################################################################################
@@ -656,13 +657,13 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             entity = self._game.get_entity_by_name(entity_name)
             assert entity is not None, f"无法找到实体: {entity_name}"
 
-            task_hint = _generate_post_arbitration_task_hint(
+            task_hints = _generate_post_arbitration_task_hint(
                 actor_name=actor_entity.name,
                 play_cards_action=play_cards_action,
                 entity_name=entity_name,
             )
 
-            entity.replace(AddStatusEffectsAction, entity_name, task_hint)
+            entity.replace(AddStatusEffectsAction, entity_name, task_hints)
             logger.debug(f"[{entity_name}] 仲裁后添加 AddStatusEffectsAction")
 
     #######################################################################################################################################

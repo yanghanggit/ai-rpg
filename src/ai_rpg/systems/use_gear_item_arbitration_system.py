@@ -72,29 +72,28 @@ def _generate_gear_task_hint(
     actor_name: str,
     action: UseGearItemAction,
     entity_name: str,
-) -> str:
+) -> List[str]:
     item = action.item
     actor_short = actor_name.split(".")[-1]
     targets_str = "、".join(t.split(".")[-1] for t in action.targets) or "无"
-    effects_line = (
-        "- 延迟词缀：\n" + "\n".join(f"  - {a}" for a in item.affixes)
-        if item.affixes
-        else ""
-    )
-    item_info = (
+    item_base = (
         f"- 装备：{item.name}（{item.description}）\n"
         f"- 属性加成：{_fmt_stat_bonuses(item.stat_bonuses)}"
-        + (f"\n{effects_line}" if effects_line else "")
     )
     if entity_name == actor_name:
-        return (
-            f"装备使用结算完成。你本回合使用了：\n{item_info}\n- 作用目标：{targets_str}\n"
-            f"请根据以上使用结果，结合战斗上下文，评估是否追加状态效果。"
+        header = (
+            f"装备使用结算完成。你本回合使用了：\n{item_base}\n- 作用目标：{targets_str}\n"
+            f"请根据以上使用结果，结合战斗上下文，"
         )
-    return (
-        f"装备使用结算完成。你本回合被 {actor_short} 使用装备影响：\n{item_info}\n"
-        f"请根据以上情况，结合战斗上下文，评估是否追加状态效果。"
-    )
+    else:
+        header = (
+            f"装备使用结算完成。你本回合被 {actor_short} 使用装备影响：\n{item_base}\n"
+            f"请根据以上情况，结合战斗上下文，"
+        )
+    return [
+        f"{header}评估是否追加与以下词缀对应的状态效果：{affix}"
+        for affix in item.affixes
+    ]
 
 
 #######################################################################################################################################
@@ -221,10 +220,10 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
             entity = self._game.get_entity_by_name(entity_name)
             assert entity is not None, f"无法找到实体: {entity_name}"
 
-            task_hint = _generate_gear_task_hint(
+            task_hints = _generate_gear_task_hint(
                 actor_name=actor_entity.name,
                 action=action,
                 entity_name=entity_name,
             )
-            entity.replace(AddStatusEffectsAction, entity_name, task_hint)
+            entity.replace(AddStatusEffectsAction, entity_name, task_hints)
             logger.debug(f"[{entity_name}] 装备仲裁后添加 AddStatusEffectsAction")

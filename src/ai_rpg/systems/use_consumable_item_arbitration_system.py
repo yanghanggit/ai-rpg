@@ -52,31 +52,32 @@ def _generate_consumable_task_hint(
     actor_name: str,
     action: UseConsumableItemAction,
     entity_name: str,
-) -> str:
-    """生成消耗品仲裁结算后的 AddStatusEffectsAction task_hint，区分使用者视角与目标视角。"""
+) -> List[str]:
+    """生成消耗品仲裁结算后的 AddStatusEffectsAction task_hints，区分使用者视角与目标视角。
+    每条 affix 对应一个 hint，公共上下文作为前缀。"""
     item = action.item
     actor_short_name = actor_name.split(".")[-1]
     targets_str = "、".join(t.split(".")[-1] for t in action.targets) or "无"
-    effects_line = f"- 延迟词缀：{chr(10).join(item.affixes)}" if item.affixes else ""
-    modifiers_line = (
-        f"- 即时修正词缀：{chr(10).join(item.modifiers)}" if item.modifiers else ""
-    )
-    extra = "".join(f"\n{line}" for line in [effects_line, modifiers_line] if line)
-    item_info = f"- 消耗品：{item.name}（{item.description}）" + extra
+    item_base = f"- 消耗品：{item.name}（{item.description}）"
 
     if entity_name == actor_name:
-        return (
+        header = (
             f"消耗品使用结算完成。你本回合使用了：\n"
-            f"{item_info}\n"
+            f"{item_base}\n"
             f"- 作用目标：{targets_str}\n"
-            f"请根据以上使用结果，结合战斗上下文，评估是否追加状态效果。"
+            f"请根据以上使用结果，结合战斗上下文，"
         )
     else:
-        return (
+        header = (
             f"消耗品使用结算完成。你本回合被 {actor_short_name} 使用消耗品命中：\n"
-            f"{item_info}\n"
-            f"请根据以上情况，结合战斗上下文，评估是否追加状态效果。"
+            f"{item_base}\n"
+            f"请根据以上情况，结合战斗上下文，"
         )
+
+    return [
+        f"{header}评估是否追加与以下词缀对应的状态效果：{affix}"
+        for affix in item.affixes
+    ]
 
 
 #######################################################################################################################################
@@ -507,10 +508,10 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             entity = self._game.get_entity_by_name(entity_name)
             assert entity is not None, f"无法找到实体: {entity_name}"
 
-            task_hint = _generate_consumable_task_hint(
+            task_hints = _generate_consumable_task_hint(
                 actor_name=actor_entity.name,
                 action=action,
                 entity_name=entity_name,
             )
-            entity.replace(AddStatusEffectsAction, entity_name, task_hint)
+            entity.replace(AddStatusEffectsAction, entity_name, task_hints)
             logger.debug(f"[{entity_name}] 消耗品仲裁后添加 AddStatusEffectsAction")

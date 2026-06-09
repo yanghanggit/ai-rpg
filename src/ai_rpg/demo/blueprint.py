@@ -7,7 +7,7 @@ from ..models import (
     Blueprint,
     CostumeItem,
     GearItem,
-    GearSlot,
+    GearCategory,
     ConsumableItem,
     MaterialItem,
     TargetType,
@@ -136,7 +136,7 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
             GearItem(
                 name="装备.缺口猎刀",
                 description="一把刀身偏短的猎刀，刃背厚实，靠近刀尖三分之一处有一道浅缺口，像是曾经硬撬过什么。握柄以粗布条缠绕，布已泛黄，但缠法整齐，显然出自熟练的手。",
-                gear_slot=GearSlot.WEAPON,
+                gear_slot=GearCategory.WEAPON,
                 stat_bonuses=CharacterStats(
                     hp=0, max_hp=0, attack=2, defense=0, energy=0, speed=0
                 ),
@@ -144,7 +144,7 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
             GearItem(
                 name="装备.沙漠旅行者轻甲",
                 description="一套轻便的皮质护甲，由多块经过硬化处理的皮革拼接而成，覆盖躯干、肩部与小腿。设计简洁，不妨碍快速移动，表面留有风沙打磨的痕迹。",
-                gear_slot=GearSlot.ARMOR,
+                gear_slot=GearCategory.ARMOR,
                 stat_bonuses=CharacterStats(
                     hp=0, max_hp=0, attack=0, defense=2, energy=0, speed=0
                 ),
@@ -152,7 +152,7 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
             GearItem(
                 name="装备.旧骨环",
                 description="一枚以兽骨磨制的指环，表面刻有细密的纹路，像是某种已失传的符文。佩戴后指尖略感温热，仿佛有什么在缓缓流动。",
-                gear_slot=GearSlot.ACCESSORY,
+                gear_slot=GearCategory.ACCESSORY,
                 stat_bonuses=CharacterStats(
                     hp=5, max_hp=5, attack=0, defense=0, energy=0, speed=0
                 ),

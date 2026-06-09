@@ -37,8 +37,8 @@ class Item(BaseModel):
 #######################################################################################################################################
 @final
 @unique
-class GearSlot(StrEnum):
-    """装备槽位类型，与 EquipmentComponent 的字段名一一对应"""
+class GearCategory(StrEnum):
+    """三种功能性装备类别：武器、盔甲、饰品"""
 
     WEAPON = "weapon"  # 武器
     ARMOR = "armor"  # 盔甲
@@ -50,7 +50,7 @@ class GearItem(Item):
     """装备类（武器、防具、饰品等），继承自物品基类"""
 
     type: Literal[ItemType.GEAR_ITEM] = Field(default=ItemType.GEAR_ITEM, frozen=True)
-    gear_slot: GearSlot  # 装备槽位
+    gear_slot: GearCategory  # 装备槽位
     stat_bonuses: CharacterStats = Field(
         default_factory=lambda: CharacterStats(
             hp=0, max_hp=0, attack=0, defense=0, energy=0, speed=0

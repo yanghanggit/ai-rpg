@@ -21,3 +21,4 @@
 | ------ | ------ |
 | [消耗品系统（ConsumableItem）](wiki/consumable-item.md) | 消耗品的数据模型、战斗使用管道、词缀机制设计 |
 | [装备系统（GearItem）](wiki/gear-item.md) | 装备的数据模型、战斗装备管道、EquippedGearComponent 生命周期 |
+| [AI 操作 CLI（run_agent_game.py）](wiki/run-agent-game.md) | 快照驱动设计的意图、AI 代理操作工具与 TUI 客户端的分工 |

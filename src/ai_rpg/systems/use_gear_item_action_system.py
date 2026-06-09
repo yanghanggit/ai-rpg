@@ -1,5 +1,4 @@
-"""使用装备前置动作系统模块。
-"""
+"""使用装备前置动作系统模块。"""
 
 from typing import Dict, Final, List, final
 from loguru import logger
@@ -51,8 +50,7 @@ def _generate_action_notice_for_others(
 #######################################################################################################################################
 @final
 class UseGearItemActionSystem(ReactiveProcessor):
-    """使用装备前置动作系统。
-    """
+    """使用装备前置动作系统。"""
 
     def __init__(self, game: TCGGame) -> None:
         super().__init__(game)
@@ -78,7 +76,7 @@ class UseGearItemActionSystem(ReactiveProcessor):
         if not self._game.current_dungeon.is_ongoing:
             logger.debug("UseGearItemActionSystem: 战斗未进行中，跳过")
             return
-        
+
         logger.debug(f"UseGearItemActionSystem: 触发实体数量 {len(entities)}")
 
         current_rounds = self._game.current_dungeon.current_rounds
@@ -97,7 +95,9 @@ class UseGearItemActionSystem(ReactiveProcessor):
             )
 
             # 扫描全局：移除所有持有同名装备的 EquippedGearComponent（保证全局唯一）
-            for holder in self._game.get_group(Matcher(EquippedGearComponent)).entities.copy():
+            for holder in self._game.get_group(
+                Matcher(EquippedGearComponent)
+            ).entities.copy():
                 if holder.get(EquippedGearComponent).item.name == item.name:
                     logger.debug(
                         f"UseGearItemActionSystem: 从 [{holder.name}] 移除已激活装备 '{item.name}'"

@@ -44,8 +44,9 @@ class GearItem(Item):
             hp=0, max_hp=0, attack=0, defense=0, energy=0, speed=0
         )
     )
-    # affixes: List[str] = []  # 延迟词缀列表（同 Card.affixes）
-    # modifiers: List[str] = []  # 即时修正词缀列表（同 Card.modifiers）
+    target_type: TargetType = TargetType.ALLY_SINGLE  # 作用目标类型，默认作用于单个友方
+    affixes: List[str] = []  # 延迟词缀列表（同 Card.affixes）
+    modifiers: List[str] = []  # 即时修正词缀列表（同 Card.modifiers）
 
 
 #######################################################################################################################################

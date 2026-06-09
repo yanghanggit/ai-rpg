@@ -26,6 +26,7 @@ class TargetType(StrEnum):
     - self_only：targets 由系统自动替换为施法者自身，调用方传入值被忽略；
                  典型用途：呼吸法（自我恢复）、强化自身 buff 等
                  与 ally_single 的区别：ally_single 可指向任意存活友方，self_only 严格限定为施法者本人
+    - card：作用于目标卡牌（Card），用于装备被动或技能直接修改/强化手牌中的卡牌
     """
 
     ENEMY_SINGLE = "enemy_single"
@@ -34,6 +35,7 @@ class TargetType(StrEnum):
     ALLY_SINGLE = "ally_single"
     ALLY_ALL = "ally_all"
     SELF_ONLY = "self_only"
+    CARD = "card"
 
 
 ###############################################################################################################################################

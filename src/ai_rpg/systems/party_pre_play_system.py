@@ -1,11 +1,4 @@
-"""出牌叙事润色系统模块。
-
-在 MonsterPlayDecisionSystem 之后、PlayCardsActionSystem 之前触发。
-当 PlayCardsAction.action 为空且卡牌非空时，调用 LLM 为出牌者生成
-第一人称行动叙事，回写至 PlayCardsAction。
-
-该系统是可选的：即使不加入 pipeline，PlayCardsArbitrationSystem 也有兆底逻辑。
-"""
+"""出牌前系统模块（队员）。"""
 
 from typing import Final, List, final, Dict
 from loguru import logger
@@ -16,7 +9,8 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
     PlayCardsAction,
-    CharacterStatsComponent,
+    HandComponent,
+    PartyMemberComponent,
     DeathComponent,
 )
 from ..utils import extract_json_from_code_block
@@ -58,12 +52,8 @@ def _generate_narration_prompt(
 
 #######################################################################################################################################
 @final
-class PlayActionNarrationSystem(ReactiveProcessor):
-    """出牌叙事润色系统。
-
-    当 PlayCardsAction.action 为空时，调用 LLM 为出牌者生成第一人称行动叙事，
-    并将结果回写至 PlayCardsAction。仅处理非空卡（card.name != ""）。
-    """
+class PartyPrePlaySystem(ReactiveProcessor):
+    """出牌前系统（队员）。"""
 
     def __init__(self, game: TCGGame) -> None:
         super().__init__(game)
@@ -79,7 +69,8 @@ class PlayActionNarrationSystem(ReactiveProcessor):
     def filter(self, entity: Entity) -> bool:
         return (
             entity.has(PlayCardsAction)
-            and entity.has(CharacterStatsComponent)
+            and entity.has(HandComponent)
+            and entity.has(PartyMemberComponent)
             and not entity.has(DeathComponent)
         )
 
@@ -87,7 +78,7 @@ class PlayActionNarrationSystem(ReactiveProcessor):
     @override
     async def react(self, entities: List[Entity]) -> None:
         if not self._game.current_dungeon.is_ongoing:
-            logger.debug("PlayActionNarrationSystem: 战斗未进行中，跳过")
+            logger.debug("PartyPrePlaySystem: 战斗未进行中，跳过")
             return
 
         current_round_number = len(self._game.current_dungeon.current_rounds or [])
@@ -114,22 +105,18 @@ class PlayActionNarrationSystem(ReactiveProcessor):
             )
 
         if not chat_clients:
-            logger.debug("PlayActionNarrationSystem: 无需润色的出牌，跳过")
+            logger.debug("PartyPrePlaySystem: 无需生成叙事的出牌，跳过")
             return
 
-        logger.debug(
-            f"PlayActionNarrationSystem: 为 {len(chat_clients)} 个出牌生成叙事"
-        )
+        logger.debug(f"PartyPrePlaySystem: 为 {len(chat_clients)} 个出牌生成叙事")
 
         await DeepSeekClient.batch_chat(clients=chat_clients)
 
         for client in chat_clients:
             found = self._game.get_entity_by_name(client.name)
-            assert (
-                found is not None
-            ), f"PlayActionNarrationSystem: 无法找到实体 {client.name}"
+            assert found is not None, f"PartyPrePlaySystem: 无法找到实体 {client.name}"
             # if found is None:
-            #     logger.error(f"PlayActionNarrationSystem: 无法找到实体 {client.name}")
+            #     logger.error(f"PartyPrePlaySystem: 无法找到实体 {client.name}")
             #     continue
             self._apply_narration(found, client)
 
@@ -149,11 +136,11 @@ class PlayActionNarrationSystem(ReactiveProcessor):
                 response.action,
             )
             logger.debug(
-                f"PlayActionNarrationSystem: [{entity.name}] 叙事生成完毕 | {response.action}"
+                f"PartyPrePlaySystem: [{entity.name}] 叙事生成完毕 | {response.action}"
             )
         except Exception as e:
             logger.error(
-                f"PlayActionNarrationSystem: [{entity.name}] 解析叙事失败，将使用仲裁兜底。Exception: {e}"
+                f"PartyPrePlaySystem: [{entity.name}] 解析叙事失败，将使用仲裁兜底。Exception: {e}"
             )
 
     #######################################################################################################################################

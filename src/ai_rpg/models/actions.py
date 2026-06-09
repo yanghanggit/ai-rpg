@@ -147,7 +147,7 @@ class RetreatAction(Component):
 @register_action_component_type
 @register_component_type
 class MonsterTurnAction(Component):
-    """标记当前轮到指定怪物行动，触发 MonsterPlayDecisionSystem 进行出牌决策。"""
+    """标记当前轮到指定怪物行动，触发 MonsterPrePlaySystem 进行出牌决策。"""
 
     name: str
 

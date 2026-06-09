@@ -144,8 +144,8 @@ def create_combat_pipeline(
         ActionOrderStrategy,
     )
     from ..systems.combat_round_completion_system import CombatRoundCompletionSystem
-    from ..systems.monster_play_decision_system import MonsterPlayDecisionSystem
-    from ..systems.play_action_narration_system import PlayActionNarrationSystem
+    from ..systems.monster_pre_play_system import MonsterPrePlaySystem
+    from ..systems.party_pre_play_system import PartyPrePlaySystem
 
     tcg_game = cast(TCGGame, game)
     processors = RPGGameProcessPipeline()
@@ -165,10 +165,10 @@ def create_combat_pipeline(
     # 牌库生成系统（战斗开始时为每个角色生成初始牌库，歸入 DrawPile；条件：is_ongoing AND no rounds）
     processors.add(DeckGenerationSystem(tcg_game))
 
-    # 战斗核心动作处理相关的系统：抽牌 → 敌人决策 → 叙事润色 → 出牌 → 退却 → 仲裁 → 状态效果追加
+    # 战斗核心动作处理相关的系统：抄牌 → 出牌前（怪物） → 出牌前（队员） → 出牌 → 退却 → 仲裁 → 状态效果追加
     processors.add(DrawCardsActionSystem(tcg_game))
-    processors.add(MonsterPlayDecisionSystem(tcg_game))
-    processors.add(PlayActionNarrationSystem(tcg_game))
+    processors.add(MonsterPrePlaySystem(tcg_game))
+    processors.add(PartyPrePlaySystem(tcg_game))
     processors.add(PlayCardsActionSystem(tcg_game))
     processors.add(UseConsumableItemActionSystem(tcg_game))
     processors.add(MoveToDiscardPileSystem(tcg_game))

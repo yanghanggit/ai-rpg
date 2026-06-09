@@ -142,12 +142,7 @@ def _generate_compressed_monster_decision_prompt(
     completed_actors: List[str],
     current_round_number: int,
 ) -> str:
-    """生成怪物出牌决策的压缩版提示词（写入对话历史，减少 token 消耗）。
-
-    保留动态感知部分（状态、序列、手牌、对手），删除静态策略说明与 JSON 字段注释。
-    LLM 推理仍使用全量版 `_generate_monster_decision_prompt`。
-    Args 同 `_generate_monster_decision_prompt`。
-    """
+    """生成怪物出牌决策的压缩版提示词（写入对话历史，减少 token 消耗）。"""
     stats = monster_stats
     self_info = (
         f"HP:{stats.hp}/{stats.max_hp} | 攻击:{stats.attack} | 防御:{stats.defense}"
@@ -208,7 +203,10 @@ def _generate_compressed_monster_decision_prompt(
 
 #######################################################################################################################################
 @final
-class MonsterPlayDecisionSystem(ReactiveProcessor):
+class MonsterPrePlaySystem(ReactiveProcessor):
+    """
+    怪物出牌决策系统。
+    """
 
     def __init__(self, game: TCGGame) -> None:
         super().__init__(game)
@@ -240,15 +238,13 @@ class MonsterPlayDecisionSystem(ReactiveProcessor):
 
         # 验证战斗状态
         if not self._game.current_dungeon.is_ongoing:
-            logger.debug("MonsterPlayDecisionSystem: 战斗未进行中，跳过决策")
+            logger.debug("MonsterPrePlaySystem: 战斗未进行中，跳过决策")
             return
 
-        logger.debug(
-            f"MonsterPlayDecisionSystem: 为 {len(entities)} 个怪物进行出牌决策推理"
-        )
+        logger.debug(f"MonsterPrePlaySystem: 为 {len(entities)} 个怪物进行出牌决策推理")
 
         # 注入 context 引导（仅第一回合，强制过牌）
-        current_round_number = len(self._game.current_dungeon.current_rounds or [])
+        # current_round_number = len(self._game.current_dungeon.current_rounds or [])
         # self._mock_inject_pass_turn_context(entities, current_round_number)
 
         # 为每个怪物创建推理 DeepSeekClient
@@ -259,7 +255,7 @@ class MonsterPlayDecisionSystem(ReactiveProcessor):
                 chat_clients.append(client)
 
         if not chat_clients:
-            logger.warning("MonsterPlayDecisionSystem: 没有可推理的怪物实体，跳过")
+            logger.warning("MonsterPrePlaySystem: 没有可推理的怪物实体，跳过")
             return
 
         # 并行 LLM 推理
@@ -271,10 +267,9 @@ class MonsterPlayDecisionSystem(ReactiveProcessor):
             found_entity = self._game.get_entity_by_name(client.name)
             assert (
                 found_entity is not None
-            ), f"MonsterPlayDecisionSystem: 无法找到实体 {client.name}"
-            # if found_entity is None:
-            #     logger.error(f"MonsterPlayDecisionSystem: 无法找到实体 {client.name}")
-            #     continue
+            ), f"MonsterPrePlaySystem: 无法找到实体 {client.name}"
+
+            # 解析 LLM 响应，替换 PlayCardsAction
             self._process_monster_decision(found_entity, client)
 
     ####################################################################################################################################
@@ -289,9 +284,7 @@ class MonsterPlayDecisionSystem(ReactiveProcessor):
         """
         hand_comp = entity.get(HandComponent)
         if hand_comp is None or len(hand_comp.cards) == 0:
-            logger.error(
-                f"MonsterPlayDecisionSystem: 怪物 {entity.name} 没有手牌，无法决策"
-            )
+            logger.error(f"MonsterPrePlaySystem: 怪物 {entity.name} 没有手牌，无法决策")
             return None
 
         monster_stats = self._game.compute_character_stats(entity)
@@ -378,19 +371,19 @@ class MonsterPlayDecisionSystem(ReactiveProcessor):
                 draw_cards_round_number=current_round_number,
                 draw_cards_full_prompt=client.prompt,
             )
-            assert client.response_ai_message is not None
+            assert client.response_ai_message is not None, "MonsterPrePlaySystem: AI 消息不能为空"
             self._game.add_ai_message(entity, client.response_ai_message)
 
             if decision.pass_turn:
                 entity.remove(PlayCardsAction)
                 entity.replace(PassTurnAction, entity.name)
                 logger.debug(
-                    f"MonsterPlayDecisionSystem: [{entity.name}] 决策过牌（跳过本次出牌机会）"
+                    f"MonsterPrePlaySystem: [{entity.name}] 决策过牌（跳过本次出牌机会）"
                 )
                 return
 
             hand_comp = entity.get(HandComponent)
-            assert hand_comp is not None
+            assert hand_comp is not None, "MonsterPrePlaySystem: HandComponent 不能为空"
 
             selected_card = next(
                 (c for c in hand_comp.cards if c.name == decision.card_name),
@@ -398,7 +391,7 @@ class MonsterPlayDecisionSystem(ReactiveProcessor):
             )
             if selected_card is None:
                 logger.error(
-                    f"MonsterPlayDecisionSystem: [{entity.name}] LLM 返回的卡牌名 '{decision.card_name}' "
+                    f"MonsterPrePlaySystem: [{entity.name}] LLM 返回的卡牌名 '{decision.card_name}' "
                     f"不在手牌中：{[c.name for c in hand_comp.cards]}，保留空卡"
                 )
                 return
@@ -436,7 +429,7 @@ class MonsterPlayDecisionSystem(ReactiveProcessor):
                     valid_targets = [t for t in decision.targets if t in alive_names]
                     if len(valid_targets) != len(decision.targets):
                         logger.warning(
-                            f"MonsterPlayDecisionSystem: [{entity.name}] 过滤无效目标 "
+                            f"MonsterPrePlaySystem: [{entity.name}] 过滤无效目标 "
                             f"{set(decision.targets) - alive_names}"
                         )
 
@@ -449,13 +442,13 @@ class MonsterPlayDecisionSystem(ReactiveProcessor):
                 decision.action,
             )
             logger.debug(
-                f"MonsterPlayDecisionSystem: [{entity.name}] 决策出牌 '{selected_card.name}'，目标：{valid_targets}"
+                f"MonsterPrePlaySystem: [{entity.name}] 决策出牌 '{selected_card.name}'，目标：{valid_targets}"
             )
 
         except Exception as e:
             logger.error(f"{client.response_content}")
             logger.error(
-                f"MonsterPlayDecisionSystem: [{entity.name}] 解析 LLM 响应失败，保留空卡。Exception: {e}"
+                f"MonsterPrePlaySystem: [{entity.name}] 解析 LLM 响应失败，保留空卡。Exception: {e}"
             )
 
     ####################################################################################################################################

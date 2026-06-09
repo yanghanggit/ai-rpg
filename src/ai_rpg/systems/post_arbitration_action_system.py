@@ -23,7 +23,7 @@ from ..models import (
     StageComponent,
     PostArbitrationAction,
     StatusEffect,
-    CombatPhase,
+    PhaseType,
     StatusEffectsComponent,
 )
 from ..utils import extract_json_from_code_block
@@ -173,14 +173,14 @@ def _generate_stage_post_arbitration_prompt(
 
 | phase | 对应阶段 | 可影响属性 | 典型效果举例 |
 |---|---|---|---|
-| `{CombatPhase.DRAW}` | 抽牌阶段 | attack、defense（间接影响下回合卡牌数値） | 「虚弱」攻击力−2，damage_dealt 偏低；「沉重」防御力−1，防御较弱 |
-| `{CombatPhase.ARBITRATION}` | 仲裁结算阶段 | hp、damage_dealt | 「破甲」防御降低；「荆棘」反伤；「眩晕」影响出牌；「虚弱」伤害减少 |
-| `{CombatPhase.ROUND_END}` | 回合末阶段 | hp | 「中毒」每回合末扣血；「燃烧」持续火焰伤害；「再生」每回合末回血 |
+| `{PhaseType.DRAW}` | 抽牌阶段 | attack、defense（间接影响下回合卡牌数値） | 「虚弱」攻击力−2，damage_dealt 偏低；「沉重」防御力−1，防御较弱 |
+| `{PhaseType.ARBITRATION}` | 仲裁结算阶段 | hp、damage_dealt | 「破甲」防御降低；「荆棘」反伤；「眩晕」影响出牌；「虚弱」伤害减少 |
+| `{PhaseType.ROUND_END}` | 回合末阶段 | hp | 「中毒」每回合末扣血；「燃烧」持续火焰伤害；「再生」每回合末回血 |
 
 **speed**：影响出手顺序，只允许 +1 / 0 / -1，默认 0。
 **defense**：影响防御值（正值增防、负值破甲），整数，默认 0。
 **duration**：-1=永久，>0=剩余回合数，默认 3。禁止修改 max_hp。
-**counter**：整数初始值；`{CombatPhase.ARBITRATION}` 阶段特殊计数器词条（如"前3次受击"设 3），默认 0。
+**counter**：整数初始值；`{PhaseType.ARBITRATION}` 阶段特殊计数器词条（如"前3次受击"设 3），默认 0。
 **description**：第三人称，描述环境要素如何作用于角色身体（如："沙尘被战斗扰动卷入眼中，视线受阻，造成伤害减少"）。
 
 ## 塞牌字段说明
@@ -222,7 +222,7 @@ def _generate_stage_post_arbitration_prompt(
           "name": "沙尘入眼",
           "description": "战斗搅起的沙尘钻入眼中，视线模糊，造成伤害减少",
           "duration": 2,
-          "phase": "{CombatPhase.ARBITRATION}",
+          "phase": "{PhaseType.ARBITRATION}",
           "speed": 0,
           "defense": 0,
           "counter": 0

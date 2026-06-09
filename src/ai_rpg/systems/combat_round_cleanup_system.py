@@ -11,7 +11,7 @@ from ..models import (
     CharacterStatsComponent,
     StatusEffect,
     StatusEffectsComponent,
-    CombatPhase,
+    PhaseType,
 )
 from ..utils import extract_json_from_code_block
 
@@ -208,7 +208,7 @@ class CombatRoundCleanupSystem(ExecuteProcessor):
             round_end_effects = [
                 e
                 for e in entity.get(StatusEffectsComponent).status_effects
-                if e.phase == CombatPhase.ROUND_END
+                if e.phase == PhaseType.ROUND_END
             ]
             if not round_end_effects:
                 continue

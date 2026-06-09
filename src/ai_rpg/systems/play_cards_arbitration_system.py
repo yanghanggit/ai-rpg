@@ -19,7 +19,7 @@ from ..models import (
     CharacterStatsComponent,
     CombatArbitrationEvent,
     StatusEffect,
-    CombatPhase,
+    PhaseType,
     PostArbitrationAction,
 )
 from ..utils import extract_json_from_code_block
@@ -431,9 +431,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
         current_round_number = len(self._game.current_dungeon.current_rounds or [])
 
         actor_arbitration_effects: List[StatusEffect] = (
-            self._game.get_status_effects_by_phase(
-                actor_entity, CombatPhase.ARBITRATION
-            )
+            self._game.get_status_effects_by_phase(actor_entity, PhaseType.ARBITRATION)
         )
 
         target_arbitration_effects: Dict[str, List[StatusEffect]] = {}
@@ -442,7 +440,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             assert target_entity is not None, f"无法找到目标实体: {target_name}"
             target_arbitration_effects[target_name] = (
                 self._game.get_status_effects_by_phase(
-                    target_entity, CombatPhase.ARBITRATION
+                    target_entity, PhaseType.ARBITRATION
                 )
             )
 

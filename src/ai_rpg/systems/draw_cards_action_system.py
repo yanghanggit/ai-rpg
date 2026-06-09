@@ -29,7 +29,7 @@ from ..models import (
     CharacterStats,
     CharacterStatsComponent,
     StatusEffect,
-    CombatPhase,
+    PhaseType,
     PartyMemberComponent,
     MonsterComponent,
 )
@@ -225,7 +225,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
         entities_with_effects: List[Entity] = [
             entity
             for entity in entities
-            if self._game.get_status_effects_by_phase(entity, CombatPhase.DRAW)
+            if self._game.get_status_effects_by_phase(entity, PhaseType.DRAW)
         ]
 
         if not entities_with_effects:
@@ -245,7 +245,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
         for entity in entities_with_effects:
             combat_stats = self._game.compute_character_stats(entity)
             draw_effects = self._game.get_status_effects_by_phase(
-                entity, CombatPhase.DRAW
+                entity, PhaseType.DRAW
             )
             prompt = _generate_adjust_prompt(
                 actor_stats=combat_stats,

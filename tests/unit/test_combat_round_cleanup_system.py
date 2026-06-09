@@ -15,7 +15,7 @@ from src.ai_rpg.models import (
     StatusEffectsComponent,
 )
 from src.ai_rpg.models import CharacterStats
-from src.ai_rpg.models import CombatPhase, StatusEffect
+from src.ai_rpg.models import PhaseType, StatusEffect
 from src.ai_rpg.systems.combat_round_cleanup_system import (
     CombatRoundCleanupSystem,
     _make_status_effects_tick_message,
@@ -32,7 +32,7 @@ def _make_effect(name: str, duration: int) -> StatusEffect:
     return StatusEffect(
         name=name,
         description="test",
-        phase=CombatPhase.ARBITRATION,
+        phase=PhaseType.ARBITRATION,
         duration=duration,
     )
 
@@ -42,7 +42,7 @@ def _make_round_end_effect(name: str, duration: int) -> StatusEffect:
     return StatusEffect(
         name=name,
         description=f"{name}发作，持续伤害",
-        phase=CombatPhase.ROUND_END,
+        phase=PhaseType.ROUND_END,
         duration=duration,
     )
 

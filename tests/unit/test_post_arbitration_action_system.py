@@ -13,7 +13,7 @@ from src.ai_rpg.models import (
     StageComponent,
     StatusEffectsComponent,
 )
-from src.ai_rpg.models import Card, StatusEffect, CombatPhase, AIMessage
+from src.ai_rpg.models import Card, StatusEffect, PhaseType, AIMessage
 from src.ai_rpg.systems.post_arbitration_action_system import (
     ActorPostArbitrationDirective,
     CardInjectStrategy,
@@ -50,7 +50,7 @@ def _make_effect(
     name: str = "燃烧",
     description: str = "持续灼烧",
     duration: int = 2,
-    phase: CombatPhase = CombatPhase.ARBITRATION,
+    phase: PhaseType = PhaseType.ARBITRATION,
     speed: int = 0,
     defense: int = 0,
 ) -> StatusEffect:

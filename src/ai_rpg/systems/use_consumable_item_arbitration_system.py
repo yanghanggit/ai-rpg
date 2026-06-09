@@ -17,7 +17,7 @@ from ..models import (
     CharacterStatsComponent,
     CombatArbitrationEvent,
     StatusEffect,
-    CombatPhase,
+    PhaseType,
     PostArbitrationAction,
 )
 from ..utils import extract_json_from_code_block
@@ -334,15 +334,13 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
         current_round_number = len(self._game.current_dungeon.current_rounds or [])
 
         actor_arbitration_effects: List[StatusEffect] = (
-            self._game.get_status_effects_by_phase(
-                actor_entity, CombatPhase.ARBITRATION
-            )
+            self._game.get_status_effects_by_phase(actor_entity, PhaseType.ARBITRATION)
         )
 
         target_arbitration_effects: Dict[str, List[StatusEffect]] = {
             target_name: self._game.get_status_effects_by_phase(
                 self._game.get_entity_by_name(target_name),  # type: ignore[arg-type]
-                CombatPhase.ARBITRATION,
+                PhaseType.ARBITRATION,
             )
             for target_name in dict.fromkeys(action.targets)
         }

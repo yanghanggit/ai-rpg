@@ -33,7 +33,7 @@ from src.ai_rpg.models import (
     StageComponent,
     StatusEffectsComponent,
     StatusEffect,
-    CombatPhase,
+    PhaseType,
     Round,
     CombatRoom,
     Dungeon,
@@ -397,7 +397,7 @@ class TestClearStatusEffects:
         actor = _make_actor_entity(game, "witch")
         effect = StatusEffect(
             name="burn",
-            phase=CombatPhase.ARBITRATION,
+            phase=PhaseType.ARBITRATION,
             description="burns",
             duration=2,
         )

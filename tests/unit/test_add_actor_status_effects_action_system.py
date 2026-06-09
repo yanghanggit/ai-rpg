@@ -13,7 +13,7 @@ from src.ai_rpg.models import (
     DeathComponent,
     StatusEffectsComponent,
 )
-from src.ai_rpg.models import StatusEffect, CombatPhase
+from src.ai_rpg.models import StatusEffect, PhaseType
 from src.ai_rpg.models.messages import AIMessage
 from src.ai_rpg.systems.add_actor_status_effects_action_system import (
     AddActorStatusEffectsActionSystem,
@@ -52,7 +52,7 @@ def _make_effect(
     name: str = "燃烧",
     description: str = "持续灼烧",
     duration: int = 3,
-    phase: CombatPhase = CombatPhase.ARBITRATION,
+    phase: PhaseType = PhaseType.ARBITRATION,
     speed: int = 0,
     defense: int = 0,
 ) -> StatusEffect:
@@ -167,8 +167,8 @@ class TestGenerateAddStatusEffectsPrompt:
 
     def test_phase_table_contains_draw_and_arbitration(self) -> None:
         result = _generate_add_status_effects_prompt([], 1, ["任务"])
-        assert CombatPhase.DRAW in result
-        assert CombatPhase.ARBITRATION in result
+        assert PhaseType.DRAW in result
+        assert PhaseType.ARBITRATION in result
 
     def test_speed_constraint_mentioned(self) -> None:
         result = _generate_add_status_effects_prompt([], 1, ["任务"])

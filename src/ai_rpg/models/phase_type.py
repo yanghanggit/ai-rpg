@@ -1,6 +1,6 @@
-"""战斗阶段枚举模型定义
+"""战斗阶段/流程枚举模型定义
 
-CombatPhase 描述战斗流程中各个阶段，供 StatusEffect、系统及 LLM 提示词复用。
+PhaseType 描述战斗流程中各个阶段，供 StatusEffect、系统及 LLM 提示词复用。
 """
 
 from enum import StrEnum, unique
@@ -10,7 +10,7 @@ from typing import final
 ###############################################################################################################################################
 @final
 @unique
-class CombatPhase(StrEnum):
+class PhaseType(StrEnum):
     """战斗阶段
 
     标记战斗流程中的各个阶段，状态效果（StatusEffect）通过 phase 字段声明应在哪个阶段起效。

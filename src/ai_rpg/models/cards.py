@@ -9,7 +9,7 @@ from typing import List, final
 from uuid import uuid4
 from pydantic import BaseModel, Field, field_validator
 from .target_type import TargetType
-from .combat_phase import CombatPhase
+from .phase_type import PhaseType
 
 
 ###############################################################################################################################################
@@ -30,7 +30,7 @@ class StatusEffect(BaseModel):
         str  # 效果描述（静态规则说明，不随状态变化，由 LLM 创建时写入后不再修改）
     )
     duration: int = 3  # 持续回合数；-1=永久，>0=剩余回合
-    phase: CombatPhase = CombatPhase.ARBITRATION  # 生效阶段，默认仲裁阶段
+    phase: PhaseType = PhaseType.ARBITRATION  # 生效阶段，默认仲裁阶段
     counter: int = (
         0  # 特殊计数器；仅 ARBITRATION 阶段效果使用；由仲裁 LLM 按游戏事件更新（倒计型从初始值递减，累加型从 0 递增）；普通效果保持 0
     )

@@ -560,16 +560,9 @@ class TCGGame(RPGGame):
 
     ################################################################################################################
     def clear_equipped_gear(self) -> None:
-        """清除所有角色实体的装备组件，将装备归还玩家 InventoryComponent。"""
-        player_entity = self.get_player_entity()
+        """清除所有角色实体的装备组件。道具始终留在 InventoryComponent，无需归还。"""
         for entity in self.get_group(Matcher(EquippedGearComponent)).entities.copy():
-            gear_comp = entity.get(EquippedGearComponent)
-            logger.debug(
-                f"clear equipped gear: {entity.name} 归还装备 '{gear_comp.item.name}'"
-            )
-            if player_entity is not None and player_entity.has(InventoryComponent):
-                inv_comp = player_entity.get(InventoryComponent)
-                inv_comp.items.append(gear_comp.item.model_copy(deep=True))
+            logger.debug(f"clear equipped gear: {entity.name}")
             entity.remove(EquippedGearComponent)
 
     ###############################################################################################################################################

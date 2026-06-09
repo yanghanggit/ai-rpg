@@ -1,7 +1,4 @@
 """使用装备前置动作系统模块。
-
-响应 UseGearItemAction 事件，从 InventoryComponent 移除被使用的装备，
-并将其挂载到目标的 EquippedGearComponent（替换逻辑），随后广播使用通知。
 """
 
 from typing import Dict, Final, List, final
@@ -55,9 +52,6 @@ def _generate_action_notice_for_others(
 @final
 class UseGearItemActionSystem(ReactiveProcessor):
     """使用装备前置动作系统。
-
-    从 InventoryComponent 扣减装备数量（耗尽则移除），将装备挂载到目标
-    EquippedGearComponent（替换旧装备），广播使用通知并注入对话上下文。
     """
 
     def __init__(self, game: TCGGame) -> None:
@@ -84,6 +78,8 @@ class UseGearItemActionSystem(ReactiveProcessor):
         if not self._game.current_dungeon.is_ongoing:
             logger.debug("UseGearItemActionSystem: 战斗未进行中，跳过")
             return
+        
+        logger.debug(f"UseGearItemActionSystem: 触发实体数量 {len(entities)}")
 
         current_rounds = self._game.current_dungeon.current_rounds
         assert (
@@ -100,28 +96,15 @@ class UseGearItemActionSystem(ReactiveProcessor):
                 f" | target_type={item.target_type} | 目标: {action.targets}"
             )
 
-            # 从 InventoryComponent 移除装备（装备 count 必为 1，直接移除）
-            inventory_comp = entity.get(InventoryComponent)
-            inv_idx = next(
-                (
-                    i
-                    for i, inv_item in enumerate(inventory_comp.items)
-                    if inv_item.name == item.name
-                ),
-                None,
-            )
-            if inv_idx is None:
-                logger.warning(
-                    f"UseGearItemActionSystem: [{entity.name}] 背包中未找到 '{item.name}'，跳过装备"
-                )
-                continue
+            # 扫描全局：移除所有持有同名装备的 EquippedGearComponent（保证全局唯一）
+            for holder in self._game.get_group(Matcher(EquippedGearComponent)).entities.copy():
+                if holder.get(EquippedGearComponent).item.name == item.name:
+                    logger.debug(
+                        f"UseGearItemActionSystem: 从 [{holder.name}] 移除已激活装备 '{item.name}'"
+                    )
+                    holder.remove(EquippedGearComponent)
 
-            assert (
-                inventory_comp.items[inv_idx].count == 1
-            ), f"装备 '{item.name}' count 必为 1，实际为 {inventory_comp.items[inv_idx].count}"
-            inventory_comp.items.pop(inv_idx)
-
-            # 装备到目标实体：替换逻辑（单件装备槽）
+            # 装备到目标实体（item 引用自 action，始终与 inventory 中同一对象）
             target_entity = self._game.get_entity_by_name(target_name)
             assert (
                 target_entity is not None

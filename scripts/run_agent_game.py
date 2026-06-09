@@ -564,9 +564,7 @@ def use_consumable(
     default=(),
     help="目标角色名，可重复使用（如 --targets 角色.盟友.云音）；ALLY_SINGLE 时指定一个盟友目标",
 )
-def use_gear(
-    snapshot: str, actor: str, item: str, targets: tuple[str, ...]
-) -> None:
+def use_gear(snapshot: str, actor: str, item: str, targets: tuple[str, ...]) -> None:
     """从存档复位，让指定角色在战斗中装备背包内的 GearItem，并写入新存档。
 
     适用于【地下城模式】战斗进行中（is_ongoing）。
@@ -594,9 +592,7 @@ def use_gear(
     logger.info(f"本次存档目录：{_save_dir}")
 
     asyncio.run(
-        use_gear_game(
-            world, player_session, actor, item, list(targets), _save_dir
-        )
+        use_gear_game(world, player_session, actor, item, list(targets), _save_dir)
     )
 
 

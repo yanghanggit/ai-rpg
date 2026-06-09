@@ -575,9 +575,7 @@ async def use_gear_game(
         logger.error("use-gear 当前没有未完成的回合可供使用装备")
         return terminal_game
 
-    success, message = activate_use_gear(
-        terminal_game, actor, item, list(targets)
-    )
+    success, message = activate_use_gear(terminal_game, actor, item, list(targets))
     if not success:
         logger.error(f"use-gear 失败: {message}")
         return terminal_game

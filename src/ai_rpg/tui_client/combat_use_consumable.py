@@ -136,7 +136,12 @@ class UseConsumableMixin:
                 tt_str = TARGET_LABEL.get(
                     item.target_type, f"[dim]{item.target_type}[/]"
                 )
-                desc = "、".join(item.affixes) if item.affixes else "[dim](无描述)[/]"
+                desc_parts = []
+                if item.affixes:
+                    desc_parts.append("、".join(item.affixes))
+                if item.modifiers:
+                    desc_parts.append("[即时] " + "、".join(item.modifiers))
+                desc = "  |  ".join(desc_parts) if desc_parts else "[dim](无描述)[/]"
                 item_table.add_row(str(idx), item.name, tt_str, desc)
             log.write(item_table)
 

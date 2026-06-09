@@ -34,30 +34,18 @@ class Item(BaseModel):
     count: int = 1  # 物品数量，默认为1
 
 
-#######################################################################################################################################
-@final
-@unique
-class GearCategory(StrEnum):
-    """三种功能性装备类别：武器、盔甲、饰品"""
-
-    WEAPON = "weapon"  # 武器
-    ARMOR = "armor"  # 盔甲
-    ACCESSORY = "accessory"  # 饰品
-
-
 ###############################################################################################################################################
 class GearItem(Item):
     """装备类（武器、防具、饰品等），继承自物品基类"""
 
     type: Literal[ItemType.GEAR_ITEM] = Field(default=ItemType.GEAR_ITEM, frozen=True)
-    gear_slot: GearCategory  # 装备槽位
     stat_bonuses: CharacterStats = Field(
         default_factory=lambda: CharacterStats(
             hp=0, max_hp=0, attack=0, defense=0, energy=0, speed=0
         )
     )
-    affixes: List[str] = []  # 延迟词缀列表（同 Card.affixes）
-    modifiers: List[str] = []  # 即时修正词缀列表（同 Card.modifiers）
+    # affixes: List[str] = []  # 延迟词缀列表（同 Card.affixes）
+    # modifiers: List[str] = []  # 即时修正词缀列表（同 Card.modifiers）
 
 
 #######################################################################################################################################
@@ -77,7 +65,12 @@ class ConsumableItem(Item):
         default=ItemType.CONSUMABLE_ITEM, frozen=True
     )
     target_type: TargetType = TargetType.SELF_ONLY  # 使用目标类型，默认仅作用于自身
-    affixes: List[str] = []  # 潜在副作用词缀列表
+    affixes: List[str] = (
+        []
+    )  # 延迟词缀列表；格式"[名称]:触发倾向描述"（如"[燃烧]:可能引发持续扣血"）；使用后独立推理生成 StatusEffect；无持续效果时输出 []
+    modifiers: List[str] = (
+        []
+    )  # 即时修正词缀列表；格式"[名称]:即时修正描述"（如"[穿甲]:无视目标防御"）；直接注入本次仲裁计算；无即时修正时输出 []
 
 
 #######################################################################################################################################

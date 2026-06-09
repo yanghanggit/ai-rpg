@@ -57,10 +57,12 @@ def _generate_consumable_task_hint(
     item = action.item
     actor_short_name = actor_name.split(".")[-1]
     targets_str = "、".join(t.split(".")[-1] for t in action.targets) or "无"
-    effects_line = f"- 潜在词缀：{chr(10).join(item.affixes)}" if item.affixes else ""
-    item_info = f"- 消耗品：{item.name}（{item.description}）" + (
-        f"\n{effects_line}" if effects_line else ""
+    effects_line = f"- 延迟词缀：{chr(10).join(item.affixes)}" if item.affixes else ""
+    modifiers_line = (
+        f"- 即时修正词缀：{chr(10).join(item.modifiers)}" if item.modifiers else ""
     )
+    extra = "".join(f"\n{line}" for line in [effects_line, modifiers_line] if line)
+    item_info = f"- 消耗品：{item.name}（{item.description}）" + extra
 
     if entity_name == actor_name:
         return (
@@ -146,6 +148,13 @@ def _generate_consumable_arbitration_prompt(
             f"\n\n**目标 —— {t_name}**:\n{_fmt_effects(t_effects)}"
         )
 
+    modifiers = action.item.modifiers
+    modifiers_line = (
+        "\n- 即时修正词缀：\n" + "\n".join(f"  - {m}" for m in modifiers)
+        if modifiers
+        else ""
+    )
+
     return f"""# 第 {current_round_number} 回合：消耗品使用结算（以 JSON 格式返回）
 
 ## 使用者
@@ -155,7 +164,7 @@ def _generate_consumable_arbitration_prompt(
 ## 消耗品
 
 - 名称：{action.item.name}
-- 描述：{action.item.description}
+- 描述：{action.item.description}{modifiers_line}
 
 ## 目标
 
@@ -170,6 +179,7 @@ def _generate_consumable_arbitration_prompt(
 根据消耗品描述，推断其对使用者与目标的效果（如恢复 HP、施加增益/减益等）。
 仅依据物品描述中明确写明的数值计算；描述模糊时给出合理推断并体现在 narrative 中。
 目标 HP = max(0, min(计算后 HP, 最大 HP))
+即时修正词缀（若有）声明的修正规则叠加到上述计算之上，在 final_stats 中体现。
 
 若使用者 HP 已为 0，跳过对其的恢复结算
 
@@ -240,6 +250,13 @@ def _generate_compressed_consumable_arbitration_prompt(
             f"\n\n**目标 —— {t_name}**:\n{_fmt_effects(t_effects)}"
         )
 
+    modifiers_compressed = action.item.modifiers
+    modifiers_line_compressed = (
+        "\n- 即时修正词缀：\n" + "\n".join(f"  - {m}" for m in modifiers_compressed)
+        if modifiers_compressed
+        else ""
+    )
+
     return f"""# 第 {current_round_number} 回合：消耗品使用结算（以 JSON 格式返回）
 
 ## 使用者
@@ -249,7 +266,7 @@ def _generate_compressed_consumable_arbitration_prompt(
 ## 消耗品
 
 - 名称：{action.item.name}
-- 描述：{action.item.description}
+- 描述：{action.item.description}{modifiers_line_compressed}
 
 ## 目标
 

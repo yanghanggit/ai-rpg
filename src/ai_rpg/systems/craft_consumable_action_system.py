@@ -31,6 +31,7 @@ class _CraftConsumableResponse(BaseModel):
     description: str = ""
     target_type: TargetType = TargetType.SELF_ONLY
     affixes: List[str] = []
+    modifiers: List[str] = []
 
 
 #######################################################################################################################################
@@ -65,10 +66,8 @@ def _build_craft_prompt(materials: List[MaterialItem]) -> str:
   - enemy_single：作用于单个敌方（伤害、削弱）
   - enemy_all：作用于全体敌方
   - enemy_random_multi：随机多次打击敌方
-- **affixes**：词缀声明列表，两类格式：
-  - 延迟词缀（默认）：`[名称]:触发倾向描述`，仲裁后独立推理生成持续状态效果（如 `[燃烧]:可能引发持续扣血`）
-  - 即时词缀（前缀 !）：`![名称]:即时修正描述`，直接注入本次仲裁计算（如 `![穿甲]:无视目标防御`）
-  - 无任何副作用时输出 []
+- **affixes**：延迟词缀列表，格式 `[名称]:触发倾向描述`，使用后独立推理生成持续状态效果（如 `[燃烧]:可能引发持续扣血`）；无持续效果时输出 []
+- **modifiers**：即时修正词缀列表，格式 `[名称]:即时修正描述`，直接注入本次仲裁计算（如 `[穿甲]:无视目标防御`）；无即时修正时输出 []
 
 ## 输出格式
 
@@ -77,7 +76,8 @@ def _build_craft_prompt(materials: List[MaterialItem]) -> str:
   "name": "消耗品.XXX",
   "description": "...",
   "target_type": "self_only",
-  "affixes": ["[燃烧]:可能引发持续扣血", "![穿甲]:无视目标防御"]
+  "affixes": ["[燃烧]:可能引发持续扣血"],
+  "modifiers": ["[穿甲]:无视目标防御"]
 }}
 ```
 
@@ -160,12 +160,13 @@ class CraftConsumableActionSystem(ReactiveProcessor):
             description=result.description,
             target_type=result.target_type,
             affixes=result.affixes,
+            modifiers=result.modifiers,
         )
         self._update_storage(storage_entity, action.material_names, new_item)
 
         logger.info(
             f"[CraftConsumableActionSystem] 合成完成: {new_item.name} "
-            f"(target={new_item.target_type}, affixes={new_item.affixes})"
+            f"(target={new_item.target_type}, affixes={new_item.affixes}, modifiers={new_item.modifiers})"
         )
 
     ####################################################################################################################################

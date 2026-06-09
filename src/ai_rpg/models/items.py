@@ -35,15 +35,29 @@ class Item(BaseModel):
 
 
 #######################################################################################################################################
+@final
+@unique
+class GearSlot(StrEnum):
+    """装备槽位类型，与 EquipmentComponent 的字段名一一对应"""
+
+    WEAPON = "weapon"  # 武器
+    ARMOR = "armor"  # 盔甲
+    ACCESSORY = "accessory"  # 饰品
+
+
+###############################################################################################################################################
 class GearItem(Item):
     """装备类（武器、防具、饰品等），继承自物品基类"""
 
     type: Literal[ItemType.GEAR_ITEM] = Field(default=ItemType.GEAR_ITEM, frozen=True)
+    gear_slot: GearSlot  # 装备槽位
     stat_bonuses: CharacterStats = Field(
         default_factory=lambda: CharacterStats(
             hp=0, max_hp=0, attack=0, defense=0, energy=0, speed=0
         )
     )
+    affixes: List[str] = []  # 延迟词缀列表（同 Card.affixes）
+    modifiers: List[str] = []  # 即时修正词缀列表（同 Card.modifiers）
 
 
 #######################################################################################################################################

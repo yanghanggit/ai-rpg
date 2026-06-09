@@ -371,7 +371,9 @@ class MonsterPrePlaySystem(ReactiveProcessor):
                 draw_cards_round_number=current_round_number,
                 draw_cards_full_prompt=client.prompt,
             )
-            assert client.response_ai_message is not None, "MonsterPrePlaySystem: AI 消息不能为空"
+            assert (
+                client.response_ai_message is not None
+            ), "MonsterPrePlaySystem: AI 消息不能为空"
             self._game.add_ai_message(entity, client.response_ai_message)
 
             if decision.pass_turn:

@@ -3,7 +3,7 @@
 from typing import List, final
 from ..entitas.components import Component, MutableComponent
 from .cards import Card, Keyword, StatusEffect
-from .items import AnyItem, CostumeItem
+from .items import AnyItem, CostumeItem, GearItem
 from .stats import CharacterStats
 from .registry import register_component_type
 
@@ -312,3 +312,13 @@ class CostumeComponent(MutableComponent):
 
     name: str
     item: CostumeItem
+
+
+############################################################################################################
+@final
+@register_component_type
+class EquippedGearComponent(MutableComponent):
+    """装备组件，记录当前装备中的武器/护甲（GearItem）。"""
+
+    name: str
+    item: GearItem

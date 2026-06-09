@@ -10,6 +10,8 @@ from ..models import (
     CharacterStatsComponent,
     StatusEffectsComponent,
     DrawPileComponent,
+    EquippedGearComponent,
+    GearItem,
     HandComponent,
     MonsterComponent,
     PartyMemberComponent,
@@ -105,8 +107,19 @@ def write_battlefield_block(
         for comp in entity.components:
             if comp.name == CharacterStatsComponent.__name__:
                 _stats_comp = CharacterStatsComponent(**comp.data)
+        equipped_gear_comp = next(
+            (c for c in entity.components if c.name == EquippedGearComponent.__name__),
+            None,
+        )
         if _stats_comp is not None:
-            _final = compute_effective_stats(_stats_comp)
+            _final = compute_effective_stats(
+                _stats_comp,
+                equipped_gear=(
+                    GearItem(**equipped_gear_comp.data["item"])
+                    if equipped_gear_comp is not None
+                    else None
+                ),
+            )
             hp_str = f"{_final.hp}/{_final.max_hp}"
         short = display_name(entity.name)
         log.write(f"    {flabel} [bold]{short}[/]  HP:[yellow]{hp_str}[/]")
@@ -153,11 +166,24 @@ def write_full_entities_block(
                 ),
                 None,
             )
+            equipped_gear_comp = next(
+                (
+                    c
+                    for c in entity.components
+                    if c.name == EquippedGearComponent.__name__
+                ),
+                None,
+            )
             stats = compute_effective_stats(
                 CharacterStatsComponent(**stats_comp.data),
                 (
                     StatusEffectsComponent(**status_effects_comp.data).status_effects
                     if status_effects_comp is not None
+                    else None
+                ),
+                (
+                    GearItem(**equipped_gear_comp.data["item"])
+                    if equipped_gear_comp is not None
                     else None
                 ),
             )

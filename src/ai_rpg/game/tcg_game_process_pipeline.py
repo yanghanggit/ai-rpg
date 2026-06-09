@@ -112,6 +112,9 @@ def create_combat_pipeline(
     from ..systems.use_consumable_item_action_system import (
         UseConsumableItemActionSystem,
     )
+    from ..systems.use_gear_item_action_system import (
+        UseGearItemActionSystem,
+    )
 
     from ..systems.exhaust_cards_action_system import ExhaustCardsActionSystem
     from ..systems.move_to_discard_pile_system import MoveToDiscardPileSystem
@@ -124,6 +127,9 @@ def create_combat_pipeline(
     from ..systems.play_cards_arbitration_system import PlayCardsArbitrationSystem
     from ..systems.use_consumable_item_arbitration_system import (
         UseConsumableItemArbitrationSystem,
+    )
+    from ..systems.use_gear_item_arbitration_system import (
+        UseGearItemArbitrationSystem,
     )
     from ..systems.add_actor_status_effects_action_system import (
         AddActorStatusEffectsActionSystem,
@@ -171,12 +177,14 @@ def create_combat_pipeline(
     processors.add(PartyPrePlaySystem(tcg_game))
     processors.add(PlayCardsActionSystem(tcg_game))
     processors.add(UseConsumableItemActionSystem(tcg_game))
+    processors.add(UseGearItemActionSystem(tcg_game))
     processors.add(MoveToDiscardPileSystem(tcg_game))
     processors.add(ExhaustCardsActionSystem(tcg_game))
     processors.add(PassTurnActionSystem(tcg_game))
     processors.add(RetreatActionSystem(tcg_game))
     processors.add(PlayCardsArbitrationSystem(tcg_game))
     processors.add(UseConsumableItemArbitrationSystem(tcg_game))
+    processors.add(UseGearItemArbitrationSystem(tcg_game))
     processors.add(AddActorStatusEffectsActionSystem(tcg_game, max_effects=2))
 
     # 仲裁结算后，由 stage agent（地牢主视角）决定是否对场内角色追加状态效果或塞牌

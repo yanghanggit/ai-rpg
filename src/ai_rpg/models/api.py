@@ -343,6 +343,22 @@ class DungeonCombatUseConsumableItemResponse(BaseModel):
     message: str
 
 
+@final
+class DungeonCombatUseGearItemRequest(BaseModel):
+    user_name: str
+    game_name: str
+    actor_name: str
+    item_name: str
+    targets: List[str] = []
+
+
+@final
+class DungeonCombatUseGearItemResponse(BaseModel):
+    task_id: str
+    status: str
+    message: str
+
+
 ################################################################################################################
 ################################################################################################################
 ################################################################################################################

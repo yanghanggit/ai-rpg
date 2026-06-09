@@ -28,6 +28,8 @@ from ..models import (
     DungeonCombatPassTurnResponse,
     DungeonCombatUseConsumableItemRequest,
     DungeonCombatUseConsumableItemResponse,
+    DungeonCombatUseGearItemRequest,
+    DungeonCombatUseGearItemResponse,
     TaskStatus,
 )
 from .dungeon_lifecycle import (
@@ -45,6 +47,7 @@ from .dungeon_tasks import (
     execute_play_cards_task,
     # _execute_exhaust_card_task,
     execute_pass_turn_task,
+    execute_use_gear_task,
     execute_use_consumable_task,
 )
 from ..game.game_server import GameServer
@@ -717,6 +720,76 @@ async def dungeon_combat_use_consumable(
         task_id=use_consumable_task.task_id,
         status=TaskStatus.RUNNING.value,
         message="使用消耗品任务已启动，请通过会话消息查询结果",
+    )
+
+
+###################################################################################################################################################################
+@dungeon_gameplay_api_router.post(
+    path="/api/dungeon/combat/use_gear/v1/",
+    response_model=DungeonCombatUseGearItemResponse,
+)
+async def dungeon_combat_use_gear(
+    payload: DungeonCombatUseGearItemRequest,
+    game_server: CurrentGameServer,
+) -> DungeonCombatUseGearItemResponse:
+    """地下城战斗使用装备接口。
+
+    触发玩家在战斗中使用背包内装备的后台任务，立即返回任务ID。
+    """
+
+    logger.info(
+        f"/api/dungeon/combat/use_gear/v1/: user={payload.user_name} "
+        f"actor={payload.actor_name} item={payload.item_name}"
+    )
+
+    current_room = game_server.get_room(payload.user_name)
+    if current_room is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="没有登录，请先登录",
+        )
+
+    async with current_room._lock:
+        rpg_game = _validate_dungeon_prerequisites(
+            user_name=payload.user_name,
+            game_server=game_server,
+        )
+
+        if not rpg_game.current_dungeon.is_ongoing:
+            logger.error(f"玩家 {payload.user_name} 使用装备失败: 战斗未在进行中")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="战斗未在进行中",
+            )
+
+        last_round = rpg_game.current_dungeon.latest_round
+        if last_round is None or last_round.is_completed:
+            logger.error(f"玩家 {payload.user_name} 使用装备失败: 当前没有未完成的回合")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="当前没有未完成的回合",
+            )
+
+    use_gear_task = game_server.create_task()
+    asyncio.create_task(
+        execute_use_gear_task(
+            use_gear_task.task_id,
+            payload.user_name,
+            payload.actor_name,
+            payload.item_name,
+            payload.targets,
+            game_server,
+        )
+    )
+
+    logger.info(
+        f"📝 创建使用装备后台任务: task_id={use_gear_task.task_id}, user={payload.user_name}"
+    )
+
+    return DungeonCombatUseGearItemResponse(
+        task_id=use_gear_task.task_id,
+        status=TaskStatus.RUNNING.value,
+        message="使用装备任务已启动，请通过会话消息查询结果",
     )
 
 

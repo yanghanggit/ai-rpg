@@ -23,7 +23,9 @@ from ..models import (
     TargetType,
     HandComponent,
     InventoryComponent,
+    UseGearItemAction,
     UseConsumableItemAction,
+    GearItem,
 )
 from ..entitas import Entity, Matcher
 
@@ -482,6 +484,78 @@ def activate_use_consumable(
         resolved_targets,
     )
     return True, f"成功为角色 {actor_name} 激活消耗品使用（物品: {item_name}）"
+
+
+###################################################################################################################################################################
+def activate_use_gear(
+    tcg_game: TCGGame,
+    actor_name: str,
+    item_name: str,
+    targets: List[str],
+) -> Tuple[bool, str]:
+    """让指定远征队员在战斗中使用背包内的指定装备。
+
+    装备使用不消耗 energy，采用替换逻辑：目标只保留一件已装备 GearItem。
+    """
+    entity, error_msg = _validate_actor_turn(tcg_game, actor_name)
+    if entity is None:
+        logger.error(f"activate_use_gear: {error_msg}")
+        return False, error_msg
+
+    if not entity.has(PartyMemberComponent):
+        msg = f"角色 {actor_name} 不是远征队员，怪物无法使用装备"
+        logger.error(msg)
+        return False, msg
+
+    if not entity.has(InventoryComponent):
+        msg = f"角色 {actor_name} 没有 InventoryComponent"
+        logger.error(msg)
+        return False, msg
+
+    inventory_comp = entity.get(InventoryComponent)
+    selected_item = next((i for i in inventory_comp.items if i.name == item_name), None)
+    if selected_item is None:
+        msg = (
+            f"角色 {actor_name} 背包中找不到装备 '{item_name}'，"
+            f"当前背包: {[i.name for i in inventory_comp.items]}"
+        )
+        logger.error(msg)
+        return False, msg
+
+    # from ..models import GearItem as _GearItem
+
+    if not isinstance(selected_item, GearItem):
+        msg = f"物品 '{item_name}' 不是装备（类型: {type(selected_item).__name__}）"
+        logger.error(msg)
+        return False, msg
+
+    if selected_item.target_type == TargetType.CARD:
+        msg = "当前版本暂不支持 target_type=card 的装备使用"
+        logger.error(msg)
+        return False, msg
+
+    resolved_targets, resolve_err = _resolve_targets(
+        selected_item.target_type, 1, entity, targets, tcg_game
+    )
+    if resolve_err:
+        logger.error(f"activate_use_gear: {resolve_err}")
+        return False, resolve_err
+
+    if len(resolved_targets) != 1:
+        msg = f"装备使用要求单目标，解析结果为 {resolved_targets}"
+        logger.error(msg)
+        return False, msg
+
+    logger.debug(
+        f"为角色 {actor_name} 激活装备使用，物品: {selected_item.name} 目标: {resolved_targets}"
+    )
+    entity.replace(
+        UseGearItemAction,
+        entity.name,
+        selected_item,
+        resolved_targets,
+    )
+    return True, f"成功为角色 {actor_name} 激活装备使用（物品: {item_name}）"
 
 
 ###################################################################################################################################################################

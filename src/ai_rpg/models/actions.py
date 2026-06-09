@@ -3,7 +3,7 @@
 from typing import Dict, List, Optional, final
 from ..entitas.components import Component
 from .cards import Card
-from .items import ConsumableItem, CostumeItem, MaterialItem
+from .items import ConsumableItem, CostumeItem, GearItem, MaterialItem
 from .registry import register_action_component_type, register_component_type
 
 
@@ -210,6 +210,20 @@ class UseConsumableItemAction(Component):
     name: str
     item: ConsumableItem  # 使用的消耗品对象（从 InventoryComponent 检索后填入）
     targets: List[str]  # 技能目标角色名列表（由 target_type 解析后填入）
+
+
+############################################################################################################
+@final
+@register_action_component_type
+@register_component_type
+class UseGearItemAction(Component):
+    """触发角色在战斗中使用背包内装备，由系统替换目标已装备 GearItem 并由 LLM 仲裁附加效果。"""
+
+    name: str
+    item: GearItem  # 使用的装备对象（从 InventoryComponent 检索后填入）
+    targets: List[
+        str
+    ]  # 装备目标角色名列表（由 target_type 解析后填入；当前期望单目标）
 
 
 ############################################################################################################

@@ -192,9 +192,22 @@ def _enter_dungeon_stage(
     # 6. 初始化战斗状态
     dungeon.start_combat(Combat(name=stage_entity.name))
 
-    # 7. 清除每回合可变状态（手牌）
-    tcg_game.clear_round_state()
+    # 7. 清除关卡间临时状态（手牌、状态效果、装备）
+    clear_between_stages(tcg_game)
     return True
+
+
+###################################################################################################################################################################
+def clear_between_stages(tcg_game: TCGGame) -> None:
+    """清除关卡间的临时状态。在每次进入新关卡前调用。
+
+    - 清除所有角色的手牌与回合动态属性（HandComponent / RoundStatsComponent）
+    - 清除所有角色的状态效果（StatusEffectsComponent）
+    - 清除所有角色的装备并归还玩家背包（EquippedGearComponent → InventoryComponent）
+    """
+    tcg_game.clear_round_state()
+    tcg_game.clear_status_effects()
+    tcg_game.clear_equipped_gear()
 
 
 ###################################################################################################################################################################
@@ -481,13 +494,10 @@ def exit_dungeon_and_return_home(tcg_game: TCGGame, dungeon: Dungeon) -> None:
             f"[return_home] 最终确认 {party_member_entity.name} 场景={final_stage.name if final_stage else 'None'!r}"
         )
 
-    # 7. 清除每回合可变状态（手牌）
-    tcg_game.clear_round_state()
+    # 8. 清除装备组件并归还背包
+    clear_between_stages(tcg_game)
 
-    # 8. 清除状态效果组件
-    tcg_game.clear_status_effects()
-
-    # 10. 将运行时实体状态同步回序列化字段（stage_transition 只更新内存，必须显式 flush）
+    # 9. 将运行时实体状态同步回序列化字段（stage_transition 只更新内存，必须显式 flush）
     tcg_game.flush_entities()
 
 

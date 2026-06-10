@@ -372,7 +372,6 @@ async def execute_use_consumable_task(
 async def execute_use_gear_task(
     task_id: str,
     user_name: str,
-    actor_name: str,
     item_name: str,
     targets: List[str],
     game_server: GameServer,
@@ -392,9 +391,7 @@ async def execute_use_gear_task(
             if not rpg_game.current_dungeon.is_ongoing:
                 raise ValueError("战斗未在进行中")
 
-            success, message = activate_use_gear(
-                rpg_game, actor_name, item_name, targets
-            )
+            success, message = activate_use_gear(rpg_game, item_name, targets)
             if not success:
                 raise ValueError(f"使用装备失败: {message}")
 

@@ -424,18 +424,16 @@ async def dungeon_combat_use_consumable(
 async def dungeon_combat_use_gear(
     user_name: str,
     game_name: str,
-    actor_name: str,
     item_name: str,
     targets: List[str],
 ) -> DungeonCombatUseGearItemResponse:
-    """发起战斗中使用装备请求，返回后台任务信息。"""
+    """使用玩家背包内装备，返回后台任务信息。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
             server_config.base_url + "/api/dungeon/combat/use_gear/v1/",
             json=DungeonCombatUseGearItemRequest(
                 user_name=user_name,
                 game_name=game_name,
-                actor_name=actor_name,
                 item_name=item_name,
                 targets=targets,
             ).model_dump(),

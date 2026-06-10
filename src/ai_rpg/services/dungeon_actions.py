@@ -501,40 +501,59 @@ def activate_use_consumable(
 ###################################################################################################################################################################
 def activate_use_gear(
     tcg_game: TCGGame,
-    actor_name: str,
     item_name: str,
     targets: List[str],
 ) -> Tuple[bool, str]:
-    """让指定远征队员在战斗中使用背包内的指定装备。
+    """使用队伍背包内的指定装备。装备是队伍级别的行为，Action 挂在 Player 实体上。
 
+    不受当前行动者死活或轮次限制，但要求当前行动角色属于玩家阵营（PartyMemberComponent）。
     装备使用不消耗 energy，采用替换逻辑：目标只保留一件已装备 GearItem。
+
+    Args:
+        tcg_game: TCG游戏实例
+        item_name: 要使用的装备名称（须存在于玩家 InventoryComponent 中）
+        targets: 目标名称列表，可为 []；target_type 为 SELF_ONLY 时系统自动覆盖
+
+    Returns:
+        tuple[bool, str]: (是否成功, 结果消息)
     """
-    entity, error_msg = _validate_actor_turn(tcg_game, actor_name)
-    if entity is None:
-        logger.error(f"activate_use_gear: {error_msg}")
-        return False, error_msg
-
-    if not entity.has(PartyMemberComponent):
-        msg = f"角色 {actor_name} 不是远征队员，怪物无法使用装备"
+    if not tcg_game.current_dungeon.is_ongoing:
+        msg = "使用装备失败：战斗未在进行中"
         logger.error(msg)
         return False, msg
 
-    if not entity.has(InventoryComponent):
-        msg = f"角色 {actor_name} 没有 InventoryComponent"
+    latest_round = tcg_game.current_dungeon.latest_round
+    if latest_round is None:
+        msg = "使用装备失败：当前没有进行中的回合"
         logger.error(msg)
         return False, msg
 
-    inventory_comp = entity.get(InventoryComponent)
+    current_turn_actor_name = latest_round.current_turn_actor_name
+    if current_turn_actor_name is None:
+        msg = "使用装备失败：当前没有行动角色"
+        logger.error(msg)
+        return False, msg
+
+    current_turn_entity = tcg_game.get_actor_entity(current_turn_actor_name)
+    if current_turn_entity is None or not current_turn_entity.has(PartyMemberComponent):
+        msg = f"使用装备失败：当前行动角色 {current_turn_actor_name} 不属于玩家阵营"
+        logger.error(msg)
+        return False, msg
+
+    player_entity = tcg_game.get_player_entity()
+    assert player_entity is not None, "activate_use_gear: player_entity is None"
+    assert player_entity.has(PartyMemberComponent), "玩家实体缺少 PartyMemberComponent"
+    assert player_entity.has(InventoryComponent), "玩家实体缺少 InventoryComponent"
+
+    inventory_comp = player_entity.get(InventoryComponent)
     selected_item = next((i for i in inventory_comp.items if i.name == item_name), None)
     if selected_item is None:
         msg = (
-            f"角色 {actor_name} 背包中找不到装备 '{item_name}'，"
+            f"玩家背包中找不到装备 '{item_name}'，"
             f"当前背包: {[i.name for i in inventory_comp.items]}"
         )
         logger.error(msg)
         return False, msg
-
-    # from ..models import GearItem as _GearItem
 
     if not isinstance(selected_item, GearItem):
         msg = f"物品 '{item_name}' 不是装备（类型: {type(selected_item).__name__}）"
@@ -547,7 +566,7 @@ def activate_use_gear(
         return False, msg
 
     resolved_targets, resolve_err = _resolve_targets(
-        selected_item.target_type, 1, entity, targets, tcg_game
+        selected_item.target_type, 1, player_entity, targets, tcg_game
     )
     if resolve_err:
         logger.error(f"activate_use_gear: {resolve_err}")
@@ -559,15 +578,15 @@ def activate_use_gear(
         return False, msg
 
     logger.debug(
-        f"为角色 {actor_name} 激活装备使用，物品: {selected_item.name} 目标: {resolved_targets}"
+        f"为玩家 {player_entity.name} 激活装备使用，物品: {selected_item.name} 目标: {resolved_targets}"
     )
-    entity.replace(
+    player_entity.replace(
         UseGearItemAction,
-        entity.name,
+        player_entity.name,
         selected_item,
         resolved_targets,
     )
-    return True, f"成功为角色 {actor_name} 激活装备使用（物品: {item_name}）"
+    return True, f"成功激活装备使用（物品: {item_name}）"
 
 
 ###################################################################################################################################################################

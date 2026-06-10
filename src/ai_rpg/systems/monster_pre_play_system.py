@@ -216,7 +216,6 @@ class MonsterPrePlaySystem(ReactiveProcessor):
     @override
     def get_trigger(self) -> Dict[Matcher, GroupEvent]:
         return {
-            Matcher(PlayCardsAction): GroupEvent.ADDED,
             Matcher(MonsterTurnAction): GroupEvent.ADDED,
         }
 
@@ -225,8 +224,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
     def filter(self, entity: Entity) -> bool:
         """只处理怪物实体且未死亡的情况"""
         return (
-            entity.has(PlayCardsAction)
-            and entity.has(MonsterTurnAction)
+            entity.has(MonsterTurnAction)
             and entity.has(HandComponent)
             and entity.has(MonsterComponent)
             and not entity.has(DeathComponent)
@@ -377,7 +375,6 @@ class MonsterPrePlaySystem(ReactiveProcessor):
             self._game.add_ai_message(entity, client.response_ai_message)
 
             if decision.pass_turn:
-                entity.remove(PlayCardsAction)
                 entity.replace(PassTurnAction, entity.name)
                 logger.debug(
                     f"MonsterPrePlaySystem: [{entity.name}] 决策过牌（跳过本次出牌机会）"
@@ -394,8 +391,9 @@ class MonsterPrePlaySystem(ReactiveProcessor):
             if selected_card is None:
                 logger.error(
                     f"MonsterPrePlaySystem: [{entity.name}] LLM 返回的卡牌名 '{decision.card_name}' "
-                    f"不在手牌中：{[c.name for c in hand_comp.cards]}，保留空卡"
+                    f"不在手牌中：{[c.name for c in hand_comp.cards]}，执行过牌"
                 )
+                entity.replace(PassTurnAction, entity.name)
                 return
 
             # 根据 target_type 解析出牌目标
@@ -450,7 +448,8 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         except Exception as e:
             logger.error(f"{client.response_content}")
             logger.error(
-                f"MonsterPrePlaySystem: [{entity.name}] 解析 LLM 响应失败，保留空卡。Exception: {e}"
+                f"MonsterPrePlaySystem: [{entity.name}] 解析 LLM 响应失败，执行过牌。Exception: {e}"
             )
+            entity.replace(PassTurnAction, entity.name)
 
     ####################################################################################################################################

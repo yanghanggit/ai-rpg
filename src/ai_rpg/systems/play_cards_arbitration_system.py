@@ -397,18 +397,11 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
     async def _request_combat_arbitration(
         self, stage_entity: Entity, actor_entity: Entity
     ) -> None:
-        """驱动单次出牌的完整仲裁流程，空卡走放弃行动分支。"""
+        """驱动单次出牌的完整仲裁流程。"""
         assert actor_entity.has(
             PlayCardsAction
         ), f"实体 {actor_entity.name} 缺少 PlayCardsAction 组件！"
         play_cards_action = actor_entity.get(PlayCardsAction)
-        if play_cards_action.card.name == "":
-            # 空卡表示 MonsterPlayDecisionSystem 推理失败，记录放弃行动结果
-            logger.warning(
-                f"PlayCardsArbitrationSystem: [{actor_entity.name}] 出牌为空卡，执行放弃行动"
-            )
-            self._apply_forfeit_result(stage_entity, actor_entity)
-            return
 
         target_stats: Dict[str, CharacterStats] = {}
 
@@ -486,35 +479,6 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
         )
 
         self._game.process_zero_health_entities()
-
-    #######################################################################################################################################
-    def _apply_forfeit_result(self, stage_entity: Entity, actor_entity: Entity) -> None:
-        """空卡时以"放弃行动"作为结算结果，广播到场景并写入回合记录。"""
-        short_name = actor_entity.name.split(".")[-1]
-        combat_log = f"[{short_name}|放弃行动]"
-        narrative = f"{short_name}迟疑片刻，最终放弃了这回合的行动。"
-
-        current_round_number = len(self._game.current_dungeon.current_rounds or [])
-        self._game.broadcast_to_stage(
-            entity=stage_entity,
-            agent_event=CombatArbitrationEvent(
-                message=_generate_combat_arbitration_broadcast(
-                    combat_log,
-                    narrative,
-                    current_round_number,
-                    actor_entity.name,
-                ),
-                stage=stage_entity.name,
-                combat_log=combat_log,
-                narrative=narrative,
-            ),
-            exclude_entities={stage_entity},
-        )
-
-        latest_round = self._game.current_dungeon.latest_round
-        assert latest_round is not None, "current_rounds 不应为 None"
-        latest_round.combat_log.append(combat_log)
-        latest_round.narrative.append(narrative)
 
     #######################################################################################################################################
     def _apply_arbitration_result(

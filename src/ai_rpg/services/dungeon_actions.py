@@ -19,7 +19,6 @@ from ..models import (
     DeathComponent,
     RetreatAction,
     MonsterTurnAction,
-    Card,
     TargetType,
     HandComponent,
     InventoryComponent,
@@ -351,10 +350,7 @@ def activate_monster_play_trigger(
 
     logger.debug(f"为怪物 {actor_name} 触发出牌决策，由 MonsterPrePlaySystem 自动选牌")
 
-    # 使用空卡占位，真正的卡牌和目标由 MonsterPrePlaySystem 在 pipeline 中自动替换
-    entity.replace(PlayCardsAction, entity.name, Card(name="", description=""), [], "")
-
-    # 核心标记：添加 MonsterTurnAction 组件，触发 MonsterPrePlaySystem 的决策流程
+    # 添加 MonsterTurnAction 标记，触发 MonsterPrePlaySystem 的决策流程
     entity.replace(MonsterTurnAction, entity.name)
 
     return True, f"成功为怪物 {actor_name} 触发出牌决策"

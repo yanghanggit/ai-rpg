@@ -83,11 +83,11 @@ class PartyPrePlaySystem(ReactiveProcessor):
 
         current_round_number = len(self._game.current_dungeon.current_rounds or [])
 
-        # 只为 action 为空且卡牌非空的实体创建 DeepSeekClient
+        # 只为 action 为空的实体创建 DeepSeekClient
         chat_clients: List[DeepSeekClient] = []
         for entity in entities:
             action = entity.get(PlayCardsAction)
-            if action.action != "" or action.card.name == "":
+            if action.action != "":
                 continue
 
             prompt = _generate_narration_prompt(

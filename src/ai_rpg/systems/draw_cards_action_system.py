@@ -1,13 +1,5 @@
 """
 卡牌抽取系统模块
-
-从 DrawPileComponent 抽取手牌填充 HandComponent。
-DrawPile 耗尽时自动将 DiscardPile 洗牌补入；若 DRAW 阶段存在状态效果，
-则调用一次 LLM 对已抽得的手牌进行数值调整，否则直接写入。
-
-主要组件：
-- DrawCardsActionSystem: 核心系统类
-- AdjustedCardEntry / DrawAdjustResponse: DRAW 效果调整 LLM 响应的 Pydantic 解析模型
 """
 
 import random
@@ -149,11 +141,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     def _draw_from_pile(self, entity: Entity, n: int) -> List[Card]:
-        """从 DrawPile 抽取 n 张牌（FIFO）。
-
-        DrawPile 不足时自动将 DiscardPile 洗牌整体补入后继续抽取。
-        两堆均空时插入兜底牌「等待」，保证手牌不为空。
-        """
+        """从 DrawPile 抽取 n 张牌（FIFO）。"""
         draw_pile = entity.get(DrawPileComponent)
         discard_pile = entity.get(DiscardPileComponent)
         assert draw_pile is not None and discard_pile is not None

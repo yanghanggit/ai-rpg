@@ -1,8 +1,4 @@
-"""战斗仲裁动作系统模块。
-
-响应 PlayCardsAction 事件，对每次单张出牌立即进行 AI 仲裁结算。
-每次 pipeline.process() 只有一个角色出牌（ActionCleanupSystem 保证），仲裁随即触发。
-"""
+"""战斗仲裁动作系统模块。"""
 
 from typing import Dict, Final, List, final
 from loguru import logger
@@ -56,8 +52,8 @@ def _generate_stats_update_notification(final_hp: int, max_hp: int) -> str:
 
 
 #######################################################################################################################################
-def _generate_defeat_notification() -> str:
-    return """# 你的HP已归零，失去战斗能力！"""
+# def _generate_defeat_notification() -> str:
+#     return """# 你的HP已归零，失去战斗能力！"""
 
 
 #######################################################################################################################################

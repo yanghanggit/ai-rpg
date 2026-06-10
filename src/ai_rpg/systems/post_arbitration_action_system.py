@@ -1,8 +1,4 @@
-"""仲裁后效果系统模块
-
-每次战斗仲裁结算完成后，决定是否对场内角色施加额外效果。
-当前支持两条处理路径：Stage（场景级干预）和 Actor（角色级反应，暂为 stub）。
-"""
+"""仲裁后效果系统模块"""
 
 from enum import StrEnum, unique
 import random
@@ -106,11 +102,7 @@ def _generate_compressed_stage_post_arbitration_prompt(
     current_turn_actor_name: str,
     current_round_number: int,
 ) -> str:
-    """生成压缩版仲裁后场景效果提示词（仅动态感知部分，省略静态规则/格式说明）
-
-    保留内容：回合标题、出牌者说明、存活角色当前状态。
-    省略内容：## 你的本质与职责、状态效果字段说明、塞牌字段说明、description 规范、JSON 示例。
-    """
+    """生成压缩版仲裁后场景效果提示词（仅动态感知部分，省略静态规则/格式说明）"""
 
     actors_summary = _build_actors_summary(game, actor_entities)
 
@@ -131,9 +123,6 @@ def _generate_stage_post_arbitration_prompt(
     current_round_number: int,
 ) -> str:
     """生成仲裁后场景效果提示词
-
-    要求 stage agent 以地牢主视角，在仲裁结算后决定是否对场内角色施加新效果或塞牌。
-    仲裁结算的完整内容（combat_log/narrative）已在 stage agent 的上下文中，无需重复传入。
 
     Args:
         actor_entities: 场内所有存活角色实体集合
@@ -250,20 +239,7 @@ def _generate_stage_post_arbitration_prompt(
 #######################################################################################################################################
 @final
 class PostArbitrationActionSystem(ReactiveProcessor):
-    """仲裁后效果系统
-
-    每次仲裁结算成功后触发，对 Stage 和 Actor 两类实体分批处理：
-
-    - Stage：combat stage 的 LLM agent 以地牢主视角决定是否干预，
-      可追加状态效果或向角色手牌塞入卡牌。
-    - Actor（暂为 stub）：预留给角色级仲裁后反应，当前未激活。
-
-    战斗未进行中时整批跳过。
-
-    参数：
-        strategy: 塞牌位置策略（APPEND 追加尾部 / RANDOM_INSERT 随机插入）
-        use_compressed_prompt: 是否使用压缩提示词（默认 True）
-    """
+    """仲裁后效果系统"""
 
     def __init__(
         self,

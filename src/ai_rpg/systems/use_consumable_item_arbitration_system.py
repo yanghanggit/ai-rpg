@@ -1,7 +1,4 @@
-"""使用消耗品仲裁系统模块。
-
-响应 UseConsumableItemAction 事件，调用 LLM 仲裁消耗品效果（HP/状态效果描述更新）。
-"""
+"""使用消耗品仲裁系统模块。"""
 
 from typing import Dict, Final, List, final
 from loguru import logger

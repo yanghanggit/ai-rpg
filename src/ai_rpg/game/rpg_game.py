@@ -160,12 +160,20 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         """添加AI响应消息到实体的LLM上下文"""
         assert isinstance(ai_message, AIMessage)
         assert ai_message.content != "", "ai_message content should not be empty"
+
+        # 如果有额外的属性，就设置到 ai_message 上。
         if kwargs:
             for key, value in kwargs.items():
                 setattr(ai_message, key, value)
+
+        # 所以如果有 kwargs 就打印一下。
         logger.debug(
             f"add_ai_message: {entity.name} 添加LLM context:\n{ai_message.content}"
         )
+        if kwargs:
+            logger.debug(f"kwargs: {kwargs}")
+
+        # 最后添加到上下文中。
         agent_context = self.get_agent_context(entity)
         agent_context.context.append(ai_message)
 

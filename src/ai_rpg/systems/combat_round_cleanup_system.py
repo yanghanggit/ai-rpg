@@ -105,17 +105,6 @@ def _generate_round_end_effects_prompt(
 class CombatRoundCleanupSystem(ExecuteProcessor):
     """
     战斗回合清理系统。
-
-    目标：在每个回合标记完成后，清除该回合遗留的瞬态数据，
-          使 CombatRoundTransitionSystem 能安全地创建下一回合。
-
-    Pipeline 位置：CombatOutcomeSystem（后）→ 本系统 → CombatRoundTransitionSystem（前）
-
-    前置条件：
-    - 当前战斗处于 ONGOING 状态
-    - 已存在至少一个回合，且最新回合已完成
-
-    不满足上述条件时静默跳过，对外无副作用。
     """
 
     ############################################################################################################
@@ -187,15 +176,7 @@ class CombatRoundCleanupSystem(ExecuteProcessor):
 
     ################################################################################################################
     async def process_round_end_effects(self) -> None:
-        """并发为所有持有 ROUND_END 效果的实体调用 LLM 推理 HP 变化。
-
-        流程：
-        1. 过滤所有含 ROUND_END 效果的实体；无则直接返回
-        2. 为每个实体构造 DeepSeekClient（使用自身 agent 上下文）
-        3. 并发调用 batch_chat
-        4. 逐个解析响应 → set_character_hp → 写入 agent 上下文
-        5. 调用 process_zero_health_entities 处理击败逻辑
-        """
+        """并发为所有持有 ROUND_END 效果的实体调用 LLM 推理 HP 变化。"""
         chat_clients: List[DeepSeekClient] = []
 
         for entity in self._game.get_group(
@@ -218,19 +199,25 @@ class CombatRoundCleanupSystem(ExecuteProcessor):
                 f"{[e.name for e in round_end_effects]}"
             )
 
-            if not entity.has(CharacterStatsComponent):
-                logger.warning(
-                    f"[{entity.name}] 有 ROUND_END 效果但缺少 CharacterStatsComponent，跳过"
-                )
-                continue
-
+            # if not entity.has(CharacterStatsComponent):
+            #     logger.warning(
+            #         f"[{entity.name}] 有 ROUND_END 效果但缺少 CharacterStatsComponent，跳过"
+            #     )
+            #     continue
+            assert entity.has(
+                CharacterStatsComponent
+            ), f"Entity {entity.name} has ROUND_END effects but is missing CharacterStatsComponent"
             current_stats = self._game.compute_character_stats(entity)
+
+            # 生成提示词，准备调用 LLM
             prompt = _generate_round_end_effects_prompt(
                 entity_name=entity.name,
                 current_hp=current_stats.hp,
                 max_hp=current_stats.max_hp,
                 round_end_effects=round_end_effects,
             )
+
+            # 创建 DeepSeekClient 并发调用 LLM
             chat_clients.append(
                 DeepSeekClient(
                     name=entity.name,
@@ -248,11 +235,13 @@ class CombatRoundCleanupSystem(ExecuteProcessor):
         logger.debug(f"开始并发结算 {len(chat_clients)} 个实体的 ROUND_END 效果...")
         await DeepSeekClient.batch_chat(clients=chat_clients)
 
+        # 处理每个实体的 LLM 响应，更新 HP 并写入上下文
         for chat_client in chat_clients:
             found_entity = self._game.get_entity_by_name(chat_client.name)
             assert found_entity is not None, f"无法找到角色实体: {chat_client.name}"
             self._apply_round_end_effect_response(found_entity, chat_client)
 
+        # 结算后处理 HP 为 0 的实体（如标记死亡、触发后续效果等）
         self._game.process_zero_health_entities()
 
     ################################################################################################################

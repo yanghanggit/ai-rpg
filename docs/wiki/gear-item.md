@@ -33,11 +33,12 @@
 
 | 时机 | 操作 |
 | ------ | ------ |
-| 战斗中使用装备 | 装备从 `InventoryComponent` pop，`replace` 挂载到目标 |
-| 目标已有装备时再次装备 | 旧装备被覆盖丢失（当前不归还） |
-| 进入下一关 / 退出地下城 | `clear_between_stages` → `clear_equipped_gear`：所有装备归还玩家背包，组件移除 |
+| 战斗中使用装备 | 原物品**始终保留**在 `InventoryComponent`；系统将其深拷贝（`model_copy`）写入目标的 `EquippedGearComponent` |
+| 同名装备已被某实体激活时 | 先全局扫描移除所有持有该名称的 `EquippedGearComponent`，确保同一装备全局唯一激活 |
+| 目标已装备其他物品时再次装备 | `replace` 覆盖目标已有 `EquippedGearComponent`；被覆盖的物品同样保留在 `InventoryComponent`，不会丢失 |
+| 进入下一关 / 退出地下城 | `clear_between_stages` → `clear_equipped_gear`：移除所有角色的 `EquippedGearComponent`；物品始终在 `InventoryComponent` 中，无需归还 |
 
-`clear_between_stages` 同时清除手牌（`RoundStatsComponent`）与状态效果（`StatusEffectsComponent`），装备归还是其中一步。
+`clear_between_stages` 同时清除手牌与回合动态属性（`HandComponent` / `RoundStatsComponent`）以及状态效果（`StatusEffectsComponent`），移除装备组件是其中一步。
 
 ---
 

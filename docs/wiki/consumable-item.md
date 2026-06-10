@@ -30,6 +30,6 @@
 ## 系统边界
 
 - 消耗品使用不影响 `EquippedGearComponent`，不触发装备仲裁。
-- `target_type = CARD` 暂不支持，服务层会拒绝此调用。
+- `target_type = CARD` 当前无专属处理逻辑，不应使用；如需阻断，需在服务层单独添加检查（`GearItem` 已有对应守卫，`ConsumableItem` 尚未添加）。
 
 → 参见：[装备系统（GearItem）](gear-item.md)

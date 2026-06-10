@@ -5,10 +5,15 @@ from ..game.tcg_game import TCGGame
 
 
 ####################################################################################################################################
-def _format_announce_notification(
-    announcer_name: str, announcement_message: str
-) -> str:
-    return f"""# {announcer_name} 发布公告: {announcement_message}"""
+def _format_local_announce(announcer_name: str, content: str) -> str:
+    """公告者所在场景内的公告提示词格式。"""
+    return f"# {announcer_name} 发布公告\n{content}"
+
+
+####################################################################################################################################
+def _format_remote_announce(source_stage_name: str, content: str) -> str:
+    """其他场景收到的远端公告提示词格式。"""
+    return f"# 来自「{source_stage_name}」的公告\n{content}"
 
 
 ####################################################################################################################################
@@ -70,15 +75,22 @@ class AnnounceActionSystem(ReactiveProcessor):
 
         # 广播公告事件给所有家园场景的玩家
         for stage_entity in home_stage_entities:
+            is_local = stage_entity is current_stage_entity
+            if is_local:
+                # 公告者所在场景：显示角色名 + 公告内容
+                formatted_message = _format_local_announce(
+                    entity.name, announce_action.message
+                )
+            else:
+                # 其他场景：显示公告来源场景名 + 公告内容
+                formatted_message = _format_remote_announce(
+                    current_stage_entity.name, announce_action.message
+                )
 
-            # 广播每个同类型的stage
             self._game.broadcast_to_stage(
                 stage_entity,
                 AnnounceEvent(
-                    message=_format_announce_notification(
-                        entity.name,
-                        announce_action.message,
-                    ),
+                    message=formatted_message,
                     actor=entity.name,
                     stage=stage_entity.name,
                     content=announce_action.message,

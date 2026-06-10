@@ -56,10 +56,17 @@ class MoveToDiscardPileSystem(ReactiveProcessor):
             before_count = len(hand_comp.cards)
             hand_comp.cards = [c for c in hand_comp.cards if c is not played_card]
 
-            discard_pile.cards.append(played_card)
+            # 若该牌是 DRAW 阶段的调整副本，则还原为原始牌入堆，避免修改值污染牌库循环
+            card_to_store = (
+                played_card.original_data
+                if played_card.original_data is not None
+                else played_card
+            )
+            discard_pile.cards.append(card_to_store)
 
             logger.debug(
                 f"  [{entity.name}] 手牌 {before_count} → {len(hand_comp.cards)}，"
                 f"DiscardPile 累计 {len(discard_pile.cards)} 张"
-                f"（牌：{played_card.name}，source={played_card.source!r}）"
+                f"（牌：{card_to_store.name}，source={card_to_store.source!r}，"
+                f"{'已还原原始牌' if played_card.original_data is not None else '原始牌直接入堆'}）"
             )

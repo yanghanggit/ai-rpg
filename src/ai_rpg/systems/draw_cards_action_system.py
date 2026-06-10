@@ -331,12 +331,11 @@ class DrawCardsActionSystem(ReactiveProcessor):
                     )
                     entry.target_type = original_cards[i].target_type.value
 
+                orig = original_cards[i]
                 adjusted_cards.append(
                     Card(
-                        uuid=original_cards[
-                            i
-                        ].uuid,  # 保留副本 uuid，确保跨系统身份一致
-                        name=original_cards[i].name,  # 保持原名
+                        uuid=orig.uuid,  # 保留副本 uuid，确保跨系统身份一致
+                        name=orig.name,  # 保持原名
                         description=entry.description,
                         affixes=entry.affixes,
                         modifiers=entry.modifiers,
@@ -345,7 +344,11 @@ class DrawCardsActionSystem(ReactiveProcessor):
                         damage_dealt=entry.damage_dealt,
                         hit_count=entry.hit_count,
                         target_type=TargetType(entry.target_type),
-                        source=entity.name,
+                        source=orig.source,
+                        # 首次修改时快照原始牌；若原始牌本身已是副本则保留其快照，确保还原点始终指向最原始版本
+                        original_data=(
+                            orig if orig.original_data is None else orig.original_data
+                        ),
                     )
                 )
 

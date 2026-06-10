@@ -5,7 +5,7 @@ CombatPhase、StatusEffect、Card、DiceValue、Keyword
 """
 
 from enum import IntEnum, unique
-from typing import List, final
+from typing import List, Optional, final
 from uuid import uuid4
 from pydantic import BaseModel, Field, field_validator
 from .target_type import TargetType
@@ -68,6 +68,12 @@ class Card(BaseModel):
     target_type: TargetType = TargetType.ENEMY_SINGLE  # 出牌目标类型，决定目标约束策略
     source: str = ""  # 卡牌来源（生成/注入者名称）；空字符串表示来源未知
     uuid: str = Field(default_factory=lambda: str(uuid4()))  # 全局唯一标识符
+    original_data: Optional["Card"] = (
+        None  # 原始牌快照；None=未被修改过；首次修改时写入，后续修改不覆盖
+    )
+
+
+Card.model_rebuild()  # 解析 original_data 的前向引用
 
 
 ###############################################################################################################################################

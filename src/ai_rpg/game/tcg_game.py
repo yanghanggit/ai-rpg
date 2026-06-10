@@ -743,6 +743,22 @@ class TCGGame(RPGGame):
         )
 
     ###############################################################################################################################################
+    def give_energy(self, entity: Entity, amount: int = 1) -> None:
+        """向角色实体追加 energy（用于卡牌 energy_given 效果）。
+
+        Args:
+            entity: 目标角色实体；若无 RoundStatsComponent（已死亡/战斗外）则静默跳过
+            amount: 追加的 energy 数量，默认为 1
+        """
+        if not entity.has(RoundStatsComponent):
+            return
+        entity.replace(
+            RoundStatsComponent,
+            entity.name,
+            self.get_energy(entity) + amount,
+        )
+
+    ###############################################################################################################################################
     def accumulate_status_effects_action(
         self, entity: Entity, task_hints: List[str]
     ) -> None:

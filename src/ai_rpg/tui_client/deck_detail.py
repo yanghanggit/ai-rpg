@@ -190,7 +190,13 @@ class DeckDetailScreen(BaseGameScreen):
                         )
                         log.write(
                             f"  [bold green]{i:>2}[/]  [bold]{card.name}[/]  "
-                            f"伤害:[red]{card.damage_dealt}[/]{hit_str}  目标:{tt_str}"
+                            f"伤害:[red]{card.damage_dealt}[/]{hit_str}"
+                            + (
+                                f"  行动:[green]+{card.energy_given}[/]"
+                                if card.energy_given > 0
+                                else ""
+                            )
+                            + f"  目标:{tt_str}"
                             + source_str
                             + action_str
                             + hint_str

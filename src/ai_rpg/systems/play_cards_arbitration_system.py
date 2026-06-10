@@ -81,7 +81,8 @@ def _generate_post_arbitration_task_hint(
     card_context = (
         f"- 卡牌：{card.name}（{card.description}）\n"
         f"- 单次伤害：{card.damage_dealt}，攻击次数：{card.hit_count}\n"
-        f"- 行动描述：{action_desc}"
+        + (f"- 给予目标行动：{card.energy_given} 次\n" if card.energy_given > 0 else "")
+        + f"- 行动描述：{action_desc}"
     )
 
     if entity_name == actor_name:
@@ -229,7 +230,7 @@ def _generate_combat_arbitration_prompt(
 - 卡牌：{play_cards_action.card.name}
 - damage_dealt：{play_cards_action.card.damage_dealt}（单次伤害）
 - hit_count：{play_cards_action.card.hit_count}（攻击次数）
-{action_line}{modifiers_line}{rm.hit_assignment}
+{f'- energy_given：{play_cards_action.card.energy_given}（给予目标行动次数，已由系统直接结算）' + chr(10) if play_cards_action.card.energy_given > 0 else ''}{action_line}{modifiers_line}{rm.hit_assignment}
 
 ## 目标
 
@@ -345,7 +346,7 @@ def _generate_compressed_combat_arbitration_prompt(
 - 卡牌：{play_cards_action.card.name}
 - damage_dealt：{play_cards_action.card.damage_dealt}（单次伤害）
 - hit_count：{play_cards_action.card.hit_count}（攻击次数）
-{action_line}{modifiers_line}{rm.hit_assignment}
+{f'- energy_given：{play_cards_action.card.energy_given}（给予目标行动次数，已由系统直接结算）' + chr(10) if play_cards_action.card.energy_given > 0 else ''}{action_line}{modifiers_line}{rm.hit_assignment}
 
 ## 目标
 
@@ -607,6 +608,16 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                 play_cards_action=action,
                 affected_entity_names=list(format_response.final_stats.keys()),
             )
+
+            # 确定性结算 energy_given：直接向每个目标追加行动次数，不经 LLM 仲裁
+            if action.card.energy_given > 0:
+                for target_name in dict.fromkeys(action.targets):
+                    target_entity = self._game.get_entity_by_name(target_name)
+                    if target_entity is not None:
+                        self._game.give_energy(target_entity, action.card.energy_given)
+                        logger.debug(
+                            f"[{target_name}] energy_given +{action.card.energy_given}"
+                        )
 
             latest_round = self._game.current_dungeon.latest_round
             assert latest_round is not None, "current_rounds 不应为 None"

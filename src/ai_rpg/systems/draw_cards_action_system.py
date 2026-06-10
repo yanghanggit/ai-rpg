@@ -49,6 +49,7 @@ class AdjustedCardEntry(BaseModel):
     playable: bool = True
     exhaust: bool = False
     damage_dealt: int
+    energy_given: int = 0
     hit_count: int = 1
     target_type: str = TargetType.ENEMY_SINGLE
 
@@ -79,7 +80,7 @@ def _generate_adjust_prompt(
     )
 
     cards_rows = "\n".join(
-        f"| {i + 1} | {c.name} | {c.description} | {c.damage_dealt} | {c.hit_count} | {c.target_type.value} |"
+        f"| {i + 1} | {c.name} | {c.description} | {c.damage_dealt} | {c.energy_given} | {c.hit_count} | {c.target_type.value} |"
         for i, c in enumerate(drawn_cards)
     )
 
@@ -98,15 +99,15 @@ def _generate_adjust_prompt(
 
 ## 当前手牌
 
-| # | name | description | damage_dealt | hit_count | target_type |
-|---|---|---|---|---|---|
+| # | name | description | damage_dealt | energy_given | hit_count | target_type |
+|---|---|---|---|---|---|---|
 {cards_rows}
 
 ## 任务
 
 根据以上 DRAW 阶段状态效果，调整每张手牌的数值，使其体现状态效果的影响。
 
-**可修改字段**：`description`、`affixes`、`modifiers`、`playable`、`exhaust`、`damage_dealt`、`hit_count`、`target_type`
+**可修改字段**：`description`、`affixes`、`modifiers`、`playable`、`exhaust`、`damage_dealt`、`energy_given`、`hit_count`、`target_type`
 
 **不可修改字段**：`name`（用于对位识别，须原样回传）、`uuid`、`source`（系统自动保留，无需输出）
 
@@ -123,6 +124,7 @@ def _generate_adjust_prompt(
       "playable": true,
       "exhaust": false,
       "damage_dealt": 0,
+      "energy_given": 0,
       "hit_count": 1,
       "target_type": "enemy_single"
     }}
@@ -342,6 +344,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                         playable=entry.playable,
                         exhaust=entry.exhaust,
                         damage_dealt=entry.damage_dealt,
+                        energy_given=entry.energy_given,
                         hit_count=entry.hit_count,
                         target_type=TargetType(entry.target_type),
                         source=orig.source,

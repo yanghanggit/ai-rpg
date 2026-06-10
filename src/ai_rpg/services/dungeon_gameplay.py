@@ -667,7 +667,7 @@ async def dungeon_combat_use_consumable(
 
     logger.info(
         f"/api/dungeon/combat/use_consumable/v1/: user={payload.user_name} "
-        f"actor={payload.actor_name} item={payload.item_name}"
+        f"item={payload.item_name}"
     )
 
     current_room = game_server.get_room(payload.user_name)
@@ -705,7 +705,6 @@ async def dungeon_combat_use_consumable(
         execute_use_consumable_task(
             use_consumable_task.task_id,
             payload.user_name,
-            payload.actor_name,
             payload.item_name,
             payload.targets,
             game_server,

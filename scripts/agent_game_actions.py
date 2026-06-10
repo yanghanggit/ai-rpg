@@ -518,9 +518,7 @@ async def use_consumable_game(
         logger.error("use-consumable 当前没有未完成的回合可供使用消耗品")
         return terminal_game
 
-    success, message = activate_use_consumable(
-        terminal_game, actor, item, list(targets)
-    )
+    success, message = activate_use_consumable(terminal_game, item, list(targets))
     if not success:
         logger.error(f"use-consumable 失败: {message}")
         return terminal_game

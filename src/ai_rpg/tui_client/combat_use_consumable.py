@@ -333,7 +333,7 @@ class UseConsumableMixin:
         task_id = ""
         try:
             resp = await server_use_consumable(
-                self._user_name, self._game_name, actor_name, item_name, targets  # type: ignore[attr-defined]
+                self._user_name, self._game_name, item_name, targets  # type: ignore[attr-defined]
             )
             task_id = resp.task_id
             logger.info(f"_do_use_consumable: 任务已创建 task_id={task_id}")

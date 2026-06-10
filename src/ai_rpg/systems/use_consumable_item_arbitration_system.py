@@ -9,7 +9,6 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
     UseConsumableItemAction,
-    RoundStatsComponent,
     CharacterStats,
     CharacterStatsComponent,
     CombatArbitrationEvent,
@@ -292,7 +291,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
     #######################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(UseConsumableItemAction) and entity.has(RoundStatsComponent)
+        return entity.has(UseConsumableItemAction)
 
     #######################################################################################################################################
     @override

@@ -418,43 +418,55 @@ def activate_retreat(
 ###################################################################################################################################################################
 def activate_use_consumable(
     tcg_game: TCGGame,
-    actor_name: str,
     item_name: str,
     targets: List[str],
 ) -> Tuple[bool, str]:
-    """让指定远征队员使用背包内的指定消耗品。仅适用于 PartyMemberComponent 角色。
+    """使用队伍背包内的指定消耗品。消耗品是队伍级别的行为，Action 挂在 Player 实体上。
 
-    使用消耗品不消耗 energy，可在玩家行动阶段内任意次数使用。
+    不受当前行动者死活或轮次限制，但要求当前行动角色属于玩家阵营（PartyMemberComponent）。
+    使用消耗品不消耗 energy，可在己方行动阶段内任意次数使用。
 
     Args:
         tcg_game: TCG游戏实例
-        actor_name: 使用消耗品的角色全名
-        item_name: 要使用的消耗品名称（须存在于该角色 InventoryComponent 中）
+        item_name: 要使用的消耗品名称（须存在于玩家 InventoryComponent 中）
         targets: 目标名称列表，可为 []；target_type 为 SELF_ONLY / ENEMY_ALL 时系统自动覆盖
 
     Returns:
         tuple[bool, str]: (是否成功, 结果消息)
     """
-    entity, error_msg = _validate_actor_turn(tcg_game, actor_name)
-    if entity is None:
-        logger.error(f"activate_use_consumable: {error_msg}")
-        return False, error_msg
-
-    if not entity.has(PartyMemberComponent):
-        msg = f"角色 {actor_name} 不是远征队员，怪物无法使用消耗品"
+    if not tcg_game.current_dungeon.is_ongoing:
+        msg = "使用消耗品失败：战斗未在进行中"
         logger.error(msg)
         return False, msg
 
-    if not entity.has(InventoryComponent):
-        msg = f"角色 {actor_name} 没有 InventoryComponent"
+    latest_round = tcg_game.current_dungeon.latest_round
+    if latest_round is None:
+        msg = "使用消耗品失败：当前没有进行中的回合"
         logger.error(msg)
         return False, msg
 
-    inventory_comp = entity.get(InventoryComponent)
+    current_turn_actor_name = latest_round.current_turn_actor_name
+    if current_turn_actor_name is None:
+        msg = "使用消耗品失败：当前没有行动角色"
+        logger.error(msg)
+        return False, msg
+
+    current_turn_entity = tcg_game.get_actor_entity(current_turn_actor_name)
+    if current_turn_entity is None or not current_turn_entity.has(PartyMemberComponent):
+        msg = f"使用消耗品失败：当前行动角色 {current_turn_actor_name} 不属于玩家阵营"
+        logger.error(msg)
+        return False, msg
+
+    player_entity = tcg_game.get_player_entity()
+    assert player_entity is not None, "activate_use_consumable: player_entity is None"
+    assert player_entity.has(PartyMemberComponent), "玩家实体缺少 PartyMemberComponent"
+    assert player_entity.has(InventoryComponent), "玩家实体缺少 InventoryComponent"
+
+    inventory_comp = player_entity.get(InventoryComponent)
     selected_item = next((i for i in inventory_comp.items if i.name == item_name), None)
     if selected_item is None:
         msg = (
-            f"角色 {actor_name} 背包中找不到消耗品 '{item_name}'，"
+            f"玩家背包中找不到消耗品 '{item_name}'，"
             f"当前背包: {[i.name for i in inventory_comp.items]}"
         )
         logger.error(msg)
@@ -468,22 +480,22 @@ def activate_use_consumable(
         return False, msg
 
     resolved_targets, resolve_err = _resolve_targets(
-        selected_item.target_type, 1, entity, targets, tcg_game
+        selected_item.target_type, 1, player_entity, targets, tcg_game
     )
     if resolve_err:
         logger.error(f"activate_use_consumable: {resolve_err}")
         return False, resolve_err
 
     logger.debug(
-        f"为角色 {actor_name} 激活消耗品使用，物品: {selected_item.name} 目标: {resolved_targets}"
+        f"为玩家 {player_entity.name} 激活消耗品使用，物品: {selected_item.name} 目标: {resolved_targets}"
     )
-    entity.replace(
+    player_entity.replace(
         UseConsumableItemAction,
-        entity.name,
+        player_entity.name,
         selected_item,
         resolved_targets,
     )
-    return True, f"成功为角色 {actor_name} 激活消耗品使用（物品: {item_name}）"
+    return True, f"成功激活消耗品使用（物品: {item_name}）"
 
 
 ###################################################################################################################################################################

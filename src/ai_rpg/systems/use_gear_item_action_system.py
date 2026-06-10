@@ -11,6 +11,7 @@ from ..models import (
     EquippedGearComponent,
     InventoryComponent,
     UseGearItemAction,
+    GearItem,
 )
 
 
@@ -117,6 +118,19 @@ class UseGearItemActionSystem(ReactiveProcessor):
             logger.debug(
                 f"UseGearItemActionSystem: [{entity.name}] 已为 [{target_name}] 装备 '{item.name}'"
             )
+
+            # 扣减 InventoryComponent 中原始 GearItem 的耐久度
+            inventory_comp = entity.get(InventoryComponent)
+            for inventory_item in inventory_comp.items:
+                if inventory_item.uuid == item.uuid:
+                    assert isinstance(
+                        inventory_item, GearItem
+                    ), f"UseGearItemActionSystem: uuid 匹配到的物品非 GearItem: {inventory_item}"
+                    inventory_item.cur_durability -= 1
+                    logger.debug(
+                        f"UseGearItemActionSystem: '{item.name}' 耐久 {inventory_item.cur_durability + 1} → {inventory_item.cur_durability}"
+                    )
+                    break
 
             # 为使用者注入本回合使用装备的上下文
             self._game.add_human_message(

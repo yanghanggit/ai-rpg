@@ -22,6 +22,7 @@ from ..models import (
     TargetType,
     HandComponent,
     InventoryComponent,
+    EquippedGearComponent,
     UseGearItemAction,
     UseConsumableItemAction,
     GearItem,
@@ -565,6 +566,17 @@ def activate_use_gear(
         msg = f"物品 '{item_name}' 不是装备（类型: {type(selected_item).__name__}）"
         logger.error(msg)
         return False, msg
+
+    if selected_item.cur_durability <= 0:
+        msg = f"装备 '{item_name}' 耐久已耗尽（cur_durability=0），无法装备"
+        logger.error(msg)
+        return False, msg
+
+    for holder in tcg_game.get_group(Matcher(EquippedGearComponent)).entities:
+        if holder.get(EquippedGearComponent).item.uuid == selected_item.uuid:
+            msg = f"装备 '{item_name}' 当前已被 {holder.name} 装备中，无法再次使用"
+            logger.error(msg)
+            return False, msg
 
     if selected_item.target_type == TargetType.CARD:
         msg = "当前版本暂不支持 target_type=card 的装备使用"

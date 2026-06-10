@@ -20,6 +20,7 @@ from ..models import (
     PlayerOnlyStageComponent,
     HomeComponent,
     DeathComponent,
+    GearItem,
 )
 from ..entitas import Matcher, Entity
 
@@ -198,6 +199,28 @@ def _enter_dungeon_stage(
 
 
 ###################################################################################################################################################################
+def _restore_gear_durability(tcg_game: TCGGame) -> None:
+    """将所有 InventoryComponent 中 GearItem 的 cur_durability 恢复至 max_durability。
+
+    在进入地下城第一关之前和从地下城返回家园之后调用。
+    """
+    from ..models import InventoryComponent
+
+    for entity in tcg_game.get_group(Matcher(InventoryComponent)).entities:
+        inv = entity.get(InventoryComponent)
+        for item in inv.items:
+            if (
+                isinstance(item, GearItem)
+                and item.cur_durability != item.max_durability
+            ):
+                logger.debug(
+                    f"_restore_gear_durability: [{entity.name}] '{item.name}' "
+                    f"{item.cur_durability} → {item.max_durability}"
+                )
+                item.cur_durability = item.max_durability
+
+
+###################################################################################################################################################################
 def clear_between_stages(tcg_game: TCGGame) -> None:
     """清除关卡间的临时状态。在每次进入新关卡前调用。
 
@@ -313,6 +336,9 @@ def enter_dungeon_first_stage(tcg_game: TCGGame, dungeon: Dungeon) -> tuple[bool
 
     # 选择远征队成员（玩家 + 最多1个随机盟友）
     party_member_entities = _select_party_members(tcg_game, dungeon)
+
+    # 进入地下城前恢复所有背包装备的耐久度
+    _restore_gear_durability(tcg_game)
 
     # 传送并初始化战斗
     if not _enter_dungeon_stage(tcg_game, dungeon, party_member_entities):
@@ -494,10 +520,13 @@ def exit_dungeon_and_return_home(tcg_game: TCGGame, dungeon: Dungeon) -> None:
             f"[return_home] 最终确认 {party_member_entity.name} 场景={final_stage.name if final_stage else 'None'!r}"
         )
 
-    # 8. 清除装备组件并归还背包
+    # 8. 清除装备组件
     clear_between_stages(tcg_game)
 
-    # 9. 将运行时实体状态同步回序列化字段（stage_transition 只更新内存，必须显式 flush）
+    # 9. 返回家园后恢复所有背包装备的耐久度
+    _restore_gear_durability(tcg_game)
+
+    # 10. 将运行时实体状态同步回序列化字段（stage_transition 只更新内存，必须显式 flush）
     tcg_game.flush_entities()
 
 

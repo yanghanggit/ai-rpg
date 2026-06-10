@@ -44,6 +44,9 @@ class Round(BaseModel):
         None  # 当前 turn 应行动的角色名；由系统写入，供 TUI 等无 ECS 访问的消费点读取
     )
     is_completed: bool = False  # 回合结束标记；由 CombatRoundCompletionSystem 写入
+    draw_phase_completed: bool = (
+        False  # 抽牌阶段结束标记；由 DrawCardsActionSystem 写入
+    )
     combat_log: List[str] = []  # 战斗计算日志，每次出手追加一条
     narrative: List[str] = []  # 叙事文本/演出描述，每次出手追加一条
 

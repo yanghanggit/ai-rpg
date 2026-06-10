@@ -262,6 +262,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                     current_round_number,
                 )
             logger.debug("所有实体无 DRAW 阶段效果，跳过 LLM 直接写入手牌")
+            last_round.draw_phase_completed = True
             return
 
         # 为有 DRAW 效果的实体构建 LLM 调整请求
@@ -287,6 +288,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
         await DeepSeekClient.batch_chat(clients=chat_clients)
 
+        last_round.draw_phase_completed = True
         # 第三步：解析调整结果并写入 HandComponent
         adjusted_entity_names = {e.name for e in entities_with_effects}
         for entity in entities:

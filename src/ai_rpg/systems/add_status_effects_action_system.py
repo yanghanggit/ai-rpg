@@ -170,7 +170,7 @@ def _generate_add_status_effects_prompt(
 
 #######################################################################################################################################
 @final
-class AddActorStatusEffectsActionSystem(ReactiveProcessor):
+class AddStatusEffectsActionSystem(ReactiveProcessor):
     """让每个参战 Actor 根据战斗上下文评估并追加新的状态效果（增益/减益/削弱等）。
 
     约束：实体须同时具有 ActorComponent + StatusEffectsComponent；仅战斗 ongoing 时生效。

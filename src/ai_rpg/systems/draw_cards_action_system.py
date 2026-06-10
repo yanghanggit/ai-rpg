@@ -74,28 +74,62 @@ def _generate_adjust_prompt(
         return "永久" if d == -1 else f"剩余{d}回合"
 
     effects_lines = "\n".join(
-        f"- {e.name}（{_fmt_duration(e.duration)}）: {e.description}"
+        f"- **{e.name}**（{_fmt_duration(e.duration)}）: {e.description}"
         for e in draw_status_effects
     )
 
-    cards_lines = "\n".join(
-        f"  {i + 1}. {c.name}: {c.description}"
-        f"（damage_dealt={c.damage_dealt}, hit_count={c.hit_count}, target_type={c.target_type.value}）"
+    cards_rows = "\n".join(
+        f"| {i + 1} | {c.name} | {c.description} | {c.damage_dealt} | {c.hit_count} | {c.target_type.value} |"
         for i, c in enumerate(drawn_cards)
     )
 
-    stats_line = f"属性：HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense}"
+    return f"""\
+# 第 {current_round_number} 回合：根据状态效果调整手牌
 
-    return (
-        f"# 第 {current_round_number} 回合：根据状态效果调整手牌\n\n"
-        f"{stats_line}\n\n"
-        f"DRAW 阶段状态效果（影响本回合手牌数值）：\n{effects_lines}\n\n"
-        f"当前抽到的手牌：\n{cards_lines}\n\n"
-        "根据以上状态效果，调整每张手牌的数傀（可修改 damage_dealt、hit_count、affixes、modifiers、description 等字段）。\n"
-        "【重要】保持每张牌的 name 和 target_type 原値不变，cards 数组长度必须与输入相同。\n"
-        "输出完整 JSON，cards 数组每项格式：\n"
-        '{"name":"...","description":"...","affixes":[],"modifiers":[],"playable":true,"exhaust":false,"damage_dealt":0,"hit_count":1,"target_type":"enemy_single"}'
-    )
+## 角色属性
+
+| HP | 攻击 | 防御 |
+|---|---|---|
+| {actor_stats.hp}/{actor_stats.max_hp} | {actor_stats.attack} | {actor_stats.defense} |
+
+## DRAW 阶段状态效果
+
+{effects_lines}
+
+## 当前手牌
+
+| # | name | description | damage_dealt | hit_count | target_type |
+|---|---|---|---|---|---|
+{cards_rows}
+
+## 任务
+
+根据以上 DRAW 阶段状态效果，调整每张手牌的数值，使其体现状态效果的影响。
+
+**可修改字段**：`description`、`affixes`、`modifiers`、`playable`、`exhaust`、`damage_dealt`、`hit_count`、`target_type`
+
+**不可修改字段**：`name`（用于对位识别，须原样回传）、`uuid`、`source`（系统自动保留，无需输出）
+
+**约束**：`cards` 数组长度必须与输入相同，顺序一一对应。只输出 JSON。
+
+```json
+{{
+  "cards": [
+    {{
+      "name": "（原样回传，不得修改）",
+      "description": "...",
+      "affixes": [],
+      "modifiers": [],
+      "playable": true,
+      "exhaust": false,
+      "damage_dealt": 0,
+      "hit_count": 1,
+      "target_type": "enemy_single"
+    }}
+  ]
+}}
+```
+"""
 
 
 #######################################################################################################################################

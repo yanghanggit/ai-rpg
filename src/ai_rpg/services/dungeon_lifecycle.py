@@ -192,9 +192,6 @@ def _enter_dungeon_stage(
 
     # 6. 初始化战斗状态
     dungeon.start_combat(Combat(name=stage_entity.name))
-
-    # 7. 清除关卡间临时状态（手牌、状态效果、装备）
-    clear_between_stages(tcg_game)
     return True
 
 
@@ -221,12 +218,12 @@ def _restore_gear_durability(tcg_game: TCGGame) -> None:
 
 
 ###################################################################################################################################################################
-def clear_between_stages(tcg_game: TCGGame) -> None:
-    """清除关卡间的临时状态。在每次进入新关卡前调用。
+def _clear_combat_state(tcg_game: TCGGame) -> None:
+    """清除一次战斗（Combat）结束后的临时状态。
 
     - 清除所有角色的手牌与回合动态属性（HandComponent / RoundStatsComponent）
     - 清除所有角色的状态效果（StatusEffectsComponent）
-    - 清除所有角色的装备并归还玩家背包（EquippedGearComponent → InventoryComponent）
+    - 移除所有角色的 EquippedGearComponent（物品始终保留在 InventoryComponent）
     """
     tcg_game.clear_round_state()
     tcg_game.clear_status_effects()
@@ -298,7 +295,7 @@ def setup_dungeon(tcg_game: TCGGame, dungeon_name: str) -> tuple[bool, str]:
 
 
 ###################################################################################################################################################################
-def enter_dungeon_first_stage(tcg_game: TCGGame, dungeon: Dungeon) -> tuple[bool, str]:
+def enter_dungeon(tcg_game: TCGGame, dungeon: Dungeon) -> tuple[bool, str]:
     """组建远征队并传送至地下城第一关，启动首个战斗序列。
 
     必须在 setup_dungeon 成功后调用（依赖 dungeon.setup_entities == True）。
@@ -346,12 +343,15 @@ def enter_dungeon_first_stage(tcg_game: TCGGame, dungeon: Dungeon) -> tuple[bool
         logger.error(error_msg)
         return False, error_msg
 
+    # 清除上一场战斗的临时状态
+    _clear_combat_state(tcg_game)
+
     logger.info(f"enter_dungeon_first_stage 完成: {dungeon.name}")
     return True, f"成功进入地下城: {dungeon.name}"
 
 
 ###################################################################################################################################################################
-def advance_to_next_stage(tcg_game: TCGGame, dungeon: Dungeon) -> None:
+def advance_dungeon(tcg_game: TCGGame, dungeon: Dungeon) -> None:
     """
     推进到地下城的下一个关卡
 
@@ -390,9 +390,12 @@ def advance_to_next_stage(tcg_game: TCGGame, dungeon: Dungeon) -> None:
     enter = _enter_dungeon_stage(tcg_game, dungeon, party_member_entities)
     assert enter, "进入下一关卡失败！"
 
+    # 清除上一场战斗的临时状态
+    _clear_combat_state(tcg_game)
+
 
 ###################################################################################################################################################################
-def exit_dungeon_and_return_home(tcg_game: TCGGame, dungeon: Dungeon) -> None:
+def exit_dungeon(tcg_game: TCGGame, dungeon: Dungeon) -> None:
     """
     退出地下城并将角色传送回家园
 
@@ -520,8 +523,8 @@ def exit_dungeon_and_return_home(tcg_game: TCGGame, dungeon: Dungeon) -> None:
             f"[return_home] 最终确认 {party_member_entity.name} 场景={final_stage.name if final_stage else 'None'!r}"
         )
 
-    # 8. 清除装备组件
-    clear_between_stages(tcg_game)
+    # 8. 清除战斗临时状态
+    _clear_combat_state(tcg_game)
 
     # 9. 返回家园后恢复所有背包装备的耐久度
     _restore_gear_durability(tcg_game)

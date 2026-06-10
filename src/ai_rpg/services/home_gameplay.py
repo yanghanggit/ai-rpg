@@ -29,7 +29,7 @@ from .home_actions import (
 )
 from .dungeon_lifecycle import (
     setup_dungeon,
-    enter_dungeon_first_stage,
+    enter_dungeon,
 )
 from ..models import (
     HomePlayerActionRequest,
@@ -284,9 +284,7 @@ async def home_enter_dungeon(
             )
 
         # 第二步：组建远征队并进入第一关
-        success, error_detail = enter_dungeon_first_stage(
-            rpg_game, rpg_game.current_dungeon
-        )
+        success, error_detail = enter_dungeon(rpg_game, rpg_game.current_dungeon)
         if not success:
             logger.error(f"玩家 {payload.user_name} 进入地下城失败: {error_detail}")
             raise HTTPException(

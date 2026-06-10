@@ -33,8 +33,8 @@ from ..models import (
     TaskStatus,
 )
 from .dungeon_lifecycle import (
-    advance_to_next_stage,
-    exit_dungeon_and_return_home,
+    advance_dungeon,
+    exit_dungeon,
 )
 from .dungeon_actions import (
     activate_all_card_draws,
@@ -265,7 +265,7 @@ async def dungeon_advance_stage(
                     status_code=status.HTTP_409_CONFLICT,
                     detail="地下城已全部通关，请返回营地",
                 )
-            advance_to_next_stage(rpg_game, rpg_game.current_dungeon)
+            advance_dungeon(rpg_game, rpg_game.current_dungeon)
             return DungeonAdvanceStageResponse(message="已前进到下一关")
         elif rpg_game.current_dungeon.is_lost:
             logger.warning(f"玩家 {payload.user_name} 战斗失败")
@@ -406,7 +406,7 @@ async def dungeon_exit(
             )
 
         # 退出地下城并返回家园
-        exit_dungeon_and_return_home(tcg_game, tcg_game._world.dungeon)
+        exit_dungeon(tcg_game, tcg_game._world.dungeon)
         logger.info(f"玩家 {payload.user_name} 成功返回家园")
 
         # 返回

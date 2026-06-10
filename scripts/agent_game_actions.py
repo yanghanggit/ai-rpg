@@ -64,9 +64,9 @@ from ai_rpg.services.dungeon_actions import (
 )
 from ai_rpg.services.dungeon_lifecycle import (
     setup_dungeon,
-    enter_dungeon_first_stage,
-    advance_to_next_stage,
-    exit_dungeon_and_return_home,
+    enter_dungeon,
+    advance_dungeon,
+    exit_dungeon,
 )
 from pathlib import Path
 from typing import List
@@ -344,9 +344,7 @@ async def enter_dungeon_game(
         logger.error(f"地下城实体创建失败: {error_detail}")
         return terminal_game
 
-    success, error_detail = enter_dungeon_first_stage(
-        terminal_game, terminal_game.current_dungeon
-    )
+    success, error_detail = enter_dungeon(terminal_game, terminal_game.current_dungeon)
     if not success:
         logger.error(f"进入地下城第一关失败: {error_detail}")
         return terminal_game
@@ -669,7 +667,7 @@ async def exit_dungeon_and_return_home_game(
         return terminal_game
 
     # 执行退出地下城流程，返回家园
-    exit_dungeon_and_return_home(terminal_game, terminal_game._world.dungeon)
+    exit_dungeon(terminal_game, terminal_game._world.dungeon)
 
     # 最后归档
     archive_world(
@@ -725,7 +723,7 @@ async def next_dungeon_game(
         logger.info("没有下一关，你胜利了，应该返回营地")
         return terminal_game
 
-    advance_to_next_stage(terminal_game, terminal_game.current_dungeon)
+    advance_dungeon(terminal_game, terminal_game.current_dungeon)
     await terminal_game._combat_pipeline.process()
 
     archive_world(

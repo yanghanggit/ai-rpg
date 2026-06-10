@@ -14,9 +14,9 @@ class TestParseCommandArgs:
     def test_parse_multiple_arguments(self) -> None:
         """测试解析多个参数"""
         result = parse_command_args(
-            "/speak --target=角色.法师.奥露娜 --content=你好", {"target", "content"}
+            "/speak --target=法师.奠露娜 --content=你好", {"target", "content"}
         )
-        assert result == {"target": "角色.法师.奥露娜", "content": "你好"}
+        assert result == {"target": "法师.奠露娜", "content": "你好"}
 
     def test_parse_with_spaces_around_equals(self) -> None:
         """测试等号前后有空格的情况"""
@@ -76,10 +76,10 @@ class TestParseCommandArgs:
     def test_parse_with_chinese_characters(self) -> None:
         """测试包含中文字符的参数"""
         result = parse_command_args(
-            "/speak --target=角色.法师.奥露娜 --content=我还是需要准备一下",
+            "/speak --target=法师.奠露娜 --content=我还是需要准备一下",
             {"target", "content"},
         )
-        assert result == {"target": "角色.法师.奥露娜", "content": "我还是需要准备一下"}
+        assert result == {"target": "法师.奠露娜", "content": "我还是需要准备一下"}
 
     def test_parse_with_special_characters(self) -> None:
         """测试包含特殊字符的参数值"""

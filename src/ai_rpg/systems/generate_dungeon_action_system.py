@@ -118,7 +118,7 @@ class DungeonActorBlueprint(BaseModel):
     """地下城怪物实体创建所需的原始字段（无 system_message，供下一阶段组装）。
 
     Attributes:
-        actor_name: 角色全名，格式为「角色.常物/精怪/大妖.XXXX」
+        actor_name: 角色全名，格式为「常物/精怪/大妖.XXXX」
         character_sheet_name: 角色英文标识（snake_case）
         profile: 第一人称 AI 扮演描述（性格、行为习惯）
         base_body: 第三人称外观描述
@@ -236,7 +236,7 @@ class DungeonActorResponse(BaseModel):
     """地下城怪物设定数据响应模型（概念/文字，无数值/技能）。
 
     Attributes:
-        actor_name: 角色全名，格式为「角色.常物/精怪/大妖.XXXX」
+        actor_name: 角色全名，格式为「常物/精怪/大妖.XXXX」
         character_sheet_name: 角色英文标识（snake_case）
         profile: 第一人称 AI 扮演描述（性格、行为习惯）
         base_body: 第三人称外观描述
@@ -277,7 +277,7 @@ def _build_dungeon_actor_prompt(
 
 ## 要求
 
-- **actor_name**：角色全名，采用「角色.常物/精怪/大妖.XXXX」格式，XXXX 体现该生物的特征
+- **actor_name**：角色全名，采用「常物/精怪/大妖.XXXX」格式，XXXX 体现该生物的特征
 - **character_sheet_name**：角色英文标识，snake_case 格式（如 `bone_crawler`、`mist_spirit`）
 - **profile**：第一人称 AI 扮演描述，50-100字，描述该生物的性格、行为倾向、与环境的关系
   - 禁忌：不出现战斗数值、技能名称、等级等游戏机制词汇
@@ -288,7 +288,7 @@ def _build_dungeon_actor_prompt(
 
 ```json
 {{
-  "actor_name": "角色.精怪.XXX",
+  "actor_name": "精怪.XXX",
   "character_sheet_name": "snake_case_name",
   "profile": "...",
   "base_body": "..."

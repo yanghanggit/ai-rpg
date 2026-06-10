@@ -26,7 +26,7 @@ def create_wanderer() -> Actor:
         Actor: 无名氏角色实例
     """
     actor = create_actor(
-        name="角色.旅行者.无名氏",
+        name="旅行者.无名氏",
         character_sheet=CharacterSheet(
             name="wanderer",
             type=ActorType.NPC,

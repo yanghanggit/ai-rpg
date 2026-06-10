@@ -240,7 +240,7 @@ async def speak_game(
     Args:
         world: 由 restore_world() 反序列化的世界数据。
         player_session: 由 restore_world() 反序列化的玩家会话。
-        target: 对话目标角色全名（如 "角色.术士.云音"）。
+        target: 对话目标角色全名（如 "术士.云音"）。
         content: 玩家说话内容。
         save_dir: 新存档写入目录。
 
@@ -435,7 +435,7 @@ async def play_cards_specified_game(
     Args:
         world: 由 restore_world() 反序列化的世界数据。
         player_session: 由 restore_world() 反序列化的玩家会话。
-        actor: 出牌角色全名（如 角色.旅行者.无名氏）。
+        actor: 出牌角色全名（如 旅行者.无名氏）。
         card: 要打出的卡牌名称（须存在于该角色手牌中）。
         targets: 目标名称列表，可为空。
         save_dir: 新存档写入目录。
@@ -499,7 +499,7 @@ async def use_consumable_game(
     Args:
         world: 由 restore_world() 反序列化的世界数据。
         player_session: 由 restore_world() 反序列化的玩家会话。
-        actor: 使用消耗品的角色全名（如 角色.旅行者.无名氏）。
+        actor: 使用消耗品的角色全名（如 旅行者.无名氏）。
         item: 要使用的消耗品名称（须存在于该角色 InventoryComponent 中）。
         targets: 目标名称列表，可为空；SELF_ONLY/ENEMY_ALL 时系统自动覆盖。
         save_dir: 新存档写入目录。
@@ -556,7 +556,7 @@ async def use_gear_game(
     Args:
         world: 由 restore_world() 反序列化的世界数据。
         player_session: 由 restore_world() 反序列化的玩家会话。
-        actor: 装备使用者角色全名（如 角色.旅行者.无名氏）。
+        actor: 装备使用者角色全名（如 旅行者.无名氏）。
         item: 要装备的道具名称（须存在于该角色 InventoryComponent 中，类型为 GearItem）。
         targets: 目标名称列表（通常含一个目标；ALLY_SINGLE 时指定盟友）。
         save_dir: 新存档写入目录。
@@ -609,7 +609,7 @@ async def pass_turn_game(
     Args:
         world: 由 restore_world() 反序列化的世界数据。
         player_session: 由 restore_world() 反序列化的玩家会话。
-        actor: 过牌角色全名（如 角色.旅行者.无名氏）。
+        actor: 过牌角色全名（如 旅行者.无名氏）。
         save_dir: 新存档写入目录。
 
     Returns:

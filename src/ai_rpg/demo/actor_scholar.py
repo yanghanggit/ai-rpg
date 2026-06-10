@@ -30,7 +30,7 @@ def create_scholar() -> Actor:
     """
 
     actor = create_actor(
-        name="角色.学者.寒蝉",
+        name="学者.寒蝉",
         character_sheet=CharacterSheet(
             name="scholar",
             type=ActorType.NPC,

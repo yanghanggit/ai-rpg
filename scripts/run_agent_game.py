@@ -225,7 +225,7 @@ def advance(snapshot: str) -> None:
 @click.option(
     "--target",
     required=True,
-    help="对话目标角色名（如 角色.术士.云音）",
+    help="对话目标角色名（如 术士.云音）",
 )
 @click.option(
     "--content",
@@ -392,7 +392,7 @@ def draw_cards(snapshot: str) -> None:
 @click.option(
     "--actor",
     required=True,
-    help="出牌角色全名（如 角色.旅行者.无名氏）",
+    help="出牌角色全名（如 旅行者.无名氏）",
 )
 @click.option(
     "--card",
@@ -403,7 +403,7 @@ def draw_cards(snapshot: str) -> None:
     "--targets",
     multiple=True,
     default=(),
-    help="目标角色名，可重复使用（如 --targets 角色.常物.野猪）",
+    help="目标角色名，可重复使用（如 --targets 常物.野猪）",
 )
 def play_cards_specified(
     snapshot: str, actor: str, card: str, targets: tuple[str, ...]
@@ -451,7 +451,7 @@ def play_cards_specified(
 @click.option(
     "--actor",
     required=True,
-    help="过牌角色全名（如 角色.旅行者.无名氏）",
+    help="过牌角色全名（如 旅行者.无名氏）",
 )
 def pass_turn(snapshot: str, actor: str) -> None:
     """从存档复位，让指定角色跳过本次出牌机会，并写入新存档。
@@ -492,7 +492,7 @@ def pass_turn(snapshot: str, actor: str) -> None:
 @click.option(
     "--actor",
     required=True,
-    help="使用消耗品的角色全名（如 角色.旅行者.无名氏）",
+    help="使用消耗品的角色全名（如 旅行者.无名氏）",
 )
 @click.option(
     "--item",
@@ -503,7 +503,7 @@ def pass_turn(snapshot: str, actor: str) -> None:
     "--targets",
     multiple=True,
     default=(),
-    help="目标角色名，可重复使用（如 --targets 角色.常物.野猪）；SELF_ONLY/ENEMY_ALL 时可省略",
+    help="目标角色名，可重复使用（如 --targets 常物.野猪）；SELF_ONLY/ENEMY_ALL 时可省略",
 )
 def use_consumable(
     snapshot: str, actor: str, item: str, targets: tuple[str, ...]
@@ -551,7 +551,7 @@ def use_consumable(
 @click.option(
     "--actor",
     required=True,
-    help="使用装备的角色全名（如 角色.旅行者.无名氏）",
+    help="使用装备的角色全名（如 旅行者.无名氏）",
 )
 @click.option(
     "--item",
@@ -562,7 +562,7 @@ def use_consumable(
     "--targets",
     multiple=True,
     default=(),
-    help="目标角色名，可重复使用（如 --targets 角色.盟友.云音）；ALLY_SINGLE 时指定一个盟友目标",
+    help="目标角色名，可重复使用（如 --targets 盟友.云音）；ALLY_SINGLE 时指定一个盟友目标",
 )
 def use_gear(snapshot: str, actor: str, item: str, targets: tuple[str, ...]) -> None:
     """从存档复位，让指定角色在战斗中装备背包内的 GearItem，并写入新存档。
@@ -959,7 +959,7 @@ def inventory_to_storage(snapshot: str, item: str) -> None:
     "--target",
     default="",
     show_default=True,
-    help="目标角色全名（如 角色.学者.寒蝉）；不传表示玩家自身",
+    help="目标角色全名（如 学者.寒蝉）；不传表示玩家自身",
 )
 def wear_costume(snapshot: str, item: str, target: str) -> None:
     """从存档复位，为玩家或指定 NPC 穿上/移除时装，LLM 语义合成外观后广播，并写入新存档。

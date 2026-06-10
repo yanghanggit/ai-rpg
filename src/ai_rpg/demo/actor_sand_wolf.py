@@ -27,7 +27,7 @@ def create_actor_sand_jackal() -> Actor:
         Actor: 沙狼角色实例
     """
     sand_wolf = create_actor(
-        name="角色.怪物.沙狼",
+        name="怪物.沙狼",
         character_sheet=CharacterSheet(
             name="sand_wolf",
             type=ActorType.MONSTER,

@@ -271,7 +271,7 @@ async def activate_play_cards_specified(
 
     Args:
         tcg_game: TCG游戏实例
-        actor_name: 出牌角色的全名（如 角色.旅行者.无名氏）
+        actor_name: 出牌角色的全名（如 旅行者.无名氏）
         card_name: 要打出的卡牌名称（须存在于该角色手牌中）
         targets: 目标名称列表，可为 []
         action: 出牌时的第一人称叙事；默认为空字符串，仲裁 agent 将自行演绎

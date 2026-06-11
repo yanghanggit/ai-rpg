@@ -48,7 +48,7 @@ class GearItem(Item):
     affixes: List[str] = []  # 延迟词缀列表（同 Card.affixes）
     modifiers: List[str] = []  # 即时修正词缀列表（同 Card.modifiers）
     max_durability: int = (
-        3  # 最大耐久度；每次进入/离开地下城时 cur_durability 恢复至此值
+        3  # 最大耐久度；每次进入/离开地下城时 durability 恢复至此值
     )
     durability: int = (
         3  # 当前耐久度；每次装备到 EquippedGearComponent 时 -1；归零后无法再次装备

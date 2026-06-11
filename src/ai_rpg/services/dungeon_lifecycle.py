@@ -197,7 +197,7 @@ def _enter_dungeon_stage(
 
 ###################################################################################################################################################################
 def _restore_gear_durability(tcg_game: TCGGame) -> None:
-    """将所有 InventoryComponent 中 GearItem 的 cur_durability 恢复至 max_durability。
+    """将所有 InventoryComponent 中 GearItem 的 durability 恢复至 max_durability。
 
     在进入地下城第一关之前和从地下城返回家园之后调用。
     """

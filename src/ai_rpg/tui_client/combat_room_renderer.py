@@ -113,7 +113,7 @@ def write_battlefield_block(
         )
         if _stats_comp is not None:
             _final = compute_effective_stats(
-                _stats_comp,
+                _stats_comp.stats,
                 equipped_gear=(
                     GearItem(**equipped_gear_comp.data["item"])
                     if equipped_gear_comp is not None
@@ -175,7 +175,7 @@ def write_full_entities_block(
                 None,
             )
             stats = compute_effective_stats(
-                CharacterStatsComponent(**stats_comp.data),
+                CharacterStatsComponent(**stats_comp.data).stats,
                 (
                     StatusEffectsComponent(**status_effects_comp.data).status_effects
                     if status_effects_comp is not None

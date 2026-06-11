@@ -5,27 +5,24 @@
 
 from typing import List, Optional
 from .cards import StatusEffect
-from .components import CharacterStatsComponent
 from .items import GearItem
 from .stats import CharacterStats
 
 
 def compute_effective_stats(
-    stats_comp: CharacterStatsComponent,
+    base_stats: CharacterStats,
     status_effects: Optional[List[StatusEffect]] = None,
     equipped_gear: Optional[GearItem] = None,
 ) -> CharacterStats:
     """计算角色的最终有效属性，聚合基础属性与状态效果的属性加成。
 
     Args:
-        stats_comp: 角色基础属性组件
+        base_stats: 角色的基础属性
         status_effects: 当前状态效果列表，为 None 时不计算状态效果加成
 
     Returns:
         包含基础属性与所有加成之和的新 CharacterStats 实例
     """
-
-    base = stats_comp.stats
 
     bonus_hp = 0
     bonus_max_hp = 0
@@ -46,11 +43,14 @@ def compute_effective_stats(
         bonus_speed += se.speed
         bonus_defense += se.defense
 
+    assert (
+        bonus_hp == 0
+    ), "当前设计中状态效果不应直接修改 HP，若需要请改为修改 max_hp 或通过其他机制实现"
     return CharacterStats(
-        hp=base.hp + bonus_hp,
-        max_hp=base.max_hp + bonus_max_hp,
-        attack=base.attack + bonus_attack,
-        defense=base.defense + bonus_defense,
-        energy=base.energy + bonus_energy,
-        speed=base.speed + bonus_speed,
+        hp=base_stats.hp + bonus_hp,
+        max_hp=base_stats.max_hp + bonus_max_hp,
+        attack=base_stats.attack + bonus_attack,
+        defense=base_stats.defense + bonus_defense,
+        energy=base_stats.energy + bonus_energy,
+        speed=base_stats.speed + bonus_speed,
     )

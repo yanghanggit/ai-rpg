@@ -585,7 +585,7 @@ class TCGGame(RPGGame):
 
         stats_comp = entity.get(CharacterStatsComponent)
         return compute_effective_stats(
-            stats_comp,
+            stats_comp.stats,
             (
                 entity.get(StatusEffectsComponent).status_effects
                 if entity.has(StatusEffectsComponent)

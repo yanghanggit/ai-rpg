@@ -71,15 +71,6 @@ class PlayerComponent(Component):
 ############################################################################################################
 @final
 @register_component_type
-class PlayerOnlyStageComponent(Component):
-    """标记场景为玩家专属传送目标。"""
-
-    name: str
-
-
-############################################################################################################
-@final
-@register_component_type
 class DestroyComponent(Component):
     """标记实体在下一帧销毁。"""
 

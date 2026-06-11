@@ -27,7 +27,6 @@ from src.ai_rpg.models import (
     AppearanceComponent,
     HomeComponent,
     PlayerComponent,
-    PlayerOnlyStageComponent,
     QueryAction,
     SpeakAction,
     StageComponent,
@@ -71,7 +70,6 @@ def _make_game() -> TCGGame:
     blueprint = Blueprint(
         name="test",
         player_actor="hero",
-        player_only_stage="private_stage",
         campaign_setting="",
         stages=[],
         world_systems=[],
@@ -318,26 +316,6 @@ class TestGetAvailableHomeStages:
         npc = _make_actor(game, "npc", "hall")
         result = system._get_available_home_stages(npc, current)
         assert library in result
-
-    def test_npc_cannot_go_to_player_only_stage(self) -> None:
-        game = _make_game()
-        system = _make_system(game)
-        current = _make_home_stage(game, "hall")
-        private = _make_home_stage(game, "private")
-        private.add(PlayerOnlyStageComponent, "private")
-        npc = _make_actor(game, "npc", "hall")
-        result = system._get_available_home_stages(npc, current)
-        assert private not in result
-
-    def test_player_can_go_to_player_only_stage(self) -> None:
-        game = _make_game()
-        system = _make_system(game)
-        current = _make_home_stage(game, "hall")
-        private = _make_home_stage(game, "private")
-        private.add(PlayerOnlyStageComponent, "private")
-        player = _make_player_actor(game, "hero", "hall")
-        result = system._get_available_home_stages(player, current)
-        assert private in result
 
     def test_current_stage_always_excluded(self) -> None:
         game = _make_game()

@@ -88,7 +88,6 @@ class NewGameScreen(BaseGameScreen):
                 )
                 for stage in bp.stages:
                     actor_names = [a.name for a in stage.actors]
-                    is_player_only = stage.name == bp.player_only_stage
                     if actor_names:
                         actors_str = "、".join(
                             f"[{'bold magenta' if a == bp.player_actor else 'green'}]{display_name(a)}[/]"
@@ -96,14 +95,9 @@ class NewGameScreen(BaseGameScreen):
                         )
                     else:
                         actors_str = "[dim]（空）[/]"
-                    if is_player_only:
-                        log.write(
-                            f"  [bold magenta]{display_name(stage.name)} ★玩家专属[/] → {actors_str}"
-                        )
-                    else:
-                        log.write(
-                            f"  [bold cyan]{display_name(stage.name)}[/] → {actors_str}"
-                        )
+                    log.write(
+                        f"  [bold cyan]{display_name(stage.name)}[/] → {actors_str}"
+                    )
                 log.write("")
                 log.write(
                     "[bold cyan]── 世界系统 ──────────────────────────────────[/]"

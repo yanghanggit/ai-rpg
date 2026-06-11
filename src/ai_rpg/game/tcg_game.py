@@ -36,7 +36,6 @@ from ..models import (
     InventoryComponent,
     KeywordComponent,
     PlayerComponent,
-    PlayerOnlyStageComponent,
     StorageComponent,
     DiscardPileComponent,
     Round,
@@ -172,23 +171,7 @@ class TCGGame(RPGGame):
             f"玩家: {self._player_session.name} 选择控制: {self._player_session.actor}"
         )
 
-        ## 第5步，标记仅玩家可见的场景
-        assert (
-            self._world.blueprint.player_only_stage != ""
-        ), "player_only_stage 不能为空"
-        player_only_stage_entity = self.get_stage_entity(
-            self._world.blueprint.player_only_stage
-        )
-        assert player_only_stage_entity is not None, "player_only_stage_entity is None"
-        assert not player_only_stage_entity.has(PlayerOnlyStageComponent)
-
-        # 添加 PlayerOnlyStageComponent 组件，并设置 name 属性为场景实体的名字，方便后续识别和访问控制
-        player_only_stage_entity.replace(
-            PlayerOnlyStageComponent, player_only_stage_entity.name
-        )
-        logger.debug(f"场景: {player_only_stage_entity.name} 已标记为仅玩家可见")
-
-        ## 第6步，添加 PartyRosterComponent 到玩家角色实体
+        ## 第5步，添加 PartyRosterComponent 到玩家角色实体
         assert not player_actor_entity.has(
             PartyRosterComponent
         ), "玩家角色实体不应该已经有 PartyRosterComponent"

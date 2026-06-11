@@ -14,7 +14,6 @@ from src.ai_rpg.entitas.entity import Entity
 from src.ai_rpg.models import (
     ActorComponent,
     PlayerComponent,
-    PlayerOnlyStageComponent,
     StageComponent,
 )
 from src.ai_rpg.game.stage_transition import (
@@ -271,30 +270,3 @@ class TestStageTransition:
         assert any(
             "进入" in c for c in contents
         ), f"未在终点场景 context 中找到到达消息，实际消息: {contents}"
-
-    # ------------------------------------------------------------------
-    # PlayerOnlyStage 访问控制
-    # ------------------------------------------------------------------
-
-    def test_non_player_entering_player_only_stage_raises(self, game: Any) -> None:
-        """非玩家角色尝试进入仅玩家场景应触发 AssertionError。"""
-        source = _make_stage(game, "起点")
-        dest = _make_stage(game, "玩家专属")
-        dest.add(PlayerOnlyStageComponent, "玩家专属")
-        actor = _make_actor(game, "NPC", source.name)
-
-        with pytest.raises(AssertionError, match="不是玩家"):
-            stage_transition(game, {actor}, dest)
-
-    def test_player_actor_can_enter_player_only_stage(self, game: Any) -> None:
-        """持有 PlayerComponent 的角色可以进入仅玩家场景，传送正常完成。"""
-        source = _make_stage(game, "起点")
-        dest = _make_stage(game, "玩家专属")
-        dest.add(PlayerOnlyStageComponent, "玩家专属")
-        player = _make_player_actor(game, "玩家", source.name)
-
-        stage_transition(game, {player}, dest)
-
-        comp = player.get(ActorComponent)
-        assert comp is not None
-        assert comp.current_stage == dest.name

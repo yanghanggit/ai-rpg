@@ -17,7 +17,6 @@ from ..models import (
     ActorComponent,
     NPCComponent,
     PlayerComponent,
-    PlayerOnlyStageComponent,
 )
 from ..utils import extract_json_from_code_block
 from ..game import TCGGame
@@ -284,15 +283,7 @@ class HomeNpcPlanSystem(ReactiveProcessor):
             Matcher(all_of=[HomeComponent])
         ).entities.copy()
         home_stage_entities.discard(current_stage)
-
-        if actor_entity.has(PlayerComponent):
-            return home_stage_entities
-
-        return {
-            stage
-            for stage in home_stage_entities
-            if not stage.has(PlayerOnlyStageComponent)
-        }
+        return home_stage_entities
 
     #######################################################################################################################################
     def _create_actor_chat_clients(

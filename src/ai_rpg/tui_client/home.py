@@ -232,12 +232,8 @@ class HomeScreen(BaseGameScreen):
             )
             return
 
-        player_only_stage = bp.player_only_stage
         if current_stage:
-            if current_stage == player_only_stage:
-                stage_text = f"[bold yellow]{display_name(current_stage)}[/] [dim cyan]（专属）[/]"
-            else:
-                stage_text = f"[bold yellow]{display_name(current_stage)}[/]"
+            stage_text = f"[bold yellow]{display_name(current_stage)}[/]"
         else:
             stage_text = "[dim]（未知）[/]"
         self.query_one("#home-status", Static).update(

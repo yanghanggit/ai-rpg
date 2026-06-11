@@ -66,7 +66,6 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
     return Blueprint(
         name=game_name,
         player_actor=actor_wanderer.name,  # 玩家角色为战士
-        player_only_stage=stage_broken_wall_enclosure.name,
         campaign_setting=RPG_CAMPAIGN_SETTING,
         stages=[
             stage_broken_wall_enclosure,

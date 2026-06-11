@@ -16,8 +16,6 @@ from ..models import (
     Combat,
     PartyMemberComponent,
     PartyRosterComponent,
-    PlayerComponent,
-    PlayerOnlyStageComponent,
     HomeComponent,
     DeathComponent,
     GearItem,
@@ -432,46 +430,28 @@ def exit_dungeon(tcg_game: TCGGame, dungeon: Dungeon) -> None:
     )
     assert len(party_member_entities) > 0, "没有找到远征队成员"
 
-    # 2-3. 获取并分类家园场景实体
-    player_only_stages: Set[Entity] = tcg_game.get_group(
-        Matcher(all_of=[HomeComponent, PlayerOnlyStageComponent])
+    # 2. 获取家园场景实体
+    home_stages: Set[Entity] = tcg_game.get_group(
+        Matcher(all_of=[HomeComponent])
     ).entities.copy()
     logger.debug(
-        f"[return_home] 玩家专属家园场景({len(player_only_stages)}): "
-        f"{[e.name for e in player_only_stages]}"
+        f"[return_home] 家园场景({len(home_stages)}): "
+        f"{[e.name for e in home_stages]}"
     )
-    assert len(player_only_stages) == 1, "必须存在且仅存在一个玩家专属家园场景！"
+    assert len(home_stages) >= 1, "必须存在至少一个家园场景！"
 
-    regular_home_stages: Set[Entity] = tcg_game.get_group(
-        Matcher(all_of=[HomeComponent], none_of=[PlayerOnlyStageComponent])
-    ).entities.copy()
-    logger.debug(
-        f"[return_home] 普通家园场景({len(regular_home_stages)}): "
-        f"{[e.name for e in regular_home_stages]}"
-    )
-
-    # 4. 生成并发送返回提示消息，传送远征队成员回家
-    player_only_stage = next(iter(player_only_stages))
-    regular_home_stage = (
-        next(iter(regular_home_stages)) if regular_home_stages else None
-    )
+    # 3. 生成并发送返回提示消息，传送远征队成员回家
+    dest_stage = next(iter(home_stages))
 
     for party_member_entity in party_member_entities:
-        is_player = party_member_entity.has(PlayerComponent)
-        dest_stage = player_only_stage if is_player else regular_home_stage
         current_stage_entity = tcg_game.resolve_stage_entity(party_member_entity)
         current_stage_name = (
             current_stage_entity.name if current_stage_entity else "None"
         )
         logger.debug(
-            f"[return_home] 传送 {party_member_entity.name} | is_player={is_player} | "
-            f"当前场景={current_stage_name!r} → 目标场景={dest_stage.name if dest_stage else 'None'!r}"
+            f"[return_home] 传送 {party_member_entity.name} | "
+            f"当前场景={current_stage_name!r} → 目标场景={dest_stage.name!r}"
         )
-        if dest_stage is None:
-            logger.warning(
-                f"盟友 {party_member_entity.name} 无普通家园场景可返回，跳过传送"
-            )
-            continue
 
         tcg_game.add_human_message(
             party_member_entity,

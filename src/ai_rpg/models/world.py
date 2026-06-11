@@ -13,7 +13,6 @@ from .serialization import EntitySerialization
 class Blueprint(BaseModel):
     name: str
     player_actor: str
-    player_only_stage: str
     campaign_setting: str
     stages: List[Stage]
     world_systems: List[WorldSystem]

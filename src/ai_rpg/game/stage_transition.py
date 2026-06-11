@@ -10,8 +10,6 @@ from ..entitas import Entity
 from ..models import (
     ActorComponent,
     AgentEvent,
-    PlayerComponent,
-    PlayerOnlyStageComponent,
     TransStageEvent,
 )
 from .rpg_game import RPGGame
@@ -168,14 +166,6 @@ def stage_transition(
         actors: 需要传送的角色集合
         stage_destination: 目标场景
     """
-    # 0. 访问控制：PlayerOnlyStage 只允许玩家进入
-    if stage_destination.has(PlayerOnlyStageComponent):
-        for actor in actors:
-            assert actor.has(PlayerComponent), (
-                f"角色 {actor.name} 试图进入仅玩家场景 {stage_destination.name}，"
-                "但该角色不是玩家！这是程序逻辑错误。"
-            )
-
     # 1. 验证前置条件并过滤有效角色
     actors_to_transfer = _validate_stage_transition_prerequisites(
         game, actors, stage_destination

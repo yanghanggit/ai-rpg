@@ -28,7 +28,6 @@ from src.ai_rpg.models import (
     HandComponent,
     HomeComponent,
     PlayerComponent,
-    PlayerOnlyStageComponent,
     RoundStatsComponent,
     StageComponent,
     StatusEffectsComponent,
@@ -62,7 +61,6 @@ def _make_game(
         blueprint = Blueprint(
             name="test",
             player_actor=actor_name,
-            player_only_stage="home_stage",
             campaign_setting="",
             stages=[],
             world_systems=[],
@@ -214,13 +212,11 @@ class TestBuildFromBlueprint:
     def _make_full_blueprint(self) -> Blueprint:
         ally = _make_actor_model("hero", ActorType.NPC)
         home = _make_stage_model("home_stage", StageType.HOME, actors=[ally])
-        player_only = _make_stage_model("private_stage", StageType.HOME)
         return Blueprint(
             name="full_test",
             player_actor="hero",
-            player_only_stage="private_stage",
             campaign_setting="",
-            stages=[home, player_only],
+            stages=[home],
             world_systems=[],
             storage_entity="世界储物箱",
         )
@@ -254,13 +250,6 @@ class TestBuildFromBlueprint:
         hero = game.get_actor_entity("hero")
         assert hero is not None
         assert hero.has(PlayerComponent)
-
-    def test_player_only_stage_component_assigned(self) -> None:
-        game = self._make_game_for_build()
-        game.build_from_blueprint()
-        stage = game.get_stage_entity("private_stage")
-        assert stage is not None
-        assert stage.has(PlayerOnlyStageComponent)
 
     def test_build_with_existing_entities_raises(self) -> None:
         game = self._make_game_for_build()

@@ -1,23 +1,23 @@
 """道具管理 Screen：显示背包与储物箱道具，并支持在两者之间移动。"""
 
-from typing import Any, Dict, List, Literal, Tuple
-
+from typing import List, Literal, Tuple
 from loguru import logger
+from pydantic import TypeAdapter
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.widgets import Input, RichLog, Static
-
 from .base import BaseGameScreen
-
 from .server_client import (
     fetch_entities_details,
     home_item_move_to_inventory,
     home_item_move_to_storage,
 )
 from ..models import InventoryComponent, StorageComponent
-from ..models.items import CostumeItem
+from ..models.items import AnyItem, CostumeItem
 from .utils import display_name, render_item
+
+_ITEM_ADAPTER: TypeAdapter[AnyItem] = TypeAdapter(AnyItem)
 
 ITEM_MGMT_HEADER = """\
 [bold cyan]── 道具管理 ──────────────────────────────────────[/]
@@ -26,8 +26,8 @@ ITEM_MGMT_HEADER = """\
 输入编号将该道具移到另一侧，[bold]Escape[/] 返回。
 """
 
-# (location, item_dict)
-_ItemEntry = Tuple[Literal["inventory", "storage", "equipped"], Dict[str, Any]]
+# (location, item)
+_ItemEntry = Tuple[Literal["inventory", "storage", "equipped"], AnyItem]
 
 
 class ItemManagementScreen(BaseGameScreen):
@@ -96,12 +96,12 @@ class ItemManagementScreen(BaseGameScreen):
         storage_items = [
             (i, item)
             for i, (loc, item) in enumerate(self._all_items)
-            if loc == "storage" and item.get("type") != CostumeItem.__name__
+            if loc == "storage" and not isinstance(item, CostumeItem)
         ]
         costume_items = [
             (i, item)
             for i, (loc, item) in enumerate(self._all_items)
-            if loc == "storage" and item.get("type") == CostumeItem.__name__
+            if loc == "storage" and isinstance(item, CostumeItem)
         ]
         if inventory_items:
             log.write("[bold green]  ▍随身背包[/]")
@@ -159,10 +159,10 @@ class ItemManagementScreen(BaseGameScreen):
             log.write(f"[red]编号超出范围，请输入 1 ~ {len(self._all_items)}。[/]")
             return
 
-        location, item_dict = self._all_items[idx]
-        item_name = item_dict.get("name", "?")
+        location, item = self._all_items[idx]
+        item_name = item.name
 
-        if item_dict.get("type") == CostumeItem.__name__:
+        if isinstance(item, CostumeItem):
             log.write(
                 f"[yellow]⚠ 时装「{item_name}」不可移动，请通过外观更新功能使用。[/]"
             )
@@ -200,15 +200,21 @@ class ItemManagementScreen(BaseGameScreen):
             log.write(f"[bold red]❌ 读取道具列表失败: {e}[/]")
             return
 
-        inventory_items: List[Dict[str, Any]] = []
-        storage_items: List[Dict[str, Any]] = []
+        inventory_items: List[AnyItem] = []
+        storage_items: List[AnyItem] = []
 
         for entity in resp.entities_serialization:
             for comp in entity.components:
                 if comp.name == InventoryComponent.__name__:
-                    inventory_items = comp.data.get("items", [])
+                    inventory_items = [
+                        _ITEM_ADAPTER.validate_python(d)
+                        for d in comp.data.get("items", [])
+                    ]
                 elif comp.name == StorageComponent.__name__:
-                    storage_items = comp.data.get("items", [])
+                    storage_items = [
+                        _ITEM_ADAPTER.validate_python(d)
+                        for d in comp.data.get("items", [])
+                    ]
 
         self._all_items = [("inventory", item) for item in inventory_items] + [
             ("storage", item) for item in storage_items

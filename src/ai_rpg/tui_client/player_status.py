@@ -16,6 +16,7 @@ from ..models import (
     DrawPileComponent,
     ExhaustPileComponent,
     DiscardPileComponent,
+    CostumeComponent,
 )
 from textual import work
 from textual.app import ComposeResult
@@ -32,6 +33,7 @@ _COMPONENT_ORDER: List[str] = [
     CharacterStatsComponent.__name__,
     AppearanceComponent.__name__,
     InventoryComponent.__name__,
+    CostumeComponent.__name__,
     KeywordComponent.__name__,
     DrawPileComponent.__name__,
     ExhaustPileComponent.__name__,
@@ -88,10 +90,15 @@ def _render_component(name: str, data: Dict[str, Any], context: Dict[str, Any]) 
         else:
             lines.append(f"    共 [bold]{len(inv.items)}[/] 件道具：")
             for item in inv.items:
-                lines.append(
-                    "    "
-                    + render_item(item if isinstance(item, dict) else item.model_dump())
-                )
+                lines.append("    " + render_item(item))
+
+    elif name == CostumeComponent.__name__:
+        costume_comp = CostumeComponent(**data)
+        if not costume_comp.item:
+            lines.append("    [dim]（未穿戴时装）[/]")
+        else:
+            lines.append(f"    当前穿戴时装：")
+            lines.append("    " + render_item(costume_comp.item))
 
     elif name == KeywordComponent.__name__:
         keyword_comp = KeywordComponent(**data)
@@ -114,12 +121,14 @@ def _render_component(name: str, data: Dict[str, Any], context: Dict[str, Any]) 
             lines.append("    [dim]（空）[/]")
         else:
             lines.append(f"    共 [bold]{len(disc.cards)}[/] 张已消耗")
+
     elif name == DiscardPileComponent.__name__:
         played = DiscardPileComponent(**data)
         if not played.cards:
             lines.append("    [dim](空)[/]")
         else:
             lines.append(f"    共 [bold]{len(played.cards)}[/] 张已弃置")
+
     else:
         # 通用展示：key-value，跳过 name 字段
         for k, v in data.items():

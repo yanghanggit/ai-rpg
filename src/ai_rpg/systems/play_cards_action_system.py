@@ -34,8 +34,8 @@ def _generate_play_card_context_prompt(
     if card.damage_dealt > 0:
         hit_info = f"（{card.hit_count} 段）" if card.hit_count > 1 else ""
         stats_parts.append(f"造成伤害 {card.damage_dealt}{hit_info}")
-    if card.energy_given > 0:
-        stats_parts.append(f"给予目标行动 {card.energy_given} 次")
+    if card.energy_delta != 0:
+        stats_parts.append(f"改变目标行动 {card.energy_delta:+d} 次")
     if stats_parts:
         lines.append(f"卡牌效果：{'，'.join(stats_parts)}。")
     return "\n".join(lines)

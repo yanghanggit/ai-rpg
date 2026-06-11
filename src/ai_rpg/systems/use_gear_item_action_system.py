@@ -126,9 +126,10 @@ class UseGearItemActionSystem(ReactiveProcessor):
                     assert isinstance(
                         inventory_item, GearItem
                     ), f"UseGearItemActionSystem: uuid 匹配到的物品非 GearItem: {inventory_item}"
-                    inventory_item.cur_durability -= 1
+                    inventory_item.durability -= 1
+                    inventory_item.durability = max(inventory_item.durability, 0)
                     logger.debug(
-                        f"UseGearItemActionSystem: '{item.name}' 耐久 {inventory_item.cur_durability + 1} → {inventory_item.cur_durability}"
+                        f"UseGearItemActionSystem: '{item.name}' 耐久 {inventory_item.durability + 1} → {inventory_item.durability}"
                     )
                     break
 

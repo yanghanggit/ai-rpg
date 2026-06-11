@@ -206,15 +206,12 @@ def _restore_gear_durability(tcg_game: TCGGame) -> None:
     for entity in tcg_game.get_group(Matcher(InventoryComponent)).entities:
         inv = entity.get(InventoryComponent)
         for item in inv.items:
-            if (
-                isinstance(item, GearItem)
-                and item.cur_durability != item.max_durability
-            ):
+            if isinstance(item, GearItem) and item.durability != item.max_durability:
                 logger.debug(
                     f"_restore_gear_durability: [{entity.name}] '{item.name}' "
-                    f"{item.cur_durability} → {item.max_durability}"
+                    f"{item.durability} → {item.max_durability}"
                 )
-                item.cur_durability = item.max_durability
+                item.durability = item.max_durability
 
 
 ###################################################################################################################################################################

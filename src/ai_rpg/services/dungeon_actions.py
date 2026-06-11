@@ -567,8 +567,8 @@ def activate_use_gear(
         logger.error(msg)
         return False, msg
 
-    if selected_item.cur_durability <= 0:
-        msg = f"装备 '{item_name}' 耐久已耗尽（cur_durability=0），无法装备"
+    if selected_item.durability <= 0:
+        msg = f"装备 '{item_name}' 耐久已耗尽（durability=0），无法装备"
         logger.error(msg)
         return False, msg
 

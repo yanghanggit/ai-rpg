@@ -6,7 +6,7 @@
 
 装备是战斗中可主动使用的**持久性**道具。使用后以深拷贝写入目标角色的 `EquippedGearComponent`，持续提供属性加成直至关卡结束；原物品始终留在背包（`InventoryComponent`），不被移除。
 
-每次装备消耗一点耐久（`cur_durability -= 1`）；耐久归零或装备正在被某角色激活时，均无法再次装备。进入地下城或离开地下城返回家园时，所有背包装备的耐久恢复至 `max_durability`。
+每次装备消耗一点耐久（`durability -= 1`）；耐久归零或装备正在被某角色激活时，均无法再次装备。进入地下城或离开地下城返回家园时，所有背包装备的耐久恢复至 `max_durability`。
 
 ---
 
@@ -28,11 +28,11 @@
 
 ## 耐久机制
 
-`max_durability`（默认 3）为上限，`cur_durability` 为当前值，初始与上限相等。
+`max_durability`（默认 3）为上限，`durability` 为当前值，初始与上限相等。
 
-- **装备时**：`UseGearItemActionSystem` 从 `InventoryComponent` 按 `uuid` 找到原件，执行 `cur_durability -= 1`。
-- **拦截条件**（服务层 `activate_use_gear`）：`cur_durability <= 0` 或该装备的 `uuid` 已存在于某实体的 `EquippedGearComponent`。
-- **恢复时机**：`enter_dungeon_first_stage` 调用 `_enter_dungeon_stage` 前，以及 `exit_dungeon_and_return_home` 执行 `clear_between_stages` 后，均调用 `_restore_gear_durability` 将所有背包 `GearItem` 的 `cur_durability` 重置为 `max_durability`。
+- **装备时**：`UseGearItemActionSystem` 从 `InventoryComponent` 按 `uuid` 找到原件，执行 `durability -= 1`。
+- **拦截条件**（服务层 `activate_use_gear`）：`durability <= 0` 或该装备的 `uuid` 已存在于某实体的 `EquippedGearComponent`。
+- **恢复时机**：`enter_dungeon_first_stage` 调用 `_enter_dungeon_stage` 前，以及 `exit_dungeon_and_return_home` 执行 `clear_between_stages` 后，均调用 `_restore_gear_durability` 将所有背包 `GearItem` 的 `durability` 重置为 `max_durability`。
 
 同一场 Combat 内，因"已激活"拦截，同一装备事实上只能消耗一次耐久。
 
@@ -42,7 +42,7 @@
 
 | 时机 | 操作 |
 | ------ | ------ |
-| 战斗中使用装备 | 深拷贝写入目标 `EquippedGearComponent`；`cur_durability -= 1` |
+| 战斗中使用装备 | 深拷贝写入目标 `EquippedGearComponent`；`durability -= 1` |
 | 装备已被激活或耐久归零 | 服务层拒绝，不创建 Action |
 | 目标已装备其他物品时再次装备 | `replace` 覆盖；被覆盖物品保留背包 |
 | 进入下一关 / 退出地下城 | `clear_between_stages` 移除所有 `EquippedGearComponent`；随后 `_restore_gear_durability` 恢复耐久 |

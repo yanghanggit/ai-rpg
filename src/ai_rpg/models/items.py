@@ -50,7 +50,7 @@ class GearItem(Item):
     max_durability: int = (
         3  # 最大耐久度；每次进入/离开地下城时 cur_durability 恢复至此值
     )
-    cur_durability: int = (
+    durability: int = (
         3  # 当前耐久度；每次装备到 EquippedGearComponent 时 -1；归零后无法再次装备
     )
 

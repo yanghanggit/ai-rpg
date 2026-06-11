@@ -38,7 +38,7 @@ class DeckCardEntry(BaseModel):
     playable: bool = True
     exhaust: bool = False
     damage_dealt: int
-    energy_given: int = 0
+    energy_delta: int = 0
     hit_count: int = 1
     target_type: str = TargetType.ENEMY_SINGLE
 
@@ -119,7 +119,7 @@ HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:
 - playable：布尔值，是否允许出牌；默认 true
 - exhaust：布尔值，出牌后是否永久消耗（归入消耗堆，不进入弃牌循环）；默认 false
 - damage_dealt：单次攻击造成的伤害值（基于攻击力合理推算，整数）
-- energy_given：出牌后给予每个目标的行动次数（整数，默认 0；支援技能为友方追加行动时可设正值）
+- energy_delta：出牌后改变每个目标的行动次数（整数，默认 0；正值增加行动次数，如支援技能为友方追加行动；负值剥夺目标行动次数，如控制/等待效果）
 - hit_count：攻击次数（默认 1；多段攻击可设为 2~4）
 - target_type：目标类型：enemy_single / enemy_all / enemy_random_multi / ally_single / ally_all / self_only
 
@@ -127,7 +127,7 @@ HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:
 
 输出 JSON，cards 数组共 {num_cards} 张：
 
-{{"name":"...","description":"...","affixes":[],"modifiers":[],"playable":true,"exhaust":false,"damage_dealt":0,"energy_given":0,"hit_count":1,"target_type":"enemy_single"}}"""
+{"name":"...","description":"...","affixes":[],"modifiers":[],"playable":true,"exhaust":false,"damage_dealt":0,"energy_delta":0,"hit_count":1,"target_type":"enemy_single"}"""
 
 
 #######################################################################################################################################
@@ -265,7 +265,7 @@ class DeckGenerationSystem(ReactiveProcessor):
                         playable=entry.playable,
                         exhaust=entry.exhaust,
                         damage_dealt=entry.damage_dealt,
-                        energy_given=entry.energy_given,
+                        energy_delta=entry.energy_delta,
                         hit_count=entry.hit_count,
                         target_type=TargetType(entry.target_type),
                         source=entity.name,

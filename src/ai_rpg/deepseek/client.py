@@ -285,6 +285,12 @@ class DeepSeekClient:
 
     ################################################################################################################################################################################
     @property
+    def succeeded(self) -> bool:
+        """请求是否成功（收到有效响应）"""
+        return self._response_ai_message is not None
+
+    ################################################################################################################################################################################
+    @property
     def prompt_cache_hit_tokens(self) -> int:
         """本次请求缓存命中的 token 数（计费价格更低）"""
         return self._prompt_cache_hit_tokens
@@ -569,7 +575,6 @@ class DeepSeekClient:
             f"DeepSeekClient.batch_chat: {len(clients)} clients, {elapsed:.2f}s"
         )
 
-        failed = sum(1 for r in results if isinstance(r, Exception))
         for i, result in enumerate(results):
             if isinstance(result, Exception):
                 name = clients[i].name if i < len(clients) else "unknown"
@@ -577,6 +582,7 @@ class DeepSeekClient:
                     f"Request failed for '{name}': {type(result).__name__}: {result}"
                 )
 
+        failed = sum(1 for c in clients if not c.succeeded)
         if failed:
             logger.warning(f"DeepSeekClient.batch_chat: {failed}/{len(clients)} failed")
         else:

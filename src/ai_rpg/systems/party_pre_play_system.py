@@ -123,6 +123,11 @@ class PartyPrePlaySystem(ReactiveProcessor):
     #######################################################################################################################################
     def _apply_narration(self, entity: Entity, client: DeepSeekClient) -> None:
         """解析 LLM 响应并回写至 PlayCardsAction.action。失败时记录错误日志，保持原有空字符串不变，由仲裁系统兜底。"""
+        if not client.succeeded:
+            logger.warning(
+                f"PartyPrePlaySystem: [{entity.name}] 请求未成功（超时或网络错误），跳过叙事生成，由仲裁兜底"
+            )
+            return
         try:
             response = ActionNarrationResponse.model_validate_json(
                 extract_json_from_code_block(client.response_content)

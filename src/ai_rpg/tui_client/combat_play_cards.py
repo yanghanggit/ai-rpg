@@ -92,12 +92,9 @@ class PlayCardsMixin(UseConsumableMixin):
     # 出牌流程入口
     # ──────────────────────────────────────────────
     def _start_play_cards(self) -> None:
-        """进入出牌模式：打印标题后启动 _advance()。"""
+        """进入出牌模式：启动 _advance()。"""
         log = self.query_one(RichLog)  # type: ignore[attr-defined]
-        log.write(
-            "\n[bold cyan]── 出牌阶段 ─────────────────────────────────────────[/]\n"
-            "  逐步完成当前回合所有角色的出牌。\n"
-        )
+        log.write("[bold cyan]── 出牌阶段 ──[/]")
         inp = self.query_one(Input)  # type: ignore[attr-defined]
         inp.disabled = True
         self._phase = _Phase.LOADING
@@ -195,34 +192,18 @@ class PlayCardsMixin(UseConsumableMixin):
             return
 
         short = display_name(current_actor)
-        log.write(
-            f"[bold green]── 你的回合：{short} ────────────────────────────────[/]"
-        )
-        ao_str = " → ".join(display_name(a) for a in action_order)
-        done_str = (
-            "  ".join(display_name(a) for a in completed_actors)
-            if completed_actors
-            else "（无）"
-        )
-        log.write(
-            f"  [bold yellow]回合 {round_num}[/]  行动序列：{ao_str}  已出手：{done_str}"
-        )
         ally_entities: List[EntitySerialization] = [
             e
             for e in all_details.entities_serialization
             if not any(c.name == MonsterComponent.__name__ for c in e.components)
         ]
-        write_full_entities_block(
-            log, ally_entities, show_hand=False, show_header=False
-        )
-        log.write("  [bold cyan]── 选牌（输入编号）──[/]")
+        write_full_entities_block(log, ally_entities, show_hand=False)
         write_hand_table(log, hand_cards, current_actor)
         self._current_actor = current_actor
         self._phase = _Phase.SELECT_CARD
         self._update_play_status(
             f"[{short}] 输入卡牌编号（1-{len(hand_cards)}）选牌  |  q 返回主菜单"
         )
-        log.write(f"  [dim](输入卡牌编号出牌 / q 返回主菜单)[/]")
         inp = self.query_one(Input)  # type: ignore[attr-defined]
         inp.placeholder = f"1-{len(hand_cards)} 或卡牌名 / q 返回"
         inp.disabled = False

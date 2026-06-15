@@ -29,6 +29,7 @@ from .server_client import (
     TaskFailedError,
 )
 from ..models import (
+    CombatState,
     ConsumableItem,
     InventoryComponent,
     MonsterComponent,
@@ -71,7 +72,10 @@ class UseConsumableMixin(BaseGameScreen):
 
     # ── 由 PlayCardsMixin 提供 ───────────────────────
     @abstractmethod
-    def _abort_play_cards(self) -> None: ...
+    def _abort_play_cards(
+        self,
+        hint: str = "[dim]已中断出牌。输入 [bold]2[/] 可随时继续本回合。[/]",
+    ) -> None: ...
 
     @abstractmethod
     def _advance(self) -> object: ...
@@ -110,6 +114,16 @@ class UseConsumableMixin(BaseGameScreen):
         log = self.query_one(RichLog)
         try:
             room_resp = await fetch_dungeon_room(self._user_name, self._game_name)
+            combat_state = room_resp.room.combat.state
+
+            if combat_state in (CombatState.NONE, CombatState.INITIALIZATION):
+                self._abort_play_cards("[yellow]⚠ 战斗尚未开始，无法使用消耗品。[/]")
+                return
+
+            if combat_state in (CombatState.COMPLETE, CombatState.POST_COMBAT):
+                self._abort_play_cards("[yellow]⚠ 战斗已结束，无法使用消耗品。[/]")
+                return
+
             stage_name = room_resp.room.stage.name
             stages_resp = await fetch_stages_state(self._user_name, self._game_name)
             actor_names: List[str] = list(stages_resp.mapping.get(stage_name, []))
@@ -132,15 +146,13 @@ class UseConsumableMixin(BaseGameScreen):
                     break
 
             if player_actor is None:
-                log.write("[red]未找到玩家角色。[/]")
-                self._abort_play_cards()
+                self._abort_play_cards("[red]❌ 未找到玩家角色。[/]")
                 return
 
             self._consumable_actor = player_actor
 
             if not consumables:
-                log.write("[yellow]背包中没有消耗品。[/]")
-                self._abort_play_cards()
+                self._abort_play_cards("[yellow]背包中没有消耗品。[/]")
                 return
 
             log.write(f"  [bold]背包消耗品（{display_name(player_actor)}）：[/]")
@@ -177,8 +189,7 @@ class UseConsumableMixin(BaseGameScreen):
 
         except Exception as e:
             logger.error(f"_load_consumables_for_player: 加载失败 error={e}")
-            log.write(f"[bold red]❌ 加载背包失败: {e}[/]")
-            self._abort_play_cards()
+            self._abort_play_cards(f"[bold red]❌ 加载背包失败: {e}[/]")
 
     @work
     async def _handle_consumable_selection(self, raw: str) -> None:

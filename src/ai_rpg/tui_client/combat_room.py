@@ -111,7 +111,7 @@ class CombatRoomScreen(PlayCardsMixin, BaseGameScreen):
         self.query_one("#combat-status", Static).update(self._status_bar_text)
         log = self.query_one(RichLog)
         log.write(COMBAT_ROOM_MENU)
-        self._fetch_status()
+        log.write("[dim]输入 [bold]6[/] 查看当前战斗状态。[/]")
         self.query_one(Input).focus()
 
     def action_suggest_exit(self) -> None:

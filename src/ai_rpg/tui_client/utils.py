@@ -29,6 +29,7 @@ _TARGET_MAP = {
     "self_only": "己方",
     "enemy_single": "单体敌方",
     "enemy_all": "全体敌方",
+    "enemy_random_multi": "随机多体敌方",
     "ally_single": "单体友方",
     "ally_all": "全体友方",
 }

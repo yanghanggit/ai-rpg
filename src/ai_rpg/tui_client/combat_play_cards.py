@@ -31,6 +31,7 @@ from ..models import (
     Card,
     CombatResult,
     CombatState,
+    ConsumableItem,
     HandComponent,
     MonsterComponent,
     PartyMemberComponent,
@@ -84,14 +85,16 @@ class PlayCardsMixin(UseConsumableMixin):
         self._current_actor: Optional[str] = None
         self._selected_card_name: Optional[str] = None
         self._target_candidates: List[str] = []
+        self._consumable_items: List[ConsumableItem] = []
         self._selected_item_name: Optional[str] = None
-        self._consumable_actor: Optional[str] = None
 
     # ──────────────────────────────────────────────
     # 出牌区域重绘辅助
     # ──────────────────────────────────────────────
-    def _clear_to_play_area(self) -> RichLog:
-        """清空 log，重写主菜单 + 出牌阶段标题，返回 log。
+    def _clear_to_play_area(
+        self, title: str = "[bold cyan]── 出牌阶段 ──[/]"
+    ) -> RichLog:
+        """清空 log，重写主菜单 + 阶段标题，返回 log。
 
         三个互斥子状态（选牌 / 出牌等待+结果 / 敌人回合）进入时调用，
         确保各状态独占出牌内容区域，同时保持主菜单始终可见。
@@ -99,7 +102,7 @@ class PlayCardsMixin(UseConsumableMixin):
         log = self.query_one(RichLog)
         log.clear()
         log.write(COMBAT_ROOM_MENU)
-        log.write("[bold cyan]── 出牌阶段 ──[/]")
+        log.write(title)
         return log
 
     # ──────────────────────────────────────────────
@@ -292,8 +295,8 @@ class PlayCardsMixin(UseConsumableMixin):
         self._current_actor = None
         self._selected_card_name = None
         self._target_candidates = []
+        self._consumable_items = []
         self._selected_item_name = None
-        self._consumable_actor = None
         log = self.query_one(RichLog)
         inp = self.query_one(Input)
         inp.placeholder = "输入命令..."

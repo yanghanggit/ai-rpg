@@ -97,11 +97,14 @@ def _generate_deck_prompt(
 
     design_principle = _build_design_principle_prompt(num_cards, keywords, dice_rolls)
 
-    return f"""# 战斗开始：生成 {num_cards} 张初始牌库卡牌
+    return f"""\
+# 战斗开始：生成 {num_cards} 张初始牌库卡牌
 
 ## 角色属性
 
-HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense}
+| HP | 攻击 | 防御 |
+|---|---|---|
+| {actor_stats.hp}/{actor_stats.max_hp} | {actor_stats.attack} | {actor_stats.defense} |
 
 ## 设计约束
 
@@ -109,25 +112,60 @@ HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:
 
 ## 字段说明
 
-- name：富有想象力，体现行动意图
-- description：第三人称通用描述（1句，客观说明这张牌的即时战斗行为，禁止叙事润色）。
-  【重要】禁止提及任何当前场景的地物（如断柱、沙地、余晖、岩板等）、地名或即时情境细节。
-  ❌ 错误示例：「借助断柱的支撑旋身，踢击敌人」
-  ✓ 正确示例：「旋身借力，以连续踢击攻击单一敌人」
-- affixes：延迟词缀列表，格式 `[名称]:触发倾向描述`，出牌后独立推理生成持续状态效果（如 `[燃烧]:可能引发持续扣血`）；无持续效果时输出 []
-- modifiers：即时修正词缀列表，格式 `[名称]:即时修正描述`，直接注入本次仲裁计算（如 `[穿甲]:无视目标防御`）；无即时修正时输出 []
-- playable：布尔值，是否允许出牌；默认 true
-- exhaust：布尔值，出牌后是否永久消耗（归入消耗堆，不进入弃牌循环）；默认 false
-- damage_dealt：单次攻击造成的伤害值（基于攻击力合理推算，整数）
-- energy_delta：出牌后改变每个目标的行动次数（整数，默认 0；正值增加行动次数，如支援技能为友方追加行动；负值剥夺目标行动次数，如控制/等待效果）
-- hit_count：攻击次数（默认 1；多段攻击可设为 2~4）
-- target_type：目标类型：enemy_single / enemy_all / enemy_random_multi / ally_single / ally_all / self_only
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| name | str | 富有想象力，体现行动意图 |
+| description | str | 第三人称客观描述（1句），只描述即时战斗行为 |
+| affixes | list[str] | 延迟词缀，格式 `[名称]:触发倾向`；无则 [] |
+| modifiers | list[str] | 即时修正词缀，格式 `[名称]:即时修正`；无则 [] |
+| playable | bool | 是否可出牌；默认 true |
+| exhaust | bool | 出牌后是否永久消耗；默认 false |
+| damage_dealt | int | 单次伤害值（参考攻击力合理推算） |
+| energy_delta | int | 改变目标行动次数（正值增加，负值剥夺）；默认 0 |
+| hit_count | int | 攻击次数；默认 1，多段可设 2~4 |
+| target_type | str | enemy_single / enemy_all / enemy_random_multi / ally_single / ally_all / self_only |
 
-## 输出格式
+## 约束
 
-输出 JSON，cards 数组共 {num_cards} 张：
+- `description` 禁止提及任何场景地物（如断柱、沙地）、地名或即时情境细节
+- `cards` 数组长度必须恰好为 {num_cards}
+- 只输出 JSON，不附加任何说明文字
 
-{"name":"...","description":"...","affixes":[],"modifiers":[],"playable":true,"exhaust":false,"damage_dealt":0,"energy_delta":0,"hit_count":1,"target_type":"enemy_single"}"""
+```json
+{{
+  "cards": [
+    {{
+      "name": "...",
+      "description": "...",
+      "affixes": [],
+      "modifiers": [],
+      "playable": true,
+      "exhaust": false,
+      "damage_dealt": 0,
+      "energy_delta": 0,
+      "hit_count": 1,
+      "target_type": "enemy_single"
+    }}
+  ]
+}}
+```"""
+
+
+#######################################################################################################################################
+def _generate_compressed_deck_prompt(
+    actor_stats: CharacterStats,
+    num_cards: int,
+    keywords: List[Keyword] = [],
+    dice_rolls: List[int] = [],
+) -> str:
+    """生成牌库生成 prompt 的压缩版（写入对话历史，减少 token 消耗）。"""
+    design_principle = _build_design_principle_prompt(num_cards, keywords, dice_rolls)
+    return f"""\
+# 战斗牌库生成（{num_cards} 张）
+
+HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense}
+
+{design_principle}"""
 
 
 #######################################################################################################################################
@@ -135,9 +173,6 @@ HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:
 class DeckGenerationSystem(ReactiveProcessor):
     """
     响应 GenerateDeckAction，为每个触发角色并行调用 LLM 生成初始牌库卡牌，
-    洗牌后填入各角色的 DrawPileComponent。
-
-    触发条件：实体挂载 GenerateDeckAction（由 CombatInitializationSystem 在战斗初始化时注入）。
     """
 
     def __init__(self, game: TCGGame) -> None:
@@ -199,11 +234,18 @@ class DeckGenerationSystem(ReactiveProcessor):
                 keywords=sampled_keywords,
                 dice_rolls=dice_rolls,
             )
+            compressed_prompt = _generate_compressed_deck_prompt(
+                actor_stats=combat_stats,
+                num_cards=num_cards,
+                keywords=sampled_keywords,
+                dice_rolls=dice_rolls,
+            )
 
             chat_clients.append(
                 DeepSeekClient(
                     name=entity.name,
                     prompt=prompt,
+                    compressed_prompt=compressed_prompt,
                     context=self._game.get_agent_context(entity).context,
                 )
             )
@@ -287,6 +329,17 @@ class DeckGenerationSystem(ReactiveProcessor):
             draw_pile = entity.get(DrawPileComponent)
             assert draw_pile is not None, f"{entity.name} 缺少 DrawPileComponent"
             draw_pile.cards.extend([c.model_copy() for c in cards])
+
+            # 将本轮任务提示词与 LLM 回复写入 agent 对话历史
+            self._game.add_human_message(
+                entity=entity,
+                message_content=chat_client.compressed_prompt,
+                deck_generation_full_prompt=chat_client.prompt,
+            )
+            assert chat_client.response_ai_message is not None
+            self._game.add_ai_message(
+                entity=entity, ai_message=chat_client.response_ai_message
+            )
 
             logger.debug(
                 f"[{entity.name}] 牌库生成完成：本次 {len(cards)} 张副本已洗牌填入 DrawPile"

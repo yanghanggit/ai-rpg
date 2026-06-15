@@ -284,9 +284,6 @@ def write_full_entities_block(
         assert (
             StatusEffectsComponent.__name__ in comp_map
         ), f"[renderer] {entity.name} 缺少 StatusEffectsComponent"
-        assert (
-            DrawPileComponent.__name__ in comp_map
-        ), f"[renderer] {entity.name} 缺少 DrawPileComponent"
 
         # 解析必须组件
         stats_comp = CharacterStatsComponent(
@@ -295,7 +292,6 @@ def write_full_entities_block(
         status_effects_comp = StatusEffectsComponent(
             **comp_map[StatusEffectsComponent.__name__].data
         )
-        draw_pile_comp = DrawPileComponent(**comp_map[DrawPileComponent.__name__].data)
 
         # 解析可选组件
         _gear_raw = comp_map.get(EquippedGearComponent.__name__)
@@ -330,9 +326,6 @@ def write_full_entities_block(
             )
         else:
             log.write("  [dim](无状态效果)[/]")
-        log.write("")
-
-        _write_draw_pile(log, draw_pile_comp, entity.name)
         log.write("")
 
         if show_hand:

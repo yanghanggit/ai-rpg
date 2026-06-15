@@ -371,7 +371,9 @@ class CombatRoomScreen(PlayCardsMixin, BaseGameScreen):
         inp.disabled = False
         inp.focus()
         if ok:
-            self._fetch_status()
+            log.write(
+                "[dim]输入 [bold]6[/] 查看当前战斗状态，输入 [bold]2[/] 开始抽牌。[/]"
+            )
 
     @work
     async def _do_advance_combat(self) -> None:

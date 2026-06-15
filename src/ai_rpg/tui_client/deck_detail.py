@@ -13,21 +13,13 @@ from .server_client import (
 from .utils import display_name
 from ..models import (
     DeckComponent,
+    HandComponent,
     KeywordComponent,
     DrawPileComponent,
     ExhaustPileComponent,
     DiscardPileComponent,
 )
-from ..models.cards import Card
-from typing import List
-
-_TARGET_LABEL = {
-    "enemy_single": "[red]敌方单体[/]",
-    "enemy_all": "[red]敌方全体[/]",
-    "ally_single": "[green]友方单体[/]",
-    "ally_all": "[green]友方全体[/]",
-    "self_only": "[cyan]仅自己[/]",
-}
+from .combat_room_renderer import write_hand_table
 
 DECK_HEADER = """\
 [bold cyan]── 牌组详情 ──────────────────────────────────────[/]
@@ -154,87 +146,68 @@ class DeckDetailScreen(BaseGameScreen):
                 played_count = len(played_comp.cards) if played_comp else 0
                 deck_count = len(deck_comp.cards) if deck_comp else 0
 
-                log.write(
-                    f"[bold cyan]{display_name(entity.name)}[/]  "
-                    f"[dim]牌库 {deck_count} 张 | 已出牌 {played_count} 张 | 消耗堆 {discard_count} 张 | 可重抽 {draw_count} 张[/]"
+                hand_raw = next(
+                    (c for c in entity.components if c.name == HandComponent.__name__),
+                    None,
+                )
+                hand_comp = HandComponent(**hand_raw.data) if hand_raw else None
+                hand_suffix = (
+                    f" | 手牌 {len(hand_comp.cards)} 张（回合 {hand_comp.round}）"
+                    if hand_comp is not None
+                    else ""
                 )
 
-                def _render_cards(cards: List[Card], log: RichLog) -> None:
-                    for i, card in enumerate(cards, start=1):
-                        hit_str = (
-                            f"x[yellow]{card.hit_count}[/]"
-                            if card.hit_count > 1
-                            else ""
-                        )
-                        tt_str = _TARGET_LABEL.get(
-                            card.target_type, f"[dim]{card.target_type}[/]"
-                        )
-                        action_str = (
-                            f"\n        [dim]{card.description}[/]"
-                            if card.description
-                            else ""
-                        )
-                        hint_str = (
-                            f"\n        [yellow]词缀：{'\u3001'.join(card.affixes)}[/]"
-                            if card.affixes
-                            else ""
-                        ) + (
-                            f"\n        [cyan]即时：{'\u3001'.join(card.modifiers)}[/]"
-                            if card.modifiers
-                            else ""
-                        )
-                        source_str = (
-                            f"  [dim]来源:{display_name(card.source)}[/]"
-                            if card.source and card.source != entity.name
-                            else ""
-                        )
-                        log.write(
-                            f"  [bold green]{i:>2}[/]  [bold]{card.name}[/]  "
-                            f"伤害:[red]{card.damage_dealt}[/]{hit_str}"
-                            + (
-                                f"  行动:[green]+{card.energy_delta}[/]"
-                                if card.energy_delta > 0
-                                else (
-                                    f"  行动:[red]{card.energy_delta}[/]"
-                                    if card.energy_delta < 0
-                                    else ""
-                                )
-                            )
-                            + f"  目标:{tt_str}"
-                            + source_str
-                            + action_str
-                            + hint_str
-                        )
+                log.write(
+                    f"[bold cyan]{display_name(entity.name)}[/]  "
+                    f"[dim]牌库 {deck_count} 张 | 已出牌 {played_count} 张 | 消耗堆 {discard_count} 张 | 可重抽 {draw_count} 张{hand_suffix}[/]"
+                )
 
                 # 0) 牌库（DeckComponent）
+                log.write("[dim]──────────────────────────────────────────────────[/]")
                 log.write("  [bold blue]▸ 牌库（DeckComponent）[/]")
                 if deck_comp and deck_comp.cards:
-                    _render_cards(deck_comp.cards, log)
+                    write_hand_table(log, deck_comp.cards, entity.name)
                 else:
                     log.write("    [dim]（尚无记录）[/]")
 
                 # 1) 已出牌（DiscardPile）
+                log.write("[dim]──────────────────────────────────────────────────[/]")
                 log.write("  [bold red]▸ 已出牌（DiscardPile）[/]")
                 if played_comp and played_comp.cards:
-                    _render_cards(played_comp.cards, log)
+                    write_hand_table(log, played_comp.cards, entity.name)
                 else:
                     log.write("    [dim]（尚无记录）[/]")
 
                 # 2) 消耗堆（ExhaustPile）
+                log.write("[dim]──────────────────────────────────────────────────[/]")
                 log.write("  [bold magenta]▸ 消耗堆（ExhaustPile）[/]")
                 if discard_comp and discard_comp.cards:
-                    _render_cards(discard_comp.cards, log)
+                    write_hand_table(log, discard_comp.cards, entity.name)
                 else:
                     log.write("    [dim]（尚无记录）[/]")
 
                 # 3) 可重抽卡牌（DrawPile）
+                log.write("[dim]──────────────────────────────────────────────────[/]")
                 log.write("  [bold yellow]▸ 可重抽（DrawPile）[/]")
                 if draw_comp and draw_comp.cards:
-                    _render_cards(draw_comp.cards, log)
+                    write_hand_table(log, draw_comp.cards, entity.name)
                 else:
                     log.write("    [dim]（尚无记录）[/]")
 
-                # 4) Keyword 关键词约束
+                # 4) 当前手牌（HandComponent，可选）
+                if hand_comp is not None:
+                    log.write(
+                        "[dim]──────────────────────────────────────────────────[/]"
+                    )
+                    log.write(
+                        f"  [bold green]▸ 当前手牌（HandComponent，回合 {hand_comp.round}）[/]"
+                    )
+                    if hand_comp.cards:
+                        write_hand_table(log, hand_comp.cards, entity.name)
+                    else:
+                        log.write("    [dim]（手牌为空）[/]")
+
+                # 5) Keyword 关键词约束
                 keyword_raw = next(
                     (
                         c
@@ -246,12 +219,18 @@ class DeckDetailScreen(BaseGameScreen):
                 if keyword_raw is not None:
                     keyword_comp = KeywordComponent(**keyword_raw.data)
                     if keyword_comp.keywords:
-                        log.write("")
+                        log.write(
+                            "[dim]──────────────────────────────────────────────────[/]"
+                        )
+                        log.write("  [bold magenta]▸ 关键词约束[/]")
                         for j, kw in enumerate(keyword_comp.keywords, start=1):
                             log.write(
                                 f"  [bold magenta]关键词 {j}：[/][dim]{kw.description}[/]"
                             )
 
+                log.write(
+                    "[bold cyan]══════════════════════════════════════════════════[/]"
+                )
                 log.write("")
 
             logger.info(

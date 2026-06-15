@@ -4,14 +4,13 @@
 - _Phase 枚举：出牌/消耗品阶段状态机的所有状态（由 combat_play_cards 重新导出）
 - UseConsumableMixin：消耗品流程的 5 个方法
 
-UseConsumableMixin 是纯 Mixin，不继承任何基类。
-宿主类需通过 MRO 提供：
-  - self._user_name: str / self._game_name: str
-  - self.query_one()  ← 由 Textual Widget 提供
-  - self._abort_play_cards() / self._advance()
-  - self._update_play_status() / self._show_play_results()
+UseConsumableMixin 继承 BaseGameScreen；子类（PlayCardsMixin）需实现抽象成员：
+  - self._user_name / self._game_name（由 CombatRoomScreen 提供）
+  - self._abort_play_cards() / self._advance()（由 PlayCardsMixin 提供）
+  - self._update_play_status() / self._show_play_results()（由 PlayCardsMixin 提供）
 """
 
+from abc import abstractmethod
 from enum import auto, Enum
 from typing import List, Optional
 import httpx
@@ -20,6 +19,7 @@ from rich import box as rich_box
 from rich.table import Table
 from textual import work
 from textual.widgets import Input, RichLog
+from .base import BaseGameScreen
 from .server_client import dungeon_combat_use_consumable as server_use_consumable
 from .server_client import (
     fetch_dungeon_room,
@@ -53,12 +53,36 @@ class _Phase(Enum):
     SELECT_CONSUMABLE_TARGET = auto()  # 等待用户输入消耗品目标编号
 
 
-class UseConsumableMixin:
+class UseConsumableMixin(BaseGameScreen):
     """消耗品流程状态机。
 
-    宿主类（CombatRoomScreen）必须在 __init__ 中调用 self._init_play_state()。
-    PlayCardsMixin 通过继承链提供缺失的状态字段和方法。
+    继承 BaseGameScreen，由 PlayCardsMixin 进一步继承，最终由 CombatRoomScreen 实例化。
+    以下抽象成员必须由子类或宿主类提供。
     """
+
+    # ── 由 CombatRoomScreen 提供 ─────────────────────
+    @property
+    @abstractmethod
+    def _user_name(self) -> str: ...
+
+    @property
+    @abstractmethod
+    def _game_name(self) -> str: ...
+
+    # ── 由 PlayCardsMixin 提供 ───────────────────────
+    @abstractmethod
+    def _abort_play_cards(self) -> None: ...
+
+    @abstractmethod
+    def _advance(self) -> object: ...
+
+    @abstractmethod
+    def _update_play_status(self, text: str) -> None: ...
+
+    @abstractmethod
+    async def _show_play_results(
+        self, prev_round_idx: int, prev_completed_count: int
+    ) -> None: ...
 
     # 消耗品流程专用状态
     _consumable_actor: Optional[str]
@@ -73,26 +97,25 @@ class UseConsumableMixin:
 
     def _start_use_consumable(self) -> None:
         """命令 4 入口：拉取玩家背包并展示消耗品列表，等待用户选择。"""
-        log = self.query_one(RichLog)  # type: ignore[attr-defined]
-        log.clear()
+        log = self.query_one(RichLog)
         log.write("[bold yellow]── 使用消耗品 ──[/]")
         log.write("[dim]正在加载背包...[/]")
         self._phase = _Phase.LOADING
-        self.query_one(Input).disabled = True  # type: ignore[attr-defined]
+        self.query_one(Input).disabled = True
         self._load_consumables_for_player()
 
     @work
     async def _load_consumables_for_player(self) -> None:
         """拉取当前玩家实体的背包，展示消耗品列表，进入 SELECT_CONSUMABLE 阶段。"""
-        log = self.query_one(RichLog)  # type: ignore[attr-defined]
+        log = self.query_one(RichLog)
         try:
-            room_resp = await fetch_dungeon_room(self._user_name, self._game_name)  # type: ignore[attr-defined]
+            room_resp = await fetch_dungeon_room(self._user_name, self._game_name)
             stage_name = room_resp.room.stage.name
-            stages_resp = await fetch_stages_state(self._user_name, self._game_name)  # type: ignore[attr-defined]
+            stages_resp = await fetch_stages_state(self._user_name, self._game_name)
             actor_names: List[str] = list(stages_resp.mapping.get(stage_name, []))
 
             all_details = await fetch_entities_details(
-                self._user_name, self._game_name, actor_names  # type: ignore[attr-defined]
+                self._user_name, self._game_name, actor_names
             )
 
             player_actor: Optional[str] = None
@@ -110,14 +133,14 @@ class UseConsumableMixin:
 
             if player_actor is None:
                 log.write("[red]未找到玩家角色。[/]")
-                self._abort_play_cards()  # type: ignore[attr-defined]
+                self._abort_play_cards()
                 return
 
             self._consumable_actor = player_actor
 
             if not consumables:
                 log.write("[yellow]背包中没有消耗品。[/]")
-                self._abort_play_cards()  # type: ignore[attr-defined]
+                self._abort_play_cards()
                 return
 
             log.write(f"  [bold]背包消耗品（{display_name(player_actor)}）：[/]")
@@ -147,7 +170,7 @@ class UseConsumableMixin:
 
             self._target_candidates = [item.name for item in consumables]
             self._phase = _Phase.SELECT_CONSUMABLE
-            inp = self.query_one(Input)  # type: ignore[attr-defined]
+            inp = self.query_one(Input)
             inp.placeholder = f"1-{len(consumables)} 或消耗品名 / q 返回"
             inp.disabled = False
             inp.focus()
@@ -155,12 +178,12 @@ class UseConsumableMixin:
         except Exception as e:
             logger.error(f"_load_consumables_for_player: 加载失败 error={e}")
             log.write(f"[bold red]❌ 加载背包失败: {e}[/]")
-            self._abort_play_cards()  # type: ignore[attr-defined]
+            self._abort_play_cards()
 
     @work
     async def _handle_consumable_selection(self, raw: str) -> None:
         """用户输入消耗品编号/名称后处理：决定是否需要选择目标。"""
-        log = self.query_one(RichLog)  # type: ignore[attr-defined]
+        log = self.query_one(RichLog)
         candidates: List[str] = self._target_candidates
 
         item_name: Optional[str] = None
@@ -179,7 +202,7 @@ class UseConsumableMixin:
                 f"[red]无效输入 '{raw}'，请输入 1-{len(candidates)} 的数字或消耗品名称。[/]"
             )
             self._phase = _Phase.SELECT_CONSUMABLE
-            inp = self.query_one(Input)  # type: ignore[attr-defined]
+            inp = self.query_one(Input)
             inp.placeholder = f"1-{len(candidates)} 或消耗品名 / q 返回"
             inp.disabled = False
             inp.focus()
@@ -190,12 +213,12 @@ class UseConsumableMixin:
         try:
             actor_name = self._consumable_actor
             assert actor_name is not None
-            room_resp = await fetch_dungeon_room(self._user_name, self._game_name)  # type: ignore[attr-defined]
+            room_resp = await fetch_dungeon_room(self._user_name, self._game_name)
             stage_name = room_resp.room.stage.name
-            stages_resp = await fetch_stages_state(self._user_name, self._game_name)  # type: ignore[attr-defined]
+            stages_resp = await fetch_stages_state(self._user_name, self._game_name)
             actor_names: List[str] = list(stages_resp.mapping.get(stage_name, []))
             all_details = await fetch_entities_details(
-                self._user_name, self._game_name, actor_names  # type: ignore[attr-defined]
+                self._user_name, self._game_name, actor_names
             )
 
             target_type: str = "self_only"
@@ -246,7 +269,7 @@ class UseConsumableMixin:
                 self._selected_item_name = item_name
                 self._target_candidates = list(alive_allies)
                 self._phase = _Phase.SELECT_CONSUMABLE_TARGET
-                inp = self.query_one(Input)  # type: ignore[attr-defined]
+                inp = self.query_one(Input)
                 inp.placeholder = f"1-{len(alive_allies)} 或 Enter 跳过"
                 inp.disabled = False
                 inp.focus()
@@ -262,7 +285,7 @@ class UseConsumableMixin:
                 self._selected_item_name = item_name
                 self._target_candidates = list(alive_enemies)
                 self._phase = _Phase.SELECT_CONSUMABLE_TARGET
-                inp = self.query_one(Input)  # type: ignore[attr-defined]
+                inp = self.query_one(Input)
                 inp.placeholder = f"1-{len(alive_enemies)} 或 Enter 跳过"
                 inp.disabled = False
                 inp.focus()
@@ -272,7 +295,7 @@ class UseConsumableMixin:
 
     def _handle_consumable_target_selection(self, raw: str) -> None:
         """用户输入消耗品目标编号后处理。"""
-        log = self.query_one(RichLog)  # type: ignore[attr-defined]
+        log = self.query_one(RichLog)
         targets: List[str] = []
 
         if raw == "":
@@ -309,9 +332,9 @@ class UseConsumableMixin:
         self, actor_name: str, item_name: str, targets: List[str]
     ) -> None:
         """后台提交使用消耗品任务，等待完成后展示结果并推进回合。"""
-        log = self.query_one(RichLog)  # type: ignore[attr-defined]
+        log = self.query_one(RichLog)
         self._phase = _Phase.WAITING
-        self.query_one(Input).disabled = True  # type: ignore[attr-defined]
+        self.query_one(Input).disabled = True
 
         short = display_name(actor_name)
         log.write(
@@ -322,7 +345,7 @@ class UseConsumableMixin:
         prev_round_idx = -1
         prev_completed_count = 0
         try:
-            pre_room = await fetch_dungeon_room(self._user_name, self._game_name)  # type: ignore[attr-defined]
+            pre_room = await fetch_dungeon_room(self._user_name, self._game_name)
             pre_rounds = pre_room.room.combat.rounds
             if pre_rounds:
                 prev_round_idx = len(pre_rounds) - 1
@@ -333,7 +356,7 @@ class UseConsumableMixin:
         task_id = ""
         try:
             resp = await server_use_consumable(
-                self._user_name, self._game_name, item_name, targets  # type: ignore[attr-defined]
+                self._user_name, self._game_name, item_name, targets
             )
             task_id = resp.task_id
             logger.info(f"_do_use_consumable: 任务已创建 task_id={task_id}")
@@ -344,15 +367,15 @@ class UseConsumableMixin:
                 detail = str(e)
             log.write(f"[bold red]❌ 使用消耗品请求失败: {detail}[/]")
             logger.error(f"_do_use_consumable: 请求失败 error={e}")
-            self._advance()  # type: ignore[attr-defined]
+            self._advance()
             return
         except Exception as e:
             log.write(f"[bold red]❌ 使用消耗品请求失败: {e}[/]")
             logger.error(f"_do_use_consumable: 请求失败 error={e}")
-            self._advance()  # type: ignore[attr-defined]
+            self._advance()
             return
 
-        self._update_play_status(f"等待 {short} 使用消耗品完成...")  # type: ignore[attr-defined]
+        self._update_play_status(f"等待 {short} 使用消耗品完成...")
         try:
             await watch_task_until_done(task_id, timeout_seconds=90)
             log.write(f"  [green]✓ {short} 使用消耗品完成[/]")
@@ -366,6 +389,6 @@ class UseConsumableMixin:
         except Exception as e:
             logger.warning(f"_do_use_consumable: 等待任务失败 error={e}")
 
-        await self._show_play_results(prev_round_idx, prev_completed_count)  # type: ignore[attr-defined]
+        await self._show_play_results(prev_round_idx, prev_completed_count)
         self._consumable_actor = None
-        self._advance()  # type: ignore[attr-defined]
+        self._advance()

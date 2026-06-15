@@ -168,8 +168,10 @@ class CombatRoomScreen(PlayCardsMixin, BaseGameScreen):
             return
 
         # 每次执行任意命令前先清空 Log 并重印菜单
-        log.clear()
-        log.write(COMBAT_ROOM_MENU)
+        # 出牌（3）和消耗品（4）命令进入专属 UI，自行处理 log 初始化，不在此预写菜单
+        if cmd not in ("3", "4"):
+            log.clear()
+            log.write(COMBAT_ROOM_MENU)
 
         if cmd == "0":
             pass  # 仅显示菜单，已经显示

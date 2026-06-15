@@ -31,7 +31,6 @@ from ..models import (
     Card,
     CombatResult,
     CombatState,
-    EntitySerialization,
     HandComponent,
     MonsterComponent,
     PartyMemberComponent,
@@ -89,13 +88,26 @@ class PlayCardsMixin(UseConsumableMixin):
         self._consumable_actor: Optional[str] = None
 
     # ──────────────────────────────────────────────
+    # 出牌区域重绘辅助
+    # ──────────────────────────────────────────────
+    def _clear_to_play_area(self) -> RichLog:
+        """清空 log，重写主菜单 + 出牌阶段标题，返回 log。
+
+        三个互斥子状态（选牌 / 出牌等待+结果 / 敌人回合）进入时调用，
+        确保各状态独占出牌内容区域，同时保持主菜单始终可见。
+        """
+        log = self.query_one(RichLog)
+        log.clear()
+        log.write(COMBAT_ROOM_MENU)
+        log.write("[bold cyan]── 出牌阶段 ──[/]")
+        return log
+
+    # ──────────────────────────────────────────────
     # 出牌流程入口
     # ──────────────────────────────────────────────
     def _start_play_cards(self) -> None:
         """进入出牌模式：启动 _advance()。"""
-        log = self.query_one(RichLog)  # type: ignore[attr-defined]
-        log.write("[bold cyan]── 出牌阶段 ──[/]")
-        inp = self.query_one(Input)  # type: ignore[attr-defined]
+        inp = self.query_one(Input)
         inp.disabled = True
         self._phase = _Phase.LOADING
         self._advance()
@@ -106,10 +118,10 @@ class PlayCardsMixin(UseConsumableMixin):
     @work
     async def _advance(self) -> None:
         """从服务器拉取最新状态，决定下一个 phase，做一次 phase 进入后 return。"""
-        log = self.query_one(RichLog)  # type: ignore[attr-defined]
+        log = self.query_one(RichLog)
 
         try:
-            room_resp = await fetch_dungeon_room(self._user_name, self._game_name)  # type: ignore[attr-defined]
+            room_resp = await fetch_dungeon_room(self._user_name, self._game_name)
             combat = room_resp.room.combat
             stage_name = room_resp.room.stage.name
             cur = combat.rounds[-1] if combat.rounds else None
@@ -126,7 +138,7 @@ class PlayCardsMixin(UseConsumableMixin):
         if cur is None:
             log.write("[yellow]⚠ 当前没有进行中的回合，请输入 [bold]1[/] 抽牌。[/]")
             self._phase = None
-            inp = self.query_one(Input)  # type: ignore[attr-defined]
+            inp = self.query_one(Input)
             inp.placeholder = "输入命令..."
             inp.disabled = False
             inp.focus()
@@ -144,18 +156,18 @@ class PlayCardsMixin(UseConsumableMixin):
             return
 
         try:
-            stages_resp = await fetch_stages_state(self._user_name, self._game_name)  # type: ignore[attr-defined]
+            stages_resp = await fetch_stages_state(self._user_name, self._game_name)
             stage_actor_names: List[str] = list(stages_resp.mapping.get(stage_name, []))
             if current_actor not in stage_actor_names:
                 stage_actor_names.append(current_actor)
             all_details = await fetch_entities_details(
-                self._user_name, self._game_name, stage_actor_names  # type: ignore[attr-defined]
+                self._user_name, self._game_name, stage_actor_names
             )
         except Exception as e:
             logger.error(f"_advance: 加载实体详情失败 error={e}")
             log.write(f"[bold red]❌ 加载战场数据失败: {e}[/]")
             self._phase = None
-            inp = self.query_one(Input)  # type: ignore[attr-defined]
+            inp = self.query_one(Input)
             inp.placeholder = "输入命令..."
             inp.disabled = False
             inp.focus()
@@ -173,7 +185,7 @@ class PlayCardsMixin(UseConsumableMixin):
             if not cur.completed_actors:
                 log.write("[yellow]⚠ 新回合已开始，请输入 [bold]1[/] 抽牌后再出牌。[/]")
                 self._phase = None
-                inp = self.query_one(Input)  # type: ignore[attr-defined]
+                inp = self.query_one(Input)
                 inp.placeholder = "输入命令..."
                 inp.disabled = False
                 inp.focus()
@@ -192,19 +204,22 @@ class PlayCardsMixin(UseConsumableMixin):
             return
 
         short = display_name(current_actor)
-        ally_entities: List[EntitySerialization] = [
-            e
-            for e in all_details.entities_serialization
-            if not any(c.name == MonsterComponent.__name__ for c in e.components)
+        # 选牌状态：清空重绘（互斥子状态入口）
+        log = self._clear_to_play_area()
+        # 出牌者实体信息（属性 + 状态效果），不含手牌（手牌由 write_hand_table 渲染）
+        actor_entities = [
+            e for e in all_details.entities_serialization if e.name == current_actor
         ]
-        write_full_entities_block(log, ally_entities, show_hand=False)
+        write_full_entities_block(log, actor_entities, show_hand=False)
         write_hand_table(log, hand_cards, current_actor)
+        log.write("")
+        log.write("[dim]──────────────────────────────────────────────────[/]")
         self._current_actor = current_actor
         self._phase = _Phase.SELECT_CARD
         self._update_play_status(
             f"[{short}] 输入卡牌编号（1-{len(hand_cards)}）选牌  |  q 返回主菜单"
         )
-        inp = self.query_one(Input)  # type: ignore[attr-defined]
+        inp = self.query_one(Input)
         inp.placeholder = f"1-{len(hand_cards)} 或卡牌名 / q 返回"
         inp.disabled = False
         inp.focus()
@@ -218,16 +233,17 @@ class PlayCardsMixin(UseConsumableMixin):
         action_order: Optional[List[str]] = None,
         completed_actors: Optional[List[str]] = None,
     ) -> None:
-        log = self.query_one(RichLog)  # type: ignore[attr-defined]
+        # 敌人回合状态：清空重绘（互斥子状态入口）
+        log = self._clear_to_play_area()
         short = display_name(actor_name)
         log.write(
             f"[bold red]── 敌人回合：{short} ──────────────────────────────────[/]"
         )
         try:
-            stages_resp = await fetch_stages_state(self._user_name, self._game_name)  # type: ignore[attr-defined]
+            stages_resp = await fetch_stages_state(self._user_name, self._game_name)
             actor_names: List[str] = list(stages_resp.mapping.get(stage_name, []))
             details = await fetch_entities_details(
-                self._user_name, self._game_name, actor_names  # type: ignore[attr-defined]
+                self._user_name, self._game_name, actor_names
             )
             write_battlefield_block(
                 log,
@@ -246,20 +262,20 @@ class PlayCardsMixin(UseConsumableMixin):
         self._update_play_status(
             f"敌人 [{short}] 的回合 — 按 Enter 触发 AI 出牌  |  q 返回主菜单"
         )
-        inp = self.query_one(Input)  # type: ignore[attr-defined]
+        inp = self.query_one(Input)
         inp.placeholder = "Enter 触发 AI / q 返回主菜单"
         inp.disabled = False
         inp.focus()
 
     def _enter_round_done(self) -> None:
         """回合结束：保留 log，等待用户按 Enter 回到主菜单。"""
-        log = self.query_one(RichLog)  # type: ignore[attr-defined]
+        log = self.query_one(RichLog)
         self._phase = _Phase.ROUND_DONE
         log.write(
             "\n[bold green]✅ 本回合所有角色已出手，回合结束。[/]"
             "  按 [bold]Enter[/] 回到主菜单。\n"
         )
-        inp = self.query_one(Input)  # type: ignore[attr-defined]
+        inp = self.query_one(Input)
         inp.placeholder = "按 Enter 回到主菜单..."
         inp.disabled = False
         inp.focus()
@@ -272,8 +288,8 @@ class PlayCardsMixin(UseConsumableMixin):
         self._target_candidates = []
         self._selected_item_name = None
         self._consumable_actor = None
-        log = self.query_one(RichLog)  # type: ignore[attr-defined]
-        inp = self.query_one(Input)  # type: ignore[attr-defined]
+        log = self.query_one(RichLog)
+        inp = self.query_one(Input)
         inp.placeholder = "输入命令..."
         inp.disabled = False
         inp.focus()
@@ -283,9 +299,9 @@ class PlayCardsMixin(UseConsumableMixin):
 
     def _confirm_round_done(self) -> None:
         """用户确认后跳回主菜单（清 log、重印菜单）。"""
-        log = self.query_one(RichLog)  # type: ignore[attr-defined]
+        log = self.query_one(RichLog)
         self._phase = None
-        inp = self.query_one(Input)  # type: ignore[attr-defined]
+        inp = self.query_one(Input)
         inp.placeholder = "输入命令..."
         inp.disabled = False
         inp.focus()
@@ -296,12 +312,12 @@ class PlayCardsMixin(UseConsumableMixin):
     # 敌方名单辅助（通过 MonsterComponent）
     # ──────────────────────────────────────────────
     async def _fetch_play_enemy_names(self, stage_name: str) -> List[str]:
-        stages_resp = await fetch_stages_state(self._user_name, self._game_name)  # type: ignore[attr-defined]
+        stages_resp = await fetch_stages_state(self._user_name, self._game_name)
         actor_names = stages_resp.mapping.get(stage_name, [])
         if not actor_names:
             return []
         details = await fetch_entities_details(
-            self._user_name, self._game_name, actor_names  # type: ignore[attr-defined]
+            self._user_name, self._game_name, actor_names
         )
         return [
             e.name
@@ -315,7 +331,7 @@ class PlayCardsMixin(UseConsumableMixin):
     @work
     async def _handle_card_selection(self, raw: str) -> None:
         """实时从服务器拉取手牌、阵营列表，解析选择，进入 SELECT_TARGET 或直接提交出牌。"""
-        log = self.query_one(RichLog)  # type: ignore[attr-defined]
+        log = self.query_one(RichLog)
         if self._current_actor is None:
             log.write("[red]错误：当前无出牌角色。[/]")
             return
@@ -323,20 +339,20 @@ class PlayCardsMixin(UseConsumableMixin):
         actor_name = self._current_actor
 
         try:
-            room_resp = await fetch_dungeon_room(self._user_name, self._game_name)  # type: ignore[attr-defined]
+            room_resp = await fetch_dungeon_room(self._user_name, self._game_name)
             stage_name = room_resp.room.stage.name
-            stages_resp = await fetch_stages_state(self._user_name, self._game_name)  # type: ignore[attr-defined]
+            stages_resp = await fetch_stages_state(self._user_name, self._game_name)
             stage_actor_names: List[str] = list(stages_resp.mapping.get(stage_name, []))
             if actor_name not in stage_actor_names:
                 stage_actor_names.append(actor_name)
             all_details = await fetch_entities_details(
-                self._user_name, self._game_name, stage_actor_names  # type: ignore[attr-defined]
+                self._user_name, self._game_name, stage_actor_names
             )
         except Exception as e:
             logger.error(f"_handle_card_selection: 加载失败 error={e}")
             log.write(f"[bold red]❌ 加载手牌失败: {e}[/]")
             self._phase = _Phase.SELECT_CARD
-            inp = self.query_one(Input)  # type: ignore[attr-defined]
+            inp = self.query_one(Input)
             inp.disabled = False
             inp.focus()
             return
@@ -376,7 +392,7 @@ class PlayCardsMixin(UseConsumableMixin):
                 f"[red]无效输入 '{raw}'，请输入 1-{len(hand_cards)} 的数字或卡牌名称。[/]"
             )
             self._phase = _Phase.SELECT_CARD
-            inp = self.query_one(Input)  # type: ignore[attr-defined]
+            inp = self.query_one(Input)
             inp.placeholder = f"1-{len(hand_cards)} 或卡牌名 / q 返回"
             inp.disabled = False
             inp.focus()
@@ -405,7 +421,7 @@ class PlayCardsMixin(UseConsumableMixin):
                 self._update_play_status(
                     f"输入目标编号（1-{len(alive_allies)}），或直接 Enter 跳过"
                 )
-                inp = self.query_one(Input)  # type: ignore[attr-defined]
+                inp = self.query_one(Input)
                 inp.placeholder = "编号或 Enter 跳过"
                 inp.disabled = False
                 inp.focus()
@@ -424,7 +440,7 @@ class PlayCardsMixin(UseConsumableMixin):
                 self._update_play_status(
                     f"输入目标编号（1-{len(alive_enemies)}），或直接 Enter 跳过"
                 )
-                inp = self.query_one(Input)  # type: ignore[attr-defined]
+                inp = self.query_one(Input)
                 inp.placeholder = "编号或 Enter 跳过"
                 inp.disabled = False
                 inp.focus()
@@ -436,7 +452,7 @@ class PlayCardsMixin(UseConsumableMixin):
     # 目标选择
     # ──────────────────────────────────────────────
     def _handle_target_selection(self, raw: str) -> None:
-        log = self.query_one(RichLog)  # type: ignore[attr-defined]
+        log = self.query_one(RichLog)
         targets: List[str] = []
 
         if raw == "":
@@ -482,9 +498,10 @@ class PlayCardsMixin(UseConsumableMixin):
     async def _do_play_card(
         self, actor_name: str, card_name: str, targets: List[str]
     ) -> None:
-        log = self.query_one(RichLog)  # type: ignore[attr-defined]
+        # 出牌等待/结果状态：清空重绘（互斥子状态入口）
+        log = self._clear_to_play_area()
         self._phase = _Phase.WAITING
-        self.query_one(Input).disabled = True  # type: ignore[attr-defined]
+        self.query_one(Input).disabled = True
 
         short = display_name(actor_name)
         display_card = card_name if card_name else "（AI 自选）"
@@ -500,7 +517,7 @@ class PlayCardsMixin(UseConsumableMixin):
         prev_completed_count = 0
         prev_energy = 0
         try:
-            pre_room = await fetch_dungeon_room(self._user_name, self._game_name)  # type: ignore[attr-defined]
+            pre_room = await fetch_dungeon_room(self._user_name, self._game_name)
             pre_rounds = pre_room.room.combat.rounds
             if pre_rounds:
                 prev_round_idx = len(pre_rounds) - 1
@@ -513,7 +530,7 @@ class PlayCardsMixin(UseConsumableMixin):
         task_id = ""
         try:
             resp = await server_play_cards(
-                self._user_name, self._game_name, actor_name, card_name, targets  # type: ignore[attr-defined]
+                self._user_name, self._game_name, actor_name, card_name, targets
             )
             task_id = resp.task_id
             logger.info(f"_do_play_card: 任务已创建 task_id={task_id}")
@@ -550,10 +567,10 @@ class PlayCardsMixin(UseConsumableMixin):
 
         if prev_energy > 0 and prev_round_idx >= 0:
             try:
-                post_room = await fetch_dungeon_room(self._user_name, self._game_name)  # type: ignore[attr-defined]
+                post_room = await fetch_dungeon_room(self._user_name, self._game_name)
                 post_combat = post_room.room.combat
                 post_rounds = post_combat.rounds
-                log = self.query_one(RichLog)  # type: ignore[attr-defined]
+                log = self.query_one(RichLog)
 
                 if post_combat.state in (CombatState.COMPLETE, CombatState.POST_COMBAT):
                     result = post_combat.result
@@ -585,9 +602,9 @@ class PlayCardsMixin(UseConsumableMixin):
     ) -> None:
         if prev_round_idx < 0:
             return
-        log = self.query_one(RichLog)  # type: ignore[attr-defined]
+        log = self.query_one(RichLog)
         try:
-            room_resp = await fetch_dungeon_room(self._user_name, self._game_name)  # type: ignore[attr-defined]
+            room_resp = await fetch_dungeon_room(self._user_name, self._game_name)
             rounds = room_resp.room.combat.rounds
             if prev_round_idx >= len(rounds):
                 return
@@ -606,5 +623,5 @@ class PlayCardsMixin(UseConsumableMixin):
     # ──────────────────────────────────────────────
     def _update_play_status(self, text: str) -> None:
         if text:
-            log = self.query_one(RichLog)  # type: ignore[attr-defined]
+            log = self.query_one(RichLog)
             log.write(f"[dim]{text}[/]")

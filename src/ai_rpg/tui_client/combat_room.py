@@ -250,34 +250,34 @@ class CombatRoomScreen(PlayCardsMixin, BaseGameScreen):
             )
             self.query_one("#combat-status", Static).update(self._status_bar_text)
 
-            log.write(
-                "[bold cyan]── 参战角色 ──────────────────────────────────────[/]"
-            )
-
             # Step B：从 stages state 取该场景的运行时 actor 名单
             stages_resp = await fetch_stages_state(self._user_name, self._game_name)
             actor_names = stages_resp.mapping.get(stage.name, [])
 
             # Step C：逐实体获取运行时 ECS 组件数据
+            entities_serialization = []
             if actor_names:
                 details_resp = await fetch_entities_details(
                     self._user_name, self._game_name, actor_names
                 )
-                write_full_entities_block(log, details_resp.entities_serialization)
-            else:
-                log.write("  [dim]（房间内无角色）[/]")
-            log.write("")
+                entities_serialization = details_resp.entities_serialization
 
+            # ── 1. 战斗摘要（宏观信息）──
+            log.write(
+                "[bold cyan]── 战斗摘要 ──────────────────────────────────────[/]"
+            )
             log.write(
                 f"  [bold]战斗状态：[/] {combat.state.name}  "
                 f"[bold]战斗结果：[/] {combat.result.name}  "
                 f"[bold]当前局数：[/] {len(combat.rounds)}"
             )
+            action_order = []
             if combat.rounds:
                 cur = combat.rounds[-1]
                 snapshot = (
                     cur.actor_order_snapshots[-1] if cur.actor_order_snapshots else []
                 )
+                action_order = list(snapshot)
                 order_str = (
                     " => ".join(display_name(a) for a in snapshot)
                     if snapshot
@@ -297,6 +297,35 @@ class CombatRoomScreen(PlayCardsMixin, BaseGameScreen):
                 log.write(f"  [bold]已出手：[/]   {done_str}")
                 log.write(f"  [bold]当前行动：[/] {current_actor_str}")
             log.write("")
+
+            # ── 分割线 ──
+            log.write(
+                "[bold cyan]══════════════════════════════════════════════════[/]"
+            )
+            log.write("")
+
+            # ── 2. 逐个参战单位详情（按行动顺序排列）──
+            log.write(
+                "[bold cyan]── 参战角色 ──────────────────────────────────────[/]"
+            )
+            log.write("")
+            if entities_serialization:
+                entity_map = {e.name: e for e in entities_serialization}
+                ordered_names = action_order + [
+                    n for n in actor_names if n not in action_order
+                ]
+                for name in ordered_names:
+                    entity = entity_map.get(name)
+                    if entity is None:
+                        continue
+                    write_full_entities_block(log, [entity])
+                    log.write(
+                        "[dim]──────────────────────────────────────────────────[/]"
+                    )
+                    log.write("")
+            else:
+                log.write("  [dim]（房间内无角色）[/]")
+                log.write("")
 
             logger.info(
                 f"CombatRoomScreen._fetch_status: 房间查询成功 room={stage.name}"

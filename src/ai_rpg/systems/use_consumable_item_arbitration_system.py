@@ -12,6 +12,7 @@ from ..models import (
     CharacterStats,
     CharacterStatsComponent,
     CombatArbitrationEvent,
+    EquippedGearComponent,
     StatusEffect,
     PhaseType,
     PostArbitrationAction,
@@ -126,15 +127,19 @@ def _generate_consumable_arbitration_prompt(
     current_round_number: int,
     actor_arbitration_effects: List[StatusEffect],
     target_arbitration_effects: Dict[str, List[StatusEffect]],
+    target_gear_modifiers: Dict[str, List[str]],
 ) -> str:
-    target_lines = (
-        "\n".join(
-            f"- {name}（HP {stats.hp}/{stats.max_hp}）"
-            for name, stats in target_stats.items()
-        )
-        if target_stats
-        else "- 无目标（仅作用于使用者自身）"
-    )
+    if target_stats:
+        target_line_parts = []
+        for name, stats in target_stats.items():
+            line = f"- {name}（HP {stats.hp}/{stats.max_hp}）"
+            mods = target_gear_modifiers.get(name, [])
+            if mods:
+                line += "\n  装备修正：" + "、".join(mods)
+            target_line_parts.append(line)
+        target_lines = "\n".join(target_line_parts)
+    else:
+        target_lines = "- 无目标（仅作用于使用者自身）"
 
     arbitration_effects_lines = (
         f"**使用者 —— {actor_name}**:\n{_fmt_effects(actor_arbitration_effects)}"
@@ -227,16 +232,20 @@ def _generate_compressed_consumable_arbitration_prompt(
     current_round_number: int,
     actor_arbitration_effects: List[StatusEffect],
     target_arbitration_effects: Dict[str, List[StatusEffect]],
+    target_gear_modifiers: Dict[str, List[str]],
 ) -> str:
     """生成压缩版消耗品仲裁提示词，用于写入对话历史。"""
-    target_lines = (
-        "\n".join(
-            f"- {name}（HP {stats.hp}/{stats.max_hp}）"
-            for name, stats in target_stats.items()
-        )
-        if target_stats
-        else "- 无目标（仅作用于使用者自身）"
-    )
+    if target_stats:
+        target_line_parts = []
+        for name, stats in target_stats.items():
+            line = f"- {name}（HP {stats.hp}/{stats.max_hp}）"
+            mods = target_gear_modifiers.get(name, [])
+            if mods:
+                line += "\n  装备修正：" + "、".join(mods)
+            target_line_parts.append(line)
+        target_lines = "\n".join(target_line_parts)
+    else:
+        target_lines = "- 无目标（仅作用于使用者自身）"
 
     arbitration_effects_lines = (
         f"**使用者 —— {actor_name}**:\n{_fmt_effects(actor_arbitration_effects)}"
@@ -343,6 +352,16 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
 
         actor_stats = self._game.compute_character_stats(actor_entity)
 
+        target_gear_modifiers: Dict[str, List[str]] = {}
+        for _tgt_name in dict.fromkeys(action.targets):
+            _tgt_entity = self._game.get_entity_by_name(_tgt_name)
+            assert _tgt_entity is not None, f"无法找到目标实体: {_tgt_name}"
+            target_gear_modifiers[_tgt_name] = (
+                _tgt_entity.get(EquippedGearComponent).item.modifiers
+                if _tgt_entity.has(EquippedGearComponent)
+                else []
+            )
+
         message = _generate_consumable_arbitration_prompt(
             actor_name=actor_entity.name,
             actor_stats=actor_stats,
@@ -351,6 +370,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             current_round_number=current_round_number,
             actor_arbitration_effects=actor_arbitration_effects,
             target_arbitration_effects=target_arbitration_effects,
+            target_gear_modifiers=target_gear_modifiers,
         )
 
         compressed_message = (
@@ -362,6 +382,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                 current_round_number=current_round_number,
                 actor_arbitration_effects=actor_arbitration_effects,
                 target_arbitration_effects=target_arbitration_effects,
+                target_gear_modifiers=target_gear_modifiers,
             )
             if self._use_compressed_prompt
             else None

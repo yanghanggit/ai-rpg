@@ -34,10 +34,13 @@ def _generate_gear_equip_narrative_prompt(
     actor_short = actor_name.split(".")[-1]
     targets_str = "、".join(t.split(".")[-1] for t in action.targets) or actor_short
     item = action.item
+    modifiers_text = (
+        "\n即时修正词缀：" + "、".join(item.modifiers) if item.modifiers else ""
+    )
     return (
         f"第 {current_round_number} 回合，{actor_short} 为 {targets_str} 装备了【{item.name}】。\n\n"
         f"装备描述：{item.description}\n"
-        f"属性加成：{_fmt_stat_bonuses(item.stat_bonuses)}\n\n"
+        f"属性加成：{_fmt_stat_bonuses(item.stat_bonuses)}{modifiers_text}\n\n"
         f"请用 60-120 字、第三人称感官视角，描述装备更换的瞬间画面。"
     )
 

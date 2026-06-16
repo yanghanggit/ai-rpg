@@ -192,15 +192,20 @@ def _generate_combat_arbitration_prompt(
     current_round_number: int,
     actor_arbitration_effects: List[StatusEffect],
     target_arbitration_effects: Dict[str, List[StatusEffect]],
+    actor_gear_modifiers: List[str],
+    target_gear_modifiers: Dict[str, List[str]],
 ) -> str:
-    target_lines = (
-        "\n".join(
-            f"- {name}（HP {stats.hp}/{stats.max_hp} | 防御:{stats.defense}）"
-            for name, stats in target_stats.items()
-        )
-        if target_stats
-        else "- 无目标"
-    )
+    if target_stats:
+        target_line_parts = []
+        for name, stats in target_stats.items():
+            line = f"- {name}（HP {stats.hp}/{stats.max_hp} | 防御:{stats.defense}）"
+            mods = target_gear_modifiers.get(name, [])
+            if mods:
+                line += "\n  装备修正：" + "、".join(mods)
+            target_line_parts.append(line)
+        target_lines = "\n".join(target_line_parts)
+    else:
+        target_lines = "- 无目标"
 
     arbitration_effects_lines = (
         f"**出牌者 —— {actor_name}**:\n{_fmt_effects(actor_arbitration_effects)}"
@@ -224,6 +229,11 @@ def _generate_combat_arbitration_prompt(
         if modifiers
         else ""
     )
+    actor_gear_modifiers_line = (
+        "\n- 装备即时修正词缀：\n" + "\n".join(f"  - {m}" for m in actor_gear_modifiers)
+        if actor_gear_modifiers
+        else ""
+    )
 
     return f"""# 第 {current_round_number} 回合：战斗结算（以 JSON 格式返回）
 
@@ -236,7 +246,7 @@ def _generate_combat_arbitration_prompt(
 - 卡牌：{play_cards_action.card.name}
 - damage_dealt：{play_cards_action.card.damage_dealt}（单次伤害）
 - hit_count：{play_cards_action.card.hit_count}（攻击次数）
-{f'- energy_delta：{play_cards_action.card.energy_delta:+d}（改变目标行动次数，已由系统直接结算）' + chr(10) if play_cards_action.card.energy_delta != 0 else ''}{action_line}{modifiers_line}{rm.hit_assignment}
+{f'- energy_delta：{play_cards_action.card.energy_delta:+d}（改变目标行动次数，已由系统直接结算）' + chr(10) if play_cards_action.card.energy_delta != 0 else ''}{action_line}{modifiers_line}{actor_gear_modifiers_line}{rm.hit_assignment}
 
 ## 目标
 
@@ -307,16 +317,21 @@ def _generate_compressed_combat_arbitration_prompt(
     current_round_number: int,
     actor_arbitration_effects: List[StatusEffect],
     target_arbitration_effects: Dict[str, List[StatusEffect]],
+    actor_gear_modifiers: List[str],
+    target_gear_modifiers: Dict[str, List[str]],
 ) -> str:
     """压缩版仲裁提示词，省略静态规则与格式说明，用于写入对话历史减少重复 token。"""
-    target_lines = (
-        "\n".join(
-            f"- {name}（HP {stats.hp}/{stats.max_hp} | 防御:{stats.defense}）"
-            for name, stats in target_stats.items()
-        )
-        if target_stats
-        else "- 无目标"
-    )
+    if target_stats:
+        target_line_parts = []
+        for name, stats in target_stats.items():
+            line = f"- {name}（HP {stats.hp}/{stats.max_hp} | 防御:{stats.defense}）"
+            mods = target_gear_modifiers.get(name, [])
+            if mods:
+                line += "\n  装备修正：" + "、".join(mods)
+            target_line_parts.append(line)
+        target_lines = "\n".join(target_line_parts)
+    else:
+        target_lines = "- 无目标"
 
     arbitration_effects_lines = (
         f"**出牌者 —— {actor_name}**:\n{_fmt_effects(actor_arbitration_effects)}"
@@ -340,6 +355,11 @@ def _generate_compressed_combat_arbitration_prompt(
         if modifiers
         else ""
     )
+    actor_gear_modifiers_line = (
+        "\n- 装备即时修正词缀：\n" + "\n".join(f"  - {m}" for m in actor_gear_modifiers)
+        if actor_gear_modifiers
+        else ""
+    )
 
     return f"""# 第 {current_round_number} 回合：战斗结算（以 JSON 格式返回）
 
@@ -352,7 +372,7 @@ def _generate_compressed_combat_arbitration_prompt(
 - 卡牌：{play_cards_action.card.name}
 - damage_dealt：{play_cards_action.card.damage_dealt}（单次伤害）
 - hit_count：{play_cards_action.card.hit_count}（攻击次数）
-{f'- energy_delta：{play_cards_action.card.energy_delta:+d}（改变目标行动次数，已由系统直接结算）' + chr(10) if play_cards_action.card.energy_delta != 0 else ''}{action_line}{modifiers_line}{rm.hit_assignment}
+{f'- energy_delta：{play_cards_action.card.energy_delta:+d}（改变目标行动次数，已由系统直接结算）' + chr(10) if play_cards_action.card.energy_delta != 0 else ''}{action_line}{modifiers_line}{actor_gear_modifiers_line}{rm.hit_assignment}
 
 ## 目标
 
@@ -460,6 +480,21 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                 )
             )
 
+        actor_gear_modifiers: List[str] = (
+            actor_entity.get(EquippedGearComponent).item.modifiers
+            if actor_entity.has(EquippedGearComponent)
+            else []
+        )
+        target_gear_modifiers: Dict[str, List[str]] = {}
+        for _tgt_name in dict.fromkeys(play_cards_action.targets):
+            _tgt_entity = self._game.get_entity_by_name(_tgt_name)
+            assert _tgt_entity is not None, f"无法找到目标实体: {_tgt_name}"
+            target_gear_modifiers[_tgt_name] = (
+                _tgt_entity.get(EquippedGearComponent).item.modifiers
+                if _tgt_entity.has(EquippedGearComponent)
+                else []
+            )
+
         message = _generate_combat_arbitration_prompt(
             actor_entity.name,
             self._game.compute_character_stats(actor_entity),
@@ -468,6 +503,8 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             current_round_number,
             actor_arbitration_effects,
             target_arbitration_effects,
+            actor_gear_modifiers,
+            target_gear_modifiers,
         )
 
         compressed_message = (
@@ -479,6 +516,8 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                 current_round_number,
                 actor_arbitration_effects,
                 target_arbitration_effects,
+                actor_gear_modifiers,
+                target_gear_modifiers,
             )
             if self._use_compressed_prompt
             else None

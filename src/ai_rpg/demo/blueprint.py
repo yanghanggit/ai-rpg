@@ -126,12 +126,16 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
                 description="一小瓶从废弃营地的医疗箱里翻出的透明液体，瓶身有细小裂纹但封口尚好。液体微微泛绿，入口有刺激的苦涩感。应急时饮下，能迅速止血并小幅恢复体力。",
                 count=1,
                 target_type=TargetType.SELF_ONLY,
+                modifiers=["[急救]:优先恢复至战斗有效生命值，无视超量回复上限"],
+                affixes=["[止血]:可能移除当前出血状态"],
             ),
             ConsumableItem(
                 name="消耗品.沙尘爆裂罐",
                 description="一个用陶土粗制的密封罐，内填混有研磨沙粒的易燃粉末。罐身表面有细小裂纹，隐约能感觉到内部气压。用力摔向地面后会猛烈爆散，碎片与沙砾横飞，对场上所有敌人造成伤害。",
                 count=1,
                 target_type=TargetType.ENEMY_ALL,
+                modifiers=["[爆裂]:碎片横飞，穿透目标物理防御的一部分"],
+                affixes=["[震慑]:爆炸冲击可能令目标下回合行动延迟"],
             ),
         ],
     )

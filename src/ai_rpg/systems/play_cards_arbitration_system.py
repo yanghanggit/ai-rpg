@@ -589,8 +589,8 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
 
             latest_round = self._game.current_dungeon.latest_round
             assert latest_round is not None, "current_rounds 不应为 None"
-            latest_round.combat_log.append(format_response.combat_log)
-            latest_round.narrative.append(format_response.narrative)
+            latest_round.cards_combat_log.append(format_response.combat_log)
+            latest_round.cards_narrative.append(format_response.narrative)
 
             if format_response.trigger_post_arbitration:
                 logger.debug(

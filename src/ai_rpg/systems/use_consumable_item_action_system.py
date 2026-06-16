@@ -84,6 +84,14 @@ class UseConsumableItemActionSystem(ReactiveProcessor):
             current_rounds is not None
         ), "UseConsumableItemActionSystem: current_rounds is None"
 
+        latest_round = self._game.current_dungeon.latest_round
+        assert (
+            latest_round is not None
+        ), "UseConsumableItemActionSystem: latest_round is None"
+        assert (
+            latest_round.consumable_use_count == 0
+        ), f"UseConsumableItemActionSystem: 本回合已使用过消耗品（consumable_use_count={latest_round.consumable_use_count}），应由 dungeon_actions 拦截"
+
         for entity in entities:
             action = entity.get(UseConsumableItemAction)
             item = action.item

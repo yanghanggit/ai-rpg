@@ -193,8 +193,9 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
 
         latest_round = self._game.current_dungeon.latest_round
         assert latest_round is not None, "latest_round 不应为 None"
-        latest_round.combat_log.append(combat_log)
-        latest_round.narrative.append(narrative)
+        latest_round.gear_combat_log.append(combat_log)
+        latest_round.gear_narrative.append(narrative)
+        latest_round.gear_use_count += 1
 
         self._trigger_add_status_effects(
             actor_entity, action, list(dict.fromkeys(action.targets))

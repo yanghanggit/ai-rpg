@@ -107,10 +107,27 @@ class UseConsumableMixin(BaseGameScreen):
     @abstractmethod
     def _update_play_status(self, text: str) -> None: ...
 
-    @abstractmethod
-    async def _show_play_results(
-        self, prev_round_idx: int, prev_completed_count: int
-    ) -> None: ...
+    async def _show_consumable_results(
+        self, prev_round_idx: int, prev_consumable_use_count: int
+    ) -> None:
+        """展示本次消耗品使用后新增的战斗日志与叙事文本。"""
+        if prev_round_idx < 0:
+            return
+        log = self.query_one(RichLog)
+        try:
+            room_resp = await fetch_dungeon_room(self._user_name, self._game_name)
+            rounds = room_resp.room.combat.rounds
+            if prev_round_idx >= len(rounds):
+                return
+            cur = rounds[prev_round_idx]
+            for text in cur.consumable_narrative[prev_consumable_use_count:]:
+                if text:
+                    log.write(f"  [italic]{text}[/]")
+            for text in cur.consumable_combat_log[prev_consumable_use_count:]:
+                if text:
+                    log.write(f"  [dim cyan]{text}[/]")
+        except Exception as e:
+            logger.warning(f"_show_consumable_results: 加载日志失败 error={e}")
 
     # 消耗品流程专用状态
     _consumable_items: List[ConsumableItem]
@@ -185,6 +202,12 @@ class UseConsumableMixin(BaseGameScreen):
             if not current_actor_is_party_member:
                 self._abort_play_cards(
                     f"[yellow]⚠ 当前行动角色 {display_name(current_actor)} 不属于玩家阵营，无法使用消耗品。[/]"
+                )
+                return
+
+            if latest_round.consumable_use_count > 0:
+                self._abort_play_cards(
+                    "[yellow]⚠ 本回合已使用过消耗品，每回合限用一次。[/]"
                 )
                 return
 
@@ -373,13 +396,13 @@ class UseConsumableMixin(BaseGameScreen):
         )
 
         prev_round_idx = -1
-        prev_completed_count = 0
+        prev_consumable_use_count = 0
         try:
             pre_room = await fetch_dungeon_room(self._user_name, self._game_name)
             pre_rounds = pre_room.room.combat.rounds
             if pre_rounds:
                 prev_round_idx = len(pre_rounds) - 1
-                prev_completed_count = len(pre_rounds[-1].completed_actors)
+                prev_consumable_use_count = pre_rounds[-1].consumable_use_count
         except Exception as e:
             logger.warning(f"_do_use_consumable: 使用前快照失败 error={e}")
 
@@ -419,5 +442,5 @@ class UseConsumableMixin(BaseGameScreen):
         except Exception as e:
             logger.warning(f"_do_use_consumable: 等待任务失败 error={e}")
 
-        await self._show_play_results(prev_round_idx, prev_completed_count)
+        await self._show_consumable_results(prev_round_idx, prev_consumable_use_count)
         self._advance()

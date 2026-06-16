@@ -466,8 +466,9 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
 
             latest_round = self._game.current_dungeon.latest_round
             assert latest_round is not None, "latest_round 不应为 None"
-            latest_round.combat_log.append(response.combat_log)
-            latest_round.narrative.append(response.narrative)
+            latest_round.consumable_combat_log.append(response.combat_log)
+            latest_round.consumable_narrative.append(response.narrative)
+            latest_round.consumable_use_count += 1
 
             affected_names = list(response.final_stats.keys())
             self._trigger_add_status_effects(actor_entity, action, affected_names)

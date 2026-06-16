@@ -618,10 +618,10 @@ class PlayCardsMixin(UseConsumableMixin):
             if prev_round_idx >= len(rounds):
                 return
             cur = rounds[prev_round_idx]
-            for text in cur.narrative[prev_completed_count:]:
+            for text in cur.cards_narrative[prev_completed_count:]:
                 if text:
                     log.write(f"  [italic]{text}[/]")
-            for text in cur.combat_log[prev_completed_count:]:
+            for text in cur.cards_combat_log[prev_completed_count:]:
                 if text:
                     log.write(f"  [dim cyan]{text}[/]")
         except Exception as e:

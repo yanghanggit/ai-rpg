@@ -45,8 +45,18 @@ class Round(BaseModel):
     )
     is_completed: bool = False  # 回合结束标记；
     draw_completed: bool = False  # 抽牌阶段结束标记；
-    combat_log: List[str] = []  # 战斗计算日志，每次出手追加一条
-    narrative: List[str] = []  # 叙事文本/演出描述，每次出手追加一条
+    cards_combat_log: List[str] = []  # 出牌战斗日志，每次 PlayCardsAction 追加一条
+    cards_narrative: List[str] = []  # 出牌叙事文本，每次 PlayCardsAction 追加一条
+    consumable_combat_log: List[str] = (
+        []
+    )  # 消耗品战斗日志，每次 UseConsumableItemAction 追加一条
+    consumable_narrative: List[str] = (
+        []
+    )  # 消耗品叙事文本，每次 UseConsumableItemAction 追加一条
+    consumable_use_count: int = 0  # 本回合消耗品使用次数
+    gear_combat_log: List[str] = []  # 装备战斗日志，每次 UseGearItemAction 追加一条
+    gear_narrative: List[str] = []  # 装备叙事文本，每次 UseGearItemAction 追加一条
+    gear_use_count: int = 0  # 本回合装备使用次数
 
 
 ###############################################################################################################################################

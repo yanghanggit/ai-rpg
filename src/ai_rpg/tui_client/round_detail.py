@@ -106,10 +106,56 @@ class RoundDetailScreen(BaseGameScreen):
                         f"    [bold]当前 turn：[/] [bold yellow]{display_name(rnd.current_turn_actor_name)}[/]"
                     )
 
-                if rnd.combat_log or rnd.narrative:
-                    log.write("    [bold]出手记录：[/]")
+                if rnd.cards_combat_log or rnd.cards_narrative:
+                    log.write("    [bold]出牌记录：[/]")
                     for i, (cl, nv) in enumerate(
-                        zip_longest(rnd.combat_log, rnd.narrative, fillvalue=None),
+                        zip_longest(
+                            rnd.cards_combat_log, rnd.cards_narrative, fillvalue=None
+                        ),
+                        start=1,
+                    ):
+                        log.write(
+                            f"      [{i}] [dim]战斗：[/] {cl}"
+                            if cl
+                            else f"      [{i}] [dim]战斗：[/] [dim]（无）[/]"
+                        )
+                        log.write(
+                            f"          [dim]叙事：[/] {nv}"
+                            if nv
+                            else f"          [dim]叙事：[/] [dim]（无）[/]"
+                        )
+
+                if rnd.consumable_combat_log or rnd.consumable_narrative:
+                    log.write(
+                        f"    [bold]消耗品记录（本回合 {rnd.consumable_use_count} 次）：[/]"
+                    )
+                    for i, (cl, nv) in enumerate(
+                        zip_longest(
+                            rnd.consumable_combat_log,
+                            rnd.consumable_narrative,
+                            fillvalue=None,
+                        ),
+                        start=1,
+                    ):
+                        log.write(
+                            f"      [{i}] [dim]战斗：[/] {cl}"
+                            if cl
+                            else f"      [{i}] [dim]战斗：[/] [dim]（无）[/]"
+                        )
+                        log.write(
+                            f"          [dim]叙事：[/] {nv}"
+                            if nv
+                            else f"          [dim]叙事：[/] [dim]（无）[/]"
+                        )
+
+                if rnd.gear_combat_log or rnd.gear_narrative:
+                    log.write(
+                        f"    [bold]装备记录（本回合 {rnd.gear_use_count} 次）：[/]"
+                    )
+                    for i, (cl, nv) in enumerate(
+                        zip_longest(
+                            rnd.gear_combat_log, rnd.gear_narrative, fillvalue=None
+                        ),
                         start=1,
                     ):
                         log.write(

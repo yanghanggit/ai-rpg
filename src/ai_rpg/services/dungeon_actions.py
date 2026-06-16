@@ -459,6 +459,11 @@ def activate_use_consumable(
         logger.error(msg)
         return False, msg
 
+    if latest_round.consumable_use_count > 0:
+        msg = f"使用消耗品失败：本回合已使用过消耗品（consumable_use_count={latest_round.consumable_use_count}），每回合限用一次"
+        logger.error(msg)
+        return False, msg
+
     player_entity = tcg_game.get_player_entity()
     assert player_entity is not None, "activate_use_consumable: player_entity is None"
     assert player_entity.has(PartyMemberComponent), "玩家实体缺少 PartyMemberComponent"

@@ -283,13 +283,13 @@ class PlayCardsMixin(UseConsumableMixin):
         inp.disabled = False
         inp.focus()
 
-    def _abort_play_cards(
+    def _return_to_menu(
         self,
-        hint: str = "[dim]已中断出牌。输入 [bold]2[/] 可随时继续本回合。[/]",
+        hint: str = "[dim]已中断出牌。输入 [bold]3[/] 可随时继续本回合。[/]",
     ) -> None:
-        """中断出牌/消耗品流程，清空状态，回到主菜单命令模式。
+        """重置流程状态，回到主菜单命令模式。
 
-        hint: 清屏后写入 log 的提示行；传入不同文本可适配消耗品等非出牌场景。
+        hint: 清屏后写入 log 的提示行。
         """
         self._phase = None
         self._current_actor = None

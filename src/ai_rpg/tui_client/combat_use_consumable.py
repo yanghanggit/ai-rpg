@@ -6,7 +6,7 @@
 
 UseConsumableMixin 继承 BaseGameScreen；子类（PlayCardsMixin）需实现抽象成员：
   - self._user_name / self._game_name（由 CombatRoomScreen 提供）
-  - self._abort_play_cards() / self._advance()（由 PlayCardsMixin 提供）
+  - self._return_to_menu() / self._advance()（由 PlayCardsMixin 提供）
   - self._update_play_status() / self._show_play_results()（由 PlayCardsMixin 提供）
 """
 
@@ -36,7 +36,7 @@ from ..models import (
     EntitySerialization,
 )
 from ..models.target_type import TargetType
-from .utils import display_name, render_item, _TARGET_MAP
+from .utils import display_name, render_item
 
 
 # ─────────────────────────────────────────────────
@@ -91,9 +91,9 @@ class UseConsumableMixin(BaseGameScreen):
 
     # ── 由 PlayCardsMixin 提供 ───────────────────────
     @abstractmethod
-    def _abort_play_cards(
+    def _return_to_menu(
         self,
-        hint: str = "[dim]已中断出牌。输入 [bold]2[/] 可随时继续本回合。[/]",
+        hint: str = "[dim]已中断出牌。输入 [bold]3[/] 可随时继续本回合。[/]",
     ) -> None: ...
 
     @abstractmethod
@@ -158,28 +158,26 @@ class UseConsumableMixin(BaseGameScreen):
             combat_state = combat.state
 
             if combat_state in (CombatState.NONE, CombatState.INITIALIZATION):
-                self._abort_play_cards("[yellow]⚠ 战斗尚未开始，无法使用消耗品。[/]")
+                self._return_to_menu("[yellow]⚠ 战斗尚未开始，无法使用消耗品。[/]")
                 return
 
             if combat_state in (CombatState.COMPLETE, CombatState.POST_COMBAT):
-                self._abort_play_cards("[yellow]⚠ 战斗已结束，无法使用消耗品。[/]")
+                self._return_to_menu("[yellow]⚠ 战斗已结束，无法使用消耗品。[/]")
                 return
 
             if not combat.rounds:
-                self._abort_play_cards(
+                self._return_to_menu(
                     "[yellow]⚠ 当前没有进行中的回合，请先输入 2 抽牌。[/]"
                 )
                 return
 
             latest_round = combat.rounds[-1]
             if not latest_round.draw_completed:
-                self._abort_play_cards(
-                    "[yellow]⚠ 抽牌阶段尚未完成，请先输入 2 抽牌。[/]"
-                )
+                self._return_to_menu("[yellow]⚠ 抽牌阶段尚未完成，请先输入 2 抽牌。[/]")
                 return
 
             if latest_round.current_turn_actor_name is None:
-                self._abort_play_cards(
+                self._return_to_menu(
                     "[yellow]⚠ 本回合所有角色已出手，无法使用消耗品。[/]"
                 )
                 return
@@ -200,13 +198,13 @@ class UseConsumableMixin(BaseGameScreen):
                 for e in all_details.entities_serialization
             )
             if not current_actor_is_party_member:
-                self._abort_play_cards(
+                self._return_to_menu(
                     f"[yellow]⚠ 当前行动角色 {display_name(current_actor)} 不属于玩家阵营，无法使用消耗品。[/]"
                 )
                 return
 
             if latest_round.consumable_use_count > 0:
-                self._abort_play_cards(
+                self._return_to_menu(
                     "[yellow]⚠ 本回合已使用过消耗品，每回合限用一次。[/]"
                 )
                 return
@@ -222,11 +220,11 @@ class UseConsumableMixin(BaseGameScreen):
             consumables = _find_player_consumables(all_details.entities_serialization)
 
             if player_actor is None:
-                self._abort_play_cards("[red]❌ 未找到玩家角色。[/]")
+                self._return_to_menu("[red]❌ 未找到玩家角色。[/]")
                 return
 
             if not consumables:
-                self._abort_play_cards("[yellow]背包中没有消耗品。[/]")
+                self._return_to_menu("[yellow]背包中没有消耗品。[/]")
                 return
 
             self._consumable_items = consumables
@@ -250,7 +248,7 @@ class UseConsumableMixin(BaseGameScreen):
 
         except Exception as e:
             logger.error(f"_load_consumables_for_player: 加载失败 error={e}")
-            self._abort_play_cards(f"[bold red]❌ 加载背包失败: {e}[/]")
+            self._return_to_menu(f"[bold red]❌ 加载背包失败: {e}[/]")
 
     @work
     async def _handle_consumable_selection(self, raw: str) -> None:
@@ -287,15 +285,29 @@ class UseConsumableMixin(BaseGameScreen):
         self._consumable_items = []
         self._target_candidates = []
 
-        _MANUAL_TARGET_TYPES = {TargetType.ENEMY_SINGLE, TargetType.ALLY_SINGLE}
-
-        if target_type not in _MANUAL_TARGET_TYPES:
-            label = _TARGET_MAP.get(target_type, str(target_type))
-            log.write(f"  [dim]目标: {label}[/]")
+        # ── 无需选择目标的类型：系统自动处理 ─────────────────────
+        if target_type == TargetType.SELF_ONLY:
+            log.write("  [dim]目标：自身（系统自动）[/]")
             self._do_use_consumable(item_name, [])
             return
 
-        # 需要选择目标（enemy_single / ally_single）：拉取存活角色列表
+        if target_type == TargetType.ENEMY_ALL:
+            log.write("  [dim]目标：全体敌方（系统自动）[/]")
+            self._do_use_consumable(item_name, [])
+            return
+
+        # ── 不支持的目标类型：报错并返回主菜单 ──────────────────
+        if target_type not in (TargetType.ENEMY_SINGLE, TargetType.ALLY_SINGLE):
+            log.write(
+                f"[bold red]❌ 不支持的目标类型 '{target_type}'，无法使用此消耗品。[/]"
+            )
+            logger.error(
+                f"_handle_consumable_selection: 不支持的目标类型 target_type={target_type} item={item_name}"
+            )
+            self._return_to_menu("[dim]已返回主菜单。[/]")
+            return
+
+        # ── 需要手动选择目标（ENEMY_SINGLE / ALLY_SINGLE）────────
         alive_enemies: List[str] = []
         alive_allies: List[str] = []
         try:
@@ -313,43 +325,42 @@ class UseConsumableMixin(BaseGameScreen):
                 elif PartyMemberComponent.__name__ in comp_names:
                     alive_allies.append(entity.name)
         except Exception as e:
-            logger.warning(
-                f"_handle_consumable_selection: 拉取目标列表失败 error={e}, 直接使用"
-            )
-            self._do_use_consumable(item_name, [])
+            logger.warning(f"_handle_consumable_selection: 拉取目标列表失败 error={e}")
+            log.write(f"[bold red]❌ 拉取目标列表失败: {e}[/]")
+            self._return_to_menu("[dim]已返回主菜单。[/]")
             return
 
         if target_type == TargetType.ALLY_SINGLE:
-            if alive_allies:
-                log.write("  [bold]可选友方目标：[/]")
-                for i, name in enumerate(alive_allies, 1):
-                    log.write(f"    [bold cyan]{i}.[/] {display_name(name)}")
-                self._selected_item_name = item_name
-                self._target_candidates = list(alive_allies)
-                self._phase = _Phase.SELECT_CONSUMABLE_TARGET
-                inp = self.query_one(Input)
-                inp.placeholder = f"1-{len(alive_allies)} 或 Enter 跳过"
-                inp.disabled = False
-                inp.focus()
-            else:
-                log.write("  [dim]无存活友方，直接使用[/]")
-                self._do_use_consumable(item_name, [])
+            if not alive_allies:
+                log.write("  [yellow]⚠ 无存活友方，无法使用。[/]")
+                self._return_to_menu("[dim]已返回主菜单。[/]")
+                return
+            log.write("  [bold]可选友方目标：[/]")
+            for i, name in enumerate(alive_allies, 1):
+                log.write(f"    [bold cyan]{i}.[/] {display_name(name)}")
+            self._selected_item_name = item_name
+            self._target_candidates = list(alive_allies)
+            self._phase = _Phase.SELECT_CONSUMABLE_TARGET
+            inp = self.query_one(Input)
+            inp.placeholder = f"1-{len(alive_allies)} 或目标名"
+            inp.disabled = False
+            inp.focus()
 
         else:  # ENEMY_SINGLE
-            if alive_enemies:
-                log.write("  [bold]可用目标：[/]")
-                for i, name in enumerate(alive_enemies, 1):
-                    log.write(f"    [bold cyan]{i}.[/] {display_name(name)}")
-                self._selected_item_name = item_name
-                self._target_candidates = list(alive_enemies)
-                self._phase = _Phase.SELECT_CONSUMABLE_TARGET
-                inp = self.query_one(Input)
-                inp.placeholder = f"1-{len(alive_enemies)} 或 Enter 跳过"
-                inp.disabled = False
-                inp.focus()
-            else:
-                log.write("  [dim]无存活敌人，直接使用[/]")
-                self._do_use_consumable(item_name, [])
+            if not alive_enemies:
+                log.write("  [yellow]⚠ 无存活敌人，无法使用。[/]")
+                self._return_to_menu("[dim]已返回主菜单。[/]")
+                return
+            log.write("  [bold]可选敌方目标：[/]")
+            for i, name in enumerate(alive_enemies, 1):
+                log.write(f"    [bold cyan]{i}.[/] {display_name(name)}")
+            self._selected_item_name = item_name
+            self._target_candidates = list(alive_enemies)
+            self._phase = _Phase.SELECT_CONSUMABLE_TARGET
+            inp = self.query_one(Input)
+            inp.placeholder = f"1-{len(alive_enemies)} 或目标名"
+            inp.disabled = False
+            inp.focus()
 
     def _handle_consumable_target_selection(self, raw: str) -> None:
         """用户输入消耗品目标编号后处理。"""
@@ -420,12 +431,12 @@ class UseConsumableMixin(BaseGameScreen):
                 detail = str(e)
             log.write(f"[bold red]❌ 使用消耗品请求失败: {detail}[/]")
             logger.error(f"_do_use_consumable: 请求失败 error={e}")
-            self._advance()
+            self._return_to_menu("[dim]消耗品请求失败，已返回主菜单。[/]")
             return
         except Exception as e:
             log.write(f"[bold red]❌ 使用消耗品请求失败: {e}[/]")
             logger.error(f"_do_use_consumable: 请求失败 error={e}")
-            self._advance()
+            self._return_to_menu("[dim]消耗品请求失败，已返回主菜单。[/]")
             return
 
         self._update_play_status("等待消耗品使用完成...")
@@ -443,4 +454,7 @@ class UseConsumableMixin(BaseGameScreen):
             logger.warning(f"_do_use_consumable: 等待任务失败 error={e}")
 
         await self._show_consumable_results(prev_round_idx, prev_consumable_use_count)
-        self._advance()
+        used = prev_consumable_use_count + 1
+        self._return_to_menu(
+            f"[dim]消耗品已使用（本回合第 {used} 次）。输入 [bold]3[/] 继续出牌。[/]"
+        )

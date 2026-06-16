@@ -136,7 +136,7 @@ class CombatRoomScreen(PlayCardsMixin, BaseGameScreen):
                     _Phase.SELECT_CONSUMABLE,
                     _Phase.SELECT_CONSUMABLE_TARGET,
                 ):
-                    self._abort_play_cards()
+                    self._return_to_menu()
                 else:
                     log.write("[yellow]正在处理中，请稍候...[/]")
                 return

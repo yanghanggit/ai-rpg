@@ -121,13 +121,6 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
                     hp=0, max_hp=0, attack=0, defense=2, energy=0, speed=0
                 ),
             ),
-            # GearItem(
-            #     name="装备.旧骨环",
-            #     description="一枚以兽骨磨制的指环，表面刻有细密的纹路，像是某种已失传的符文。佩戴后指尖略感温热，仿佛有什么在缓缓流动。",
-            #     stat_bonuses=CharacterStats(
-            #         hp=5, max_hp=5, attack=0, defense=0, energy=0, speed=0
-            #     ),
-            # ),
             ConsumableItem(
                 name="消耗品.遗迹急救药剂",
                 description="一小瓶从废弃营地的医疗箱里翻出的透明液体，瓶身有细小裂纹但封口尚好。液体微微泛绿，入口有刺激的苦涩感。应急时饮下，能迅速止血并小幅恢复体力。",

@@ -155,7 +155,7 @@ class UseConsumableMixin(BaseGameScreen):
                 return
 
             latest_round = combat.rounds[-1]
-            if not latest_round.draw_phase_completed:
+            if not latest_round.draw_completed:
                 self._abort_play_cards(
                     "[yellow]⚠ 抽牌阶段尚未完成，请先输入 2 抽牌。[/]"
                 )

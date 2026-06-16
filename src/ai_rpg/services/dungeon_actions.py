@@ -442,7 +442,7 @@ def activate_use_consumable(
         logger.error(msg)
         return False, msg
 
-    if not latest_round.draw_phase_completed:
+    if not latest_round.draw_completed:
         msg = "使用消耗品失败：抽牌阶段尚未完成"
         logger.error(msg)
         return False, msg
@@ -530,7 +530,7 @@ def activate_use_gear(
         logger.error(msg)
         return False, msg
 
-    if not latest_round.draw_phase_completed:
+    if not latest_round.draw_completed:
         msg = "使用装备失败：抽牌阶段尚未完成"
         logger.error(msg)
         return False, msg

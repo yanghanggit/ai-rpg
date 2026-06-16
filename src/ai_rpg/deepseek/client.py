@@ -16,7 +16,6 @@ temperature 参数默认为 1.0。
 import asyncio
 import os
 import time
-import traceback
 from typing import Any, Dict, Final, List, Literal, Optional, Sequence, final
 import httpx
 import requests
@@ -285,12 +284,6 @@ class DeepSeekClient:
 
     ################################################################################################################################################################################
     @property
-    def succeeded(self) -> bool:
-        """请求是否成功（收到有效响应）"""
-        return self._response_ai_message is not None
-
-    ################################################################################################################################################################################
-    @property
     def prompt_cache_hit_tokens(self) -> int:
         """本次请求缓存命中的 token 数（计费价格更低）"""
         return self._prompt_cache_hit_tokens
@@ -471,48 +464,57 @@ class DeepSeekClient:
 
     ################################################################################################################################################################################
     async def chat(self) -> None:
-        """异步发送聊天请求（直连 DeepSeek 平台）"""
-        try:
-            logger.debug(f"{self._name} a_request prompt:\n{self._prompt}")
-            start_time = time.time()
+        """异步发送聊天请求（直连 DeepSeek 平台）
 
+        Raises:
+            httpx.TimeoutException: 请求超时
+            httpx.ConnectError: 连接失败
+            httpx.RequestError: 其他网络错误
+            httpx.HTTPStatusError: HTTP 响应状态码非 200
+        """
+        logger.debug(f"{self._name} a_request prompt:\n{self._prompt}")
+        start_time = time.time()
+
+        try:
             response = await DeepSeekClient.get_async_client().post(
                 url=_DEEPSEEK_API_URL,
                 headers=self._build_headers(),
                 json=self._build_payload(),
                 timeout=self._timeout,
             )
-
-            elapsed = time.time() - start_time
-            logger.debug(f"{self._name} a_request time: {elapsed:.2f}s")
-
-            if response.status_code == 200:
-                self._parse_response(response.json())
-                logger.info(f"{self._name} response_content:\n{self.response_content}")
-                logger.debug(
-                    f"{self._name} cache: hit={self.prompt_cache_hit_tokens}, miss={self.prompt_cache_miss_tokens}"
-                )
-                if self.response_reasoning_content:
-                    logger.info(
-                        f"\n💭 {self._name} 思考过程:\n{self.response_reasoning_content}\n"
-                    )
-                    logger.info("=" * 60)
-            else:
-                self._handle_error_response(response.status_code, response.text)
-
         except httpx.TimeoutException as e:
             logger.error(f"{self._name}: async timeout: {type(e).__name__}: {e}")
+            raise
         except httpx.ConnectError as e:
             logger.error(
                 f"{self._name}: async connection error: {type(e).__name__}: {e}"
             )
+            raise
         except httpx.RequestError as e:
             logger.error(f"{self._name}: async request error: {type(e).__name__}: {e}")
-        except Exception as e:
-            logger.error(
-                f"{self._name}: unexpected async error: {type(e).__name__}: {e}"
+            raise
+
+        elapsed = time.time() - start_time
+        logger.debug(f"{self._name} a_request time: {elapsed:.2f}s")
+
+        if response.status_code == 200:
+            self._parse_response(response.json())
+            logger.info(f"{self._name} response_content:\n{self.response_content}")
+            logger.debug(
+                f"{self._name} cache: hit={self.prompt_cache_hit_tokens}, miss={self.prompt_cache_miss_tokens}"
             )
-            logger.debug(f"{self._name}: traceback:\n{traceback.format_exc()}")
+            if self.response_reasoning_content:
+                logger.info(
+                    f"\n💭 {self._name} 思考过程:\n{self.response_reasoning_content}\n"
+                )
+                logger.info("=" * 60)
+        else:
+            self._handle_error_response(response.status_code, response.text)
+            raise httpx.HTTPStatusError(
+                f"HTTP {response.status_code}",
+                request=response.request,
+                response=response,
+            )
 
     ################################################################################################################################################################################
     @staticmethod
@@ -541,7 +543,7 @@ class DeepSeekClient:
                     f"Request failed for '{name}': {type(result).__name__}: {result}"
                 )
 
-        failed = sum(1 for c in clients if not c.succeeded)
+        failed = sum(1 for r in results if isinstance(r, BaseException))
         if failed:
             logger.warning(f"DeepSeekClient.batch_chat: {failed}/{len(clients)} failed")
         else:

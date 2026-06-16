@@ -144,7 +144,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             prompt=prompt,
             context=self._game.get_agent_context(entity).context,
         )
-        await client.async_chat()
+        await client.chat()
         new_appearance = client.response_content.strip()
 
         if not new_appearance:

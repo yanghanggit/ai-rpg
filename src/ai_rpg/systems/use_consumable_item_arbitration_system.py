@@ -374,7 +374,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             context=self._game.get_agent_context(stage_entity).context,
             timeout=60 * 2,
         )
-        chat_client.chat()
+        await chat_client.chat()
 
         self._apply_item_arbitration_result(
             stage_entity, chat_client, actor_entity, action

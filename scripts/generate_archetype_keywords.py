@@ -106,8 +106,8 @@ def _build_keyword_prompt(index: int) -> str:
 # ---------------------------------------------------------------------------
 
 
-def generate_archetype() -> Optional[ArchetypeResult]:
-    """同步生成一个 Archetype。"""
+async def generate_archetype() -> Optional[ArchetypeResult]:
+    """异步生成一个 Archetype。"""
     client = DeepSeekClient(
         name="archetype_generator",
         prompt=_build_archetype_prompt(),
@@ -116,7 +116,7 @@ def generate_archetype() -> Optional[ArchetypeResult]:
         temperature=1.5,
         timeout=120,
     )
-    client.chat()
+    await client.chat()
     if not client.response_content:
         logger.error("archetype_generator: empty response")
         return None
@@ -196,7 +196,7 @@ def main() -> None:
     DeepSeekClient.setup()
 
     print("\n=== Phase 1: 生成 Archetype ===")
-    archetype = generate_archetype()
+    archetype = asyncio.run(generate_archetype())
     assert archetype is not None, "Archetype 生成失败，请检查日志"
     print(f"✅ 原型名称: {archetype.name}")
     print(f"   描述: {archetype.description}")

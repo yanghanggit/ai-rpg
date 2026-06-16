@@ -190,7 +190,7 @@ class CraftConsumableActionSystem(ReactiveProcessor):
             prompt=prompt,
             context=self._game.get_agent_context(workshop_entity).context,
         )
-        await chat_client.async_chat()
+        await chat_client.chat()
 
         raw = chat_client.response_content
         if not raw:

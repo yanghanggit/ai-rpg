@@ -445,7 +445,7 @@ class GenerateDungeonActionSystem(ReactiveProcessor):
             prompt=_build_dungeon_ecology_prompt(),
             context=self._game.get_agent_context(world_system_entity).context,
         )
-        await chat_client.async_chat()
+        await chat_client.chat()
 
         try:
             ecology_response = DungeonEcologyResponse.model_validate_json(
@@ -498,7 +498,7 @@ class GenerateDungeonActionSystem(ReactiveProcessor):
             ),
             context=self._game.get_agent_context(world_system_entity).context,
         )
-        await chat_client.async_chat()
+        await chat_client.chat()
 
         try:
             stages_response = DungeonStagesResponse.model_validate_json(

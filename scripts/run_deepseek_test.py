@@ -28,15 +28,15 @@ from ai_rpg.models.messages import (
 _SYSTEM = SystemMessage(content="你是一个有帮助的助手，请用中文回答。")
 
 
-def test_chat() -> None:
-    """测试同步单次请求"""
+async def test_chat() -> None:
+    """测试异步单次请求"""
     print("\n=== 测试 chat() ===")
     client = DeepSeekClient(
         name="test_chat",
         prompt="请简单介绍一下你自己。",
         context=[_SYSTEM],
     )
-    client.chat()
+    await client.chat()
     print("📝 回复:")
     print(client.response_content)
 
@@ -112,7 +112,7 @@ def test_get_balance() -> None:
         print("未获取到余额信息")
 
 
-def test_cache_tokens() -> None:
+async def test_cache_tokens() -> None:
     """测试缓存命中 token 统计"""
     print("\n=== 测试 prompt_cache_hit/miss_tokens ===")
     client = DeepSeekClient(
@@ -120,7 +120,7 @@ def test_cache_tokens() -> None:
         prompt="请用一句话解释什么是缓存。",
         context=[_SYSTEM],
     )
-    client.chat()
+    await client.chat()
     print(f"缓存命中 tokens : {client.prompt_cache_hit_tokens}")
     print(f"缓存未命中 tokens: {client.prompt_cache_miss_tokens}")
     print(f"回复: {client.response_content}")
@@ -197,7 +197,7 @@ def _mock_get_weather(city: str, unit: str = "celsius") -> str:
     return f"{city}当前天气：{temp}，{cond}"
 
 
-def test_tool_call_single() -> None:
+async def test_tool_call_single() -> None:
     """测试工具调用第一轮：LLM 返回 tool_calls，尚未执行工具"""
     print("\n=== 测试 tool calling 第一转（LLM 返回 tool_calls）===")
     client = DeepSeekClient(
@@ -206,7 +206,7 @@ def test_tool_call_single() -> None:
         context=[_SYSTEM],
         tools=[_WEATHER_TOOL],
     )
-    client.chat()
+    await client.chat()
 
     print(f"finish_reason : {client.finish_reason}")
     print(f"tool_calls 数量: {len(client.tool_calls)}")
@@ -225,7 +225,7 @@ def test_tool_call_single() -> None:
     print("✅ 第一转工具调用验证通过")
 
 
-def test_tool_call_full_round() -> None:
+async def test_tool_call_full_round() -> None:
     """测试工具调用完整两转：LLM 调用工具 → Python 执行 → 回传结果 → LLM 给出最终回复"""
     print("\n=== 测试 tool calling 完整两转（agentic loop）===")
     import json
@@ -239,7 +239,7 @@ def test_tool_call_full_round() -> None:
         context=[_SYSTEM],
         tools=[_WEATHER_TOOL],
     )
-    first.chat()
+    await first.chat()
     print(
         f"[转 1] finish_reason={first.finish_reason}, tool_calls={len(first.tool_calls)}"
     )
@@ -267,7 +267,7 @@ def test_tool_call_full_round() -> None:
         tools=[_WEATHER_TOOL],
         tool_choice="none",  # 强制回答，不再调用工具
     )
-    second.chat()
+    await second.chat()
     print(f"[转 2] finish_reason={second.finish_reason}")
     print(f"最终回复: {second.response_content}")
     assert (
@@ -282,12 +282,12 @@ def main() -> None:
     test_get_buffer_string()
     test_list_models()
     test_get_balance()
-    test_chat()
-    test_cache_tokens()
+    asyncio.run(test_chat())
+    asyncio.run(test_cache_tokens())
     asyncio.run(test_batch_chat())
     asyncio.run(test_model_matrix())
-    test_tool_call_single()
-    test_tool_call_full_round()
+    asyncio.run(test_tool_call_single())
+    asyncio.run(test_tool_call_full_round())
 
 
 if __name__ == "__main__":

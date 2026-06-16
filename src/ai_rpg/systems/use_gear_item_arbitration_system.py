@@ -152,7 +152,7 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
             context=self._game.get_agent_context(stage_entity).context,
             timeout=60 * 2,
         )
-        chat_client.chat()
+        await chat_client.chat()
 
         narrative = chat_client.response_content.strip()
         combat_log = _build_gear_combat_log(actor_entity.name, action)

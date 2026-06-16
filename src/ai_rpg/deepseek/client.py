@@ -470,48 +470,7 @@ class DeepSeekClient:
         }
 
     ################################################################################################################################################################################
-    def chat(self) -> None:
-        """同步发送聊天请求（直连 DeepSeek 平台）"""
-        try:
-            logger.debug(f"{self._name} request prompt:\n{self._prompt}")
-            start_time = time.time()
-
-            response = requests.post(
-                url=_DEEPSEEK_API_URL,
-                headers=self._build_headers(),
-                json=self._build_payload(),
-                timeout=self._timeout,
-            )
-
-            elapsed = time.time() - start_time
-            logger.debug(f"{self._name} request time: {elapsed:.2f}s")
-
-            if response.status_code == 200:
-                self._parse_response(response.json())
-                logger.info(f"{self._name} response_content:\n{self.response_content}")
-                logger.debug(
-                    f"{self._name} cache: hit={self.prompt_cache_hit_tokens}, miss={self.prompt_cache_miss_tokens}"
-                )
-                if self.response_reasoning_content:
-                    logger.info(
-                        f"\n💭 {self._name} 思考过程:\n{self.response_reasoning_content}\n"
-                    )
-                    logger.info("=" * 60)
-            else:
-                self._handle_error_response(response.status_code, response.text)
-
-        except requests.exceptions.Timeout as e:
-            logger.error(f"{self._name}: request timeout: {type(e).__name__}: {e}")
-        except requests.exceptions.ConnectionError as e:
-            logger.error(f"{self._name}: connection error: {type(e).__name__}: {e}")
-        except requests.exceptions.RequestException as e:
-            logger.error(f"{self._name}: request error: {type(e).__name__}: {e}")
-        except Exception as e:
-            logger.error(f"{self._name}: unexpected error: {type(e).__name__}: {e}")
-            logger.debug(f"{self._name}: traceback:\n{traceback.format_exc()}")
-
-    ################################################################################################################################################################################
-    async def async_chat(self) -> None:
+    async def chat(self) -> None:
         """异步发送聊天请求（直连 DeepSeek 平台）"""
         try:
             logger.debug(f"{self._name} a_request prompt:\n{self._prompt}")
@@ -568,7 +527,7 @@ class DeepSeekClient:
 
         start_time = time.time()
         results = await asyncio.gather(
-            *[c.async_chat() for c in clients], return_exceptions=True
+            *[c.chat() for c in clients], return_exceptions=True
         )
         elapsed = time.time() - start_time
         logger.debug(

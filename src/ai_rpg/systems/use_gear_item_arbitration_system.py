@@ -90,7 +90,7 @@ def _generate_gear_task_hint(
         )
     return [
         f"{header}评估是否追加与以下词缀对应的状态效果：{affix}"
-        for affix in item.affixes
+        for affix in item.equip_affixes
     ]
 
 
@@ -208,10 +208,10 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
         action: UseGearItemAction,
         affected_entity_names: List[str],
     ) -> None:
-        """装备仲裁结算后为使用者与所有目标添加 AddStatusEffectsAction。item.affixes 为空时跳过。"""
-        if not action.item.affixes:
+        """装备仲裁结算后为装备者添加 AddStatusEffectsAction。item.equip_affixes 为空时跳过。"""
+        if not action.item.equip_affixes:
             logger.debug(
-                f"[{actor_entity.name}] 装备 affixes 为空，跳过 AddStatusEffectsAction"
+                f"[{actor_entity.name}] 装备 equip_affixes 为空，跳过 AddStatusEffectsAction"
             )
             return
 

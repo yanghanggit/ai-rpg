@@ -17,6 +17,8 @@ from ..models import (
     StatusEffect,
     PhaseType,
     PostArbitrationAction,
+    EquippedGearComponent,
+    GearItem,
 )
 from ..utils import extract_json_from_code_block
 
@@ -362,6 +364,26 @@ def _generate_compressed_combat_arbitration_prompt(
 
 
 ###########################################################################################################################################
+def _generate_gear_on_hit_task_hint(
+    actor_name: str,
+    play_cards_action: PlayCardsAction,
+    gear_item: GearItem,
+    entity_name: str,
+) -> List[str]:
+    """生成装备 on_hit_affixes 对应的 AddStatusEffectsAction task_hints（仅目标视角）。"""
+    actor_short = actor_name.split(".")[-1]
+    card = play_cards_action.card
+    header = (
+        f"仲裁结算完成。{actor_short} 持有装备「{gear_item.name}」并使用卡牌「{card.name}」命中了你。\n"
+        f"请根据以上受击情况，结合战斗上下文，"
+    )
+    return [
+        f"{header}评估是否追加与以下装备词缀对应的状态效果：{affix}"
+        for affix in gear_item.on_hit_affixes
+    ]
+
+
+###########################################################################################################################################
 @final
 class PlayCardsArbitrationSystem(ReactiveProcessor):
     """响应 PlayCardsAction 事件，对单张出牌立即进行 AI 仲裁结算。"""
@@ -610,17 +632,24 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
         play_cards_action: PlayCardsAction,
         affected_entity_names: List[str],
     ) -> None:
-        """仲裁结算后为出牌者与所有目标添加 AddStatusEffectsAction。card.affixes 为空时跳过。
+        """仲裁结算后为出牌者与所有目标添加 AddStatusEffectsAction。card.affixes 与装备 on_hit_affixes 均为空时跳过。
 
         Args:
             actor_entity: 出牌者实体
             play_cards_action: 本次出牌的 PlayCardsAction 组件
             affected_entity_names: final_stats 中所有受影响实体的全名列表
         """
-        # 卡牌无延迟词缀时跳过，不触发后续 LLM 推理
-        if not play_cards_action.card.affixes:
+        card_affixes = play_cards_action.card.affixes
+        has_equipped = actor_entity.has(EquippedGearComponent)
+        gear_on_hit_affixes: List[str] = (
+            actor_entity.get(EquippedGearComponent).item.on_hit_affixes
+            if has_equipped
+            else []
+        )
+
+        if not card_affixes and not gear_on_hit_affixes:
             logger.debug(
-                f"[{actor_entity.name}] 出牌卡牌无延迟词缀，跳过 AddStatusEffectsAction"
+                f"[{actor_entity.name}] 出牌卡牌无延迟词缀且装备无 on_hit_affixes，跳过 AddStatusEffectsAction"
             )
             return
 
@@ -629,13 +658,26 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             entity = self._game.get_entity_by_name(entity_name)
             assert entity is not None, f"无法找到实体: {entity_name}"
 
-            task_hints = _generate_post_arbitration_task_hint(
-                actor_name=actor_entity.name,
-                play_cards_action=play_cards_action,
-                entity_name=entity_name,
-            )
+            task_hints: List[str] = []
 
-            self._game.accumulate_status_effects_action(entity, task_hints)
-            logger.debug(f"[{entity_name}] 仲裁后添加 AddStatusEffectsAction")
+            if card_affixes:
+                task_hints += _generate_post_arbitration_task_hint(
+                    actor_name=actor_entity.name,
+                    play_cards_action=play_cards_action,
+                    entity_name=entity_name,
+                )
+
+            # on_hit_affixes 仅作用于命中目标（非出牌者自身）
+            if gear_on_hit_affixes and entity_name != actor_entity.name:
+                task_hints += _generate_gear_on_hit_task_hint(
+                    actor_name=actor_entity.name,
+                    play_cards_action=play_cards_action,
+                    gear_item=actor_entity.get(EquippedGearComponent).item,
+                    entity_name=entity_name,
+                )
+
+            if task_hints:
+                self._game.accumulate_status_effects_action(entity, task_hints)
+                logger.debug(f"[{entity_name}] 仲裁后添加 AddStatusEffectsAction")
 
     #######################################################################################################################################

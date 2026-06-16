@@ -61,9 +61,12 @@ def render_item(item: AnyItem) -> str:
             lines.append(f"  [dim]属性: {', '.join(bonus_parts)}[/]")
         target_label = _TARGET_MAP.get(item.target_type.value, item.target_type.value)
         lines.append(f"  [dim]目标: {target_label}[/]")
-        if item.affixes:
-            for affix in item.affixes:
-                lines.append(f"  [dim]词缀 {affix}[/]")
+        if item.equip_affixes:
+            for affix in item.equip_affixes:
+                lines.append(f"  [dim]词缀(装备时) {affix}[/]")
+        if item.on_hit_affixes:
+            for affix in item.on_hit_affixes:
+                lines.append(f"  [dim]词缀(命中时) {affix}[/]")
         if item.modifiers:
             for mod in item.modifiers:
                 lines.append(f"  [dim]修正 {mod}[/]")

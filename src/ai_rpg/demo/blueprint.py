@@ -7,6 +7,7 @@ from ..models import (
     Blueprint,
     CostumeItem,
     GearItem,
+    GearType,
     ConsumableItem,
     MaterialItem,
     TargetType,
@@ -110,16 +111,28 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
             GearItem(
                 name="装备.缺口猎刀",
                 description="一把刀身偏短的猎刀，刃背厚实，靠近刀尖三分之一处有一道浅缺口，像是曾经硬撬过什么。握柄以粗布条缠绕，布已泛黄，但缠法整齐，显然出自熟练的手。",
+                gear_type=GearType.WEAPON,
                 stat_bonuses=CharacterStats(
                     hp=0, max_hp=0, attack=2, defense=0, energy=0, speed=0
                 ),
+                modifiers=[
+                    "[缺口锯刃]:刃口缺口增加穿透力，攻击时额外无视目标防御的一部分"
+                ],
+                on_hit_affixes=[
+                    "[撕裂伤]:命中后缺口可能造成撕裂型创口，引发持续流血效果"
+                ],
             ),
             GearItem(
                 name="装备.沙漠旅行者轻甲",
                 description="一套轻便的皮质护甲，由多块经过硬化处理的皮革拼接而成，覆盖躯干、肩部与小腿。设计简洁，不妨碍快速移动，表面留有风沙打磨的痕迹。",
+                gear_type=GearType.ARMOR,
                 stat_bonuses=CharacterStats(
                     hp=0, max_hp=0, attack=0, defense=2, energy=0, speed=0
                 ),
+                modifiers=["[轻型构造]:受击时防御值完整生效，不因移动或姿态产生减值"],
+                equip_affixes=[
+                    "[皮革韧性]:承受重击时可能激活韧性层，减少下一次受到的伤害"
+                ],
             ),
             ConsumableItem(
                 name="消耗品.遗迹急救药剂",

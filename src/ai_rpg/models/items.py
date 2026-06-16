@@ -15,6 +15,16 @@ from .target_type import TargetType
 ###############################################################################################################################################
 @final
 @unique
+class GearType(StrEnum):
+
+    WEAPON = "Weapon"
+    ARMOR = "Armor"
+    ACCESSORY = "Accessory"
+
+
+###############################################################################################################################################
+@final
+@unique
 class ItemType(StrEnum):
 
     GEAR_ITEM = "GearItem"
@@ -44,8 +54,14 @@ class GearItem(Item):
             hp=0, max_hp=0, attack=0, defense=0, energy=0, speed=0
         )
     )
+    gear_type: GearType  # 装备类型：武器/防具/饰品，必须赋值
     target_type: TargetType = TargetType.ALLY_SINGLE  # 作用目标类型，默认作用于单个友方
-    affixes: List[str] = []  # 延迟词缀列表（同 Card.affixes）
+    equip_affixes: List[str] = (
+        []
+    )  # 装备时对装备者触发的延迟词缀；格式同 Card.affixes；由 UseGearItemArbitrationSystem 评估
+    on_hit_affixes: List[str] = (
+        []
+    )  # 出牌命中目标时触发的延迟词缀；格式同 Card.affixes；由 PlayCardsArbitrationSystem 评估
     modifiers: List[str] = []  # 即时修正词缀列表（同 Card.modifiers）
     max_durability: int = 3  # 最大耐久度；每次进入/离开地下城时 durability 恢复至此值
     durability: int = (

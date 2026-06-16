@@ -83,6 +83,11 @@ from ai_rpg.game import restore_world
 from pathlib import Path
 from typing import Final as _Final
 
+# 仅在本 CLI 运行时启用 chat dump（调试用途）
+import ai_rpg.deepseek.config
+
+ai_rpg.deepseek.config.CHAT_DUMP_ENABLED = True
+
 LOG_LEVEL: _Final[str] = "DEBUG"
 
 

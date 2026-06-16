@@ -25,7 +25,8 @@ from loguru import logger
 from pydantic import BaseModel
 
 from ..models.messages import AIMessage, BaseMessage, ToolMessage, get_buffer_string
-from .config import CHAT_DUMP_DIR, CHAT_DUMP_ENABLED, MODEL_FLASH
+from . import config
+from .config import CHAT_DUMP_DIR, MODEL_FLASH
 
 load_dotenv()
 
@@ -528,30 +529,36 @@ class DeepSeekClient:
 
     ################################################################################################################################################################################
     def _build_dump_content(self) -> str:
-        """将本次对话渲染为 Markdown 字符串。"""
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-        context_text = (
-            get_buffer_string(list(self._context)) if self._context else "（空）"
-        )
-        prompt_text = (
-            self._prompt if self._prompt else "（continuation 模式，无独立 prompt）"
-        )
-        lines = [
-            f"# Chat Dump: {self._name}",
-            f"- Time: {now}",
-            f"- Model: {self._model}",
+        """将本次对话渲染为纯文本，以分割线分隔各段。"""
+        _SEP = "-" * 86
+        lines: list[str] = []
+
+        # Context（对话历史）
+        if self._context:
+            lines.append(
+                get_buffer_string(
+                    list(self._context),
+                    human_prefix="\n" + _SEP + "\nHuman",
+                    ai_prefix="\n" + _SEP + "\nAI",
+                )
+            )
+        else:
+            lines.append("（空）")
+
+        # Prompt（本轮人类输入）
+        lines += [
             "",
-            "## Context",
-            context_text,
-            "",
-            "## Prompt",
-            prompt_text,
-            "",
-            "## Response",
-            self.response_content,
+            _SEP,
+            self._prompt if self._prompt else "（continuation 模式，无独立 prompt）",
         ]
+
+        # Response（本轮 AI 回复）
+        lines += ["", _SEP, self.response_content]
+
+        # Reasoning（可选）
         if self.response_reasoning_content:
-            lines += ["", "## Reasoning", self.response_reasoning_content]
+            lines += ["", _SEP, self.response_reasoning_content]
+
         return "\n".join(lines) + "\n"
 
     ################################################################################################################################################################################
@@ -561,7 +568,7 @@ class DeepSeekClient:
         文件名格式：{YYYYMMDD_HHMMSS_ffffff}_{name}.md（含微秒防并发冲突）
         写入失败只记录 warning，不向上抛异常。
         """
-        if not CHAT_DUMP_ENABLED:
+        if not config.CHAT_DUMP_ENABLED:
             return
         try:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")

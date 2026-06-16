@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from typing import List
 
-from src.ai_rpg.deepseek import AIMessage, DeepSeekClient
+from src.ai_rpg.deepseek import DeepSeekClient
 from src.ai_rpg.entitas.context import Context
 from src.ai_rpg.entitas.entity import Entity
 from src.ai_rpg.game.tcg_game import TCGGame
@@ -13,6 +13,7 @@ from src.ai_rpg.models import (
     ActorComponent,
     CharacterStatsComponent,
     StatusEffectsComponent,
+    AIMessage,
 )
 from src.ai_rpg.models import CharacterStats
 from src.ai_rpg.models import PhaseType, StatusEffect

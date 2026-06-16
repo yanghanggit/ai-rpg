@@ -16,6 +16,7 @@ temperature 参数默认为 1.0。
 import asyncio
 import os
 import time
+from datetime import datetime
 from typing import Any, Dict, Final, List, Literal, Optional, Sequence, final
 import httpx
 import requests
@@ -23,8 +24,8 @@ from dotenv import load_dotenv
 from loguru import logger
 from pydantic import BaseModel
 
-from ..models.messages import AIMessage, BaseMessage, ToolMessage
-from .config import MODEL_FLASH
+from ..models.messages import AIMessage, BaseMessage, ToolMessage, get_buffer_string
+from .config import CHAT_DUMP_DIR, CHAT_DUMP_ENABLED, MODEL_FLASH
 
 load_dotenv()
 
@@ -498,22 +499,79 @@ class DeepSeekClient:
         logger.debug(f"{self._name} a_request time: {elapsed:.2f}s")
 
         if response.status_code == 200:
+
+            # 解析响应并填充 response_content 和相关属性
             self._parse_response(response.json())
             logger.info(f"{self._name} response_content:\n{self.response_content}")
             logger.debug(
                 f"{self._name} cache: hit={self.prompt_cache_hit_tokens}, miss={self.prompt_cache_miss_tokens}"
             )
+
+            # deepseek-reasoner 模型的思考过程内容通常较长，我们单独记录在 info 级别日志中，方便用户查看但不干扰主要输出
             if self.response_reasoning_content:
                 logger.info(
                     f"\n💭 {self._name} 思考过程:\n{self.response_reasoning_content}\n"
                 )
                 logger.info("=" * 60)
+
+            # 记录完整对话内容以供调试分析
+            self._dump_chat()
         else:
+
+            # 记录错误响应信息
             self._handle_error_response(response.status_code, response.text)
             raise httpx.HTTPStatusError(
                 f"HTTP {response.status_code}",
                 request=response.request,
                 response=response,
+            )
+
+    ################################################################################################################################################################################
+    def _build_dump_content(self) -> str:
+        """将本次对话渲染为 Markdown 字符串。"""
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+        context_text = (
+            get_buffer_string(list(self._context)) if self._context else "（空）"
+        )
+        prompt_text = (
+            self._prompt if self._prompt else "（continuation 模式，无独立 prompt）"
+        )
+        lines = [
+            f"# Chat Dump: {self._name}",
+            f"- Time: {now}",
+            f"- Model: {self._model}",
+            "",
+            "## Context",
+            context_text,
+            "",
+            "## Prompt",
+            prompt_text,
+            "",
+            "## Response",
+            self.response_content,
+        ]
+        if self.response_reasoning_content:
+            lines += ["", "## Reasoning", self.response_reasoning_content]
+        return "\n".join(lines) + "\n"
+
+    ################################################################################################################################################################################
+    def _dump_chat(self) -> None:
+        """将本次 chat() 完整对话写入 .chat_dumps/ 下的 Markdown 文件。
+
+        文件名格式：{YYYYMMDD_HHMMSS_ffffff}_{name}.md（含微秒防并发冲突）
+        写入失败只记录 warning，不向上抛异常。
+        """
+        if not CHAT_DUMP_ENABLED:
+            return
+        try:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+            dump_file = CHAT_DUMP_DIR / f"{timestamp}_{self._name}.md"
+            CHAT_DUMP_DIR.mkdir(parents=True, exist_ok=True)
+            dump_file.write_text(self._build_dump_content(), encoding="utf-8")
+            logger.debug(f"chat dump saved: {dump_file}")
+        except Exception as e:
+            logger.warning(
+                f"_dump_chat failed for '{self._name}': {type(e).__name__}: {e}"
             )
 
     ################################################################################################################################################################################

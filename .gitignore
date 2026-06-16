@@ -73,6 +73,7 @@ htmlcov/
 .worlds/
 .dungeons/
 .debug_cache/
+.chat_dumps/
 
 # Local AI Agent Configurations (e.g., Claude, Gemini, etc.)
 .claude.json

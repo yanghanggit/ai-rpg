@@ -7,8 +7,9 @@ from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.widgets import Input, RichLog, Static
-from .base import BaseGameScreen
 from .combat_play_cards import _Phase, COMBAT_ROOM_MENU, PlayCardsMixin
+from .combat_use_consumable import UseConsumableMixin
+from .combat_use_gear import UseGearMixin
 from .combat_room_renderer import write_full_entities_block
 from .deck_detail import DeckDetailScreen
 from .round_detail import RoundDetailScreen
@@ -40,7 +41,7 @@ def _format_http_error(e: Exception) -> str:
 
 
 @final
-class CombatRoomScreen(PlayCardsMixin, BaseGameScreen):
+class CombatRoomScreen(PlayCardsMixin, UseConsumableMixin, UseGearMixin):
     """战斗房间 Screen：进入地下城战斗房间后的主界面，支持战斗操作与状态查询。"""
 
     CSS = """
@@ -89,6 +90,8 @@ class CombatRoomScreen(PlayCardsMixin, BaseGameScreen):
 
         # 出牌阶段状态机字段（由 PlayCardsMixin 提供）
         self._init_play_state()
+        # 道具子流程状态字段（由 UseConsumableMixin / UseGearMixin 提供）
+        self._init_item_state()
 
     @property
     def _user_name(self) -> str:
@@ -160,6 +163,12 @@ class CombatRoomScreen(PlayCardsMixin, BaseGameScreen):
                 self._handle_consumable_selection(raw)
             elif self._phase == _Phase.SELECT_CONSUMABLE_TARGET:
                 self._handle_consumable_target_selection(raw)
+            elif self._phase == _Phase.SELECT_GEAR:
+                self._phase = _Phase.LOADING
+                self.query_one(Input).disabled = True
+                self._handle_gear_selection(raw)
+            elif self._phase == _Phase.SELECT_GEAR_TARGET:
+                self._handle_gear_target_selection(raw)
             return
 
         # ── 普通命令模式 ──
@@ -168,8 +177,8 @@ class CombatRoomScreen(PlayCardsMixin, BaseGameScreen):
             return
 
         # 每次执行任意命令前先清空 Log 并重印菜单
-        # 出牌（3）和消耗品（4）命令进入专属 UI，自行处理 log 初始化，不在此预写菜单
-        if cmd not in ("3", "4"):
+        # 出牌（3）、消耗品（4）、装备（5）命令进入专属 UI，自行处理 log 初始化，不在此预写菜单
+        if cmd not in ("3", "4", "5"):
             log.clear()
             log.write(COMBAT_ROOM_MENU)
 
@@ -187,6 +196,9 @@ class CombatRoomScreen(PlayCardsMixin, BaseGameScreen):
 
         elif cmd == "4":
             self._start_use_consumable()
+
+        elif cmd == "5":
+            self._start_use_gear()
 
         elif cmd == "6":
             self._fetch_status()

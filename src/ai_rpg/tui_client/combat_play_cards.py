@@ -1,24 +1,12 @@
-"""出牌流程状态机 Mixin（PlayCardsMixin）。
-
-此模块包含：
-- COMBAT_ROOM_MENU：主菜单文本常量
-- PlayCardsMixin：出牌流程的 13 个方法（继承自 UseConsumableMixin）
-
-_Phase 枚举已移至 combat_use_consumable，此模块重新导出以保持向后兼容。
-
-PlayCardsMixin 继承 UseConsumableMixin，宿主类只需继承 PlayCardsMixin。
-宿主类需提供：
-  - self._user_name: str
-  - self._game_name: str
-  - self.query_one()  ← 由 Textual Widget 提供
-  - self._fetch_status()  ← 由 CombatRoomScreen 提供
-"""
+"""出牌流程状态机 Mixin（PlayCardsMixin）。"""
 
 from typing import Final, List, Optional
 import httpx
+from abc import abstractmethod
 from loguru import logger
 from textual import work
 from textual.widgets import Input, RichLog
+from .base import BaseGameScreen
 from .server_client import dungeon_combat_play_cards as server_play_cards
 from .server_client import fetch_dungeon_room
 from .server_client import (
@@ -31,7 +19,6 @@ from ..models import (
     Card,
     CombatResult,
     CombatState,
-    ConsumableItem,
     HandComponent,
     MonsterComponent,
     PartyMemberComponent,
@@ -42,7 +29,7 @@ from .combat_room_renderer import (
     write_hand_table,
 )
 from .utils import display_name
-from .combat_use_consumable import _Phase as _Phase, UseConsumableMixin
+from .combat_use_item import _Phase as _Phase
 
 
 COMBAT_ROOM_MENU: Final[
@@ -55,6 +42,7 @@ COMBAT_ROOM_MENU: Final[
   [bold green]2[/]  抽牌            为全员抽牌
   [bold green]3[/]  出牌            进入出牌界面完成本回合
   [bold green]4[/]  使用消耗品      从背包使用一件消耗品
+  [bold green]5[/]  使用装备        从背包装备一件装备道具
 [bold cyan]── 查看 ──────────────────────────────────────[/]
   [bold green]6[/]  当前战斗状态    房间信息与角色属性
   [bold green]7[/]  回合详情        行动顺序与出手记录
@@ -71,11 +59,25 @@ COMBAT_ROOM_MENU: Final[
 """
 
 
-class PlayCardsMixin(UseConsumableMixin):
-    """出牌流程状态机（消耗品流程由 UseConsumableMixin 提供）。
+class PlayCardsMixin(BaseGameScreen):
+    """出牌流程状态机。
 
-    宿主类（CombatRoomScreen）必须在 __init__ 中调用 self._init_play_state()。
+    直接继承 BaseGameScreen，与 UseConsumableMixin/UseGearMixin 平级。
+    由 CombatRoomScreen 通过多继承组合，宿主类在 __init__ 中调用 self._init_play_state()。
     """
+
+    # ── 由 CombatRoomScreen 提供 ─────────────────────
+    @property
+    @abstractmethod
+    def _user_name(self) -> str: ...
+
+    @property
+    @abstractmethod
+    def _game_name(self) -> str: ...
+
+    # ── 与道具子流程共享的状态字段声明 ──────────
+    _phase: Optional[_Phase]
+    _target_candidates: List[str]
 
     # ──────────────────────────────────────────────
     # 状态字段初始化（由 __init__ 调用）
@@ -85,8 +87,6 @@ class PlayCardsMixin(UseConsumableMixin):
         self._current_actor: Optional[str] = None
         self._selected_card_name: Optional[str] = None
         self._target_candidates: List[str] = []
-        self._consumable_items: List[ConsumableItem] = []
-        self._selected_item_name: Optional[str] = None
 
     # ──────────────────────────────────────────────
     # 出牌区域重绘辅助
@@ -295,8 +295,6 @@ class PlayCardsMixin(UseConsumableMixin):
         self._current_actor = None
         self._selected_card_name = None
         self._target_candidates = []
-        self._consumable_items = []
-        self._selected_item_name = None
         log = self.query_one(RichLog)
         inp = self.query_one(Input)
         inp.placeholder = "输入命令..."

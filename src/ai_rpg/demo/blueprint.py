@@ -7,7 +7,6 @@ from ..models import (
     Blueprint,
     CostumeItem,
     GearItem,
-    GearType,
     ConsumableItem,
     MaterialItem,
     TargetType,
@@ -111,7 +110,6 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
             GearItem(
                 name="装备.缺口猎刀",
                 description="一把刀身偏短的猎刀，刃背厚实，靠近刀尖三分之一处有一道浅缺口，像是曾经硬撬过什么。握柄以粗布条缠绕，布已泛黄，但缠法整齐，显然出自熟练的手。",
-                gear_type=GearType.WEAPON,
                 stat_bonuses=CharacterStats(
                     hp=0, max_hp=0, attack=2, defense=0, energy=0, speed=0
                 ),
@@ -125,7 +123,6 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
             GearItem(
                 name="装备.沙漠旅行者轻甲",
                 description="一套轻便的皮质护甲，由多块经过硬化处理的皮革拼接而成，覆盖躯干、肩部与小腿。设计简洁，不妨碍快速移动，表面留有风沙打磨的痕迹。",
-                gear_type=GearType.ARMOR,
                 stat_bonuses=CharacterStats(
                     hp=0, max_hp=0, attack=0, defense=2, energy=0, speed=0
                 ),
@@ -139,16 +136,17 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
                 description="一小瓶从废弃营地的医疗箱里翻出的透明液体，瓶身有细小裂纹但封口尚好。液体微微泛绿，入口有刺激的苦涩感。应急时饮下，能迅速止血并小幅恢复体力。",
                 count=1,
                 target_type=TargetType.SELF_ONLY,
-                modifiers=["[急救]:优先恢复至战斗有效生命值，无视超量回复上限"],
                 affixes=["[止血]:可能移除当前出血状态"],
+                modifiers=["[急救]:优先恢复至战斗有效生命值，无视超量回复上限"],
+                
             ),
             ConsumableItem(
                 name="消耗品.沙尘爆裂罐",
                 description="一个用陶土粗制的密封罐，内填混有研磨沙粒的易燃粉末。罐身表面有细小裂纹，隐约能感觉到内部气压。用力摔向地面后会猛烈爆散，碎片与沙砾横飞，对场上所有敌人造成伤害。",
                 count=1,
                 target_type=TargetType.ENEMY_ALL,
-                modifiers=["[爆裂]:碎片横飞，穿透目标物理防御的一部分"],
                 affixes=["[震慑]:爆炸冲击可能令目标下回合行动延迟"],
+                modifiers=["[爆裂]:碎片横飞，穿透目标物理防御的一部分"],
             ),
         ],
     )

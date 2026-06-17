@@ -15,16 +15,6 @@ from .target_type import TargetType
 ###############################################################################################################################################
 @final
 @unique
-class GearType(StrEnum):
-
-    WEAPON = "Weapon"
-    ARMOR = "Armor"
-    ACCESSORY = "Accessory"
-
-
-###############################################################################################################################################
-@final
-@unique
 class ItemType(StrEnum):
 
     GEAR_ITEM = "GearItem"
@@ -54,7 +44,6 @@ class GearItem(Item):
             hp=0, max_hp=0, attack=0, defense=0, energy=0, speed=0
         )
     )
-    gear_type: GearType  # 装备类型：武器/防具/饰品，必须赋值
     target_type: TargetType = TargetType.ALLY_SINGLE  # 作用目标类型，默认作用于单个友方
     equip_affixes: List[str] = (
         []

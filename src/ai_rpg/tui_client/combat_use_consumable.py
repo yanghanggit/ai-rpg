@@ -107,31 +107,34 @@ class UseConsumableMixin(BaseGameScreen):
     @abstractmethod
     def _update_play_status(self, text: str) -> None: ...
 
-    async def _show_consumable_results(
+    async def _collect_consumable_result_text(
         self, prev_round_idx: int, prev_consumable_use_count: int
-    ) -> None:
-        """展示本次消耗品使用后新增的战斗日志与叙事文本。"""
+    ) -> str:
+        """获取本次消耗品使用后新增的叙事与战斗日志，返回格式化字符串（供 hint 拼接）。"""
         if prev_round_idx < 0:
-            return
-        log = self.query_one(RichLog)
+            return ""
         try:
             room_resp = await fetch_dungeon_room(self._user_name, self._game_name)
             rounds = room_resp.room.combat.rounds
             if prev_round_idx >= len(rounds):
-                return
+                return ""
             cur = rounds[prev_round_idx]
+            lines: List[str] = []
             for text in cur.consumable_narrative[prev_consumable_use_count:]:
                 if text:
-                    log.write(f"  [italic]{text}[/]")
+                    lines.append(f"  [italic]{text}[/]")
             for text in cur.consumable_combat_log[prev_consumable_use_count:]:
                 if text:
-                    log.write(f"  [dim cyan]{text}[/]")
+                    lines.append(f"  [dim cyan]{text}[/]")
+            return "\n".join(lines)
         except Exception as e:
-            logger.warning(f"_show_consumable_results: 加载日志失败 error={e}")
+            logger.warning(f"_collect_consumable_result_text: 加载日志失败 error={e}")
+            return ""
 
     # 消耗品流程专用状态
     _consumable_items: List[ConsumableItem]
     _selected_item_name: Optional[str]
+    _round_consumable_use_count: int  # 加载背包时快照的本回合使用次数，供选择阶段守卫
     # 与出牌流程共享的状态（由 PlayCardsMixin._init_play_state 初始化）
     _phase: Optional[_Phase]
     _target_candidates: List[str]
@@ -203,11 +206,7 @@ class UseConsumableMixin(BaseGameScreen):
                 )
                 return
 
-            if latest_round.consumable_use_count > 0:
-                self._return_to_menu(
-                    "[yellow]⚠ 本回合已使用过消耗品，每回合限用一次。[/]"
-                )
-                return
+            self._round_consumable_use_count = latest_round.consumable_use_count
 
             player_actor: Optional[str] = next(
                 (
@@ -229,6 +228,11 @@ class UseConsumableMixin(BaseGameScreen):
 
             self._consumable_items = consumables
             log.write("")
+            if self._round_consumable_use_count > 0:
+                log.write(
+                    f"[yellow]⚠ 本回合已使用消耗品 {self._round_consumable_use_count} 次（每回合限用一次，仅供浏览）[/]"
+                )
+                log.write("")
             for idx, item in enumerate(consumables, 1):
                 rendered = render_item(item)
                 first_nl = rendered.find("\n")
@@ -256,6 +260,10 @@ class UseConsumableMixin(BaseGameScreen):
         log = self.query_one(RichLog)
         items: List[ConsumableItem] = self._consumable_items
         candidates: List[str] = self._target_candidates
+
+        if self._round_consumable_use_count > 0:
+            self._return_to_menu("[yellow]⚠ 本回合已使用过消耗品，每回合限用一次。[/]")
+            return
 
         selected_item: Optional[ConsumableItem] = None
         if raw.isdigit():
@@ -453,8 +461,12 @@ class UseConsumableMixin(BaseGameScreen):
         except Exception as e:
             logger.warning(f"_do_use_consumable: 等待任务失败 error={e}")
 
-        await self._show_consumable_results(prev_round_idx, prev_consumable_use_count)
+        result_text = await self._collect_consumable_result_text(
+            prev_round_idx, prev_consumable_use_count
+        )
         used = prev_consumable_use_count + 1
-        self._return_to_menu(
+        base_hint = (
             f"[dim]消耗品已使用（本回合第 {used} 次）。输入 [bold]3[/] 继续出牌。[/]"
         )
+        hint = f"{result_text}\n{base_hint}" if result_text else base_hint
+        self._return_to_menu(hint)

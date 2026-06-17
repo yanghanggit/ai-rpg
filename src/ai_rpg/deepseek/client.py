@@ -572,7 +572,7 @@ class DeepSeekClient:
             return
         try:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-            dump_file = CHAT_DUMP_DIR / f"{timestamp}_{self._name}.md"
+            dump_file = CHAT_DUMP_DIR / f"{timestamp}_{self._name}.txt"
             CHAT_DUMP_DIR.mkdir(parents=True, exist_ok=True)
             dump_file.write_text(self._build_dump_content(), encoding="utf-8")
             logger.debug(f"chat dump saved: {dump_file}")

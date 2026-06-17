@@ -14,6 +14,7 @@ from ..models import (
     UseGearItemAction,
     CharacterStats,
     CombatArbitrationEvent,
+    PartyMemberComponent,
 )
 
 
@@ -27,18 +28,16 @@ def _fmt_stat_bonuses(stats: CharacterStats) -> str:
 
 #######################################################################################################################################
 def _generate_gear_equip_narrative_prompt(
-    actor_name: str,
     action: UseGearItemAction,
     current_round_number: int,
 ) -> str:
-    actor_short = actor_name.split(".")[-1]
-    targets_str = "、".join(t.split(".")[-1] for t in action.targets) or actor_short
+    targets_str = "、".join(action.targets) if action.targets else "未知目标"
     item = action.item
     modifiers_text = (
         "\n即时修正词缀：" + "、".join(item.modifiers) if item.modifiers else ""
     )
     return (
-        f"第 {current_round_number} 回合，{actor_short} 为 {targets_str} 装备了【{item.name}】。\n\n"
+        f"第 {current_round_number} 回合，友方阵营为 {targets_str} 装备了【{item.name}】。\n\n"
         f"装备描述：{item.description}\n"
         f"属性加成：{_fmt_stat_bonuses(item.stat_bonuses)}{modifiers_text}\n\n"
         f"请用 60-120 字、第三人称感官视角，描述装备更换的瞬间画面。"
@@ -46,23 +45,20 @@ def _generate_gear_equip_narrative_prompt(
 
 
 #######################################################################################################################################
-def _build_gear_combat_log(actor_name: str, action: UseGearItemAction) -> str:
-    actor_short = actor_name.split(".")[-1]
-    targets_str = "→".join(t.split(".")[-1] for t in action.targets) or actor_short
-    return f"[{actor_short}|装备{action.item.name}→{targets_str}]"
+def _build_gear_combat_log(action: UseGearItemAction) -> str:
+    targets_str = "→".join(action.targets) if action.targets else "无"
+    return f"[装备{action.item.name}→{targets_str}]"
 
 
 #######################################################################################################################################
 def _generate_gear_equip_broadcast(
-    actor_name: str,
     action: UseGearItemAction,
     current_round_number: int,
     narrative: str,
     combat_log: str,
 ) -> str:
-    actor_short = actor_name.split(".")[-1]
     return (
-        f"# 第 {current_round_number} 回合 · {actor_short} 装备 {action.item.name}\n\n"
+        f"# 第 {current_round_number} 回合 · 友方阵营装备「{action.item.name}」\n\n"
         f"## 战斗演出\n\n{narrative}\n\n"
         f"## 数据日志\n\n{combat_log}"
     )
@@ -70,25 +66,28 @@ def _generate_gear_equip_broadcast(
 
 #######################################################################################################################################
 def _generate_gear_task_hint(
-    actor_name: str,
     action: UseGearItemAction,
-    entity_name: str,
+    entity: Entity,
 ) -> List[str]:
     item = action.item
-    actor_short = actor_name.split(".")[-1]
-    targets_str = "、".join(t.split(".")[-1] for t in action.targets) or "无"
+    targets_str = "、".join(action.targets) or "无"
     item_base = (
         f"- 装备：{item.name}（{item.description}）\n"
         f"- 属性加成：{_fmt_stat_bonuses(item.stat_bonuses)}"
     )
-    if entity_name == actor_name:
+    if entity.has(PartyMemberComponent):
         header = (
-            f"装备使用结算完成。你本回合使用了：\n{item_base}\n- 作用目标：{targets_str}\n"
-            f"请根据以上使用结果，结合战斗上下文，"
+            f"友方阵营为你装备了「{item.name}」。\n"
+            f"{item_base}\n"
+            f"- 作用目标：{targets_str}\n"
+            f"请根据以上情况，结合战斗上下文，"
         )
     else:
+        # 兜底：装备通常不作用于敌方，但保留健壮性
         header = (
-            f"装备使用结算完成。你本回合被 {actor_short} 使用装备影响：\n{item_base}\n"
+            f"装备使用结算完成。本回合装备作用情况：\n"
+            f"{item_base}\n"
+            f"- 作用目标：{targets_str}\n"
             f"请根据以上情况，结合战斗上下文，"
         )
     return [
@@ -143,7 +142,6 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
         current_round_number = len(self._game.current_dungeon.current_rounds or [])
 
         prompt = _generate_gear_equip_narrative_prompt(
-            actor_name=actor_entity.name,
             action=action,
             current_round_number=current_round_number,
         )
@@ -158,7 +156,7 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
         await chat_client.chat()
 
         narrative = chat_client.response_content.strip()
-        combat_log = _build_gear_combat_log(actor_entity.name, action)
+        combat_log = _build_gear_combat_log(action)
 
         if self._use_compressed_prompt:
             self._game.add_human_message(
@@ -181,7 +179,6 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
             entity=stage_entity,
             agent_event=CombatArbitrationEvent(
                 message=_generate_gear_equip_broadcast(
-                    actor_name=actor_entity.name,
                     action=action,
                     current_round_number=current_round_number,
                     narrative=narrative,
@@ -200,32 +197,25 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
         latest_round.gear_narrative.append(narrative)
         latest_round.gear_use_count += 1
 
-        self._trigger_add_status_effects(
-            actor_entity, action, list(dict.fromkeys(action.targets))
-        )
+        self._trigger_add_status_effects(action)
 
     #######################################################################################################################################
     def _trigger_add_status_effects(
         self,
-        actor_entity: Entity,
         action: UseGearItemAction,
-        affected_entity_names: List[str],
     ) -> None:
-        """装备仲裁结算后为装备者添加 AddStatusEffectsAction。item.equip_affixes 为空时跳过。"""
+        """装备仲裁结算后为所有目标（action.targets）添加 AddStatusEffectsAction。"""
         if not action.item.equip_affixes:
-            logger.debug(
-                f"[{actor_entity.name}] 装备 equip_affixes 为空，跳过 AddStatusEffectsAction"
-            )
+            logger.debug("装备 equip_affixes 为空，跳过 AddStatusEffectsAction")
             return
 
-        for entity_name in affected_entity_names:
+        for entity_name in action.targets:
             entity = self._game.get_entity_by_name(entity_name)
             assert entity is not None, f"无法找到实体: {entity_name}"
 
             task_hints = _generate_gear_task_hint(
-                actor_name=actor_entity.name,
                 action=action,
-                entity_name=entity_name,
+                entity=entity,
             )
             self._game.accumulate_status_effects_action(entity, task_hints)
             logger.debug(f"[{entity_name}] 装备仲裁后添加 AddStatusEffectsAction")

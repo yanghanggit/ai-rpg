@@ -33,19 +33,12 @@ def _generate_use_gear_context_prompt(
 
 #######################################################################################################################################
 def _generate_action_notice_for_others(
-    actor_name: str,
     item_name: str,
     target_name: str,
     round_number: int,
 ) -> str:
     """生成装备使用预告，广播给场景内其他角色。"""
-    actor_short_name = actor_name.split(".")[-1]
-    item_short_name = item_name.split(".")[-1] if "." in item_name else item_name
-    target_short_name = target_name.split(".")[-1]
-    return (
-        f"【第 {round_number} 回合】{actor_short_name} 为 {target_short_name}"
-        f" 装备了「{item_short_name}」。"
-    )
+    return f"【第 {round_number} 回合】友方阵营为 {target_name} 装备了「{item_name}」。"
 
 
 #######################################################################################################################################
@@ -151,7 +144,6 @@ class UseGearItemActionSystem(ReactiveProcessor):
                 entity=entity,
                 agent_event=AgentEvent(
                     message=_generate_action_notice_for_others(
-                        actor_name=action.name,
                         item_name=item.name,
                         target_name=target_name,
                         round_number=len(current_rounds),

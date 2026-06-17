@@ -26,6 +26,7 @@ from ..models import (
     UseGearItemAction,
     UseConsumableItemAction,
     GearItem,
+    ConsumableItem,
 )
 from ..entitas import Entity, Matcher
 
@@ -418,15 +419,12 @@ def activate_use_consumable(
     item_name: str,
     targets: List[str],
 ) -> Tuple[bool, str]:
-    """使用队伍背包内的指定消耗品。消耗品是队伍级别的行为，Action 挂在 Player 实体上。
-
-    不受当前行动者死活或轮次限制，但要求当前行动角色属于玩家阵营（PartyMemberComponent）。
-    使用消耗品不消耗 energy，可在己方行动阶段内任意次数使用。
+    """使用队伍背包内的指定消耗品。
 
     Args:
         tcg_game: TCG游戏实例
-        item_name: 要使用的消耗品名称（须存在于玩家 InventoryComponent 中）
-        targets: 目标名称列表，可为 []；target_type 为 SELF_ONLY / ENEMY_ALL 时系统自动覆盖
+        item_name: 要使用的消耗品名称
+        targets: 目标名称列表，
 
     Returns:
         tuple[bool, str]: (是否成功, 结果消息)
@@ -479,9 +477,7 @@ def activate_use_consumable(
         logger.error(msg)
         return False, msg
 
-    from ..models import ConsumableItem as _ConsumableItem
-
-    if not isinstance(selected_item, _ConsumableItem):
+    if not isinstance(selected_item, ConsumableItem):
         msg = f"物品 '{item_name}' 不是消耗品（类型: {type(selected_item).__name__}）"
         logger.error(msg)
         return False, msg

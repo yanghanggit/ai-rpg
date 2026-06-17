@@ -138,7 +138,6 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
                 target_type=TargetType.SELF_ONLY,
                 affixes=["[止血]:可能移除当前出血状态"],
                 modifiers=["[急救]:优先恢复至战斗有效生命值，无视超量回复上限"],
-                
             ),
             ConsumableItem(
                 name="消耗品.沙尘爆裂罐",

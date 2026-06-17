@@ -129,9 +129,9 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
     ###############################################################################################################################################
     def add_system_message(self, entity: Entity, message_content: str) -> None:
         """添加系统消息到实体的LLM上下文，必须是第一条消息"""
-        logger.info(
-            f"add_system_message: {entity.name} 添加LLM system prompt:\n{message_content}"
-        )
+        # logger.info(
+        #     f"add_system_message: {entity.name} 添加LLM system prompt:\n{message_content}"
+        # )
         agent_context = self.get_agent_context(entity)
         assert (
             len(agent_context.context) == 0
@@ -143,12 +143,12 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
         self, entity: Entity, message_content: str, **kwargs: Any
     ) -> None:
         """添加用户消息到实体的LLM上下文"""
-        logger.debug(
-            f"add_human_message: {entity.name} 添加LLM context:\n{message_content}"
-        )
-        if len(kwargs) > 0:
-            # 如果 **kwargs 不是 空，就打印一下，这种消息比较特殊。
-            logger.debug(f"kwargs: {kwargs}")
+        # logger.debug(
+        #     f"add_human_message: {entity.name} 添加LLM context:\n{message_content}"
+        # )
+        # if len(kwargs) > 0:
+        #     # 如果 **kwargs 不是 空，就打印一下，这种消息比较特殊。
+        #     logger.debug(f"kwargs: {kwargs}")
 
         agent_context = self.get_agent_context(entity)
         agent_context.context.extend([HumanMessage(content=message_content, **kwargs)])
@@ -167,11 +167,11 @@ class RPGGame(GameSession, RPGEntityManager, RPGGamePipelineManager):
                 setattr(ai_message, key, value)
 
         # 所以如果有 kwargs 就打印一下。
-        logger.debug(
-            f"add_ai_message: {entity.name} 添加LLM context:\n{ai_message.content}"
-        )
-        if kwargs:
-            logger.debug(f"kwargs: {kwargs}")
+        # logger.debug(
+        #     f"add_ai_message: {entity.name} 添加LLM context:\n{ai_message.content}"
+        # )
+        # if kwargs:
+        #     logger.debug(f"kwargs: {kwargs}")
 
         # 最后添加到上下文中。
         agent_context = self.get_agent_context(entity)

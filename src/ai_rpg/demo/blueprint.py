@@ -123,6 +123,21 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
                 description="遗迹废墟中翻出的铜制连接零件，表面氧化后呈深绿色，但结构完整无裂纹。形状接近圆形，适合做装备连接件、皮带扣或简单饰品框架。",
                 count=2,
             ),
+            MaterialItem(
+                name="材料.沙丘细绒布",
+                description="从废弃商队遗留的布包中取出的细密织物，颜色似流沙渐变，手感柔软但耐磨。纤维密度高，适合裁制外袍或衬里。",
+                count=3,
+            ),
+            MaterialItem(
+                name="材料.靛蓝染料",
+                description="一小瓷罐封装的深蓝色粉末，研磨自遗迹壁画残片，色彩浓郁稳定。溶于水后可均匀着色，是布料染制的上等原料。",
+                count=2,
+            ),
+            MaterialItem(
+                name="材料.金丝边饰",
+                description="从旧时装饰带上剪下的细金属丝线，质地柔韧，在光线下反射出暗哑金光。可用于衣物滚边或刺绣描线。",
+                count=2,
+            ),
         ],
         inventory=[
             GearItem(

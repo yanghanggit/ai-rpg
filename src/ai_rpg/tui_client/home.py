@@ -40,6 +40,7 @@ MENU_TEXT = """\
   [bold green]10[/] 穿戴时装      为目标安装/移除时装
   [bold green]11[/] 制造工坊      合成消耗品
   [bold green]12[/] 工坊锻造      用材料锻造装备
+  [bold green]13[/] 工坊制衣      用材料制作时装
 [bold cyan]── 系统 ──────────────────────────────────────[/]
   [bold green]0[/]  显示此菜单
   [bold dim]Escape[/]  登出并返回主菜单
@@ -306,6 +307,10 @@ class HomeScreen(BaseGameScreen):
             from .craft_gear_item import CraftGearItemScreen
 
             self.app.push_screen(CraftGearItemScreen())
+        elif cmd == "13":
+            from .craft_costume_item import CraftCostumeItemScreen
+
+            self.app.push_screen(CraftCostumeItemScreen())
         else:
             log.write(f"[red]未知输入：{cmd}，输入 0 查看操作菜单。[/]")
 

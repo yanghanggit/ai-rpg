@@ -23,6 +23,7 @@ from .home_actions import (
     activate_update_appearance,
     activate_craft_consumable,
     activate_craft_gear_item,
+    activate_craft_costume_item,
     add_party_member,
     remove_party_member,
     move_item_to_inventory,
@@ -646,6 +647,56 @@ async def home_craft_gear_item_endpoint(
         task_id=craft_task.task_id,
         status=TaskStatus.RUNNING.value,
         message="工坊锻造任务已启动，请通过会话消息查询结果",
+    )
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+@home_gameplay_api_router.post(
+    path="/api/home/craft/costume/v1/", response_model=HomeCraftItemResponse
+)
+async def home_craft_costume_item_endpoint(
+    payload: HomeCraftItemRequest,
+    game_server: CurrentGameServer,
+) -> HomeCraftItemResponse:
+    """工坊制衣接口：使用储物箱中的材料制作时装。"""
+    logger.info(
+        f"/api/home/craft/costume/v1/: user={payload.user_name} materials={payload.materials}"
+    )
+
+    current_room = game_server.get_room(payload.user_name)
+    if current_room is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="没有登录，请先登录",
+        )
+
+    async with current_room._lock:
+        tcg_game = await _validate_player_at_home(payload.user_name, game_server)
+        success, error_detail = activate_craft_costume_item(
+            tcg_game, list(payload.materials)
+        )
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=error_detail,
+            )
+
+    craft_task = game_server.create_task()
+    asyncio.create_task(
+        _execute_home_pipeline_task(
+            craft_task.task_id,
+            payload.user_name,
+            game_server,
+        )
+    )
+    logger.info(
+        f"📝 创建工坊制衣任务: task_id={craft_task.task_id}, user={payload.user_name}"
+    )
+    return HomeCraftItemResponse(
+        task_id=craft_task.task_id,
+        status=TaskStatus.RUNNING.value,
+        message="工坊制衣任务已启动，请通过会话消息查询结果",
     )
 
 

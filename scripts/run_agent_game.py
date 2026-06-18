@@ -127,6 +127,7 @@ from agent_game_inventory import (
     move_item_to_storage_game,
     update_appearance_game,
     craft_consumable_game,
+    craft_gear_item_game,
 )
 
 
@@ -1076,6 +1077,48 @@ def craft_item(snapshot: str, materials: tuple[str, ...]) -> None:
     asyncio.run(
         craft_consumable_game(world, player_session, list(materials), _save_dir)
     )
+
+
+###############################################################################################################################################
+@main.command("craft-gear")
+@click.option(
+    "--snapshot",
+    required=True,
+    help="存档目录路径",
+)
+@click.option(
+    "--materials",
+    multiple=True,
+    required=True,
+    help="参与锻造的材料名称，可重复使用（如 --materials 材料.遗迹铁片 --materials 材料.硬化兽骨）",
+)
+def craft_gear(snapshot: str, materials: tuple[str, ...]) -> None:
+    """从存档复位，用储物箱内的材料通过工坊 LLM 锻造一件装备，并写入新存档。
+
+    --materials 可多次使用，相同名称重复传入代表使用多份。
+    材料须为储物箱（StorageComponent）内 type=MATERIAL_ITEM 的物品，且数量充足。
+    适用于【家园模式】。执行后装备追加至储物箱，已使用的材料对应扣减。
+    """
+    snapshot_path = Path(snapshot)
+    if not snapshot_path.exists():
+        raise click.BadParameter(
+            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+        )
+
+    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
+    _setup_logger(_log_file)
+
+    world, player_session = restore_world(snapshot_path)
+    _save_dir = (
+        WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
+    )
+
+    logger.info(f"本次运行日志文件：{_log_file}")
+    logger.info(f"读取存档：{snapshot_path}")
+    logger.info(f"本次存档目录：{_save_dir}")
+
+    asyncio.run(craft_gear_item_game(world, player_session, list(materials), _save_dir))
 
 
 ###############################################################################################################################################

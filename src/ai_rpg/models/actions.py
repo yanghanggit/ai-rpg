@@ -206,6 +206,22 @@ class CraftConsumableAction(Component):
 @final
 @register_action_component_type
 @register_component_type
+class CraftGearItemAction(Component):
+    """触发玩家在工坊用储物箱内的材料合成装备，由 LLM（WorkshopComponent agent）推理生成结果。"""
+
+    name: str
+    material_names: List[
+        str
+    ]  # 参与合成的材料名称列表（精确匹配 StorageComponent 中的 MaterialItem）
+    material_items: List[MaterialItem] = (
+        []
+    )  # 预填充的材料对象列表（count = 本次使用量）
+
+
+############################################################################################################
+@final
+@register_action_component_type
+@register_component_type
 class UseConsumableItemAction(Component):
     """触发角色在战斗中使用背包内的消耗品，由 LLM 仲裁效果（HP 变化、状态效果等）。"""
 

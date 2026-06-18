@@ -1,8 +1,4 @@
-"""制造工坊 Screen：从储物箱材料合成道具。
-
-当前支持：消耗品合成。
-未来可扩展：装备、特殊道具等更多类型。
-"""
+"""工坊锻造 Screen：从储物箱材料锻造装备。"""
 
 from typing import Dict, List, Literal, Set
 
@@ -16,48 +12,47 @@ from .base import BaseGameScreen
 from .server_client import (
     TaskFailedError,
     fetch_entities_details,
-    home_craft_item,
+    home_craft_gear_item,
     watch_task_until_done,
 )
 from .utils import display_name
 from ..models import StorageComponent
 
-CRAFT_HEADER = """\
-[bold cyan]── 制造工坊 ──────────────────────────────────────[/]
+CRAFT_GEAR_HEADER = """\
+[bold cyan]── 工坊锻造 ──────────────────────────────────────[/]
 
-在工坊中将储物箱内的材料合成道具。[bold]Escape[/] 返回。
-  • 当前支持：[yellow]消耗品[/]（未来可扩展至装备等更多类型）
-  • 输入材料编号逐一添加，输入 [bold green]0[/] 提交合成，输入 [bold red]r[/] 清空已选。
+在工坊中将储物箱内的材料锻造成装备。[bold]Escape[/] 返回。
+  • 输入材料编号逐一添加，输入 [bold green]0[/] 提交锻造，输入 [bold red]r[/] 清空已选。
 """
 
 
-class CraftScreen(BaseGameScreen):
-    """制造工坊 Screen：多选材料后提交合成。"""
+class CraftGearItemScreen(BaseGameScreen):
+    """工坊锻造 Screen：多选材料后提交锻造装备。"""
 
     CSS = """
-    CraftScreen {
+    CraftGearItemScreen {
         align: center middle;
     }
 
-    #craft-log {
+    #craft-gear-log {
         border: solid $primary;
         padding: 0 1;
         height: 1fr;
     }
 
-    #craft-input-row {
+    #craft-gear-input-row {
         height: 3;
         dock: bottom;
     }
 
-    #craft-prompt {
+    #craft-gear-prompt {
         width: 6;
         height: 3;
         content-align: left middle;
         color: $success;
     }
 
-    #craft-input {
+    #craft-gear-input {
         width: 1fr;
     }
     """
@@ -68,27 +63,27 @@ class CraftScreen(BaseGameScreen):
 
     def __init__(self) -> None:
         super().__init__()
-        self._material_list: List[Dict[str, object]] = []  # {"name": str, "count": int}
-        self._selected: List[str] = []  # names added in selection order
+        self._material_list: List[Dict[str, object]] = []
+        self._selected: List[str] = []
         self._step: Literal["selecting", "confirming"] = "selecting"
-        self._known_consumable_names: Set[str] = set()  # snapshot before crafting
+        self._known_gear_names: Set[str] = set()
 
     def compose(self) -> ComposeResult:
-        yield RichLog(id="craft-log", highlight=True, markup=True, wrap=True)
-        with Horizontal(id="craft-input-row"):
-            yield Static("> ", id="craft-prompt")
-            yield Input(placeholder="输入编号...", id="craft-input")
+        yield RichLog(id="craft-gear-log", highlight=True, markup=True, wrap=True)
+        with Horizontal(id="craft-gear-input-row"):
+            yield Static("> ", id="craft-gear-prompt")
+            yield Input(placeholder="输入编号...", id="craft-gear-input")
 
     def on_mount(self) -> None:
         log = self.query_one(RichLog)
-        log.write(CRAFT_HEADER)
+        log.write(CRAFT_GEAR_HEADER)
         self._load_data()
         self.query_one(Input).focus()
 
     def action_go_back(self) -> None:
         self.app.pop_screen()
 
-    @on(Input.Submitted, "#craft-input")
+    @on(Input.Submitted, "#craft-gear-input")
     def handle_input(self, event: Input.Submitted) -> None:
         raw = event.value.strip()
         event.input.clear()
@@ -101,7 +96,6 @@ class CraftScreen(BaseGameScreen):
             self._handle_confirming(raw)
             return
 
-        # reset shortcut
         if raw.lower() == "r":
             self._selected.clear()
             log.write("[dim]已清空已选材料列表。[/]")
@@ -112,8 +106,7 @@ class CraftScreen(BaseGameScreen):
             log.write("[red]请输入有效编号（数字），或输入 r 清空已选。[/]")
             return
 
-        idx = int(raw)
-        self._handle_selecting(idx)
+        self._handle_selecting(int(raw))
 
     def _handle_selecting(self, idx: int) -> None:
         log = self.query_one(RichLog)
@@ -123,9 +116,8 @@ class CraftScreen(BaseGameScreen):
             return
 
         if idx == 0:
-            # confirm selection
             if not self._selected:
-                log.write("[red]尚未选择任何材料，无法提交合成。[/]")
+                log.write("[red]尚未选择任何材料，无法提交锻造。[/]")
                 return
             self._step = "confirming"
             self._show_confirm_prompt()
@@ -155,7 +147,7 @@ class CraftScreen(BaseGameScreen):
             log.write("[dim]已取消，重新选择材料。[/]")
             self._show_material_list()
         else:
-            log.write("[red]请输入 1 确认合成 / 0 取消。[/]")
+            log.write("[red]请输入 1 确认锻造 / 0 取消。[/]")
 
     def _show_material_list(self) -> None:
         log = self.query_one(RichLog)
@@ -172,7 +164,7 @@ class CraftScreen(BaseGameScreen):
             log.write("  [dim]（储物箱中暂无材料）[/]")
         log.write("")
         log.write(
-            "[dim]输入编号添加材料（可重复选取同一材料），输入 0 提交合成，输入 r 清空已选：[/]"
+            "[dim]输入编号添加材料（可重复选取同一材料），输入 0 提交锻造，输入 r 清空已选：[/]"
         )
 
     def _show_selection_summary(self) -> None:
@@ -191,10 +183,10 @@ class CraftScreen(BaseGameScreen):
 
         counts = Counter(self._selected)
         parts = [f"[bold magenta]{display_name(n)}[/] ×{c}" for n, c in counts.items()]
-        log.write("[bold yellow]── 确认合成 ───────────────────────────────────────[/]")
+        log.write("[bold yellow]── 确认锻造 ───────────────────────────────────────[/]")
         log.write(f"  使用材料：{', '.join(parts)}")
         log.write("")
-        log.write("[dim]输入 [bold green]1[/] 确认合成 / [bold red]0[/] 取消：[/]")
+        log.write("[dim]输入 [bold green]1[/] 确认锻造 / [bold red]0[/] 取消：[/]")
 
     @work
     async def _load_data(self) -> None:
@@ -228,21 +220,21 @@ class CraftScreen(BaseGameScreen):
                                         "count": item.get("count", 1),
                                     }
                                 )
-                            elif item.get("type") == "ConsumableItem":
+                            elif item.get("type") == "GearItem":
                                 known.add(str(item.get("name", "")))
             self._material_list = materials
-            self._known_consumable_names = known
+            self._known_gear_names = known
         except Exception as e:
-            logger.warning(f"CraftScreen._load_data: 加载材料失败 error={e}")
+            logger.warning(f"CraftGearItemScreen._load_data: 加载材料失败 error={e}")
             log.write(f"[yellow]⚠ 加载材料列表失败: {e}[/]")
             return
 
-        logger.info(f"CraftScreen._load_data: materials={self._material_list}")
+        logger.info(f"CraftGearItemScreen._load_data: materials={self._material_list}")
         self._show_material_list()
 
     @work
     async def _do_craft(self) -> None:
-        """提交合成请求并等待任务完成。"""
+        """提交锻造请求并等待任务完成。"""
         app = self.game_client
         if app.session is None:
             return
@@ -260,16 +252,18 @@ class CraftScreen(BaseGameScreen):
 
         counts = Counter(materials)
         parts = [f"{display_name(n)} ×{c}" for n, c in counts.items()]
-        log.write("[bold yellow]── 制造工坊合成 ───────────────────────────────────[/]")
-        log.write(f"[dim]▶ 合成中（材料：{', '.join(parts)}）...[/]")
-        logger.info(f"CraftScreen._do_craft: user={user_name} materials={materials}")
+        log.write("[bold yellow]── 工坊锻造 ───────────────────────────────────────[/]")
+        log.write(f"[dim]▶ 锻造中（材料：{', '.join(parts)}）...[/]")
+        logger.info(
+            f"CraftGearItemScreen._do_craft: user={user_name} materials={materials}"
+        )
 
         try:
-            resp = await home_craft_item(user_name, game_name, materials)
+            resp = await home_craft_gear_item(user_name, game_name, materials)
             task_id = resp.task_id
             log.write(f"[dim]任务已创建：{task_id}[/]")
         except Exception as e:
-            logger.error(f"CraftScreen._do_craft: 请求失败 error={e}")
+            logger.error(f"CraftGearItemScreen._do_craft: 请求失败 error={e}")
             log.write(f"[bold red]❌ 请求失败: {e}[/]")
             inp.disabled = False
             inp.focus()
@@ -277,15 +271,19 @@ class CraftScreen(BaseGameScreen):
 
         try:
             await watch_task_until_done(task_id)
-            log.write("[bold green]✅ 合成完成[/]")
-            logger.info(f"CraftScreen._do_craft: 任务完成 task_id={task_id}")
+            log.write("[bold green]✅ 锻造完成[/]")
+            logger.info(f"CraftGearItemScreen._do_craft: 任务完成 task_id={task_id}")
             await self._show_craft_result(log, user_name, game_name, storage_entity)
         except TaskFailedError as e:
-            log.write(f"[bold red]❌ 合成失败: {e}[/]")
-            logger.error(f"CraftScreen._do_craft: 任务失败 task_id={task_id} error={e}")
+            log.write(f"[bold red]❌ 锻造失败: {e}[/]")
+            logger.error(
+                f"CraftGearItemScreen._do_craft: 任务失败 task_id={task_id} error={e}"
+            )
         except TimeoutError:
-            log.write("[bold yellow]⚠️ 合成超时，请检查服务器状态[/]")
-            logger.warning(f"CraftScreen._do_craft: 任务轮询超时 task_id={task_id}")
+            log.write("[bold yellow]⚠️ 锻造超时，请检查服务器状态[/]")
+            logger.warning(
+                f"CraftGearItemScreen._do_craft: 任务轮询超时 task_id={task_id}"
+            )
 
         inp.disabled = False
         inp.focus()
@@ -297,14 +295,16 @@ class CraftScreen(BaseGameScreen):
         game_name: str,
         storage_entity: str,
     ) -> None:
-        """重新加载储物箱，展示本次新合成的消耗品详情。"""
+        """重新加载储物箱，展示本次新锻造的装备详情。"""
         try:
             result_resp = await fetch_entities_details(
                 user_name, game_name, [storage_entity]
             )
         except Exception as e:
-            logger.warning(f"CraftScreen._show_craft_result: 获取储物箱失败 error={e}")
-            log.write("[dim]（无法获取合成结果详情，请手动查看储物箱）[/]")
+            logger.warning(
+                f"CraftGearItemScreen._show_craft_result: 获取储物箱失败 error={e}"
+            )
+            log.write("[dim]（无法获取锻造结果详情，请手动查看储物箱）[/]")
             return
 
         shown = False
@@ -313,26 +313,47 @@ class CraftScreen(BaseGameScreen):
                 if comp.name != StorageComponent.__name__:
                     continue
                 for item in comp.data.get("items", []):
-                    if item.get("type") != "ConsumableItem":
+                    if item.get("type") != "GearItem":
                         continue
                     name = str(item.get("name", ""))
-                    if name in self._known_consumable_names:
+                    if name in self._known_gear_names:
                         continue
                     if not shown:
                         log.write(
-                            "[bold yellow]── 合成结果 ──────────────────────────────────────────────[/]"
+                            "[bold yellow]── 锻造结果 ──────────────────────────────────────────────[/]"
                         )
                         shown = True
                     desc = str(item.get("description", ""))
                     target = str(item.get("target_type", ""))
-                    affixes: List[str] = [str(a) for a in item.get("affixes", [])]
-                    log.write(f"  [bold magenta]道具[/]：{display_name(name)}")
+                    stat_bonuses = item.get("stat_bonuses", {})
+                    equip_affixes: List[str] = [
+                        str(a) for a in item.get("equip_affixes", [])
+                    ]
+                    on_hit_affixes: List[str] = [
+                        str(a) for a in item.get("on_hit_affixes", [])
+                    ]
+                    modifiers: List[str] = [str(m) for m in item.get("modifiers", [])]
+                    durability = item.get("max_durability", 3)
+                    log.write(f"  [bold magenta]装备[/]：{display_name(name)}")
                     if desc:
                         log.write(f"  [dim]{desc}[/]")
                     log.write(f"  [cyan]目标类型[/]：{target}")
-                    if affixes:
-                        log.write(f"  [cyan]词缀[/]：{', '.join(affixes)}")
+                    if stat_bonuses:
+                        bonuses = ", ".join(
+                            f"{k}+{v}"
+                            for k, v in stat_bonuses.items()
+                            if isinstance(v, int) and v != 0
+                        )
+                        if bonuses:
+                            log.write(f"  [cyan]属性加成[/]：{bonuses}")
+                    if equip_affixes:
+                        log.write(f"  [cyan]装备词缀[/]：{', '.join(equip_affixes)}")
+                    if on_hit_affixes:
+                        log.write(f"  [cyan]命中词缀[/]：{', '.join(on_hit_affixes)}")
+                    if modifiers:
+                        log.write(f"  [cyan]即时修正[/]：{', '.join(modifiers)}")
+                    log.write(f"  [cyan]耐久度[/]：{durability}")
                     log.write("")
 
         if not shown:
-            log.write("[dim]（已入库储物箱，请查看消耗品列表）[/]")
+            log.write("[dim]（已入库储物箱，请查看装备列表）[/]")

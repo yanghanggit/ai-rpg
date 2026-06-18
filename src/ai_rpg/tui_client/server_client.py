@@ -580,3 +580,20 @@ async def home_craft_item(
         )
         response.raise_for_status()
         return HomeCraftItemResponse.model_validate(response.json())
+
+
+async def home_craft_gear_item(
+    user_name: str, game_name: str, materials: List[str]
+) -> HomeCraftItemResponse:
+    """从储物箱材料在工坊锻造一件装备，返回后台任务ID。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.post(
+            server_config.base_url + "/api/home/craft/gear/v1/",
+            json=HomeCraftItemRequest(
+                user_name=user_name,
+                game_name=game_name,
+                materials=materials,
+            ).model_dump(),
+        )
+        response.raise_for_status()
+        return HomeCraftItemResponse.model_validate(response.json())

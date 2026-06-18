@@ -20,6 +20,7 @@ from ai_rpg.models import World
 from ai_rpg.game import archive_world
 from ai_rpg.services.home_actions import (
     activate_craft_consumable,
+    activate_craft_gear_item,
     add_party_member,
     remove_party_member,
     get_party_roster,
@@ -269,4 +270,39 @@ async def craft_consumable_game(
         save_dir=save_dir,
     )
     logger.info(f"合成消耗品完成（材料={material_names}），存档: {save_dir}")
+    return terminal_game
+
+
+async def craft_gear_item_game(
+    world: World,
+    player_session: PlayerSession,
+    material_names: list[str],
+    save_dir: Path,
+) -> TCGGame:
+    """从存档复位，触发工坊锻造装备动作并通过 home pipeline 执行 LLM 推理，归档新状态。
+
+    Args:
+        world: 由 restore_world() 反序列化的世界数据。
+        player_session: 由 restore_world() 反序列化的玩家会话。
+        material_names: 参与锻造的材料名称列表（允许重复代表多份）。
+        save_dir: 新存档写入目录。
+
+    Returns:
+        执行完毕后的 TCGGame 实例；操作失败时提前返回未归档实例。
+    """
+    terminal_game = await restore_game(world, player_session)
+
+    success, error_detail = activate_craft_gear_item(terminal_game, material_names)
+    if not success:
+        logger.error(f"锻造装备失败: {error_detail}")
+        return terminal_game
+
+    await terminal_game._home_pipeline.process()
+    terminal_game.flush_entities()
+    archive_world(
+        terminal_game._world,
+        terminal_game._player_session,
+        save_dir=save_dir,
+    )
+    logger.info(f"锻造装备完成（材料={material_names}），存档: {save_dir}")
     return terminal_game

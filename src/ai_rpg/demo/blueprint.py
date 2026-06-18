@@ -108,6 +108,21 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
                 description="一块拳头大小的硬化皮革碎片，边缘粗糙，切割痕迹清晰可辨。可用于绑扎或简单防护。",
                 count=2,
             ),
+            MaterialItem(
+                name="材料.遗迹铁片",
+                description="从遗迹废墟中捡到的锈蚀铁片，大小不一，边缘参差。表面锈层薄而均匀，内芯含铁量尚可，经打磨或粗锻可制成简易刀刃或护板。",
+                count=3,
+            ),
+            MaterialItem(
+                name="材料.硬化兽骨",
+                description="沙漠大型走兽遗留的骨骼碎段，在干燥环境中自然风干，密度极高。截面呈象牙色，敲击时发出沉闷声响，可用作武器护手、甲衬骨架或骨制配件。",
+                count=2,
+            ),
+            MaterialItem(
+                name="材料.铜质扣环",
+                description="遗迹废墟中翻出的铜制连接零件，表面氧化后呈深绿色，但结构完整无裂纹。形状接近圆形，适合做装备连接件、皮带扣或简单饰品框架。",
+                count=2,
+            ),
         ],
         inventory=[
             GearItem(

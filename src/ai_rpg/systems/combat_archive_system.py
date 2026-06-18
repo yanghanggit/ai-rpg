@@ -15,48 +15,22 @@ from ..models import (
     HumanMessage,
     SystemMessage,
     ToolMessage,
-    CombatArchiveEvent,
     PartyMemberComponent,
     get_buffer_string,
 )
 
 
 #######################################################################################################################################
-def _generate_combat_summary_prompt(
-    actor_name: str, stage_name: str, total_rounds: int
-) -> str:
+def _generate_combat_summary_prompt(stage_name: str, total_rounds: int) -> str:
     """返回用于生成第一人称战斗摘要的 LLM prompt。
 
     Args:
-        actor_name: 保留参数，暂未注入 prompt
         stage_name: 战斗场景名称
         total_rounds: 本场战斗总回合数
     """
-    return f"""# 战斗已结束，记忆归档，并以纯文本方式输出。
-
-你在 {stage_name} 经历了 {total_rounds} 回合战斗，现在将整场战斗压缩为简要回忆录。
-
-**用第一人称叙述战斗摘要**：起因（对手是谁、我方是谁）、关键经过（战术、配合、转折）、结局（胜负、收获）。只记录关键要素，去除无关细节。
-
-**禁止JSON格式、代码块、大括号、键值对**，这是回忆日记，不是数据分析。请纯文本方式返回。"""
-
-
-#######################################################################################################################################
-def _format_combat_archive_message(
-    actor_name: str, stage_name: str, combat_experience: str
-) -> str:
-    """将 LLM 生成的战斗摘要包装为写入角色上下文的通知消息。
-
-    Args:
-        actor_name: 保留参数，暂未注入消息
-        stage_name: 战斗场景名称
-        combat_experience: LLM 生成的战斗摘要文本
-    """
-    return f"""# 你在 {stage_name} 的战斗已结束
-
-{combat_experience}
-
-这段经历已记录。"""
+    return f"""# 战斗结束，归档这段记忆。
+你在 {stage_name} 完成了 {total_rounds} 回合的战斗。以第一人称写一段连续的战斗复盘，按顺序写明：进入（场景、我方成员、对手）、过程（关键行动与转折）、结果（胜利/撤退/失败，伤亡情况）。
+要求：客观简洁，不用修辞，整段不分段不空行，纯文本输出。"""
 
 
 #######################################################################################################################################
@@ -114,7 +88,7 @@ class CombatArchiveSystem(ExecuteProcessor):
                 DeepSeekClient(
                     name=combat_actor.name,
                     prompt=_generate_combat_summary_prompt(
-                        combat_actor.name, combat_stage_entity.name, total_rounds
+                        combat_stage_entity.name, total_rounds
                     ),
                     context=self._game.get_agent_context(combat_actor).context,
                 )
@@ -132,6 +106,11 @@ class CombatArchiveSystem(ExecuteProcessor):
         Args:
             chat_client: 已完成 LLM 调用的客户端，name 对应角色实体名
         """
+
+        if chat_client.response_ai_message is None:
+            logger.error(f"LLM 响应缺失，无法归档战斗记录！chat_client: {chat_client}")
+            return
+
         processed_actor_entity = self._game.get_entity_by_name(chat_client.name)
         assert (
             processed_actor_entity is not None
@@ -146,26 +125,20 @@ class CombatArchiveSystem(ExecuteProcessor):
         deleted_messages = self._extract_combat_message_range(processed_actor_entity)
         assert len(deleted_messages) >= 0, "压缩战斗消息历史时出错！"
 
-        # 压缩后的战斗经历，就是战斗过程做成摘要。
-        combat_summary = _format_combat_archive_message(
-            processed_actor_entity.name,
-            combat_stage_entity.name,
-            chat_client.response_content,
-        )
-
         # 合成一个字符串缓冲区
         buffer_string = get_buffer_string(
             deleted_messages, ai_prefix=f"""AI({processed_actor_entity.name})"""
         )
 
-        # 添加记忆，并给客户端。
-        self._game.notify_entities(
-            set({processed_actor_entity}),
-            CombatArchiveEvent(
-                message=combat_summary,
-                actor=processed_actor_entity.name,
-                summary=chat_client.response_content,
-            ),
+        # 将原始消息内容附在事件上，供后续流程（如记忆存储）使用
+        self._game.add_human_message(
+            entity=processed_actor_entity, message_content=chat_client.prompt
+        )
+
+        # 将 LLM 生成的摘要写回角色上下文
+        self._game.add_ai_message(
+            processed_actor_entity,
+            chat_client.response_ai_message,
             removed_messages_content=buffer_string,
         )
 

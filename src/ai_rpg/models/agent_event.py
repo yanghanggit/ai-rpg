@@ -217,28 +217,6 @@ class CombatArbitrationEvent(AgentEvent):
 
 
 ####################################################################################################################################
-
-
-@final
-class CombatArchiveEvent(AgentEvent):
-    """战斗归档事件。
-
-    表示战斗结束后将角色的战斗经历归档到记忆系统的事件。
-    包含了AI生成的战斗总结，用于存储到角色的知识库中，
-    作为后续回忆和决策的参考。
-
-    Attributes:
-        head: 事件类型，固定为COMBAT_ARCHIVE_EVENT
-        actor: 参与战斗的角色名称
-        summary: AI生成的战斗经历总结
-    """
-
-    head: Literal[EventHead.COMBAT_ARCHIVE_EVENT] = EventHead.COMBAT_ARCHIVE_EVENT
-    actor: str
-    summary: str
-
-
-####################################################################################################################################
 @final
 class AppearanceUpdateEvent(AgentEvent):
     """外观更新事件。
@@ -271,7 +249,7 @@ AgentEventUnion = Annotated[
         TransStageEvent,
         CombatInitiationEvent,
         CombatArbitrationEvent,
-        CombatArchiveEvent,
+        # CombatArchiveEvent,
         AppearanceUpdateEvent,
     ],
     Field(discriminator="head"),

@@ -1098,6 +1098,7 @@ async def collect_loot_game(
         logger.warning(f"collect-loot 未归档：{msg}")
         return terminal_game
 
+    terminal_game.flush_entities()
     archive_world(
         terminal_game._world,
         terminal_game._player_session,

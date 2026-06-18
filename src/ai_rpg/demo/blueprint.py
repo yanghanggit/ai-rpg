@@ -49,7 +49,7 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
     actor_wanderer.character_stats.speed = 2
 
     # 调整旅行者的攻击属性，增加其战斗能力，便于快速演示战斗系统
-    actor_wanderer.character_stats.attack = 20
+    actor_wanderer.character_stats.attack = 100
 
     # 创建学者角色
     actor_scholar = create_scholar()

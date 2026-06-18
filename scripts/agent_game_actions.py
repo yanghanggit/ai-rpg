@@ -61,6 +61,7 @@ from ai_rpg.services.dungeon_actions import (
     activate_retreat,
     activate_use_consumable,
     activate_use_gear,
+    collect_combat_loot,
 )
 from ai_rpg.services.dungeon_lifecycle import (
     setup_dungeon,
@@ -1064,6 +1065,45 @@ async def craft_consumable_game(
         save_dir=save_dir,
     )
     logger.info(f"合成消耗品完成（材料={material_names}），存档: {save_dir}")
+    return terminal_game
+
+
+###############################################################################
+async def collect_loot_game(
+    world: World,
+    player_session: PlayerSession,
+    save_dir: Path,
+) -> TCGGame:
+    """从存档复位，将战利品背包（CombatLootComponent）中的道具合并至随身背包，归档新状态。
+
+    调用 collect_combat_loot 将本场战斗的掉落物从临时组件 CombatLootComponent 转入
+    InventoryComponent，并移除该临时组件。若玩家身上无 CombatLootComponent（本场无掉落
+    或已收取），则记录警告并返回，不写新存档。
+
+    前置条件：战斗胜利后（is_post_combat + is_won），CombatLootSystem 已将掉落物写入
+    CombatLootComponent。
+
+    Args:
+        world: 由 restore_world() 反序列化的世界数据。
+        player_session: 由 restore_world() 反序列化的玩家会话。
+        save_dir: 新存档写入目录。
+
+    Returns:
+        执行完毕后的 TCGGame 实例；无战利品可收时返回未归档实例。
+    """
+    terminal_game = await _restore_game(world, player_session)
+
+    success, msg = collect_combat_loot(terminal_game)
+    if not success:
+        logger.warning(f"collect-loot 未归档：{msg}")
+        return terminal_game
+
+    archive_world(
+        terminal_game._world,
+        terminal_game._player_session,
+        save_dir=save_dir,
+    )
+    logger.info(f"战利品收取完成：{msg}，存档: {save_dir}")
     return terminal_game
 
 

@@ -35,8 +35,7 @@
     enter-dungeon  →  draw-cards（抽牌）→  play-cards（打牌/结算）
     若战斗未结束（is_ongoing）：继续 draw-cards → play-cards
     战斗结束后（is_post_combat）：
-        is_won + 有下一关 → next-dungeon → 继续战斗
-        is_won + 无下一关 → exit-dungeon
+        is_won → collect-loot（收取战利品）→ next-dungeon 或 exit-dungeon
         is_lost           → exit-dungeon
         主动撤退（战斗中）→ retreat
 
@@ -54,6 +53,7 @@
     python scripts/run_agent_game.py use-gear          --snapshot PATH --actor ACTOR --item ITEM [--targets TARGET...]
     python scripts/run_agent_game.py exit-dungeon      --snapshot PATH
     python scripts/run_agent_game.py next-dungeon      --snapshot PATH
+    python scripts/run_agent_game.py collect-loot      --snapshot PATH
     python scripts/run_agent_game.py retreat           --snapshot PATH
 
 日志文件：logs/run_agent_game_{timestamp}.log（与新存档时间戳相同）"""
@@ -121,6 +121,7 @@ from agent_game_actions import (
     move_item_to_inventory_game,
     move_item_to_storage_game,
     update_appearance_game,
+    collect_loot_game,
     craft_consumable_game,
     use_consumable_game,
     use_gear_game,
@@ -674,6 +675,47 @@ def next_dungeon(snapshot: str) -> None:
     logger.info(f"本次存档目录：{_save_dir}")
 
     asyncio.run(next_dungeon_game(world, player_session, _save_dir))
+
+
+###############################################################################################################################################
+@main.command("collect-loot")
+@click.option(
+    "--snapshot",
+    required=True,
+    help="存档目录路径",
+)
+def collect_loot(snapshot: str) -> None:
+    """从存档复位，将战利品背包（CombatLootComponent）合并至随身背包，并写入新存档。
+
+    战斗胜利后，CombatLootSystem 自动将 LLM 推断的掉落物写入玩家实体的临时组件
+    CombatLootComponent。调用本命令后，战利品转入随身背包（InventoryComponent），
+    临时组件移除。
+
+    适用于【地下城模式】战斗胜利结算后（is_post_combat + is_won）。
+    若当前无战利品可收（本场无掉落或已收取），记录警告并不写新存档。
+    收取后可继续使用 next-dungeon 进入下一关，或使用 exit-dungeon 返回家园。
+    """
+
+    snapshot_path = Path(snapshot)
+    if not snapshot_path.exists():
+        raise click.BadParameter(
+            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+        )
+
+    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
+    _setup_logger(_log_file)
+
+    world, player_session = restore_world(snapshot_path)
+    _save_dir = (
+        WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
+    )
+
+    logger.info(f"本次运行日志文件：{_log_file}")
+    logger.info(f"读取存档：{snapshot_path}")
+    logger.info(f"本次存档目录：{_save_dir}")
+
+    asyncio.run(collect_loot_game(world, player_session, _save_dir))
 
 
 ###############################################################################################################################################

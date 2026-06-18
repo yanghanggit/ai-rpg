@@ -294,6 +294,16 @@ class StorageComponent(MutableComponent):
 
 
 ############################################################################################################
+@final
+@register_component_type
+class CombatLootComponent(MutableComponent):
+    """战斗战利品背包；战斗胜利后由 CombatLootSystem 写入，调用 collect_combat_loot() 后合并至 InventoryComponent 并移除。"""
+
+    name: str
+    items: List[AnyItem]  # 本场战斗从怪物处获得的战利品（实践中为 MaterialItem）
+
+
+############################################################################################################
 
 
 @final

@@ -139,6 +139,7 @@ def create_combat_pipeline(
         CardInjectStrategy,
     )
     from ..systems.combat_archive_system import CombatArchiveSystem
+    from ..systems.combat_loot_system import CombatLootSystem
     from ..systems.deck_generation_system import DeckGenerationSystem
     from ..systems.combat_pile_teardown_system import CombatPileTeardownSystem
     from ..systems.stage_description_system import (
@@ -205,6 +206,9 @@ def create_combat_pipeline(
     processors.add(
         CombatRoundTransitionSystem(tcg_game, strategy=ActionOrderStrategy.SPEED_ORDER)
     )
+
+    # 战斗掉落系统（胜利时为每头怪物推理掉落 MaterialItem，写入玩家 CombatLootComponent）
+    processors.add(CombatLootSystem(tcg_game))
 
     # 战斗归档系统（生成总结、压缩消息、触发记忆存储，内部有状态守卫）
     processors.add(CombatArchiveSystem(tcg_game))

@@ -22,6 +22,7 @@ from ..models import (
     TargetType,
     HandComponent,
     InventoryComponent,
+    CombatLootComponent,
     EquippedGearComponent,
     UseGearItemAction,
     UseConsumableItemAction,
@@ -211,51 +212,6 @@ def _validate_play_turn(
         return None, f"角色 {actor_name} 没有 HandComponent"
 
     return entity, ""
-
-
-###################################################################################################################################################################
-# def _validate_actor_turn(
-#     tcg_game: TCGGame,
-#     actor_name: str,
-# ) -> Tuple["Entity | None", str]:
-#     """校验当前是否轮到指定角色行动，并返回其实体。
-
-#     与 _validate_play_turn 相同，但不要求角色持有 HandComponent。
-#     适用于消耗品等不依赖手牌的行动。
-
-#     Returns:
-#         (entity, "") 校验通过；(None, error_msg) 校验失败。
-#     """
-#     latest_round = tcg_game.current_dungeon.latest_round
-#     if latest_round is None:
-#         return None, "当前没有进行中的回合"
-
-#     current_snapshot = (
-#         latest_round.actor_order_snapshots[-1]
-#         if latest_round.actor_order_snapshots
-#         else []
-#     )
-#     if actor_name not in current_snapshot:
-#         return (
-#             None,
-#             f"角色 {actor_name} 不在本回合行动快照中: {current_snapshot}",
-#         )
-
-#     next_actor = latest_round.current_turn_actor_name
-#     if next_actor != actor_name:
-#         return None, f"现在不是 {actor_name} 的回合，当前应由 {next_actor} 出牌"
-
-#     entity = tcg_game.get_actor_entity(actor_name)
-#     if entity is None:
-#         return None, f"找不到角色 {actor_name}"
-
-#     if not (entity.has(PartyMemberComponent) or entity.has(MonsterComponent)):
-#         return None, f"角色 {actor_name} 不是战斗角色（非 PartyMember 或 Monster）"
-
-#     if entity.has(DeathComponent):
-#         return None, f"角色 {actor_name} 已死亡，无法行动"
-
-#     return entity, ""
 
 
 ###################################################################################################################################################################
@@ -630,3 +586,49 @@ def activate_pass_turn(
     logger.debug(f"为角色 {actor_name} 激活过牌动作")
     entity.replace(PassTurnAction, entity.name)
     return True, f"成功为角色 {actor_name} 激活过牌动作"
+
+
+###################################################################################################################################################################
+def collect_combat_loot(
+    tcg_game: TCGGame,
+) -> Tuple[bool, str]:
+    """将战斗战利品背包（CombatLootComponent）中的道具全部转入玩家随身背包（InventoryComponent）。
+
+    战斗胜利后，CombatLootSystem 将掉落的 MaterialItem 写入玩家实体的
+    CombatLootComponent。调用本函数后，战利品合并至 InventoryComponent 并移除该临时组件。
+
+    Args:
+        tcg_game: TCG游戏实例
+
+    Returns:
+        tuple[bool, str]: (是否成功, 结果消息)
+    """
+    player_entity = tcg_game.get_player_entity()
+    if player_entity is None:
+        msg = "收取战利品失败：无法获取玩家实体"
+        logger.error(msg)
+        return False, msg
+
+    if not player_entity.has(CombatLootComponent):
+        msg = (
+            "收取战利品失败：玩家身上没有 CombatLootComponent（本场战斗无掉落或已收取）"
+        )
+        logger.warning(msg)
+        return False, msg
+
+    assert player_entity.has(InventoryComponent), "玩家实体缺少 InventoryComponent"
+
+    loot_comp = player_entity.get(CombatLootComponent)
+    loot_items = loot_comp.items
+
+    inventory_comp = player_entity.get(InventoryComponent)
+    new_inventory = list(inventory_comp.items) + loot_items
+
+    player_entity.replace(InventoryComponent, inventory_comp.name, new_inventory)
+    player_entity.remove(CombatLootComponent)
+
+    logger.info(
+        f"[collect_combat_loot] 收取战利品 {len(loot_items)} 件，"
+        f"背包现有 {len(new_inventory)} 件道具"
+    )
+    return True, f"成功收取 {len(loot_items)} 件战利品到背包"

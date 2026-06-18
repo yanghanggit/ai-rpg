@@ -48,6 +48,9 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
     # 调整旅行者的速度属性，增加其在 SPEED_ORDER 策略下的出手优先级
     actor_wanderer.character_stats.speed = 2
 
+    # 调整旅行者的攻击属性，增加其战斗能力，便于快速演示战斗系统
+    actor_wanderer.character_stats.attack = 20
+
     # 创建学者角色
     actor_scholar = create_scholar()
     actor_scholar.custom_item = CostumeItem(

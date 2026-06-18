@@ -21,8 +21,9 @@ from ..models import (
     StorageComponent,
     GenerateDungeonAction,
     CraftConsumableAction,
+    ItemType,
+    MaterialItem,
 )
-from ..models.items import ItemType, MaterialItem
 
 
 ###################################################################################################################################################################

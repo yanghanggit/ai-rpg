@@ -1,8 +1,4 @@
-"""物品相关模型定义
-
-包含物品枚举与物品基类及其子类：
-ItemType、Item、GearItem、CostumeItem、ConsumableItem、MaterialItem、AnyItem。
-"""
+"""物品相关模型定义"""
 
 from enum import StrEnum, unique
 from typing import Annotated, List, Literal, Union, final

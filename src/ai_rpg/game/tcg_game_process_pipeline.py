@@ -162,16 +162,16 @@ def create_combat_pipeline(
     # 角色外观生成系统
     processors.add(ActorAppearanceInitSystem(tcg_game))
 
-    # 战斗场景描述系统（与家园共用，内部有状态守卫，只有在战斗开始时才会触发）
+    # 战斗场景描述系统
     processors.add(StageDescriptionSystem(game=tcg_game, enable_debug_cache=True))
 
-    # 战斗初始化系统（注入战场上下文、转换战斗状态为进行中、触发初始状态效果；第一回合由 CombatRoundTransitionSystem 创建）
+    # 战斗初始化系统（注入战场上下文、转换战斗状态为进行中、触发初始状态效果
     processors.add(CombatInitializationSystem(tcg_game))
 
-    # 牌库生成系统（战斗开始时为每个角色生成初始牌库，歸入 DrawPile；条件：is_ongoing AND no rounds）
+    # 牌库生成系统（战斗开始时为每个角色生成初始牌库
     processors.add(DeckGenerationSystem(tcg_game))
 
-    # 战斗核心动作处理相关的系统：抄牌 → 出牌前（怪物） → 出牌前（队员） → 出牌 → 退却 → 仲裁 → 状态效果追加
+    # 战斗核心动作处理相关的系统
     processors.add(DrawCardsActionSystem(tcg_game))
     processors.add(MonsterPrePlaySystem(tcg_game))
     processors.add(PartyPrePlaySystem(tcg_game))
@@ -192,7 +192,7 @@ def create_combat_pipeline(
         PostArbitrationActionSystem(tcg_game, strategy=CardInjectStrategy.RANDOM_INSERT)
     )
 
-    # 回合完成判定系统（所有存活角色 energy <= 0 时写入 Round.is_completed = True）
+    # 回合完成判定系统
     processors.add(CombatRoundCompletionSystem(tcg_game))
 
     # 检查战斗结果系统

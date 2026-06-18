@@ -6,7 +6,7 @@
 
 装备是战斗中可主动使用的**持久性**道具，使用不消耗 energy。使用后以深拷贝写入目标角色的 `EquippedGearComponent`，持续提供属性加成直至关卡结束；原物品始终保留在 `InventoryComponent` 中，不被消耗。
 
-装备的属性加成为确定性计算，不经 LLM 仲裁；仲裁系统仅负责生成叙事广播。
+`GearItem` 的基础属性加成（`stat_bonuses`）为确定性计算，由前置系统直接写入 `EquippedGearComponent`，不经 LLM 仲裁。仲裁系统则交由 LLM 评估即时修正词缀（`modifiers`）对目标 HP 的叠加影响，结算结果写入本回合战斗日志并广播至全场。
 
 ---
 

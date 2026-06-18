@@ -60,7 +60,6 @@
 
 import os
 import sys
-from typing import Final
 
 # 将 src 目录添加到模块搜索路径
 sys.path.insert(
@@ -75,7 +74,6 @@ import sys
 import click
 from loguru import logger
 from ai_rpg.game.config import (
-    GAME_1,
     WORLDS_DIR,
 )
 from config import LOGS_DIR
@@ -102,34 +100,34 @@ def _setup_logger(log_file_path: Path) -> None:
     logger.info(f"日志配置: 级别={LOG_LEVEL}, 文件路径={log_file_path}")
 
 
-from agent_game_actions import (
-    create_and_initialize_game,
+from agent_game_core import create_and_initialize_game
+from agent_game_home import (
     advance_game,
     speak_game,
     switch_stage_game,
     enter_dungeon_game,
+    generate_dungeon_game,
+)
+from agent_game_combat import (
     draw_cards_game,
     play_cards_specified_game,
     pass_turn_game,
+    use_consumable_game,
+    use_gear_game,
     exit_dungeon_and_return_home_game,
     next_dungeon_game,
     retreat_game,
-    generate_dungeon_game,
+    collect_loot_game,
+)
+from agent_game_inventory import (
     add_party_member_game,
     remove_party_member_game,
     get_party_roster_game,
     move_item_to_inventory_game,
     move_item_to_storage_game,
     update_appearance_game,
-    collect_loot_game,
     craft_consumable_game,
-    use_consumable_game,
-    use_gear_game,
 )
-
-###########################################################################################################################################
-# 默认地下城名称
-DUNGEON_1: Final[str] = "Dungeon1"
 
 
 ###############################################################################################################################################
@@ -151,14 +149,12 @@ def main() -> None:
 )
 @click.option(
     "--game",
-    default=GAME_1,
-    show_default=True,
+    required=True,
     help="游戏名称（对应 BLUEPRINTS_DIR 下的文件名，如 Game1）。",
 )
 @click.option(
     "--dungeon",
-    default=DUNGEON_1,
-    show_default=True,
+    required=True,
     help="地下城名称（对应 DUNGEONS_DIR 下的文件名，如 Dungeon1）。",
 )
 def new_game(user: str, game: str, dungeon: str) -> None:

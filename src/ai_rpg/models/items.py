@@ -1,7 +1,7 @@
 """物品相关模型定义"""
 
 from enum import StrEnum, unique
-from typing import Annotated, List, Literal, Union, final
+from typing import Annotated, List, Literal, Sequence, Union, final
 from uuid import uuid4
 from pydantic import BaseModel, Field
 from .stats import CharacterStats
@@ -52,6 +52,9 @@ class GearItem(Item):
     durability: int = (
         3  # 当前耐久度；每次装备到 EquippedGearComponent 时 -1；归零后无法再次装备
     )
+    craft_materials: Sequence["AnyItem"] = Field(
+        default_factory=list
+    )  # 合成时消耗的原料列表；当前仅存 MaterialItem，保留 AnyItem 扩展余地
 
 
 #######################################################################################################################################
@@ -61,6 +64,9 @@ class CostumeItem(Item):
     type: Literal[ItemType.COSTUME_ITEM] = Field(
         default=ItemType.COSTUME_ITEM, frozen=True
     )
+    craft_materials: Sequence["AnyItem"] = Field(
+        default_factory=list
+    )  # 合成时消耗的原料列表；当前仅存 MaterialItem，保留 AnyItem 扩展余地
 
 
 #######################################################################################################################################
@@ -77,6 +83,9 @@ class ConsumableItem(Item):
     modifiers: List[str] = (
         []
     )  # 即时修正词缀列表；格式"[名称]:即时修正描述"（如"[穿甲]:无视目标防御"）；直接注入本次仲裁计算；无即时修正时输出 []
+    craft_materials: Sequence["AnyItem"] = Field(
+        default_factory=list
+    )  # 合成时消耗的原料列表；当前仅存 MaterialItem，保留 AnyItem 扩展余地
 
 
 #######################################################################################################################################
@@ -93,6 +102,11 @@ AnyItem = Annotated[
     Union[GearItem, CostumeItem, ConsumableItem, MaterialItem],
     Field(discriminator="type"),
 ]
+
+# 解决前向引用：AnyItem 定义后重新编译依赖它的三个模型
+GearItem.model_rebuild()
+CostumeItem.model_rebuild()
+ConsumableItem.model_rebuild()
 
 
 ###############################################################################################################################################

@@ -150,6 +150,7 @@ class CraftConsumableActionSystem(ReactiveProcessor):
             target_type=result.target_type,
             affixes=result.affixes,
             modifiers=result.modifiers,
+            craft_materials=action.material_items,
         )
         self._update_storage(storage_entity, action.material_names, new_item)
 

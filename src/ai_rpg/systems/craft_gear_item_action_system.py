@@ -166,6 +166,7 @@ class CraftGearItemActionSystem(ReactiveProcessor):
             modifiers=result.modifiers,
             max_durability=result.max_durability,
             durability=result.max_durability,
+            craft_materials=action.material_items,
         )
         self._update_storage(storage_entity, action.material_names, new_item)
 

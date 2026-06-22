@@ -28,8 +28,6 @@ def _generate_play_card_context_prompt(
         f"你使用了卡牌「{card.name}」。",
         f"目标：{targets_str}",
     ]
-    if play_cards_action.action:
-        lines.insert(2, f"行动叙述：{play_cards_action.action}")
     stats_parts = []
     if card.damage_dealt > 0:
         hit_info = f"（{card.hit_count} 段）" if card.hit_count > 1 else ""
@@ -106,7 +104,6 @@ class PlayCardsActionSystem(ReactiveProcessor):
                 f"  [{play_cards_action.name}] 出牌 → 卡牌: {play_cards_action.card.name}"
                 f" | damage_dealt={play_cards_action.card.damage_dealt}"
                 f" | 目标: {play_cards_action.targets}"
-                f" | 行动叙事: {play_cards_action.action}"
             )
 
             # 写一个assert 要求 entity.name 必须是当前回合的行动者

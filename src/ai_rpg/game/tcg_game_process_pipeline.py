@@ -60,7 +60,7 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     processors.add(HomePlayerContextSystem(tcg_game))
     processors.add(HomeNpcPlanSystem(tcg_game))
 
-    # 动作处理相关的系统：查询-审核-说话-耳语-公告-场景转换-清理
+    # 动作处理相关的系统
     processors.add(QueryActionSystem(tcg_game))
     processors.add(PlayerActionAuditSystem(tcg_game))
     processors.add(SpeakActionSystem(tcg_game))
@@ -68,6 +68,8 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     processors.add(AnnounceActionSystem(tcg_game))
     processors.add(TransStageActionSystem(tcg_game))
     processors.add(UpdateAppearanceActionSystem(tcg_game))
+
+    # 制作相关的系统
     processors.add(CraftConsumableActionSystem(tcg_game))
     processors.add(CraftGearItemActionSystem(tcg_game))
     processors.add(CraftCostumeItemActionSystem(tcg_game))

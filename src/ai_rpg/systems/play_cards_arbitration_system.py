@@ -78,17 +78,15 @@ def _generate_post_arbitration_task_hint(
     card = play_cards_action.card
     actor_short_name = actor_name.split(".")[-1]
     targets_str = "、".join(t.split(".")[-1] for t in play_cards_action.targets) or "无"
-    action_desc = play_cards_action.action if play_cards_action.action else "（未提供）"
 
     card_context = (
         f"- 卡牌：{card.name}（{card.description}）\n"
-        f"- 单次伤害：{card.damage_dealt}，攻击次数：{card.hit_count}\n"
+        f"- 单次伤害：{card.damage_dealt}，攻击次数：{card.hit_count}"
         + (
-            f"- 改变目标行动：{card.energy_delta:+d} 次\n"
+            f"\n- 改变目标行动：{card.energy_delta:+d} 次"
             if card.energy_delta != 0
             else ""
         )
-        + f"- 行动描述：{action_desc}"
     )
 
     if entity_name == actor_name:
@@ -215,12 +213,6 @@ def _generate_combat_arbitration_prompt(
             f"\n\n**目标 —— {t_name}**:\n{_fmt_effects(t_effects)}"
         )
 
-    action_line = (
-        f"- 行动：{play_cards_action.action}"
-        if play_cards_action.action
-        else "- 行动：（未提供，请根据卡牌描述与战场情境自行演绎）"
-    )
-
     rm = _build_random_multi_sections(play_cards_action)
 
     modifiers = play_cards_action.card.modifiers
@@ -246,7 +238,7 @@ def _generate_combat_arbitration_prompt(
 - 卡牌：{play_cards_action.card.name}
 - damage_dealt：{play_cards_action.card.damage_dealt}（单次伤害）
 - hit_count：{play_cards_action.card.hit_count}（攻击次数）
-{f'- energy_delta：{play_cards_action.card.energy_delta:+d}（改变目标行动次数，已由系统直接结算）' + chr(10) if play_cards_action.card.energy_delta != 0 else ''}{action_line}{modifiers_line}{actor_gear_modifiers_line}{rm.hit_assignment}
+{f'- energy_delta：{play_cards_action.card.energy_delta:+d}（改变目标行动次数，已由系统直接结算）\n' if play_cards_action.card.energy_delta != 0 else ''}{modifiers_line}{actor_gear_modifiers_line}{rm.hit_assignment}
 
 ## 目标
 
@@ -341,12 +333,6 @@ def _generate_compressed_combat_arbitration_prompt(
             f"\n\n**目标 —— {t_name}**:\n{_fmt_effects(t_effects)}"
         )
 
-    action_line = (
-        f"- 行动：{play_cards_action.action}"
-        if play_cards_action.action
-        else "- 行动：（未提供，请根据卡牌描述与战场情境自行演绎）"
-    )
-
     rm = _build_random_multi_sections(play_cards_action)
 
     modifiers = play_cards_action.card.modifiers
@@ -372,7 +358,7 @@ def _generate_compressed_combat_arbitration_prompt(
 - 卡牌：{play_cards_action.card.name}
 - damage_dealt：{play_cards_action.card.damage_dealt}（单次伤害）
 - hit_count：{play_cards_action.card.hit_count}（攻击次数）
-{f'- energy_delta：{play_cards_action.card.energy_delta:+d}（改变目标行动次数，已由系统直接结算）' + chr(10) if play_cards_action.card.energy_delta != 0 else ''}{action_line}{modifiers_line}{actor_gear_modifiers_line}{rm.hit_assignment}
+{f'- energy_delta：{play_cards_action.card.energy_delta:+d}（改变目标行动次数，已由系统直接结算）\n' if play_cards_action.card.energy_delta != 0 else ''}{modifiers_line}{actor_gear_modifiers_line}{rm.hit_assignment}
 
 ## 目标
 
@@ -430,6 +416,10 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
         if not self._game.current_dungeon.is_ongoing:
             logger.debug("PlayCardsArbitrationSystem: 战斗未进行中，跳过仲裁")
             return
+
+        logger.debug(
+            f"PlayCardsArbitrationSystem: 触发仲裁，找到 {len(entities)} 个符合条件的出牌实体"
+        )
 
         for entity in entities:
 

@@ -3,8 +3,6 @@
 from typing import Final, List, final, Dict
 from loguru import logger
 from overrides import override
-from pydantic import BaseModel
-from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
@@ -13,47 +11,12 @@ from ..models import (
     PartyMemberComponent,
     DeathComponent,
 )
-from ..utils import extract_json_from_code_block
-
-
-#######################################################################################################################################
-@final
-class ActionNarrationResponse(BaseModel):
-    """出牌叙事响应模型"""
-
-    action: str
-
-
-#######################################################################################################################################
-def _generate_narration_prompt(
-    actor_name: str,
-    play_cards_action: PlayCardsAction,
-    targets: List[str],
-    current_round_number: int,
-) -> str:
-    card = play_cards_action.card
-    targets_str = "、".join(t.split(".")[-1] for t in targets) if targets else "无目标"
-
-    return f"""# 第 {current_round_number} 回合：出牌叙事（以 JSON 格式返回）
-
-你是 {actor_name}，请以**第一人称**为本次出牌写 1-2 句生动叙事。
-
-卡牌：{card.name}（{card.description}）
-目标：{targets_str}
-
-结合卡牌描述与当前战场情境，不要提及具体数字或术语。
-
-```json
-{{
-  "action": "第一人称出牌叙事（1-2句）"
-}}
-```"""
 
 
 #######################################################################################################################################
 @final
 class PartyPrePlaySystem(ReactiveProcessor):
-    """出牌前系统（队员）。"""
+    """出牌前系统（队员）。预留 hook，供后续出牌前注入机制扩展，与 MonsterPrePlaySystem 结构对齐。"""
 
     def __init__(self, game: TCGGame) -> None:
         super().__init__(game)
@@ -81,71 +44,8 @@ class PartyPrePlaySystem(ReactiveProcessor):
             logger.debug("PartyPrePlaySystem: 战斗未进行中，跳过")
             return
 
-        current_round_number = len(self._game.current_dungeon.current_rounds or [])
-
-        # 只为 action 为空的实体创建 DeepSeekClient
-        chat_clients: List[DeepSeekClient] = []
-        for entity in entities:
-            action = entity.get(PlayCardsAction)
-            if action.action != "":
-                continue
-
-            prompt = _generate_narration_prompt(
-                actor_name=entity.name,
-                play_cards_action=action,
-                targets=action.targets,
-                current_round_number=current_round_number,
-            )
-            chat_clients.append(
-                DeepSeekClient(
-                    name=entity.name,
-                    prompt=prompt,
-                    context=self._game.get_agent_context(entity).context,
-                )
-            )
-
-        if not chat_clients:
-            logger.debug("PartyPrePlaySystem: 无需生成叙事的出牌，跳过")
-            return
-
-        logger.debug(f"PartyPrePlaySystem: 为 {len(chat_clients)} 个出牌生成叙事")
-
-        await DeepSeekClient.batch_chat(clients=chat_clients)
-
-        for client in chat_clients:
-            found = self._game.get_entity_by_name(client.name)
-            assert found is not None, f"PartyPrePlaySystem: 无法找到实体 {client.name}"
-            # if found is None:
-            #     logger.error(f"PartyPrePlaySystem: 无法找到实体 {client.name}")
-            #     continue
-            self._apply_narration(found, client)
-
-    #######################################################################################################################################
-    def _apply_narration(self, entity: Entity, client: DeepSeekClient) -> None:
-        """解析 LLM 响应并回写至 PlayCardsAction.action。失败时记录错误日志，保持原有空字符串不变，由仲裁系统兜底。"""
-        if client.response_ai_message is None:
-            logger.warning(
-                f"PartyPrePlaySystem: [{entity.name}] 请求未成功（超时或网络错误），跳过叙事生成，由仲裁兜底"
-            )
-            return
-        try:
-            response = ActionNarrationResponse.model_validate_json(
-                extract_json_from_code_block(client.response_content)
-            )
-            play_cards_action = entity.get(PlayCardsAction)
-            entity.replace(
-                PlayCardsAction,
-                play_cards_action.name,
-                play_cards_action.card,
-                play_cards_action.targets,
-                response.action,
-            )
-            logger.debug(
-                f"PartyPrePlaySystem: [{entity.name}] 叙事生成完毕 | {response.action}"
-            )
-        except Exception as e:
-            logger.error(
-                f"PartyPrePlaySystem: [{entity.name}] 解析叙事失败，将使用仲裁兜底。Exception: {e}"
-            )
+        logger.debug(
+            f"PartyPrePlaySystem: 触发出牌前处理，找到 {len(entities)} 个符合条件的出牌实体"
+        )
 
     #######################################################################################################################################

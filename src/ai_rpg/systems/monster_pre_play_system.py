@@ -28,7 +28,6 @@ class MonsterDecisionResponse(BaseModel):
     pass_turn: bool = False
     card_name: str = ""
     targets: List[str] = []
-    action: str = ""
 
 
 #######################################################################################################################################
@@ -117,7 +116,7 @@ def _generate_monster_decision_prompt(
 
 - 行动序列严格顺序执行，排在你前面的角色已出手，其目标可能已死亡
 - targets 从"场上存活对手"中选全名，可多选，可为空列表
-- 若所有手牌均无法执行（如全部封印），可选择跳过出牌（pass_turn: true），此时 card_name/targets/action 可省略
+- 若所有手牌均无法执行（如全部封印），可选择跳过出牌（pass_turn: true），此时 card_name/targets 可省略
 
 ## 输出 JSON
 
@@ -125,8 +124,7 @@ def _generate_monster_decision_prompt(
 {{
   "pass_turn": false,
   "card_name": "从手牌中选择一张卡牌的名称（必须是以下之一：{card_names_json}）",
-  "targets": ["目标全名列表，可为 []"],
-  "action": "第一人称出牌叙事（1-2句，结合当前战场情景，生动具体）"
+  "targets": ["目标全名列表，可为 []"]
 }}
 ```
 pass_turn 为 true 时表示跳过出牌，其他字段可省略"""
@@ -198,7 +196,7 @@ def _generate_compressed_monster_decision_prompt(
 
 {opponents_lines}
 
-输出 JSON（pass_turn/card_name/targets/action；可用卡牌：{card_names_json}）"""
+输出 JSON（pass_turn/card_name/targets；可用卡牌：{card_names_json})"""
 
 
 #######################################################################################################################################
@@ -439,7 +437,6 @@ class MonsterPrePlaySystem(ReactiveProcessor):
                 entity.name,
                 selected_card,
                 valid_targets,
-                decision.action,
             )
             logger.debug(
                 f"MonsterPrePlaySystem: [{entity.name}] 决策出牌 '{selected_card.name}'，目标：{valid_targets}"

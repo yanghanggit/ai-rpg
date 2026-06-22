@@ -2,7 +2,7 @@
 
 from typing import List, final
 from ..entitas.components import Component, MutableComponent
-from .cards import Card, Keyword, StatusEffect
+from .cards import Card, StatusEffect
 from .items import AnyItem, CostumeItem, GearItem
 from .stats import CharacterStats
 from .registry import register_component_type
@@ -270,7 +270,7 @@ class KeywordComponent(Component):
     """存储角色卡牌生成关键词约束，指导 LLM 按特定风格生成手牌；运行时不可变。"""
 
     name: str
-    keywords: List[Keyword]
+    keywords: List[str]
 
 
 ############################################################################################################

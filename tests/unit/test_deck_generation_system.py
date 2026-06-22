@@ -24,7 +24,6 @@ from src.ai_rpg.models import (
     DeckComponent,
     DrawPileComponent,
 )
-from src.ai_rpg.models.cards import Keyword
 from src.ai_rpg.models.stats import CharacterStats
 from src.ai_rpg.models.target_type import TargetType
 from src.ai_rpg.systems.deck_generation_system import (
@@ -40,9 +39,9 @@ from src.ai_rpg.systems.deck_generation_system import (
 # ---------------------------------------------------------------------------
 
 
-def _make_keywords(n: int) -> List[Keyword]:
-    """生成 n 个描述各不相同的 Keyword 列表。"""
-    return [Keyword(description=f"关键词{i}") for i in range(n)]
+def _make_keywords(n: int) -> List[str]:
+    """生成 n 个描述各不相同的关键词列表。"""
+    return [f"关键词{i}" for i in range(n)]
 
 
 def _make_stats(hp: int = 10, attack: int = 5, defense: int = 3) -> CharacterStats:
@@ -115,9 +114,7 @@ class TestSampleKeywords:
         keywords = _make_keywords(3)
         result = _sample_keywords(keywords, k=3)
         assert len(result) == 3
-        assert sorted(kw.description for kw in result) == sorted(
-            kw.description for kw in keywords
-        )
+        assert sorted(result) == sorted(keywords)
 
 
 # ---------------------------------------------------------------------------
@@ -135,7 +132,7 @@ class TestBuildDesignPrinciplePrompt:
         keywords = _make_keywords(2)
         result = _build_design_principle_prompt(num_cards=2, keywords=keywords)
         for kw in keywords:
-            assert kw.description in result
+            assert kw in result
 
     def test_keywords_without_dice_no_dice_label(self) -> None:
         """dice_rolls 为空时，输出中不含"骰值"字样。"""

@@ -1,6 +1,5 @@
 from ..models import (
     Actor,
-    Keyword,
     CharacterSheet,
     ActorType,
     CharacterStats,
@@ -40,15 +39,9 @@ def create_wanderer() -> Actor:
         campaign_setting=RPG_CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
         keywords=[
-            # Keyword(
-            #     description="多段连击型：每张卡牌优先生成多次攻击（hit_count ≥ 2），每段伤害较低但累积可观；damage_dealt 不为 0。"
-            # ),
-            Keyword(
-                description="即时破甲型：每张卡牌的 modifiers 必须包含至少一个即时修正词缀，优先生成破甲、穿透、无视防御类效果（如 `[破甲]:本次攻击无视目标防御値`、`[穿刺]:穿透护甲直接造成伤害`）；damage_dealt 不为 0，即时修正词缀直接注入本次仲裁计算。"
-            ),
-            Keyword(
-                description="状态控制型：每张卡牌的 affixes 不得为空，优先生成能引发持续状态（如虚弱、减速、灼烧）的卡牌；damage_dealt 可以偏低甚至为 0，以控场效果为核心价値。"
-            ),
+            # "多段连击型：每张卡牌优先生成多次攻击（hit_count ≥ 2），每段伤害较低但累积可观；damage_dealt 不为 0。",
+            "即时破甲型：每张卡牌的 modifiers 必须包含至少一个即时修正词缀，优先生成破甲、穿透、无视防御类效果（如 `[破甲]:本次攻击无视目标防御値`、`[穿刺]:穿透护甲直接造成伤害`）；damage_dealt 不为 0，即时修正词缀直接注入本次仲裁计算。",
+            "状态控制型：每张卡牌的 affixes 不得为空，优先生成能引发持续状态（如虚弱、减速、灌烧）的卡牌；damage_dealt 可以偏低甚至为 0，以控场效果为核心价値。",
         ],
     )
 

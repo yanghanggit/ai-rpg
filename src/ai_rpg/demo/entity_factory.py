@@ -14,7 +14,6 @@ from typing import List
 
 from ..models import (
     Actor,
-    Keyword,
     CharacterSheet,
     CharacterStats,
     Stage,
@@ -30,7 +29,7 @@ def create_actor(
     character_stats: CharacterStats,
     campaign_setting: str,
     system_rules: str,
-    keywords: List[Keyword] = [],
+    keywords: List[str] = [],
 ) -> Actor:
     """
     创建一个游戏角色(Actor)实例。

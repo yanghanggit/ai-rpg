@@ -3,6 +3,7 @@
 """
 
 import random
+from enum import IntEnum, unique
 from typing import Dict, Final, List, final, override
 from loguru import logger
 from pydantic import BaseModel
@@ -18,12 +19,20 @@ from ..models import (
     CharacterStats,
     CharacterStatsComponent,
     KeywordComponent,
-    Keyword,
-    DiceValue,
     Card,
     TargetType,
 )
 from ..utils import extract_json_from_code_block
+
+
+###############################################################################################################################################
+@final
+@unique
+class DiceValue(IntEnum):
+    """骰值范围常量（0-100 均匀随机整数）"""
+
+    MIN = 0
+    MAX = 100
 
 
 #######################################################################################################################################
@@ -52,7 +61,7 @@ class DeckGenerateResponse(BaseModel):
 
 
 #######################################################################################################################################
-def _sample_keywords(keywords: List[Keyword], k: int) -> List[Keyword]:
+def _sample_keywords(keywords: List[str], k: int) -> List[str]:
     """从关键词池中采样 k 个关键词，优先不重复，池不足时降级为有放回采样。"""
     if not keywords:
         return []
@@ -64,7 +73,7 @@ def _sample_keywords(keywords: List[Keyword], k: int) -> List[Keyword]:
 #######################################################################################################################################
 def _build_design_principle_prompt(
     num_cards: int,
-    keywords: List[Keyword],
+    keywords: List[str],
     dice_rolls: List[int] = [],
 ) -> str:
     """生成关键词约束段落。无关键词时输出差异化指引；有骰值时附加于各卡约束行末。"""
@@ -79,7 +88,7 @@ def _build_design_principle_prompt(
         else "关键词约束（按顺序对应）："
     )
     lines = "\n".join(
-        f"  - 卡牌{i + 1}：{keywords[i].description}"
+        f"  - 卡牌{i + 1}：{keywords[i]}"
         + (f"（骰值：{dice_rolls[i]}）" if use_dice else "")
         for i in range(len(keywords))
     )
@@ -90,7 +99,7 @@ def _build_design_principle_prompt(
 def _generate_deck_prompt(
     actor_stats: CharacterStats,
     num_cards: int,
-    keywords: List[Keyword] = [],
+    keywords: List[str] = [],
     dice_rolls: List[int] = [],
 ) -> str:
     """生成战斗开始牌库生成 prompt（含字段说明与 JSON 示例）。"""
@@ -155,7 +164,7 @@ def _generate_deck_prompt(
 def _generate_compressed_deck_prompt(
     actor_stats: CharacterStats,
     num_cards: int,
-    keywords: List[Keyword] = [],
+    keywords: List[str] = [],
     dice_rolls: List[int] = [],
 ) -> str:
     """生成牌库生成 prompt 的压缩版（写入对话历史，减少 token 消耗）。"""
@@ -225,7 +234,7 @@ class DeckGenerationSystem(ReactiveProcessor):
                 random.randint(DiceValue.MIN, DiceValue.MAX) for _ in range(num_cards)
             ]
             logger.debug(
-                f"[{entity.name}] 关键词: {[k.description[:20] for k in sampled_keywords]}  骰值: {dice_rolls}"
+                f"[{entity.name}] 关键词: {[k[:20] for k in sampled_keywords]}  骰值: {dice_rolls}"
             )
 
             prompt = _generate_deck_prompt(

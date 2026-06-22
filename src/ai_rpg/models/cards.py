@@ -4,7 +4,6 @@
 CombatPhase、StatusEffect、Card、DiceValue、Keyword
 """
 
-from enum import IntEnum, unique
 from typing import List, Optional, final
 from uuid import uuid4
 from pydantic import BaseModel, Field, field_validator
@@ -77,31 +76,6 @@ class Card(BaseModel):
 
 
 Card.model_rebuild()  # 解析 original_data 的前向引用
-
-
-###############################################################################################################################################
-@final
-@unique
-class DiceValue(IntEnum):
-    """骰值范围常量（0-100 均匀随机整数）"""
-
-    MIN = 0
-    MAX = 100
-
-
-###############################################################################################################################################
-@final
-class Keyword(BaseModel):
-    """卡牌关键词，定义角色生成卡牌时遵循的风格与功能约束。
-
-    通过自然语言描述约束规则，LLM 在生成卡牌时据此限制生成边界。
-    空列表表示无约束，角色可自由生成任意风格的卡牌。
-
-    Attributes:
-        description: 约束规则的自然语言描述
-    """
-
-    description: str
 
 
 ###############################################################################################################################################

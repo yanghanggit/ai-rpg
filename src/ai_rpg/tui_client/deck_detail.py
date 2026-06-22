@@ -224,9 +224,7 @@ class DeckDetailScreen(BaseGameScreen):
                         )
                         log.write("  [bold magenta]▸ 关键词约束[/]")
                         for j, kw in enumerate(keyword_comp.keywords, start=1):
-                            log.write(
-                                f"  [bold magenta]关键词 {j}：[/][dim]{kw.description}[/]"
-                            )
+                            log.write(f"  [bold magenta]关键词 {j}：[/][dim]{kw}[/]")
 
                 log.write(
                     "[bold cyan]══════════════════════════════════════════════════[/]"

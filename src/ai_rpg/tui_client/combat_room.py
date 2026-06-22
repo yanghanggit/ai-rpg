@@ -7,7 +7,8 @@ from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.widgets import Input, RichLog, Static
-from .combat_play_cards import _Phase, COMBAT_ROOM_MENU, PlayCardsMixin
+from .combat_play_cards import _Phase, PlayCardsMixin
+from .combat_menu import COMBAT_ROOM_MENU
 from .combat_use_consumable import UseConsumableMixin
 from .combat_use_gear import UseGearMixin
 from .combat_room_renderer import write_full_entities_block

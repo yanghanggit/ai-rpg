@@ -124,9 +124,9 @@ def _generate_deck_prompt(
 | 字段 | 类型 | 说明 |
 |---|---|---|
 | name | str | 富有想象力，体现行动意图 |
-| description | str | 第三人称客观描述（1句），只描述即时战斗行为 |
-| affixes | list[str] | 延迟词缀，格式 `[名称]:触发倾向`；无则 [] |
-| modifiers | list[str] | 即时修正词缀，格式 `[名称]:即时修正`；无则 [] |
+| description | str | 战斗行为的艺术性叙述（1句，第三人称），描述动作风格与角色气质；不含数值，不转述已由其他字段表达的机械效果，不出现"我"等第一人称指代 |
+| affixes | list[str] | 延迟词缀，格式 `[名称]:触发倾向`；仅描述数值字段未涵盖的额外持续效果；无则 [] |
+| modifiers | list[str] | 即时修正词缀，格式 `[名称]:即时修正`；仅描述数值字段未涵盖的即时修正；无则 [] |
 | playable | bool | 是否可出牌；默认 true |
 | exhaust | bool | 出牌后是否永久消耗；默认 false |
 | damage_dealt | int | 单次伤害值（参考攻击力合理推算） |
@@ -136,7 +136,8 @@ def _generate_deck_prompt(
 
 ## 约束
 
-- `description` 禁止提及任何场景地物（如断柱、沙地）、地名或即时情境细节
+- `description` 禁止提及任何场景地物（如断柱、沙地）、地名或即时情境细节，禁止含数字
+- `affixes`/`modifiers` 禁止重述数值字段已确定性表达的效果：`energy_delta ≠ 0` 时不得描述行动次数变化；不得重复量化 `damage_dealt`/`hit_count` 已决定的伤害量级
 - `cards` 数组长度必须恰好为 {num_cards}
 - 只输出 JSON，不附加任何说明文字
 

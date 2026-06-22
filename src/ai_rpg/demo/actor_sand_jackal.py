@@ -37,7 +37,7 @@ def create_actor_sand_jackal() -> Actor:
         campaign_setting=RPG_CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
         keywords=[
-            "纯攻击型：所有卡牌以最大化 damage_dealt 为目标，affixes 与 modifiers 均留空；target_type 仅使用 enemy_single。"
+            "纯攻击型：每张卡牌专注于对单个敌人造成直接伤害，不携带任何附加效果或持续状态。骰值 0-30 为失败，攻击乏力、伤害偏低；骰值 31-70 为正常，伤害稳定适中；骰值 71-100 为优质，体现爆发感，伤害显著高于角色基础攻击力。"
         ],
     )
 

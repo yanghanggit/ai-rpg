@@ -129,6 +129,7 @@ def _make_actor_model(
         character_stats=CharacterStats(
             hp=hp, max_hp=hp, attack=attack, defense=defense
         ),
+        keywords=["通用型：无特殊约束，自由生成卡牌。"],
     )
 
 

@@ -18,7 +18,6 @@ from ..models import (
     GenerateDeckAction,
     CharacterStats,
     CharacterStatsComponent,
-    KeywordComponent,
     Card,
     TargetType,
 )
@@ -203,7 +202,6 @@ class DeckGenerationSystem(ReactiveProcessor):
             and entity.has(DeckComponent)
             and entity.has(DrawPileComponent)
             and entity.has(CharacterStatsComponent)
-            and entity.has(KeywordComponent)
             and not entity.has(DeathComponent)
         )
 
@@ -227,9 +225,11 @@ class DeckGenerationSystem(ReactiveProcessor):
             # 获取角色关键词
             combat_stats = self._game.compute_character_stats(entity)
 
-            keyword_comp = entity.get(KeywordComponent)
-            # keywords = keyword_comp.keywords if keyword_comp is not None else []
-            sampled_keywords = _sample_keywords(keyword_comp.keywords, k=num_cards)
+            deck_comp_for_keywords = entity.get(DeckComponent)
+            assert deck_comp_for_keywords is not None
+            sampled_keywords = _sample_keywords(
+                deck_comp_for_keywords.keywords, k=num_cards
+            )
 
             dice_rolls = [
                 random.randint(DiceValue.MIN, DiceValue.MAX) for _ in range(num_cards)

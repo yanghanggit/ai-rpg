@@ -52,7 +52,7 @@ def _make_actor_entity(context: Context, name: str = "test_actor") -> Entity:
     """创建挂载 DeckComponent + DrawPileComponent 的实体。"""
     entity = context.create_entity()
     entity._name = name
-    entity.add(DeckComponent, name, [])
+    entity.add(DeckComponent, name, [], [])
     entity.add(DrawPileComponent, name, [])
     return entity
 

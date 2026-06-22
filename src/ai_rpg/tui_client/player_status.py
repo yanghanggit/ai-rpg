@@ -12,7 +12,7 @@ from ..models import (
     InventoryComponent,
     PlayerComponent,
     PartyRosterComponent,
-    KeywordComponent,
+    DeckComponent,
     DrawPileComponent,
     ExhaustPileComponent,
     DiscardPileComponent,
@@ -34,7 +34,7 @@ _COMPONENT_ORDER: List[str] = [
     AppearanceComponent.__name__,
     InventoryComponent.__name__,
     CostumeComponent.__name__,
-    KeywordComponent.__name__,
+    DeckComponent.__name__,
     DrawPileComponent.__name__,
     ExhaustPileComponent.__name__,
     DiscardPileComponent.__name__,
@@ -100,12 +100,9 @@ def _render_component(name: str, data: Dict[str, Any], context: Dict[str, Any]) 
             lines.append(f"    当前穿戴时装：")
             lines.append("    " + render_item(costume_comp.item))
 
-    elif name == KeywordComponent.__name__:
-        keyword_comp = KeywordComponent(**data)
-        # if not keyword_comp.keywords:
-        #     lines.append("    [dim]（暂无关键词约束）[/]")
-        # else:
-        for i, kw in enumerate(keyword_comp.keywords, 1):
+    elif name == DeckComponent.__name__:
+        deck_comp = DeckComponent(**data)
+        for i, kw in enumerate(deck_comp.keywords, 1):
             lines.append(f"    [dim]{i}.[/] {kw}")
 
     elif name == DrawPileComponent.__name__:

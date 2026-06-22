@@ -14,7 +14,6 @@ from .utils import display_name
 from ..models import (
     DeckComponent,
     HandComponent,
-    KeywordComponent,
     DrawPileComponent,
     ExhaustPileComponent,
     DiscardPileComponent,
@@ -208,22 +207,12 @@ class DeckDetailScreen(BaseGameScreen):
                         log.write("    [dim]（手牌为空）[/]")
 
                 # 5) Keyword 关键词约束
-                keyword_raw = next(
-                    (
-                        c
-                        for c in entity.components
-                        if c.name == KeywordComponent.__name__
-                    ),
-                    None,
-                )
-                if keyword_raw is not None:
-                    keyword_comp = KeywordComponent(**keyword_raw.data)
-                    # if keyword_comp.keywords:
+                if deck_comp and deck_comp.keywords:
                     log.write(
                         "[dim]──────────────────────────────────────────────────[/]"
                     )
                     log.write("  [bold magenta]▸ 关键词约束[/]")
-                    for j, kw in enumerate(keyword_comp.keywords, start=1):
+                    for j, kw in enumerate(deck_comp.keywords, start=1):
                         log.write(f"  [bold magenta]关键词 {j}：[/][dim]{kw}[/]")
 
                 log.write(

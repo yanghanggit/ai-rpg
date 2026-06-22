@@ -257,20 +257,11 @@ class DiscardPileComponent(MutableComponent):
 @final
 @register_component_type
 class DeckComponent(MutableComponent):
-    """跨战斗持久牌库；战斗外唯一权威来源。战斗开始时由 DeckGenerationSystem 生成并锁定原始牌，战斗期间只读；战斗子堆流转的均为 model_copy() 副本。"""
+    """跨战斗持久牌库；战斗外唯一权威来源。战斗开始时由 DeckGenerationSystem 生成并锁定原始牌，战斗期间只读；战斗子堆流转的均为 model_copy() 副本。keywords 为卡牌生成关键词约束，指导 LLM 按特定风格生成手牌，运行时不可变。"""
 
     name: str
     cards: List[Card]  # 跨战斗累积；每次触发 GenerateDeckAction 追加新生成的牌
-
-
-############################################################################################################
-@final
-@register_component_type
-class KeywordComponent(Component):
-    """存储角色卡牌生成关键词约束，指导 LLM 按特定风格生成手牌；运行时不可变。"""
-
-    name: str
-    keywords: List[str]
+    keywords: List[str]  # 卡牌生成关键词约束，运行时不可变
 
 
 ############################################################################################################

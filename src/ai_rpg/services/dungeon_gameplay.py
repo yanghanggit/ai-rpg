@@ -30,6 +30,8 @@ from ..models import (
     DungeonCombatUseConsumableItemResponse,
     DungeonCombatUseGearItemRequest,
     DungeonCombatUseGearItemResponse,
+    DungeonCombatCollectLootRequest,
+    DungeonCombatCollectLootResponse,
     TaskStatus,
 )
 from .dungeon_lifecycle import (
@@ -39,6 +41,7 @@ from .dungeon_lifecycle import (
 from .dungeon_actions import (
     activate_all_card_draws,
     activate_retreat,
+    collect_combat_loot,
 )
 from .dungeon_tasks import (
     execute_init_combat_task,
@@ -413,6 +416,62 @@ async def dungeon_exit(
         return DungeonExitResponse(
             message="成功返回家园",
         )
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
+@dungeon_gameplay_api_router.post(
+    path="/api/dungeon/combat/collect_loot/v1/",
+    response_model=DungeonCombatCollectLootResponse,
+)
+async def dungeon_combat_collect_loot(
+    payload: DungeonCombatCollectLootRequest,
+    game_server: CurrentGameServer,
+) -> DungeonCombatCollectLootResponse:
+    """
+    收取战斗战利品接口
+
+    将玩家实体上的 CombatLootComponent 中的道具全部转入随身背包（InventoryComponent），
+    并移除临时战利品组件。
+
+    Args:
+        payload: 收取战利品请求对象
+        game_server: 游戏服务器实例
+
+    Returns:
+        DungeonCombatCollectLootResponse: 包含收取结果消息的响应对象
+
+    Raises:
+        HTTPException(404): 玩家未登录或游戏不存在
+        HTTPException(409): 无战利品可收取（本场无掉落或已收取）
+    """
+
+    logger.info(f"/api/dungeon/combat/collect_loot/v1/: user={payload.user_name}")
+
+    current_room = game_server.get_room(payload.user_name)
+    if current_room is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="没有登录，请先登录",
+        )
+
+    async with current_room._lock:
+        tcg_game = _validate_dungeon_prerequisites(
+            user_name=payload.user_name,
+            game_server=game_server,
+        )
+
+        success, message = collect_combat_loot(tcg_game)
+        if not success:
+            logger.warning(f"玩家 {payload.user_name} 收取战利品失败: {message}")
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=message,
+            )
+
+        logger.info(f"玩家 {payload.user_name} 收取战利品成功: {message}")
+        return DungeonCombatCollectLootResponse(message=message)
 
 
 ###################################################################################################################################################################

@@ -22,6 +22,8 @@ from ..models import (
     DungeonCombatRetreatResponse,
     DungeonExitRequest,
     DungeonExitResponse,
+    DungeonCombatCollectLootRequest,
+    DungeonCombatCollectLootResponse,
     DungeonListResponse,
     DungeonRoomResponse,
     DungeonStateResponse,
@@ -327,6 +329,22 @@ async def dungeon_exit(user_name: str, game_name: str) -> DungeonExitResponse:
         )
         response.raise_for_status()
         return DungeonExitResponse.model_validate(response.json())
+
+
+async def dungeon_combat_collect_loot(
+    user_name: str, game_name: str
+) -> DungeonCombatCollectLootResponse:
+    """收取战斗战利品，将掉落物转入背包。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.post(
+            server_config.base_url + "/api/dungeon/combat/collect_loot/v1/",
+            json=DungeonCombatCollectLootRequest(
+                user_name=user_name,
+                game_name=game_name,
+            ).model_dump(),
+        )
+        response.raise_for_status()
+        return DungeonCombatCollectLootResponse.model_validate(response.json())
 
 
 async def dungeon_combat_init(

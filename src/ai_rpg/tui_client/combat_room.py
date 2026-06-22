@@ -1,6 +1,6 @@
 """战斗房间 Screen（CombatRoom）"""
 
-from typing import final
+from typing import Optional, final
 import httpx
 from loguru import logger
 from textual import on, work
@@ -14,10 +14,13 @@ from .combat_use_gear import UseGearMixin
 from .combat_room_renderer import write_full_entities_block
 from .deck_detail import DeckDetailScreen
 from .round_detail import RoundDetailScreen
-from .utils import display_name
+from .utils import display_name, render_item
 from .server_client import dungeon_combat_draw_cards as server_dungeon_combat_draw_cards
 from .server_client import dungeon_combat_init as server_dungeon_combat_init
 from .server_client import dungeon_combat_retreat as server_dungeon_combat_retreat
+from .server_client import (
+    dungeon_combat_collect_loot as server_dungeon_combat_collect_loot,
+)
 from .server_client import dungeon_exit as server_dungeon_exit
 from .server_client import fetch_dungeon_room, fetch_dungeon_state
 from .server_client import (
@@ -27,6 +30,7 @@ from .server_client import (
     TaskFailedError,
 )
 from ..models import (
+    CombatLootComponent,
     CombatState,
 )
 
@@ -139,6 +143,7 @@ class CombatRoomScreen(PlayCardsMixin, UseConsumableMixin, UseGearMixin):
                     _Phase.ROUND_DONE,
                     _Phase.SELECT_CONSUMABLE,
                     _Phase.SELECT_CONSUMABLE_TARGET,
+                    _Phase.CONFIRM_COLLECT_LOOT,
                 ):
                     self._return_to_menu()
                 else:
@@ -170,6 +175,13 @@ class CombatRoomScreen(PlayCardsMixin, UseConsumableMixin, UseGearMixin):
                 self._handle_gear_selection(raw)
             elif self._phase == _Phase.SELECT_GEAR_TARGET:
                 self._handle_gear_target_selection(raw)
+            elif self._phase == _Phase.CONFIRM_COLLECT_LOOT:
+                if raw.lower() in ("", "y", "是", "确认"):
+                    self._phase = _Phase.LOADING
+                    self.query_one(Input).disabled = True
+                    self._do_collect_loot()
+                else:
+                    self._return_to_menu("[dim]已取消收取。[/]")
             return
 
         # ── 普通命令模式 ──
@@ -215,6 +227,9 @@ class CombatRoomScreen(PlayCardsMixin, UseConsumableMixin, UseGearMixin):
 
         elif cmd == "10":
             self._do_exit()
+
+        elif cmd == "11":
+            self._fetch_loot()
 
         else:
             log.write(f"[red]未知输入：{cmd}，输入 0 查看操作菜单。[/]")
@@ -570,3 +585,84 @@ class CombatRoomScreen(PlayCardsMixin, UseConsumableMixin, UseGearMixin):
             log.write(f"[bold red]❌ 退出地下城失败: {_format_http_error(e)}[/]")
             inp.disabled = False
             inp.focus()
+
+    @work
+    async def _fetch_loot(self) -> None:
+        """查询并展示玩家实体上的战斗战利品（CombatLootComponent）。"""
+        log = self.query_one(RichLog)
+        log.write("[dim]正在查询战利品...[/]")
+        logger.info(
+            f"CombatRoomScreen._fetch_loot: user={self._user_name} game={self._game_name}"
+        )
+
+        try:
+            room_resp = await fetch_dungeon_room(self._user_name, self._game_name)
+            stage_name = room_resp.room.stage.name
+            stages_resp = await fetch_stages_state(self._user_name, self._game_name)
+            actor_names = stages_resp.mapping.get(stage_name, [])
+        except Exception as e:
+            logger.error(f"_fetch_loot: 查询房间状态失败 error={e}")
+            log.write(f"[bold red]❌ 查询战利品失败: {e}[/]")
+            return
+
+        if not actor_names:
+            log.write("[dim]（当前房间无角色数据）[/]")
+            return
+
+        try:
+            details = await fetch_entities_details(
+                self._user_name, self._game_name, actor_names
+            )
+        except Exception as e:
+            logger.error(f"_fetch_loot: 获取实体数据失败 error={e}")
+            log.write(f"[bold red]❌ 获取实体数据失败: {e}[/]")
+            return
+
+        loot_comp: Optional[CombatLootComponent] = None
+        for entity in details.entities_serialization:
+            for comp in entity.components:
+                if comp.name == CombatLootComponent.__name__:
+                    loot_comp = CombatLootComponent(**comp.data)
+                    break
+            if loot_comp is not None:
+                break
+
+        log.write("[bold cyan]── 战利品 ──────────────────────────────────────[/]")
+
+        if loot_comp is None or not loot_comp.items:
+            log.write("  [dim]（暂无战利品，战斗胜利后才会生成）[/]")
+            return
+
+        for item in loot_comp.items:
+            log.write(render_item(item))
+            log.write("")
+
+        log.write(f"  [dim]共 {len(loot_comp.items)} 件。[/]")
+        logger.info(f"_fetch_loot: 展示战利品 {len(loot_comp.items)} 件")
+
+        self._phase = _Phase.CONFIRM_COLLECT_LOOT
+        inp = self.query_one(Input)
+        inp.placeholder = "Enter/y 确认收取 / q 取消"
+        inp.disabled = False
+        inp.focus()
+
+    @work
+    async def _do_collect_loot(self) -> None:
+        """调用 collect_loot API，将战利品转入背包。"""
+        log = self.query_one(RichLog)
+        log.write("[dim]正在收取战利品...[/]")
+        logger.info(
+            f"CombatRoomScreen._do_collect_loot: user={self._user_name} game={self._game_name}"
+        )
+
+        try:
+            resp = await server_dungeon_combat_collect_loot(
+                self._user_name, self._game_name
+            )
+            log.write(f"[bold green]✅ {resp.message}[/]")
+            logger.info(f"_do_collect_loot: 收取成功 message={resp.message}")
+        except Exception as e:
+            log.write(f"[bold red]❌ 收取失败: {_format_http_error(e)}[/]")
+            logger.error(f"_do_collect_loot: 收取失败 error={e}")
+
+        self._return_to_menu()

@@ -128,7 +128,7 @@ def _generate_deck_prompt(
 | modifiers | list[str] | 即时修正词缀，格式 `[名称]:即时修正`；仅描述数值字段未涵盖的即时修正；无则 [] |
 | playable | bool | 是否可出牌；默认 true |
 | exhaust | bool | 出牌后是否永久消耗；默认 false |
-| damage_dealt | int | 单次伤害值（参考攻击力合理推算） |
+| damage_dealt | int | 单次命中造成的伤害（必须以'攻击'为基数进行计算） |
 | energy_delta | int | 改变目标行动次数（正值增加，负值剥夺）；默认 0 |
 | hit_count | int | 攻击次数；默认 1，多段可设 2~4 |
 | target_type | str | enemy_single / enemy_all / enemy_random_multi / ally_single / ally_all / self_only |

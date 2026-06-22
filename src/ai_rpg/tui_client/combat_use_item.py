@@ -30,6 +30,7 @@ class _Phase(Enum):
     SELECT_CONSUMABLE_TARGET = auto()  # 等待用户输入消耗品目标编号
     SELECT_GEAR = auto()  # 等待用户输入装备编号
     SELECT_GEAR_TARGET = auto()  # 等待用户输入装备目标编号
+    CONFIRM_COLLECT_LOOT = auto()  # 展示战利品后，等待用户确认收取
 
 
 # ─────────────────────────────────────────────────────────────────

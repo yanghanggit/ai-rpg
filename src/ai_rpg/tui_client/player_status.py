@@ -102,11 +102,11 @@ def _render_component(name: str, data: Dict[str, Any], context: Dict[str, Any]) 
 
     elif name == KeywordComponent.__name__:
         keyword_comp = KeywordComponent(**data)
-        if not keyword_comp.keywords:
-            lines.append("    [dim]（暂无关键词约束）[/]")
-        else:
-            for i, kw in enumerate(keyword_comp.keywords, 1):
-                lines.append(f"    [dim]{i}.[/] {kw}")
+        # if not keyword_comp.keywords:
+        #     lines.append("    [dim]（暂无关键词约束）[/]")
+        # else:
+        for i, kw in enumerate(keyword_comp.keywords, 1):
+            lines.append(f"    [dim]{i}.[/] {kw}")
 
     elif name == DrawPileComponent.__name__:
         ddc = DrawPileComponent(**data)

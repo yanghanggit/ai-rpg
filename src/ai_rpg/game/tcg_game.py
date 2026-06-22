@@ -355,6 +355,9 @@ class TCGGame(RPGGame):
             )
 
             # TCG 组件：关键词
+            assert (
+                len(actor_model.keywords) > 0
+            ), f"TCG 游戏要求每个角色至少有一个关键词约束: {actor_model.name}"
             actor_entity.replace(
                 KeywordComponent, actor_entity.name, actor_model.keywords.copy()
             )

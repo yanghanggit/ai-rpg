@@ -227,8 +227,8 @@ class DeckGenerationSystem(ReactiveProcessor):
             combat_stats = self._game.compute_character_stats(entity)
 
             keyword_comp = entity.get(KeywordComponent)
-            keywords = keyword_comp.keywords if keyword_comp is not None else []
-            sampled_keywords = _sample_keywords(keywords, k=num_cards)
+            # keywords = keyword_comp.keywords if keyword_comp is not None else []
+            sampled_keywords = _sample_keywords(keyword_comp.keywords, k=num_cards)
 
             dice_rolls = [
                 random.randint(DiceValue.MIN, DiceValue.MAX) for _ in range(num_cards)

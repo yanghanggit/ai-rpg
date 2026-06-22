@@ -218,13 +218,13 @@ class DeckDetailScreen(BaseGameScreen):
                 )
                 if keyword_raw is not None:
                     keyword_comp = KeywordComponent(**keyword_raw.data)
-                    if keyword_comp.keywords:
-                        log.write(
-                            "[dim]──────────────────────────────────────────────────[/]"
-                        )
-                        log.write("  [bold magenta]▸ 关键词约束[/]")
-                        for j, kw in enumerate(keyword_comp.keywords, start=1):
-                            log.write(f"  [bold magenta]关键词 {j}：[/][dim]{kw}[/]")
+                    # if keyword_comp.keywords:
+                    log.write(
+                        "[dim]──────────────────────────────────────────────────[/]"
+                    )
+                    log.write("  [bold magenta]▸ 关键词约束[/]")
+                    for j, kw in enumerate(keyword_comp.keywords, start=1):
+                        log.write(f"  [bold magenta]关键词 {j}：[/][dim]{kw}[/]")
 
                 log.write(
                     "[bold cyan]══════════════════════════════════════════════════[/]"

@@ -74,6 +74,9 @@ def create_actor(
         base_body=character_sheet.base_body,
     )
 
+    assert (
+        len(actor.keywords) > 0
+    ), f"TCG 游戏要求每个角色至少有一个关键词约束: {actor.name}"
     return actor
 
 

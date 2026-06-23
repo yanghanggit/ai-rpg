@@ -204,7 +204,7 @@ ACTOR_TOOL: Final[ToolDefinition] = ToolDefinition(
             "properties": {
                 "actor_name": {
                     "type": "string",
-                    "description": "角色全名，采用「常物/精怪/大妖.XXXX」格式，XXXX 体现该生物的特征",
+                    "description": "角色全名，采用「怪物.XXXX」格式，XXXX 体现该生物的特征",
                 },
                 "character_sheet_name": {
                     "type": "string",

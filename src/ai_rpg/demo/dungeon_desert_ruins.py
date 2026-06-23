@@ -4,7 +4,7 @@
 本模块用于创建沙漠残垣世界观下的遗迹相关地下城副本。
 
 核心内容：
-- create_sand_jackal_ruins_dungeon: 单场景副本，挑战遗迹外缘的沙豺（常物），适合初期狩猎练习。
+- create_sand_jackal_ruins_dungeon: 单场景副本，挑战遗迹外缘的沙豺，适合初期狩猎练习。
 """
 
 from ..models import (
@@ -31,7 +31,7 @@ def create_sand_jackal_ruins_dungeon() -> Dungeon:
     创建沙豺遗迹副本。
 
     包含单个场景：
-    - 残柱外沿：遗迹外缘的开阔沙地，常物级沙豺的活动领域
+    - 残柱外沿：遗迹外缘的开阔沙地，沙豺的活动领域
 
     Returns:
         Dungeon: 沙豺遗迹副本实例

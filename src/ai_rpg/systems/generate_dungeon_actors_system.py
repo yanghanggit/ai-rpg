@@ -55,7 +55,7 @@ def _build_dungeon_actor_prompt(
 
 ## 要求
 
-- **actor_name**：角色全名，采用「常物/精怪/大妖.XXXX」格式，XXXX 体现该生物的特征
+- **actor_name**：角色全名，采用「怪物.XXXX」格式，XXXX 体现该生物的特征
 - **character_sheet_name**：角色英文标识，snake_case 格式（如 `bone_crawler`、`mist_spirit`）
 - **profile**：第一人称 AI 扮演描述，50-100字，描述该生物的性格、行为倾向、与环境的关系
   - 禁忌：不出现战斗数值、技能名称、等级等游戏机制词汇

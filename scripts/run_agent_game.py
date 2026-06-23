@@ -407,7 +407,7 @@ def draw_cards(snapshot: str) -> None:
     "--targets",
     multiple=True,
     default=(),
-    help="目标角色名，可重复使用（如 --targets 常物.野猪）",
+    help="目标角色名，可重复使用（如 --targets 怪物.野猪）",
 )
 def play_cards_specified(
     snapshot: str, actor: str, card: str, targets: tuple[str, ...]
@@ -507,7 +507,7 @@ def pass_turn(snapshot: str, actor: str) -> None:
     "--targets",
     multiple=True,
     default=(),
-    help="目标角色名，可重复使用（如 --targets 常物.野猪）；SELF_ONLY/ENEMY_ALL 时可省略",
+    help="目标角色名，可重复使用（如 --targets 怪物.野猪）；SELF_ONLY/ENEMY_ALL 时可省略",
 )
 def use_consumable(
     snapshot: str, actor: str, item: str, targets: tuple[str, ...]

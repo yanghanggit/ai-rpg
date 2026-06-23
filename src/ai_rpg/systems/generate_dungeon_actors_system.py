@@ -1,10 +1,12 @@
 """地下城怪物生成系统"""
 
+import asyncio
+from collections import defaultdict
 from pathlib import Path
-from typing import Dict, Final, List, final, override
+from typing import Dict, Final, List, Optional, final, override
 from loguru import logger
 from pydantic import BaseModel
-from ..deepseek import DeepSeekClient
+from ..deepseek import agent_loop, ToolDefinition, ToolFunction
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.config import DUNGEON_PROCESS_DIR
 from ..game.tcg_game import TCGGame
@@ -14,8 +16,38 @@ from ..models import (
     GenerateDungeonActorsAction,
     WorldComponent,
 )
-from ..utils import extract_json_from_code_block
-from .generate_dungeon_stages_system import DungeonStagesFile
+from .generate_dungeon_stages_system import DungeonStagesFile, _DungeonStageResponse
+
+
+####################################################################################################################################
+_ACTOR_TOOL: Final[ToolDefinition] = ToolDefinition(
+    function=ToolFunction(
+        name="record_dungeon_actor",
+        description="记录该场景中一个标居怪物的全部设定字段。",
+        parameters={
+            "type": "object",
+            "properties": {
+                "actor_name": {
+                    "type": "string",
+                    "description": "角色全名，采用「常物/精怪/大妖.XXXX」格式，XXXX 体现该生物的特征",
+                },
+                "character_sheet_name": {
+                    "type": "string",
+                    "description": "角色英文标识，snake_case 格式（如 bone_crawler、mist_spirit）",
+                },
+                "profile": {
+                    "type": "string",
+                    "description": "第一人称 AI 扮演描述，50-100字，描述该生物的性格、行为倾向、与环境的关系；禁止出现战斗数值、技能名称、等级等游戏机制词汇",
+                },
+                "base_body": {
+                    "type": "string",
+                    "description": "第三人称外观描述，30-60字，描述该生物的形态、材质、动态特征；禁止出现战斗数值、技能名称、等级等游戏机制词汇",
+                },
+            },
+            "required": ["actor_name", "character_sheet_name", "profile", "base_body"],
+        },
+    )
+)
 
 
 ####################################################################################################################################
@@ -55,26 +87,7 @@ def _build_dungeon_actor_prompt(
 - **base_body**：第三人称外观描述，30-60字，描述该生物的形态、材质、动态特征
   - 禁忌：不出现战斗数值、技能名称、等级等游戏机制词汇
 
-## 输出格式
-
-```json
-{{
-  "actor_name": "怪物.XXX",
-  "character_sheet_name": "snake_case_name",
-  "profile": "...",
-  "base_body": "..."
-}}
-```
-
-严格按 JSON 格式输出，不要添加其他内容。"""
-
-
-####################################################################################################################################
-class _DungeonActorResponse(BaseModel):
-    actor_name: str = ""
-    character_sheet_name: str = ""
-    profile: str = ""
-    base_body: str = ""
+工作流程：调用 record_dungeon_actor 写入怪物数据，确认无误后结束本次对话。"""
 
 
 ####################################################################################################################################
@@ -187,14 +200,44 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
 
         context = self._game.get_agent_context(world_system_entity).context
 
-        # 展开 (stage, actor_index) 对，每对对应一个并发请求
+        # 展开 (stage, actor_index) 对，每对对应一个并发 agent_loop
         client_tasks = [
             (stage, actor_idx)
             for stage in stages_file.stage_responses
             for actor_idx in range(stage.actor_count)
         ]
-        clients: List[DeepSeekClient] = [
-            DeepSeekClient(
+        actor_results: List[Optional[DungeonActorBlueprint]] = [None] * len(
+            client_tasks
+        )
+
+        async def _run_single_actor(
+            stage: _DungeonStageResponse,
+            actor_idx: int,
+            result_idx: int,
+        ) -> None:
+            actor_bp: Optional[DungeonActorBlueprint] = None
+
+            def _handle_record_dungeon_actor(
+                actor_name: str,
+                character_sheet_name: str,
+                profile: str,
+                base_body: str,
+            ) -> str:
+                nonlocal actor_bp
+                actor_bp = DungeonActorBlueprint(
+                    actor_name=actor_name,
+                    character_sheet_name=character_sheet_name,
+                    profile=profile,
+                    base_body=base_body,
+                )
+                logger.info(
+                    f"[GenerateDungeonActorsSystem] record_dungeon_actor 执行:\n"
+                    f"  actor_name: {actor_name}\n"
+                    f"  stage:      {stage.stage_name}[{actor_idx + 1}]"
+                )
+                return f"已记录怪物「{actor_name}」于场景「{stage.stage_name}」。"
+
+            success = await agent_loop(
                 name=f"{stage.stage_name}[{actor_idx + 1}]",
                 prompt=_build_dungeon_actor_prompt(
                     dungeon_name=stages_file.dungeon_name,
@@ -205,38 +248,33 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
                     total_actors=stage.actor_count,
                 ),
                 context=context,
+                tools=[_ACTOR_TOOL],
+                handlers={"record_dungeon_actor": _handle_record_dungeon_actor},
+                max_rounds=5,
             )
-            for stage, actor_idx in client_tasks
-        ]
 
-        await DeepSeekClient.batch_chat(clients)
-
-        # 按 stage 归组解析结果
-        from collections import defaultdict
-
-        stage_actors: dict[str, List[DungeonActorBlueprint]] = defaultdict(list)
-
-        for (stage, actor_idx), client in zip(client_tasks, clients):
-            try:
-                actor_response = _DungeonActorResponse.model_validate_json(
-                    extract_json_from_code_block(client.response_content)
-                )
-            except Exception as e:
+            if not success or actor_bp is None:
                 logger.error(
-                    f"[GenerateDungeonActorsSystem] Stage '{stage.stage_name}' actor[{actor_idx + 1}] 解析失败，该条跳过: {e}\n"
-                    f"原始内容:\n{client.response_content}"
+                    f"[GenerateDungeonActorsSystem] Stage '{stage.stage_name}' "
+                    f"actor[{actor_idx + 1}] 生成失败，该条跳过"
                 )
-                continue
-            stage_actors[stage.stage_name].append(
-                DungeonActorBlueprint(
-                    actor_name=actor_response.actor_name,
-                    character_sheet_name=actor_response.character_sheet_name,
-                    profile=actor_response.profile,
-                    base_body=actor_response.base_body,
-                )
-            )
+                return
 
-        # 组装 DungeonBlueprint
+            actor_results[result_idx] = actor_bp
+
+        await asyncio.gather(
+            *[
+                _run_single_actor(stage, actor_idx, i)
+                for i, (stage, actor_idx) in enumerate(client_tasks)
+            ]
+        )
+
+        # 按 stage 归组并组装 DungeonBlueprint
+        stage_actors: dict[str, List[DungeonActorBlueprint]] = defaultdict(list)
+        for (stage, _), actor_bp in zip(client_tasks, actor_results):
+            if actor_bp is not None:
+                stage_actors[stage.stage_name].append(actor_bp)
+
         blueprint = DungeonBlueprint(
             dungeon_name=stages_file.dungeon_name,
             ecology=stages_file.ecology,

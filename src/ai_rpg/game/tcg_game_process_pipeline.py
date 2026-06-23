@@ -40,7 +40,7 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
         StageDescriptionSystem,
     )
     from ..systems.home_npc_plan_system import HomeNpcPlanSystem
-    from ..systems.home_player_context_system import HomePlayerContextSystem
+    from ..systems.home_player_plan_system import HomePlayerPlanSystem
     from ..systems.craft_consumable_action_system import CraftConsumableActionSystem
     from ..systems.craft_gear_item_action_system import CraftGearItemActionSystem
     from ..systems.craft_costume_item_action_system import CraftCostumeItemActionSystem
@@ -57,7 +57,7 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
 
     # 规划系统-场景描述系统-角色系统
     processors.add(StageDescriptionSystem(game=tcg_game, enable_debug_cache=True))
-    processors.add(HomePlayerContextSystem(tcg_game))
+    processors.add(HomePlayerPlanSystem(tcg_game))
     processors.add(HomeNpcPlanSystem(tcg_game))
 
     # 动作处理相关的系统

@@ -1,9 +1,4 @@
-"""家园玩家上下文注入系统。
-
-响应 PlanAction 触发，仅处理玩家实体：
-将玩家当前动作（或被动观察）序列化为标准 ActionPlanResponse，
-写入对话历史，与 NPC 路径保持一致的 context 格式。
-"""
+"""家园玩家上下文注入系统。"""
 
 from typing import Dict, Final, final, Dict, List
 from ..models.messages import AIMessage
@@ -16,7 +11,6 @@ from ..models import (
     WhisperAction,
     PlanAction,
     TransStageAction,
-    HomeComponent,
     MindEvent,
     ActorComponent,
     PlayerComponent,
@@ -28,22 +22,15 @@ from .home_planning_utils import (
     build_action_planning_prompt,
     build_compressed_planning_prompt,
     format_mind_notification,
+    get_other_actors_appearances,
+    get_available_home_stages,
 )
 
 
 #######################################################################################################################################
 @final
-class HomePlayerContextSystem(ReactiveProcessor):
-    """家园玩家上下文注入系统。
-
-    响应式处理器，监听 PlanAction 组件触发，仅对持有 PlayerComponent 的实体生效。
-    不调用 LLM，而是将玩家当前动作组件序列化为 ActionPlanResponse 写入对话历史，
-    并自增全局家园规划回合计数器（应注册在 HomeActorPlanSystem 之前）。
-
-    Attributes:
-        _game: 游戏实例引用
-        _use_compressed_prompt: 是否使用压缩 prompt 机制，与 HomeActorPlanSystem 保持一致。
-    """
+class HomePlayerPlanSystem(ReactiveProcessor):
+    """家园玩家上下文注入系统。"""
 
     def __init__(self, game: TCGGame, use_compressed_prompt: bool = True) -> None:
         super().__init__(game)
@@ -85,13 +72,15 @@ class HomePlayerContextSystem(ReactiveProcessor):
             planning_turn_index: 全局家园规划回合编号
         """
         current_stage = self._game.resolve_stage_entity(player_entity)
-        assert current_stage is not None
+        assert (
+            current_stage is not None
+        ), f"玩家 {player_entity.name} 不在任何场景中，无法注入家园规划上下文。"
 
-        other_actors_appearances = self._get_other_actors_appearances(
-            player_entity, current_stage
+        other_actors_appearances = get_other_actors_appearances(
+            self._game, player_entity, current_stage
         )
-        available_home_stages = self._get_available_home_stages(
-            player_entity, current_stage
+        available_home_stages = get_available_home_stages(
+            self._game, player_entity, current_stage
         )
 
         stage_narrative = current_stage.get(StageDescriptionComponent).narrative
@@ -192,39 +181,39 @@ class HomePlayerContextSystem(ReactiveProcessor):
         return response
 
     #######################################################################################################################################
-    def _get_other_actors_appearances(
-        self, actor_entity: Entity, current_stage: Entity
-    ) -> Dict[str, str]:
-        """获取当前场景内除自身以外的所有角色外观描述。
+    # def _get_other_actors_appearances(
+    #     self, actor_entity: Entity, current_stage: Entity
+    # ) -> Dict[str, str]:
+    #     """获取当前场景内除自身以外的所有角色外观描述。
 
-        Args:
-            actor_entity: 当前角色实体（将被排除）
-            current_stage: 当前所在场景实体
+    #     Args:
+    #         actor_entity: 当前角色实体（将被排除）
+    #         current_stage: 当前所在场景实体
 
-        Returns:
-            其他角色的外观描述（角色名 -> 外观）
-        """
-        appearances = self._game.get_actor_appearances_in_stage(current_stage)
-        appearances.pop(actor_entity.name, None)
-        return appearances
+    #     Returns:
+    #         其他角色的外观描述（角色名 -> 外观）
+    #     """
+    #     appearances = self._game.get_actor_appearances_in_stage(current_stage)
+    #     appearances.pop(actor_entity.name, None)
+    #     return appearances
 
-    #######################################################################################################################################
-    def _get_available_home_stages(
-        self, actor_entity: Entity, current_stage: Entity
-    ) -> set[Entity]:
-        """获取玩家可前往的家园场景集合（排除当前场景）。
+    # #######################################################################################################################################
+    # def _get_available_home_stages(
+    #     self, actor_entity: Entity, current_stage: Entity
+    # ) -> set[Entity]:
+    #     """获取玩家可前往的家园场景集合（排除当前场景）。
 
-        Args:
-            actor_entity: 玩家实体
-            current_stage: 当前所在场景实体
+    #     Args:
+    #         actor_entity: 玩家实体
+    #         current_stage: 当前所在场景实体
 
-        Returns:
-            可前往的家园场景实体集合
-        """
-        home_stage_entities = self._game.get_group(
-            Matcher(all_of=[HomeComponent])
-        ).entities.copy()
-        home_stage_entities.discard(current_stage)
-        return home_stage_entities
+    #     Returns:
+    #         可前往的家园场景实体集合
+    #     """
+    #     home_stage_entities = self._game.get_group(
+    #         Matcher(all_of=[HomeComponent])
+    #     ).entities.copy()
+    #     home_stage_entities.discard(current_stage)
+    #     return home_stage_entities
 
     #######################################################################################################################################

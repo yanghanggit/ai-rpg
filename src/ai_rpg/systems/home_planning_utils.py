@@ -1,23 +1,17 @@
 """家园规划系统共享工具模块。
-
-提供 HomeNpcPlanSystem 与 HomePlayerContextSystem 共用的：
-  - ActionPlanResponse：行动规划响应数据模型
-  - _PLAYER_ACTIVE_ACTION_TYPES：玩家主动行动类型常量
-  - _format_mind_notification：内心活动通知格式化
-  - _build_action_planning_prompt：完整版行动规划提示词构建
-  - _build_compressed_planning_prompt：压缩版行动规划提示词构建
-  - is_player_active：判断玩家本轮是否有主动行动
 """
 
-from typing import Any, Dict, Final, List
+from typing import Any, Dict, Final, List, Set
 from pydantic import BaseModel, field_validator
 from ..models import (
     AnnounceAction,
     SpeakAction,
     WhisperAction,
     TransStageAction,
+    HomeComponent,
 )
 from ..game import TCGGame
+from ..entitas import Entity, Matcher
 
 # 玩家「主动行动」对应的 Action 组件类型集合。
 # 当任一玩家持有其中任意类型时，视为本轮「有主动行动」，NPC 将进入待命模式。
@@ -242,3 +236,41 @@ def is_player_active(game: TCGGame) -> bool:
     return any(
         player_entity.has(action_type) for action_type in _PLAYER_ACTIVE_ACTION_TYPES
     )
+
+
+#######################################################################################################################################
+def get_other_actors_appearances(
+    game: TCGGame, actor_entity: Entity, current_stage: Entity
+) -> Dict[str, str]:
+    """获取当前场景内除自身以外的所有角色外观描述。
+
+    Args:
+        actor_entity: 当前角色实体（将被排除）
+        current_stage: 当前所在场景实体
+
+    Returns:
+        其他角色的外观描述（角色名 -> 外观）
+    """
+    appearances = game.get_actor_appearances_in_stage(current_stage)
+    appearances.pop(actor_entity.name, None)
+    return appearances
+
+
+#######################################################################################################################################
+def get_available_home_stages(
+    game: TCGGame, actor_entity: Entity, current_stage: Entity
+) -> Set[Entity]:
+    """获取玩家可前往的家园场景集合（排除当前场景）。
+
+    Args:
+        actor_entity: 玩家实体
+        current_stage: 当前所在场景实体
+
+    Returns:
+        可前往的家园场景实体集合
+    """
+    home_stage_entities = game.get_group(
+        Matcher(all_of=[HomeComponent])
+    ).entities.copy()
+    home_stage_entities.discard(current_stage)
+    return home_stage_entities

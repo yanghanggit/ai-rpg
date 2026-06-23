@@ -23,6 +23,7 @@ DUNGEONS_DIR: Path = Path(".dungeons")
 DUNGEONS_DIR.mkdir(parents=True, exist_ok=True)
 assert DUNGEONS_DIR.exists(), f"找不到目录: {DUNGEONS_DIR}"
 
+
 ###########################################################################################################################################
 # 游戏世界运行时数据目录
 WORLDS_DIR: Path = Path(".worlds")
@@ -34,6 +35,14 @@ assert WORLDS_DIR.exists(), f"找不到目录: {WORLDS_DIR}"
 # 开发期 AI 响应磁盘缓存目录（基于 context+prompt hash，避免重复调用 AI 接口）
 DEBUG_CACHE_DIR: Path = Path(".debug_cache")
 DEBUG_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+assert DEBUG_CACHE_DIR.exists(), f"找不到目录: {DEBUG_CACHE_DIR}"
+
+
+###########################################################################################################################################
+# 地下城生成过程文件目录（Steps 1-3 中间产物，供各步骤系统读写，便于调试观察）
+DUNGEON_PROCESS_DIR: Path = DEBUG_CACHE_DIR / "_process"
+DUNGEON_PROCESS_DIR.mkdir(parents=True, exist_ok=True)
+assert DUNGEON_PROCESS_DIR.exists(), f"找不到目录: {DUNGEON_PROCESS_DIR}"
 
 
 ###########################################################################################################################################
@@ -41,4 +50,3 @@ DEBUG_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 GAME_1: Final[str] = (
     "Game1"  # unity 客户端目前是一定会链接到这个游戏的，所以这个名字暂时不能改。
 )
-# GAME_2: Final[str] = "Game2"  # 开发测试用的第二个游戏。

@@ -252,8 +252,12 @@ def create_dungeon_generate_pipeline(
 
     ### 不这样就循环引用
     from ..game.tcg_game import TCGGame
-    from ..systems.generate_dungeon_action_system import GenerateDungeonActionSystem
-    from ..systems.illustrate_dungeon_action_system import IllustrateDungeonActionSystem
+    from ..systems.generate_dungeon_ecology_system import GenerateDungeonEcologySystem
+    from ..systems.generate_dungeon_stages_system import GenerateDungeonStagesSystem
+    from ..systems.generate_dungeon_actors_system import GenerateDungeonActorsSystem
+    from ..systems.assemble_dungeon_system import AssembleDungeonSystem
+
+    # from ..systems.illustrate_dungeon_action_system import IllustrateDungeonActionSystem
     from ..systems.epilogue_system import EpilogueSystem
     from ..systems.prologue_system import PrologueSystem
     from ..systems.action_cleanup_system import ActionCleanupSystem
@@ -265,11 +269,14 @@ def create_dungeon_generate_pipeline(
     # 起始系统
     processors.add(PrologueSystem(tcg_game))
 
-    # 地下城文本数据生成系统（Steps 1-4）
-    processors.add(GenerateDungeonActionSystem(tcg_game))
+    # 地下城生成流程（Steps 1-4，在同一次 pipeline.process() 内顺序触发）
+    processors.add(GenerateDungeonEcologySystem(tcg_game))  # Step 1: 生态环境生成
+    processors.add(GenerateDungeonStagesSystem(tcg_game))  # Step 2: 场景批量生成
+    processors.add(GenerateDungeonActorsSystem(tcg_game))  # Step 3: 怪物并发生成
+    processors.add(AssembleDungeonSystem(tcg_game))  # Step 4: 实体树组装
 
     # 地下城图片生成系统（Step 5）
-    processors.add(IllustrateDungeonActionSystem(tcg_game))
+    # processors.add(IllustrateDungeonActionSystem(tcg_game))
 
     # 清除动作相关的临时状态、标记等，准备下一轮输入
     processors.add(ActionCleanupSystem(tcg_game))

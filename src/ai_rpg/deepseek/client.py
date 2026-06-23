@@ -205,7 +205,7 @@ class DeepSeekClient:
         temperature: Optional[float] = None,
         compressed_prompt: Optional[str] = None,
         tools: Optional[Sequence[ToolDefinition]] = None,
-        tool_choice: Optional[Literal["auto", "none"]] = None,
+        tool_choice: Optional[Literal["auto", "none", "required"]] = None,
     ) -> None:
         """初始化 DeepSeek 直连客户端
 
@@ -218,7 +218,7 @@ class DeepSeekClient:
             timeout: 请求超时（秒），默认 30
             compressed_prompt: 写入对话历史的压缩版提示词；若为 None 则使用 prompt
             tools: 工具定义列表；传入后自动启用 tool calling
-            tool_choice: 工具选择策略，默认：有 tools 时为 "auto"，否则为 "none"
+            tool_choice: 工具选择策略，默认：有 tools 时为 "required"，否则为 "none"
         """
         assert name != "", "name should not be empty"
         _tools: List[ToolDefinition] = list(tools) if tools else []
@@ -236,8 +236,10 @@ class DeepSeekClient:
         self._thinking: Final[bool] = thinking
         self._timeout: Final[int] = timeout if timeout is not None else 30
         self._tools: Final[List[ToolDefinition]] = _tools
-        self._tool_choice: Final[Literal["auto", "none"]] = (
-            tool_choice if tool_choice is not None else ("auto" if _tools else "none")
+        self._tool_choice: Final[Literal["auto", "none", "required"]] = (
+            tool_choice
+            if tool_choice is not None
+            else ("required" if _tools else "none")
         )
 
         assert self._timeout > 0, "timeout should be positive"

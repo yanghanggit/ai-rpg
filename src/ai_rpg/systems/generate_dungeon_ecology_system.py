@@ -1,11 +1,10 @@
 """地下城生态环境生成系统"""
 
-import json
 from pathlib import Path
-from typing import Callable, Dict, Final, List, Optional, final, override
+from typing import Dict, Final, List, Optional, final, override
 from loguru import logger
 from pydantic import BaseModel
-from ..deepseek import DeepSeekClient, ToolDefinition, ToolFunction
+from ..deepseek import agent_loop, ToolDefinition, ToolFunction
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.config import DUNGEON_PROCESS_DIR
 from ..game.tcg_game import TCGGame
@@ -15,7 +14,6 @@ from ..models import (
     GenerateDungeonStagesAction,
     WorldComponent,
 )
-from ..models.messages import BaseMessage, HumanMessage, ToolMessage
 
 
 ####################################################################################################################################
@@ -63,8 +61,6 @@ _READ_ECOLOGY_FILE_TOOL: Final[ToolDefinition] = ToolDefinition(
         },
     )
 )
-
-_MAX_ROUNDS: Final[int] = 5
 
 
 ####################################################################################################################################
@@ -177,82 +173,20 @@ class GenerateDungeonEcologySystem(ReactiveProcessor):
                 return f"错误：文件不存在 {file_path}"
             return file_path.read_text(encoding="utf-8")
 
-        handlers: Dict[str, Callable[..., str]] = {
-            "record_dungeon_ecology": _handle_record_dungeon_ecology,
-            "read_ecology_file": _handle_read_ecology_file,
-        }
-        tools = [_ECOLOGY_TOOL, _READ_ECOLOGY_FILE_TOOL]
-
-        # 浅拷贝 context，不污染原始队列
-        history: List[BaseMessage] = list(
-            self._game.get_agent_context(world_system_entity).context
+        success = await agent_loop(
+            name=world_system_entity.name,
+            prompt=_build_dungeon_ecology_prompt(),
+            context=self._game.get_agent_context(world_system_entity).context,
+            tools=[_ECOLOGY_TOOL, _READ_ECOLOGY_FILE_TOOL],
+            handlers={
+                "record_dungeon_ecology": _handle_record_dungeon_ecology,
+                "read_ecology_file": _handle_read_ecology_file,
+            },
+            max_rounds=5,
         )
-        prompt = _build_dungeon_ecology_prompt()
 
-        for round_num in range(1, _MAX_ROUNDS + 1):
-            logger.info(
-                f"[GenerateDungeonEcologySystem] Step 1 第 {round_num}/{_MAX_ROUNDS} 轮"
-            )
-            client = DeepSeekClient(
-                name=world_system_entity.name,
-                prompt=prompt,
-                context=history,
-                tools=tools,
-                tool_choice="auto",
-            )
-            await client.chat()
-
-            if client.finish_reason == "stop":
-                logger.info(
-                    f"[GenerateDungeonEcologySystem] Step 1 LLM 完成（stop），第 {round_num} 轮"
-                )
-                break
-
-            if client.finish_reason != "tool_calls" or not client.tool_calls:
-                logger.error(
-                    f"[GenerateDungeonEcologySystem] Step 1 意外的 "
-                    f"finish_reason={client.finish_reason!r}，中止"
-                )
-                return
-
-            # 追加本轮消息到 history
-            if prompt:
-                history.append(HumanMessage(content=prompt))
-                prompt = ""  # 后续轮次使用 continuation 模式
-
-            # 追加 LLM 回复到 history
-            ai_message = client.response_ai_message
-            assert (
-                ai_message is not None
-            ), "[GenerateDungeonEcologySystem] Step 1 LLM 回复消息为空"
-            history.append(ai_message)
-
-            # 按名称分发 tool calls
-            for tc in client.tool_calls:
-
-                handler = handlers.get(tc.function.name)
-                if handler is None:
-                    logger.warning(
-                        f"[GenerateDungeonEcologySystem] 未知工具: {tc.function.name!r}"
-                    )
-                    result = f"错误：未知工具 {tc.function.name!r}"
-                else:
-                    try:
-                        result = handler(**json.loads(tc.function.arguments))
-                    except Exception as e:
-                        logger.error(
-                            f"[GenerateDungeonEcologySystem] 工具 "
-                            f"{tc.function.name!r} 执行失败: {e}"
-                        )
-                        result = f"错误：工具执行失败 {e}"
-
-                # 追加工具执行结果到 history
-                history.append(ToolMessage(content=result, tool_call_id=tc.id))
-        else:
-            logger.error(
-                f"[GenerateDungeonEcologySystem] Step 1 达到最大轮次限制 "
-                f"{_MAX_ROUNDS}，中止"
-            )
+        if not success:
+            logger.error("[GenerateDungeonEcologySystem] Step 1 agent_loop 失败，中止")
             return
 
         if ecology_file is None:

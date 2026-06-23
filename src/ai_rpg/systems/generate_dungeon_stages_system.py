@@ -3,8 +3,7 @@
 from pathlib import Path
 from typing import Any, Dict, Final, List, final, override
 from loguru import logger
-from pydantic import BaseModel
-from ..deepseek import agent_loop, ToolDefinition, ToolFunction
+from ..deepseek import agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.config import DUNGEON_PROCESS_DIR
 from ..game.tcg_game import TCGGame
@@ -14,83 +13,13 @@ from ..models import (
     GenerateDungeonStagesAction,
     WorldComponent,
 )
-from .generate_dungeon_ecology_system import DungeonEcologyFile
-
-
-# _MAX_ROUNDS: Final[int] = 5
-
-
-####################################################################################################################################
-_READ_STAGES_FILE_TOOL: Final[ToolDefinition] = ToolDefinition(
-    function=ToolFunction(
-        name="read_stages_file",
-        description="读取已写入磁盘的地下城场景中间文件，返回其 JSON 内容。",
-        parameters={
-            "type": "object",
-            "properties": {
-                "dungeon_name": {
-                    "type": "string",
-                    "description": "地下城全名，与 record_dungeon_stages 中填写的 dungeon_name 字段一致",
-                },
-            },
-            "required": ["dungeon_name"],
-        },
-    )
+from .dungeon_generation import (
+    DungeonEcologyData,
+    DungeonStageData,
+    DungeonStagesData,
+    READ_STAGES_FILE_TOOL,
+    build_stages_tool,
 )
-
-
-####################################################################################################################################
-def _build_stages_tool(stage_count: int) -> ToolDefinition:
-    """动态构建 record_dungeon_stages 工具定义，将 minItems/maxItems 约束绑定到 stage_count。"""
-    return ToolDefinition(
-        function=ToolFunction(
-            name="record_dungeon_stages",
-            description=f"记录地下城全部 {stage_count} 个战斗场景的名称、英文标识、环境描写与生物种类数量。",
-            parameters={
-                "type": "object",
-                "properties": {
-                    "dungeon_name": {
-                        "type": "string",
-                        "description": "地下城全名，与 Step 1 ecology 文件中的 dungeon_name 一致",
-                    },
-                    "stages": {
-                        "type": "array",
-                        "minItems": stage_count,
-                        "maxItems": stage_count,
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "stage_name": {
-                                    "type": "string",
-                                    "description": "场景全名，采用「场景.XXXX」命名格式，体现该局部区域的地貌特征，所有场景名称不重复",
-                                },
-                                "profile_name": {
-                                    "type": "string",
-                                    "description": "场景英文标识，snake_case 格式（如 forest_edge、deep_pool），所有标识不重复",
-                                },
-                                "profile": {
-                                    "type": "string",
-                                    "description": "该场景的感官环境描写，50-100字，只描述「这里有什么」，禁止出现生物名称及威胁评价性词汇",
-                                },
-                                "actor_count": {
-                                    "type": "integer",
-                                    "enum": [1, 2],
-                                    "description": "该场景内栖居生物的种类数量；入口区域为 1，深处场景可为 2",
-                                },
-                            },
-                            "required": [
-                                "stage_name",
-                                "profile_name",
-                                "profile",
-                                "actor_count",
-                            ],
-                        },
-                    },
-                },
-                "required": ["dungeon_name", "stages"],
-            },
-        )
-    )
 
 
 ####################################################################################################################################
@@ -121,23 +50,6 @@ def _build_dungeon_stages_prompt(
 
 工作流程：调用 record_dungeon_stages 写入全部场景数据，确认无误后结束本次对话。
 如需核查已写入内容，可先调用 read_stages_file，再决定是否结束。"""
-
-
-####################################################################################################################################
-class _DungeonStageResponse(BaseModel):
-    stage_name: str = ""
-    profile_name: str = ""
-    profile: str = ""
-    actor_count: int = 1
-
-
-####################################################################################################################################
-class DungeonStagesFile(BaseModel):
-    """Step 2 中间文件数据模型，写入 _step2_stages.json。"""
-
-    dungeon_name: str = ""
-    ecology: str = ""
-    stage_responses: List[_DungeonStageResponse] = []
 
 
 ####################################################################################################################################
@@ -194,7 +106,7 @@ class GenerateDungeonStagesSystem(ReactiveProcessor):
             DUNGEON_PROCESS_DIR / f"{dungeon_name}_step1_ecology.json"
         )
         try:
-            ecology_file = DungeonEcologyFile.model_validate_json(
+            ecology_file = DungeonEcologyData.model_validate_json(
                 ecology_file_path.read_text(encoding="utf-8")
             )
         except Exception as e:
@@ -204,23 +116,23 @@ class GenerateDungeonStagesSystem(ReactiveProcessor):
             )
             return
 
-        stages_file: DungeonStagesFile | None = None
+        stages_file: DungeonStagesData | None = None
 
         def _handle_record_dungeon_stages(dungeon_name: str, stages: List[Any]) -> str:
             nonlocal stages_file
-            stage_responses = [_DungeonStageResponse(**s) for s in stages]
-            stages_file = DungeonStagesFile(
+            stage_items = [DungeonStageData(**s) for s in stages]
+            stages_file = DungeonStagesData(
                 dungeon_name=dungeon_name,
                 ecology=ecology_file.ecology,
-                stage_responses=stage_responses,
+                stages=stage_items,
             )
             file_path: Path = DUNGEON_PROCESS_DIR / f"{dungeon_name}_step2_stages.json"
             file_path.write_text(
                 stages_file.model_dump_json(indent=4), encoding="utf-8"
             )
-            for i, stage in enumerate(stage_responses, start=1):
+            for i, stage in enumerate(stage_items, start=1):
                 logger.info(
-                    f"[GenerateDungeonStagesSystem] Stage {i}/{len(stage_responses)}:\n"
+                    f"[GenerateDungeonStagesSystem] Stage {i}/{len(stage_items)}:\n"
                     f"  stage_name:   {stage.stage_name}\n"
                     f"  profile_name: {stage.profile_name}\n"
                     f"  profile:      {stage.profile}"
@@ -228,11 +140,11 @@ class GenerateDungeonStagesSystem(ReactiveProcessor):
             logger.info(
                 f"[GenerateDungeonStagesSystem] record_dungeon_stages 执行:\n"
                 f"  dungeon_name: {dungeon_name}\n"
-                f"  stage_count:  {len(stage_responses)}\n"
+                f"  stage_count:  {len(stage_items)}\n"
                 f"  → {file_path}"
             )
             return (
-                f"已记录地下城「{dungeon_name}」的 {len(stage_responses)} 个场景。"
+                f"已记录地下城「{dungeon_name}」的 {len(stage_items)} 个场景。"
                 f"中间文件已写入: {file_path}"
             )
 
@@ -251,8 +163,8 @@ class GenerateDungeonStagesSystem(ReactiveProcessor):
             ),
             context=self._game.get_agent_context(world_system_entity).context,
             tools=[
-                _build_stages_tool(ecology_file.stage_count),
-                _READ_STAGES_FILE_TOOL,
+                build_stages_tool(ecology_file.stage_count),
+                READ_STAGES_FILE_TOOL,
             ],
             handlers={
                 "record_dungeon_stages": _handle_record_dungeon_stages,
@@ -274,8 +186,8 @@ class GenerateDungeonStagesSystem(ReactiveProcessor):
 
         logger.info(
             f"[GenerateDungeonStagesSystem] Step 2 完成:\n"
-            f"  stages ({len(stages_file.stage_responses)}): "
-            + ", ".join(s.stage_name for s in stages_file.stage_responses)
+            f"  stages ({len(stages_file.stages)}): "
+            + ", ".join(s.stage_name for s in stages_file.stages)
             + f"\n  → {DUNGEON_PROCESS_DIR / f'{dungeon_name}_step2_stages.json'}"
         )
 

@@ -3,8 +3,7 @@
 from pathlib import Path
 from typing import Dict, Final, List, Optional, final, override
 from loguru import logger
-from pydantic import BaseModel
-from ..deepseek import agent_loop, ToolDefinition, ToolFunction
+from ..deepseek import agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.config import DUNGEON_PROCESS_DIR
 from ..game.tcg_game import TCGGame
@@ -14,52 +13,10 @@ from ..models import (
     GenerateDungeonStagesAction,
     WorldComponent,
 )
-
-
-####################################################################################################################################
-_ECOLOGY_TOOL: Final[ToolDefinition] = ToolDefinition(
-    function=ToolFunction(
-        name="record_dungeon_ecology",
-        description="记录地下城的名称、生态环境描写与场景数量。",
-        parameters={
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "description": "地下城全名，采用「地下城.XXXX」命名格式，体现地貌特征",
-                },
-                "ecology": {
-                    "type": "string",
-                    "description": "该地点的生态环境写照，100-200字，只描述「这里有什么」，禁止出现生物名称、威胁评价性词汇",
-                },
-                "stage_count": {
-                    "type": "integer",
-                    "enum": [2, 3],
-                    "description": "该地下城应包含的战斗场景数量，依地形规模与层次丰富程度选择",
-                },
-            },
-            "required": ["name", "ecology", "stage_count"],
-        },
-    )
-)
-
-
-####################################################################################################################################
-_READ_ECOLOGY_FILE_TOOL: Final[ToolDefinition] = ToolDefinition(
-    function=ToolFunction(
-        name="read_ecology_file",
-        description="读取已写入磁盘的地下城生态环境中间文件，返回其 JSON 内容。",
-        parameters={
-            "type": "object",
-            "properties": {
-                "dungeon_name": {
-                    "type": "string",
-                    "description": "地下城全名，与 record_dungeon_ecology 中填写的 name 字段一致",
-                },
-            },
-            "required": ["dungeon_name"],
-        },
-    )
+from .dungeon_generation import (
+    DungeonEcologyData,
+    ECOLOGY_TOOL,
+    READ_ECOLOGY_FILE_TOOL,
 )
 
 
@@ -82,15 +39,6 @@ def _build_dungeon_ecology_prompt() -> str:
 
 工作流程：调用 record_dungeon_ecology 写入生态数据，确认无误后结束本次对话。
 如需核查已写入内容，可先调用 read_ecology_file，再决定是否结束。"""
-
-
-####################################################################################################################################
-class DungeonEcologyFile(BaseModel):
-    """Step 1 中间文件数据模型，写入 _step1_ecology.json。"""
-
-    dungeon_name: str = ""
-    ecology: str = ""
-    stage_count: int = 2
 
 
 ####################################################################################################################################
@@ -141,13 +89,13 @@ class GenerateDungeonEcologySystem(ReactiveProcessor):
     async def _run(self, entity: Entity, world_system_entity: Entity) -> None:
         logger.info(f"[GenerateDungeonEcologySystem] Step 1 开始: entity={entity.name}")
 
-        ecology_file: Optional[DungeonEcologyFile] = None
+        ecology_file: Optional[DungeonEcologyData] = None
 
         def _handle_record_dungeon_ecology(
             name: str, ecology: str, stage_count: int
         ) -> str:
             nonlocal ecology_file
-            ecology_file = DungeonEcologyFile(
+            ecology_file = DungeonEcologyData(
                 dungeon_name=name,
                 ecology=ecology,
                 stage_count=stage_count,
@@ -177,7 +125,7 @@ class GenerateDungeonEcologySystem(ReactiveProcessor):
             name=world_system_entity.name,
             prompt=_build_dungeon_ecology_prompt(),
             context=self._game.get_agent_context(world_system_entity).context,
-            tools=[_ECOLOGY_TOOL, _READ_ECOLOGY_FILE_TOOL],
+            tools=[ECOLOGY_TOOL, READ_ECOLOGY_FILE_TOOL],
             handlers={
                 "record_dungeon_ecology": _handle_record_dungeon_ecology,
                 "read_ecology_file": _handle_read_ecology_file,

@@ -5,8 +5,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Dict, Final, List, Optional, final, override
 from loguru import logger
-from pydantic import BaseModel
-from ..deepseek import agent_loop, ToolDefinition, ToolFunction
+from ..deepseek import agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.config import DUNGEON_PROCESS_DIR
 from ..game.tcg_game import TCGGame
@@ -16,37 +15,13 @@ from ..models import (
     GenerateDungeonActorsAction,
     WorldComponent,
 )
-from .generate_dungeon_stages_system import DungeonStagesFile, _DungeonStageResponse
-
-
-####################################################################################################################################
-_ACTOR_TOOL: Final[ToolDefinition] = ToolDefinition(
-    function=ToolFunction(
-        name="record_dungeon_actor",
-        description="记录该场景中一个标居怪物的全部设定字段。",
-        parameters={
-            "type": "object",
-            "properties": {
-                "actor_name": {
-                    "type": "string",
-                    "description": "角色全名，采用「常物/精怪/大妖.XXXX」格式，XXXX 体现该生物的特征",
-                },
-                "character_sheet_name": {
-                    "type": "string",
-                    "description": "角色英文标识，snake_case 格式（如 bone_crawler、mist_spirit）",
-                },
-                "profile": {
-                    "type": "string",
-                    "description": "第一人称 AI 扮演描述，50-100字，描述该生物的性格、行为倾向、与环境的关系；禁止出现战斗数值、技能名称、等级等游戏机制词汇",
-                },
-                "base_body": {
-                    "type": "string",
-                    "description": "第三人称外观描述，30-60字，描述该生物的形态、材质、动态特征；禁止出现战斗数值、技能名称、等级等游戏机制词汇",
-                },
-            },
-            "required": ["actor_name", "character_sheet_name", "profile", "base_body"],
-        },
-    )
+from .dungeon_generation import (
+    ACTOR_TOOL,
+    DungeonActorBlueprint,
+    DungeonBlueprint,
+    DungeonStageBlueprint,
+    DungeonStageData,
+    DungeonStagesData,
 )
 
 
@@ -88,44 +63,6 @@ def _build_dungeon_actor_prompt(
   - 禁忌：不出现战斗数值、技能名称、等级等游戏机制词汇
 
 工作流程：调用 record_dungeon_actor 写入怪物数据，确认无误后结束本次对话。"""
-
-
-####################################################################################################################################
-class DungeonActorBlueprint(BaseModel):
-    """地下城怪物实体创建所需的原始字段。供 assemble_dungeon_system 导入。"""
-
-    actor_name: str = ""
-    character_sheet_name: str = ""
-    profile: str = ""
-    base_body: str = ""
-
-
-####################################################################################################################################
-class DungeonStageBlueprint(BaseModel):
-    """地下城单个场景实体创建所需的原始字段（包含配对的怪物蓝图）。供 assemble_dungeon_system 导入。"""
-
-    stage_name: str = ""
-    profile_name: str = ""
-    profile: str = ""
-    actors: List[DungeonActorBlueprint] = []
-    image_url: str = ""
-
-
-####################################################################################################################################
-class DungeonBlueprint(BaseModel):
-    """地下城完整蓝图，承载 Steps 1-3 的全部产出。供 assemble_dungeon_system 导入。
-
-    Attributes:
-        dungeon_name: 地下城全名，格式为「地下城.XXXX」
-        ecology: 地下城整体生态环境描述
-        stages: 已完整配对（场景+怪物）的场景蓝图列表
-        image_url: 封面图片 URL，Step 3 写入时为空，由 IllustrateDungeonActionSystem 填充
-    """
-
-    dungeon_name: str = ""
-    ecology: str = ""
-    stages: List[DungeonStageBlueprint] = []
-    image_url: str = ""
 
 
 ####################################################################################################################################
@@ -182,7 +119,7 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
             DUNGEON_PROCESS_DIR / f"{dungeon_name}_step2_stages.json"
         )
         try:
-            stages_file = DungeonStagesFile.model_validate_json(
+            stages_file = DungeonStagesData.model_validate_json(
                 stages_file_path.read_text(encoding="utf-8")
             )
         except Exception as e:
@@ -192,9 +129,9 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
             )
             return
 
-        if not stages_file.stage_responses:
+        if not stages_file.stages:
             logger.error(
-                f"[GenerateDungeonActorsSystem] Step 2 文件中 stage_responses 为空: {stages_file_path}"
+                f"[GenerateDungeonActorsSystem] Step 2 文件中 stages 为空: {stages_file_path}"
             )
             return
 
@@ -203,7 +140,7 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
         # 展开 (stage, actor_index) 对，每对对应一个并发 agent_loop
         client_tasks = [
             (stage, actor_idx)
-            for stage in stages_file.stage_responses
+            for stage in stages_file.stages
             for actor_idx in range(stage.actor_count)
         ]
         actor_results: List[Optional[DungeonActorBlueprint]] = [None] * len(
@@ -211,7 +148,7 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
         )
 
         async def _run_single_actor(
-            stage: _DungeonStageResponse,
+            stage: DungeonStageData,
             actor_idx: int,
             result_idx: int,
         ) -> None:
@@ -248,7 +185,7 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
                     total_actors=stage.actor_count,
                 ),
                 context=context,
-                tools=[_ACTOR_TOOL],
+                tools=[ACTOR_TOOL],
                 handlers={"record_dungeon_actor": _handle_record_dungeon_actor},
                 max_rounds=5,
             )
@@ -280,7 +217,7 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
             ecology=stages_file.ecology,
         )
 
-        for i, stage in enumerate(stages_file.stage_responses, start=1):
+        for i, stage in enumerate(stages_file.stages, start=1):
             actors = stage_actors.get(stage.stage_name, [])
             if not actors:
                 logger.error(
@@ -296,7 +233,7 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
             )
             blueprint.stages.append(stage_bp)
             logger.info(
-                f"[GenerateDungeonActorsSystem] Stage+Actors {i}/{len(stages_file.stage_responses)} 写入 blueprint:\n"
+                f"[GenerateDungeonActorsSystem] Stage+Actors {i}/{len(stages_file.stages)} 写入 blueprint:\n"
                 f"  stage_name: {stage_bp.stage_name}\n"
                 f"  actors ({len(actors)}): " + ", ".join(a.actor_name for a in actors)
             )

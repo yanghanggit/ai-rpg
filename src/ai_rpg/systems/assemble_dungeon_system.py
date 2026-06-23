@@ -21,9 +21,7 @@ from ..models import (
 from ..demo.entity_factory import create_actor, create_stage
 from ..demo.global_settings import RPG_CAMPAIGN_SETTING
 from ..demo.rpg_system_rules import RPG_SYSTEM_RULES
-from .generate_dungeon_actors_system import (
-    DungeonBlueprint,
-)
+from .dungeon_generation import DungeonBlueprint
 
 
 ####################################################################################################################################

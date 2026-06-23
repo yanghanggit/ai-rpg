@@ -14,7 +14,7 @@ from pathlib import Path
 from PyInstaller.utils.hooks import collect_submodules
 
 PROJECT_ROOT = Path(SPECPATH).parent                    # ai-rpg/
-SCRIPT     = str(PROJECT_ROOT / "scripts" / "run_tui_game_client.py")
+SCRIPT     = str(PROJECT_ROOT / "scripts" / "run_tui_client.py")
 
 block_cipher = None
 
@@ -94,7 +94,7 @@ a = Analysis(
         "langchain_core",
         "langchain_core.messages",
         # ai_rpg 内部模块（collect_submodules 递归收集，新增 Screen 无需手动维护）
-        *collect_submodules("ai_rpg.tui_client"),
+        *collect_submodules("ai_rpg.tui"),
         *collect_submodules("ai_rpg.models"),
         # 标准库可能被 PyInstaller 漏掉的
         "asyncio",

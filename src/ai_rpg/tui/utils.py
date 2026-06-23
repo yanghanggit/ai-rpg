@@ -1,4 +1,4 @@
-"""tui_client 无状态工具方法"""
+"""无状态工具方法"""
 
 from ..models.items import AnyItem, CostumeItem, ConsumableItem, GearItem, MaterialItem
 

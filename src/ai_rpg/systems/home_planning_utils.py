@@ -1,5 +1,4 @@
-"""家园规划系统共享工具模块。
-"""
+"""家园规划系统共享工具模块。"""
 
 from typing import Any, Dict, Final, List, Set
 from pydantic import BaseModel, field_validator

@@ -24,22 +24,7 @@ def _format_invalid_target_error(speaker_name: str, target_name: str) -> str:
 
 @final
 class SpeakActionSystem(ReactiveProcessor):
-    """角色说话动作系统。
-
-    响应式处理器，监听 SpeakAction 组件触发，验证对话目标的有效性，
-    并将对话事件广播到当前场景内的所有角色。
-
-    功能特点：
-    - 验证对话目标是否存在于当前场景
-    - 目标有效时广播 SpeakEvent 到当前场景所有角色
-    - 目标无效时向发起者添加错误提示消息
-    - 适用于场景内公开对话交流
-
-    广播范围：当前场景内所有角色（公开）
-
-    Attributes:
-        _game: 游戏实例引用
-    """
+    """角色说话动作系统。"""
 
     def __init__(self, game: TCGGame) -> None:
         super().__init__(game)
@@ -63,29 +48,7 @@ class SpeakActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     def _process_speak_action(self, entity: Entity) -> None:
-        """处理实体的对话动作。
-
-        该方法负责处理一个实体的对话动作，包括验证对话目标的合法性，
-        在目标有效时广播对话事件，在目标无效时添加错误提示消息。
-
-        处理流程：
-        1. 获取实体的 SpeakAction 组件
-        2. 遍历所有目标及其对话内容
-        3. 验证每个目标的交互合法性
-        4. 如果目标不存在，添加错误提示消息并跳过该目标
-        5. 如果目标有效，广播 SpeakEvent 到游戏舞台
-
-        Args:
-            entity: 包含 SpeakAction 组件的游戏实体，代表发起对话的角色
-
-        Returns:
-            None
-
-        Note:
-            - 该方法会处理 SpeakAction 中的所有目标消息
-            - 对于无效目标，会通过 append_human_message 添加提示
-            - 对于有效目标，会通过 broadcast_to_stage 广播事件
-        """
+        """处理实体的对话动作。"""
         # 处理对话动作
         speak_action = entity.get(SpeakAction)
         for target_name, speak_content in speak_action.target_messages.items():
@@ -102,6 +65,11 @@ class SpeakActionSystem(ReactiveProcessor):
                             speak_action.name, target_name
                         ),
                     )
+                continue
+
+            # 目标存在，广播对话事件
+            if speak_content is None or speak_content.strip() == "":
+                # 空内容，跳过
                 continue
 
             # 广播对话事件

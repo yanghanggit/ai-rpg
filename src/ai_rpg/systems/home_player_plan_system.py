@@ -14,6 +14,7 @@ from ..models import (
     MindEvent,
     ActorComponent,
     PlayerComponent,
+    NPCComponent,
 )
 from ..game import TCGGame
 from .home_planning_utils import (
@@ -49,6 +50,7 @@ class HomePlayerPlanSystem(ReactiveProcessor):
             entity.has(PlanAction)
             and entity.has(PlayerComponent)
             and entity.has(ActorComponent)
+            and entity.has(NPCComponent)
         )
 
     #######################################################################################################################################

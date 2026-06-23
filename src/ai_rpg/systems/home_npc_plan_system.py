@@ -63,6 +63,7 @@ class HomeNpcPlanSystem(ReactiveProcessor):
             entity.has(PlanAction)
             and entity.has(ActorComponent)
             and entity.has(NPCComponent)
+            and not entity.has(PlayerComponent)
         )
 
     #######################################################################################################################################
@@ -338,8 +339,15 @@ class HomeNpcPlanSystem(ReactiveProcessor):
         Args:
             actor_entity: 待注入的角色实体
         """
-        if not actor_entity.has(NPCComponent) or actor_entity.has(PlayerComponent):
-            return
+        # if not actor_entity.has(NPCComponent) or actor_entity.has(PlayerComponent):
+        #     return
+
+        assert actor_entity.has(
+            NPCComponent
+        ), f"actor_entity {actor_entity.name} must have NPCComponent"
+        assert not actor_entity.has(
+            PlayerComponent
+        ), f"actor_entity {actor_entity.name} must not have PlayerComponent"
 
         logger.debug(
             "这里清醒mock一个message 添加给学者的上下文，要求在后续的计划行动中不可以使用trans_stage 来移动场景！"

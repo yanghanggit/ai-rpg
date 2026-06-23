@@ -17,10 +17,6 @@ from ..models import (
 from ..utils import extract_json_from_code_block
 from .generate_dungeon_ecology_system import DungeonEcologyFile
 
-####################################################################################################################################
-# 每次地下城生成的场景数量
-_STAGE_COUNT: Final[int] = 2
-
 
 ####################################################################################################################################
 def _build_dungeon_stages_prompt(
@@ -50,6 +46,7 @@ def _build_dungeon_stages_prompt(
   - 动物活动留下的痕迹（足迹、爪痕、巢穴残迹、骨骸），不直接点名生物
   - 气味或声音等感官线索
   - 禁忌：不出现生物名称、不叙述故事、不描写角色行为、不使用「威胁」「挑战」「危险」等评价性词汇
+- **actor_count**：该场景内栗居生物的种类数量，从 1 至 2 中选择；入口区域標准为 1，深处场景可为 2
 
 ## 输出格式
 
@@ -59,7 +56,8 @@ def _build_dungeon_stages_prompt(
     {{
       "stage_name": "场景.XXX",
       "profile_name": "snake_case_name",
-      "profile": "..."
+      "profile": "...",
+      "actor_count": 1
     }}
   ]
 }}
@@ -73,6 +71,7 @@ class _DungeonStageResponse(BaseModel):
     stage_name: str = ""
     profile_name: str = ""
     profile: str = ""
+    actor_count: int = 1
 
 
 ####################################################################################################################################
@@ -159,7 +158,7 @@ class GenerateDungeonStagesSystem(ReactiveProcessor):
             prompt=_build_dungeon_stages_prompt(
                 dungeon_name=ecology_file.dungeon_name,
                 ecology=ecology_file.ecology,
-                total_stages=_STAGE_COUNT,
+                total_stages=ecology_file.stage_count,
             ),
             context=self._game.get_agent_context(world_system_entity).context,
         )

@@ -25,3 +25,4 @@
 | [装备系统（GearItem）](wiki/gear-item.md) | 装备的数据模型、战斗装备管道、EquippedGearComponent 生命周期 |
 | [材料系统（MaterialItem）](wiki/material-item.md) | 材料的数据模型、工坊合成管道、与其他物品类型的关系 |
 | [AI 操作 CLI（run_agent_game.py）](wiki/run-agent-game.md) | 快照驱动设计的意图、AI 代理操作工具与 TUI 客户端的分工 |
+| [地下城生成流程（Dungeon Generation Pipeline）](wiki/dungeon-generation.md) | 四步流水线的设计意图、LLM 决策分工、并发策略与中间文件约定 |

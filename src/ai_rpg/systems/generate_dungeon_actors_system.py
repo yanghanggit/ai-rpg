@@ -2,10 +2,8 @@
 
 from pathlib import Path
 from typing import Dict, Final, List, final, override
-
 from loguru import logger
 from pydantic import BaseModel
-
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.config import DUNGEON_PROCESS_DIR
@@ -22,9 +20,21 @@ from .generate_dungeon_stages_system import DungeonStagesFile
 
 ####################################################################################################################################
 def _build_dungeon_actor_prompt(
-    dungeon_name: str, ecology: str, stage_name: str, stage_profile: str
+    dungeon_name: str,
+    ecology: str,
+    stage_name: str,
+    stage_profile: str,
+    actor_index: int = 1,
+    total_actors: int = 1,
 ) -> str:
-    return f"""# 任务：为场景创作一个栖居怪物的设定
+    multi_actor_note = (
+        f"\n## 同场景多生物说明\n\n"
+        f"该场景共有 {total_actors} 种标居生物，当前为第 {actor_index} 个。\n"
+        f"请与同场景其他生物在形态类型、活动层高、觅食策略上有所区别，避免重复。\n"
+        if total_actors > 1
+        else ""
+    )
+    return f"""# 任务：为场景创作一个标居怪物的设定{multi_actor_note}
 
 ## 所在地下城
 
@@ -84,7 +94,7 @@ class DungeonStageBlueprint(BaseModel):
     stage_name: str = ""
     profile_name: str = ""
     profile: str = ""
-    actor: DungeonActorBlueprint = DungeonActorBlueprint()
+    actors: List[DungeonActorBlueprint] = []
     image_url: str = ""
 
 
@@ -176,21 +186,55 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
             return
 
         context = self._game.get_agent_context(world_system_entity).context
+
+        # 展开 (stage, actor_index) 对，每对对应一个并发请求
+        client_tasks = [
+            (stage, actor_idx)
+            for stage in stages_file.stage_responses
+            for actor_idx in range(stage.actor_count)
+        ]
         clients: List[DeepSeekClient] = [
             DeepSeekClient(
-                name=stage.stage_name,
+                name=f"{stage.stage_name}[{actor_idx + 1}]",
                 prompt=_build_dungeon_actor_prompt(
                     dungeon_name=stages_file.dungeon_name,
                     ecology=stages_file.ecology,
                     stage_name=stage.stage_name,
                     stage_profile=stage.profile,
+                    actor_index=actor_idx + 1,
+                    total_actors=stage.actor_count,
                 ),
                 context=context,
             )
-            for stage in stages_file.stage_responses
+            for stage, actor_idx in client_tasks
         ]
 
         await DeepSeekClient.batch_chat(clients)
+
+        # 按 stage 归组解析结果
+        from collections import defaultdict
+
+        stage_actors: dict[str, List[DungeonActorBlueprint]] = defaultdict(list)
+
+        for (stage, actor_idx), client in zip(client_tasks, clients):
+            try:
+                actor_response = _DungeonActorResponse.model_validate_json(
+                    extract_json_from_code_block(client.response_content)
+                )
+            except Exception as e:
+                logger.error(
+                    f"[GenerateDungeonActorsSystem] Stage '{stage.stage_name}' actor[{actor_idx + 1}] 解析失败，该条跳过: {e}\n"
+                    f"原始内容:\n{client.response_content}"
+                )
+                continue
+            stage_actors[stage.stage_name].append(
+                DungeonActorBlueprint(
+                    actor_name=actor_response.actor_name,
+                    character_sheet_name=actor_response.character_sheet_name,
+                    profile=actor_response.profile,
+                    base_body=actor_response.base_body,
+                )
+            )
 
         # 组装 DungeonBlueprint
         blueprint = DungeonBlueprint(
@@ -198,17 +242,11 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
             ecology=stages_file.ecology,
         )
 
-        for i, (client, stage) in enumerate(
-            zip(clients, stages_file.stage_responses), start=1
-        ):
-            try:
-                actor_response = _DungeonActorResponse.model_validate_json(
-                    extract_json_from_code_block(client.response_content)
-                )
-            except Exception as e:
+        for i, stage in enumerate(stages_file.stage_responses, start=1):
+            actors = stage_actors.get(stage.stage_name, [])
+            if not actors:
                 logger.error(
-                    f"[GenerateDungeonActorsSystem] Stage '{stage.stage_name}' 解析怪物失败，该场景不纳入 blueprint: {e}\n"
-                    f"原始内容:\n{client.response_content}"
+                    f"[GenerateDungeonActorsSystem] Stage '{stage.stage_name}' 所有 actor 解析均失败，该场景不纳入 blueprint"
                 )
                 continue
 
@@ -216,20 +254,13 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
                 stage_name=stage.stage_name,
                 profile_name=stage.profile_name,
                 profile=stage.profile,
-                actor=DungeonActorBlueprint(
-                    actor_name=actor_response.actor_name,
-                    character_sheet_name=actor_response.character_sheet_name,
-                    profile=actor_response.profile,
-                    base_body=actor_response.base_body,
-                ),
+                actors=actors,
             )
             blueprint.stages.append(stage_bp)
             logger.info(
-                f"[GenerateDungeonActorsSystem] Stage+Actor {i}/{len(stages_file.stage_responses)} 写入 blueprint:\n"
-                f"  stage_name:           {stage_bp.stage_name}\n"
-                f"  profile_name:         {stage_bp.profile_name}\n"
-                f"  actor_name:           {stage_bp.actor.actor_name}\n"
-                f"  character_sheet_name: {stage_bp.actor.character_sheet_name}"
+                f"[GenerateDungeonActorsSystem] Stage+Actors {i}/{len(stages_file.stage_responses)} 写入 blueprint:\n"
+                f"  stage_name: {stage_bp.stage_name}\n"
+                f"  actors ({len(actors)}): " + ", ".join(a.actor_name for a in actors)
             )
 
         if not blueprint.stages:
@@ -247,7 +278,7 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
             f"  dungeon_name: {blueprint.dungeon_name}\n"
             f"  stages ({len(blueprint.stages)}): "
             + ", ".join(
-                f"{s.stage_name}({s.actor.actor_name})" for s in blueprint.stages
+                f"{s.stage_name}({len(s.actors)} actors)" for s in blueprint.stages
             )
             + f"\n  → {file_path}"
         )

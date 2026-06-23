@@ -2,10 +2,8 @@
 
 from pathlib import Path
 from typing import Dict, Final, List, final, override
-
 from loguru import logger
 from pydantic import BaseModel
-
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.config import DUNGEON_PROCESS_DIR
@@ -45,9 +43,12 @@ def _build_dungeon_ecology_prompt() -> str:
 ```json
 {{
   "name": "地下城.XXX",
-  "ecology": "..."
+  "ecology": "...",
+  "stage_count": 2
 }}
 ```
+
+- **stage_count**：该地下城应包含的战斗场景数量，依地形规模与层次丰富程度从 2 至 3 中选择。
 
 严格按 JSON 格式输出，不要添加其他内容。"""
 
@@ -58,6 +59,7 @@ class _DungeonEcologyResponse(BaseModel):
 
     name: str = ""
     ecology: str = ""
+    stage_count: int = 2
 
 
 ####################################################################################################################################
@@ -66,6 +68,7 @@ class DungeonEcologyFile(BaseModel):
 
     dungeon_name: str = ""
     ecology: str = ""
+    stage_count: int = 2
 
 
 ####################################################################################################################################
@@ -137,6 +140,7 @@ class GenerateDungeonEcologySystem(ReactiveProcessor):
         ecology_file = DungeonEcologyFile(
             dungeon_name=response.name,
             ecology=response.ecology,
+            stage_count=response.stage_count,
         )
         file_path: Path = DUNGEON_PROCESS_DIR / f"{response.name}_step1_ecology.json"
         file_path.write_text(ecology_file.model_dump_json(indent=4), encoding="utf-8")

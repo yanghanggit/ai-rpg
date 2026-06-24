@@ -23,6 +23,7 @@ from ..models import (
     GenerateDungeonAction,
     DungeonGenerationComponent,
     WorldComponent,
+    WorkshopComponent,
     CraftConsumableAction,
     CraftGearItemAction,
     CraftCostumeItemAction,
@@ -511,9 +512,6 @@ def activate_craft_consumable(
         logger.error(f"激活合成消耗品失败: {error_detail}")
         return False, error_detail
 
-    player_entity = tcg_game.get_player_entity()
-    assert player_entity is not None, "玩家实体不存在！"
-
     storage_entity = tcg_game.get_storage_entity()
     assert storage_entity is not None, "全局储物箱实体不存在！"
     assert storage_entity.has(StorageComponent), "全局储物箱实体缺少 StorageComponent"
@@ -552,14 +550,29 @@ def activate_craft_consumable(
         copied.count = used
         material_items.append(copied)
 
-    if player_entity.has(CraftConsumableAction):
+    workshop_entities = tcg_game.get_group(
+        Matcher(all_of=[WorldComponent, WorkshopComponent])
+    ).entities.copy()
+
+    if not workshop_entities:
+        error_detail = "未找到工坊世界系统实体，无法激活合成动作"
+        logger.error(f"激活合成消耗品失败: {error_detail}")
+        return False, error_detail
+
+    assert len(workshop_entities) == 1, "存在多个工坊世界系统实体，数据异常"
+    workshop_entity = next(iter(workshop_entities))
+
+    if workshop_entity.has(CraftConsumableAction):
         error_detail = "合成动作已存在，请勿重复激活"
         logger.warning(f"激活合成消耗品失败: {error_detail}")
         return False, error_detail
 
-    logger.debug(f"激活合成消耗品: {player_entity.name}, 材料={material_names}")
-    player_entity.replace(
-        CraftConsumableAction, player_entity.name, list(material_names), material_items
+    logger.debug(f"激活合成消耗品: {workshop_entity.name}, 材料={material_names}")
+    workshop_entity.replace(
+        CraftConsumableAction,
+        workshop_entity.name,
+        list(material_names),
+        material_items,
     )
     return True, ""
 
@@ -587,9 +600,6 @@ def activate_craft_gear_item(
         error_detail = "材料列表为空，至少需要一种材料"
         logger.error(f"激活合成装备失败: {error_detail}")
         return False, error_detail
-
-    player_entity = tcg_game.get_player_entity()
-    assert player_entity is not None, "玩家实体不存在！"
 
     storage_entity = tcg_game.get_storage_entity()
     assert storage_entity is not None, "全局储物箱实体不存在！"
@@ -629,14 +639,26 @@ def activate_craft_gear_item(
         copied.count = used
         material_items.append(copied)
 
-    if player_entity.has(CraftGearItemAction):
+    workshop_entities = tcg_game.get_group(
+        Matcher(all_of=[WorldComponent, WorkshopComponent])
+    ).entities.copy()
+
+    if not workshop_entities:
+        error_detail = "未找到工坊世界系统实体，无法激活合成动作"
+        logger.error(f"激活合成装备失败: {error_detail}")
+        return False, error_detail
+
+    assert len(workshop_entities) == 1, "存在多个工坊世界系统实体，数据异常"
+    workshop_entity = next(iter(workshop_entities))
+
+    if workshop_entity.has(CraftGearItemAction):
         error_detail = "合成动作已存在，请勿重复激活"
         logger.warning(f"激活合成装备失败: {error_detail}")
         return False, error_detail
 
-    logger.debug(f"激活合成装备: {player_entity.name}, 材料={material_names}")
-    player_entity.replace(
-        CraftGearItemAction, player_entity.name, list(material_names), material_items
+    logger.debug(f"激活合成装备: {workshop_entity.name}, 材料={material_names}")
+    workshop_entity.replace(
+        CraftGearItemAction, workshop_entity.name, list(material_names), material_items
     )
     return True, ""
 
@@ -664,9 +686,6 @@ def activate_craft_costume_item(
         error_detail = "材料列表为空，至少需要一种材料"
         logger.error(f"激活制作时装失败: {error_detail}")
         return False, error_detail
-
-    player_entity = tcg_game.get_player_entity()
-    assert player_entity is not None, "玩家实体不存在！"
 
     storage_entity = tcg_game.get_storage_entity()
     assert storage_entity is not None, "全局储物箱实体不存在！"
@@ -706,13 +725,28 @@ def activate_craft_costume_item(
         copied.count = used
         material_items.append(copied)
 
-    if player_entity.has(CraftCostumeItemAction):
+    workshop_entities = tcg_game.get_group(
+        Matcher(all_of=[WorldComponent, WorkshopComponent])
+    ).entities.copy()
+
+    if not workshop_entities:
+        error_detail = "未找到工坊世界系统实体，无法激活制作动作"
+        logger.error(f"激活制作时装失败: {error_detail}")
+        return False, error_detail
+
+    assert len(workshop_entities) == 1, "存在多个工坊世界系统实体，数据异常"
+    workshop_entity = next(iter(workshop_entities))
+
+    if workshop_entity.has(CraftCostumeItemAction):
         error_detail = "制作动作已存在，请勿重复激活"
         logger.warning(f"激活制作时装失败: {error_detail}")
         return False, error_detail
 
-    logger.debug(f"激活制作时装: {player_entity.name}, 材料={material_names}")
-    player_entity.replace(
-        CraftCostumeItemAction, player_entity.name, list(material_names), material_items
+    logger.debug(f"激活制作时装: {workshop_entity.name}, 材料={material_names}")
+    workshop_entity.replace(
+        CraftCostumeItemAction,
+        workshop_entity.name,
+        list(material_names),
+        material_items,
     )
     return True, ""

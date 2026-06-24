@@ -10,8 +10,6 @@ from ..game.tcg_game import TCGGame
 from ..models import (
     CraftGearItemAction,
     StorageComponent,
-    WorldComponent,
-    WorkshopComponent,
 )
 from ..models.items import AnyItem, GearItem, ItemType, MaterialItem
 from ..models.stats import CharacterStats
@@ -114,29 +112,16 @@ class CraftGearItemActionSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     async def react(self, entities: List[Entity]) -> None:
-        workshop_entities = self._game.get_group(
-            Matcher(all_of=[WorldComponent, WorkshopComponent])
-        ).entities.copy()
-
-        if not workshop_entities:
-            logger.error(
-                "[CraftGearItemActionSystem] 未找到工坊世界系统实体，无法执行合成流程"
-            )
-            return
-
-        assert len(workshop_entities) == 1, "存在多个工坊世界系统实体，数据异常"
-        workshop_entity = next(iter(workshop_entities))
-
-        for entity in entities:
-            await self._craft(entity, workshop_entity)
+        assert len(entities) == 1, "同时存在多个 CraftGearItemAction，数据异常"
+        entity = entities[0]
+        await self._craft(entity)
 
     ####################################################################################################################################
-    async def _craft(self, entity: Entity, workshop_entity: Entity) -> None:
-        """对单个触发实体执行完整合成流程。
+    async def _craft(self, entity: Entity) -> None:
+        """执行完整合成流程。
 
         Args:
-            entity: 携带 CraftGearItemAction 的实体（玩家实体）
-            workshop_entity: 持有 WorkshopComponent 的世界系统实体
+            entity: 携带 CraftGearItemAction 的工坊世界系统实体
         """
         action = entity.get(CraftGearItemAction)
 
@@ -151,7 +136,7 @@ class CraftGearItemActionSystem(ReactiveProcessor):
         materials = action.material_items
 
         # 调用 LLM 生成装备
-        result = await self._call_llm(workshop_entity, materials)
+        result = await self._call_llm(entity, materials)
         if result is None:
             return
 
@@ -180,13 +165,13 @@ class CraftGearItemActionSystem(ReactiveProcessor):
     ####################################################################################################################################
     async def _call_llm(
         self,
-        workshop_entity: Entity,
+        entity: Entity,
         materials: List[MaterialItem],
     ) -> _CraftGearItemResponse | None:
-        """调用 WorkshopComponent agent 推理生成装备属性。
+        """调用工坊 agent 推理生成装备属性。
 
         Args:
-            workshop_entity: 持有 WorkshopComponent 的世界系统实体
+            entity: 携带 CraftGearItemAction 的工坊世界系统实体
             materials: 合并后的材料列表（count = 本次使用量）
 
         Returns:
@@ -194,9 +179,9 @@ class CraftGearItemActionSystem(ReactiveProcessor):
         """
         prompt = _build_craft_gear_prompt(materials)
         chat_client = DeepSeekClient(
-            name=workshop_entity.name,
+            name=entity.name,
             prompt=prompt,
-            context=self._game.get_agent_context(workshop_entity).context,
+            context=self._game.get_agent_context(entity).context,
         )
         await chat_client.chat()
 

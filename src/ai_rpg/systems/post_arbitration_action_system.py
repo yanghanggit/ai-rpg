@@ -63,20 +63,22 @@ def _build_actors_summary(game: TCGGame, actor_entities: Set[Entity]) -> str:
     """格式化场内存活角色状态摘要，供 prompt 函数复用。"""
     actor_lines: List[str] = []
     for entity in actor_entities:
-        final_stats = (
-            game.compute_character_stats(entity)
-            if entity.has(CharacterStatsComponent)
-            else None
-        )
+
+        assert entity.has(
+            CharacterStatsComponent
+        ), f"角色 {entity.name} 缺少 CharacterStatsComponent"
+        assert entity.has(
+            StatusEffectsComponent
+        ), f"角色 {entity.name} 缺少 StatusEffectsComponent"
+        assert entity.has(HandComponent), f"角色 {entity.name} 缺少 HandComponent"
+
+        final_stats = game.compute_character_stats(entity)
+
         effects_comp = entity.get(StatusEffectsComponent)
 
-        hp_str = (
-            f"HP: {final_stats.hp}/{final_stats.max_hp}"
-            if final_stats is not None
-            else "HP: ?"
-        )
+        hp_str = f"HP: {final_stats.hp}/{final_stats.max_hp}"
 
-        if effects_comp is not None and effects_comp.status_effects:
+        if len(effects_comp.status_effects) > 0:
             effects_str = "、".join(
                 f"{e.name}（{_fmt_duration(e.duration)}）"
                 for e in effects_comp.status_effects
@@ -84,12 +86,8 @@ def _build_actors_summary(game: TCGGame, actor_entities: Set[Entity]) -> str:
         else:
             effects_str = "无"
 
-        has_hand = entity.has(HandComponent)
-        hand_note = (
-            "（当前持有手牌，可塞牌）" if has_hand else "（本回合无手牌，塞牌无效）"
-        )
         actor_lines.append(
-            f"- **{entity.name}**  {hp_str}  " f"状态效果: {effects_str}  {hand_note}"
+            f"- **{entity.name}**  {hp_str}  " f"状态效果: {effects_str}"
         )
     return "\n".join(actor_lines) if actor_lines else "  （无存活角色）"
 
@@ -142,11 +140,6 @@ def _generate_stage_post_arbitration_prompt(
 
 {actors_summary}
 
-## 你的本质与职责
-
-你是这片场景本身，没有意志，没有偏好，只有物理现实在运作。
-你能做的，是将**上下文中已出现、已存在于此场景里的环境要素**，转化为对角色身体的客观影响，或为角色提供可借用的场景物件。
-
 **干预原则**：
 - ✅ 允许：上下文叙事中已描述的环境要素引发的物理后果（沙尘入眼、热浪灼烧、松软地面失稳、碎石可用、断柱可借力等）
 - ✅ 塞牌须有据：只有上下文中描述了该物件存在于场景中，才能将其作为卡牌塞给角色使用
@@ -157,19 +150,20 @@ def _generate_stage_post_arbitration_prompt(
 
 ## 状态效果字段说明
 
-每个状态效果必须指定 `phase` 字段，决定生效阶段与可影响属性：
+每个状态效果必须指定 `phase` 字段，决定生效阶段：
 
-| phase | 对应阶段 | 可影响属性 | 典型效果举例 |
-|---|---|---|---|
-| `{PhaseType.DRAW}` | 抽牌阶段 | attack、defense（间接影响下回合卡牌数値） | 「虚弱」攻击力−2，damage_dealt 偏低；「沉重」防御力−1，防御较弱 |
-| `{PhaseType.ARBITRATION}` | 仲裁结算阶段 | hp、damage_dealt | 「破甲」防御降低；「荆棘」反伤；「眩晕」影响出牌；「虚弱」伤害减少 |
-| `{PhaseType.ROUND_END}` | 回合末阶段 | hp | 「中毒」每回合末扣血；「燃烧」持续火焰伤害；「再生」每回合末回血 |
+| phase | 触发时机 | 典型效果举例 |
+|---|---|---|
+| `{PhaseType.DRAW}` | 本回合抽牌时 | 「虚弱」生成的卡牌伤害偏低；「沉重」防御偏弱 |
+| `{PhaseType.ARBITRATION}` | 每次出牌结算时 | 「破甲」防御降低；「荆棘」反伤；「眩晕」伤害减少；条件计数型词条（`counter` 字段） |
+| `{PhaseType.ROUND_END}` | 每回合末自动 tick | 「中毒」每回合末扣血；「燃烧」持续火焰伤害；「再生」每回合末回血（DOT/HOT） |
 
-**speed**：影响出手顺序，只允许 +1 / 0 / -1，默认 0。
-**defense**：影响防御值（正值增防、负值破甲），整数，默认 0。
-**duration**：-1=永久，>0=剩余回合数，默认 3。禁止修改 max_hp。
-**counter**：整数初始值；`{PhaseType.ARBITRATION}` 阶段特殊计数器词条（如"前3次受击"设 3），默认 0。
-**description**：第三人称，描述环境要素如何作用于角色身体（如："沙尘被战斗扰动卷入眼中，视线受阻，造成伤害减少"）。
+- `duration`：-1=永久，>0=剩余回合数，默认 3
+- `speed`：+1 / 0 / -1；持续叠加到角色出手速度，**与 phase 无关**，默认 0
+- `defense`：整数；持续叠加到角色防御值（正值增防，负值破甲），**与 phase 无关**，默认 0
+- `counter`：整数初始值；`{PhaseType.ARBITRATION}` 阶段特殊计数器词条（如"前3次受击"设 3），默认 0
+- `description`：第三人称，描述环境要素如何作用于角色身体（如："沙尘被战斗扰动卷入眼中，视线受阻，造成伤害减少"）
+- 禁止修改 `max_hp`
 
 ## 塞牌字段说明
 
@@ -183,7 +177,8 @@ def _generate_stage_post_arbitration_prompt(
 | modifiers | 可选。即时修正词缀列表，格式 `[名称]:即时修正描述`（如 `[穿甲]:无视目标防御`），直接注入本次仲裁计算；无即时修正时输出 [] |
 | playable | 可选。布尔值，是否允许出牌；默认 true，场景叙事明确暗示该物件具有禁出属性时填 false |
 | exhaust | 可选。布尔值，出牌后是否永久消耗（归入消耗堆，不再回到抽牌循环）；默认 false，场景叙事明确暗示该物件使用后消失时填 true |
-| damage_dealt | 单次命中造成的伤害（整数；攻击类取合理正值，无伤害取 0） |
+| damage_dealt | 单次命中造成的伤害（必须以目标角色攻击力为基数计算；无伤害取 0） |
+| energy_delta | 改变目标行动次数（正值增加，负值剥夺）；默认 0 |
 | hit_count | 攻击次数（默认 1；多段攻击可设 2~4，每段独立作用） |
 | target_type | 出牌目标类型（见下表） |
 
@@ -223,6 +218,7 @@ def _generate_stage_post_arbitration_prompt(
           "affixes": [],
           "modifiers": [],
           "damage_dealt": 2,
+          "energy_delta": 0,
           "hit_count": 1,
           "target_type": "{TargetType.ENEMY_SINGLE}"
         }}

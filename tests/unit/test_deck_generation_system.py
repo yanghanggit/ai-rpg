@@ -28,9 +28,11 @@ from src.ai_rpg.models.stats import CharacterStats
 from src.ai_rpg.models.target_type import TargetType
 from src.ai_rpg.systems.deck_generation_system import (
     DeckGenerationSystem,
-    _build_design_principle_prompt,
-    _generate_deck_prompt,
     _sample_keywords,
+)
+from src.ai_rpg.systems.card_prompt_builders import (
+    build_design_principle_prompt,
+    generate_deck_prompt,
 )
 
 
@@ -125,19 +127,19 @@ class TestSampleKeywords:
 class TestBuildDesignPrinciplePrompt:
 
     def test_no_keywords_references_num_cards(self) -> None:
-        result = _build_design_principle_prompt(num_cards=4, keywords=[])
+        result = build_design_principle_prompt(num_cards=4, keywords=[])
         assert "4" in result
 
     def test_keywords_without_dice_descriptions_appear(self) -> None:
         keywords = _make_keywords(2)
-        result = _build_design_principle_prompt(num_cards=2, keywords=keywords)
+        result = build_design_principle_prompt(num_cards=2, keywords=keywords)
         for kw in keywords:
             assert kw in result
 
     def test_keywords_without_dice_no_dice_label(self) -> None:
         """dice_rolls 为空时，输出中不含"骰值"字样。"""
         keywords = _make_keywords(2)
-        result = _build_design_principle_prompt(
+        result = build_design_principle_prompt(
             num_cards=2, keywords=keywords, dice_rolls=[]
         )
         assert "骰值" not in result
@@ -145,7 +147,7 @@ class TestBuildDesignPrinciplePrompt:
     def test_keywords_with_matching_dice_appear_in_output(self) -> None:
         keywords = _make_keywords(2)
         dice_rolls = [42, 77]
-        result = _build_design_principle_prompt(
+        result = build_design_principle_prompt(
             num_cards=2, keywords=keywords, dice_rolls=dice_rolls
         )
         assert "42" in result
@@ -155,7 +157,7 @@ class TestBuildDesignPrinciplePrompt:
         """len(dice_rolls) != len(keywords) 时骰值不应出现。"""
         keywords = _make_keywords(3)
         dice_rolls = [10]  # 长度不匹配
-        result = _build_design_principle_prompt(
+        result = build_design_principle_prompt(
             num_cards=3, keywords=keywords, dice_rolls=dice_rolls
         )
         assert "骰值" not in result
@@ -172,7 +174,7 @@ class TestGenerateDeckPrompt:
         """回归测试：f-string 中的 JSON 示例花括号转义正确，调用不应抛出 ValueError。"""
         stats = _make_stats()
         try:
-            result = _generate_deck_prompt(actor_stats=stats, num_cards=3)
+            result = generate_deck_prompt(actor_stats=stats, num_cards=3)
         except ValueError as e:
             pytest.fail(f"_generate_deck_prompt raised ValueError: {e}")
         assert isinstance(result, str)
@@ -180,20 +182,20 @@ class TestGenerateDeckPrompt:
     def test_prompt_contains_literal_json_braces(self) -> None:
         """输出字符串中必须有字面量花括号（JSON 示例）。"""
         stats = _make_stats()
-        result = _generate_deck_prompt(actor_stats=stats, num_cards=2)
+        result = generate_deck_prompt(actor_stats=stats, num_cards=2)
         assert "{" in result
         assert "}" in result
 
     def test_prompt_contains_actor_stats(self) -> None:
         stats = _make_stats(hp=20, attack=8, defense=4)
-        result = _generate_deck_prompt(actor_stats=stats, num_cards=1)
+        result = generate_deck_prompt(actor_stats=stats, num_cards=1)
         assert "20" in result
         assert "8" in result
         assert "4" in result
 
     def test_prompt_num_cards_reflected(self) -> None:
         stats = _make_stats()
-        result = _generate_deck_prompt(actor_stats=stats, num_cards=5)
+        result = generate_deck_prompt(actor_stats=stats, num_cards=5)
         assert "5" in result
 
 

@@ -23,6 +23,7 @@ from ..models import (
 )
 from ..utils import extract_json_from_code_block
 from .arbitration_prompt_builders import fmt_duration
+from .card_prompt_builders import build_card_field_description
 from .status_effect_prompt_builders import build_status_effect_field_description
 
 
@@ -147,31 +148,7 @@ def _generate_stage_post_arbitration_prompt(
 
 {build_status_effect_field_description()}
 
-## 塞牌字段说明
-
-塞入的卡牌会被加入目标的当前手牌；数值应与场内角色血量及战斗烈度相匹配。
-
-| 字段 | 说明 |
-| --- | --- |
-| name | 卡牌名称（<8字），体现效果意图 |
-| description | 第三人称，描述角色借助场景具体物件的客观动作（如："抓起地面的断柱碎块用力掷向对方"），不绑定具体场景名词，使描述通用可复用；不可凭空引入上下文中不存在的物件 |
-| affixes | 可选。延迟词缀列表，格式 `[名称]:触发倾向描述`（如 `[碎石粉尘]:可能引起视线模糊`），出牌后独立推理生成持续状态效果；无持续效果时输出 [] |
-| modifiers | 可选。即时修正词缀列表，格式 `[名称]:即时修正描述`（如 `[穿甲]:无视目标防御`），直接注入本次仲裁计算；无即时修正时输出 [] |
-| playable | 可选。布尔值，是否允许出牌；默认 true，场景叙事明确暗示该物件具有禁出属性时填 false |
-| exhaust | 可选。布尔值，出牌后是否永久消耗（归入消耗堆，不再回到抽牌循环）；默认 false，场景叙事明确暗示该物件使用后消失时填 true |
-| damage_dealt | 单次命中造成的伤害（必须以目标角色攻击力为基数计算；无伤害取 0） |
-| energy_delta | 改变目标行动次数（正值增加，负值剥夺）；默认 0 |
-| hit_count | 攻击次数（默认 1；多段攻击可设 2~4，每段独立作用） |
-| target_type | 出牌目标类型（见下表） |
-
-| target_type | 含义 |
-|---|---|
-| `{TargetType.ENEMY_SINGLE}` | 攻击单体敌方（默认） |
-| `{TargetType.ENEMY_ALL}` | 攻击全体敌方 |
-| `{TargetType.ENEMY_RANDOM_MULTI}` | 每段独立随机命中一名敌方（需配合较高 hit_count） |
-| `{TargetType.ALLY_SINGLE}` | 治疗/增益单体友方 |
-| `{TargetType.ALLY_ALL}` | 治疗/增益全体友方 |
-| `{TargetType.SELF_ONLY}` | 仅作用于自身（防御、自损诅咒等） |
+{build_card_field_description()}
 
 ## 输出格式
 

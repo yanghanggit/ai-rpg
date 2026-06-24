@@ -6,7 +6,6 @@ import random
 from enum import IntEnum, unique
 from typing import Dict, Final, List, final, override
 from loguru import logger
-from pydantic import BaseModel
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
@@ -16,12 +15,16 @@ from ..models import (
     DrawPileComponent,
     DeathComponent,
     GenerateDeckAction,
-    CharacterStats,
     CharacterStatsComponent,
     Card,
     TargetType,
 )
 from ..utils import extract_json_from_code_block
+from .card_prompt_builders import (
+    DeckGenerateResponse,
+    generate_deck_prompt,
+    generate_compressed_deck_prompt,
+)
 
 
 ###############################################################################################################################################
@@ -35,31 +38,6 @@ class DiceValue(IntEnum):
 
 
 #######################################################################################################################################
-@final
-class DeckCardEntry(BaseModel):
-    """单张卡牌条目（用于 DeckGenerateResponse 解析）"""
-
-    name: str
-    description: str
-    affixes: List[str] = []
-    modifiers: List[str] = []
-    playable: bool = True
-    exhaust: bool = False
-    damage_dealt: int
-    energy_delta: int = 0
-    hit_count: int = 1
-    target_type: str = TargetType.ENEMY_SINGLE
-
-
-#######################################################################################################################################
-@final
-class DeckGenerateResponse(BaseModel):
-    """LLM 一次生成 num_cards 张牌库卡牌的响应模型"""
-
-    cards: List[DeckCardEntry]
-
-
-#######################################################################################################################################
 def _sample_keywords(keywords: List[str], k: int) -> List[str]:
     """从关键词池中采样 k 个关键词，优先不重复，池不足时降级为有放回采样。"""
     if not keywords:
@@ -67,114 +45,6 @@ def _sample_keywords(keywords: List[str], k: int) -> List[str]:
     if len(keywords) >= k:
         return random.sample(keywords, k=k)
     return random.choices(keywords, k=k)
-
-
-#######################################################################################################################################
-def _build_design_principle_prompt(
-    num_cards: int,
-    keywords: List[str],
-    dice_rolls: List[int] = [],
-) -> str:
-    """生成关键词约束段落。无关键词时输出差异化指引；有骰值时附加于各卡约束行末。"""
-    if not keywords:
-        return (
-            f"关键词约束：无（{num_cards}张卡牌应有差异化，如高伤低防/高防低伤/均衡型）"
-        )
-    use_dice = len(dice_rolls) == len(keywords)
-    header = (
-        "关键词约束（按顺序对应；骰值仅在约束中明确说明用法时生效，否则忽略）："
-        if use_dice
-        else "关键词约束（按顺序对应）："
-    )
-    lines = "\n".join(
-        f"  - 卡牌{i + 1}：{keywords[i]}"
-        + (f"（骰值：{dice_rolls[i]}）" if use_dice else "")
-        for i in range(len(keywords))
-    )
-    return f"{header}\n{lines}"
-
-
-#######################################################################################################################################
-def _generate_deck_prompt(
-    actor_stats: CharacterStats,
-    num_cards: int,
-    keywords: List[str] = [],
-    dice_rolls: List[int] = [],
-) -> str:
-    """生成战斗开始牌库生成 prompt（含字段说明与 JSON 示例）。"""
-
-    design_principle = _build_design_principle_prompt(num_cards, keywords, dice_rolls)
-
-    return f"""\
-# 战斗开始：生成 {num_cards} 张初始牌库卡牌
-
-## 角色属性
-
-| HP | 攻击 | 防御 |
-|---|---|---|
-| {actor_stats.hp}/{actor_stats.max_hp} | {actor_stats.attack} | {actor_stats.defense} |
-
-## 设计约束
-
-{design_principle}
-
-## 字段说明
-
-| 字段 | 类型 | 说明 |
-|---|---|---|
-| name | str | 富有想象力，体现行动意图 |
-| description | str | 战斗行为的艺术性叙述（1句，第三人称），描述动作风格与角色气质；不含数值，不转述已由其他字段表达的机械效果，不出现"我"等第一人称指代 |
-| affixes | list[str] | 延迟词缀，格式 `[名称]:触发倾向`；仅描述数值字段未涵盖的额外持续效果；无则 [] |
-| modifiers | list[str] | 即时修正词缀，格式 `[名称]:即时修正`；仅描述数值字段未涵盖的即时修正；无则 [] |
-| playable | bool | 是否可出牌；默认 true |
-| exhaust | bool | 出牌后是否永久消耗；默认 false |
-| damage_dealt | int | 单次命中造成的伤害（必须以'攻击'为基数进行计算） |
-| energy_delta | int | 改变目标行动次数（正值增加，负值剥夺）；默认 0 |
-| hit_count | int | 攻击次数；默认 1，多段可设 2~4 |
-| target_type | str | enemy_single / enemy_all / enemy_random_multi / ally_single / ally_all / self_only |
-
-## 约束
-
-- `description` 禁止提及任何场景地物（如断柱、沙地）、地名或即时情境细节，禁止含数字
-- `affixes`/`modifiers` 禁止重述数值字段已确定性表达的效果：`energy_delta ≠ 0` 时不得描述行动次数变化；不得重复量化 `damage_dealt`/`hit_count` 已决定的伤害量级
-- `cards` 数组长度必须恰好为 {num_cards}
-- 只输出 JSON，不附加任何说明文字
-
-```json
-{{
-  "cards": [
-    {{
-      "name": "...",
-      "description": "...",
-      "affixes": [],
-      "modifiers": [],
-      "playable": true,
-      "exhaust": false,
-      "damage_dealt": 0,
-      "energy_delta": 0,
-      "hit_count": 1,
-      "target_type": "enemy_single"
-    }}
-  ]
-}}
-```"""
-
-
-#######################################################################################################################################
-def _generate_compressed_deck_prompt(
-    actor_stats: CharacterStats,
-    num_cards: int,
-    keywords: List[str] = [],
-    dice_rolls: List[int] = [],
-) -> str:
-    """生成牌库生成 prompt 的压缩版（写入对话历史，减少 token 消耗）。"""
-    design_principle = _build_design_principle_prompt(num_cards, keywords, dice_rolls)
-    return f"""\
-# 战斗牌库生成（{num_cards} 张）
-
-HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense}
-
-{design_principle}"""
 
 
 #######################################################################################################################################
@@ -238,13 +108,13 @@ class DeckGenerationSystem(ReactiveProcessor):
                 f"[{entity.name}] 关键词: {[k[:20] for k in sampled_keywords]}  骰值: {dice_rolls}"
             )
 
-            prompt = _generate_deck_prompt(
+            prompt = generate_deck_prompt(
                 actor_stats=combat_stats,
                 num_cards=num_cards,
                 keywords=sampled_keywords,
                 dice_rolls=dice_rolls,
             )
-            compressed_prompt = _generate_compressed_deck_prompt(
+            compressed_prompt = generate_compressed_deck_prompt(
                 actor_stats=combat_stats,
                 num_cards=num_cards,
                 keywords=sampled_keywords,

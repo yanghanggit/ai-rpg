@@ -19,14 +19,7 @@ from ..models.messages import SystemMessage
 ####################################################################################################################################
 @final
 class ContentAuditResponse(BaseModel):
-    """内容审核响应数据模型。
-
-    封装 AI 返回的内容审核结果，用于判断玩家动作是否符合规则。
-
-    Attributes:
-        is_approved: 审核是否通过（True 表示批准，False 表示拒绝）
-        reason: 拒绝理由（审核不通过时必填）
-    """
+    """内容审核响应数据模型。"""
 
     is_approved: bool
     reason: str = ""
@@ -39,16 +32,7 @@ class ContentAuditResponse(BaseModel):
 
 ####################################################################################################################################
 def _build_audit_prompt(content: str) -> str:
-    """构建内容审核提示词。
-
-    生成用于 AI 审核玩家动作内容的提示词，要求 AI 判断内容是否合适。
-
-    Args:
-        content: 待审核的玩家动作内容
-
-    Returns:
-        格式化的审核提示词
-    """
+    """构建内容审核提示词。"""
     return f"""# 内容审核，以JSON格式返回结果
 
 {content}
@@ -73,12 +57,7 @@ def _build_audit_prompt(content: str) -> str:
 
 @final
 class PlayerActionAuditSystem(ReactiveProcessor):
-    """玩家动作内容审核系统。
-
-    监听玩家的发言类动作（SpeakAction、WhisperAction、AnnounceAction），
-    调用审计世界系统的 AI 对内容进行合规审核。
-    审核不通过或发生任何异常时，移除全部动作组件，阻止本回合发言。
-    """
+    """玩家动作内容审核系统。"""
 
     def __init__(self, game: TCGGame) -> None:
         super().__init__(game)

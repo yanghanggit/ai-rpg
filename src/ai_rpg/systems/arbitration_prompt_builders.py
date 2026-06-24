@@ -1,13 +1,4 @@
-"""仲裁提示词构建器模块。
-
-包含三类仲裁系统（卡牌出牌、装备穿戴、消耗品使用）的所有提示词生成函数：
-  - 共享仲裁响应数据模型（供三类系统统一使用）
-  - 共享格式化工具函数
-  - 提示词段落构建器
-  - 主仲裁提示词生成器（完整版 + 压缩版）
-  - 仲裁广播消息生成器
-  - 仲裁后 task hint 生成器（供 AddStatusEffectsActionSystem 消费）
-"""
+"""仲裁提示词构建器模块。"""
 
 from typing import Dict, Final, List, Optional, final
 from pydantic import BaseModel
@@ -149,9 +140,9 @@ def build_combat_arbitration_effects_lines(
     return lines
 
 
-def build_trigger_post_arbitration_description() -> str:
-    """构建 trigger_post_arbitration 字段说明块（三类仲裁共用）。"""
-    return """### trigger_post_arbitration
+TRIGGER_POST_ARBITRATION_DESCRIPTION: Final[
+    str
+] = """### trigger_post_arbitration
 
 布尔值，决定是否触发场景干预系统（stage agent 追加状态效果 / 塞牌）。
 判断规则：仅当本次行动的 **narrative 叙事中涉及与已存在场景要素的物理交互**（如搅起沙尘、触发机关、破坏地面物件、揭示可借用道具等），且该交互**合理推断可对场内角色产生后续物理影响**时，设为 `true`；
@@ -299,7 +290,7 @@ def generate_combat_arbitration_prompt(
 }}
 ```
 
-{build_trigger_post_arbitration_description()}
+{TRIGGER_POST_ARBITRATION_DESCRIPTION}
 
 ### combat_log（简名 = 全名最后一段）
 
@@ -444,7 +435,7 @@ def generate_gear_arbitration_prompt(
 }}
 ```
 
-{build_trigger_post_arbitration_description()}
+{TRIGGER_POST_ARBITRATION_DESCRIPTION}
 
 ### combat_log（简名 = 全名最后一段）
 
@@ -559,7 +550,7 @@ def generate_consumable_arbitration_prompt(
 }}
 ```
 
-{build_trigger_post_arbitration_description()}
+{TRIGGER_POST_ARBITRATION_DESCRIPTION}
 
 ### combat_log（简名 = 全名最后一段）
 

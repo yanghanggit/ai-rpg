@@ -22,9 +22,11 @@ from ..models import (
     StatusEffectsComponent,
 )
 from ..utils import extract_json_from_code_block
+from .arbitration_prompt_builders import fmt_duration
+from .status_effect_prompt_builders import build_status_effect_field_description
 
 
-###############################################################################################################################################
+#######################################################################################################################################
 # 塞牌位置策略枚举
 @final
 @unique
@@ -54,11 +56,6 @@ class StagePostArbitrationResponse(BaseModel):
 
 
 #######################################################################################################################################
-def _fmt_duration(d: int) -> str:
-    return "永久" if d == -1 else f"剩余{d}回合"
-
-
-#######################################################################################################################################
 def _build_actors_summary(game: TCGGame, actor_entities: Set[Entity]) -> str:
     """格式化场内存活角色状态摘要，供 prompt 函数复用。"""
     actor_lines: List[str] = []
@@ -80,7 +77,7 @@ def _build_actors_summary(game: TCGGame, actor_entities: Set[Entity]) -> str:
 
         if len(effects_comp.status_effects) > 0:
             effects_str = "、".join(
-                f"{e.name}（{_fmt_duration(e.duration)}）"
+                f"{e.name}（{fmt_duration(e.duration)}）"
                 for e in effects_comp.status_effects
             )
         else:
@@ -148,22 +145,7 @@ def _generate_stage_post_arbitration_prompt(
 - 不滥用：若上下文中无明显可利用的环境要素，**必须输出空数组**
 - 状态效果与卡牌可同时施加于同一目标
 
-## 状态效果字段说明
-
-每个状态效果必须指定 `phase` 字段，决定生效阶段：
-
-| phase | 触发时机 | 典型效果举例 |
-|---|---|---|
-| `{PhaseType.DRAW}` | 本回合抽牌时 | 「虚弱」生成的卡牌伤害偏低；「沉重」防御偏弱 |
-| `{PhaseType.ARBITRATION}` | 每次出牌结算时 | 「破甲」防御降低；「荆棘」反伤；「眩晕」伤害减少；条件计数型词条（`counter` 字段） |
-| `{PhaseType.ROUND_END}` | 每回合末自动 tick | 「中毒」每回合末扣血；「燃烧」持续火焰伤害；「再生」每回合末回血（DOT/HOT） |
-
-- `duration`：-1=永久，>0=剩余回合数，默认 3
-- `speed`：+1 / 0 / -1；持续叠加到角色出手速度，**与 phase 无关**，默认 0
-- `defense`：整数；持续叠加到角色防御值（正值增防，负值破甲），**与 phase 无关**，默认 0
-- `counter`：整数初始值；`{PhaseType.ARBITRATION}` 阶段特殊计数器词条（如"前3次受击"设 3），默认 0
-- `description`：第三人称，描述环境要素如何作用于角色身体（如："沙尘被战斗扰动卷入眼中，视线受阻，造成伤害减少"）
-- 禁止修改 `max_hp`
+{build_status_effect_field_description()}
 
 ## 塞牌字段说明
 

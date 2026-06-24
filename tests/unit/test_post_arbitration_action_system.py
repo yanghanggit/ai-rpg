@@ -18,8 +18,8 @@ from src.ai_rpg.systems.post_arbitration_action_system import (
     ActorPostArbitrationDirective,
     CardInjectStrategy,
     PostArbitrationActionSystem,
-    _fmt_duration,
 )
+from src.ai_rpg.systems.arbitration_prompt_builders import fmt_duration
 from typing import Dict, List
 
 
@@ -162,14 +162,14 @@ class TestFmtDuration:
     """`_fmt_duration` 的单元测试。"""
 
     def test_minus_one_returns_永久(self) -> None:
-        assert _fmt_duration(-1) == "永久"
+        assert fmt_duration(-1) == "永久"
 
     def test_positive_returns_remaining_n_rounds(self) -> None:
-        assert _fmt_duration(3) == "剩余3回合"
-        assert _fmt_duration(1) == "剩余1回合"
+        assert fmt_duration(3) == "剩余3回合"
+        assert fmt_duration(1) == "剩余1回合"
 
     def test_zero_edge_case(self) -> None:
-        assert _fmt_duration(0) == "剩余0回合"
+        assert fmt_duration(0) == "剩余0回合"
 
 
 # ---------------------------------------------------------------------------

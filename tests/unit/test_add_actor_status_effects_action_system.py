@@ -17,8 +17,10 @@ from src.ai_rpg.models import StatusEffect, PhaseType
 from src.ai_rpg.models.messages import AIMessage
 from src.ai_rpg.systems.add_status_effects_action_system import (
     AddStatusEffectsActionSystem,
-    _generate_add_status_effects_prompt,
-    _generate_compressed_add_status_effects_prompt,
+)
+from src.ai_rpg.systems.status_effect_prompt_builders import (
+    generate_add_status_effects_prompt,
+    generate_compressed_add_status_effects_prompt,
 )
 from typing import List
 
@@ -117,7 +119,7 @@ class TestGenerateCompressedAddStatusEffectsPrompt:
     """_generate_compressed_add_status_effects_prompt 的单元测试。"""
 
     def test_empty_effects_shows_none(self) -> None:
-        result = _generate_compressed_add_status_effects_prompt([], 1, ["任务"])
+        result = generate_compressed_add_status_effects_prompt([], 1, ["任务"])
         assert "无" in result
 
     def test_few_effects_shows_full_description(self) -> None:
@@ -125,7 +127,7 @@ class TestGenerateCompressedAddStatusEffectsPrompt:
             _make_effect("中毒", "每回合扣血", duration=2),
             _make_effect("虚弱", "攻击减弱", duration=1),
         ]
-        result = _generate_compressed_add_status_effects_prompt(effects, 1, ["任务"])
+        result = generate_compressed_add_status_effects_prompt(effects, 1, ["任务"])
         assert "中毒" in result
         assert "每回合扣血" in result
         assert "虚弱" in result
@@ -133,24 +135,24 @@ class TestGenerateCompressedAddStatusEffectsPrompt:
 
     def test_many_effects_shows_name_only(self) -> None:
         effects = [_make_effect(f"效果{i}", f"描述{i}") for i in range(5)]
-        result = _generate_compressed_add_status_effects_prompt(effects, 1, ["任务"])
+        result = generate_compressed_add_status_effects_prompt(effects, 1, ["任务"])
         assert "效果0" in result
         # 描述不应出现（超过3个时仅展示名称）
         assert "描述0" not in result
 
     def test_contains_round_number(self) -> None:
-        result = _generate_compressed_add_status_effects_prompt([], 7, ["任务"])
+        result = generate_compressed_add_status_effects_prompt([], 7, ["任务"])
         assert "7" in result
 
     def test_contains_task_hint(self) -> None:
-        result = _generate_compressed_add_status_effects_prompt(
+        result = generate_compressed_add_status_effects_prompt(
             [], 1, ["这是特殊任务提示"]
         )
         assert "这是特殊任务提示" in result
 
     def test_permanent_duration_shows_永久(self) -> None:
         effects = [_make_effect("诅咒", "永久削弱", duration=-1)]
-        result = _generate_compressed_add_status_effects_prompt(effects, 1, ["任务"])
+        result = generate_compressed_add_status_effects_prompt(effects, 1, ["任务"])
         assert "永久" in result
 
 
@@ -158,39 +160,39 @@ class TestGenerateAddStatusEffectsPrompt:
     """_generate_add_status_effects_prompt 的单元测试。"""
 
     def test_contains_round_number(self) -> None:
-        result = _generate_add_status_effects_prompt([], 5, ["任务"])
+        result = generate_add_status_effects_prompt([], 5, ["任务"])
         assert "5" in result
 
     def test_contains_task_hint(self) -> None:
-        result = _generate_add_status_effects_prompt([], 1, ["特定提示内容XYZ"])
+        result = generate_add_status_effects_prompt([], 1, ["特定提示内容XYZ"])
         assert "特定提示内容XYZ" in result
 
     def test_phase_table_contains_draw_and_arbitration(self) -> None:
-        result = _generate_add_status_effects_prompt([], 1, ["任务"])
+        result = generate_add_status_effects_prompt([], 1, ["任务"])
         assert PhaseType.DRAW in result
         assert PhaseType.ARBITRATION in result
 
     def test_speed_constraint_mentioned(self) -> None:
-        result = _generate_add_status_effects_prompt([], 1, ["任务"])
+        result = generate_add_status_effects_prompt([], 1, ["任务"])
         assert "+1 / 0 / -1" in result
 
     def test_json_template_present(self) -> None:
-        result = _generate_add_status_effects_prompt([], 1, ["任务"])
+        result = generate_add_status_effects_prompt([], 1, ["任务"])
         assert "add_effects" in result
 
     def test_empty_effects_shows_none(self) -> None:
-        result = _generate_add_status_effects_prompt([], 1, ["任务"])
+        result = generate_add_status_effects_prompt([], 1, ["任务"])
         assert "无" in result
 
     def test_few_effects_shows_full_description(self) -> None:
         effects = [_make_effect("燃烧", "持续灼烧扣血", duration=2)]
-        result = _generate_add_status_effects_prompt(effects, 1, ["任务"])
+        result = generate_add_status_effects_prompt(effects, 1, ["任务"])
         assert "燃烧" in result
         assert "持续灼烧扣血" in result
 
     def test_many_effects_shows_name_only(self) -> None:
         effects = [_make_effect(f"效果{i}", f"描述{i}") for i in range(5)]
-        result = _generate_add_status_effects_prompt(effects, 1, ["任务"])
+        result = generate_add_status_effects_prompt(effects, 1, ["任务"])
         assert "效果0" in result
         assert "描述0" not in result
 

@@ -39,14 +39,14 @@ TARGET_LABEL: Final[Dict[str, str]] = {
 # ─────────────────────────────────────────────────
 _PHASE_COLOR: Final[Dict[str, str]] = {
     PhaseType.DRAW: "cyan",
-    PhaseType.PLAY: "green",
+    # PhaseType.PLAY: "green",
     PhaseType.ARBITRATION: "yellow",
     PhaseType.ROUND_END: "red",
 }
 
 _PHASE_LABEL: Final[Dict[str, str]] = {
     PhaseType.DRAW: "抽牌",
-    PhaseType.PLAY: "出牌",
+    # PhaseType.PLAY: "出牌",
     PhaseType.ARBITRATION: "仲裁",
     PhaseType.ROUND_END: "回合末",
 }

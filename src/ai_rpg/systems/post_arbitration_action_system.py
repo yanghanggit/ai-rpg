@@ -10,7 +10,6 @@ from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
-    ActorComponent,
     Card,
     TargetType,
     CharacterStatsComponent,
@@ -260,9 +259,10 @@ class PostArbitrationActionSystem(ReactiveProcessor):
     #######################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(PostArbitrationAction) and (
-            (entity.has(StageComponent) and entity.has(DungeonComponent))
-            or entity.has(ActorComponent)
+        return (
+            entity.has(PostArbitrationAction)
+            and entity.has(StageComponent)
+            and entity.has(DungeonComponent)
         )
 
     #######################################################################################################################################
@@ -272,29 +272,9 @@ class PostArbitrationActionSystem(ReactiveProcessor):
             logger.debug("PostArbitrationActionSystem: 战斗未进行中，跳过")
             return
 
-        # 批次一：Stage 实体 — 地牢主视角干预（追加状态效果 / 塞牌）
-        stage_entities = [
-            e for e in entities if e.has(StageComponent) and e.has(DungeonComponent)
-        ]
-        for stage_entity in stage_entities:
+        logger.debug("PostArbitrationActionSystem: 处理仲裁后效果动作")
+        for stage_entity in entities:
             await self._process_stage(stage_entity)
-
-        # 批次二：Actor 实体 — 角色级仲裁后反应（暂未实现）
-        # actor_entities = [e for e in entities if e.has(ActorComponent)]
-        # for actor_entity in actor_entities:
-        #     await self._process_actor(actor_entity)
-
-    #######################################################################################################################################
-    # async def _process_actor(self, actor_entity: Entity) -> None:
-    #     """Actor 路径：角色级仲裁后反应（暂未实现）
-
-    #     未来由 actor 自身的 LLM agent 决定是否执行仲裁后的角色反应。
-    #     触发点需在 PlayCardsArbitrationSystem._apply_arbitration_result 中
-    #     对 actor_entity 添加 PostArbitrationAction 才会激活此路径。
-    #     """
-    #     logger.debug(
-    #         f"PostArbitrationActionSystem: [{actor_entity.name}] Actor 路径暂未实现，跳过"
-    #     )
 
     #######################################################################################################################################
     async def _process_stage(self, stage_entity: Entity) -> None:
@@ -305,12 +285,7 @@ class PostArbitrationActionSystem(ReactiveProcessor):
             action is not None
         ), "PostArbitrationActionSystem: 无法获取 PostArbitrationAction 组件！"
 
-        player_entity = self._game.get_player_entity()
-        assert (
-            player_entity is not None
-        ), "PostArbitrationActionSystem: 无法找到玩家实体！"
-
-        actor_entities = self._game.get_alive_actors_in_stage(player_entity)
+        actor_entities = self._game.get_alive_actors_in_stage(stage_entity)
         if not actor_entities:
             logger.debug("PostArbitrationActionSystem: 无存活角色，跳过")
             return
@@ -352,10 +327,12 @@ class PostArbitrationActionSystem(ReactiveProcessor):
         self, stage_entity: Entity, chat_client: DeepSeekClient
     ) -> None:
         """解析 LLM 响应并应用状态效果与塞牌"""
-
         try:
-            json_content = extract_json_from_code_block(chat_client.response_content)
-            response = StagePostArbitrationResponse.model_validate_json(json_content)
+
+            # 解析 LLM 响应为 StagePostArbitrationResponse
+            response = StagePostArbitrationResponse.model_validate_json(
+                extract_json_from_code_block(chat_client.response_content)
+            )
 
             # 预验证所有目标角色是否存在，避免部分指令生效导致的状态不一致
             for directive in response.per_actor:
@@ -385,6 +362,8 @@ class PostArbitrationActionSystem(ReactiveProcessor):
                     entity=stage_entity,
                     message_content=chat_client.prompt,
                 )
+
+            # 添加 LLM 响应消息到 stage entity 的对话历史
             assert chat_client.response_ai_message is not None
             self._game.add_ai_message(
                 entity=stage_entity,
@@ -459,9 +438,6 @@ class PostArbitrationActionSystem(ReactiveProcessor):
         assert target_entity.has(
             HandComponent
         ), f"目标角色 {directive.target} 缺少 HandComponent"
-        # if not target_entity.has(HandComponent):
-        #     logger.debug(f"[{directive.target}] 当前无手牌，跳过塞牌")
-        #     return
 
         hand_comp = target_entity.get(HandComponent)
         for card in directive.inject_cards:

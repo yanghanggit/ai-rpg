@@ -25,7 +25,7 @@ class PhaseType(StrEnum):
     """
 
     DRAW = "draw"
-    PLAY = "play"
+    # PLAY = "play"
     ARBITRATION = "arbitration"
     ROUND_END = "round_end"
 

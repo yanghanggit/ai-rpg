@@ -1,11 +1,12 @@
 """地下城生成流水线共用定义：数据模型与 LLM 工具配置"""
 
-from typing import Final, List
+from typing import Final, List, final
 from pydantic import BaseModel
 from ..deepseek import ToolDefinition, ToolFunction
 
 
 ####################################################################################################################################
+@final
 class DungeonEcologyData(BaseModel):
     """Step 1 中间数据：地下城名称、生态描写与场景数量。"""
 
@@ -15,6 +16,7 @@ class DungeonEcologyData(BaseModel):
 
 
 ####################################################################################################################################
+@final
 class DungeonStageData(BaseModel):
     """Step 2 中间数据：单个战斗场景的名称、标识、环境描写与生物种类数量。"""
 
@@ -25,6 +27,7 @@ class DungeonStageData(BaseModel):
 
 
 ####################################################################################################################################
+@final
 class DungeonStagesData(BaseModel):
     """Step 2 中间数据集合：地下城的全部场景列表。"""
 
@@ -34,6 +37,7 @@ class DungeonStagesData(BaseModel):
 
 
 ####################################################################################################################################
+@final
 class DungeonActorBlueprint(BaseModel):
     """地下城怪物实体创建所需的原始字段。供 assemble_dungeon_system 使用。"""
 
@@ -44,6 +48,7 @@ class DungeonActorBlueprint(BaseModel):
 
 
 ####################################################################################################################################
+@final
 class DungeonStageBlueprint(BaseModel):
     """地下城单个场景实体创建所需的原始字段（包含配对的怪物蓝图）。供 assemble_dungeon_system 使用。"""
 
@@ -55,6 +60,7 @@ class DungeonStageBlueprint(BaseModel):
 
 
 ####################################################################################################################################
+@final
 class DungeonBlueprint(BaseModel):
     """地下城完整蓝图，承载 Steps 1-3 的全部产出。供 assemble_dungeon_system 使用。
 

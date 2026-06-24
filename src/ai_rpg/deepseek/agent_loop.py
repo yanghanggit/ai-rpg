@@ -2,9 +2,7 @@
 
 import json
 from typing import Callable, Dict, List, Literal, Sequence
-
 from loguru import logger
-
 from ..models.messages import BaseMessage, HumanMessage, ToolMessage
 from .client import DeepSeekClient, ToolDefinition
 
@@ -83,7 +81,8 @@ async def agent_loop(
                     result = handler(**json.loads(tc.function.arguments))
                 except Exception as e:
                     logger.error(
-                        f"[agent_loop:{name}] 工具 {tc.function.name!r} 执行失败: {e}"
+                        f"[agent_loop:{name}] 工具 {tc.function.name!r} 执行失败: {e}\n"
+                        f"  raw arguments: {tc.function.arguments!r}"
                     )
                     result = f"错误：工具执行失败 {e}"
             history.append(ToolMessage(content=result, tool_call_id=tc.id))

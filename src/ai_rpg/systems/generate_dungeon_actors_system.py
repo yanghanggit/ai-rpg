@@ -35,9 +35,7 @@ def _build_dungeon_actor_prompt(
     total_actors: int = 1,
 ) -> str:
     multi_actor_note = (
-        f"\n## 同场景多生物说明\n\n"
-        f"该场景共有 {total_actors} 种标居生物，当前为第 {actor_index} 个。\n"
-        f"请与同场景其他生物在形态类型、活动层高、觅食策略上有所区别，避免重复。\n"
+        f"\n该场景共有 {total_actors} 种标居生物，当前为第 {actor_index} 个。\n"
         if total_actors > 1
         else ""
     )
@@ -52,15 +50,6 @@ def _build_dungeon_actor_prompt(
 
 - **场景名称**：{stage_name}
 - **场景环境**：{stage_profile}
-
-## 要求
-
-- **actor_name**：角色全名，采用「怪物.XXXX」格式，XXXX 体现该生物的特征
-- **character_sheet_name**：角色英文标识，snake_case 格式（如 `bone_crawler`、`mist_spirit`）
-- **profile**：第一人称 AI 扮演描述，50-100字，描述该生物的性格、行为倾向、与环境的关系
-  - 禁忌：不出现战斗数值、技能名称、等级等游戏机制词汇
-- **base_body**：第三人称外观描述，30-60字，描述该生物的形态、材质、动态特征
-  - 禁忌：不出现战斗数值、技能名称、等级等游戏机制词汇
 
 工作流程：调用 record_dungeon_actor 写入怪物数据，确认无误后结束本次对话。"""
 

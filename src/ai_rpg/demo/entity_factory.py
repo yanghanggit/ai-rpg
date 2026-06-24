@@ -10,7 +10,7 @@
 - 创建世界系统(WorldSystem)实例，设置全局叙事和规则管理
 """
 
-from typing import List
+from typing import List, Optional
 
 from ..models import (
     Actor,
@@ -213,6 +213,7 @@ def create_world_system(
     name: str,
     campaign_setting: str,
     system_rules: str,
+    role_rules: Optional[str] = None,
 ) -> WorldSystem:
     """
     创建一个世界系统(WorldSystem)实例。
@@ -224,6 +225,7 @@ def create_world_system(
         name: 世界系统名称
         campaign_setting: 战役设定描述
         system_rules: 全局游戏机制规则
+        role_rules: 该世界系统的职责专属规范；传入 None 时不附加额外章节
 
     Returns:
         WorldSystem: 初始化完成的WorldSystem实例
@@ -234,6 +236,8 @@ def create_world_system(
         system_message="",
         components=[],
     )
+
+    role_rules_section = f"\n\n{role_rules}" if role_rules is not None else ""
 
     # 初次编译system_message!!!!
     world_system.system_message = f"""# {world_system.name}
@@ -246,14 +250,6 @@ def create_world_system(
 
 ## 全局规则
 
-{system_rules}
-
-## 世界系统职责
-
-作为全局叙事者和规则管理器，你需要：
-
-- 跨场景协调事件，维护规则一致性
-- 管理和调度全局事件与世界状态
-- 确保所有游戏实体遵守世界规则"""
+{system_rules}{role_rules_section}"""
 
     return world_system

@@ -1,6 +1,4 @@
 """战斗状态效果追加系统模块
-
-为参战角色动态评估并追加状态效果（增益/减益）；监听 AddStatusEffectsAction.ADDED。
 """
 
 from typing import Final, List, final, Dict
@@ -20,6 +18,7 @@ from ..models import (
     MonsterComponent,
 )
 from ..utils import extract_json_from_code_block
+from .arbitration_prompt_builders import fmt_duration
 
 
 #######################################################################################################################################
@@ -38,22 +37,19 @@ def _generate_compressed_add_status_effects_prompt(
 ) -> str:
     """生成压缩版追加状态效果提示词（仅动态感知部分，省略静态 phase 说明与 JSON 示例）"""
 
-    def _fmt_duration(d: int) -> str:
-        return "永久" if d == -1 else f"剩余{d}回合"
-
     if len(current_status_effects) == 0:
         effects_list = "无"
     elif len(current_status_effects) <= 3:
         effects_list = "\n".join(
             [
-                f"- {effect.name}（{_fmt_duration(effect.duration)}）: {effect.description}"
+                f"- {effect.name}（{fmt_duration(effect.duration)}）: {effect.description}"
                 for effect in current_status_effects
             ]
         )
     else:
         effects_list = "、".join(
             [
-                f"{effect.name}（{_fmt_duration(effect.duration)}）"
+                f"{effect.name}（{fmt_duration(effect.duration)}）"
                 for effect in current_status_effects
             ]
         )
@@ -97,22 +93,19 @@ def _generate_add_status_effects_prompt(
     """
 
     # 效果少时展示完整描述；过多时仅列名称以节省 token
-    def _fmt_duration(d: int) -> str:
-        return "永久" if d == -1 else f"剩余{d}回合"
-
     if len(current_status_effects) == 0:
         effects_list = "无"
     elif len(current_status_effects) <= 3:
         effects_list = "\n".join(
             [
-                f"- {effect.name}（{_fmt_duration(effect.duration)}）: {effect.description}"
+                f"- {effect.name}（{fmt_duration(effect.duration)}）: {effect.description}"
                 for effect in current_status_effects
             ]
         )
     else:
         effects_list = "、".join(
             [
-                f"{effect.name}（{_fmt_duration(effect.duration)}）"
+                f"{effect.name}（{fmt_duration(effect.duration)}）"
                 for effect in current_status_effects
             ]
         )

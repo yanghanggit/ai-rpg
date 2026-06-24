@@ -7,275 +7,28 @@ stat_bonuses 已由前置动作系统确定性写入 EquippedGearComponent，mod
 from typing import Dict, Final, List, final
 from loguru import logger
 from overrides import override
-from pydantic import BaseModel
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.tcg_game import TCGGame
 from ..models import (
     UseGearItemAction,
-    CharacterStats,
     CharacterStatsComponent,
     CombatArbitrationEvent,
-    MonsterComponent,
+    CharacterStats,
     PartyMemberComponent,
     StatusEffect,
     PhaseType,
     PostArbitrationAction,
 )
 from ..utils import extract_json_from_code_block
-
-
-#######################################################################################################################################
-@final
-class _GearStatusEffectPatch(BaseModel):
-    name: str
-    counter: int
-
-
-#######################################################################################################################################
-@final
-class _GearEntityFinalStats(BaseModel):
-    hp: float
-    status_effect_patches: List[_GearStatusEffectPatch] = []
-
-
-#######################################################################################################################################
-@final
-class _UseGearArbitrationResponse(BaseModel):
-    combat_log: str
-    final_stats: Dict[str, _GearEntityFinalStats]
-    narrative: str
-    trigger_post_arbitration: bool = False
-
-
-#######################################################################################################################################
-def _fmt_stat_bonuses(stats: CharacterStats) -> str:
-    return (
-        f"HP {stats.hp:+d} | MAX_HP {stats.max_hp:+d} | ATK {stats.attack:+d} | "
-        f"DEF {stats.defense:+d} | ENERGY {stats.energy:+d} | SPD {stats.speed:+d}"
-    )
-
-
-#######################################################################################################################################
-def _build_target_stats_lines(
-    target_stats: Dict[str, CharacterStats],
-) -> str:
-    """构建目标信息段落：名称、HP。"""
-    if not target_stats:
-        return "- 无直接目标"
-    return "\n".join(
-        f"- {name}（HP {stats.hp}/{stats.max_hp}）"
-        for name, stats in target_stats.items()
-    )
-
-
-#######################################################################################################################################
-def _build_arbitration_effects_lines(
-    target_arbitration_effects: Dict[str, List[StatusEffect]],
-) -> str:
-    """构建目标的仲裁状态效果列表。"""
-    if not target_arbitration_effects:
-        return "无"
-    lines_parts = []
-    for t_name, t_effects in target_arbitration_effects.items():
-        lines_parts.append(f"**{t_name}**:\n{_fmt_effects(t_effects)}")
-    return "\n\n".join(lines_parts)
-
-
-#######################################################################################################################################
-def _generate_gear_task_hint(
-    action: UseGearItemAction,
-    entity: Entity,
-) -> List[str]:
-    """生成装备仲裁结算后的 AddStatusEffectsAction task_hints，按阵营生成不同视角。"""
-    item = action.item
-    targets_str = "、".join(action.targets) or "无"
-    item_base = (
-        f"- 装备：{item.name}（{item.description}）\n"
-        f"- 属性加成：{_fmt_stat_bonuses(item.stat_bonuses)}"
-    )
-    if entity.has(PartyMemberComponent):
-        header = (
-            f"友方阵营为你装备了「{item.name}」，你受到了作用。\n"
-            f"{item_base}\n"
-            f"- 作用目标：{targets_str}\n"
-            f"请根据以上情况，结合战斗上下文，"
-        )
-    elif entity.has(MonsterComponent):
-        header = (
-            f"敌方为你装备了「{item.name}」，你受到了作用。\n"
-            f"{item_base}\n"
-            f"- 作用目标：{targets_str}\n"
-            f"请根据以上情况，结合战斗上下文，"
-        )
-    else:
-        header = (
-            f"装备使用结算完成。本回合装备作用情况：\n"
-            f"{item_base}\n"
-            f"- 作用目标：{targets_str}\n"
-            f"请根据以上情况，结合战斗上下文，"
-        )
-    return [
-        f"{header}评估是否追加与以下词缀对应的状态效果：{affix}"
-        for affix in item.equip_affixes
-    ]
-
-
-#######################################################################################################################################
-def _generate_stats_update_notification(final_hp: int, max_hp: int) -> str:
-    return f"""# 你的生命值已更新
-
-当前HP: {final_hp}/{max_hp}"""
-
-
-#######################################################################################################################################
-def _fmt_duration(duration: int) -> str:
-    return "永久" if duration == -1 else f"剩余{duration}回合"
-
-
-#######################################################################################################################################
-def _fmt_effects(effects: List[StatusEffect]) -> str:
-    if not effects:
-        return "  无"
-    return "\n".join(
-        f"  - {e.name}（{_fmt_duration(e.duration)}）: {e.description}" for e in effects
-    )
-
-
-#######################################################################################################################################
-def _generate_gear_arbitration_broadcast(
-    combat_log: str,
-    narrative: str,
-    current_round_number: int,
-    is_party_action: bool,
-    item_name: str,
-) -> str:
-    """生成装备仲裁广播消息，使用阵营标签。"""
-    camp_label = "友方阵营" if is_party_action else "敌方"
-    return f"""# 第 {current_round_number} 回合 · {camp_label}使用装备「{item_name}」
-
-## 战斗演出
-
-{narrative}
-
-## 数据日志
-
-{combat_log}"""
-
-
-#######################################################################################################################################
-def _generate_gear_arbitration_prompt(
-    action: UseGearItemAction,
-    target_stats: Dict[str, CharacterStats],
-    current_round_number: int,
-    target_arbitration_effects: Dict[str, List[StatusEffect]],
-) -> str:
-    """生成装备仲裁提示词（完整版）。"""
-    target_lines = _build_target_stats_lines(target_stats)
-    arbitration_effects_lines = _build_arbitration_effects_lines(
-        target_arbitration_effects
-    )
-    item = action.item
-    modifiers_line = (
-        "\n- 即时修正词缀：\n" + "\n".join(f"  - {m}" for m in item.modifiers)
-        if item.modifiers
-        else ""
-    )
-
-    return f"""# 第 {current_round_number} 回合：装备使用结算（以 JSON 格式返回）
-
-## 装备
-
-- 名称：{item.name}
-- 描述：{item.description}
-- 确定性属性加成（已生效）：{_fmt_stat_bonuses(item.stat_bonuses)}{modifiers_line}
-
-## 目标
-
-{target_lines}
-
-## 仲裁状态效果
-
-{arbitration_effects_lines}
-
-## 计算规则
-
-stat_bonuses 所列属性加成已由系统确定性写入，本次仲裁无需重复计算。
-仅评估 modifiers（即时修正词缀，若有）对目标 HP 的叠加影响；若无 modifiers，final_stats 中 hp 与当前值一致。
-目标 HP = max(0, min(计算后 HP, 最大 HP))
-
-## 输出格式
-
-```json
-{{
-  "combat_log": "字符串",
-  "final_stats": {{}},
-  "narrative": "演出描述",
-  "trigger_post_arbitration": false
-}}
-```
-
-### trigger_post_arbitration
-
-布尔值，决定是否触发场景干预系统。
-仅当装备行为的 **narrative 叙事中涉及与已存在场景要素的物理交互**（如触发机关、破坏地面物件等），且该交互**合理推断可对场内角色产生后续物理影响**时，设为 `true`；
-若为纯属性增益类装备（无环境互动），输出 `false`。
-
-### combat_log（简名 = 全名最后一段）
-
-示例：`[装备寒霜剑→英雄] ATK+3`
-
-### final_stats
-
-必须包含**所有目标**，格式：
-```json
-{{"角色全名": {{"hp": 数值, "status_effect_patches": []}}}}
-```
-- hp：0 ≤ hp ≤ 最大 HP
-- status_effect_patches：仅在本次仲裁改变了某效果的 counter 值时填写，格式：
-  `{{"name": "效果名", "counter": <新整数值>}}`
-  - name 必须与"仲裁状态效果"中列出的名称完全一致
-  - 未改变 counter 的效果不输出；若未触发任何 counter 变化，保持空数组 []
-
-### narrative
-
-60-120 字，第三人称外部视角，纯感官描写，体现装备更换的瞬间画面与明显效果。"""
-
-
-#######################################################################################################################################
-def _generate_compressed_gear_arbitration_prompt(
-    action: UseGearItemAction,
-    target_stats: Dict[str, CharacterStats],
-    current_round_number: int,
-    target_arbitration_effects: Dict[str, List[StatusEffect]],
-) -> str:
-    """生成压缩版装备仲裁提示词，用于写入对话历史。"""
-    target_lines = _build_target_stats_lines(target_stats)
-    arbitration_effects_lines = _build_arbitration_effects_lines(
-        target_arbitration_effects
-    )
-    item = action.item
-    modifiers_line = (
-        "\n- 即时修正词缀：\n" + "\n".join(f"  - {m}" for m in item.modifiers)
-        if item.modifiers
-        else ""
-    )
-
-    return f"""# 第 {current_round_number} 回合：装备使用结算
-
-## 装备
-
-- 名称：{item.name}
-- 描述：{item.description}
-- 确定性属性加成（已生效）：{_fmt_stat_bonuses(item.stat_bonuses)}{modifiers_line}
-
-## 目标
-
-{target_lines}
-
-## 仲裁状态效果
-
-{arbitration_effects_lines}"""
+from .arbitration_prompt_builders import (
+    ArbitrationResponse,
+    generate_gear_arbitration_prompt,
+    generate_compressed_gear_arbitration_prompt,
+    generate_gear_arbitration_broadcast,
+    stats_update_notification,
+    generate_gear_equip_task_hints,
+)
 
 
 #######################################################################################################################################
@@ -346,7 +99,7 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
 
         is_party_action = actor_entity.has(PartyMemberComponent)
 
-        message = _generate_gear_arbitration_prompt(
+        message = generate_gear_arbitration_prompt(
             action=action,
             target_stats=target_stats,
             current_round_number=current_round_number,
@@ -354,7 +107,7 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
         )
 
         compressed_message = (
-            _generate_compressed_gear_arbitration_prompt(
+            generate_compressed_gear_arbitration_prompt(
                 action=action,
                 target_stats=target_stats,
                 current_round_number=current_round_number,
@@ -389,7 +142,7 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
         is_party_action: bool,
     ) -> None:
         try:
-            response = _UseGearArbitrationResponse.model_validate_json(
+            response = ArbitrationResponse.model_validate_json(
                 extract_json_from_code_block(chat_client.response_content)
             )
 
@@ -420,7 +173,7 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
             self._game.broadcast_to_stage(
                 entity=stage_entity,
                 agent_event=CombatArbitrationEvent(
-                    message=_generate_gear_arbitration_broadcast(
+                    message=generate_gear_arbitration_broadcast(
                         response.combat_log,
                         response.narrative,
                         current_round_number,
@@ -452,7 +205,7 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
 
                 self._game.add_human_message(
                     entity=entity,
-                    message_content=_generate_stats_update_notification(new_hp, max_hp),
+                    message_content=stats_update_notification(new_hp, max_hp),
                 )
 
                 for patch in entity_stats.status_effect_patches:
@@ -494,7 +247,7 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
             entity = self._game.get_entity_by_name(entity_name)
             assert entity is not None, f"无法找到实体: {entity_name}"
 
-            task_hints = _generate_gear_task_hint(
+            task_hints = generate_gear_equip_task_hints(
                 action=action,
                 entity=entity,
             )

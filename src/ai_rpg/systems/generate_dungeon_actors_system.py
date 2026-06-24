@@ -11,9 +11,7 @@ from ..game.config import DUNGEON_PROCESS_DIR
 from ..game.tcg_game import TCGGame
 from ..models import (
     AssembleDungeonAction,
-    DungeonGenerationComponent,
     GenerateDungeonActorsAction,
-    WorldComponent,
 )
 from .dungeon_generation import (
     ACTOR_TOOL,
@@ -76,26 +74,12 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     async def react(self, entities: List[Entity]) -> None:
-        world_system_entities = self._game.get_group(
-            Matcher(all_of=[WorldComponent, DungeonGenerationComponent])
-        ).entities.copy()
-
-        if not world_system_entities:
-            logger.error(
-                "[GenerateDungeonActorsSystem] 未找到地下城生成系统实体，Step 3 中止"
-            )
-            return
-
-        assert len(world_system_entities) == 1, "存在多个地下城生成系统实体，数据异常"
-        world_system_entity = next(iter(world_system_entities))
-
         assert len(entities) == 1, "同时存在多个 GenerateDungeonActorsAction，数据异常"
         entity = entities[0]
-
-        await self._run(entity, world_system_entity)
+        await self._run(entity)
 
     ####################################################################################################################################
-    async def _run(self, entity: Entity, world_system_entity: Entity) -> None:
+    async def _run(self, entity: Entity) -> None:
         action_comp = entity.get(GenerateDungeonActorsAction)
         dungeon_name = action_comp.dungeon_name
 
@@ -124,7 +108,7 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
             )
             return
 
-        context = self._game.get_agent_context(world_system_entity).context
+        context = self._game.get_agent_context(entity).context
 
         # 展开 (stage, actor_index) 对，每对对应一个并发 agent_loop
         client_tasks = [

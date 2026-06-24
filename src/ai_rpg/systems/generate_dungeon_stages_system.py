@@ -8,10 +8,8 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.config import DUNGEON_PROCESS_DIR
 from ..game.tcg_game import TCGGame
 from ..models import (
-    DungeonGenerationComponent,
     GenerateDungeonActorsAction,
     GenerateDungeonStagesAction,
-    WorldComponent,
 )
 from .dungeon_generation import (
     DungeonEcologyData,
@@ -61,26 +59,12 @@ class GenerateDungeonStagesSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     async def react(self, entities: List[Entity]) -> None:
-        world_system_entities = self._game.get_group(
-            Matcher(all_of=[WorldComponent, DungeonGenerationComponent])
-        ).entities.copy()
-
-        if not world_system_entities:
-            logger.error(
-                "[GenerateDungeonStagesSystem] 未找到地下城生成系统实体，Step 2 中止"
-            )
-            return
-
-        assert len(world_system_entities) == 1, "存在多个地下城生成系统实体，数据异常"
-        world_system_entity = next(iter(world_system_entities))
-
         assert len(entities) == 1, "同时存在多个 GenerateDungeonStagesAction，数据异常"
         entity = entities[0]
-
-        await self._run(entity, world_system_entity)
+        await self._run(entity)
 
     ####################################################################################################################################
-    async def _run(self, entity: Entity, world_system_entity: Entity) -> None:
+    async def _run(self, entity: Entity) -> None:
         action_comp = entity.get(GenerateDungeonStagesAction)
         dungeon_name = action_comp.dungeon_name
 
@@ -142,13 +126,13 @@ class GenerateDungeonStagesSystem(ReactiveProcessor):
             return file_path.read_text(encoding="utf-8")
 
         success = await agent_loop(
-            name=world_system_entity.name,
+            name=entity.name,
             prompt=_build_dungeon_stages_prompt(
                 dungeon_name=ecology_file.dungeon_name,
                 ecology=ecology_file.ecology,
                 total_stages=ecology_file.stage_count,
             ),
-            context=self._game.get_agent_context(world_system_entity).context,
+            context=self._game.get_agent_context(entity).context,
             tools=[
                 build_stages_tool(ecology_file.stage_count),
                 READ_STAGES_FILE_TOOL,

@@ -6,6 +6,7 @@
 
 from typing import List, Tuple, Dict
 from loguru import logger
+from ..entitas import Matcher
 from ..game.tcg_game import TCGGame
 from ..models import (
     SpeakAction,
@@ -20,6 +21,8 @@ from ..models import (
     PlanAction,
     StorageComponent,
     GenerateDungeonAction,
+    DungeonGenerationComponent,
+    WorldComponent,
     CraftConsumableAction,
     CraftGearItemAction,
     CraftCostumeItemAction,
@@ -301,16 +304,25 @@ def activate_generate_dungeon(tcg_game: TCGGame) -> Tuple[bool, str]:
         logger.error(f"激活地下城创建失败: {error_detail}")
         return False, error_detail
 
-    player_entity = tcg_game.get_player_entity()
-    assert player_entity is not None, "玩家实体不存在！"
+    world_system_entities = tcg_game.get_group(
+        Matcher(all_of=[WorldComponent, DungeonGenerationComponent])
+    ).entities.copy()
 
-    if player_entity.has(GenerateDungeonAction):
+    if not world_system_entities:
+        error_detail = "未找到地下城生成系统实体，无法激活地下城创建"
+        logger.error(f"激活地下城创建失败: {error_detail}")
+        return False, error_detail
+
+    assert len(world_system_entities) == 1, "存在多个地下城生成系统实体，数据异常"
+    world_system_entity = next(iter(world_system_entities))
+
+    if world_system_entity.has(GenerateDungeonAction):
         error_detail = "地下城创建动作已存在，请勿重复激活"
         logger.warning(f"激活地下城创建失败: {error_detail}")
         return False, error_detail
 
-    logger.debug(f"激活地下城创建: {player_entity.name}")
-    player_entity.replace(GenerateDungeonAction, player_entity.name)
+    logger.debug(f"激活地下城创建: {world_system_entity.name}")
+    world_system_entity.replace(GenerateDungeonAction, world_system_entity.name)
     return True, ""
 
 

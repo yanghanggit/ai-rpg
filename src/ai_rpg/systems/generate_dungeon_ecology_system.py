@@ -8,10 +8,8 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.config import DUNGEON_PROCESS_DIR
 from ..game.tcg_game import TCGGame
 from ..models import (
-    DungeonGenerationComponent,
     GenerateDungeonAction,
     GenerateDungeonStagesAction,
-    WorldComponent,
 )
 from .dungeon_generation import (
     DungeonEcologyData,
@@ -62,26 +60,12 @@ class GenerateDungeonEcologySystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     async def react(self, entities: List[Entity]) -> None:
-        world_system_entities = self._game.get_group(
-            Matcher(all_of=[WorldComponent, DungeonGenerationComponent])
-        ).entities.copy()
-
-        if not world_system_entities:
-            logger.error(
-                "[GenerateDungeonEcologySystem] 未找到地下城生成系统实体，Step 1 中止"
-            )
-            return
-
-        assert len(world_system_entities) == 1, "存在多个地下城生成系统实体，数据异常"
-        world_system_entity = next(iter(world_system_entities))
-
         assert len(entities) == 1, "同时存在多个 GenerateDungeonAction，数据异常"
         entity = entities[0]
-
-        await self._run(entity, world_system_entity)
+        await self._run(entity)
 
     ####################################################################################################################################
-    async def _run(self, entity: Entity, world_system_entity: Entity) -> None:
+    async def _run(self, entity: Entity) -> None:
         logger.info(f"[GenerateDungeonEcologySystem] Step 1 开始: entity={entity.name}")
 
         ecology_file: Optional[DungeonEcologyData] = None
@@ -117,9 +101,9 @@ class GenerateDungeonEcologySystem(ReactiveProcessor):
             return file_path.read_text(encoding="utf-8")
 
         success = await agent_loop(
-            name=world_system_entity.name,
+            name=entity.name,
             prompt=_build_dungeon_ecology_prompt(),
-            context=self._game.get_agent_context(world_system_entity).context,
+            context=self._game.get_agent_context(entity).context,
             tools=[ECOLOGY_TOOL, READ_ECOLOGY_FILE_TOOL],
             handlers={
                 "record_dungeon_ecology": _handle_record_dungeon_ecology,

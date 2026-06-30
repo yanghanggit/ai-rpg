@@ -13,7 +13,7 @@ from ..models import (
     StorageComponent,
 )
 from ..models.items import CostumeItem
-from .appearance_synthesis_prompt import (
+from .appearance_prompt_builders import (
     build_appearance_synthesis_prompt,
     build_remove_costume_message,
     build_wear_costume_message,

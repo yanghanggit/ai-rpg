@@ -20,8 +20,8 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     from ..systems.announce_action_system import AnnounceActionSystem
     from ..systems.destroy_entity_system import DestroyEntitySystem
 
-    from ..systems.actor_appearance_init_system import (
-        ActorAppearanceInitSystem,
+    from ..systems.appearance_initialization_system import (
+        AppearanceInitializationSystem,
     )
     from ..systems.query_action_system import (
         QueryActionSystem,
@@ -53,7 +53,7 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     processors.add(PrologueSystem(tcg_game))
 
     # 角色外观生成系统
-    processors.add(ActorAppearanceInitSystem(tcg_game))
+    processors.add(AppearanceInitializationSystem(tcg_game))
 
     # 规划系统-场景描述系统-角色系统
     processors.add(StageDescriptionSystem(game=tcg_game, enable_debug_cache=True))
@@ -105,8 +105,8 @@ def create_combat_pipeline(
         CombatInitializationSystem,
     )
 
-    from ..systems.actor_appearance_init_system import (
-        ActorAppearanceInitSystem,
+    from ..systems.appearance_initialization_system import (
+        AppearanceInitializationSystem,
     )
     from ..systems.destroy_entity_system import DestroyEntitySystem
     from ..systems.draw_cards_action_system import (
@@ -167,7 +167,7 @@ def create_combat_pipeline(
     processors.add(PrologueSystem(tcg_game))
 
     # 角色外观生成系统
-    processors.add(ActorAppearanceInitSystem(tcg_game))
+    processors.add(AppearanceInitializationSystem(tcg_game))
 
     # 战斗场景描述系统
     processors.add(StageDescriptionSystem(game=tcg_game, enable_debug_cache=True))

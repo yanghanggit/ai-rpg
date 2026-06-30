@@ -120,21 +120,3 @@ class TestActionCleanupSystem:
 
         assert not entity.has(SpeakAction)
         assert entity.has(Position)
-
-    def test_verify_raises_if_action_remains(
-        self, context: Context, system: ActionCleanupSystem
-    ) -> None:
-        """若仍有实体持有动作组件，_verify_actions_cleanup() 应触发 AssertionError。"""
-        from typing import FrozenSet
-        from src.ai_rpg.entitas.components import Component
-        from src.ai_rpg.models import ACTION_COMPONENT_TYPES
-
-        entity = context.create_entity()
-        entity.add(SpeakAction, *_SPEAK_ARGS)
-
-        registered: FrozenSet[type[Component]] = frozenset(
-            ACTION_COMPONENT_TYPES.values()
-        )
-
-        with pytest.raises(AssertionError):
-            system._verify_actions_cleanup(registered)

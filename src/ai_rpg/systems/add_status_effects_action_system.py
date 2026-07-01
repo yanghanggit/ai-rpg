@@ -26,10 +26,7 @@ from .status_effect_prompt_builders import (
 #######################################################################################################################################
 @final
 class AddStatusEffectsActionSystem(ReactiveProcessor):
-    """让每个参战 Actor 根据战斗上下文评估并追加新的状态效果（增益/减益/削弱等）。
-
-    约束：实体须同时具有 ActorComponent + StatusEffectsComponent；仅战斗 ongoing 时生效。
-    """
+    """让每个参战 Actor 根据战斗上下文评估并追加新的状态效果（增益/减益/削弱等）。"""
 
     def __init__(
         self,
@@ -68,50 +65,11 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
             f"触发 AddActorStatusEffectsActionSystem，处理 {len(entities)} 个实体"
         )
 
-        # 获取当前回合数
-        current_round_number = len(self._game.current_dungeon.current_rounds or [])
-
         # 直接使用 filter() 已过滤的实体列表，避免重新查询导致对未添加 AddStatusEffectsAction 的角色 assert 失败
         # 为每个参战角色创建评估任务
-        chat_clients: List[DeepSeekClient] = []
-
-        for entity in entities:
-
-            combat_status_effects = entity.get(StatusEffectsComponent)
-            assert (
-                combat_status_effects is not None
-            ), f"角色 {entity.name} 缺少 StatusEffectsComponent！"
-
-            # 从 action 组件读取任务说明
-            add_status_effects_action = entity.get(AddStatusEffectsAction)
-            assert (
-                add_status_effects_action is not None
-            ), f"角色 {entity.name} 缺少 AddStatusEffectsAction 组件！"
-
-            # 生成追加状态效果提示词
-            prompt = generate_add_status_effects_prompt(
-                current_status_effects=combat_status_effects.status_effects,
-                current_round_number=current_round_number,
-                task_hints=add_status_effects_action.task_hints,
-            )
-
-            compressed_message: str | None = None
-            if self._use_compressed_prompt:
-                compressed_message = generate_compressed_add_status_effects_prompt(
-                    current_status_effects=combat_status_effects.status_effects,
-                    current_round_number=current_round_number,
-                    task_hints=add_status_effects_action.task_hints,
-                )
-
-            # 创建聊天客户端
-            chat_clients.append(
-                DeepSeekClient(
-                    name=entity.name,
-                    prompt=prompt,
-                    compressed_prompt=compressed_message,
-                    context=self._game.get_agent_context(entity).context,
-                )
-            )
+        chat_clients: List[DeepSeekClient] = [
+            self._build_client(entity) for entity in entities
+        ]
 
         # 并发调用所有 LLM
         logger.debug(f"开始并发评估 {len(chat_clients)} 个角色的状态效果...")
@@ -119,10 +77,47 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
 
         # 处理每个角色的响应
         for chat_client in chat_clients:
-            found_entity = self._game.get_entity_by_name(chat_client.name)
-            assert found_entity is not None, f"无法找到角色实体: {chat_client.name}"
-            self._process_status_effects_response(found_entity, chat_client)
-            # self._mock_inject_counter_effect(found_entity)  # [测试用]
+            self._process_status_effects_response(chat_client)
+            # self._mock_inject_counter_effect(entity)  # [测试用]
+
+    #######################################################################################################################################
+    def _build_client(self, entity: Entity) -> DeepSeekClient:
+
+        # 获取当前回合数
+        current_round_number = len(self._game.current_dungeon.current_rounds or [])
+
+        combat_status_effects = entity.get(StatusEffectsComponent)
+        assert (
+            combat_status_effects is not None
+        ), f"角色 {entity.name} 缺少 StatusEffectsComponent！"
+
+        # 从 action 组件读取任务说明
+        add_status_effects_action = entity.get(AddStatusEffectsAction)
+        assert (
+            add_status_effects_action is not None
+        ), f"角色 {entity.name} 缺少 AddStatusEffectsAction 组件！"
+
+        # 生成追加状态效果提示词
+        prompt = generate_add_status_effects_prompt(
+            current_status_effects=combat_status_effects.status_effects,
+            current_round_number=current_round_number,
+            task_hints=add_status_effects_action.task_hints,
+        )
+
+        compressed_message: str | None = None
+        if self._use_compressed_prompt:
+            compressed_message = generate_compressed_add_status_effects_prompt(
+                current_status_effects=combat_status_effects.status_effects,
+                current_round_number=current_round_number,
+                task_hints=add_status_effects_action.task_hints,
+            )
+
+        return DeepSeekClient(
+            name=entity.name,
+            prompt=prompt,
+            compressed_prompt=compressed_message,
+            context=self._game.get_agent_context(entity).context,
+        )
 
     #######################################################################################################################################
     def _mock_inject_counter_effect(self, entity: Entity) -> None:
@@ -157,10 +152,12 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
         )
 
     #######################################################################################################################################
-    def _process_status_effects_response(
-        self, entity: Entity, chat_client: DeepSeekClient
-    ) -> None:
+    def _process_status_effects_response(self, chat_client: DeepSeekClient) -> None:
         """解析 LLM 响应并追加新状态效果；将本轮对话写入实体上下文。"""
+
+        ## 获取对应实体
+        entity = self._game.get_entity_by_name(chat_client.name)
+        assert entity is not None, f"无法找到角色实体: {chat_client.name}"
 
         assert entity.has(
             StatusEffectsComponent
@@ -203,7 +200,7 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
                     f"[{entity.name}] 新增 {len(format_response.add_effects)} 个状态效果"
                 )
                 for effect in format_response.add_effects:
-                    logger.info(
+                    logger.debug(
                         f"[{entity.name}] 新增效果: 「{effect.name}」 phase={effect.phase} duration={effect.duration}"
                     )
 

@@ -6,7 +6,7 @@ import pytest
 
 from src.ai_rpg.entitas.context import Context
 from src.ai_rpg.entitas.entity import Entity
-from src.ai_rpg.game.tcg_game import TCGGame
+from src.ai_rpg.game.dbg_game import DBGGame
 from src.ai_rpg.models import (
     ActorComponent,
     DiscardPileComponent,
@@ -58,7 +58,7 @@ def context() -> Context:
 
 @pytest.fixture()
 def mock_game() -> MagicMock:
-    game = MagicMock(spec=TCGGame)
+    game = MagicMock(spec=DBGGame)
     game.current_dungeon.is_ongoing = True
     return game
 

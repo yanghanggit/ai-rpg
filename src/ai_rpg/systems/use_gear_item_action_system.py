@@ -4,7 +4,7 @@ from typing import Dict, Final, List, final
 from loguru import logger
 from overrides import override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 from ..models import (
     EquippedGearComponent,
     InventoryComponent,
@@ -46,9 +46,9 @@ def _generate_enemy_notice(
 class UseGearItemActionSystem(ReactiveProcessor):
     """使用装备前置动作系统。"""
 
-    def __init__(self, game: TCGGame) -> None:
+    def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
-        self._game: Final[TCGGame] = game
+        self._game: Final[DBGGame] = game
 
     ####################################################################################################################################
     def _remove_equipped_gear_globally(self, item_name: str) -> None:

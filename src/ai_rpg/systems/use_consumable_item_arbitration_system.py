@@ -5,7 +5,7 @@ from loguru import logger
 from overrides import override
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 from ..models import (
     UseConsumableItemAction,
     CharacterStats,
@@ -33,9 +33,9 @@ from .arbitration_prompt_builders import (
 class UseConsumableItemArbitrationSystem(ReactiveProcessor):
     """响应 UseConsumableItemAction 事件，调用 LLM 仲裁消耗品效果（HP/状态效果描述更新）。"""
 
-    def __init__(self, game: TCGGame, use_compressed_prompt: bool = True) -> None:
+    def __init__(self, game: DBGGame, use_compressed_prompt: bool = True) -> None:
         super().__init__(game)
-        self._game: Final[TCGGame] = game
+        self._game: Final[DBGGame] = game
         self._use_compressed_prompt: Final[bool] = use_compressed_prompt
 
     #######################################################################################################################################

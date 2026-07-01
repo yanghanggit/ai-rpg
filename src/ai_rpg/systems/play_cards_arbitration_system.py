@@ -5,7 +5,7 @@ from loguru import logger
 from overrides import override
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 from ..models import (
     PlayCardsAction,
     RoundStatsComponent,
@@ -35,9 +35,9 @@ from .arbitration_prompt_builders import (
 class PlayCardsArbitrationSystem(ReactiveProcessor):
     """响应 PlayCardsAction 事件，对单张出牌立即进行 AI 仲裁结算。"""
 
-    def __init__(self, game: TCGGame, use_compressed_prompt: bool = True) -> None:
+    def __init__(self, game: DBGGame, use_compressed_prompt: bool = True) -> None:
         super().__init__(game)
-        self._game: Final[TCGGame] = game
+        self._game: Final[DBGGame] = game
         self._use_compressed_prompt: Final[bool] = use_compressed_prompt
 
     #######################################################################################################################################

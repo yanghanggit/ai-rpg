@@ -11,7 +11,7 @@ import random
 from typing import Final, List, Set, final, override
 from loguru import logger
 from ..entitas import Entity, ExecuteProcessor
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 from ..models import (
     CharacterStatsComponent,
     DeathComponent,
@@ -48,10 +48,10 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
     ############################################################################################################
     def __init__(
         self,
-        game: TCGGame,
+        game: DBGGame,
         strategy: ActionOrderStrategy = ActionOrderStrategy.RANDOM,
     ) -> None:
-        self._game: Final[TCGGame] = game
+        self._game: Final[DBGGame] = game
         self._strategy: Final[ActionOrderStrategy] = strategy
 
     ############################################################################################################

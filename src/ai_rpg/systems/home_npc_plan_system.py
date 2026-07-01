@@ -18,7 +18,7 @@ from ..models import (
     PlayerComponent,
 )
 from ..utils import extract_json_from_code_block
-from ..game import TCGGame
+from ..game import DBGGame
 from .home_planning_utils import (
     ActionPlanResponse,
     build_action_planning_prompt,
@@ -46,9 +46,9 @@ class HomeNpcPlanSystem(ReactiveProcessor):
             False：与旧行为一致，对话历史直接存完整 prompt，不附挂额外字段。
     """
 
-    def __init__(self, game: TCGGame, use_compressed_prompt: bool = True) -> None:
+    def __init__(self, game: DBGGame, use_compressed_prompt: bool = True) -> None:
         super().__init__(game)
-        self._game: Final[TCGGame] = game
+        self._game: Final[DBGGame] = game
         self._use_compressed_prompt: Final[bool] = use_compressed_prompt
 
     ####################################################################################################################################

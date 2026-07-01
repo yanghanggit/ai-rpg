@@ -7,7 +7,7 @@
 from datetime import datetime
 from typing import List
 from loguru import logger
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 from ..game.world_store import archive_world
 from ..game.game_server import GameServer
 from ..models import MonsterComponent, TaskStatus
@@ -42,12 +42,12 @@ async def execute_init_combat_task(
         logger.info(f"🚀 战斗初始化任务开始: task_id={task_id}, user={user_name}")
 
         current_room = game_server.get_room(user_name)
-        if current_room is None or current_room._tcg_game is None:
+        if current_room is None or current_room._dbg_game is None:
             raise ValueError(f"游戏实例不存在: user={user_name}")
 
         async with current_room._lock:
-            rpg_game = current_room._tcg_game
-            assert isinstance(rpg_game, TCGGame), "Invalid game type"
+            rpg_game = current_room._dbg_game
+            assert isinstance(rpg_game, DBGGame), "Invalid game type"
 
             if not rpg_game.current_dungeon.is_initializing:
                 raise ValueError("战斗未处于开始阶段")
@@ -99,12 +99,12 @@ async def execute_retreat_task(
         logger.info(f"🚀 撤退任务开始: task_id={task_id}, user={user_name}")
 
         current_room = game_server.get_room(user_name)
-        if current_room is None or current_room._tcg_game is None:
+        if current_room is None or current_room._dbg_game is None:
             raise ValueError(f"游戏实例不存在: user={user_name}")
 
         async with current_room._lock:
-            rpg_game = current_room._tcg_game
-            assert isinstance(rpg_game, TCGGame), "Invalid game type"
+            rpg_game = current_room._dbg_game
+            assert isinstance(rpg_game, DBGGame), "Invalid game type"
 
             # 执行战斗流程让 CombatOutcomeSystem 检测到角色死亡并判定失败
             await rpg_game._combat_pipeline.execute()
@@ -159,12 +159,12 @@ async def execute_draw_cards_task(
 
         # 获取房间并用每玩家锁避免并发状态竞争
         current_room = game_server.get_room(user_name)
-        if current_room is None or current_room._tcg_game is None:
+        if current_room is None or current_room._dbg_game is None:
             raise ValueError(f"游戏实例不存在: user={user_name}")
 
         async with current_room._lock:
-            rpg_game = current_room._tcg_game
-            assert isinstance(rpg_game, TCGGame), "Invalid game type"
+            rpg_game = current_room._dbg_game
+            assert isinstance(rpg_game, DBGGame), "Invalid game type"
 
             # 验证战斗状态
             if not rpg_game.current_dungeon.is_ongoing:
@@ -223,12 +223,12 @@ async def execute_play_cards_task(
 
         # 获取房间并用每玩家锁避免并发状态竞争
         current_room = game_server.get_room(user_name)
-        if current_room is None or current_room._tcg_game is None:
+        if current_room is None or current_room._dbg_game is None:
             raise ValueError(f"游戏实例不存在: user={user_name}")
 
         async with current_room._lock:
-            rpg_game = current_room._tcg_game
-            assert isinstance(rpg_game, TCGGame), "Invalid game type"
+            rpg_game = current_room._dbg_game
+            assert isinstance(rpg_game, DBGGame), "Invalid game type"
 
             # 验证战斗状态
             if not rpg_game.current_dungeon.is_ongoing:
@@ -282,12 +282,12 @@ async def execute_pass_turn_task(
         logger.info(f"🚀 过牌任务开始: task_id={task_id}, user={user_name}")
 
         current_room = game_server.get_room(user_name)
-        if current_room is None or current_room._tcg_game is None:
+        if current_room is None or current_room._dbg_game is None:
             raise ValueError(f"游戏实例不存在: user={user_name}")
 
         async with current_room._lock:
-            rpg_game = current_room._tcg_game
-            assert isinstance(rpg_game, TCGGame), "Invalid game type"
+            rpg_game = current_room._dbg_game
+            assert isinstance(rpg_game, DBGGame), "Invalid game type"
 
             if not rpg_game.current_dungeon.is_ongoing:
                 raise ValueError("战斗未在进行中")
@@ -331,12 +331,12 @@ async def execute_use_consumable_task(
         logger.info(f"🚀 使用消耗品任务开始: task_id={task_id}, user={user_name}")
 
         current_room = game_server.get_room(user_name)
-        if current_room is None or current_room._tcg_game is None:
+        if current_room is None or current_room._dbg_game is None:
             raise ValueError(f"游戏实例不存在: user={user_name}")
 
         async with current_room._lock:
-            rpg_game = current_room._tcg_game
-            assert isinstance(rpg_game, TCGGame), "Invalid game type"
+            rpg_game = current_room._dbg_game
+            assert isinstance(rpg_game, DBGGame), "Invalid game type"
 
             if not rpg_game.current_dungeon.is_ongoing:
                 raise ValueError("战斗未在进行中")
@@ -381,12 +381,12 @@ async def execute_use_gear_task(
         logger.info(f"🚀 使用装备任务开始: task_id={task_id}, user={user_name}")
 
         current_room = game_server.get_room(user_name)
-        if current_room is None or current_room._tcg_game is None:
+        if current_room is None or current_room._dbg_game is None:
             raise ValueError(f"游戏实例不存在: user={user_name}")
 
         async with current_room._lock:
-            rpg_game = current_room._tcg_game
-            assert isinstance(rpg_game, TCGGame), "Invalid game type"
+            rpg_game = current_room._dbg_game
+            assert isinstance(rpg_game, DBGGame), "Invalid game type"
 
             if not rpg_game.current_dungeon.is_ongoing:
                 raise ValueError("战斗未在进行中")

@@ -19,7 +19,7 @@ import pytest
 
 from src.ai_rpg.entitas.context import Context
 from src.ai_rpg.entitas.entity import Entity
-from src.ai_rpg.game.tcg_game import TCGGame
+from src.ai_rpg.game.dbg_game import DBGGame
 from src.ai_rpg.models import (
     DeckComponent,
     DrawPileComponent,
@@ -60,7 +60,7 @@ def _make_actor_entity(context: Context, name: str = "test_actor") -> Entity:
 
 
 def _make_mock_game() -> MagicMock:
-    game = MagicMock(spec=TCGGame)
+    game = MagicMock(spec=DBGGame)
     return game
 
 

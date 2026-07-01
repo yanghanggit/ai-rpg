@@ -3,7 +3,7 @@ from loguru import logger
 from overrides import override
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, ExecuteProcessor, Matcher
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 from ..models import ActorComponent, AppearanceComponent, CostumeComponent
 from ..models.items import CostumeItem
 from .appearance_prompt_builders import (
@@ -17,8 +17,8 @@ from .appearance_prompt_builders import (
 class AppearanceInitializationSystem(ExecuteProcessor):
     """角色外观初始化系统"""
 
-    def __init__(self, game: TCGGame) -> None:
-        self._game: Final[TCGGame] = game
+    def __init__(self, game: DBGGame) -> None:
+        self._game: Final[DBGGame] = game
 
     #######################################################################################################################################
     @override

@@ -5,12 +5,12 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ai-rpg"
 version = "0.1.0"
-description = "A multi-agent game framework based on ECS architecture for TCG games"
+description = "A multi-agent game framework based on ECS architecture for DBG games"
 authors = [{name = "Yang Hang", email = "yanghang@example.com"}]
 license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.12"
-keywords = ["multi-agent", "game", "framework", "ECS", "TCG", "AI"]
+keywords = ["multi-agent", "game", "framework", "ECS", "DBG", "AI"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",

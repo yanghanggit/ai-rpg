@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from loguru import logger
 from ai_rpg.game.player_session import PlayerSession
-from ai_rpg.game.tcg_game import TCGGame
+from ai_rpg.game.dbg_game import DBGGame
 from ai_rpg.models import CombatState, World
 from ai_rpg.game import archive_world
 from ai_rpg.services.home_actions import (
@@ -37,7 +37,7 @@ async def advance_game(
     world: World,
     player_session: PlayerSession,
     save_dir: Path,
-) -> TCGGame:
+) -> DBGGame:
     """从存档复位，执行一轮家园推进（等同于终端命令 /ad），并归档新状态。
 
     调用 activate_stage_plan 为玩家当前场景内所有 NPC 激活行动计划，
@@ -51,7 +51,7 @@ async def advance_game(
         save_dir: 新存档写入目录（由命令层根据时间戳预先构造）。
 
     Returns:
-        执行完毕后的 TCGGame 实例（已归档）。
+        执行完毕后的 DBGGame 实例（已归档）。
     """
     terminal_game = await restore_game(world, player_session)
 
@@ -76,7 +76,7 @@ async def speak_game(
     target: str,
     content: str,
     save_dir: Path,
-) -> TCGGame:
+) -> DBGGame:
     """从存档复位，玩家向指定 NPC 说话（等同于终端命令 /speak），并归档新状态。
 
     调用 activate_speak_action 添加玩家说话行动，然后驱动 home_pipeline.process()。
@@ -92,12 +92,12 @@ async def speak_game(
         save_dir: 新存档写入目录。
 
     Returns:
-        执行完毕后的 TCGGame 实例（已归档）；激活失败时提前返回未归档实例。
+        执行完毕后的 DBGGame 实例（已归档）；激活失败时提前返回未归档实例。
     """
     terminal_game = await restore_game(world, player_session)
 
     success, _ = activate_speak_action(
-        tcg_game=terminal_game,
+        dbg_game=terminal_game,
         target=target,
         content=content,
     )
@@ -121,7 +121,7 @@ async def switch_stage_game(
     player_session: PlayerSession,
     stage_name: str,
     save_dir: Path,
-) -> TCGGame:
+) -> DBGGame:
     """从存档复位，玩家切换到指定场景（等同于终端命令 /switch_stage），并归档新状态。
 
     调用 activate_switch_stage 添加玩家场景转换行动，然后驱动 home_pipeline.process()。
@@ -136,12 +136,12 @@ async def switch_stage_game(
         save_dir: 新存档写入目录。
 
     Returns:
-        执行完毕后的 TCGGame 实例（已归档）；激活失败时提前返回未归档实例。
+        执行完毕后的 DBGGame 实例（已归档）；激活失败时提前返回未归档实例。
     """
     terminal_game = await restore_game(world, player_session)
 
     success, _ = activate_switch_stage(
-        tcg_game=terminal_game,
+        dbg_game=terminal_game,
         stage_name=stage_name,
     )
     if not success:
@@ -164,7 +164,7 @@ async def enter_dungeon_game(
     player_session: PlayerSession,
     dungeon_name: str,
     save_dir: Path,
-) -> TCGGame:
+) -> DBGGame:
     """从存档复位，启动地下城第一关（等同于终端命令 /ed），并归档新状态。
 
     调用 setup_dungeon 从文件加载地下城、赋值并创建地下城实体，再调用 enter_dungeon_first_stage 将玩家和队友传送至第一关场景，
@@ -182,7 +182,7 @@ async def enter_dungeon_game(
         save_dir: 新存档写入目录。
 
     Returns:
-        执行完毕后的 TCGGame 实例（已归档）；失败时提前返回未归档实例。
+        执行完毕后的 DBGGame 实例（已归档）；失败时提前返回未归档实例。
     """
     terminal_game = await restore_game(world, player_session)
 
@@ -220,7 +220,7 @@ async def generate_dungeon_game(
     world: World,
     player_session: PlayerSession,
     save_dir: Path,
-) -> TCGGame:
+) -> DBGGame:
     """从存档复位，激活地下城生成动作并执行 dungeon_generate_pipeline，并归档新状态。
 
     调用 activate_generate_dungeon 为玩家实体添加 GenerateDungeonAction，
@@ -236,7 +236,7 @@ async def generate_dungeon_game(
         save_dir: 新存档写入目录。
 
     Returns:
-        执行完毕后的 TCGGame 实例（已归档）；激活失败时提前返回未归档实例。
+        执行完毕后的 DBGGame 实例（已归档）；激活失败时提前返回未归档实例。
     """
     terminal_game = await restore_game(world, player_session)
 

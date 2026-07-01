@@ -15,16 +15,16 @@ from typing import final, override, Dict, List
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import TransStageAction, HomeComponent
 from loguru import logger
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 from ..game.stage_transition import stage_transition
 
 
 @final
 class TransStageActionSystem(ReactiveProcessor):
 
-    def __init__(self, game: TCGGame) -> None:
+    def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
-        self._game: TCGGame = game
+        self._game: DBGGame = game
 
     ####################################################################################################################################
     @override

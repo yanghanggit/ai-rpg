@@ -10,7 +10,7 @@ from ..models import (
     ActorComponent,
     AgentEvent,
 )
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 
 
 #######################################################################################################################################
@@ -51,9 +51,9 @@ def _generate_action_notice_for_others(actor_name: str, round_number: int) -> st
 class PlayCardsActionSystem(ReactiveProcessor):
     """出牌动作系统。"""
 
-    def __init__(self, game: TCGGame) -> None:
+    def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
-        self._game: Final[TCGGame] = game
+        self._game: Final[DBGGame] = game
 
     ####################################################################################################################################
     @override

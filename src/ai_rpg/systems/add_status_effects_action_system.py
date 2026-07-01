@@ -5,7 +5,7 @@ from loguru import logger
 from overrides import override
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 from ..models import (
     ActorComponent,
     AddStatusEffectsAction,
@@ -30,11 +30,11 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
 
     def __init__(
         self,
-        game: TCGGame,
+        game: DBGGame,
         use_compressed_prompt: bool = True,
     ) -> None:
         super().__init__(game)
-        self._game: Final[TCGGame] = game
+        self._game: Final[DBGGame] = game
         self._use_compressed_prompt: Final[bool] = use_compressed_prompt
 
     #######################################################################################################################################

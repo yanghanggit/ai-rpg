@@ -20,7 +20,7 @@ from ai_rpg.game.config import (
     DUNGEONS_DIR,
 )
 from ai_rpg.game.player_session import PlayerSession
-from ai_rpg.game.tcg_game import TCGGame
+from ai_rpg.game.dbg_game import DBGGame
 from ai_rpg.models import Blueprint, Dungeon, World
 from ai_rpg.game import archive_world
 from pathlib import Path
@@ -29,7 +29,7 @@ from pathlib import Path
 ###############################################################################
 async def create_and_initialize_game(
     user: str, game: str, dungeon_name: str, save_dir: Path
-) -> TCGGame:
+) -> DBGGame:
     """创建并初始化一个新游戏实例。
 
     从 BLUEPRINTS_DIR/{game}.json 加载蓝图，从 DUNGEONS_DIR/{dungeon_name}.json 加载地下城。
@@ -41,7 +41,7 @@ async def create_and_initialize_game(
         save_dir: 存档目录
 
     Returns:
-        已初始化完成的 TCGGame 实例
+        已初始化完成的 DBGGame 实例
     """
     # 从 JSON 文件加载蓝图
     blueprint_path = BLUEPRINTS_DIR / f"{game}.json"
@@ -71,7 +71,7 @@ async def create_and_initialize_game(
     )
 
     assert world_data is not None, "World data must exist to create a game"
-    terminal_game = TCGGame(
+    terminal_game = DBGGame(
         name=game,
         player_session=PlayerSession(
             name=user,
@@ -111,22 +111,22 @@ async def create_and_initialize_game(
 async def restore_game(
     world: World,
     player_session: PlayerSession,
-) -> TCGGame:
-    """从已还原的 World/PlayerSession 构造 TCGGame 并完成初始化。
+) -> DBGGame:
+    """从已还原的 World/PlayerSession 构造 DBGGame 并完成初始化。
 
     各命令的共享入口：先由命令层调用 restore_world(snapshot_path) 拿到
-    (World, PlayerSession)，再传入本函数完成 TCGGame 的实体重建与服务初始化。
+    (World, PlayerSession)，再传入本函数完成 DBGGame 的实体重建与服务初始化。
 
     Args:
         world: 由 restore_world() 反序列化的世界数据。
         player_session: 由 restore_world() 反序列化的玩家会话。
 
     Returns:
-        已完成 restore_from_snapshot() + initialize() 的 TCGGame 实例，
+        已完成 restore_from_snapshot() + initialize() 的 DBGGame 实例，
         可直接调用 home_pipeline / combat_pipeline。
     """
     game = str(world.blueprint.name)
-    terminal_game = TCGGame(
+    terminal_game = DBGGame(
         name=game,
         player_session=player_session,
         world=world,

@@ -8,7 +8,7 @@ from loguru import logger
 from pydantic import BaseModel
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 from ..models import (
     ActorComponent,
     DrawPileComponent,
@@ -144,9 +144,9 @@ class DrawCardsActionSystem(ReactiveProcessor):
     若 DRAW 阶段有状态效果则调用一次 LLM 进行数值调整，否则直接写入 HandComponent。
     """
 
-    def __init__(self, game: TCGGame) -> None:
+    def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
-        self._game: Final[TCGGame] = game
+        self._game: Final[DBGGame] = game
 
     ####################################################################################################################################
     def _get_max_num_cards(self, actor: Entity) -> int:

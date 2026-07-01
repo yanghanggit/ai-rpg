@@ -5,7 +5,7 @@ from typing import Final, List, final, override, Set
 from ..models.messages import AIMessage
 from loguru import logger
 from ..entitas import ExecuteProcessor, Entity
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 from ..models import (
     GenerateDeckAction,
     StageDescriptionComponent,
@@ -107,8 +107,8 @@ class CombatInitializationSystem(ExecuteProcessor):
     执行时机：战斗序列状态为 initializing 时（战斗触发后、第一回合开始前）。
     """
 
-    def __init__(self, game: TCGGame) -> None:
-        self._game: Final[TCGGame] = game
+    def __init__(self, game: DBGGame) -> None:
+        self._game: Final[DBGGame] = game
 
     ###################################################################################################################################################################
     @override

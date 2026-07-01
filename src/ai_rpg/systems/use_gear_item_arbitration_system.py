@@ -9,7 +9,7 @@ from loguru import logger
 from overrides import override
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 from ..models import (
     UseGearItemAction,
     CharacterStatsComponent,
@@ -36,9 +36,9 @@ from .arbitration_prompt_builders import (
 class UseGearItemArbitrationSystem(ReactiveProcessor):
     """响应 UseGearItemAction 事件，LLM 结算装备即时修正效果（HP/属性），生成叙事并广播。"""
 
-    def __init__(self, game: TCGGame, use_compressed_prompt: bool = True) -> None:
+    def __init__(self, game: DBGGame, use_compressed_prompt: bool = True) -> None:
         super().__init__(game)
-        self._game: Final[TCGGame] = game
+        self._game: Final[DBGGame] = game
         self._use_compressed_prompt: Final[bool] = use_compressed_prompt
 
     #######################################################################################################################################

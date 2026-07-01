@@ -22,7 +22,7 @@ from ..embedding_model import (
     multilingual_model,
 )
 from ..chroma import get_custom_collection, search_documents
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 
 
 #############################################################################################################################
@@ -70,9 +70,9 @@ def _build_query_result_message(
 @final
 class QueryActionSystem(ReactiveProcessor):
 
-    def __init__(self, game: TCGGame, top_k: int = 3) -> None:
+    def __init__(self, game: DBGGame, top_k: int = 3) -> None:
         super().__init__(game)
-        self._game: Final[TCGGame] = game
+        self._game: Final[DBGGame] = game
         self._top_k: Final[int] = top_k  # RAG检索返回的结果数量
 
     #############################################################################################################################

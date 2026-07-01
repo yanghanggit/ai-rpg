@@ -10,7 +10,7 @@ from ..models import (
     HandComponent,
     PlayCardsAction,
 )
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 
 
 #######################################################################################################################################
@@ -18,9 +18,9 @@ from ..game.tcg_game import TCGGame
 class MoveToDiscardPileSystem(ReactiveProcessor):
     """出牌后路由系统。"""
 
-    def __init__(self, game: TCGGame) -> None:
+    def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
-        self._game: Final[TCGGame] = game
+        self._game: Final[DBGGame] = game
 
     ####################################################################################################################################
     @override

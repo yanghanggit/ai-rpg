@@ -8,7 +8,7 @@ from typing import List
 from src.ai_rpg.deepseek import DeepSeekClient
 from src.ai_rpg.entitas.context import Context
 from src.ai_rpg.entitas.entity import Entity
-from src.ai_rpg.game.tcg_game import TCGGame
+from src.ai_rpg.game.dbg_game import DBGGame
 from src.ai_rpg.models import (
     ActorComponent,
     CharacterStatsComponent,
@@ -72,8 +72,8 @@ def context() -> Context:
 
 @pytest.fixture()
 def mock_game(context: Context) -> MagicMock:
-    """MagicMock TCGGame，将 get_group() 代理到真实 Context。"""
-    game = MagicMock(spec=TCGGame)
+    """MagicMock DBGGame，将 get_group() 代理到真实 Context。"""
+    game = MagicMock(spec=DBGGame)
     game.get_group.side_effect = context.get_group
     return game
 
@@ -299,8 +299,8 @@ def _make_actor_with_stats_and_effects(
 
 
 def _make_mock_game_with_stats(context: Context) -> MagicMock:
-    """构造带有统计信息 mock 的 TCGGame，compute_character_stats 返回 hp=20, max_hp=30。"""
-    game = MagicMock(spec=TCGGame)
+    """构造带有统计信息 mock 的 DBGGame，compute_character_stats 返回 hp=20, max_hp=30。"""
+    game = MagicMock(spec=DBGGame)
     game.get_group.side_effect = context.get_group
 
     stats = MagicMock()

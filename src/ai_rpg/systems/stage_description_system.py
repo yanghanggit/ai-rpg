@@ -5,7 +5,7 @@ from overrides import override
 from pydantic import BaseModel
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, ExecuteProcessor, Matcher
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 from ..models import (
     StageDescriptionComponent,
     StageComponent,
@@ -112,11 +112,11 @@ class StageDescriptionSystem(ExecuteProcessor):
 
     def __init__(
         self,
-        game: TCGGame,
+        game: DBGGame,
         enable_debug_cache: bool,
         use_compressed_prompt: bool = True,
     ) -> None:
-        self._game: Final[TCGGame] = game
+        self._game: Final[DBGGame] = game
         self._enable_debug_cache: Final[bool] = enable_debug_cache
         self._use_compressed_prompt: Final[bool] = use_compressed_prompt
 

@@ -8,7 +8,7 @@
 from typing import Set
 from loguru import logger
 from ..game.config import DUNGEONS_DIR
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 from ..game.stage_transition import stage_transition
 from ..models import (
     Dungeon,
@@ -63,7 +63,7 @@ def _generate_return_home_message(
 
 
 ###################################################################################################################################################################
-def _select_party_members(tcg_game: TCGGame, dungeon: Dungeon) -> Set[Entity]:
+def _select_party_members(dbg_game: DBGGame, dungeon: Dungeon) -> Set[Entity]:
     """选择参与地下城远征的队伍成员
 
     依据玩家实体上的 PartyRosterComponent 决定队伍构成，规则：
@@ -72,7 +72,7 @@ def _select_party_members(tcg_game: TCGGame, dungeon: Dungeon) -> Set[Entity]:
     3. 名单为空或组件不存在时，玩家独自冒险
 
     Args:
-        tcg_game: TCG游戏实例
+        dbg_game: DBG游戏实例
         dungeon: 地下城实例
 
     Returns:
@@ -80,7 +80,7 @@ def _select_party_members(tcg_game: TCGGame, dungeon: Dungeon) -> Set[Entity]:
     """
 
     # 1. 获取玩家实体并验证组件
-    player_entity = tcg_game.get_player_entity()
+    player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
     assert player_entity.has(
         PartyRosterComponent
@@ -92,7 +92,7 @@ def _select_party_members(tcg_game: TCGGame, dungeon: Dungeon) -> Set[Entity]:
     party_members: Set[Entity] = {player_entity}
     logger.info(f"玩家 {player_entity.name} 将参与远征")
     for member_name in party_roster_comp.members:
-        member_entity = tcg_game.get_actor_entity(member_name)
+        member_entity = dbg_game.get_actor_entity(member_name)
         assert member_entity is not None, f"远征队名单中的成员 {member_name!r} 不存在！"
         party_members.add(member_entity)
         logger.info(f"按名单将 {member_name} 加入远征队")
@@ -116,7 +116,7 @@ def _select_party_members(tcg_game: TCGGame, dungeon: Dungeon) -> Set[Entity]:
 
 ###################################################################################################################################################################
 def _enter_dungeon_stage(
-    tcg_game: TCGGame, dungeon: Dungeon, party_member_entities: Set[Entity]
+    dbg_game: DBGGame, dungeon: Dungeon, party_member_entities: Set[Entity]
 ) -> bool:
     """
     进入地下城关卡并初始化战斗环境
@@ -124,7 +124,7 @@ def _enter_dungeon_stage(
     协调关卡进入流程：验证前置条件、生成叙事消息、执行场景传送、设置战斗环境。
 
     Args:
-        tcg_game: TCG游戏实例
+        dbg_game: DBG游戏实例
         dungeon: 地下城实例
         party_member_entities: 远征队成员实体集合
 
@@ -141,7 +141,7 @@ def _enter_dungeon_stage(
     assert stage_model is not None, f"{dungeon.name} 地下城关卡数据异常！"
 
     # 2. 获取关卡实体
-    stage_entity = tcg_game.get_stage_entity(stage_model.name)
+    stage_entity = dbg_game.get_stage_entity(stage_model.name)
     assert stage_entity is not None, f"{stage_model.name} 没有对应的stage实体！"
 
     assert stage_entity.has(
@@ -160,14 +160,14 @@ def _enter_dungeon_stage(
         # 根据是否为首次进入，设置不同的生命周期标记
         if dungeon.current_room_index == 0:
             # 首次进入：仅地下城名称
-            tcg_game.add_human_message(
+            dbg_game.add_human_message(
                 party_member, trans_message, dungeon_lifecycle_entry=dungeon.name
             )
 
         else:
 
             # 关卡推进：地下城名称:关卡名称
-            tcg_game.add_human_message(
+            dbg_game.add_human_message(
                 party_member,
                 trans_message,
                 dungeon_lifecycle_stage_advance=f"{dungeon.name}:{stage_entity.name}",
@@ -179,14 +179,14 @@ def _enter_dungeon_stage(
             party_member.remove(DeathComponent)
 
             # 恢复生命值1
-            revived_stats = tcg_game.set_character_hp(party_member, 1)
-            # revived_stats = tcg_game.compute_character_stats(party_member)
+            revived_stats = dbg_game.set_character_hp(party_member, 1)
+            # revived_stats = dbg_game.compute_character_stats(party_member)
             logger.info(
                 f"恢复生命值: {party_member.name} 生命值 = {revived_stats.hp}/{revived_stats.max_hp}"
             )
 
     # 4. 执行场景传送
-    stage_transition(tcg_game, party_member_entities, stage_entity)
+    stage_transition(dbg_game, party_member_entities, stage_entity)
 
     # 6. 初始化战斗状态
     dungeon.start_combat(Combat(name=stage_entity.name))
@@ -194,14 +194,14 @@ def _enter_dungeon_stage(
 
 
 ###################################################################################################################################################################
-def _restore_gear_durability(tcg_game: TCGGame) -> None:
+def _restore_gear_durability(dbg_game: DBGGame) -> None:
     """将所有 InventoryComponent 中 GearItem 的 durability 恢复至 max_durability。
 
     在进入地下城第一关之前和从地下城返回家园之后调用。
     """
     from ..models import InventoryComponent
 
-    for entity in tcg_game.get_group(Matcher(InventoryComponent)).entities:
+    for entity in dbg_game.get_group(Matcher(InventoryComponent)).entities:
         inv = entity.get(InventoryComponent)
         for item in inv.items:
             if isinstance(item, GearItem) and item.durability != item.max_durability:
@@ -213,29 +213,29 @@ def _restore_gear_durability(tcg_game: TCGGame) -> None:
 
 
 ###################################################################################################################################################################
-def _clear_combat_state(tcg_game: TCGGame) -> None:
+def _clear_combat_state(dbg_game: DBGGame) -> None:
     """清除一次战斗（Combat）结束后的临时状态。
 
     - 清除所有角色的手牌与回合动态属性（HandComponent / RoundStatsComponent）
     - 清除所有角色的状态效果（StatusEffectsComponent）
     - 移除所有角色的 EquippedGearComponent（物品始终保留在 InventoryComponent）
     """
-    tcg_game.clear_round_state()
-    tcg_game.clear_status_effects()
-    tcg_game.clear_equipped_gear()
+    dbg_game.clear_round_state()
+    dbg_game.clear_status_effects()
+    dbg_game.clear_equipped_gear()
 
 
 ###################################################################################################################################################################
-def setup_dungeon(tcg_game: TCGGame, dungeon_name: str) -> tuple[bool, str]:
+def setup_dungeon(dbg_game: DBGGame, dungeon_name: str) -> tuple[bool, str]:
     """从文件加载地下城数据、赋值到游戏世界，并创建全部游戏实体（敌人和场景）。（幂等）
 
-    从 DUNGEONS_DIR/{dungeon_name}.json 读取并实例化 Dungeon，赋值给 tcg_game._world.dungeon，
+    从 DUNGEONS_DIR/{dungeon_name}.json 读取并实例化 Dungeon，赋值给 dbg_game._world.dungeon，
     再创建对应的运行时 Entity（敌人和关卡场景）。
     若实体已创建（dungeon.setup_entities == True），跳过实体创建直接返回成功。
     仅在 current_room_index == -1（尚未进入）时允许调用。
 
     Args:
-        tcg_game: TCG游戏实例
+        dbg_game: DBG游戏实例
         dungeon_name: 地下城名称（对应 DUNGEONS_DIR 下的 JSON 文件名，不含扩展名）
 
     Returns:
@@ -261,20 +261,20 @@ def setup_dungeon(tcg_game: TCGGame, dungeon_name: str) -> tuple[bool, str]:
         return False, error_msg
 
     # 守护：当前游戏世界中已有地下城正在进行，不允许重新 setup
-    if tcg_game._world.dungeon.current_room_index >= 0:
+    if dbg_game._world.dungeon.current_room_index >= 0:
         error_msg = (
-            f"setup_dungeon 失败: 当前地下城 {tcg_game._world.dungeon.name!r} 正在进行中 "
-            f"(current_room_index={tcg_game._world.dungeon.current_room_index})，请先退出"
+            f"setup_dungeon 失败: 当前地下城 {dbg_game._world.dungeon.name!r} 正在进行中 "
+            f"(current_room_index={dbg_game._world.dungeon.current_room_index})，请先退出"
         )
         logger.error(error_msg)
         return False, error_msg
 
     assert (
-        not tcg_game.is_player_in_dungeon_stage
+        not dbg_game.is_player_in_dungeon_stage
     ), "setup_dungeon 失败: 玩家已在地下城场景中！"
 
-    # 2. 赋值到游戏世界（此后 tcg_game.current_dungeon 指向新加载的实例）
-    tcg_game._world.dungeon = dungeon
+    # 2. 赋值到游戏世界（此后 dbg_game.current_dungeon 指向新加载的实例）
+    dbg_game._world.dungeon = dungeon
     logger.debug(f"setup_dungeon: 已将 {dungeon.name} 赋值到 world.dungeon")
 
     # 3. 幂等：实体已创建则跳过
@@ -283,21 +283,21 @@ def setup_dungeon(tcg_game: TCGGame, dungeon_name: str) -> tuple[bool, str]:
         return True, f"地下城实体已存在，跳过创建: {dungeon.name}"
 
     # 4. 创建地下城实体（内部将 setup_entities 置 True），索引保持 -1
-    tcg_game.setup_dungeon_entities(dungeon)
+    dbg_game.setup_dungeon_entities(dungeon)
 
     logger.info(f"setup_dungeon 完成: {dungeon.name}")
     return True, f"地下城实体创建完成: {dungeon.name}"
 
 
 ###################################################################################################################################################################
-def enter_dungeon(tcg_game: TCGGame, dungeon: Dungeon) -> tuple[bool, str]:
+def enter_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> tuple[bool, str]:
     """组建远征队并传送至地下城第一关，启动首个战斗序列。
 
     必须在 setup_dungeon 成功后调用（依赖 dungeon.setup_entities == True）。
     负责选择远征队成员（玩家 + 最多1个随机盟友）、执行场景传送、初始化战斗状态。
 
     Args:
-        tcg_game: TCG游戏实例
+        dbg_game: DBG游戏实例
         dungeon: 地下城实例（须已完成 setup_dungeon）
 
     Returns:
@@ -317,7 +317,7 @@ def enter_dungeon(tcg_game: TCGGame, dungeon: Dungeon) -> tuple[bool, str]:
         return False, error_msg
 
     # 确保全局不存在远征队成员（无人正在参与远征）
-    party_members = tcg_game.get_group(Matcher(all_of=[PartyMemberComponent])).entities
+    party_members = dbg_game.get_group(Matcher(all_of=[PartyMemberComponent])).entities
     assert len(party_members) == 0, (
         f"enter_dungeon_first_stage: 进入前必须无远征队成员，"
         f"当前存在 {len(party_members)} 个"
@@ -327,45 +327,45 @@ def enter_dungeon(tcg_game: TCGGame, dungeon: Dungeon) -> tuple[bool, str]:
     dungeon.current_room_index = 0
 
     # 选择远征队成员（玩家 + 最多1个随机盟友）
-    party_member_entities = _select_party_members(tcg_game, dungeon)
+    party_member_entities = _select_party_members(dbg_game, dungeon)
 
     # 进入地下城前恢复所有背包装备的耐久度
-    _restore_gear_durability(tcg_game)
+    _restore_gear_durability(dbg_game)
 
     # 传送并初始化战斗
-    if not _enter_dungeon_stage(tcg_game, dungeon, party_member_entities):
+    if not _enter_dungeon_stage(dbg_game, dungeon, party_member_entities):
         error_msg = f"enter_dungeon_first_stage 失败: 无法进入第一关 {dungeon.name}"
         logger.error(error_msg)
         return False, error_msg
 
     # 清除上一场战斗的临时状态
-    _clear_combat_state(tcg_game)
+    _clear_combat_state(dbg_game)
 
     logger.info(f"enter_dungeon_first_stage 完成: {dungeon.name}")
     return True, f"成功进入地下城: {dungeon.name}"
 
 
 ###################################################################################################################################################################
-def advance_dungeon(tcg_game: TCGGame, dungeon: Dungeon) -> None:
+def advance_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> None:
     """
     推进到地下城的下一个关卡
 
     将地下城索引推进到下一关，然后让所有远征队成员进入该关卡。
 
     Args:
-        tcg_game: TCG游戏实例
+        dbg_game: DBG游戏实例
         dungeon: 地下城实例
     """
 
-    if not tcg_game.current_dungeon.is_post_combat:
+    if not dbg_game.current_dungeon.is_post_combat:
         logger.error("当前不处于战斗后状态，无法推进地下城关卡")
         return
 
-    if tcg_game.current_dungeon.is_lost:
+    if dbg_game.current_dungeon.is_lost:
         logger.info("英雄失败，应该返回营地！！！！")
         return
 
-    if not tcg_game.current_dungeon.is_won:
+    if not dbg_game.current_dungeon.is_won:
         assert False, "不可能出现的情况！"
 
     # 1. 推进地下城索引到下一关
@@ -376,21 +376,21 @@ def advance_dungeon(tcg_game: TCGGame, dungeon: Dungeon) -> None:
         return
 
     # 2. 获取所有远征队成员
-    party_member_entities = tcg_game.get_group(
+    party_member_entities = dbg_game.get_group(
         Matcher(all_of=[PartyMemberComponent])
     ).entities.copy()
     assert len(party_member_entities) > 0, "没有找到远征队成员"
 
     # 3. 进入下一关卡
-    enter = _enter_dungeon_stage(tcg_game, dungeon, party_member_entities)
+    enter = _enter_dungeon_stage(dbg_game, dungeon, party_member_entities)
     assert enter, "进入下一关卡失败！"
 
     # 清除上一场战斗的临时状态
-    _clear_combat_state(tcg_game)
+    _clear_combat_state(dbg_game)
 
 
 ###################################################################################################################################################################
-def exit_dungeon(tcg_game: TCGGame, dungeon: Dungeon) -> None:
+def exit_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> None:
     """
     退出地下城并将角色传送回家园
 
@@ -401,13 +401,13 @@ def exit_dungeon(tcg_game: TCGGame, dungeon: Dungeon) -> None:
     函数是中性的，不区分成功或失败，只负责清理和返回流程。
 
     Args:
-        tcg_game: TCG游戏实例
+        dbg_game: DBG游戏实例
         dungeon: 地下城实例
     """
-    cs = tcg_game.current_dungeon
+    cs = dbg_game.current_dungeon
     logger.debug(
         f"[return_home] 入参 dungeon={dungeon.name!r}, "
-        f"world.dungeon={tcg_game._world.dungeon.name!r}, "
+        f"world.dungeon={dbg_game._world.dungeon.name!r}, "
         f"is_ongoing={cs.is_ongoing}, is_post_combat={cs.is_post_combat}, "
         f"is_won={cs.is_won}, is_lost={cs.is_lost}"
     )
@@ -421,7 +421,7 @@ def exit_dungeon(tcg_game: TCGGame, dungeon: Dungeon) -> None:
         return
 
     # 1. 验证并获取远征队成员
-    party_member_entities = tcg_game.get_group(
+    party_member_entities = dbg_game.get_group(
         Matcher(all_of=[PartyMemberComponent])
     ).entities.copy()
     logger.debug(
@@ -431,7 +431,7 @@ def exit_dungeon(tcg_game: TCGGame, dungeon: Dungeon) -> None:
     assert len(party_member_entities) > 0, "没有找到远征队成员"
 
     # 2. 获取家园场景实体
-    home_stages: Set[Entity] = tcg_game.get_group(
+    home_stages: Set[Entity] = dbg_game.get_group(
         Matcher(all_of=[HomeComponent])
     ).entities.copy()
     logger.debug(
@@ -444,7 +444,7 @@ def exit_dungeon(tcg_game: TCGGame, dungeon: Dungeon) -> None:
     dest_stage = next(iter(home_stages))
 
     for party_member_entity in party_member_entities:
-        current_stage_entity = tcg_game.resolve_stage_entity(party_member_entity)
+        current_stage_entity = dbg_game.resolve_stage_entity(party_member_entity)
         current_stage_name = (
             current_stage_entity.name if current_stage_entity else "None"
         )
@@ -453,14 +453,14 @@ def exit_dungeon(tcg_game: TCGGame, dungeon: Dungeon) -> None:
             f"当前场景={current_stage_name!r} → 目标场景={dest_stage.name!r}"
         )
 
-        tcg_game.add_human_message(
+        dbg_game.add_human_message(
             party_member_entity,
             _generate_return_home_message(dungeon.name, dest_stage.name),
             dungeon_lifecycle_completion=dungeon.name,
         )
-        stage_transition(tcg_game, {party_member_entity}, dest_stage)
+        stage_transition(dbg_game, {party_member_entity}, dest_stage)
 
-        after_stage_entity = tcg_game.resolve_stage_entity(party_member_entity)
+        after_stage_entity = dbg_game.resolve_stage_entity(party_member_entity)
         after_stage_name = after_stage_entity.name if after_stage_entity else "None"
         logger.debug(
             f"[return_home] 传送后 {party_member_entity.name} 当前场景={after_stage_name!r}"
@@ -470,8 +470,8 @@ def exit_dungeon(tcg_game: TCGGame, dungeon: Dungeon) -> None:
     logger.debug(
         f"[return_home] 开始 teardown_dungeon_entities: dungeon={dungeon.name!r}"
     )
-    tcg_game.teardown_dungeon_entities(dungeon)
-    tcg_game._world.dungeon = Dungeon(name="", rooms=[], ecology="")
+    dbg_game.teardown_dungeon_entities(dungeon)
+    dbg_game._world.dungeon = Dungeon(name="", rooms=[], ecology="")
     logger.debug("[return_home] teardown_dungeon_entities 完成，dungeon 已重置")
 
     # 6. 恢复所有远征队成员的战斗状态
@@ -482,8 +482,8 @@ def exit_dungeon(tcg_game: TCGGame, dungeon: Dungeon) -> None:
             party_member_entity.remove(DeathComponent)
 
         # 恢复生命值至满血
-        full_stats = tcg_game.compute_character_stats(party_member_entity)
-        tcg_game.set_character_hp(party_member_entity, full_stats.max_hp)
+        full_stats = dbg_game.compute_character_stats(party_member_entity)
+        dbg_game.set_character_hp(party_member_entity, full_stats.max_hp)
         logger.info(
             f"恢复满血: {party_member_entity.name} 生命值 = {full_stats.max_hp}/{full_stats.max_hp}"
         )
@@ -495,19 +495,19 @@ def exit_dungeon(tcg_game: TCGGame, dungeon: Dungeon) -> None:
 
     # 7. 最终场景确认
     for party_member_entity in party_member_entities:
-        final_stage = tcg_game.resolve_stage_entity(party_member_entity)
+        final_stage = dbg_game.resolve_stage_entity(party_member_entity)
         logger.debug(
             f"[return_home] 最终确认 {party_member_entity.name} 场景={final_stage.name if final_stage else 'None'!r}"
         )
 
     # 8. 清除战斗临时状态
-    _clear_combat_state(tcg_game)
+    _clear_combat_state(dbg_game)
 
     # 9. 返回家园后恢复所有背包装备的耐久度
-    _restore_gear_durability(tcg_game)
+    _restore_gear_durability(dbg_game)
 
     # 10. 将运行时实体状态同步回序列化字段（stage_transition 只更新内存，必须显式 flush）
-    tcg_game.flush_entities()
+    dbg_game.flush_entities()
 
 
 ###################################################################################################################################################################

@@ -6,7 +6,7 @@ from overrides import override
 from pydantic import BaseModel
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 from ..models import (
     CraftGearItemAction,
     StorageComponent,
@@ -95,9 +95,9 @@ def _build_craft_gear_prompt(materials: List[MaterialItem]) -> str:
 class CraftGearItemActionSystem(ReactiveProcessor):
     """工坊合成装备系统。"""
 
-    def __init__(self, game: TCGGame) -> None:
+    def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
-        self._game: Final[TCGGame] = game
+        self._game: Final[DBGGame] = game
 
     ####################################################################################################################################
     @override

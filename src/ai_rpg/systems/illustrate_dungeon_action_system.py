@@ -3,7 +3,7 @@ from pathlib import Path
 from loguru import logger
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import IllustrateDungeonAction, Dungeon, DungeonRoom
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 from ..game.config import DUNGEONS_DIR
 from ..replicate import ReplicateImageClient
 
@@ -131,9 +131,9 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
         - 若 dungeon 文件不存在或解析失败，静默 return（不中断流程）
     """
 
-    def __init__(self, game: TCGGame) -> None:
+    def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
-        self._game: Final[TCGGame] = game
+        self._game: Final[DBGGame] = game
 
     ####################################################################################################################################
     @override

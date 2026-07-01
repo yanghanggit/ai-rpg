@@ -1,5 +1,5 @@
 """
-生成 TCG 卡组原型（Archetype）及其关键词约束（Keywords）
+生成 DBG 卡组原型（Archetype）及其关键词约束（Keywords）
 
 流程：
   1. 同步调用 LLM 生成一个 Archetype（name + description）
@@ -58,7 +58,7 @@ class GeneratedArchetype(BaseModel):
 # Prompt 构建
 # ---------------------------------------------------------------------------
 _ARCHETYPE_SYSTEM = SystemMessage(
-    content="""你是一名 TCG（集换式卡牌游戏）游戏设计师。
+    content="""你是一名 DBG（集换式卡牌游戏）游戏设计师。
 你的任务是设计卡组原型（Archetype）。Archetype 是具有共同核心机制、战术策略或主题风格的卡牌原型，\
 是玩家和设计师用来归类卡组类型的高层次标签（如"多段连击型"、"状态控制型"、"牺牲换利型"）。
 
@@ -71,12 +71,12 @@ _ARCHETYPE_SYSTEM = SystemMessage(
 
 
 def _build_archetype_prompt() -> str:
-    return "请设计一个独特且有趣的 TCG 卡组原型，要求风格鲜明、机制清晰，与常见原型有所区别。"
+    return "请设计一个独特且有趣的 DBG 卡组原型，要求风格鲜明、机制清晰，与常见原型有所区别。"
 
 
 def _build_keyword_system_message(archetype: ArchetypeResult) -> SystemMessage:
     return SystemMessage(
-        content=f"""你是一名 TCG 游戏设计师。
+        content=f"""你是一名 DBG 游戏设计师。
 你正在为以下卡组原型设计具体的关键词约束规则（Keyword）：
 
 原型名称：{archetype.name}

@@ -4,7 +4,7 @@ from typing import final, override, Dict, List, Final
 from loguru import logger
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 from ..models import (
     UpdateAppearanceAction,
     AppearanceComponent,
@@ -23,9 +23,9 @@ from .appearance_prompt_builders import (
 @final
 class UpdateAppearanceActionSystem(ReactiveProcessor):
 
-    def __init__(self, game: TCGGame) -> None:
+    def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
-        self._game: Final[TCGGame] = game
+        self._game: Final[DBGGame] = game
 
     ####################################################################################################################################
     @override

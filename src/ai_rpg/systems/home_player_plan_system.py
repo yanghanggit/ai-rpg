@@ -16,7 +16,7 @@ from ..models import (
     PlayerComponent,
     NPCComponent,
 )
-from ..game import TCGGame
+from ..game import DBGGame
 from .home_planning_utils import (
     ActionPlanResponse,
     _PLAYER_ACTIVE_ACTION_TYPES,
@@ -33,9 +33,9 @@ from .home_planning_utils import (
 class HomePlayerPlanSystem(ReactiveProcessor):
     """家园玩家上下文注入系统。"""
 
-    def __init__(self, game: TCGGame, use_compressed_prompt: bool = True) -> None:
+    def __init__(self, game: DBGGame, use_compressed_prompt: bool = True) -> None:
         super().__init__(game)
-        self._game: Final[TCGGame] = game
+        self._game: Final[DBGGame] = game
         self._use_compressed_prompt: Final[bool] = use_compressed_prompt
 
     ####################################################################################################################################

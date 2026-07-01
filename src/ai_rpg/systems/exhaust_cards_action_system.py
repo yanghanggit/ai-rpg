@@ -12,7 +12,7 @@ from ..models import (
     ExhaustPileComponent,
     PlayCardsAction,
 )
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 
 
 #######################################################################################################################################
@@ -20,9 +20,9 @@ from ..game.tcg_game import TCGGame
 class ExhaustCardsActionSystem(ReactiveProcessor):
     """消耗牌处理系统。"""
 
-    def __init__(self, game: TCGGame) -> None:
+    def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
-        self._game: Final[TCGGame] = game
+        self._game: Final[DBGGame] = game
 
     ####################################################################################################################################
     @override

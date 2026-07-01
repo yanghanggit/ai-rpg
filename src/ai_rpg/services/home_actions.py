@@ -7,7 +7,7 @@
 from typing import List, Tuple, Dict
 from loguru import logger
 from ..entitas import Matcher
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 from ..models import (
     SpeakAction,
     TransStageAction,
@@ -34,13 +34,13 @@ from ..models import (
 
 ###################################################################################################################################################################
 def activate_speak_action(
-    tcg_game: TCGGame, target: str, content: str
+    dbg_game: DBGGame, target: str, content: str
 ) -> Tuple[bool, str]:
     """
     激活玩家的说话动作，并触发当前场景所有角色的行动计划。
 
     Args:
-        tcg_game: TCG 游戏实例
+        dbg_game: DBG 游戏实例
         target: 说话目标的角色全名
         content: 说话内容
 
@@ -48,7 +48,7 @@ def activate_speak_action(
         tuple[bool, str]: (是否成功, 失败时的错误详情)
     """
 
-    if not tcg_game.is_player_in_home_stage:
+    if not dbg_game.is_player_in_home_stage:
         error_detail = "玩家不在家园场景中，无法执行说话动作"
         logger.error(f"激活说话动作失败: {error_detail}")
         return False, error_detail
@@ -59,34 +59,34 @@ def activate_speak_action(
         return False, error_detail
 
     # 验证目标角色存在
-    if tcg_game.get_actor_entity(target) is None:
+    if dbg_game.get_actor_entity(target) is None:
         error_detail = f"目标角色 {target} 不存在"
         logger.error(f"激活说话动作失败: {error_detail}")
         return False, error_detail
 
-    player_entity = tcg_game.get_player_entity()
+    player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
 
     logger.debug(f"激活说话动作: {player_entity.name} -> {target}: {content}")
     player_entity.replace(SpeakAction, player_entity.name, {target: content})
-    activate_stage_plan(tcg_game)
+    activate_stage_plan(dbg_game)
     return True, ""
 
 
 ###################################################################################################################################################################
-def activate_switch_stage(tcg_game: TCGGame, stage_name: str) -> Tuple[bool, str]:
+def activate_switch_stage(dbg_game: DBGGame, stage_name: str) -> Tuple[bool, str]:
     """
     激活玩家的场景转换动作，并触发当前场景所有角色的行动计划。
 
     Args:
-        tcg_game: TCG 游戏实例
+        dbg_game: DBG 游戏实例
         stage_name: 目标场景全名
 
     Returns:
         tuple[bool, str]: (是否成功, 失败时的错误详情)
     """
 
-    if not tcg_game.is_player_in_home_stage:
+    if not dbg_game.is_player_in_home_stage:
         error_detail = "玩家不在家园场景中，无法执行说话动作"
         logger.error(f"激活场景转换失败: {error_detail}")
         return False, error_detail
@@ -97,7 +97,7 @@ def activate_switch_stage(tcg_game: TCGGame, stage_name: str) -> Tuple[bool, str
         return False, error_detail
 
     # 验证目标场景存在且为家园场景
-    target_stage_entity = tcg_game.get_stage_entity(stage_name)
+    target_stage_entity = dbg_game.get_stage_entity(stage_name)
     if target_stage_entity is None:
         error_detail = f"目标场景 {stage_name} 不存在"
         logger.error(f"激活场景转换失败: {error_detail}")
@@ -108,11 +108,11 @@ def activate_switch_stage(tcg_game: TCGGame, stage_name: str) -> Tuple[bool, str
         logger.error(f"激活场景转换失败: {error_detail}")
         return False, error_detail
 
-    player_entity = tcg_game.get_player_entity()
+    player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
 
     # 验证目标场景与当前场景不同
-    current_stage_entity = tcg_game.resolve_stage_entity(player_entity)
+    current_stage_entity = dbg_game.resolve_stage_entity(player_entity)
     assert current_stage_entity is not None, "玩家当前场景实体不存在！"
     if current_stage_entity.name == stage_name:
         error_detail = f"目标场景 {stage_name} 与当前场景相同"
@@ -121,12 +121,12 @@ def activate_switch_stage(tcg_game: TCGGame, stage_name: str) -> Tuple[bool, str
 
     logger.debug(f"激活场景转换: {player_entity.name} -> {stage_name}")
     player_entity.replace(TransStageAction, player_entity.name, stage_name)
-    activate_stage_plan(tcg_game)
+    activate_stage_plan(dbg_game)
     return True, ""
 
 
 ###################################################################################################################################################################
-def activate_stage_plan(tcg_game: TCGGame) -> Tuple[bool, str]:
+def activate_stage_plan(dbg_game: DBGGame) -> Tuple[bool, str]:
     """
     为玩家当前场景内所有盟友 NPC 激活行动计划
 
@@ -134,23 +134,23 @@ def activate_stage_plan(tcg_game: TCGGame) -> Tuple[bool, str]:
     使其在下一次游戏推进时执行 AI 决策。
 
     Args:
-        tcg_game: TCG 游戏实例
+        dbg_game: DBG 游戏实例
 
     Returns:
         tuple[bool, str]: (是否成功, 错误详情)
     """
 
-    if not tcg_game.is_player_in_home_stage:
+    if not dbg_game.is_player_in_home_stage:
         error_detail = "玩家不在家园场景中，无法执行说话动作"
         logger.error(f"激活行动计划失败: {error_detail}")
         return False, error_detail
 
     # 获取玩家实体和当前场景实体，验证场景为家园
-    player_entity = tcg_game.get_player_entity()
+    player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
 
     # 获取玩家当前场景实体，验证为家园场景
-    stage_entity = tcg_game.resolve_stage_entity(player_entity)
+    stage_entity = dbg_game.resolve_stage_entity(player_entity)
     assert stage_entity is not None, "玩家当前场景实体不存在！"
     if not stage_entity.has(HomeComponent):
         error_detail = "当前场景不是家园，无法激活行动计划"
@@ -158,7 +158,7 @@ def activate_stage_plan(tcg_game: TCGGame) -> Tuple[bool, str]:
         return False, error_detail
 
     # 获取当前场景中的所有角色实体，验证至少有一个角色存在
-    actors_in_stage = tcg_game.get_actors_in_stage(player_entity)
+    actors_in_stage = dbg_game.get_actors_in_stage(player_entity)
     assert len(actors_in_stage) > 0, f"当前场景没有角色，无法激活行动计划！"
 
     #
@@ -175,23 +175,23 @@ def activate_stage_plan(tcg_game: TCGGame) -> Tuple[bool, str]:
 
 
 ###################################################################################################################################################################
-def add_party_member(tcg_game: TCGGame, member_name: str) -> Tuple[bool, str]:
+def add_party_member(dbg_game: DBGGame, member_name: str) -> Tuple[bool, str]:
     """
     将盟友加入远征队名单。
 
     Args:
-        tcg_game: TCG 游戏实例
+        dbg_game: DBG 游戏实例
         member_name: 要加入名单的盟友角色名称
 
     Returns:
         tuple[bool, str]: (是否成功, 失败时的错误详情)
     """
-    if not tcg_game.is_player_in_home_stage:
+    if not dbg_game.is_player_in_home_stage:
         error_detail = "玩家不在家园场景中，无法修改远征队名单"
         logger.error(f"添加远征队成员失败: {error_detail}")
         return False, error_detail
 
-    member_entity = tcg_game.get_actor_entity(member_name)
+    member_entity = dbg_game.get_actor_entity(member_name)
     if member_entity is None:
         error_detail = f"角色 {member_name} 不存在"
         logger.error(f"添加远征队成员失败: {error_detail}")
@@ -207,7 +207,7 @@ def add_party_member(tcg_game: TCGGame, member_name: str) -> Tuple[bool, str]:
         logger.error(f"添加远征队成员失败: {error_detail}")
         return False, error_detail
 
-    player_entity = tcg_game.get_player_entity()
+    player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
     assert player_entity.has(PartyRosterComponent), "玩家实体缺少 PartyRosterComponent"
 
@@ -227,23 +227,23 @@ def add_party_member(tcg_game: TCGGame, member_name: str) -> Tuple[bool, str]:
 
 
 ###################################################################################################################################################################
-def remove_party_member(tcg_game: TCGGame, member_name: str) -> Tuple[bool, str]:
+def remove_party_member(dbg_game: DBGGame, member_name: str) -> Tuple[bool, str]:
     """
     将盟友从远征队名单中移除。
 
     Args:
-        tcg_game: TCG 游戏实例
+        dbg_game: DBG 游戏实例
         member_name: 要移除的盟友角色名称
 
     Returns:
         tuple[bool, str]: (是否成功, 失败时的错误详情)
     """
-    if not tcg_game.is_player_in_home_stage:
+    if not dbg_game.is_player_in_home_stage:
         error_detail = "玩家不在家园场景中，无法修改远征队名单"
         logger.error(f"移除远征队成员失败: {error_detail}")
         return False, error_detail
 
-    player_entity = tcg_game.get_player_entity()
+    player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
     assert player_entity.has(PartyRosterComponent), "玩家实体缺少 PartyRosterComponent"
 
@@ -263,17 +263,17 @@ def remove_party_member(tcg_game: TCGGame, member_name: str) -> Tuple[bool, str]
 
 
 ###################################################################################################################################################################
-def get_party_roster(tcg_game: TCGGame) -> List[str]:
+def get_party_roster(dbg_game: DBGGame) -> List[str]:
     """
     查阅当前远征队名单（不含玩家自身）。
 
     Args:
-        tcg_game: TCG 游戏实例
+        dbg_game: DBG 游戏实例
 
     Returns:
         远征队同伴名称列表；玩家实体或组件不存在时返回空列表
     """
-    player_entity = tcg_game.get_player_entity()
+    player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
     if player_entity is None:
         return []
@@ -286,7 +286,7 @@ def get_party_roster(tcg_game: TCGGame) -> List[str]:
 
 
 ###################################################################################################################################################################
-def activate_generate_dungeon(tcg_game: TCGGame) -> Tuple[bool, str]:
+def activate_generate_dungeon(dbg_game: DBGGame) -> Tuple[bool, str]:
     """
     在家园状态下激活地下城创建动作。
 
@@ -295,17 +295,17 @@ def activate_generate_dungeon(tcg_game: TCGGame) -> Tuple[bool, str]:
     成功后自动添加 IllustrateDungeonAction 触发图片生成。动作组件由 ActionCleanupSystem 自动清除。
 
     Args:
-        tcg_game: TCG 游戏实例
+        dbg_game: DBG 游戏实例
 
     Returns:
         Tuple[bool, str]: (是否成功, 失败时的错误详情)
     """
-    if not tcg_game.is_player_in_home_stage:
+    if not dbg_game.is_player_in_home_stage:
         error_detail = "玩家不在家园场景中，无法创建地下城"
         logger.error(f"激活地下城创建失败: {error_detail}")
         return False, error_detail
 
-    world_system_entities = tcg_game.get_group(
+    world_system_entities = dbg_game.get_group(
         Matcher(all_of=[WorldComponent, DungeonGenerationComponent])
     ).entities.copy()
 
@@ -329,21 +329,21 @@ def activate_generate_dungeon(tcg_game: TCGGame) -> Tuple[bool, str]:
 
 ###################################################################################################################################################################
 def move_item_to_inventory(
-    tcg_game: TCGGame,
+    dbg_game: DBGGame,
     item_name: str,
 ) -> Tuple[bool, str]:
     """将道具从玩家储物箱（StorageComponent）移动到随身背包（InventoryComponent）。
 
     Args:
-        tcg_game: TCG 游戏实例
+        dbg_game: DBG 游戏实例
         item_name: 要移动的道具名称（精确匹配）
 
     Returns:
         Tuple[bool, str]: (是否成功, 失败时的错误详情)
     """
-    player_entity = tcg_game.get_player_entity()
+    player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
-    storage_entity = tcg_game.get_storage_entity()
+    storage_entity = dbg_game.get_storage_entity()
     assert storage_entity is not None, "全局储物箱实体不存在！"
 
     assert storage_entity.has(StorageComponent), "全局储物箱实体缺少 StorageComponent"
@@ -377,21 +377,21 @@ def move_item_to_inventory(
 
 ###################################################################################################################################################################
 def move_item_to_storage(
-    tcg_game: TCGGame,
+    dbg_game: DBGGame,
     item_name: str,
 ) -> Tuple[bool, str]:
     """将道具从玩家随身背包（InventoryComponent）移动到储物箱（StorageComponent）。
 
     Args:
-        tcg_game: TCG 游戏实例
+        dbg_game: DBG 游戏实例
         item_name: 要移动的道具名称（精确匹配）
 
     Returns:
         Tuple[bool, str]: (是否成功, 失败时的错误详情)
     """
-    player_entity = tcg_game.get_player_entity()
+    player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
-    storage_entity = tcg_game.get_storage_entity()
+    storage_entity = dbg_game.get_storage_entity()
     assert storage_entity is not None, "全局储物箱实体不存在！"
 
     assert player_entity.has(InventoryComponent), "玩家实体缺少 InventoryComponent"
@@ -418,7 +418,7 @@ def move_item_to_storage(
 
 ###################################################################################################################################################################
 def activate_update_appearance(
-    tcg_game: TCGGame, item_name: str, target_name: str = ""
+    dbg_game: DBGGame, item_name: str, target_name: str = ""
 ) -> Tuple[bool, str]:
     """
     为指定角色激活外观更新动作，时装来源为玩家的背包或储物箱（全局）。
@@ -426,7 +426,7 @@ def activate_update_appearance(
     传入空字符串 item_name 表示移除当前时装，将外观重置为基础体型描述。
 
     Args:
-        tcg_game: TCG 游戏实例
+        dbg_game: DBG 游戏实例
         item_name: CostumeItem 的精确名称；传入空字符串表示移除时装
         target_name: 目标角色全名；为空时默认为玩家自身
 
@@ -434,20 +434,20 @@ def activate_update_appearance(
         Tuple[bool, str]: (是否成功, 失败时的错误详情)
     """
 
-    if not tcg_game.is_player_in_home_stage:
+    if not dbg_game.is_player_in_home_stage:
         error_detail = "玩家不在家园场景中，无法更新外观"
         logger.error(f"激活外观更新失败: {error_detail}")
         return False, error_detail
 
-    player_entity = tcg_game.get_player_entity()
+    player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
-    storage_entity = tcg_game.get_storage_entity()
+    storage_entity = dbg_game.get_storage_entity()
     assert storage_entity is not None, "全局储物箱实体不存在！"
     assert storage_entity.has(StorageComponent), "全局储物箱实体缺少 StorageComponent"
 
     # 确定目标实体：为空则默认玩家自身
     if target_name:
-        target_entity = tcg_game.get_actor_entity(target_name)
+        target_entity = dbg_game.get_actor_entity(target_name)
         if target_entity is None:
             error_detail = f"目标角色 {target_name!r} 不存在"
             logger.error(f"激活外观更新失败: {error_detail}")
@@ -489,20 +489,20 @@ def activate_update_appearance(
 
 ###################################################################################################################################################################
 def activate_craft_consumable(
-    tcg_game: TCGGame,
+    dbg_game: DBGGame,
     material_names: List[str],
 ) -> Tuple[bool, str]:
     """
     在家园状态下激活工坊合成消耗品动作。
 
     Args:
-        tcg_game: TCG 游戏实例
+        dbg_game: DBG 游戏实例
         material_names: 参与合成的材料名称列表（精确匹配，允许重复代表多份）
 
     Returns:
         Tuple[bool, str]: (是否成功, 失败时的错误详情)
     """
-    if not tcg_game.is_player_in_home_stage:
+    if not dbg_game.is_player_in_home_stage:
         error_detail = "玩家不在家园场景中，无法激活合成动作"
         logger.error(f"激活合成消耗品失败: {error_detail}")
         return False, error_detail
@@ -512,7 +512,7 @@ def activate_craft_consumable(
         logger.error(f"激活合成消耗品失败: {error_detail}")
         return False, error_detail
 
-    storage_entity = tcg_game.get_storage_entity()
+    storage_entity = dbg_game.get_storage_entity()
     assert storage_entity is not None, "全局储物箱实体不存在！"
     assert storage_entity.has(StorageComponent), "全局储物箱实体缺少 StorageComponent"
 
@@ -550,7 +550,7 @@ def activate_craft_consumable(
         copied.count = used
         material_items.append(copied)
 
-    workshop_entities = tcg_game.get_group(
+    workshop_entities = dbg_game.get_group(
         Matcher(all_of=[WorldComponent, WorkshopComponent])
     ).entities.copy()
 
@@ -579,19 +579,19 @@ def activate_craft_consumable(
 
 ###################################################################################################################################################################
 def activate_craft_gear_item(
-    tcg_game: TCGGame,
+    dbg_game: DBGGame,
     material_names: List[str],
 ) -> Tuple[bool, str]:
     """预校验材料并激活装备合成动作（CraftGearItemAction），实际合成由 CraftGearItemActionSystem 执行。
 
     Args:
-        tcg_game: TCG 游戏实例
+        dbg_game: DBG 游戏实例
         material_names: 参与合成的材料名称列表（允许重复代表多份）
 
     Returns:
         (True, "") 表示激活成功；(False, error_detail) 表示前置校验失败
     """
-    if not tcg_game.is_player_in_home_stage:
+    if not dbg_game.is_player_in_home_stage:
         error_detail = "玩家不在家园场景中，无法激活合成动作"
         logger.error(f"激活合成装备失败: {error_detail}")
         return False, error_detail
@@ -601,7 +601,7 @@ def activate_craft_gear_item(
         logger.error(f"激活合成装备失败: {error_detail}")
         return False, error_detail
 
-    storage_entity = tcg_game.get_storage_entity()
+    storage_entity = dbg_game.get_storage_entity()
     assert storage_entity is not None, "全局储物箱实体不存在！"
     assert storage_entity.has(StorageComponent), "全局储物箱实体缺少 StorageComponent"
 
@@ -639,7 +639,7 @@ def activate_craft_gear_item(
         copied.count = used
         material_items.append(copied)
 
-    workshop_entities = tcg_game.get_group(
+    workshop_entities = dbg_game.get_group(
         Matcher(all_of=[WorldComponent, WorkshopComponent])
     ).entities.copy()
 
@@ -665,19 +665,19 @@ def activate_craft_gear_item(
 
 ###################################################################################################################################################################
 def activate_craft_costume_item(
-    tcg_game: TCGGame,
+    dbg_game: DBGGame,
     material_names: List[str],
 ) -> Tuple[bool, str]:
     """预校验材料并激活时装制作动作（CraftCostumeItemAction），实际制作由 CraftCostumeItemActionSystem 执行。
 
     Args:
-        tcg_game: TCG 游戏实例
+        dbg_game: DBG 游戏实例
         material_names: 参与制作的材料名称列表（允许重复代表多份）
 
     Returns:
         (True, "") 表示激活成功；(False, error_detail) 表示前置校验失败
     """
-    if not tcg_game.is_player_in_home_stage:
+    if not dbg_game.is_player_in_home_stage:
         error_detail = "玩家不在家园场景中，无法激活制作动作"
         logger.error(f"激活制作时装失败: {error_detail}")
         return False, error_detail
@@ -687,7 +687,7 @@ def activate_craft_costume_item(
         logger.error(f"激活制作时装失败: {error_detail}")
         return False, error_detail
 
-    storage_entity = tcg_game.get_storage_entity()
+    storage_entity = dbg_game.get_storage_entity()
     assert storage_entity is not None, "全局储物箱实体不存在！"
     assert storage_entity.has(StorageComponent), "全局储物箱实体缺少 StorageComponent"
 
@@ -725,7 +725,7 @@ def activate_craft_costume_item(
         copied.count = used
         material_items.append(copied)
 
-    workshop_entities = tcg_game.get_group(
+    workshop_entities = dbg_game.get_group(
         Matcher(all_of=[WorldComponent, WorkshopComponent])
     ).entities.copy()
 

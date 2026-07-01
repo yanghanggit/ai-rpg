@@ -196,7 +196,7 @@ class HomeScreen(BaseGameScreen):
     def _refresh_status_bar(self) -> None:
         """重置状态栏为“查询中”并启动异步刷新。"""
         self.query_one("#home-status", Static).update(
-            "[bold cyan]AI RPG TCG  游戏主场景[/]\n" "[dim]查询玩家状态中...[/]"
+            "[bold cyan]AI RPG DBG  游戏主场景[/]\n" "[dim]查询玩家状态中...[/]"
         )
         self._show_player_status()
 
@@ -211,7 +211,7 @@ class HomeScreen(BaseGameScreen):
 
         if not player_actor:
             self.query_one("#home-status", Static).update(
-                "[bold cyan]AI RPG TCG  游戏主场景[/]\n"
+                "[bold cyan]AI RPG DBG  游戏主场景[/]\n"
                 "[dim]玩家角色信息暂不可用。[/]"
             )
             return
@@ -228,7 +228,7 @@ class HomeScreen(BaseGameScreen):
         except Exception as e:
             logger.warning(f"_show_player_status: 查询场景失败 error={e}")
             self.query_one("#home-status", Static).update(
-                "[bold cyan]AI RPG TCG  游戏主场景[/]\n"
+                "[bold cyan]AI RPG DBG  游戏主场景[/]\n"
                 f"[bold green]▶ 玩家角色：[bold cyan]{display_name(player_actor)}[/][bold green][/]  "
                 f"[dim]当前场景：（查询失败）[/]"
             )
@@ -239,7 +239,7 @@ class HomeScreen(BaseGameScreen):
         else:
             stage_text = "[dim]（未知）[/]"
         self.query_one("#home-status", Static).update(
-            "[bold cyan]AI RPG TCG  游戏主场景[/]\n"
+            "[bold cyan]AI RPG DBG  游戏主场景[/]\n"
             f"[bold green]▶ 玩家角色：[bold cyan]{display_name(player_actor)}[/][bold green][/]  "
             f"当前场景：{stage_text}"
         )

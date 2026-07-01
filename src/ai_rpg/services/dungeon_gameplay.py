@@ -8,7 +8,7 @@
 import asyncio
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 from .game_server_dependencies import CurrentGameServer
 from ..models import (
     CombatState,
@@ -65,7 +65,7 @@ dungeon_gameplay_api_router = APIRouter()
 def _validate_dungeon_prerequisites(
     user_name: str,
     game_server: GameServer,
-) -> TCGGame:
+) -> DBGGame:
     """
     验证地下城操作的前置条件
 
@@ -76,7 +76,7 @@ def _validate_dungeon_prerequisites(
         game_server: 游戏服务器实例
 
     Returns:
-        TCGGame: 验证通过的游戏实例
+        DBGGame: 验证通过的游戏实例
 
     Raises:
         HTTPException(404): 玩家未登录、游戏不存在或没有战斗
@@ -97,7 +97,7 @@ def _validate_dungeon_prerequisites(
         current_room is not None
     ), f"_validate_dungeon_prerequisites: room is None for {user_name}"
 
-    if current_room._tcg_game is None:
+    if current_room._dbg_game is None:
         logger.error(f"地下城操作失败: 玩家 {user_name} 没有游戏实例")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -105,13 +105,13 @@ def _validate_dungeon_prerequisites(
         )
 
     # 3. 获取并验证游戏实例类型
-    tcg_game = current_room._tcg_game
+    dbg_game = current_room._dbg_game
     assert isinstance(
-        tcg_game, TCGGame
+        dbg_game, DBGGame
     ), f"_validate_dungeon_prerequisites: invalid game type for {user_name}"
 
     # 4. 验证玩家在地下城状态
-    if not tcg_game.is_player_in_dungeon_stage:
+    if not dbg_game.is_player_in_dungeon_stage:
         logger.error(f"地下城操作失败: 玩家 {user_name} 不在地下城状态")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -120,13 +120,13 @@ def _validate_dungeon_prerequisites(
 
     # 5. 验证存在可进行的战斗
     assert (
-        tcg_game.current_dungeon.current_combat_room is not None
+        dbg_game.current_dungeon.current_combat_room is not None
     ), f"地下城操作失败: 玩家 {user_name} 当前尚未进入任何战斗房间"
     assert (
-        tcg_game.current_dungeon.current_combat_room.combat.state != CombatState.NONE
+        dbg_game.current_dungeon.current_combat_room.combat.state != CombatState.NONE
     ), f"地下城操作失败: 玩家 {user_name} 没有可进行的战斗"
 
-    return tcg_game
+    return dbg_game
 
 
 ###################################################################################################################################################################
@@ -395,13 +395,13 @@ async def dungeon_exit(
 
     async with current_room._lock:
         # 验证地下城操作的前置条件
-        tcg_game = _validate_dungeon_prerequisites(
+        dbg_game = _validate_dungeon_prerequisites(
             user_name=payload.user_name,
             game_server=game_server,
         )
 
         # 验证战斗是否已结束
-        if not tcg_game.current_dungeon.is_post_combat:
+        if not dbg_game.current_dungeon.is_post_combat:
             logger.error(f"玩家 {payload.user_name} 返回家园失败: 战斗未结束")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -409,7 +409,7 @@ async def dungeon_exit(
             )
 
         # 退出地下城并返回家园
-        exit_dungeon(tcg_game, tcg_game._world.dungeon)
+        exit_dungeon(dbg_game, dbg_game._world.dungeon)
         logger.info(f"玩家 {payload.user_name} 成功返回家园")
 
         # 返回
@@ -457,12 +457,12 @@ async def dungeon_combat_collect_loot(
         )
 
     async with current_room._lock:
-        tcg_game = _validate_dungeon_prerequisites(
+        dbg_game = _validate_dungeon_prerequisites(
             user_name=payload.user_name,
             game_server=game_server,
         )
 
-        success, message = collect_combat_loot(tcg_game)
+        success, message = collect_combat_loot(dbg_game)
         if not success:
             logger.warning(f"玩家 {payload.user_name} 收取战利品失败: {message}")
             raise HTTPException(

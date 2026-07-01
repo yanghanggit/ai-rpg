@@ -6,7 +6,7 @@ from overrides import override
 from pydantic import BaseModel
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, ExecuteProcessor
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 from ..models import (
     AppearanceComponent,
     CombatLootComponent,
@@ -122,8 +122,8 @@ def _build_loot_prompt(
 class CombatLootSystem(ExecuteProcessor):
     """战斗掉落系统（仿怪物猎人机制）。"""
 
-    def __init__(self, game: TCGGame) -> None:
-        self._game: Final[TCGGame] = game
+    def __init__(self, game: DBGGame) -> None:
+        self._game: Final[DBGGame] = game
 
     #######################################################################################################################################
     @override

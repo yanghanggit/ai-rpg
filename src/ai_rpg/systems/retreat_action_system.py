@@ -23,7 +23,7 @@ from typing import final, override, Dict, List
 from loguru import logger
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import RetreatAction, PartyMemberComponent, DeathComponent
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 
 
 ###################################################################################################################################################################
@@ -60,9 +60,9 @@ class RetreatActionSystem(ReactiveProcessor):
         - exit_dungeon_and_return_home 执行场景传送和状态重置
     """
 
-    def __init__(self, game: TCGGame) -> None:
+    def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
-        self._game: TCGGame = game
+        self._game: DBGGame = game
 
     ####################################################################################################################################
     @override

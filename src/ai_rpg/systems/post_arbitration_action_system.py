@@ -8,7 +8,7 @@ from overrides import override
 from pydantic import BaseModel
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 from ..models import (
     Card,
     TargetType,
@@ -57,7 +57,7 @@ class StagePostArbitrationResponse(BaseModel):
 
 
 #######################################################################################################################################
-def _build_actors_summary(game: TCGGame, actor_entities: Set[Entity]) -> str:
+def _build_actors_summary(game: DBGGame, actor_entities: Set[Entity]) -> str:
     """格式化场内存活角色状态摘要，供 prompt 函数复用。"""
     actor_lines: List[str] = []
     for entity in actor_entities:
@@ -92,7 +92,7 @@ def _build_actors_summary(game: TCGGame, actor_entities: Set[Entity]) -> str:
 
 #######################################################################################################################################
 def _generate_compressed_stage_post_arbitration_prompt(
-    game: TCGGame,
+    game: DBGGame,
     actor_entities: Set[Entity],
     current_turn_actor_name: str,
     current_round_number: int,
@@ -112,7 +112,7 @@ def _generate_compressed_stage_post_arbitration_prompt(
 
 #######################################################################################################################################
 def _generate_stage_post_arbitration_prompt(
-    game: TCGGame,
+    game: DBGGame,
     actor_entities: Set[Entity],
     current_turn_actor_name: str,
     current_round_number: int,
@@ -197,12 +197,12 @@ class PostArbitrationActionSystem(ReactiveProcessor):
 
     def __init__(
         self,
-        game: TCGGame,
+        game: DBGGame,
         strategy: CardInjectStrategy = CardInjectStrategy.APPEND,
         use_compressed_prompt: bool = True,
     ) -> None:
         super().__init__(game)
-        self._game: Final[TCGGame] = game
+        self._game: Final[DBGGame] = game
         self._strategy: Final[CardInjectStrategy] = strategy
         self._use_compressed_prompt: Final[bool] = use_compressed_prompt
 

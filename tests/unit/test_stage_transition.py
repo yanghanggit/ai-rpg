@@ -4,7 +4,7 @@ Unit tests for src/ai_rpg/game/stage_transition.py
 覆盖范围：
   - 3 个格式化纯函数
   - _validate_stage_transition_prerequisites（用 Mock game）
-  - stage_transition 完整流程（用真实 TCGGame fixture）
+  - stage_transition 完整流程（用真实 DBGGame fixture）
 """
 
 import pytest
@@ -153,12 +153,12 @@ class TestValidateStageTransitionPrerequisites:
 
 
 # ---------------------------------------------------------------------------
-# stage_transition 完整流程（真实 TCGGame）
+# stage_transition 完整流程（真实 DBGGame）
 # ---------------------------------------------------------------------------
 
 
 class TestStageTransition:
-    """使用真实 TCGGame（sample_game fixture）测试完整场景转换流程。"""
+    """使用真实 DBGGame（sample_game fixture）测试完整场景转换流程。"""
 
     @pytest.fixture
     def game(self, sample_game: Any) -> Any:

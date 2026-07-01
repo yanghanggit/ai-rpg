@@ -1,5 +1,5 @@
 """
-TCG 游戏核心实现
+DBG 游戏核心实现
 
 融合交易卡牌战斗机制的 RPG 游戏，包含地下城探险、战斗系统和流程管道管理。
 """
@@ -10,7 +10,7 @@ from typing import Final, List, Optional
 from loguru import logger
 from .rpg_game_pipeline_manager import RPGGameProcessPipeline
 from .rpg_game import RPGGame
-from ..game.tcg_game_process_pipeline import (
+from .dbg_game_process_pipeline import (
     create_home_pipeline,
     create_combat_pipeline,
     create_dungeon_generate_pipeline,
@@ -59,16 +59,13 @@ from ..entitas import Matcher, Entity
 
 
 #################################################################################################################################################
-class TCGGame(RPGGame):
+class DBGGame(RPGGame):
     """
-    交易卡牌游戏，融合卡牌战斗机制的RPG游戏实现
+    DBG，Deck Building Game，也就是我们常说的牌库构筑游戏，其核心机制现在无论是在桌游中，还是电子游戏里都已经逐渐成为了熟面孔。
+    今天想聊一下在桌游中，DBG的机制是如何呈现的。
+    为方便叙述，本文提到的DBG默认包含牌库构筑机制与牌库构筑游戏两种含义
 
-    Attributes:
-        _home_pipeline: 家园场景流程管道（NPC 与玩家共用）
-        _combat_execution_pipeline: 地下城战斗执行流程管道
     """
-
-    # _DEFAULT_STORAGE_ENTITY: Final[str] = "世界储物箱"
 
     def __init__(
         self,
@@ -127,7 +124,7 @@ class TCGGame(RPGGame):
         return self.is_actor_in_dungeon_stage(player_entity)
 
     ###############################################################################################################################################
-    def build_from_blueprint(self) -> "TCGGame":
+    def build_from_blueprint(self) -> "DBGGame":
         """创建并初始化新游戏世界，包括世界系统、角色和场景
 
         Returns:
@@ -282,7 +279,7 @@ class TCGGame(RPGGame):
 
     ###############################################################################################################################################
     def _create_actor_entities(self, actor_models: List[Actor]) -> List[Entity]:
-        """创建角色实体（玩家、NPC、敌人），初始化所有组件，并挂载 TCG 所需的牌组与关键词组件
+        """创建角色实体（玩家、NPC、敌人），初始化所有组件，并挂载 DBG 所需的牌组与关键词组件
 
         Args:
             actor_models: 角色模型列表
@@ -347,10 +344,10 @@ class TCGGame(RPGGame):
                         False
                     ), f"未知的 ActorType: {actor_model.character_sheet.type}"
 
-            # TCG 组件：牌组 + 关键词约束
+            # DBG 组件：牌组 + 关键词约束
             assert (
                 len(actor_model.keywords) > 0
-            ), f"TCG 游戏要求每个角色至少有一个关键词约束: {actor_model.name}"
+            ), f"DBG 游戏要求每个角色至少有一个关键词约束: {actor_model.name}"
             actor_entity.replace(
                 DeckComponent, actor_entity.name, [], actor_model.keywords.copy()
             )
@@ -358,7 +355,7 @@ class TCGGame(RPGGame):
                 f"为 Actor 实体 {actor_entity.name} 挂载空牌组（DeckComponent，{len(actor_model.keywords)} 条关键词）"
             )
 
-            # TCG 组件：初始时装（CostumeComponent），如果 actor_model.custom_item 不为 None，则挂载 CostumeComponent，初始时装来源于 actor_model.custom_item
+            # DBG 组件：初始时装（CostumeComponent），如果 actor_model.custom_item 不为 None，则挂载 CostumeComponent，初始时装来源于 actor_model.custom_item
             if actor_model.custom_item is not None:
                 actor_entity.replace(
                     CostumeComponent,

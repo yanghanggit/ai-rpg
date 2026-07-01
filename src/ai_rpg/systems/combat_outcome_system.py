@@ -2,7 +2,7 @@
 
 from typing import Final, final, override, Set
 from ..entitas import ExecuteProcessor, Entity
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 from ..models import (
     DeathComponent,
     CombatResult,
@@ -36,8 +36,8 @@ class CombatOutcomeSystem(ExecuteProcessor):
     仅在战斗 ONGOING 阶段生效，否则静默跳过。
     """
 
-    def __init__(self, game: TCGGame) -> None:
-        self._game: Final[TCGGame] = game
+    def __init__(self, game: DBGGame) -> None:
+        self._game: Final[DBGGame] = game
 
     ########################################################################################################################################################################
     @override

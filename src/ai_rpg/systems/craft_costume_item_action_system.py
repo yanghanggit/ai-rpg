@@ -6,7 +6,7 @@ from overrides import override
 from pydantic import BaseModel
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 from ..models import (
     CraftCostumeItemAction,
     StorageComponent,
@@ -71,9 +71,9 @@ def _build_craft_costume_prompt(materials: List[MaterialItem]) -> str:
 class CraftCostumeItemActionSystem(ReactiveProcessor):
     """工坊制作时装系统。"""
 
-    def __init__(self, game: TCGGame) -> None:
+    def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
-        self._game: Final[TCGGame] = game
+        self._game: Final[DBGGame] = game
 
     ####################################################################################################################################
     @override

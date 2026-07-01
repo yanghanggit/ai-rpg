@@ -5,7 +5,7 @@ from typing import Dict, Final, List, final, override
 from loguru import logger
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.config import DEBUG_CACHE_DIR, DUNGEON_PROCESS_DIR, DUNGEONS_DIR
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 from ..models import (
     ActorType,
     AssembleDungeonAction,
@@ -29,9 +29,9 @@ from .dungeon_generation import DungeonBlueprint
 class AssembleDungeonSystem(ReactiveProcessor):
     """地下城组装系统"""
 
-    def __init__(self, game: TCGGame) -> None:
+    def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
-        self._game: Final[TCGGame] = game
+        self._game: Final[DBGGame] = game
 
     ####################################################################################################################################
     @override

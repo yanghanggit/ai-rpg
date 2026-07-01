@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from loguru import logger
 from ai_rpg.game.player_session import PlayerSession
-from ai_rpg.game.tcg_game import TCGGame
+from ai_rpg.game.dbg_game import DBGGame
 from ai_rpg.models import World, MonsterComponent
 from ai_rpg.game import archive_world
 from ai_rpg.services.dungeon_actions import (
@@ -42,7 +42,7 @@ async def draw_cards_game(
     world: World,
     player_session: PlayerSession,
     save_dir: Path,
-) -> TCGGame:
+) -> DBGGame:
     """从存档复位，为所有角色随机抽牌（等同于终端命令 /dc），并归档新状态。
 
     调用 activate_all_card_draws 为所有战斗角色（己方 + 敌方）激活抽牌动作，
@@ -58,7 +58,7 @@ async def draw_cards_game(
         save_dir: 新存档写入目录。
 
     Returns:
-        执行完毕后的 TCGGame 实例（已归档）；前置条件不满足时提前返回未归档实例。
+        执行完毕后的 DBGGame 实例（已归档）；前置条件不满足时提前返回未归档实例。
     """
     terminal_game = await restore_game(world, player_session)
 
@@ -89,7 +89,7 @@ async def play_cards_specified_game(
     card: str,
     targets: List[str],
     save_dir: Path,
-) -> TCGGame:
+) -> DBGGame:
     """从存档复位，让指定角色打出指定手牌，并归档新状态。
 
     只有指定角色触发 PlayCardsAction；其他角色本次 pipeline 不出牌。
@@ -108,7 +108,7 @@ async def play_cards_specified_game(
         save_dir: 新存档写入目录。
 
     Returns:
-        执行完毕后的 TCGGame 实例（已归档）；前置条件不满足时提前返回未归档实例。
+        执行完毕后的 DBGGame 实例（已归档）；前置条件不满足时提前返回未归档实例。
     """
     terminal_game = await restore_game(world, player_session)
 
@@ -153,7 +153,7 @@ async def use_consumable_game(
     item: str,
     targets: List[str],
     save_dir: Path,
-) -> TCGGame:
+) -> DBGGame:
     """从存档复位，让指定角色使用背包内的消耗品，并归档新状态。
 
     使用消耗品不消耗 energy，可在玩家行动阶段内任意次数使用。
@@ -172,7 +172,7 @@ async def use_consumable_game(
         save_dir: 新存档写入目录。
 
     Returns:
-        执行完毕后的 TCGGame 实例（已归档）；前置条件不满足时提前返回未归档实例。
+        执行完毕后的 DBGGame 实例（已归档）；前置条件不满足时提前返回未归档实例。
     """
     terminal_game = await restore_game(world, player_session)
 
@@ -208,7 +208,7 @@ async def use_gear_game(
     item: str,
     targets: List[str],
     save_dir: Path,
-) -> TCGGame:
+) -> DBGGame:
     """从存档复位，让指定角色在战斗中装备背包内的 GearItem，并归档新状态。
 
     装备后的属性加成立即生效（通过 EquippedGearComponent）。
@@ -227,7 +227,7 @@ async def use_gear_game(
         save_dir: 新存档写入目录。
 
     Returns:
-        执行完毕后的 TCGGame 实例（已归档）；前置条件不满足时提前返回未归档实例。
+        执行完毕后的 DBGGame 实例（已归档）；前置条件不满足时提前返回未归档实例。
     """
     terminal_game = await restore_game(world, player_session)
 
@@ -261,7 +261,7 @@ async def pass_turn_game(
     player_session: PlayerSession,
     actor: str,
     save_dir: Path,
-) -> TCGGame:
+) -> DBGGame:
     """从存档复位，让指定角色跳过本次出牌机会（过牌），并归档新状态。
 
     消耗 1 点 energy 并推进行动顺序，不打出任何卡牌。
@@ -278,7 +278,7 @@ async def pass_turn_game(
         save_dir: 新存档写入目录。
 
     Returns:
-        执行完毕后的 TCGGame 实例（已归档）；前置条件不满足时提前返回未归档实例。
+        执行完毕后的 DBGGame 实例（已归档）；前置条件不满足时提前返回未归档实例。
     """
     terminal_game = await restore_game(world, player_session)
 
@@ -311,7 +311,7 @@ async def exit_dungeon_and_return_home_game(
     world: World,
     player_session: PlayerSession,
     save_dir: Path,
-) -> TCGGame:
+) -> DBGGame:
     """从存档复位，结束地下城并返回家园（等同于终端命令 /th），并归档新状态。
 
     调用 exit_dungeon_and_return_home：恢复远征成员满血、清空状态效果、
@@ -326,7 +326,7 @@ async def exit_dungeon_and_return_home_game(
         save_dir: 新存档写入目录。
 
     Returns:
-        执行完毕后的 TCGGame 实例（已归档）；前置条件不满足时提前返回未归档实例。
+        执行完毕后的 DBGGame 实例（已归档）；前置条件不满足时提前返回未归档实例。
     """
     terminal_game = await restore_game(world, player_session)
 
@@ -352,7 +352,7 @@ async def next_dungeon_game(
     world: World,
     player_session: PlayerSession,
     save_dir: Path,
-) -> TCGGame:
+) -> DBGGame:
     """从存档复位，进入地下城下一关（等同于终端命令 /and），并归档新状态。
 
     调用 advance_to_next_stage 将地下城推进至下一关场景，
@@ -370,7 +370,7 @@ async def next_dungeon_game(
         save_dir: 新存档写入目录。
 
     Returns:
-        执行完毕后的 TCGGame 实例（已归档）；前置条件不满足时提前返回未归档实例。
+        执行完毕后的 DBGGame 实例（已归档）；前置条件不满足时提前返回未归档实例。
     """
     terminal_game = await restore_game(world, player_session)
 
@@ -406,7 +406,7 @@ async def retreat_game(
     world: World,
     player_session: PlayerSession,
     save_dir: Path,
-) -> TCGGame:
+) -> DBGGame:
     """从存档复位，主动撤退（等同于终端命令 /rtt），并归档新状态。
 
     调用 activate_retreat 激活撤退动作，驱动 combat_pipeline.execute()
@@ -422,7 +422,7 @@ async def retreat_game(
         save_dir: 新存档写入目录。
 
     Returns:
-        执行完毕后的 TCGGame 实例（已归档）；前置条件不满足时提前返回未归档实例。
+        执行完毕后的 DBGGame 实例（已归档）；前置条件不满足时提前返回未归档实例。
     """
     # 复位游戏状态
     terminal_game = await restore_game(world, player_session)
@@ -456,7 +456,7 @@ async def collect_loot_game(
     world: World,
     player_session: PlayerSession,
     save_dir: Path,
-) -> TCGGame:
+) -> DBGGame:
     """从存档复位，将战利品背包（CombatLootComponent）中的道具合并至随身背包，归档新状态。
 
     调用 collect_combat_loot 将本场战斗的掉落物从临时组件 CombatLootComponent 转入
@@ -472,7 +472,7 @@ async def collect_loot_game(
         save_dir: 新存档写入目录。
 
     Returns:
-        执行完毕后的 TCGGame 实例；无战利品可收时返回未归档实例。
+        执行完毕后的 DBGGame 实例；无战利品可收时返回未归档实例。
     """
     terminal_game = await restore_game(world, player_session)
 

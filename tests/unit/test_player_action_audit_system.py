@@ -6,7 +6,7 @@ import pytest
 
 from src.ai_rpg.entitas.context import Context
 from src.ai_rpg.entitas.entity import Entity
-from src.ai_rpg.game.tcg_game import TCGGame
+from src.ai_rpg.game.dbg_game import DBGGame
 from src.ai_rpg.models.actions import AnnounceAction, SpeakAction, WhisperAction
 from src.ai_rpg.models.components import (
     PlayerActionAuditComponent,
@@ -59,8 +59,8 @@ def context() -> Context:
 
 @pytest.fixture()
 def mock_game(context: Context) -> MagicMock:
-    """MagicMock TCGGame，将 get_group() 代理到真实 Context。"""
-    game = MagicMock(spec=TCGGame)
+    """MagicMock DBGGame，将 get_group() 代理到真实 Context。"""
+    game = MagicMock(spec=DBGGame)
     game.get_group.side_effect = context.get_group
     game.get_agent_context.return_value = _make_agent_context()
     return game

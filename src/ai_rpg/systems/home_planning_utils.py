@@ -9,7 +9,7 @@ from ..models import (
     TransStageAction,
     HomeComponent,
 )
-from ..game import TCGGame
+from ..game import DBGGame
 from ..entitas import Entity, Matcher
 
 # 玩家「主动行动」对应的 Action 组件类型集合。
@@ -217,7 +217,7 @@ def build_compressed_planning_prompt(
 
 
 #######################################################################################################################################
-def is_player_active(game: TCGGame) -> bool:
+def is_player_active(game: DBGGame) -> bool:
     """判断本轮玩家是否具有主动行动。
 
     玩家持有 _PLAYER_ACTIVE_ACTION_TYPES 中任意类型的组件时，视为本轮有主动行动。
@@ -239,7 +239,7 @@ def is_player_active(game: TCGGame) -> bool:
 
 #######################################################################################################################################
 def get_other_actors_appearances(
-    game: TCGGame, actor_entity: Entity, current_stage: Entity
+    game: DBGGame, actor_entity: Entity, current_stage: Entity
 ) -> Dict[str, str]:
     """获取当前场景内除自身以外的所有角色外观描述。
 
@@ -257,7 +257,7 @@ def get_other_actors_appearances(
 
 #######################################################################################################################################
 def get_available_home_stages(
-    game: TCGGame, actor_entity: Entity, current_stage: Entity
+    game: DBGGame, actor_entity: Entity, current_stage: Entity
 ) -> Set[Entity]:
     """获取玩家可前往的家园场景集合（排除当前场景）。
 

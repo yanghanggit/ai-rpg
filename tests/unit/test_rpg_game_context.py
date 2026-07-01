@@ -21,7 +21,7 @@ from src.ai_rpg.entitas.entity import Entity
 
 @pytest.fixture
 def game(sample_game: Any) -> Any:
-    """Alias for sample_game — a fully-constructed TCGGame with no blueprint entities."""
+    """Alias for sample_game — a fully-constructed DBGGame with no blueprint entities."""
     return sample_game
 
 

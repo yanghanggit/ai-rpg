@@ -9,7 +9,7 @@ from loguru import logger
 from overrides import override
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, ExecuteProcessor
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 from ..models import (
     AIMessage,
     HumanMessage,
@@ -38,8 +38,8 @@ def _generate_combat_summary_prompt(stage_name: str, total_rounds: int) -> str:
 class CombatArchiveSystem(ExecuteProcessor):
     """战斗结束后执行上下文压缩与事件派发。"""
 
-    def __init__(self, game: TCGGame) -> None:
-        self._game: Final[TCGGame] = game
+    def __init__(self, game: DBGGame) -> None:
+        self._game: Final[DBGGame] = game
 
     #######################################################################################################################################
     @override

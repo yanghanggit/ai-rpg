@@ -76,7 +76,7 @@ def create_actor(
 
     assert (
         len(actor.keywords) > 0
-    ), f"TCG 游戏要求每个角色至少有一个关键词约束: {actor.name}"
+    ), f"DBG 游戏要求每个角色至少有一个关键词约束: {actor.name}"
     return actor
 
 

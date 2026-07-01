@@ -23,7 +23,7 @@ def context() -> Context:
 
 @pytest.fixture()
 def mock_game(context: Context) -> MagicMock:
-    """Mock RPGGame，将 get_group() 代理到真实 Context，避免初始化重量级 TCGGame。"""
+    """Mock RPGGame，将 get_group() 代理到真实 Context，避免初始化重量级 DBGGame。"""
     game = MagicMock(spec=RPGGame)
     game.get_group.side_effect = context.get_group
     return game

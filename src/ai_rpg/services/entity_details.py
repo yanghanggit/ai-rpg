@@ -71,7 +71,7 @@ async def get_entities_details(
     assert current_room is not None, "Current room should not be None"
 
     # 根据游戏类型获取游戏实例
-    rpg_game = current_room._tcg_game
+    rpg_game = current_room._dbg_game
     assert rpg_game is not None, "RPG game should not be None"
     if rpg_game is None:
         logger.error(f"get_session_messages: {user_name} has no RPG game")

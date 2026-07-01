@@ -392,8 +392,8 @@ async def add_party_member_endpoint(
             detail=f"找不到游戏房间: user={payload.user_name}",
         )
     async with current_room._lock:
-        tcg_game = await _validate_player_at_home(payload.user_name, game_server)
-        success, error_detail = add_party_member(tcg_game, payload.member_name)
+        dbg_game = await _validate_player_at_home(payload.user_name, game_server)
+        success, error_detail = add_party_member(dbg_game, payload.member_name)
         if not success:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -419,8 +419,8 @@ async def remove_party_member_endpoint(
             detail=f"找不到游戏房间: user={payload.user_name}",
         )
     async with current_room._lock:
-        tcg_game = await _validate_player_at_home(payload.user_name, game_server)
-        success, error_detail = remove_party_member(tcg_game, payload.member_name)
+        dbg_game = await _validate_player_at_home(payload.user_name, game_server)
+        success, error_detail = remove_party_member(dbg_game, payload.member_name)
         if not success:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -448,10 +448,10 @@ async def home_item_move_to_inventory_endpoint(
             detail=f"找不到游戏房间: user={payload.user_name}",
         )
     async with current_room._lock:
-        tcg_game = await _validate_player_at_home(payload.user_name, game_server)
+        dbg_game = await _validate_player_at_home(payload.user_name, game_server)
         moved: List[str] = []
         for name in payload.item_names:
-            success, error_detail = move_item_to_inventory(tcg_game, name)
+            success, error_detail = move_item_to_inventory(dbg_game, name)
             if not success:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -482,10 +482,10 @@ async def home_item_move_to_storage_endpoint(
             detail=f"找不到游戏房间: user={payload.user_name}",
         )
     async with current_room._lock:
-        tcg_game = await _validate_player_at_home(payload.user_name, game_server)
+        dbg_game = await _validate_player_at_home(payload.user_name, game_server)
         moved: List[str] = []
         for name in payload.item_names:
-            success, error_detail = move_item_to_storage(tcg_game, name)
+            success, error_detail = move_item_to_storage(dbg_game, name)
             if not success:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -518,9 +518,9 @@ async def home_wear_costume_endpoint(
             detail=f"找不到游戏房间: user={payload.user_name}",
         )
     async with current_room._lock:
-        tcg_game = await _validate_player_at_home(payload.user_name, game_server)
+        dbg_game = await _validate_player_at_home(payload.user_name, game_server)
         success, error_detail = activate_update_appearance(
-            tcg_game, payload.item_name, payload.target_name
+            dbg_game, payload.item_name, payload.target_name
         )
         if not success:
             raise HTTPException(
@@ -572,9 +572,9 @@ async def home_craft_item_endpoint(
         )
 
     async with current_room._lock:
-        tcg_game = await _validate_player_at_home(payload.user_name, game_server)
+        dbg_game = await _validate_player_at_home(payload.user_name, game_server)
         success, error_detail = activate_craft_consumable(
-            tcg_game, list(payload.materials)
+            dbg_game, list(payload.materials)
         )
         if not success:
             raise HTTPException(
@@ -622,9 +622,9 @@ async def home_craft_gear_item_endpoint(
         )
 
     async with current_room._lock:
-        tcg_game = await _validate_player_at_home(payload.user_name, game_server)
+        dbg_game = await _validate_player_at_home(payload.user_name, game_server)
         success, error_detail = activate_craft_gear_item(
-            tcg_game, list(payload.materials)
+            dbg_game, list(payload.materials)
         )
         if not success:
             raise HTTPException(
@@ -672,9 +672,9 @@ async def home_craft_costume_item_endpoint(
         )
 
     async with current_room._lock:
-        tcg_game = await _validate_player_at_home(payload.user_name, game_server)
+        dbg_game = await _validate_player_at_home(payload.user_name, game_server)
         success, error_detail = activate_craft_costume_item(
-            tcg_game, list(payload.materials)
+            dbg_game, list(payload.materials)
         )
         if not success:
             raise HTTPException(

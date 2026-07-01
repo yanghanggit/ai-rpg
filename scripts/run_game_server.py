@@ -44,7 +44,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     处理应用启动和关闭时的初始化和清理操作。
     """
     # 启动时的初始化操作
-    logger.info("🚀 TCG游戏服务器启动中...")
+    logger.info("🚀 DBG游戏服务器启动中...")
 
     # 在这里添加启动时需要执行的初始化操作
     try:
@@ -57,7 +57,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         # - 外部服务连接检查
         # - 游戏数据预加载
 
-        logger.info("✅ TCG游戏服务器初始化完成")
+        logger.info("✅ DBG游戏服务器初始化完成")
         DeepSeekClient.setup()
         logger.info("✅ DeepSeekClient 已初始化")
 
@@ -68,7 +68,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     yield  # 应用运行期间
 
     # 关闭时的清理操作
-    logger.info("🔄 TCG游戏服务器关闭中...")
+    logger.info("🔄 DBG游戏服务器关闭中...")
 
     # 在这里添加关闭时需要执行的清理操作
     try:
@@ -78,7 +78,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         # - 保存游戏状态
         # - 关闭外部服务连接
 
-        logger.info("✅ TCG游戏服务器清理完成")
+        logger.info("✅ DBG游戏服务器清理完成")
 
     except Exception as e:
         logger.error(f"❌ 服务器清理失败: {e}")
@@ -118,9 +118,9 @@ async def get_api_info(request: Request) -> Dict[str, Any]:
             )
 
     return {
-        "service": "AI RPG TCG Game Server",
+        "service": "AI RPG DBG Game Server",
         "base_url": base_url,
-        "description": "AI RPG TCG Game Server API Root Endpoint",
+        "description": "AI RPG DBG Game Server API Root Endpoint",
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
         "version": "0.0.1",
@@ -151,7 +151,7 @@ app.include_router(router=stages_state_api_router)
 app.include_router(router=dungeon_state_api_router)
 app.include_router(router=background_tasks_api_router)
 
-# TCG特有的
+# DBG特有的
 app.include_router(router=login_api_router)
 app.include_router(router=new_game_api_router)
 app.include_router(router=home_gameplay_api_router)

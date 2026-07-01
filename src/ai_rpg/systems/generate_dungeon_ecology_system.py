@@ -6,7 +6,7 @@ from loguru import logger
 from ..deepseek import agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.config import DUNGEON_PROCESS_DIR
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 from ..models import (
     GenerateDungeonAction,
     GenerateDungeonStagesAction,
@@ -43,9 +43,9 @@ class GenerateDungeonEcologySystem(ReactiveProcessor):
         - GenerateDungeonAction 由 home_actions.activate_generate_dungeon() 在家园状态下添加
     """
 
-    def __init__(self, game: TCGGame) -> None:
+    def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
-        self._game: Final[TCGGame] = game
+        self._game: Final[DBGGame] = game
 
     ####################################################################################################################################
     @override

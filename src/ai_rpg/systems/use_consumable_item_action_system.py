@@ -4,7 +4,7 @@ from typing import Dict, Final, List, final
 from loguru import logger
 from overrides import override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 from ..models import (
     InventoryComponent,
     MonsterComponent,
@@ -45,9 +45,9 @@ def _generate_enemy_notice(
 class UseConsumableItemActionSystem(ReactiveProcessor):
     """消耗品使用前置动作系统：扣减库存 + 按阵营广播通知上下文。"""
 
-    def __init__(self, game: TCGGame) -> None:
+    def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
-        self._game: Final[TCGGame] = game
+        self._game: Final[DBGGame] = game
 
     #######################################################################################################################################
     def _deduct_item_from_inventory(self, entity: Entity, item_name: str) -> bool:

@@ -1,23 +1,8 @@
-"""
-Unit tests for src/ai_rpg/game/tcg_game.py
-
-覆盖范围：
-  - current_dungeon（属性）
-  - is_player_in_home_stage / is_player_in_dungeon_stage（属性）
-  - build_from_blueprint
-  - setup_dungeon_entities / teardown_dungeon_entities
-  - clear_round_state
-  - clear_status_effects
-  - compute_character_stats
-  - set_character_hp
-  - get_current_turn_actor
-"""
-
 from typing import Any, List, cast
 import pytest
 from src.ai_rpg.entitas.entity import Entity
 from src.ai_rpg.game.player_session import PlayerSession
-from src.ai_rpg.game.tcg_game import TCGGame
+from src.ai_rpg.game.dbg_game import DBGGame
 from src.ai_rpg.models import (
     ActorComponent,
     ActorType,
@@ -55,8 +40,8 @@ def _make_game(
     player_name: str = "p1",
     actor_name: str = "hero",
     blueprint: Blueprint | None = None,
-) -> TCGGame:
-    """创建带有空世界的 TCGGame 实例（不调用 build_from_blueprint）。"""
+) -> DBGGame:
+    """创建带有空世界的 DBGGame 实例（不调用 build_from_blueprint）。"""
     if blueprint is None:
         blueprint = Blueprint(
             name="test",
@@ -75,7 +60,7 @@ def _make_game(
         blueprint=blueprint,
     )
     session = PlayerSession(name=player_name, actor=actor_name, game="test")
-    return TCGGame(name="test", player_session=session, world=world)
+    return DBGGame(name="test", player_session=session, world=world)
 
 
 def _make_home_stage_entity(game: Any, name: str) -> Entity:
@@ -222,7 +207,7 @@ class TestBuildFromBlueprint:
             storage_entity="世界储物箱",
         )
 
-    def _make_game_for_build(self) -> TCGGame:
+    def _make_game_for_build(self) -> DBGGame:
         bp = self._make_full_blueprint()
         world = World(
             entity_counter=0,
@@ -233,7 +218,7 @@ class TestBuildFromBlueprint:
             blueprint=bp,
         )
         session = PlayerSession(name="p1", actor="hero", game="full_test")
-        return TCGGame(name="full_test", player_session=session, world=world)
+        return DBGGame(name="full_test", player_session=session, world=world)
 
     def test_actor_entity_created(self) -> None:
         game = self._make_game_for_build()

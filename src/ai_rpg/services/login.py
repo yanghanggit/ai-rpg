@@ -69,7 +69,7 @@ async def login(
             user_name=payload.user_name,
         )
         logger.info(f"login: {payload.user_name} create room = {new_room._username}")
-        assert new_room._tcg_game is None, "新创建的房间不应该有游戏实例"
+        assert new_room._dbg_game is None, "新创建的房间不应该有游戏实例"
 
     # 如果有房间，就获取房间。
     assert (
@@ -116,23 +116,23 @@ async def logout(
     pre_room = game_server.get_room(payload.user_name)
     assert pre_room is not None, "logout: room instance is None"
 
-    # 只判断tcg_game是否存在
-    if pre_room._tcg_game is not None:
+    # 只判断dbg_game是否存在
+    if pre_room._dbg_game is not None:
 
         # 保存游戏的运行时数据
-        # pre_room._tcg_game.save_game()
+        # pre_room._dbg_game.save_game()
         logger.info(
-            f"logout: {payload.user_name} save game = {pre_room._tcg_game.name}"
+            f"logout: {payload.user_name} save game = {pre_room._dbg_game.name}"
         )
 
         # 退出游戏
-        pre_room._tcg_game.exit()
+        pre_room._dbg_game.exit()
         logger.info(
-            f"logout: {payload.user_name} exit game = {pre_room._tcg_game.name}"
+            f"logout: {payload.user_name} exit game = {pre_room._dbg_game.name}"
         )
 
     else:
-        logger.info(f"logout: {payload.user_name} no tcg game = {pre_room._username}")
+        logger.info(f"logout: {payload.user_name} no dbg game = {pre_room._username}")
 
     # 游戏已经存储并退出,删除房间实例
     game_server.remove_room(pre_room)

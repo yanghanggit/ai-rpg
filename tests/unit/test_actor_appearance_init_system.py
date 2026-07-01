@@ -8,7 +8,7 @@ import pytest
 from src.ai_rpg.deepseek import DeepSeekClient
 from src.ai_rpg.entitas import Entity
 from src.ai_rpg.game.rpg_entity_manager import RPGEntityManager
-from src.ai_rpg.game.tcg_game import TCGGame
+from src.ai_rpg.game.dbg_game import DBGGame
 from src.ai_rpg.models import ActorComponent, AppearanceComponent, CostumeComponent
 from src.ai_rpg.models.items import CostumeItem
 from src.ai_rpg.systems.appearance_initialization_system import (
@@ -51,8 +51,8 @@ def entity_manager() -> RPGEntityManager:
 
 @pytest.fixture()
 def mock_game(entity_manager: RPGEntityManager) -> MagicMock:
-    """Mock TCGGame，代理 ECS 操作到真实 RPGEntityManager。"""
-    game = MagicMock(spec=TCGGame)
+    """Mock DBGGame，代理 ECS 操作到真实 RPGEntityManager。"""
+    game = MagicMock(spec=DBGGame)
     game.get_group.side_effect = entity_manager.get_group
     game.get_entity_by_name.side_effect = entity_manager.get_entity_by_name
     game.get_agent_context.return_value = MagicMock(context=[])

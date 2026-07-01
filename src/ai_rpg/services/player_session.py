@@ -66,9 +66,9 @@ async def get_session_messages(
     current_room = game_server.get_room(user_name)
     assert current_room is not None, "get_session_messages: room instance is None"
 
-    # 获取 TCG 游戏实例
-    rpg_game = current_room._tcg_game
-    assert rpg_game is not None, "get_session_messages: TCG game instance is None"
+    # 获取 DBG 游戏实例
+    rpg_game = current_room._dbg_game
+    assert rpg_game is not None, "get_session_messages: DBG game instance is None"
     if rpg_game is None:
         logger.error(f"get_session_messages: {user_name} has no game")
         raise HTTPException(
@@ -128,7 +128,7 @@ async def stream_session_messages(
             current_room = game_server.get_room(user_name)
             if current_room is None:
                 return
-            rpg_game = current_room._tcg_game
+            rpg_game = current_room._dbg_game
             if rpg_game is None or rpg_game.name != game_name:
                 return
             messages = rpg_game._player_session.get_messages_since(current_last_id)

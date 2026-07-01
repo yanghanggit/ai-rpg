@@ -2,7 +2,7 @@ from typing import final, override, Dict, List
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.rpg_entity_manager import InteractionError
 from ..models import WhisperAction, WhisperEvent
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 
 
 ####################################################################################################################################
@@ -26,9 +26,9 @@ def _format_invalid_target_error(speaker_name: str, target_name: str) -> str:
 class WhisperActionSystem(ReactiveProcessor):
     """角色耳语动作系统。"""
 
-    def __init__(self, game: TCGGame) -> None:
+    def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
-        self._game: TCGGame = game
+        self._game: DBGGame = game
 
     ####################################################################################################################################
     @override

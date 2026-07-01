@@ -10,7 +10,7 @@ from ..models import (
     WorldComponent,
     PlayerActionAuditComponent,
 )
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 from ..deepseek import DeepSeekClient
 from ..utils import extract_json_from_code_block
 from ..models.messages import SystemMessage
@@ -59,9 +59,9 @@ def _build_audit_prompt(content: str) -> str:
 class PlayerActionAuditSystem(ReactiveProcessor):
     """玩家动作内容审核系统。"""
 
-    def __init__(self, game: TCGGame) -> None:
+    def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
-        self._game: Final[TCGGame] = game
+        self._game: Final[DBGGame] = game
 
     ####################################################################################################################################
     @override

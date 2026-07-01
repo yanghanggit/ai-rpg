@@ -4,7 +4,7 @@ from typing import Final, List, final, Dict
 from loguru import logger
 from overrides import override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 from ..models import (
     PlayCardsAction,
     HandComponent,
@@ -18,9 +18,9 @@ from ..models import (
 class PartyPrePlaySystem(ReactiveProcessor):
     """出牌前系统（队员）。预留 hook，供后续出牌前注入机制扩展，与 MonsterPrePlaySystem 结构对齐。"""
 
-    def __init__(self, game: TCGGame) -> None:
+    def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
-        self._game: Final[TCGGame] = game
+        self._game: Final[DBGGame] = game
 
     #######################################################################################################################################
     @override

@@ -8,7 +8,7 @@ from loguru import logger
 from ..deepseek import agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.config import DUNGEON_PROCESS_DIR
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 from ..models import (
     AssembleDungeonAction,
     GenerateDungeonActorsAction,
@@ -57,9 +57,9 @@ def _build_dungeon_actor_prompt(
 class GenerateDungeonActorsSystem(ReactiveProcessor):
     """地下城怪物生成系统"""
 
-    def __init__(self, game: TCGGame) -> None:
+    def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
-        self._game: Final[TCGGame] = game
+        self._game: Final[DBGGame] = game
 
     ####################################################################################################################################
     @override

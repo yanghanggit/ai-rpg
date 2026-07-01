@@ -4,7 +4,7 @@ import pytest
 from typing import Type, Optional, Any
 
 try:
-    from src.ai_rpg.game.tcg_game import TCGGame
+    from src.ai_rpg.game.dbg_game import DBGGame
     from src.ai_rpg.models.entities import Actor
     from src.ai_rpg.models import (
         CharacterSheet,
@@ -19,19 +19,19 @@ try:
     # from src.ai_rpg.models.dungeon import Dungeon
     from src.ai_rpg.game.player_session import PlayerSession
 
-    _TCGGame: Optional[Type[TCGGame]] = TCGGame
+    _DBGGame: Optional[Type[DBGGame]] = DBGGame
     _Actor: Optional[Type[Actor]] = Actor
 except ImportError:
     # 在包未完全安装时跳过导入
-    _TCGGame = None
+    _DBGGame = None
     _Actor = None
 
 
 @pytest.fixture
 def sample_game() -> Any:
     """Create a sample game for testing."""
-    if _TCGGame is None:
-        pytest.skip("TCGGame not available")
+    if _DBGGame is None:
+        pytest.skip("DBGGame not available")
 
     # 创建基本的依赖
     blueprint = Blueprint(
@@ -55,7 +55,7 @@ def sample_game() -> Any:
     player = PlayerSession(
         name="test_player", actor="test_actor", game="test_blueprint"
     )
-    return _TCGGame(
+    return _DBGGame(
         name="test_blueprint",
         player_session=player,
         world=world,

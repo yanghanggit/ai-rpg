@@ -4,7 +4,7 @@ from loguru import logger
 from pydantic import BaseModel
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 from ..models import (
     PlayCardsAction,
     MonsterTurnAction,
@@ -206,9 +206,9 @@ class MonsterPrePlaySystem(ReactiveProcessor):
     怪物出牌决策系统。
     """
 
-    def __init__(self, game: TCGGame) -> None:
+    def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
-        self._game: Final[TCGGame] = game
+        self._game: Final[DBGGame] = game
 
     ####################################################################################################################################
     @override

@@ -1,4 +1,4 @@
-"""TCG游戏流程管道工厂模块，提供不同游戏场景的流程管道创建函数"""
+"""DBG游戏流程管道工厂模块，提供不同游戏场景的流程管道创建函数"""
 
 from typing import cast
 from .game_session import GameSession
@@ -16,7 +16,7 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     """
 
     ### 不这样就循环引用
-    from ..game.tcg_game import TCGGame
+    from .dbg_game import DBGGame
     from ..systems.announce_action_system import AnnounceActionSystem
     from ..systems.destroy_entity_system import DestroyEntitySystem
 
@@ -46,42 +46,42 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     from ..systems.craft_costume_item_action_system import CraftCostumeItemActionSystem
 
     ##
-    tcg_game = cast(TCGGame, game)
+    dbg_game = cast(DBGGame, game)
     processors = RPGGameProcessPipeline()
 
     # 起始系统。
-    processors.add(PrologueSystem(tcg_game))
+    processors.add(PrologueSystem(dbg_game))
 
     # 角色外观生成系统
-    processors.add(AppearanceInitializationSystem(tcg_game))
+    processors.add(AppearanceInitializationSystem(dbg_game))
 
     # 规划系统-场景描述系统-角色系统
-    processors.add(StageDescriptionSystem(game=tcg_game, enable_debug_cache=True))
-    processors.add(HomePlayerPlanSystem(tcg_game))
-    processors.add(HomeNpcPlanSystem(tcg_game))
+    processors.add(StageDescriptionSystem(game=dbg_game, enable_debug_cache=True))
+    processors.add(HomePlayerPlanSystem(dbg_game))
+    processors.add(HomeNpcPlanSystem(dbg_game))
 
     # 动作处理相关的系统
-    processors.add(QueryActionSystem(tcg_game))
-    processors.add(PlayerActionAuditSystem(tcg_game))
-    processors.add(SpeakActionSystem(tcg_game))
-    processors.add(WhisperActionSystem(tcg_game))
-    processors.add(AnnounceActionSystem(tcg_game))
-    processors.add(TransStageActionSystem(tcg_game))
-    processors.add(UpdateAppearanceActionSystem(tcg_game))
+    processors.add(QueryActionSystem(dbg_game))
+    processors.add(PlayerActionAuditSystem(dbg_game))
+    processors.add(SpeakActionSystem(dbg_game))
+    processors.add(WhisperActionSystem(dbg_game))
+    processors.add(AnnounceActionSystem(dbg_game))
+    processors.add(TransStageActionSystem(dbg_game))
+    processors.add(UpdateAppearanceActionSystem(dbg_game))
 
     # 制作相关的系统
-    processors.add(CraftConsumableActionSystem(tcg_game))
-    processors.add(CraftGearItemActionSystem(tcg_game))
-    processors.add(CraftCostumeItemActionSystem(tcg_game))
+    processors.add(CraftConsumableActionSystem(dbg_game))
+    processors.add(CraftGearItemActionSystem(dbg_game))
+    processors.add(CraftCostumeItemActionSystem(dbg_game))
 
     # 清除动作相关的临时状态、标记等，准备下一轮输入
-    processors.add(ActionCleanupSystem(tcg_game))
+    processors.add(ActionCleanupSystem(dbg_game))
 
     # 动作处理后，可能清理。
-    processors.add(DestroyEntitySystem(tcg_game))
+    processors.add(DestroyEntitySystem(dbg_game))
 
     # 收尾系统。
-    processors.add(EpilogueSystem(tcg_game))
+    processors.add(EpilogueSystem(dbg_game))
 
     return processors
 
@@ -99,7 +99,7 @@ def create_combat_pipeline(
     """
 
     ### 不这样就循环引用
-    from ..game.tcg_game import TCGGame
+    from .dbg_game import DBGGame
     from ..systems.combat_outcome_system import CombatOutcomeSystem
     from ..systems.combat_initialization_system import (
         CombatInitializationSystem,
@@ -160,76 +160,76 @@ def create_combat_pipeline(
     from ..systems.monster_pre_play_system import MonsterPrePlaySystem
     from ..systems.party_pre_play_system import PartyPrePlaySystem
 
-    tcg_game = cast(TCGGame, game)
+    dbg_game = cast(DBGGame, game)
     processors = RPGGameProcessPipeline()
 
     # 起始系统。
-    processors.add(PrologueSystem(tcg_game))
+    processors.add(PrologueSystem(dbg_game))
 
     # 角色外观生成系统
-    processors.add(AppearanceInitializationSystem(tcg_game))
+    processors.add(AppearanceInitializationSystem(dbg_game))
 
     # 战斗场景描述系统
-    processors.add(StageDescriptionSystem(game=tcg_game, enable_debug_cache=True))
+    processors.add(StageDescriptionSystem(game=dbg_game, enable_debug_cache=True))
 
     # 战斗初始化系统（注入战场上下文、转换战斗状态为进行中、触发初始状态效果
-    processors.add(CombatInitializationSystem(tcg_game))
+    processors.add(CombatInitializationSystem(dbg_game))
 
     # 牌库生成系统（战斗开始时为每个角色生成初始牌库
-    processors.add(DeckGenerationSystem(tcg_game))
+    processors.add(DeckGenerationSystem(dbg_game))
 
     # 战斗核心动作处理相关的系统
-    processors.add(DrawCardsActionSystem(tcg_game))
-    processors.add(MonsterPrePlaySystem(tcg_game))
-    processors.add(PartyPrePlaySystem(tcg_game))
-    processors.add(PlayCardsActionSystem(tcg_game))
-    processors.add(UseConsumableItemActionSystem(tcg_game))
-    processors.add(UseGearItemActionSystem(tcg_game))
-    processors.add(MoveToDiscardPileSystem(tcg_game))
-    processors.add(ExhaustCardsActionSystem(tcg_game))
-    processors.add(PassTurnActionSystem(tcg_game))
-    processors.add(RetreatActionSystem(tcg_game))
-    processors.add(PlayCardsArbitrationSystem(tcg_game))
-    processors.add(UseConsumableItemArbitrationSystem(tcg_game))
-    processors.add(UseGearItemArbitrationSystem(tcg_game))
-    processors.add(AddStatusEffectsActionSystem(tcg_game))
+    processors.add(DrawCardsActionSystem(dbg_game))
+    processors.add(MonsterPrePlaySystem(dbg_game))
+    processors.add(PartyPrePlaySystem(dbg_game))
+    processors.add(PlayCardsActionSystem(dbg_game))
+    processors.add(UseConsumableItemActionSystem(dbg_game))
+    processors.add(UseGearItemActionSystem(dbg_game))
+    processors.add(MoveToDiscardPileSystem(dbg_game))
+    processors.add(ExhaustCardsActionSystem(dbg_game))
+    processors.add(PassTurnActionSystem(dbg_game))
+    processors.add(RetreatActionSystem(dbg_game))
+    processors.add(PlayCardsArbitrationSystem(dbg_game))
+    processors.add(UseConsumableItemArbitrationSystem(dbg_game))
+    processors.add(UseGearItemArbitrationSystem(dbg_game))
+    processors.add(AddStatusEffectsActionSystem(dbg_game))
 
     # 仲裁结算后，由 stage agent（地牢主视角）决定是否对场内角色追加状态效果或塞牌
     processors.add(
-        PostArbitrationActionSystem(tcg_game, strategy=CardInjectStrategy.RANDOM_INSERT)
+        PostArbitrationActionSystem(dbg_game, strategy=CardInjectStrategy.RANDOM_INSERT)
     )
 
     # 回合完成判定系统
-    processors.add(CombatRoundCompletionSystem(tcg_game))
+    processors.add(CombatRoundCompletionSystem(dbg_game))
 
     # 检查战斗结果系统
-    processors.add(CombatOutcomeSystem(tcg_game))
+    processors.add(CombatOutcomeSystem(dbg_game))
 
     # 战斗回合清理系统（清除旧回合手牌 + 递减状态效果）
-    processors.add(CombatRoundCleanupSystem(tcg_game))
+    processors.add(CombatRoundCleanupSystem(dbg_game))
 
     # 战斗回合过渡系统（创建新回合 + 生成 action_order）
     processors.add(
-        CombatRoundTransitionSystem(tcg_game, strategy=ActionOrderStrategy.SPEED_ORDER)
+        CombatRoundTransitionSystem(dbg_game, strategy=ActionOrderStrategy.SPEED_ORDER)
     )
 
     # 战斗掉落系统（胜利时为每头怪物推理掉落 MaterialItem，写入玩家 CombatLootComponent）
-    processors.add(CombatLootSystem(tcg_game))
+    processors.add(CombatLootSystem(dbg_game))
 
     # 战斗归档系统（生成总结、压缩消息、触发记忆存储，内部有状态守卫）
-    processors.add(CombatArchiveSystem(tcg_game))
+    processors.add(CombatArchiveSystem(dbg_game))
 
     # 牌库归还系统（战斗结束后将三个子堆自有牌归还 DeckComponent）
-    processors.add(CombatPileTeardownSystem(tcg_game))
+    processors.add(CombatPileTeardownSystem(dbg_game))
 
     # 通用性的系统，用于后处理部分：清除动作相关的临时状态、标记等，准备下一轮输入
-    processors.add(ActionCleanupSystem(tcg_game))
+    processors.add(ActionCleanupSystem(dbg_game))
 
     # 是否需要销毁实体
-    processors.add(DestroyEntitySystem(tcg_game))
+    processors.add(DestroyEntitySystem(dbg_game))
 
     # 收尾系统。
-    processors.add(EpilogueSystem(tcg_game))
+    processors.add(EpilogueSystem(dbg_game))
 
     return processors
 
@@ -251,7 +251,7 @@ def create_dungeon_generate_pipeline(
     """
 
     ### 不这样就循环引用
-    from ..game.tcg_game import TCGGame
+    from .dbg_game import DBGGame
     from ..systems.generate_dungeon_ecology_system import GenerateDungeonEcologySystem
     from ..systems.generate_dungeon_stages_system import GenerateDungeonStagesSystem
     from ..systems.generate_dungeon_actors_system import GenerateDungeonActorsSystem
@@ -263,28 +263,28 @@ def create_dungeon_generate_pipeline(
     from ..systems.action_cleanup_system import ActionCleanupSystem
     from ..systems.destroy_entity_system import DestroyEntitySystem
 
-    tcg_game = cast(TCGGame, game)
+    dbg_game = cast(DBGGame, game)
     processors = RPGGameProcessPipeline()
 
     # 起始系统
-    processors.add(PrologueSystem(tcg_game))
+    processors.add(PrologueSystem(dbg_game))
 
     # 地下城生成流程（Steps 1-4，在同一次 pipeline.process() 内顺序触发）
-    processors.add(GenerateDungeonEcologySystem(tcg_game))  # Step 1: 生态环境生成
-    processors.add(GenerateDungeonStagesSystem(tcg_game))  # Step 2: 场景批量生成
-    processors.add(GenerateDungeonActorsSystem(tcg_game))  # Step 3: 怪物并发生成
-    processors.add(AssembleDungeonSystem(tcg_game))  # Step 4: 实体树组装
+    processors.add(GenerateDungeonEcologySystem(dbg_game))  # Step 1: 生态环境生成
+    processors.add(GenerateDungeonStagesSystem(dbg_game))  # Step 2: 场景批量生成
+    processors.add(GenerateDungeonActorsSystem(dbg_game))  # Step 3: 怪物并发生成
+    processors.add(AssembleDungeonSystem(dbg_game))  # Step 4: 实体树组装
 
     # 地下城图片生成系统（Step 5）
-    # processors.add(IllustrateDungeonActionSystem(tcg_game))
+    # processors.add(IllustrateDungeonActionSystem(dbg_game))
 
     # 清除动作相关的临时状态、标记等，准备下一轮输入
-    processors.add(ActionCleanupSystem(tcg_game))
+    processors.add(ActionCleanupSystem(dbg_game))
 
     # 动作处理后，可能清理。
-    processors.add(DestroyEntitySystem(tcg_game))
+    processors.add(DestroyEntitySystem(dbg_game))
 
     # 收尾系统
-    processors.add(EpilogueSystem(tcg_game))
+    processors.add(EpilogueSystem(dbg_game))
 
     return processors

@@ -8,7 +8,7 @@ DeckComponent 中的原始牌库在整个战斗期间保持只读，战斗结束
 from typing import Final, final, override
 from loguru import logger
 from ..entitas import ExecuteProcessor, Matcher
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 from ..models import (
     ActorComponent,
     DeckComponent,
@@ -28,8 +28,8 @@ class CombatPileTeardownSystem(ExecuteProcessor):
     三个子堆流转的均为 model_copy() 副本，战斗结束后直接丢弃，无需归还。
     """
 
-    def __init__(self, game: TCGGame) -> None:
-        self._game: Final[TCGGame] = game
+    def __init__(self, game: DBGGame) -> None:
+        self._game: Final[DBGGame] = game
 
     ####################################################################################################################################
     @override

@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import MagicMock
 from src.ai_rpg.entitas.context import Context
-from src.ai_rpg.game.tcg_game import TCGGame
+from src.ai_rpg.game.dbg_game import DBGGame
 from src.ai_rpg.models import (
     ActorComponent,
     DeckComponent,
@@ -29,8 +29,8 @@ def context() -> Context:
 
 @pytest.fixture()
 def mock_game(context: Context) -> MagicMock:
-    """Mock TCGGame，将 get_group() 代理到真实 Context。"""
-    game = MagicMock(spec=TCGGame)
+    """Mock DBGGame，将 get_group() 代理到真实 Context。"""
+    game = MagicMock(spec=DBGGame)
     game.get_group.side_effect = context.get_group
     return game
 

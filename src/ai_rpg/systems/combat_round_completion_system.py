@@ -15,7 +15,7 @@
 from typing import Final, final, override
 from loguru import logger
 from ..entitas import ExecuteProcessor
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 
 
 ###############################################################################################################################################
@@ -32,8 +32,8 @@ class CombatRoundCompletionSystem(ExecuteProcessor):
     - CombatOutcomeSystem 之前（战斗结果检查依赖 is_completed 状态）
     """
 
-    def __init__(self, game: TCGGame) -> None:
-        self._game: Final[TCGGame] = game
+    def __init__(self, game: DBGGame) -> None:
+        self._game: Final[DBGGame] = game
 
     ############################################################################################################
     @override

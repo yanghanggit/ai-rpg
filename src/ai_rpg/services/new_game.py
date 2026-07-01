@@ -6,7 +6,7 @@
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from ..game.player_session import PlayerSession
-from ..game.tcg_game import TCGGame
+from ..game.dbg_game import DBGGame
 from ..models import (
     NewGameRequest,
     NewGameResponse,
@@ -111,7 +111,7 @@ async def new_game(
 
     # 依赖注入，创建新的游戏
     assert world_data is not None, "World data must exist to create a game"
-    room._tcg_game = TCGGame(
+    room._dbg_game = DBGGame(
         name=payload.game_name,
         player_session=room._player_session,
         world=world_data,
@@ -119,15 +119,15 @@ async def new_game(
 
     # 根据蓝图构建游戏实例，并刷新实体数据到world中
     assert (
-        len(room._tcg_game._world.entities_serialization) == 0
+        len(room._dbg_game._world.entities_serialization) == 0
     ), "测试阶段，游戏中不应该有实体数据！"
-    room._tcg_game.build_from_blueprint().flush_entities()
+    room._dbg_game.build_from_blueprint().flush_entities()
 
     # 执行游戏初始化逻辑，确保游戏状态正确设置，准备好接受玩家的操作
-    await room._tcg_game.initialize()
+    await room._dbg_game.initialize()
 
     # 存档初始世界状态，便于调试和回放
-    archive_world(room._tcg_game._world, room._tcg_game._player_session)
+    archive_world(room._dbg_game._world, room._dbg_game._player_session)
 
     # 返回成功响应
     return NewGameResponse(blueprint=blueprint_data)

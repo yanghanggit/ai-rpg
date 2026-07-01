@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from loguru import logger
 from ai_rpg.game.player_session import PlayerSession
-from ai_rpg.game.tcg_game import TCGGame
+from ai_rpg.game.dbg_game import DBGGame
 from ai_rpg.models import World
 from ai_rpg.game import archive_world
 from ai_rpg.services.home_actions import (
@@ -40,7 +40,7 @@ async def add_party_member_game(
     player_session: PlayerSession,
     member_name: str,
     save_dir: Path,
-) -> TCGGame:
+) -> DBGGame:
     """从存档复位，将指定盟友加入远征队名单，并归档新状态。
 
     前置条件：玩家必须处于家园模式（is_player_in_home_stage）。
@@ -52,7 +52,7 @@ async def add_party_member_game(
         save_dir: 新存档写入目录。
 
     Returns:
-        执行完毕后的 TCGGame 实例；操作失败时提前返回未归档实例。
+        执行完毕后的 DBGGame 实例；操作失败时提前返回未归档实例。
     """
     terminal_game = await restore_game(world, player_session)
 
@@ -77,7 +77,7 @@ async def remove_party_member_game(
     player_session: PlayerSession,
     member_name: str,
     save_dir: Path,
-) -> TCGGame:
+) -> DBGGame:
     """从存档复位，将指定盟友从远征队名单移除，并归档新状态。
 
     前置条件：玩家必须处于家园模式（is_player_in_home_stage）。
@@ -89,7 +89,7 @@ async def remove_party_member_game(
         save_dir: 新存档写入目录。
 
     Returns:
-        执行完毕后的 TCGGame 实例；操作失败时提前返回未归档实例。
+        执行完毕后的 DBGGame 实例；操作失败时提前返回未归档实例。
     """
     terminal_game = await restore_game(world, player_session)
 
@@ -132,7 +132,7 @@ async def move_item_to_inventory_game(
     player_session: PlayerSession,
     item_name: str,
     save_dir: Path,
-) -> TCGGame:
+) -> DBGGame:
     """从存档复位，将指定道具从储物箱移入随身背包，并归档新状态。
 
     Args:
@@ -142,7 +142,7 @@ async def move_item_to_inventory_game(
         save_dir: 新存档写入目录。
 
     Returns:
-        执行完毕后的 TCGGame 实例；操作失败时提前返回未归档实例。
+        执行完毕后的 DBGGame 实例；操作失败时提前返回未归档实例。
     """
     terminal_game = await restore_game(world, player_session)
 
@@ -167,7 +167,7 @@ async def move_item_to_storage_game(
     player_session: PlayerSession,
     item_name: str,
     save_dir: Path,
-) -> TCGGame:
+) -> DBGGame:
     """从存档复位，将指定道具从随身背包移回储物箱，并归档新状态。
 
     Args:
@@ -177,7 +177,7 @@ async def move_item_to_storage_game(
         save_dir: 新存档写入目录。
 
     Returns:
-        执行完毕后的 TCGGame 实例；操作失败时提前返回未归档实例。
+        执行完毕后的 DBGGame 实例；操作失败时提前返回未归档实例。
     """
     terminal_game = await restore_game(world, player_session)
 
@@ -203,7 +203,7 @@ async def update_appearance_game(
     item_name: str,
     save_dir: Path,
     target_name: str = "",
-) -> TCGGame:
+) -> DBGGame:
     """从存档复位，触发外观更新动作并通过 home pipeline 执行 LLM 合成，归档新状态。
 
     Args:
@@ -214,7 +214,7 @@ async def update_appearance_game(
         target_name: 目标角色全名；为空时默认玩家自身。
 
     Returns:
-        执行完毕后的 TCGGame 实例；操作失败时提前返回未归档实例。
+        执行完毕后的 DBGGame 实例；操作失败时提前返回未归档实例。
     """
     terminal_game = await restore_game(world, player_session)
 
@@ -244,7 +244,7 @@ async def craft_consumable_game(
     player_session: PlayerSession,
     material_names: List[str],
     save_dir: Path,
-) -> TCGGame:
+) -> DBGGame:
     """从存档复位，触发工坊合成消耗品动作并通过 home pipeline 执行 LLM 推理，归档新状态。
 
     Args:
@@ -254,7 +254,7 @@ async def craft_consumable_game(
         save_dir: 新存档写入目录。
 
     Returns:
-        执行完毕后的 TCGGame 实例；操作失败时提前返回未归档实例。
+        执行完毕后的 DBGGame 实例；操作失败时提前返回未归档实例。
     """
     terminal_game = await restore_game(world, player_session)
 
@@ -279,7 +279,7 @@ async def craft_gear_item_game(
     player_session: PlayerSession,
     material_names: list[str],
     save_dir: Path,
-) -> TCGGame:
+) -> DBGGame:
     """从存档复位，触发工坊锻造装备动作并通过 home pipeline 执行 LLM 推理，归档新状态。
 
     Args:
@@ -289,7 +289,7 @@ async def craft_gear_item_game(
         save_dir: 新存档写入目录。
 
     Returns:
-        执行完毕后的 TCGGame 实例；操作失败时提前返回未归档实例。
+        执行完毕后的 DBGGame 实例；操作失败时提前返回未归档实例。
     """
     terminal_game = await restore_game(world, player_session)
 
@@ -315,7 +315,7 @@ async def craft_costume_game(
     player_session: PlayerSession,
     material_names: list[str],
     save_dir: Path,
-) -> TCGGame:
+) -> DBGGame:
     """从存档复位，触发工坊制作时装动作并通过 home pipeline 执行 LLM 推理，归档新状态。
 
     Args:
@@ -325,7 +325,7 @@ async def craft_costume_game(
         save_dir: 新存档写入目录。
 
     Returns:
-        执行完毕后的 TCGGame 实例；操作失败时提前返回未归档实例。
+        执行完毕后的 DBGGame 实例；操作失败时提前返回未归档实例。
     """
     terminal_game = await restore_game(world, player_session)
 

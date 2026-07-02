@@ -19,7 +19,7 @@
 import sys
 import os
 from datetime import datetime
-from typing import Final
+from typing import Final, Optional
 
 import click
 from loguru import logger
@@ -83,7 +83,7 @@ def main(
     web: bool,
     port: int,
     host: str,
-    public_url: str | None,
+    public_url: Optional[str],
 ) -> None:
     server_config.host = server_host
     server_config.port = server_port

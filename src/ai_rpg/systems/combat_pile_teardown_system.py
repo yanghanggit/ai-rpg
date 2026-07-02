@@ -1,8 +1,5 @@
 """
 战斗堆拆除系统模块
-
-战斗结束后清空并移除三个战斗临时子堆组件（DrawPile / DiscardPile / ExhaustPile）。
-DeckComponent 中的原始牌库在整个战斗期间保持只读，战斗结束后无需任何归还操作。
 """
 
 from typing import Final, final, override
@@ -23,9 +20,6 @@ from ..models import (
 class CombatPileTeardownSystem(ExecuteProcessor):
     """
     战斗结束后清空并移除三个战斗临时子堆组件。
-
-    DeckComponent 持有本场战斗的原始牌库（战斗期间只读），
-    三个子堆流转的均为 model_copy() 副本，战斗结束后直接丢弃，无需归还。
     """
 
     def __init__(self, game: DBGGame) -> None:

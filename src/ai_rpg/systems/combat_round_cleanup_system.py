@@ -1,6 +1,6 @@
 """战斗回合清理系统：回合结束后重置战场瞬态，确保下一回合以干净状态启动。"""
 
-from typing import Final, List, final, override
+from typing import Final, List, Optional, final, override
 from loguru import logger
 from pydantic import BaseModel
 from ..deepseek import DeepSeekClient
@@ -130,7 +130,27 @@ class CombatRoundCleanupSystem(ExecuteProcessor):
 
         logger.debug("清除旧回合手牌状态")
         self._game.clear_round_state()
-        await self.process_round_end_effects()
+
+        """并发为所有持有 ROUND_END 效果的实体调用 LLM 推理 HP 变化。"""
+        entities = self._game.get_group(Matcher(StatusEffectsComponent)).entities.copy()
+        chat_clients = [
+            client
+            for entity in entities
+            if (client := self._create_round_end_effect_client(entity)) is not None
+        ]
+
+        # 并发调用 LLM 推理所有实体的 ROUND_END 效果
+        logger.debug(f"开始并发结算 {len(chat_clients)} 个实体的 ROUND_END 效果...")
+        await DeepSeekClient.batch_chat(clients=chat_clients)
+
+        # 处理每个实体的 LLM 响应，更新 HP 并写入上下文
+        for chat_client in chat_clients:
+            self._apply_round_end_effect_response(chat_client)
+
+        # 结算后处理 HP 为 0 的实体（如标记死亡、触发后续效果等）
+        self._game.process_zero_health_entities()
+
+        # 推进所有角色的状态效果时钟，移除到期效果，并将变化同步写入角色 agent 上下文
         self.tick_status_effects_duration()
 
     ############################################################################################################
@@ -175,80 +195,50 @@ class CombatRoundCleanupSystem(ExecuteProcessor):
             )
 
     ################################################################################################################
-    async def process_round_end_effects(self) -> None:
-        """并发为所有持有 ROUND_END 效果的实体调用 LLM 推理 HP 变化。"""
-        chat_clients: List[DeepSeekClient] = []
+    def _create_round_end_effect_client(
+        self, entity: Entity
+    ) -> Optional[DeepSeekClient]:
+        """为单个实体构建 ROUND_END 效果的 DeepSeekClient；无效果时返回 None。"""
+        assert entity.has(
+            ActorComponent
+        ), f"Entity {entity.name} has StatusEffectsComponent but is not an Actor"
 
-        for entity in self._game.get_group(
-            Matcher(StatusEffectsComponent)
-        ).entities.copy():
-            assert entity.has(
-                ActorComponent
-            ), f"Entity {entity.name} has StatusEffectsComponent but is not an Actor"
+        round_end_effects = [
+            e
+            for e in entity.get(StatusEffectsComponent).status_effects
+            if e.phase == PhaseType.ROUND_END
+        ]
+        if not round_end_effects:
+            return None
 
-            round_end_effects = [
-                e
-                for e in entity.get(StatusEffectsComponent).status_effects
-                if e.phase == PhaseType.ROUND_END
-            ]
-            if not round_end_effects:
-                continue
+        logger.info(
+            f"[{entity.name}] 发现 {len(round_end_effects)} 个 ROUND_END 效果: "
+            f"{[e.name for e in round_end_effects]}"
+        )
+        assert entity.has(
+            CharacterStatsComponent
+        ), f"Entity {entity.name} has ROUND_END effects but is missing CharacterStatsComponent"
+        current_stats = self._game.compute_character_stats(entity)
 
-            logger.info(
-                f"[{entity.name}] 发现 {len(round_end_effects)} 个 ROUND_END 效果: "
-                f"{[e.name for e in round_end_effects]}"
-            )
-
-            # if not entity.has(CharacterStatsComponent):
-            #     logger.warning(
-            #         f"[{entity.name}] 有 ROUND_END 效果但缺少 CharacterStatsComponent，跳过"
-            #     )
-            #     continue
-            assert entity.has(
-                CharacterStatsComponent
-            ), f"Entity {entity.name} has ROUND_END effects but is missing CharacterStatsComponent"
-            current_stats = self._game.compute_character_stats(entity)
-
-            # 生成提示词，准备调用 LLM
-            prompt = _generate_round_end_effects_prompt(
-                entity_name=entity.name,
-                current_hp=current_stats.hp,
-                max_hp=current_stats.max_hp,
-                round_end_effects=round_end_effects,
-            )
-
-            # 创建 DeepSeekClient 并发调用 LLM
-            chat_clients.append(
-                DeepSeekClient(
-                    name=entity.name,
-                    prompt=prompt,
-                    context=self._game.get_agent_context(entity).context,
-                )
-            )
-
-        if not chat_clients:
-            logger.info(
-                "process_round_end_effects: 本回合无实体持有 ROUND_END 效果，跳过"
-            )
-            return
-
-        logger.debug(f"开始并发结算 {len(chat_clients)} 个实体的 ROUND_END 效果...")
-        await DeepSeekClient.batch_chat(clients=chat_clients)
-
-        # 处理每个实体的 LLM 响应，更新 HP 并写入上下文
-        for chat_client in chat_clients:
-            found_entity = self._game.get_entity_by_name(chat_client.name)
-            assert found_entity is not None, f"无法找到角色实体: {chat_client.name}"
-            self._apply_round_end_effect_response(found_entity, chat_client)
-
-        # 结算后处理 HP 为 0 的实体（如标记死亡、触发后续效果等）
-        self._game.process_zero_health_entities()
+        prompt = _generate_round_end_effects_prompt(
+            entity_name=entity.name,
+            current_hp=current_stats.hp,
+            max_hp=current_stats.max_hp,
+            round_end_effects=round_end_effects,
+        )
+        return DeepSeekClient(
+            name=entity.name,
+            prompt=prompt,
+            context=self._game.get_agent_context(entity).context,
+        )
 
     ################################################################################################################
-    def _apply_round_end_effect_response(
-        self, entity: Entity, chat_client: DeepSeekClient
-    ) -> None:
+    def _apply_round_end_effect_response(self, chat_client: DeepSeekClient) -> None:
         """解析单个实体的 ROUND_END LLM 响应，更新 HP 并写入 agent 上下文。"""
+
+        entity = self._game.get_entity_by_name(chat_client.name)
+        assert entity is not None, f"无法找到角色实体: {chat_client.name}"
+
         try:
             json_content = extract_json_from_code_block(chat_client.response_content)
             response = RoundEndEffectResponse.model_validate_json(json_content)

@@ -26,14 +26,6 @@ def _get_combat_result_notification(stage_name: str, is_victory: bool) -> str:
 class CombatOutcomeSystem(ExecuteProcessor):
     """
     战斗结果判定系统。
-
-    目标：在每次 pipeline 执行时检测阵营全灭条件，一旦达成即结束战斗
-          并向全体远征队成员广播胜/败通知。
-
-    Pipeline 位置：PlayCardsArbitrationSystem（后）→ 本系统 → CombatRoundCleanupSystem（前）
-
-    依赖：DeathComponent 由上游系统写入，本系统只读不写角色状态。
-    仅在战斗 ONGOING 阶段生效，否则静默跳过。
     """
 
     def __init__(self, game: DBGGame) -> None:

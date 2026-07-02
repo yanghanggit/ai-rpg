@@ -1,6 +1,6 @@
 """UpdateAppearanceActionSystem 单元测试。"""
 
-from typing import List
+from typing import List, Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -42,7 +42,7 @@ def _make_actor_entity(
 
 def _make_storage_entity(
     entity_manager: RPGEntityManager,
-    items: List[CostumeItem] | None = None,
+    items: Optional[List[CostumeItem]] = None,
 ) -> Entity:
     """创建带有 StorageComponent 的储物箱实体。"""
     entity = entity_manager._create_entity("storage")

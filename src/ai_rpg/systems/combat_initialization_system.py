@@ -101,11 +101,7 @@ def _generate_init_status_effects_task_hint() -> List[str]:
 ###################################################################################################################################################################
 @final
 class CombatInitializationSystem(ExecuteProcessor):
-    """战斗初始化系统
-
-    为所有参战角色注入战场上下文、转换战斗状态为进行中、并触发初始状态效果评估。
-    执行时机：战斗序列状态为 initializing 时（战斗触发后、第一回合开始前）。
-    """
+    """战斗初始化系统"""
 
     def __init__(self, game: DBGGame) -> None:
         self._game: Final[DBGGame] = game

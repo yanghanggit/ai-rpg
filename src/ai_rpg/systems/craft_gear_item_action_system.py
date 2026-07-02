@@ -1,6 +1,6 @@
 """工坊合成装备系统模块。"""
 
-from typing import Final, List, final, Dict
+from typing import Final, List, Optional, final, Dict
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
@@ -167,7 +167,7 @@ class CraftGearItemActionSystem(ReactiveProcessor):
         self,
         entity: Entity,
         materials: List[MaterialItem],
-    ) -> _CraftGearItemResponse | None:
+    ) -> Optional[_CraftGearItemResponse]:
         """调用工坊 agent 推理生成装备属性。
 
         Args:

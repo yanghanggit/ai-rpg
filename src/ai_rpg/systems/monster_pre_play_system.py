@@ -247,8 +247,8 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         chat_clients: List[DeepSeekClient] = []
         for entity in entities:
             client = self._create_monster_decision_client(entity)
-            if client is not None:
-                chat_clients.append(client)
+            # if client is not None:
+            chat_clients.append(client)
 
         if not chat_clients:
             logger.warning("MonsterPrePlaySystem: 没有可推理的怪物实体，跳过")
@@ -269,7 +269,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
             self._process_monster_decision(found_entity, client)
 
     ####################################################################################################################################
-    def _create_monster_decision_client(self, entity: Entity) -> DeepSeekClient | None:
+    def _create_monster_decision_client(self, entity: Entity) -> DeepSeekClient:
         """为单个怪物实体创建出牌决策的 DeepSeekClient。
 
         Args:
@@ -278,10 +278,13 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         Returns:
             DeepSeekClient，若缺少必要组件则返回 None
         """
+        assert entity.has(
+            HandComponent
+        ), f"MonsterPrePlaySystem: 怪物 {entity.name} 缺少 HandComponent"
         hand_comp = entity.get(HandComponent)
-        if hand_comp is None or len(hand_comp.cards) == 0:
-            logger.error(f"MonsterPrePlaySystem: 怪物 {entity.name} 没有手牌，无法决策")
-            return None
+        # if hand_comp is None or len(hand_comp.cards) == 0:
+        #     logger.error(f"MonsterPrePlaySystem: 怪物 {entity.name} 没有手牌，无法决策")
+        #     return None
 
         monster_stats = self._game.compute_character_stats(entity)
 

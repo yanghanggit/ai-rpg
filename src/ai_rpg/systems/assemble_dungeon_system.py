@@ -1,7 +1,7 @@
 """地下城组装系统"""
 
 from pathlib import Path
-from typing import Dict, Final, List, final, override
+from typing import Dict, Final, List, final, override, Optional
 from loguru import logger
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.config import DEBUG_CACHE_DIR, DUNGEON_PROCESS_DIR, DUNGEONS_DIR
@@ -126,7 +126,7 @@ class AssembleDungeonSystem(ReactiveProcessor):
         return unique
 
     ####################################################################################################################################
-    def _build_dungeon(self, blueprint: DungeonBlueprint) -> Dungeon | None:
+    def _build_dungeon(self, blueprint: DungeonBlueprint) -> Optional[Dungeon]:
         """将 DungeonBlueprint 组装为完整 Dungeon 实体树（纯数据，无 LLM 调用）。"""
         seen_stage_names: set[str] = set()
         seen_actor_names: set[str] = set()

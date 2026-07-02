@@ -1,7 +1,7 @@
 """对话动作 Screen（SPEAK 玩家动作）"""
 
 import asyncio
-from typing import List, Literal
+from typing import List, Literal, Optional
 
 from loguru import logger
 from textual import on, work
@@ -139,7 +139,7 @@ class SpeakScreen(BaseGameScreen):
             resp = await fetch_stages_state(user_name, game_name)
 
             # 找到 player_actor 所在 stage
-            current_stage: str | None = None
+            current_stage: Optional[str] = None
             if player_actor:
                 for stage, actors in resp.mapping.items():
                     if player_actor in actors:

@@ -1,7 +1,7 @@
 """场景切换动作 Screen（SWITCH_STAGE 玩家动作）"""
 
 import asyncio
-from typing import List
+from typing import List, Optional
 
 from loguru import logger
 from textual import on, work
@@ -126,7 +126,7 @@ class SwitchStageScreen(BaseGameScreen):
             resp = await fetch_stages_state(user_name, game_name)
 
             # 找到玩家当前所在场景
-            current_stage: str | None = None
+            current_stage: Optional[str] = None
             if player_actor:
                 for stage, actors in resp.mapping.items():
                     if player_actor in actors:

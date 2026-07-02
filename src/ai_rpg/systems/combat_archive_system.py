@@ -1,8 +1,4 @@
-"""战斗归档系统。
-
-战斗结束后为每位盟友并行生成第一人称战斗摘要（LLM），
-将战斗期间的详细消息从角色上下文中移除并替换为压缩摘要，
-"""
+"""战斗归档系统。"""
 
 from typing import Final, List, final
 from loguru import logger
@@ -29,7 +25,9 @@ def _generate_combat_summary_prompt(stage_name: str, total_rounds: int) -> str:
         total_rounds: 本场战斗总回合数
     """
     return f"""# 战斗结束，归档这段记忆。
-你在 {stage_name} 完成了 {total_rounds} 回合的战斗。以第一人称写一段连续的战斗复盘，按顺序写明：进入（场景、我方成员、对手）、过程（关键行动与转折）、结果（胜利/撤退/失败，伤亡情况）。
+
+你在 {stage_name} 完成了 {total_rounds} 回合的战斗。
+以第一人称写一段连续的战斗复盘，按顺序写明：进入（场景、我方成员、对手）、过程（关键行动与转折）、结果（胜利/撤退/失败，伤亡情况）。
 要求：客观简洁，不用修辞，整段不分段不空行，纯文本输出。"""
 
 
@@ -60,41 +58,29 @@ class CombatArchiveSystem(ExecuteProcessor):
         self._game.current_dungeon.transition_to_post_combat()
 
     #######################################################################################################################################
-    def _create_combat_summary_clients(
-        self, combat_actors: List[Entity]
-    ) -> List[DeepSeekClient]:
-        """为每位盟友创建配置好的 DeepSeekClient，用于并行生成战斗摘要。
+    def _create_combat_summary_client(self, combat_actor: Entity) -> DeepSeekClient:
+        """为单个盟友创建配置好的 DeepSeekClient，用于生成战斗摘要。
 
         Args:
-            combat_actors: 参与战斗的盟友实体列表
+            combat_actor: 参与战斗的盟友实体
 
         Returns:
-            与 combat_actors 一一对应的 DeepSeekClient 列表
+            配置好的 DeepSeekClient
         """
-        chat_clients: List[DeepSeekClient] = []
-
-        # 获取总回合数
         total_rounds = len(self._game.current_dungeon.current_rounds or [])
 
-        for combat_actor in combat_actors:
+        combat_stage_entity = self._game.resolve_stage_entity(combat_actor)
+        assert (
+            combat_stage_entity is not None
+        ), f"无法获取角色 {combat_actor.name} 所在的场景实体！"
 
-            combat_stage_entity = self._game.resolve_stage_entity(combat_actor)
-            assert (
-                combat_stage_entity is not None
-            ), f"无法获取角色 {combat_actor.name} 所在的场景实体！"
-
-            # 生成请求处理器
-            chat_clients.append(
-                DeepSeekClient(
-                    name=combat_actor.name,
-                    prompt=_generate_combat_summary_prompt(
-                        combat_stage_entity.name, total_rounds
-                    ),
-                    context=self._game.get_agent_context(combat_actor).context,
-                )
-            )
-
-        return chat_clients
+        return DeepSeekClient(
+            name=combat_actor.name,
+            prompt=_generate_combat_summary_prompt(
+                combat_stage_entity.name, total_rounds
+            ),
+            context=self._game.get_agent_context(combat_actor).context,
+        )
 
     #######################################################################################################################################
     def _archive_actor_combat_record(self, chat_client: DeepSeekClient) -> None:
@@ -162,7 +148,9 @@ class CombatArchiveSystem(ExecuteProcessor):
         ]
 
         # 创建聊天客户端
-        chat_clients = self._create_combat_summary_clients(list(ally_actors))
+        chat_clients = [
+            self._create_combat_summary_client(actor) for actor in ally_actors
+        ]
 
         # 语言服务
         await DeepSeekClient.batch_chat(clients=chat_clients)

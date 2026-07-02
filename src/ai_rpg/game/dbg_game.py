@@ -556,6 +556,9 @@ class DBGGame(RPGGame):
             匹配阶段的 StatusEffect 列表；实体无 StatusEffectsComponent 时返回空列表
         """
         status_comp = entity.get(StatusEffectsComponent)
+        assert (
+            status_comp is not None
+        ), f"角色 {entity.name} 缺少 StatusEffectsComponent！"
         if status_comp is None:
             return []
         return [e for e in status_comp.status_effects if e.phase == phase]

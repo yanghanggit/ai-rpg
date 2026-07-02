@@ -1,6 +1,6 @@
 """工坊合成消耗品系统模块。"""
 
-from typing import Final, List, final, Dict
+from typing import Final, List, Optional, final, Dict
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
@@ -149,7 +149,7 @@ class CraftConsumableActionSystem(ReactiveProcessor):
         self,
         entity: Entity,
         materials: List[MaterialItem],
-    ) -> _CraftConsumableResponse | None:
+    ) -> Optional[_CraftConsumableResponse]:
         """调用工坊 agent 推理生成消耗品属性。
 
         Args:

@@ -6,7 +6,7 @@
 """
 
 import random
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 from loguru import logger
 from ..game.dbg_game import DBGGame
 from ..models import (
@@ -173,7 +173,7 @@ def _resolve_targets(
 def _validate_play_turn(
     dbg_game: DBGGame,
     actor_name: str,
-) -> Tuple["Entity | None", str]:
+) -> Tuple[Optional[Entity], str]:
     """校验当前是否轮到指定角色出牌，并返回其实体。
 
     Returns:

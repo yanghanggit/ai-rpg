@@ -1,7 +1,7 @@
 """地下城场景生成系统"""
 
 from pathlib import Path
-from typing import Any, Dict, Final, List, final, override
+from typing import Any, Dict, Final, List, Optional, final, override
 from loguru import logger
 from ..deepseek import agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
@@ -87,7 +87,7 @@ class GenerateDungeonStagesSystem(ReactiveProcessor):
             )
             return
 
-        stages_file: DungeonStagesData | None = None
+        stages_file: Optional[DungeonStagesData] = None
 
         def _handle_record_dungeon_stages(dungeon_name: str, stages: List[Any]) -> str:
             nonlocal stages_file

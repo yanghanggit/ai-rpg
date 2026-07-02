@@ -23,6 +23,7 @@
 
 import datetime
 import shutil
+from typing import Optional
 import zipfile
 from pathlib import Path
 
@@ -39,7 +40,7 @@ def archive_world(
     world: World,
     player_session: PlayerSession,
     worlds_dir: Path = WORLDS_DIR,
-    save_dir: Path | None = None,
+    save_dir: Optional[Path] = None,
     enable_gzip: bool = False,
 ) -> bool:
     """持久化游戏世界数据到存档目录。

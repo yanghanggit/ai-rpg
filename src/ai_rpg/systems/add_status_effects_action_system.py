@@ -1,6 +1,6 @@
 """战斗状态效果追加系统模块"""
 
-from typing import Final, List, final, Dict
+from typing import Final, List, final, Dict, Optional
 from loguru import logger
 from overrides import override
 from ..deepseek import DeepSeekClient
@@ -104,7 +104,7 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
             task_hints=add_status_effects_action.task_hints,
         )
 
-        compressed_message: str | None = None
+        compressed_message: Optional[str] = None
         if self._use_compressed_prompt:
             compressed_message = generate_compressed_add_status_effects_prompt(
                 current_status_effects=combat_status_effects.status_effects,

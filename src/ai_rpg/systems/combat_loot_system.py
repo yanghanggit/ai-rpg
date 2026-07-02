@@ -136,9 +136,10 @@ class CombatLootSystem(ExecuteProcessor):
             return
 
         player_entity = self._game.get_player_entity()
-        if player_entity is None:
-            logger.error("[CombatLootSystem] 无法获取玩家实体，跳过掉落流程")
-            return
+        assert player_entity is not None, "无法获取玩家实体，掉落流程异常！"
+        # if player_entity is None:
+        #     logger.error("[CombatLootSystem] 无法获取玩家实体，跳过掉落流程")
+        #     return
 
         assert player_entity.has(
             PartyMemberComponent
@@ -149,13 +150,15 @@ class CombatLootSystem(ExecuteProcessor):
         monsters = [e for e in actors if e.has(MonsterComponent)]
 
         # 为每头怪物创建 LLM 客户端并推理掉落，解析结果后写入玩家 CombatLootComponent
-        clients = self._create_loot_clients(monsters)
+        clients = [self._create_loot_client(m) for m in monsters]
 
         # 并行调用 LLM 推理所有怪物掉落
         await DeepSeekClient.batch_chat(clients=clients)
 
         # 解析所有怪物的掉落结果，合并基础掉落与部位破坏额外掉落
-        loot_items = self._parse_loot_items(clients)
+        loot_items = [
+            item for client in clients for item in self._parse_loot_item(client)
+        ]
 
         # 将掉落物写入玩家 CombatLootComponent
         player_entity.replace(CombatLootComponent, player_entity.name, loot_items)
@@ -164,14 +167,14 @@ class CombatLootSystem(ExecuteProcessor):
         )
 
     #######################################################################################################################################
-    def _create_loot_clients(self, monsters: List[Entity]) -> List[DeepSeekClient]:
-        """为每头怪物创建配置好的 DeepSeekClient，传入其战斗上下文。
+    def _create_loot_client(self, monster: Entity) -> DeepSeekClient:
+        """为单头怪物创建配置好的 DeepSeekClient，传入其战斗上下文。
 
         Args:
-            monsters: 怪物实体列表
+            monster: 怪物实体
 
         Returns:
-            与 monsters 一一对应的 DeepSeekClient 列表
+            配置好的 DeepSeekClient
         """
         total_rounds = len(self._game.current_dungeon.current_rounds or [])
 
@@ -181,58 +184,73 @@ class CombatLootSystem(ExecuteProcessor):
         stage_entity = self._game.resolve_stage_entity(player_entity)
         stage_name = stage_entity.name if stage_entity is not None else "未知场景"
 
-        clients: List[DeepSeekClient] = []
-        for monster in monsters:
-            appearance = (
-                monster.get(AppearanceComponent).appearance
-                if monster.has(AppearanceComponent)
-                else monster.name
-            )
-            clients.append(
-                DeepSeekClient(
-                    name=monster.name,
-                    prompt=_build_loot_prompt(
-                        monster.name, appearance, stage_name, total_rounds
-                    ),
-                    context=self._game.get_agent_context(monster).context,
-                )
-            )
-        return clients
+        appearance = (
+            monster.get(AppearanceComponent).appearance
+            if monster.has(AppearanceComponent)
+            else monster.name
+        )
+        return DeepSeekClient(
+            name=monster.name,
+            prompt=_build_loot_prompt(
+                monster.name, appearance, stage_name, total_rounds
+            ),
+            context=self._game.get_agent_context(monster).context,
+        )
 
     #######################################################################################################################################
-    def _parse_loot_items(self, clients: List[DeepSeekClient]) -> List[AnyItem]:
-        """解析所有怪物的 LLM 响应，合并基础掉落与部位破坏额外掉落。
+    def _parse_loot_item(self, client: DeepSeekClient) -> List[AnyItem]:
+        """解析单头怪物的 LLM 响应，返回基础掉落与部位破坏额外掉落。
 
-        解析失败的怪物记录 error 日志并跳过，不影响其他怪物的掉落。
+        解析失败时记录 error 日志并返回空列表。
 
         Args:
-            clients: 已完成 LLM 调用的客户端列表
+            client: 已完成 LLM 调用的客户端
 
         Returns:
-            汇总后的全部掉落物列表
+            该怪物的全部掉落物列表
         """
-        all_items: List[AnyItem] = []
+        items: List[AnyItem] = []
 
-        for client in clients:
-            if not client.response_content:
-                logger.error(f"[CombatLootSystem] {client.name} LLM 响应为空，跳过掉落")
+        if not client.response_content:
+            logger.error(f"[CombatLootSystem] {client.name} LLM 响应为空，跳过掉落")
+            return items
+
+        try:
+            json_str = extract_json_from_code_block(client.response_content)
+            response = _MonsterLootResponse.model_validate_json(json_str)
+        except Exception as e:
+            logger.error(
+                f"[CombatLootSystem] 解析 {client.name} 掉落响应失败: {e}\n"
+                f"原始内容:\n{client.response_content}"
+            )
+            return items
+
+        # 基础掉落（必然产生）
+        for entry in response.base_materials:
+            if not entry.name:
                 continue
+            items.append(
+                MaterialItem(
+                    name=entry.name,
+                    description=entry.description,
+                    count=max(1, entry.count),
+                )
+            )
+            logger.info(
+                f"[CombatLootSystem] {client.name} 基础掉落: {entry.name} x{entry.count}"
+            )
 
-            try:
-                json_str = extract_json_from_code_block(client.response_content)
-                response = _MonsterLootResponse.model_validate_json(json_str)
-            except Exception as e:
-                logger.error(
-                    f"[CombatLootSystem] 解析 {client.name} 掉落响应失败: {e}\n"
-                    f"原始内容:\n{client.response_content}"
+        # 部位破坏额外掉落
+        for part in response.part_breaks:
+            if not part.broken:
+                logger.debug(
+                    f"[CombatLootSystem] {client.name} 部位 [{part.part_name}] 未破坏，无额外掉落"
                 )
                 continue
-
-            # 基础掉落（必然产生）
-            for entry in response.base_materials:
+            for entry in part.materials:
                 if not entry.name:
                     continue
-                all_items.append(
+                items.append(
                     MaterialItem(
                         name=entry.name,
                         description=entry.description,
@@ -240,28 +258,7 @@ class CombatLootSystem(ExecuteProcessor):
                     )
                 )
                 logger.info(
-                    f"[CombatLootSystem] {client.name} 基础掉落: {entry.name} x{entry.count}"
+                    f"[CombatLootSystem] {client.name} 部位破坏 [{part.part_name}] 额外掉落: {entry.name} x{entry.count}"
                 )
 
-            # 部位破坏额外掉落
-            for part in response.part_breaks:
-                if not part.broken:
-                    logger.debug(
-                        f"[CombatLootSystem] {client.name} 部位 [{part.part_name}] 未破坏，无额外掉落"
-                    )
-                    continue
-                for entry in part.materials:
-                    if not entry.name:
-                        continue
-                    all_items.append(
-                        MaterialItem(
-                            name=entry.name,
-                            description=entry.description,
-                            count=max(1, entry.count),
-                        )
-                    )
-                    logger.info(
-                        f"[CombatLootSystem] {client.name} 部位破坏 [{part.part_name}] 额外掉落: {entry.name} x{entry.count}"
-                    )
-
-        return all_items
+        return items

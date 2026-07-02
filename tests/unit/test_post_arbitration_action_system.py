@@ -20,7 +20,7 @@ from src.ai_rpg.systems.post_arbitration_action_system import (
     PostArbitrationActionSystem,
 )
 from src.ai_rpg.systems.arbitration_prompt_builders import fmt_duration
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 
 # ---------------------------------------------------------------------------
@@ -86,8 +86,8 @@ def _make_mock_chat_client(
 
 def _build_response_json(
     target: str,
-    effects: List[StatusEffect] | None = None,
-    cards: List[Card] | None = None,
+    effects: Optional[List[StatusEffect]] = None,
+    cards: Optional[List[Card]] = None,
 ) -> str:
     """构建标准的 StagePostArbitrationResponse JSON 字符串。"""
     import json

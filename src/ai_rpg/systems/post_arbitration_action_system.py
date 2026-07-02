@@ -2,7 +2,7 @@
 
 from enum import StrEnum, unique
 import random
-from typing import Final, List, Set, final, Dict
+from typing import Final, List, Optional, Set, final, Dict
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
@@ -254,7 +254,7 @@ class PostArbitrationActionSystem(ReactiveProcessor):
             current_round_number=current_round_number,
         )
 
-        compressed_message: str | None = None
+        compressed_message: Optional[str] = None
         if self._use_compressed_prompt:
             compressed_message = _generate_compressed_stage_post_arbitration_prompt(
                 game=self._game,

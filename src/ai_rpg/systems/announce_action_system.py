@@ -1,4 +1,4 @@
-from typing import final, override, Dict, List
+from typing import final, override, Dict, List, Final
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import AnnounceAction, AnnounceEvent, HomeComponent
 from ..game.dbg_game import DBGGame
@@ -25,7 +25,7 @@ class AnnounceActionSystem(ReactiveProcessor):
 
     def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
-        self._game: DBGGame = game
+        self._game: Final[DBGGame] = game
 
     ####################################################################################################################################
     @override

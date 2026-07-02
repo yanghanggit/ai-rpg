@@ -11,7 +11,7 @@
 - top_k 可在构造时配置，默认 3 条
 """
 
-from typing import Final, final, override, Dict, List
+from typing import Final, Optional, final, override, Dict, List
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import (
     QueryAction,
@@ -27,7 +27,7 @@ from ..game.dbg_game import DBGGame
 
 #############################################################################################################################
 def _build_query_result_message(
-    actor: str, question: str, related_info: str | None
+    actor: str, question: str, related_info: Optional[str] = None
 ) -> str:
     """构建向量数据库查询结果的提示词消息
 

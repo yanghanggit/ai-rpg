@@ -1,4 +1,4 @@
-from typing import Any, List, cast
+from typing import Any, List, Optional, cast
 import pytest
 from src.ai_rpg.entitas.entity import Entity
 from src.ai_rpg.game.player_session import PlayerSession
@@ -39,7 +39,7 @@ from src.ai_rpg.models import (
 def _make_game(
     player_name: str = "p1",
     actor_name: str = "hero",
-    blueprint: Blueprint | None = None,
+    blueprint: Optional[Blueprint] = None,
 ) -> DBGGame:
     """创建带有空世界的 DBGGame 实例（不调用 build_from_blueprint）。"""
     if blueprint is None:

@@ -17,7 +17,7 @@ from ..models import (
     AgentContext,
     World,
 )
-from .player_session import PlayerSession
+from ..models import PlayerSession
 
 
 #################################################################################################################################################

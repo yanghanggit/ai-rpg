@@ -17,7 +17,7 @@ try:
     # from src.ai_rpg.models.entities import CharacterStats
     # from src.ai_rpg.models.world import World, Blueprint
     # from src.ai_rpg.models.dungeon import Dungeon
-    from src.ai_rpg.game.player_session import PlayerSession
+    from src.ai_rpg.models import PlayerSession
 
     _DBGGame: Optional[Type[DBGGame]] = DBGGame
     _Actor: Optional[Type[Actor]] = Actor

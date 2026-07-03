@@ -31,7 +31,7 @@ from ..models.messages import get_buffer_string
 from loguru import logger
 
 from .config import WORLDS_DIR
-from .player_session import PlayerSession
+from ..models import PlayerSession
 from ..models import Dungeon, World
 
 

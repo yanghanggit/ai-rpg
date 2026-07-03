@@ -14,7 +14,7 @@ sys.path.insert(
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from loguru import logger
-from ai_rpg.game.player_session import PlayerSession
+from ai_rpg.models import PlayerSession
 from ai_rpg.game.dbg_game import DBGGame
 from ai_rpg.models import World, MonsterComponent
 from ai_rpg.game import archive_world

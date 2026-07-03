@@ -1,6 +1,7 @@
 from typing import List
-from ..models import AgentEventUnion, SessionMessage, MessageType
 from pydantic import BaseModel
+from .agent_event import AgentEventUnion
+from .session_message import SessionMessage, MessageType
 
 
 ###############################################################################
@@ -42,13 +43,7 @@ class PlayerSession(BaseModel):
         Args:
             agent_event: 代理事件对象
         """
-        # 记录调试日志,方便追踪事件流
-        # logger.debug(
-        #     f"[{self.name}:{self.actor}] = add_agent_event_message: {agent_event.model_dump_json()}"
-        # )
 
-        # 将AgentEvent封装为SessionMessage并追加到列表
-        # MessageType.AGENT_EVENT 标识这是一个代理事件类型的消息
         agent_event_message = SessionMessage(
             message_type=MessageType.AGENT_EVENT,  # 消息类型标识
             data=agent_event.model_dump(),  # 将事件序列化为字典

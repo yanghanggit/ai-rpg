@@ -1,7 +1,7 @@
 import asyncio
 from typing import Final, Optional
 from .dbg_game import DBGGame
-from .player_session import PlayerSession
+from ..models import PlayerSession
 
 
 class PlayerRoom:

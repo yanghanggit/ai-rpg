@@ -5,7 +5,7 @@
 
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
-from ..game.player_session import PlayerSession
+from ..models import PlayerSession
 from ..game.dbg_game import DBGGame
 from ..models import (
     NewGameRequest,

@@ -54,7 +54,7 @@ from ..models import (
 )
 from ..models.items import AnyItem
 from ..models.utils import compute_effective_stats
-from .player_session import PlayerSession
+from ..models import PlayerSession
 from ..entitas import Matcher, Entity
 
 

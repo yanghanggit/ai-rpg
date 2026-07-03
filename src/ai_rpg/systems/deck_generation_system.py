@@ -85,72 +85,73 @@ class DeckGenerationSystem(ReactiveProcessor):
         chat_clients: List[DeepSeekClient] = []
         num_cards_map: Dict[str, int] = {}  # entity.name -> num_cards
         for entity in entities:
-
-            # 从 GenerateDeckAction 读取本角色的卡牌数
-            generate_deck_action = entity.get(GenerateDeckAction)
-            assert generate_deck_action is not None
-            num_cards = generate_deck_action.num_cards
+            client, num_cards = self._build_deck_chat_client(entity)
             num_cards_map[entity.name] = num_cards
-
-            # 获取角色关键词
-            combat_stats = self._game.compute_character_stats(entity)
-
-            deck_comp_for_keywords = entity.get(DeckComponent)
-            assert deck_comp_for_keywords is not None
-            sampled_keywords = _sample_keywords(
-                deck_comp_for_keywords.keywords, k=num_cards
-            )
-
-            dice_rolls = [
-                random.randint(DiceValue.MIN, DiceValue.MAX) for _ in range(num_cards)
-            ]
-            logger.debug(
-                f"[{entity.name}] 关键词: {[k[:20] for k in sampled_keywords]}  骰值: {dice_rolls}"
-            )
-
-            prompt = generate_deck_prompt(
-                actor_stats=combat_stats,
-                num_cards=num_cards,
-                keywords=sampled_keywords,
-                dice_rolls=dice_rolls,
-            )
-            compressed_prompt = generate_compressed_deck_prompt(
-                actor_stats=combat_stats,
-                num_cards=num_cards,
-                keywords=sampled_keywords,
-                dice_rolls=dice_rolls,
-            )
-
-            chat_clients.append(
-                DeepSeekClient(
-                    name=entity.name,
-                    prompt=prompt,
-                    compressed_prompt=compressed_prompt,
-                    context=self._game.get_agent_context(entity).context,
-                )
-            )
+            chat_clients.append(client)
 
         await DeepSeekClient.batch_chat(clients=chat_clients)
 
         # 解析结果，填入 DeckComponent 后洗牌移入 DrawPileComponent
         for chat_client in chat_clients:
-            entity1 = self._game.get_entity_by_name(chat_client.name)
-            assert (
-                entity1 is not None
-            ), f"DeckGenerationSystem: 无法找到实体 {chat_client.name} 以处理生成结果"
-
             self._process_generation_response(
-                entity1, chat_client, num_cards_map[chat_client.name]
+                chat_client, num_cards_map[chat_client.name]
             )
+
+    #######################################################################################################################################
+    def _build_deck_chat_client(self, entity: Entity) -> tuple[DeepSeekClient, int]:
+        """为单个实体构建牌库生成的 DeepSeekClient，同时返回本次目标卡牌数。"""
+        generate_deck_action = entity.get(GenerateDeckAction)
+        assert generate_deck_action is not None
+        num_cards = generate_deck_action.num_cards
+
+        combat_stats = self._game.compute_character_stats(entity)
+
+        deck_comp_for_keywords = entity.get(DeckComponent)
+        assert deck_comp_for_keywords is not None
+        sampled_keywords = _sample_keywords(
+            deck_comp_for_keywords.keywords, k=num_cards
+        )
+
+        dice_rolls = [
+            random.randint(DiceValue.MIN, DiceValue.MAX) for _ in range(num_cards)
+        ]
+        logger.debug(
+            f"[{entity.name}] 关键词: {[k[:20] for k in sampled_keywords]}  骰值: {dice_rolls}"
+        )
+
+        prompt = generate_deck_prompt(
+            actor_stats=combat_stats,
+            num_cards=num_cards,
+            keywords=sampled_keywords,
+            dice_rolls=dice_rolls,
+        )
+        compressed_prompt = generate_compressed_deck_prompt(
+            actor_stats=combat_stats,
+            num_cards=num_cards,
+            keywords=sampled_keywords,
+            dice_rolls=dice_rolls,
+        )
+
+        client = DeepSeekClient(
+            name=entity.name,
+            prompt=prompt,
+            compressed_prompt=compressed_prompt,
+            context=self._game.get_agent_context(entity).context,
+        )
+        return client, num_cards
 
     #######################################################################################################################################
     def _process_generation_response(
         self,
-        entity: Entity,
         chat_client: DeepSeekClient,
         num_cards: int,
     ) -> None:
         """解析 LLM 响应，将生成卡牌洗牌填入 DrawPileComponent。解析失败时跳过（DrawPile 保持空）。"""
+
+        entity = self._game.get_entity_by_name(chat_client.name)
+        assert (
+            entity is not None
+        ), f"DeckGenerationSystem: 无法找到实体 {chat_client.name} 以处理生成结果"
 
         try:
 

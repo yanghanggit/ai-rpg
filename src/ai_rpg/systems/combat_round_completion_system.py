@@ -1,16 +1,4 @@
-"""战斗回合完成判定系统
-
-职责：
-- 在每次 pipeline 执行时判断当前回合是否结束
-- 判断依据：所有存活角色的 RoundStatsComponent.energy <= 0（或无该组件）
-- 满足条件时写入 Round.is_completed = True
-
-设计说明：
-- energy-based 判断反映运行时真实剩余行动数，比结构性计数（completed_actors/action_order）更准确
-- 位于 PostArbitrationActionSystem 之后，确保本轮所有 energy 消耗已结算
-- 位于 CombatOutcomeSystem 之前，使战斗结果检查能感知到回合完成状态
-- init round（actor_order_snapshots=[]）跳过判断，维持初始化阶段行为
-"""
+"""战斗回合完成判定系统"""
 
 from typing import Final, final, override
 from loguru import logger
@@ -21,16 +9,7 @@ from ..game.dbg_game import DBGGame
 ###############################################################################################################################################
 @final
 class CombatRoundCompletionSystem(ExecuteProcessor):
-    """战斗回合完成判定系统
-
-    在每次 pipeline 执行时检查当前回合是否应标记为完成。
-    当本场景内所有存活角色均无剩余行动力（energy <= 0 或无 RoundStatsComponent）时，
-    将最新回合的 is_completed 置为 True。
-
-    执行时机：
-    - PostArbitrationActionSystem 之后（所有出牌 energy 消耗已结算）
-    - CombatOutcomeSystem 之前（战斗结果检查依赖 is_completed 状态）
-    """
+    """战斗回合完成判定系统"""
 
     def __init__(self, game: DBGGame) -> None:
         self._game: Final[DBGGame] = game
@@ -54,8 +33,9 @@ class CombatRoundCompletionSystem(ExecuteProcessor):
 
         # 获取本场景所有存活角色
         player_entity = self._game.get_player_entity()
-        if player_entity is None:
-            return
+        assert player_entity is not None, "player_entity is None"
+        # if player_entity is None:
+        #     return
         actors_in_stage = self._game.get_alive_actors_in_stage(player_entity)
 
         # 判断：所有存活角色均无剩余行动力

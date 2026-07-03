@@ -121,7 +121,7 @@ def _make_actor_model(
 def _make_stage_model(
     name: str,
     stage_type: StageType = StageType.HOME,
-    actors: List[Actor] | None = None,
+    actors: Optional[List[Actor]] = None,
 ) -> Stage:
     return Stage(
         name=name,

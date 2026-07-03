@@ -114,11 +114,12 @@ class CraftConsumableActionSystem(ReactiveProcessor):
         action = entity.get(CraftConsumableAction)
 
         storage_entity = self._game.get_storage_entity()
-        if storage_entity is None or not storage_entity.has(StorageComponent):
-            logger.error(
-                "[CraftConsumableActionSystem] 全局储物箱实体不存在或缺少 StorageComponent"
-            )
-            return
+        assert storage_entity is not None, "storage_entity is None"
+        # if storage_entity is None or not storage_entity.has(StorageComponent):
+        #     logger.error(
+        #         "[CraftConsumableActionSystem] 全局储物箱实体不存在或缺少 StorageComponent"
+        #     )
+        #     return
 
         # 材料列表由 activate_craft_consumable 预填充（count = 本次使用量）
         materials = action.material_items
@@ -137,8 +138,9 @@ class CraftConsumableActionSystem(ReactiveProcessor):
             modifiers=result.modifiers,
             craft_materials=action.material_items,
         )
-        self._update_storage(storage_entity, action.material_names, new_item)
 
+        # 更新储物箱：扣减已用材料（count 递减，归零则移除），追加合成品
+        self._update_storage(storage_entity, action.material_names, new_item)
         logger.info(
             f"[CraftConsumableActionSystem] 合成完成: {new_item.name} "
             f"(target={new_item.target_type}, affixes={new_item.affixes}, modifiers={new_item.modifiers})"

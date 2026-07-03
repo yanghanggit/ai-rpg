@@ -8,12 +8,24 @@ from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.dbg_game import DBGGame
 from ..models import (
     ActorComponent,
-    CharacterStatsComponent,
     StatusEffect,
     StatusEffectsComponent,
     PhaseType,
 )
 from ..utils import extract_json_from_code_block
+
+
+def _make_round_end_hp_update_message(new_hp: int, max_hp: int) -> str:
+    """生成回合末生命值更新的 LLM 通知文本。
+
+    Args:
+        new_hp: 结算后的当前 HP
+        max_hp: 最大 HP
+
+    Returns:
+        写入 agent 上下文的 human message 文本
+    """
+    return f"# 回合末结算 — 生命值更新\n\n当前HP: {new_hp}/{max_hp}"
 
 
 def _make_status_effects_tick_message(
@@ -39,7 +51,7 @@ def _make_status_effects_tick_message(
 
 ###############################################################################################################################################
 @final
-class RoundEndEffectResponse(BaseModel):
+class _RoundEndEffectResponse(BaseModel):
     """回合末状态效果 LLM 推理响应"""
 
     hp: int  # 效果 tick 后的新 HP（LLM 计算；系统会 clamp 至 [0, max_hp]）
@@ -199,25 +211,30 @@ class CombatRoundCleanupSystem(ExecuteProcessor):
         self, entity: Entity
     ) -> Optional[DeepSeekClient]:
         """为单个实体构建 ROUND_END 效果的 DeepSeekClient；无效果时返回 None。"""
-        assert entity.has(
-            ActorComponent
-        ), f"Entity {entity.name} has StatusEffectsComponent but is not an Actor"
+        # assert entity.has(
+        #     ActorComponent
+        # ), f"Entity {entity.name} has StatusEffectsComponent but is not an Actor"
+        # round_end_effects = [
+        #     e
+        #     for e in entity.get(StatusEffectsComponent).status_effects
+        #     if e.phase == PhaseType.ROUND_END
+        # ]
+        # if not round_end_effects:
+        #     return None
 
-        round_end_effects = [
-            e
-            for e in entity.get(StatusEffectsComponent).status_effects
-            if e.phase == PhaseType.ROUND_END
-        ]
-        if not round_end_effects:
+        round_end_effects = self._game.get_status_effects_by_phase(
+            entity, PhaseType.ROUND_END
+        )
+        if len(round_end_effects) == 0:
             return None
 
         logger.info(
             f"[{entity.name}] 发现 {len(round_end_effects)} 个 ROUND_END 效果: "
             f"{[e.name for e in round_end_effects]}"
         )
-        assert entity.has(
-            CharacterStatsComponent
-        ), f"Entity {entity.name} has ROUND_END effects but is missing CharacterStatsComponent"
+        # assert entity.has(
+        #     CharacterStatsComponent
+        # ), f"Entity {entity.name} has ROUND_END effects but is missing CharacterStatsComponent"
         current_stats = self._game.compute_character_stats(entity)
 
         prompt = _generate_round_end_effects_prompt(
@@ -241,7 +258,7 @@ class CombatRoundCleanupSystem(ExecuteProcessor):
 
         try:
             json_content = extract_json_from_code_block(chat_client.response_content)
-            response = RoundEndEffectResponse.model_validate_json(json_content)
+            response = _RoundEndEffectResponse.model_validate_json(json_content)
 
             # 将本轮 prompt 和 AI 回复写入 agent 上下文，完成对话
             self._game.add_human_message(entity, chat_client.prompt)
@@ -257,7 +274,7 @@ class CombatRoundCleanupSystem(ExecuteProcessor):
 
             self._game.add_human_message(
                 entity,
-                f"# 回合末结算 — 生命值更新\n\n当前HP: {new_hp}/{max_hp}",
+                _make_round_end_hp_update_message(new_hp, max_hp),
             )
 
         except Exception as e:

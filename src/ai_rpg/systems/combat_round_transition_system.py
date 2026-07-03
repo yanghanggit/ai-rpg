@@ -1,9 +1,5 @@
 """
 战斗回合过渡系统
-
-职责：创建新回合、重置参战角色的回合属性，并生成本回合的行动顺序快照。
-第一回合由 CombatInitializationSystem 创建；本系统负责后续每一回合的衔接。
-旧回合清理由 CombatRoundCleanupSystem 负责（位于本系统之前）。
 """
 
 from enum import StrEnum, unique
@@ -38,11 +34,6 @@ class ActionOrderStrategy(StrEnum):
 class CombatRoundTransitionSystem(ExecuteProcessor):
     """
     战斗回合过渡系统。
-
-    每次 pipeline 执行时，若上一回合已完成（is_completed）则自动创建下一回合：
-    调用 start_new_round 重置所有参战角色的 RoundStatsComponent，
-    再按指定策略（RANDOM / SPEED_ORDER / CREATION_ORDER）生成行动顺序快照，
-    写入 Round.actor_order_snapshots 供 MonsterPlayDecisionSystem 等后续系统使用。
     """
 
     ############################################################################################################
@@ -53,63 +44,6 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
     ) -> None:
         self._game: Final[DBGGame] = game
         self._strategy: Final[ActionOrderStrategy] = strategy
-
-    ############################################################################################################
-    def start_new_round(self, actors: set[Entity]) -> Round:
-        """创建并追加新回合，同时重置所有参战角色的 RoundStatsComponent。"""
-        assert (
-            self._game.current_dungeon.current_combat is not None
-        ), "current_combat is None"
-        assert self._game.current_dungeon.is_ongoing, "当前战斗未进行中，无法开始新回合"
-        current_rounds = self._game.current_dungeon.current_rounds or []
-        if len(current_rounds) > 0:
-            last_round = self._game.current_dungeon.latest_round
-            assert last_round is not None, "latest_round is None"
-            assert last_round.is_completed, "上一回合尚未完成，无法创建新回合"
-        new_round = Round()
-        self._game.current_dungeon.current_combat.rounds.append(new_round)
-        for actor in actors:
-            assert not actor.has(
-                RoundStatsComponent
-            ), f"{actor.name} 已存在 RoundStatsComponent"
-            assert not actor.has(DeathComponent), f"{actor.name} 已死亡，不应参与新回合"
-            computed = self._game.compute_character_stats(actor)
-            actor.replace(RoundStatsComponent, actor.name, computed.energy)
-        return new_round
-
-    ############################################################################################################
-    def sorted_actors_by_round_speed(self, actors: Set[Entity]) -> List[Entity]:
-        """从给定的角色集合中，筛选本回合仍有行动力的角色并按速度降序排列。"""
-        eligible: List[Entity] = [
-            entity for entity in actors if self._game.get_energy(entity) > 0
-        ]
-        eligible.sort(
-            key=lambda entity: (
-                -self._game.compute_character_stats(
-                    entity
-                ).speed,  # 速度降序（含装备加成）
-                entity.get(IdentityComponent).creation_order,
-            )
-        )
-        return eligible
-
-    ############################################################################################################
-    def shuffled_actors_by_round(self, actors: Set[Entity]) -> List[Entity]:
-        """从给定的角色集合中，筛选本回合仍有行动力的角色并随机打乱顺序。"""
-        eligible: List[Entity] = [
-            entity for entity in actors if self._game.get_energy(entity) > 0
-        ]
-        random.shuffle(eligible)
-        return eligible
-
-    ############################################################################################################
-    def sorted_actors_by_creation_order(self, actors: Set[Entity]) -> List[Entity]:
-        """从给定的角色集合中，筛选本回合仍有行动力的角色并按创建顺序升序排列。"""
-        eligible: List[Entity] = [
-            entity for entity in actors if self._game.get_energy(entity) > 0
-        ]
-        eligible.sort(key=lambda entity: entity.get(IdentityComponent).creation_order)
-        return eligible
 
     ############################################################################################################
     @override
@@ -150,15 +84,15 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
         assert stage_entity.has(DungeonComponent), "stage_entity 没有 DungeonComponent"
 
         round_number = len(current_rounds) + 1
-        new_round = self.start_new_round(actors_in_stage)
+        new_round = self._start_new_round(actors_in_stage)
 
         # 快照必须在 start_new_round 之后构建，此时 RoundStatsComponent 已按新回合重置
         if self._strategy == ActionOrderStrategy.RANDOM:
-            snapshot_entities = self.shuffled_actors_by_round(actors_in_stage)
+            snapshot_entities = self._shuffled_actors_by_round(actors_in_stage)
         elif self._strategy == ActionOrderStrategy.SPEED_ORDER:
-            snapshot_entities = self.sorted_actors_by_round_speed(actors_in_stage)
+            snapshot_entities = self._sorted_actors_by_round_speed(actors_in_stage)
         else:  # CREATION_ORDER（含未知策略回退）
-            snapshot_entities = self.sorted_actors_by_creation_order(actors_in_stage)
+            snapshot_entities = self._sorted_actors_by_creation_order(actors_in_stage)
 
         new_round.actor_order_snapshots.append(
             [entity.name for entity in snapshot_entities]
@@ -170,5 +104,69 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
         logger.info(
             f"创建第 {round_number} 回合，快照行动顺序: {new_round.actor_order_snapshots[-1]}"
         )
+
+    ############################################################################################################
+    def _start_new_round(self, actors: set[Entity]) -> Round:
+        """创建并追加新回合，同时重置所有参战角色的 RoundStatsComponent。"""
+        assert (
+            self._game.current_dungeon.current_combat is not None
+        ), "current_combat is None"
+        assert self._game.current_dungeon.is_ongoing, "当前战斗未进行中，无法开始新回合"
+
+        # 守卫：若当前已有回合，则必须确保上一回合已完成
+        current_rounds = self._game.current_dungeon.current_rounds or []
+        if len(current_rounds) > 0:
+            last_round = self._game.current_dungeon.latest_round
+            assert last_round is not None, "latest_round is None"
+            assert last_round.is_completed, "上一回合尚未完成，无法创建新回合"
+
+        # 创建新回合并追加到当前战斗
+        new_round = Round()
+        self._game.current_dungeon.current_combat.rounds.append(new_round)
+
+        # 重置所有参战角色的 RoundStatsComponent
+        for actor in actors:
+            assert not actor.has(
+                RoundStatsComponent
+            ), f"{actor.name} 已存在 RoundStatsComponent"
+            assert not actor.has(DeathComponent), f"{actor.name} 已死亡，不应参与新回合"
+            computed = self._game.compute_character_stats(actor)
+            actor.replace(RoundStatsComponent, actor.name, computed.energy)
+
+        return new_round
+
+    ############################################################################################################
+    def _sorted_actors_by_round_speed(self, actors: Set[Entity]) -> List[Entity]:
+        """从给定的角色集合中，筛选本回合仍有行动力的角色并按速度降序排列。"""
+        eligible: List[Entity] = [
+            entity for entity in actors if self._game.get_energy(entity) > 0
+        ]
+        eligible.sort(
+            key=lambda entity: (
+                -self._game.compute_character_stats(
+                    entity
+                ).speed,  # 速度降序（含装备加成）
+                entity.get(IdentityComponent).creation_order,
+            )
+        )
+        return eligible
+
+    ############################################################################################################
+    def _shuffled_actors_by_round(self, actors: Set[Entity]) -> List[Entity]:
+        """从给定的角色集合中，筛选本回合仍有行动力的角色并随机打乱顺序。"""
+        eligible: List[Entity] = [
+            entity for entity in actors if self._game.get_energy(entity) > 0
+        ]
+        random.shuffle(eligible)
+        return eligible
+
+    ############################################################################################################
+    def _sorted_actors_by_creation_order(self, actors: Set[Entity]) -> List[Entity]:
+        """从给定的角色集合中，筛选本回合仍有行动力的角色并按创建顺序升序排列。"""
+        eligible: List[Entity] = [
+            entity for entity in actors if self._game.get_energy(entity) > 0
+        ]
+        eligible.sort(key=lambda entity: entity.get(IdentityComponent).creation_order)
+        return eligible
 
     ################################################################################################################

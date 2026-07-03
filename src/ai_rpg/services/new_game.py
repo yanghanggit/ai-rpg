@@ -130,4 +130,6 @@ async def new_game(
     archive_world(room._dbg_game._world, room._dbg_game._player_session)
 
     # 返回成功响应
-    return NewGameResponse(blueprint=blueprint_data)
+    return NewGameResponse(
+        blueprint=blueprint_data, player_session=room._player_session
+    )

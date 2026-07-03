@@ -191,7 +191,7 @@ class WearCostumeScreen(BaseGameScreen):
 
         user_name = app.session.user_name
         game_name = app.session.game_name
-        player_actor = app.session.blueprint.player_actor
+        player_actor = app.session.player_session.actor
         storage_entity = app.session.blueprint.storage_entity
         self._player_actor = player_actor
 

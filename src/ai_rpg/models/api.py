@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from .session_message import SessionMessage
 from .combat import Combat
 from .dungeon import Dungeon, CombatRoom
+from .player_session import PlayerSession
 from .serialization import EntitySerialization
 from .task import TaskRecord
 from .world import Blueprint
@@ -50,6 +51,7 @@ class NewGameRequest(BaseModel):
 @final
 class NewGameResponse(BaseModel):
     blueprint: Blueprint
+    player_session: PlayerSession
 
 
 ################################################################################################################

@@ -156,8 +156,7 @@ class NewGameScreen(BaseGameScreen):
 
             app = self.game_client
             app.session = GameSession(
-                user_name=user_name,
-                game_name=game_name,
+                player_session=resp.player_session,
                 blueprint=resp.blueprint,
             )
             app.switch_screen(HomeScreen())

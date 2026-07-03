@@ -101,15 +101,12 @@ class RPGEntityManager(Context):
         Returns:
             EntitySerialization: 序列化后的实体数据
         """
-        entity_serialization = EntitySerialization(name=entity.name, components=[])
-
-        for key, value in entity._components.items():
-            if COMPONENT_TYPES.get(key.__name__) is None:
-                continue
-            entity_serialization.components.append(
-                ComponentSerialization(name=key.__name__, data=value.model_dump())
-            )
-        return entity_serialization
+        components = [
+            ComponentSerialization(name=key.__name__, data=value.model_dump())
+            for key, value in entity._components.items()
+            if COMPONENT_TYPES.get(key.__name__) is not None
+        ]
+        return EntitySerialization(name=entity.name, components=components)
 
     ###############################################################################################################################################
     def serialize_entities(self, entities: Set[Entity]) -> List[EntitySerialization]:

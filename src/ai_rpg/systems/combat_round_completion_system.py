@@ -4,6 +4,7 @@ from typing import Final, final, override
 from loguru import logger
 from ..entitas import ExecuteProcessor
 from ..game.dbg_game import DBGGame
+from ..game.entity_ops import get_energy
 
 
 ###############################################################################################################################################
@@ -39,9 +40,7 @@ class CombatRoundCompletionSystem(ExecuteProcessor):
         actors_in_stage = self._game.get_alive_actors_in_stage(player_entity)
 
         # 判断：所有存活角色均无剩余行动力
-        all_energy_exhausted = all(
-            self._game.get_energy(actor) <= 0 for actor in actors_in_stage
-        )
+        all_energy_exhausted = all(get_energy(actor) <= 0 for actor in actors_in_stage)
 
         if all_energy_exhausted:
             latest_round.is_completed = True

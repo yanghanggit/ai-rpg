@@ -9,6 +9,7 @@ from typing import Set
 from loguru import logger
 from ..game.config import DUNGEONS_DIR
 from ..game.dbg_game import DBGGame
+from ..game.entity_ops import compute_character_stats, set_character_hp
 from ..game.stage_transition import stage_transition
 from ..models import (
     ActorType,
@@ -189,8 +190,8 @@ def _enter_dungeon_stage(
             party_member.remove(DeathComponent)
 
             # 恢复生命值1
-            revived_stats = dbg_game.set_character_hp(party_member, 1)
-            # revived_stats = dbg_game.compute_character_stats(party_member)
+            revived_stats = set_character_hp(party_member, 1)
+            # revived_stats = compute_character_stats(party_member)
             logger.info(
                 f"恢复生命值: {party_member.name} 生命值 = {revived_stats.hp}/{revived_stats.max_hp}"
             )
@@ -528,8 +529,8 @@ def exit_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> None:
             party_member_entity.remove(DeathComponent)
 
         # 恢复生命值至满血
-        full_stats = dbg_game.compute_character_stats(party_member_entity)
-        dbg_game.set_character_hp(party_member_entity, full_stats.max_hp)
+        full_stats = compute_character_stats(party_member_entity)
+        set_character_hp(party_member_entity, full_stats.max_hp)
         logger.info(
             f"恢复满血: {party_member_entity.name} 生命值 = {full_stats.max_hp}/{full_stats.max_hp}"
         )

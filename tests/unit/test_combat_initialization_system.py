@@ -9,8 +9,10 @@ from src.ai_rpg.entitas.context import Context
 from src.ai_rpg.entitas.entity import Entity
 from src.ai_rpg.game.dbg_game import DBGGame
 from src.ai_rpg.models import (
+    ActorComponent,
     AddStatusEffectsAction,
     AppearanceComponent,
+    CharacterStatsComponent,
     DiscardPileComponent,
     DrawPileComponent,
     ExhaustPileComponent,
@@ -46,6 +48,8 @@ def _make_actor_entity(
     """创建带外观和阵营标记的参战角色实体。"""
     entity = context.create_entity()
     entity._name = name
+    entity.add(ActorComponent, name, f"{name}_sheet", "")
+    entity.add(CharacterStatsComponent, name, CharacterStats())
     entity.add(AppearanceComponent, name, "base_body", appearance)
     if is_ally:
         entity.add(PartyMemberComponent, name, "test_dungeon")
@@ -67,23 +71,8 @@ def context() -> Context:
 
 @pytest.fixture()
 def mock_game() -> MagicMock:
-    """MagicMock DBGGame，避免初始化重量级 DBGGame 依赖。
-
-    accumulate_status_effects_action 的 side_effect 模拟真实合并逻辑，
-    以便单元测试仍能断言实体上的 AddStatusEffectsAction 组件状态。
-    """
-    game = MagicMock(spec=DBGGame)
-
-    def _accumulate(entity: Entity, task_hints: List[str]) -> None:
-        existing_hints: List[str] = (
-            entity.get(AddStatusEffectsAction).task_hints
-            if entity.has(AddStatusEffectsAction)
-            else []
-        )
-        entity.replace(AddStatusEffectsAction, entity.name, existing_hints + task_hints)
-
-    game.accumulate_status_effects_action.side_effect = _accumulate
-    return game
+    """MagicMock DBGGame，避免初始化重量级 DBGGame 依赖。"""
+    return MagicMock(spec=DBGGame)
 
 
 @pytest.fixture()
@@ -392,8 +381,7 @@ class TestAddContextForAllActors:
         context: Context,
         actors: Set[Entity],
     ) -> None:
-        """为 mock_game 配置 compute_character_stats 返回值，指向真实实体集合。"""
-        mock_game.compute_character_stats.return_value = CharacterStats()
+        pass
 
     def test_add_human_message_called_once_per_actor(
         self, context: Context, mock_game: MagicMock, system: CombatInitializationSystem
@@ -491,7 +479,6 @@ class TestExecute:
         mock_game.get_player_entity.return_value = player_entity
         mock_game.resolve_stage_entity.return_value = stage_entity
         mock_game.get_alive_actors_in_stage.return_value = {player_entity, actor_entity}
-        mock_game.compute_character_stats.return_value = CharacterStats()
 
         return player_entity, stage_entity
 

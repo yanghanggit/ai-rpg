@@ -6,6 +6,14 @@ from overrides import override
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
+from ..game.entity_ops import (
+    accumulate_status_effects_action,
+    apply_status_effect_patch,
+    compute_character_stats,
+    get_status_effects_by_phase,
+    give_energy,
+    set_character_hp,
+)
 from ..game.zero_health_processor import process_zero_health_entities
 from ..models import (
     PlayCardsAction,
@@ -90,27 +98,23 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             target_entity = self._game.get_entity_by_name(target_name)
             assert target_entity is not None, f"无法找到目标实体: {target_name}"
 
-            target_stats[target_name] = self._game.compute_character_stats(
-                target_entity
-            )
+            target_stats[target_name] = compute_character_stats(target_entity)
 
         assert actor_entity.has(
             RoundStatsComponent
         ), f"出牌实体 {actor_entity.name} 缺少 RoundStatsComponent！"
         current_round_number = len(self._game.current_dungeon.current_rounds or [])
 
-        actor_arbitration_effects: List[StatusEffect] = (
-            self._game.get_status_effects_by_phase(actor_entity, PhaseType.ARBITRATION)
+        actor_arbitration_effects: List[StatusEffect] = get_status_effects_by_phase(
+            actor_entity, PhaseType.ARBITRATION
         )
 
         target_arbitration_effects: Dict[str, List[StatusEffect]] = {}
         for target_name in dict.fromkeys(play_cards_action.targets):
             target_entity = self._game.get_entity_by_name(target_name)
             assert target_entity is not None, f"无法找到目标实体: {target_name}"
-            target_arbitration_effects[target_name] = (
-                self._game.get_status_effects_by_phase(
-                    target_entity, PhaseType.ARBITRATION
-                )
+            target_arbitration_effects[target_name] = get_status_effects_by_phase(
+                target_entity, PhaseType.ARBITRATION
             )
 
         actor_gear_modifiers: List[str] = (
@@ -130,7 +134,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
 
         message = generate_combat_arbitration_prompt(
             actor_entity.name,
-            self._game.compute_character_stats(actor_entity),
+            compute_character_stats(actor_entity),
             play_cards_action,
             target_stats,
             current_round_number,
@@ -143,7 +147,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
         compressed_message = (
             generate_compressed_combat_arbitration_prompt(
                 actor_entity.name,
-                self._game.compute_character_stats(actor_entity),
+                compute_character_stats(actor_entity),
                 play_cards_action,
                 target_stats,
                 current_round_number,
@@ -251,8 +255,8 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                     CharacterStatsComponent
                 ), f"实体 {entity_name} 缺少 CharacterStatsComponent！"
 
-                old_hp = self._game.compute_character_stats(entity).hp
-                after_stats = self._game.set_character_hp(entity, int(entity_stats.hp))
+                old_hp = compute_character_stats(entity).hp
+                after_stats = set_character_hp(entity, int(entity_stats.hp))
                 new_hp = after_stats.hp
                 max_hp = after_stats.max_hp
                 post_arbitration_hp[entity_name] = (new_hp, max_hp)
@@ -260,9 +264,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
 
                 # 回写仲裁阶段状态效果的 counter（更新特殊计数器）
                 for patch in entity_stats.status_effect_patches:
-                    self._game.apply_status_effect_patch(
-                        entity, patch.name, patch.counter
-                    )
+                    apply_status_effect_patch(entity, patch.name, patch.counter)
 
                 self._game.add_human_message(
                     entity=entity,
@@ -283,7 +285,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                 for target_name in dict.fromkeys(action.targets):
                     target_entity = self._game.get_entity_by_name(target_name)
                     if target_entity is not None:
-                        self._game.give_energy(target_entity, action.card.energy_delta)
+                        give_energy(target_entity, action.card.energy_delta)
                         logger.debug(
                             f"[{target_name}] energy_delta {action.card.energy_delta:+d}"
                         )
@@ -368,7 +370,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                 )
 
             if task_hints:
-                self._game.accumulate_status_effects_action(entity, task_hints)
+                accumulate_status_effects_action(entity, task_hints)
                 logger.debug(f"[{entity_name}] 仲裁后添加 AddStatusEffectsAction")
 
     #######################################################################################################################################

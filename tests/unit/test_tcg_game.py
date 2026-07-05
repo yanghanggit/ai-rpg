@@ -3,6 +3,7 @@ import pytest
 from src.ai_rpg.entitas.entity import Entity
 from src.ai_rpg.models import PlayerSession
 from src.ai_rpg.game.dbg_game import DBGGame
+from src.ai_rpg.game.entity_ops import compute_character_stats, set_character_hp
 from src.ai_rpg.models import (
     ActorComponent,
     ActorType,
@@ -297,7 +298,7 @@ class TestComputeCharacterStats:
     def test_base_stats_returned(self) -> None:
         game = _make_game()
         actor = _make_actor_entity(game, "knight")
-        stats = game.compute_character_stats(actor)
+        stats = compute_character_stats(actor)
         assert stats.max_hp == 20
         assert stats.attack == 5
         assert stats.defense == 3
@@ -307,19 +308,19 @@ class TestComputeCharacterStats:
         entity = game._create_entity("ghost")
         entity.add(CharacterStatsComponent, "ghost", CharacterStats())
         with pytest.raises(AssertionError):
-            game.compute_character_stats(entity)
+            compute_character_stats(entity)
 
     def test_missing_stats_component_raises(self) -> None:
         game = _make_game()
         entity = game._create_entity("ghost")
         entity.add(ActorComponent, "ghost", "sheet", "")
         with pytest.raises(AssertionError):
-            game.compute_character_stats(entity)
+            compute_character_stats(entity)
 
     def test_no_equipment_uses_base_stats(self) -> None:
         game = _make_game()
         actor = _make_actor_entity(game, "rogue")
-        stats = game.compute_character_stats(actor)
+        stats = compute_character_stats(actor)
         # Without equipment bonuses, stats should equal base
         assert stats.attack == 5
         assert stats.defense == 3
@@ -334,29 +335,29 @@ class TestSetCharacterHp:
     def test_set_normal_hp(self) -> None:
         game = _make_game()
         actor = _make_actor_entity(game, "warrior")
-        game.set_character_hp(actor, 10)
-        result = game.compute_character_stats(actor)
+        set_character_hp(actor, 10)
+        result = compute_character_stats(actor)
         assert result.hp == 10
 
     def test_clamp_negative_hp_to_zero(self) -> None:
         game = _make_game()
         actor = _make_actor_entity(game, "warrior")
-        game.set_character_hp(actor, -5)
-        result = game.compute_character_stats(actor)
+        set_character_hp(actor, -5)
+        result = compute_character_stats(actor)
         assert result.hp == 0
 
     def test_clamp_exceeding_max_hp(self) -> None:
         game = _make_game()
         actor = _make_actor_entity(game, "warrior")
-        game.set_character_hp(actor, 9999)
-        result = game.compute_character_stats(actor)
+        set_character_hp(actor, 9999)
+        result = compute_character_stats(actor)
         assert result.hp == 20  # max_hp is 20
 
     def test_set_hp_to_max(self) -> None:
         game = _make_game()
         actor = _make_actor_entity(game, "warrior")
-        game.set_character_hp(actor, 20)
-        result = game.compute_character_stats(actor)
+        set_character_hp(actor, 20)
+        result = compute_character_stats(actor)
         assert result.hp == 20
 
 

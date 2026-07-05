@@ -9,6 +9,7 @@ import uuid
 from typing import Final, List, Optional
 from loguru import logger
 from .rpg_game_pipeline_manager import RPGGameProcessPipeline
+from .entity_ops import get_energy
 from .rpg_game import RPGGame
 from .dbg_game_process_pipeline import (
     create_home_pipeline,
@@ -20,9 +21,7 @@ from ..models import (
     ActorComponent,
     ActorType,
     NPCComponent,
-    AddStatusEffectsAction,
     AppearanceComponent,
-    CharacterStats,
     CharacterStatsComponent,
     COMPONENT_TYPES,
     DeckComponent,
@@ -42,20 +41,14 @@ from ..models import (
     Stage,
     StageComponent,
     StageType,
-    StatusEffect,
-    PhaseType,
-    StatusEffectsComponent,
     World,
     WorldComponent,
     WorldSystem,
     CostumeComponent,
-    EquippedGearComponent,
     SystemMessage,
     AnyItem,
-    compute_effective_stats,
     PlayerSession,
 )
-from ..models import PlayerSession
 from ..entitas import Matcher, Entity
 
 
@@ -475,110 +468,6 @@ class DBGGame(RPGGame):
             entity.remove(RoundStatsComponent)
 
     ###############################################################################################################################################
-    def get_status_effects_by_phase(
-        self, entity: Entity, phase: PhaseType
-    ) -> List[StatusEffect]:
-        """返回实体在指定战斗阶段生效的状态效果列表。
-
-        Args:
-            entity: 目标实体
-            phase: 要筛选的生效阶段（EffectPhase）
-
-        Returns:
-            匹配阶段的 StatusEffect 列表；实体无 StatusEffectsComponent 时返回空列表
-        """
-        status_comp = entity.get(StatusEffectsComponent)
-        assert (
-            status_comp is not None
-        ), f"角色 {entity.name} 缺少 StatusEffectsComponent！"
-        if status_comp is None:
-            return []
-        return [e for e in status_comp.status_effects if e.phase == phase]
-
-    ###############################################################################################################################################
-    def compute_character_stats(self, entity: Entity) -> CharacterStats:
-        """计算角色的最终有效属性，聚合基础属性与已装备物品的属性加成。
-
-        Args:
-            entity: 角色实体，必须拥有 CharacterStatsComponent
-
-        Returns:
-            包含基础属性与所有已装备物品加成之和的新 CharacterStats 实例
-        """
-
-        assert entity.has(ActorComponent), f"{entity.name} 缺少 ActorComponent"
-        assert entity.has(
-            CharacterStatsComponent
-        ), f"{entity.name} 缺少 CharacterStatsComponent"
-
-        stats_comp = entity.get(CharacterStatsComponent)
-        return compute_effective_stats(
-            stats_comp.stats,
-            (
-                entity.get(StatusEffectsComponent).status_effects
-                if entity.has(StatusEffectsComponent)
-                else None
-            ),
-            (
-                entity.get(EquippedGearComponent).item
-                if entity.has(EquippedGearComponent)
-                else None
-            ),
-        )
-
-    ###############################################################################################################################################
-    def set_character_hp(self, entity: Entity, hp: int) -> CharacterStats:
-        """设置角色的当前 HP，自动 clamp 至 [0, max_hp]。
-
-        Args:
-            entity: 角色实体，必须拥有 CharacterStatsComponent
-            hp: 目标 HP 值，将被 clamp 至 0 ~ compute_character_stats(entity).max_hp
-        """
-
-        assert entity.has(ActorComponent), f"{entity.name} 缺少 ActorComponent"
-        assert entity.has(
-            CharacterStatsComponent
-        ), f"{entity.name} 缺少 CharacterStatsComponent"
-
-        stats_comp = entity.get(CharacterStatsComponent)
-        max_hp = self.compute_character_stats(entity).max_hp
-        clamped = max(0, min(hp, max_hp))
-        stats_comp.stats.hp = clamped
-
-        return self.compute_character_stats(entity)
-
-    ###############################################################################################################################################
-    def apply_status_effect_patch(
-        self, entity: Entity, status_effect_name: str, counter: int
-    ) -> None:
-        """更新实体上指定状态效果的 counter，并记录更新日志。
-
-        匹配方式为按名称精确匹配。名称不存在时记录 warning 并跳过，不抛异常。
-
-        Args:
-            entity: 目标实体，必须拥有 StatusEffectsComponent
-            status_effect_name: 要更新的状态效果名称
-            counter: 更新后的特殊计数器值
-        """
-        assert entity.has(
-            StatusEffectsComponent
-        ), f"{entity.name} 缺少 StatusEffectsComponent，无法回写状态效果计数器"
-        status_comp = entity.get(StatusEffectsComponent)
-        effect_map = {e.name: e for e in status_comp.status_effects}
-        if status_effect_name in effect_map:
-            old_counter = effect_map[status_effect_name].counter
-            effect_map[status_effect_name].counter = counter
-            logger.info(
-                f"更新 {entity.name} 状态效果「{status_effect_name}」 counter: "
-                f"{old_counter} → {counter}"
-            )
-        else:
-            logger.warning(
-                f"status_effect_patches 中的效果「{status_effect_name}」"
-                f"在 {entity.name} 的 StatusEffectsComponent 中不存在，跳过"
-            )
-
-    ###############################################################################################################################################
     def get_current_turn_actor(self, round: Round) -> Optional[str]:
         """从最新回合快照中找出第一个仍有行动力（energy > 0）的角色名。
 
@@ -602,7 +491,7 @@ class DBGGame(RPGGame):
             ), f"{actor_name} 缺少 RoundStatsComponent"
             if not actor_entity.has(RoundStatsComponent):
                 continue
-            if self.get_energy(actor_entity) > 0:
+            if get_energy(actor_entity) > 0:
                 return actor_name
         return None
 
@@ -619,71 +508,5 @@ class DBGGame(RPGGame):
         logger.debug(
             f"advance_turn: current_turn_actor_name updated to {round.current_turn_actor_name}"
         )
-
-    ###############################################################################################################################################
-    def get_energy(self, entity: Entity) -> int:
-        """获取角色实体的当前回合剩余行动次数（RoundStatsComponent.energy）。
-
-        Args:
-            entity: 角色实体；若无 RoundStatsComponent 则返回 0
-
-        Returns:
-            当前回合剩余行动次数；无 RoundStatsComponent 时返回 0
-        """
-        round_stats = entity.get(RoundStatsComponent)
-        return round_stats.energy if round_stats is not None else 0
-
-    ###############################################################################################################################################
-    def consume_energy(self, entity: Entity, amount: int = 1) -> None:
-        """消耗角色实体指定点数的 energy。
-
-        Args:
-            entity: 角色实体，必须拥有 RoundStatsComponent 且 energy > 0
-            amount: 消耗的 energy 数量，默认为 1
-        """
-        assert entity.has(
-            RoundStatsComponent
-        ), f"{entity.name} 缺少 RoundStatsComponent"
-        assert (
-            self.get_energy(entity) > 0
-        ), f"{entity.name} 能量不足！当前 energy={self.get_energy(entity)}"
-        entity.replace(
-            RoundStatsComponent,
-            entity.name,
-            max(0, self.get_energy(entity) - amount),
-        )
-
-    ###############################################################################################################################################
-    def give_energy(self, entity: Entity, amount: int = 1) -> None:
-        """改变角色实体的 energy（用于卡牌 energy_delta 效果）。
-
-        Args:
-            entity: 目标角色实体；若无 RoundStatsComponent（已死亡/战斗外）则静默跳过
-            amount: energy 变化量，正值追加行动次数，负值剥夺行动次数；结果 floor 到 0
-        """
-        if not entity.has(RoundStatsComponent):
-            return
-        entity.replace(
-            RoundStatsComponent,
-            entity.name,
-            max(0, self.get_energy(entity) + amount),
-        )
-
-    ###############################################################################################################################################
-    def accumulate_status_effects_action(
-        self, entity: Entity, task_hints: List[str]
-    ) -> None:
-        """为实体追加 AddStatusEffectsAction，自动合并已有的 task_hints。
-        Args:
-            entity: 目标实体
-            task_hints: 本次追加的提示词列表，每条对应一个待生成的状态效果
-        """
-        existing = (
-            entity.get(AddStatusEffectsAction)
-            if entity.has(AddStatusEffectsAction)
-            else None
-        )
-        merged = (existing.task_hints if existing is not None else []) + task_hints
-        entity.replace(AddStatusEffectsAction, entity.name, merged)
 
     ################################################################################################################

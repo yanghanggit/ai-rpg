@@ -9,6 +9,7 @@ from loguru import logger
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
+from ..game.entity_ops import compute_character_stats
 from ..models import (
     ActorComponent,
     DeckComponent,
@@ -105,7 +106,7 @@ class DeckGenerationSystem(ReactiveProcessor):
         assert generate_deck_action is not None
         num_cards = generate_deck_action.num_cards
 
-        combat_stats = self._game.compute_character_stats(entity)
+        combat_stats = compute_character_stats(entity)
 
         deck_comp_for_keywords = entity.get(DeckComponent)
         assert deck_comp_for_keywords is not None

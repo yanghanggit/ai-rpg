@@ -1,7 +1,7 @@
 """CombatRoundCleanupSystem 单元测试。"""
 
 from typing import List
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -156,23 +156,25 @@ def _make_client(name: str, json_str: str) -> MagicMock:
     return client
 
 
-def test_apply_valid_response_updates_hp(ctx: Context) -> None:
+@patch("src.ai_rpg.systems.combat_round_cleanup_system.set_character_hp")
+def test_apply_valid_response_updates_hp(mock_set_hp: MagicMock, ctx: Context) -> None:
     """LLM 返回合法 JSON 时 set_character_hp 应被调用。"""
     game = _make_game(ctx)
     entity = _make_actor(ctx, "英雄", [])
     entity.add(CharacterStatsComponent, "英雄", CharacterStats(hp=20, max_hp=30))
     game.get_entity_by_name.return_value = entity
-    game.set_character_hp.return_value = MagicMock(hp=17, max_hp=30)
+    mock_set_hp.return_value = MagicMock(hp=17, max_hp=30)
     system = CombatRoundCleanupSystem(game)
 
     system._apply_round_end_effect_response(
         _make_client("英雄", '{"hp": 17, "combat_log": "中毒发作"}')
     )
 
-    game.set_character_hp.assert_called_once_with(entity, 17)
+    mock_set_hp.assert_called_once_with(entity, 17)
 
 
-def test_apply_invalid_response_no_raise(ctx: Context) -> None:
+@patch("src.ai_rpg.systems.combat_round_cleanup_system.set_character_hp")
+def test_apply_invalid_response_no_raise(mock_set_hp: MagicMock, ctx: Context) -> None:
     """LLM 返回无法解析的内容时不抛出，set_character_hp 不被调用。"""
     game = _make_game(ctx)
     entity = _make_actor(ctx, "英雄", [])
@@ -182,7 +184,7 @@ def test_apply_invalid_response_no_raise(ctx: Context) -> None:
 
     system._apply_round_end_effect_response(_make_client("英雄", "not valid json"))
 
-    game.set_character_hp.assert_not_called()
+    mock_set_hp.assert_not_called()
 
 
 # ---------------------------------------------------------------------------

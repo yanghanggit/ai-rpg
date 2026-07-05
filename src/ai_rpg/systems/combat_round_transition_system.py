@@ -8,6 +8,7 @@ from typing import Final, List, Set, final, override
 from loguru import logger
 from ..entitas import Entity, ExecuteProcessor
 from ..game.dbg_game import DBGGame
+from ..game.entity_ops import compute_character_stats, get_energy
 from ..models import (
     CharacterStatsComponent,
     DeathComponent,
@@ -130,7 +131,7 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
                 RoundStatsComponent
             ), f"{actor.name} 已存在 RoundStatsComponent"
             assert not actor.has(DeathComponent), f"{actor.name} 已死亡，不应参与新回合"
-            computed = self._game.compute_character_stats(actor)
+            computed = compute_character_stats(actor)
             actor.replace(RoundStatsComponent, actor.name, computed.energy)
 
         return new_round
@@ -138,14 +139,10 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
     ############################################################################################################
     def _sorted_actors_by_round_speed(self, actors: Set[Entity]) -> List[Entity]:
         """从给定的角色集合中，筛选本回合仍有行动力的角色并按速度降序排列。"""
-        eligible: List[Entity] = [
-            entity for entity in actors if self._game.get_energy(entity) > 0
-        ]
+        eligible: List[Entity] = [entity for entity in actors if get_energy(entity) > 0]
         eligible.sort(
             key=lambda entity: (
-                -self._game.compute_character_stats(
-                    entity
-                ).speed,  # 速度降序（含装备加成）
+                -compute_character_stats(entity).speed,  # 速度降序（含装备加成）
                 entity.get(IdentityComponent).creation_order,
             )
         )
@@ -154,18 +151,14 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
     ############################################################################################################
     def _shuffled_actors_by_round(self, actors: Set[Entity]) -> List[Entity]:
         """从给定的角色集合中，筛选本回合仍有行动力的角色并随机打乱顺序。"""
-        eligible: List[Entity] = [
-            entity for entity in actors if self._game.get_energy(entity) > 0
-        ]
+        eligible: List[Entity] = [entity for entity in actors if get_energy(entity) > 0]
         random.shuffle(eligible)
         return eligible
 
     ############################################################################################################
     def _sorted_actors_by_creation_order(self, actors: Set[Entity]) -> List[Entity]:
         """从给定的角色集合中，筛选本回合仍有行动力的角色并按创建顺序升序排列。"""
-        eligible: List[Entity] = [
-            entity for entity in actors if self._game.get_energy(entity) > 0
-        ]
+        eligible: List[Entity] = [entity for entity in actors if get_energy(entity) > 0]
         eligible.sort(key=lambda entity: entity.get(IdentityComponent).creation_order)
         return eligible
 

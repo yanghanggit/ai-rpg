@@ -6,6 +6,7 @@ from ..models.messages import AIMessage, HumanMessage
 from loguru import logger
 from ..entitas import ExecuteProcessor, Entity
 from ..game.dbg_game import DBGGame
+from ..game.entity_ops import accumulate_status_effects_action, compute_character_stats
 from ..models import (
     GenerateDeckAction,
     StageDescriptionComponent,
@@ -217,7 +218,7 @@ class CombatInitializationSystem(ExecuteProcessor):
             )
 
             # 添加 AddStatusEffectsAction，触发 AddStatusEffectsActionSystem 评估初始状态效果
-            self._game.accumulate_status_effects_action(
+            accumulate_status_effects_action(
                 actor_entity,
                 _generate_init_status_effects_task_hint(),
             )
@@ -233,7 +234,7 @@ class CombatInitializationSystem(ExecuteProcessor):
         for actor_entity in actor_entities:
 
             # 计算角色有效属性（含装备加成）
-            actor_stats = self._game.compute_character_stats(actor_entity)
+            actor_stats = compute_character_stats(actor_entity)
 
             # 生成其他角色信息（包含外观和阵营）
             other_actors_info = self._generate_other_actors_info(

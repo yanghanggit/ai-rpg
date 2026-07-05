@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
+from ..game.entity_ops import compute_character_stats
 from ..models import (
     Card,
     TargetType,
@@ -71,7 +72,7 @@ def _build_actors_summary(game: DBGGame, actor_entities: Set[Entity]) -> str:
         ), f"角色 {entity.name} 缺少 StatusEffectsComponent"
         assert entity.has(HandComponent), f"角色 {entity.name} 缺少 HandComponent"
 
-        final_stats = game.compute_character_stats(entity)
+        final_stats = compute_character_stats(entity)
 
         effects_comp = entity.get(StatusEffectsComponent)
 

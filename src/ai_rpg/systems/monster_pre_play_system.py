@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
+from ..game.entity_ops import compute_character_stats
 from ..models import (
     PlayCardsAction,
     MonsterTurnAction,
@@ -287,7 +288,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         #     logger.error(f"MonsterPrePlaySystem: 怪物 {entity.name} 没有手牌，无法决策")
         #     return None
 
-        monster_stats = self._game.compute_character_stats(entity)
+        monster_stats = compute_character_stats(entity)
 
         # 获取场上存活的远征队成员名称（对手，不传入血量）
         alive_actors = self._game.get_alive_actors_in_stage(entity)

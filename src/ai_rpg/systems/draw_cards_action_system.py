@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
+from ..game.entity_ops import compute_character_stats, get_status_effects_by_phase
 from ..models import (
     ActorComponent,
     DrawPileComponent,
@@ -250,7 +251,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
         entities_with_effects: List[Entity] = [
             entity
             for entity in entities
-            if self._game.get_status_effects_by_phase(entity, PhaseType.DRAW)
+            if get_status_effects_by_phase(entity, PhaseType.DRAW)
         ]
 
         if not entities_with_effects:
@@ -269,10 +270,8 @@ class DrawCardsActionSystem(ReactiveProcessor):
         # 为有 DRAW 效果的实体构建 LLM 调整请求
         chat_clients: List[DeepSeekClient] = []
         for entity in entities_with_effects:
-            combat_stats = self._game.compute_character_stats(entity)
-            draw_effects = self._game.get_status_effects_by_phase(
-                entity, PhaseType.DRAW
-            )
+            combat_stats = compute_character_stats(entity)
+            draw_effects = get_status_effects_by_phase(entity, PhaseType.DRAW)
             prompt = _generate_adjust_prompt(
                 actor_stats=combat_stats,
                 current_round_number=current_round_number,

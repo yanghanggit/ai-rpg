@@ -12,6 +12,7 @@ from ..models import (
     AgentEvent,
 )
 from ..game.dbg_game import DBGGame
+from ..game.entity_ops import consume_energy
 
 
 #######################################################################################################################################
@@ -117,7 +118,7 @@ class PlayCardsActionSystem(ReactiveProcessor):
             last_round.completed_actors.append(play_cards_action.name)
 
             # 每出一张牌消耗 1 点 energy
-            self._game.consume_energy(entity)
+            consume_energy(entity)
 
             # 更新当前行动者（能量消耗后重新计算）
             self._game.advance_turn(last_round)

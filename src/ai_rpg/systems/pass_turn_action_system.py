@@ -13,6 +13,7 @@ from ..models import (
     RoundStatsComponent,
 )
 from ..game.dbg_game import DBGGame
+from ..game.entity_ops import consume_energy, get_energy
 
 
 #######################################################################################################################################
@@ -85,11 +86,11 @@ class PassTurnActionSystem(ReactiveProcessor):
             )
 
             # 消耗过牌角色的全部行动能量，并按消耗次数追加 completed_actors（与出牌系统保持一致）
-            cur_energy = self._game.get_energy(entity)
+            cur_energy = get_energy(entity)
             logger.debug(
                 f"  {entity.name} 当前剩余行动能量: {cur_energy}，消耗后变为 0"
             )
-            self._game.consume_energy(entity, cur_energy)
+            consume_energy(entity, cur_energy)
             for _ in range(cur_energy):
                 last_round.completed_actors.append(pass_turn_action.name)
 

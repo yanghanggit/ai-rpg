@@ -6,6 +6,13 @@ from overrides import override
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
+from ..game.entity_ops import (
+    accumulate_status_effects_action,
+    apply_status_effect_patch,
+    compute_character_stats,
+    get_status_effects_by_phase,
+    set_character_hp,
+)
 from ..game.zero_health_processor import process_zero_health_entities
 from ..models import (
     UseConsumableItemAction,
@@ -85,14 +92,12 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
         for target_name in dict.fromkeys(action.targets):
             target_entity = self._game.get_entity_by_name(target_name)
             assert target_entity is not None, f"无法找到目标实体: {target_name}"
-            target_stats[target_name] = self._game.compute_character_stats(
-                target_entity
-            )
+            target_stats[target_name] = compute_character_stats(target_entity)
 
         current_round_number = len(self._game.current_dungeon.current_rounds or [])
 
         target_arbitration_effects: Dict[str, List[StatusEffect]] = {
-            target_name: self._game.get_status_effects_by_phase(
+            target_name: get_status_effects_by_phase(
                 self._game.get_entity_by_name(target_name),  # type: ignore[arg-type]
                 PhaseType.ARBITRATION,
             )
@@ -216,8 +221,8 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                     CharacterStatsComponent
                 ), f"实体 {entity_name} 缺少 CharacterStatsComponent！"
 
-                old_hp = self._game.compute_character_stats(entity).hp
-                after_stats = self._game.set_character_hp(entity, int(entity_stats.hp))
+                old_hp = compute_character_stats(entity).hp
+                after_stats = set_character_hp(entity, int(entity_stats.hp))
                 new_hp = after_stats.hp
                 max_hp = after_stats.max_hp
                 logger.info(f"更新 {entity_name} HP: {old_hp} → {new_hp}/{max_hp}")
@@ -231,9 +236,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
 
                 # 回写状态效果计数器补丁
                 for patch in entity_stats.status_effect_patches:
-                    self._game.apply_status_effect_patch(
-                        entity, patch.name, patch.counter
-                    )
+                    apply_status_effect_patch(entity, patch.name, patch.counter)
 
             # 更新本回合的消耗品仲裁日志和计数
             latest_round = self._game.current_dungeon.latest_round
@@ -276,5 +279,5 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                 action=action,
                 entity=entity,
             )
-            self._game.accumulate_status_effects_action(entity, task_hints)
+            accumulate_status_effects_action(entity, task_hints)
             logger.debug(f"[{entity_name}] 消耗品仲裁后添加 AddStatusEffectsAction")

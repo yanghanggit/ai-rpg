@@ -6,6 +6,11 @@ from pydantic import BaseModel
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.dbg_game import DBGGame
+from ..game.entity_ops import (
+    compute_character_stats,
+    get_status_effects_by_phase,
+    set_character_hp,
+)
 from ..game.zero_health_processor import process_zero_health_entities
 from ..models import (
     ActorComponent,
@@ -227,9 +232,7 @@ class CombatRoundCleanupSystem(ExecuteProcessor):
         # if not round_end_effects:
         #     return None
 
-        round_end_effects = self._game.get_status_effects_by_phase(
-            entity, PhaseType.ROUND_END
-        )
+        round_end_effects = get_status_effects_by_phase(entity, PhaseType.ROUND_END)
         if len(round_end_effects) == 0:
             return None
 
@@ -240,7 +243,7 @@ class CombatRoundCleanupSystem(ExecuteProcessor):
         # assert entity.has(
         #     CharacterStatsComponent
         # ), f"Entity {entity.name} has ROUND_END effects but is missing CharacterStatsComponent"
-        current_stats = self._game.compute_character_stats(entity)
+        current_stats = compute_character_stats(entity)
 
         prompt = _generate_round_end_effects_prompt(
             entity_name=entity.name,
@@ -272,7 +275,7 @@ class CombatRoundCleanupSystem(ExecuteProcessor):
             assert chat_client.response_ai_message is not None
             self._game.add_ai_message(entity, chat_client.response_ai_message)
 
-            after_stats = self._game.set_character_hp(entity, response.hp)
+            after_stats = set_character_hp(entity, response.hp)
             new_hp = after_stats.hp
             max_hp = after_stats.max_hp
             logger.info(

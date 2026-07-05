@@ -12,6 +12,7 @@ from ..models import (
     HumanMessage,
 )
 from .dbg_game import DBGGame
+from .entity_ops import compute_character_stats
 
 
 #################################################################################################################################################
@@ -32,7 +33,7 @@ def process_zero_health_entities(game: DBGGame) -> None:
     ).entities.copy()
 
     for entity in defeated_entities:
-        entity_hp = game.compute_character_stats(entity).hp
+        entity_hp = compute_character_stats(entity).hp
         if entity_hp <= 0:
             logger.info(f"{entity.name} 已被击败，HP={entity_hp}")
             game.add_human_message(

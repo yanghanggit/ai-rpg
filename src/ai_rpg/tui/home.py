@@ -18,7 +18,7 @@ from .server_client import (
     logout as server_logout,
 )
 from ..models.session_message import MessageType
-from ..models.agent_event import EventHead
+from ..models.agent_event import EventType
 from .utils import display_name
 from typing import Any, Dict
 
@@ -50,14 +50,14 @@ MENU_TEXT = """\
 
 def _format_agent_event(data: Dict[str, Any]) -> str:
     """将 AGENT_EVENT 的 data dict 渲染为 Rich markup 字符串。"""
-    head = data.get("head", EventHead.NONE)
+    head = data.get("type", EventType.NONE)
     try:
-        head = EventHead(head)
+        head = EventType(head)
     except ValueError:
-        head = EventHead.NONE
+        head = EventType.NONE
 
     match head:
-        case EventHead.SPEAK_EVENT:
+        case EventType.SPEAK:
             actor = data.get("actor", "?")
             target = data.get("target", "?")
             content = data.get("content", "")
@@ -65,45 +65,43 @@ def _format_agent_event(data: Dict[str, Any]) -> str:
                 f"[bold yellow]{actor}[/] 对 [yellow]{target}[/] 说：\n"
                 f"  「{content}」"
             )
-        case EventHead.WHISPER_EVENT:
+        case EventType.WHISPER:
             actor = data.get("actor", "?")
             target = data.get("target", "?")
             content = data.get("content", "")
             return f"[dim]{actor} 悄悄向 {target} 耳语：「{content}」[/]"
-        case EventHead.ANNOUNCE_EVENT:
+        case EventType.ANNOUNCE:
             actor = data.get("actor", "?")
             stage = data.get("stage", "?")
             content = data.get("content", "")
             return f"[bold magenta]【{actor}】[/] 在 {stage} 宣告：{content}"
-        case EventHead.MIND_EVENT:
+        case EventType.MIND:
             actor = data.get("actor", "?")
             content = data.get("content", "")
             return f"[dim italic]（{actor} 心想：{content}）[/]"
-        case EventHead.QUERY_EVENT:
+        case EventType.QUERY:
             actor = data.get("actor", "?")
             question = data.get("question", "")
             return f"[dim]{actor} 询问：{question}[/]"
-        case EventHead.TRANS_STAGE_EVENT:
+        case EventType.TRANS_STAGE:
             actor = data.get("actor", "?")
             from_stage = data.get("from_stage", "?")
             to_stage = data.get("to_stage", "?")
             return f"[cyan]▶ {actor}  {from_stage} → {to_stage}[/]"
-        case EventHead.COMBAT_INITIATION_EVENT:
+        case EventType.COMBAT_INITIATION:
             actor = data.get("actor", "?")
             return f"[bold red]⚔ {actor} 发起战斗！[/]"
-        case EventHead.COMBAT_ARBITRATION_EVENT:
+        case EventType.COMBAT_ARBITRATION:
             narrative = data.get("narrative", data.get("message", ""))
             return f"[bold]{narrative}[/]"
-        case EventHead.COMBAT_ARCHIVE_EVENT:
+        case EventType.COMBAT_ARCHIVE:
             actor = data.get("actor", "?")
             summary = data.get("summary", "")
             return f"[dim]{actor} 战斗归档：{summary}[/]"
-        case EventHead.APPEARANCE_UPDATE_EVENT:
-            target = data.get("target", "?")
+        case EventType.APPEARANCE_UPDATE:
+            actor = data.get("actor", "?")
             appearance = data.get("appearance", "")
-            return (
-                f"[bold green]✨ {target} 外观已更新：[/]\n" f"  [dim]{appearance}[/]"
-            )
+            return f"[bold green]✨ {actor} 外观已更新：[/]\n" f"  [dim]{appearance}[/]"
         case _:
             return f"[dim cyan]{data.get('message', '')}[/]"
 

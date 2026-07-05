@@ -8,7 +8,7 @@ from .rpg_agent_context import RPGAgentContext
 from .rpg_entity_manager import RPGEntityManager
 from .rpg_game_pipeline_manager import RPGGamePipelineManager
 from ..models import (
-    AgentEventUnion,
+    AnyAgentEvent,
     World,
 )
 from ..models import PlayerSession
@@ -106,7 +106,7 @@ class RPGGame(GameSession, RPGAgentContext, RPGEntityManager, RPGGamePipelineMan
     def broadcast_to_stage(
         self,
         entity: Entity,
-        agent_event: AgentEventUnion,
+        agent_event: AnyAgentEvent,
         exclude_entities: Set[Entity] = set(),
     ) -> None:
         """向场景中的所有存活角色和场景实体广播事件
@@ -133,7 +133,7 @@ class RPGGame(GameSession, RPGAgentContext, RPGEntityManager, RPGGamePipelineMan
     def notify_entities(
         self,
         entities: Set[Entity],
-        agent_event: AgentEventUnion,
+        agent_event: AnyAgentEvent,
     ) -> None:
         """向指定实体集合发送通知，并同步到玩家客户端
 

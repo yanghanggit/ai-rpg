@@ -98,8 +98,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
                 message=build_remove_costume_message(
                     entity.name, appearance_comp.base_body
                 ),
-                actor="",
-                target=entity.name,
+                actor=entity.name,
                 appearance=appearance_comp.base_body,
             ),
         )
@@ -175,8 +174,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
                 message=build_wear_costume_message(
                     entity.name, costume.name, new_appearance
                 ),
-                actor="",
-                target=entity.name,
+                actor=entity.name,
                 appearance=new_appearance,
             ),
         )

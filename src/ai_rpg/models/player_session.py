@@ -1,6 +1,6 @@
 from typing import List
 from pydantic import BaseModel
-from .agent_event import AgentEventUnion
+from .agent_event import AnyAgentEvent
 from .session_message import SessionMessage, MessageType
 
 
@@ -36,7 +36,7 @@ class PlayerSession(BaseModel):
     event_sequence: int = 0
 
     ###############################################################################
-    def add_agent_event_message(self, agent_event: AgentEventUnion) -> None:
+    def add_agent_event_message(self, agent_event: AnyAgentEvent) -> None:
         """
         添加一个代理事件消息到会话历史中
 

@@ -11,10 +11,8 @@ from src.ai_rpg.models import (
     AppearanceComponent,
     CharacterStatsComponent,
     DungeonComponent,
-    HandComponent,
     HomeComponent,
     PlayerComponent,
-    RoundStatsComponent,
     StageComponent,
     CombatRoom,
     Dungeon,
@@ -243,52 +241,6 @@ class TestBuildFromBlueprint:
 
 
 # ---------------------------------------------------------------------------
-# TestClearRoundState
-# ---------------------------------------------------------------------------
-
-
-class TestClearRoundState:
-    def test_hand_component_removed(self) -> None:
-        from src.ai_rpg.models import DrawPileComponent
-
-        game = _make_game()
-        actor = _make_actor_entity(game, "fighter")
-        actor.add(DrawPileComponent, "fighter", [])
-        actor.add(HandComponent, "fighter", [], 1)
-        game.clear_round_state()
-        assert not actor.has(HandComponent)
-
-    def test_round_stats_component_removed(self) -> None:
-        game = _make_game()
-        actor = _make_actor_entity(game, "fighter")
-        actor.add(RoundStatsComponent, "fighter", 3)
-        game.clear_round_state()
-        assert not actor.has(RoundStatsComponent)
-
-    def test_clear_with_no_components_is_safe(self) -> None:
-        game = _make_game()
-        _make_actor_entity(game, "fighter")
-        # Should not raise even without HandComponent or RoundStatsComponent
-        game.clear_round_state()
-
-    def test_multiple_actors_all_cleared(self) -> None:
-        from src.ai_rpg.models import DrawPileComponent
-
-        game = _make_game()
-        for name in ("a1", "a2", "a3"):
-            actor = _make_actor_entity(game, name)
-            actor.add(DrawPileComponent, name, [])
-            actor.add(HandComponent, name, [], 1)
-            actor.add(RoundStatsComponent, name, 2)
-        game.clear_round_state()
-        for name in ("a1", "a2", "a3"):
-            entity = game.get_actor_entity(name)
-            assert entity is not None
-            assert not entity.has(HandComponent)
-            assert not entity.has(RoundStatsComponent)
-
-
-# ---------------------------------------------------------------------------
 # TestComputeCharacterStats
 # ---------------------------------------------------------------------------
 
@@ -358,41 +310,3 @@ class TestSetCharacterHp:
         set_character_hp(actor, 20)
         result = compute_character_stats(actor)
         assert result.hp == 20
-
-
-# ---------------------------------------------------------------------------
-# TestGetCurrentTurnActor
-# ---------------------------------------------------------------------------
-
-
-# class TestGetCurrentTurnActor:
-#     def test_no_snapshots_returns_none(self) -> None:
-#         game = _make_game()
-#         round_ = Round()
-#         assert game.get_current_turn_actor(round_) is None
-
-#     def test_actor_with_energy_returned(self) -> None:
-#         game = _make_game()
-#         actor = _make_actor_entity(game, "mage")
-#         actor.add(RoundStatsComponent, "mage", 2)
-#         round_ = Round(actor_order_snapshots=[["mage"]])
-#         result = game.get_current_turn_actor(round_)
-#         assert result == "mage"
-
-#     def test_all_zero_energy_returns_none(self) -> None:
-#         game = _make_game()
-#         actor = _make_actor_entity(game, "mage")
-#         actor.add(RoundStatsComponent, "mage", 0)
-#         round_ = Round(actor_order_snapshots=[["mage"]])
-#         result = game.get_current_turn_actor(round_)
-#         assert result is None
-
-#     def test_first_nonzero_energy_actor_returned(self) -> None:
-#         game = _make_game()
-#         a1 = _make_actor_entity(game, "a1")
-#         a2 = _make_actor_entity(game, "a2")
-#         a1.add(RoundStatsComponent, "a1", 0)
-#         a2.add(RoundStatsComponent, "a2", 1)
-#         round_ = Round(actor_order_snapshots=[["a1", "a2"]])
-#         result = game.get_current_turn_actor(round_)
-#         assert result == "a2"

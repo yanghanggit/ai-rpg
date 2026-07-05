@@ -432,17 +432,16 @@ class DBGGame(RPGGame):
 
     ################################################################################################################
     def clear_round_state(self) -> None:
-        """清除所有角色实体的每回合可变状态（手牌）"""
+        """清除所有角色实体的每回合可变状态（手牌归入弃牌堆 + 回合动态属性）"""
 
         # 清除所有角色实体的手牌组件，将剩余手牌归入 DiscardPile（STS 标准：回合末未出牌进弃牌堆）
-        for entity in self.get_group(Matcher(HandComponent)).entities.copy():
+        for entity in self.get_group(
+            Matcher(all_of=[HandComponent, DiscardPileComponent])
+        ).entities.copy():
             hand_comp = entity.get(HandComponent)
+            discard_pile_comp = entity.get(DiscardPileComponent)
 
             if hand_comp.cards:
-                discard_pile_comp = entity.get(DiscardPileComponent)
-                assert (
-                    discard_pile_comp is not None
-                ), f"{entity.name} 缺少 DiscardPileComponent"
                 # 仅归入来源为本角色的卡牌；外来塞入牌（source != actor_name）直接丢弃
                 own_cards = [c for c in hand_comp.cards if c.source == entity.name]
                 foreign_cards = [c for c in hand_comp.cards if c.source != entity.name]

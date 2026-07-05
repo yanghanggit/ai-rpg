@@ -42,7 +42,6 @@ from ..models import (
     Stage,
     StageComponent,
     StageType,
-    DeathComponent,
     StatusEffect,
     PhaseType,
     StatusEffectsComponent,
@@ -52,7 +51,6 @@ from ..models import (
     CostumeComponent,
     EquippedGearComponent,
     SystemMessage,
-    HumanMessage,
     AnyItem,
     compute_effective_stats,
     PlayerSession,
@@ -761,21 +759,5 @@ class DBGGame(RPGGame):
         )
         merged = (existing.task_hints if existing is not None else []) + task_hints
         entity.replace(AddStatusEffectsAction, entity.name, merged)
-
-    ###############################################################################################################################################
-    def process_zero_health_entities(self) -> None:
-        """为 HP 归零且尚未标记死亡的实体添加 DeathComponent。"""
-        defeated_entities = self.get_group(
-            Matcher(all_of=[CharacterStatsComponent], none_of=[DeathComponent])
-        ).entities.copy()
-
-        for entity in defeated_entities:
-            entity_hp = self.compute_character_stats(entity).hp
-            if entity_hp <= 0:
-                logger.info(f"{entity.name} 已被击败，HP={entity_hp}")
-                self.add_human_message(
-                    entity, HumanMessage(content="# 你的HP已归零，失去战斗能力！")
-                )
-                entity.replace(DeathComponent, entity.name)
 
     ################################################################################################################

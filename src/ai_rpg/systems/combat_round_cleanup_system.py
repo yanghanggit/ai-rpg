@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.dbg_game import DBGGame
+from ..game.zero_health_processor import process_zero_health_entities
 from ..models import (
     ActorComponent,
     HumanMessage,
@@ -161,7 +162,7 @@ class CombatRoundCleanupSystem(ExecuteProcessor):
             self._apply_round_end_effect_response(chat_client)
 
         # 结算后处理 HP 为 0 的实体（如标记死亡、触发后续效果等）
-        self._game.process_zero_health_entities()
+        process_zero_health_entities(self._game)
 
         # 推进所有角色的状态效果时钟，移除到期效果，并将变化同步写入角色 agent 上下文
         self.tick_status_effects_duration()

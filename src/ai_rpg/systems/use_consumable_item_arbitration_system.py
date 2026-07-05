@@ -6,6 +6,7 @@ from overrides import override
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
+from ..game.zero_health_processor import process_zero_health_entities
 from ..models import (
     UseConsumableItemAction,
     CharacterStats,
@@ -144,7 +145,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             stage_entity, chat_client, actor_entity, action, is_party_action
         )
 
-        self._game.process_zero_health_entities()
+        process_zero_health_entities(self._game)
 
     #######################################################################################################################################
     def _apply_item_arbitration_result(

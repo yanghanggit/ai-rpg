@@ -50,6 +50,9 @@ class AIMessage(BaseMessage):
 
     type: Literal["ai"] = "ai"
 
+    def __init__(self, **data: Any) -> None:
+        super().__init__(**data)
+
 
 ############################################################################################################
 class ToolMessage(BaseMessage):

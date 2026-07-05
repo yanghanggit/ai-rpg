@@ -125,8 +125,9 @@ class CombatArchiveSystem(ExecuteProcessor):
         # 将 LLM 生成的摘要写回角色上下文
         self._game.add_ai_message(
             processed_actor_entity,
-            chat_client.response_ai_message,
-            removed_messages_content=buffer_string,
+            chat_client.response_ai_message.model_copy(
+                update={"removed_messages_content": buffer_string}
+            ),
         )
 
     #######################################################################################################################################

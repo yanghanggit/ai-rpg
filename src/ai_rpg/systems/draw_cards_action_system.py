@@ -372,8 +372,9 @@ class DrawCardsActionSystem(ReactiveProcessor):
             assert chat_client.response_ai_message is not None
             self._game.add_ai_message(
                 entity,
-                chat_client.response_ai_message,
-                draw_cards_round_number=current_round_number,
+                chat_client.response_ai_message.model_copy(
+                    update={"draw_cards_round_number": current_round_number}
+                ),
             )
 
             entity.replace(

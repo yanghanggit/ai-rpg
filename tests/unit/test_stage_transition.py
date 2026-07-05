@@ -16,7 +16,7 @@ from src.ai_rpg.models import (
     PlayerComponent,
     StageComponent,
 )
-from src.ai_rpg.game.stage_transition import (
+from src.ai_rpg.game.rpg_stage_transition import (
     _format_stage_arrival_message,
     _format_stage_departure_message,
     _format_stage_transition_message,

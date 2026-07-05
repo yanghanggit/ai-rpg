@@ -6,7 +6,10 @@ from ..models.messages import AIMessage, HumanMessage
 from loguru import logger
 from ..entitas import ExecuteProcessor, Entity
 from ..game.dbg_game import DBGGame
-from ..game.entity_ops import accumulate_status_effects_action, compute_character_stats
+from ..game.dbg_entity_ops import (
+    accumulate_status_effects_action,
+    compute_character_stats,
+)
 from ..models import (
     GenerateDeckAction,
     StageDescriptionComponent,

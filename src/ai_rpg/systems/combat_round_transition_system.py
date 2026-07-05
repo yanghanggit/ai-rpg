@@ -8,7 +8,7 @@ from typing import Final, List, Set, final, override
 from loguru import logger
 from ..entitas import Entity, ExecuteProcessor
 from ..game.dbg_game import DBGGame
-from ..game.entity_ops import compute_character_stats, get_energy
+from ..game.dbg_entity_ops import compute_character_stats, get_energy
 from ..models import (
     CharacterStatsComponent,
     DeathComponent,

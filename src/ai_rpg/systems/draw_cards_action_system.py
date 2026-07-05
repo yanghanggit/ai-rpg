@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
-from ..game.entity_ops import compute_character_stats, get_status_effects_by_phase
+from ..game.dbg_entity_ops import compute_character_stats, get_status_effects_by_phase
 from ..models import (
     ActorComponent,
     DrawPileComponent,

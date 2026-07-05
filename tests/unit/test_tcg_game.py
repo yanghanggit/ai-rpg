@@ -3,7 +3,7 @@ import pytest
 from src.ai_rpg.entitas.entity import Entity
 from src.ai_rpg.models import PlayerSession
 from src.ai_rpg.game.dbg_game import DBGGame
-from src.ai_rpg.game.entity_ops import compute_character_stats, set_character_hp
+from src.ai_rpg.game.dbg_entity_ops import compute_character_stats, set_character_hp
 from src.ai_rpg.models import (
     ActorComponent,
     ActorType,

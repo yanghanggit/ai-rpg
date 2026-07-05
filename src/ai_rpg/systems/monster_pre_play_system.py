@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
-from ..game.entity_ops import compute_character_stats
+from ..game.dbg_entity_ops import compute_character_stats
 from ..models import (
     PlayCardsAction,
     MonsterTurnAction,

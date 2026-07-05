@@ -13,8 +13,8 @@ from ..models import (
     RoundStatsComponent,
 )
 from ..game.dbg_game import DBGGame
-from ..game.entity_ops import consume_energy, get_energy
-from ..game.combat_processor import get_current_turn_actor, advance_turn
+from ..game.dbg_entity_ops import consume_energy, get_energy
+from ..game.dbg_combat_processor import get_current_turn_actor, advance_turn
 
 
 #######################################################################################################################################

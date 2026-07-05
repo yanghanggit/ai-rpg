@@ -15,7 +15,7 @@ from ..models import (
     Round,
 )
 from .dbg_game import DBGGame
-from .entity_ops import compute_character_stats, get_energy
+from .dbg_entity_ops import compute_character_stats, get_energy
 
 
 #################################################################################################################################################

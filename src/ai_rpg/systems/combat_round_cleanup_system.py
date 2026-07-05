@@ -6,12 +6,12 @@ from pydantic import BaseModel
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.dbg_game import DBGGame
-from ..game.entity_ops import (
+from ..game.dbg_entity_ops import (
     compute_character_stats,
     get_status_effects_by_phase,
     set_character_hp,
 )
-from ..game.combat_processor import process_zero_health_entities
+from ..game.dbg_combat_processor import process_zero_health_entities
 from ..models import (
     ActorComponent,
     HumanMessage,

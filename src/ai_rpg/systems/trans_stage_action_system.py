@@ -16,7 +16,7 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import HumanMessage, TransStageAction, HomeComponent
 from loguru import logger
 from ..game.dbg_game import DBGGame
-from ..game.stage_transition import stage_transition
+from ..game.rpg_stage_transition import stage_transition
 
 
 @final

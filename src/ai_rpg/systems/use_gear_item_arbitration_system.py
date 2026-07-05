@@ -10,14 +10,14 @@ from overrides import override
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
-from ..game.entity_ops import (
+from ..game.dbg_entity_ops import (
     accumulate_status_effects_action,
     apply_status_effect_patch,
     compute_character_stats,
     get_status_effects_by_phase,
     set_character_hp,
 )
-from ..game.combat_processor import process_zero_health_entities
+from ..game.dbg_combat_processor import process_zero_health_entities
 from ..models import (
     UseGearItemAction,
     CharacterStatsComponent,

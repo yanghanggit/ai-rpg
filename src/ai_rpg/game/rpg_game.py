@@ -146,6 +146,6 @@ class RPGGame(GameSession, RPGAgentContext, RPGEntityManager, RPGGamePipelineMan
             self.add_human_message(entity, HumanMessage(content=agent_event.message))
 
         # 最后都要发给客户端。
-        self._player_session.add_agent_event_message(agent_event=agent_event)
+        self._player_session.add_agent_event(agent_event=agent_event)
 
     #######################################################################################################################################

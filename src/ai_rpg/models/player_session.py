@@ -36,7 +36,7 @@ class PlayerSession(BaseModel):
     event_sequence: int = 0
 
     ###############################################################################
-    def add_agent_event_message(self, agent_event: AnyAgentEvent) -> None:
+    def add_agent_event(self, agent_event: AnyAgentEvent) -> None:
         """
         添加一个代理事件消息到会话历史中
 

@@ -9,6 +9,7 @@ from ..game.dbg_game import DBGGame
 from ..models import (
     ActorComponent,
     AddStatusEffectsAction,
+    HumanMessage,
     StatusEffectsComponent,
     StatusEffect,
     PhaseType,
@@ -172,12 +173,15 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
             if self._use_compressed_prompt:
                 self._game.add_human_message(
                     entity=entity,
-                    message_content=chat_client.compressed_prompt,
-                    add_status_effects_full_prompt=chat_client.prompt,
+                    human_message=HumanMessage(
+                        content=chat_client.compressed_prompt,
+                        add_status_effects_full_prompt=chat_client.prompt,
+                    ),
                 )
             else:
                 self._game.add_human_message(
-                    entity=entity, message_content=chat_client.prompt
+                    entity=entity,
+                    human_message=HumanMessage(content=chat_client.prompt),
                 )
 
             # 将 LLM 回复写入角色上下文（AI 端），完成本轮对话

@@ -8,6 +8,7 @@ from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.dbg_game import DBGGame
 from ..models import (
     ActorComponent,
+    HumanMessage,
     StatusEffect,
     StatusEffectsComponent,
     PhaseType,
@@ -203,7 +204,10 @@ class CombatRoundCleanupSystem(ExecuteProcessor):
 
             # 将更新结果写入角色上下文，保持对话连续性
             self._game.add_human_message(
-                entity, _make_status_effects_tick_message(ticked, expired)
+                entity,
+                HumanMessage(
+                    content=_make_status_effects_tick_message(ticked, expired)
+                ),
             )
 
     ################################################################################################################
@@ -261,7 +265,9 @@ class CombatRoundCleanupSystem(ExecuteProcessor):
             response = _RoundEndEffectResponse.model_validate_json(json_content)
 
             # 将本轮 prompt 和 AI 回复写入 agent 上下文，完成对话
-            self._game.add_human_message(entity, chat_client.prompt)
+            self._game.add_human_message(
+                entity, HumanMessage(content=chat_client.prompt)
+            )
             assert chat_client.response_ai_message is not None
             self._game.add_ai_message(entity, chat_client.response_ai_message)
 
@@ -274,7 +280,7 @@ class CombatRoundCleanupSystem(ExecuteProcessor):
 
             self._game.add_human_message(
                 entity,
-                _make_round_end_hp_update_message(new_hp, max_hp),
+                HumanMessage(content=_make_round_end_hp_update_message(new_hp, max_hp)),
             )
 
         except Exception as e:

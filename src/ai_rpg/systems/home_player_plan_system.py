@@ -1,7 +1,7 @@
 """家园玩家上下文注入系统。"""
 
 from typing import Dict, Final, final, Dict, List
-from ..models.messages import AIMessage
+from ..models.messages import AIMessage, HumanMessage
 from overrides import override
 from ..entitas import Entity, Matcher, GroupEvent, ReactiveProcessor
 from ..models import (
@@ -105,15 +105,19 @@ class HomePlayerPlanSystem(ReactiveProcessor):
             )
             self._game.add_human_message(
                 player_entity,
-                compressed_prompt,
-                home_actor_planning=player_entity.name,
-                home_actor_full_prompt=full_prompt,
+                HumanMessage(
+                    content=compressed_prompt,
+                    home_actor_planning=player_entity.name,
+                    home_actor_full_prompt=full_prompt,
+                ),
             )
         else:
             self._game.add_human_message(
                 player_entity,
-                full_prompt,
-                home_actor_planning=player_entity.name,
+                HumanMessage(
+                    content=full_prompt,
+                    home_actor_planning=player_entity.name,
+                ),
             )
 
         # 判断玩家本轮是否有主动动作

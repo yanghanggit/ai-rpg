@@ -9,6 +9,7 @@ from ..models import (
     PlayCardsAction,
     MonsterTurnAction,
     PassTurnAction,
+    HumanMessage,
     MonsterComponent,
     DeathComponent,
     HandComponent,
@@ -366,9 +367,11 @@ class MonsterPrePlaySystem(ReactiveProcessor):
             current_round_number = len(self._game.current_dungeon.current_rounds or [])
             self._game.add_human_message(
                 entity=entity,
-                message_content=client.compressed_prompt,
-                draw_cards_round_number=current_round_number,
-                draw_cards_full_prompt=client.prompt,
+                human_message=HumanMessage(
+                    content=client.compressed_prompt,
+                    draw_cards_round_number=current_round_number,
+                    draw_cards_full_prompt=client.prompt,
+                ),
             )
             assert (
                 client.response_ai_message is not None

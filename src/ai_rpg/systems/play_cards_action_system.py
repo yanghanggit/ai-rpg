@@ -6,6 +6,7 @@ from overrides import override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import (
     HandComponent,
+    HumanMessage,
     PlayCardsAction,
     ActorComponent,
     AgentEvent,
@@ -128,11 +129,13 @@ class PlayCardsActionSystem(ReactiveProcessor):
             # 为出牌角色注入本回合出牌上下文，作为其对话历史的一部分
             self._game.add_human_message(
                 entity=entity,
-                message_content=_generate_play_card_context_prompt(
-                    play_cards_action=play_cards_action,
-                    round_number=len(current_rounds),
+                human_message=HumanMessage(
+                    content=_generate_play_card_context_prompt(
+                        play_cards_action=play_cards_action,
+                        round_number=len(current_rounds),
+                    ),
+                    play_card_context=play_cards_action.card.model_dump_json(),
                 ),
-                play_card_context=play_cards_action.card.model_dump_json(),
             )
 
             # 向场景内其他角色（排除出牌者自身与场景仲裁实体）广播简短的行动预告，

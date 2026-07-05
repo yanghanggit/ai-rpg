@@ -14,6 +14,7 @@
 from typing import Final, Optional, final, override, Dict, List
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import (
+    HumanMessage,
     QueryAction,
 )
 from loguru import logger
@@ -116,7 +117,7 @@ class QueryActionSystem(ReactiveProcessor):
         )
 
         # 将查询结果作为系统消息发送给角色，供后续决策参考
-        self._game.add_human_message(entity, message)
+        self._game.add_human_message(entity, HumanMessage(content=message))
 
     ####################################################################################################################################
     def _get_related_info(self, entity: Entity, original_message: str) -> str:

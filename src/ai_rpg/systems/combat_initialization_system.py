@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from typing import Final, List, final, override, Set
-from ..models.messages import AIMessage
+from ..models.messages import AIMessage, HumanMessage
 from loguru import logger
 from ..entitas import ExecuteProcessor, Entity
 from ..game.dbg_game import DBGGame
@@ -251,8 +251,10 @@ class CombatInitializationSystem(ExecuteProcessor):
             # 注入战场上下文
             self._game.add_human_message(
                 entity=actor_entity,
-                message_content=combat_init_prompt,
-                combat_initialization=stage_name,
+                human_message=HumanMessage(
+                    content=combat_init_prompt,
+                    combat_initialization=stage_name,
+                ),
             )
 
             # 注入模拟 AI 回应，维护 Human↔AI 交替结构

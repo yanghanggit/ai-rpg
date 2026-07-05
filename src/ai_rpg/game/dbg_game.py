@@ -52,6 +52,7 @@ from ..models import (
     CostumeComponent,
     EquippedGearComponent,
     SystemMessage,
+    HumanMessage,
     AnyItem,
     compute_effective_stats,
     PlayerSession,
@@ -772,7 +773,9 @@ class DBGGame(RPGGame):
             entity_hp = self.compute_character_stats(entity).hp
             if entity_hp <= 0:
                 logger.info(f"{entity.name} 已被击败，HP={entity_hp}")
-                self.add_human_message(entity, "# 你的HP已归零，失去战斗能力！")
+                self.add_human_message(
+                    entity, HumanMessage(content="# 你的HP已归零，失去战斗能力！")
+                )
                 entity.replace(DeathComponent, entity.name)
 
     ################################################################################################################

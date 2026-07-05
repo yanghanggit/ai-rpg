@@ -268,7 +268,7 @@ class TestReact:
 
         calls = mock_game.add_human_message.call_args_list
         assert len(calls) == 1
-        content = calls[0].kwargs["message_content"]
+        content = calls[0].kwargs["human_message"].content
         assert "友方行动" in content
         assert "治愈药水" in content
 
@@ -290,7 +290,7 @@ class TestReact:
 
         calls = mock_game.add_human_message.call_args_list
         assert len(calls) == 1
-        content = calls[0].kwargs["message_content"]
+        content = calls[0].kwargs["human_message"].content
         assert "敌方行动" in content
         assert "毒雾瓶" in content
 
@@ -315,7 +315,7 @@ class TestReact:
         calls = mock_game.add_human_message.call_args_list
         assert len(calls) == 2
 
-        contents = [c.kwargs["message_content"] for c in calls]
+        contents = [c.kwargs["human_message"].content for c in calls]
         assert any("友方行动" in c for c in contents)
         assert any("敌方行动" in c for c in contents)
         assert all("鼓舞之酒" in c for c in contents)
@@ -372,5 +372,5 @@ class TestReact:
 
         await system.react([player])
 
-        content = mock_game.add_human_message.call_args.kwargs["message_content"]
+        content = mock_game.add_human_message.call_args.kwargs["human_message"].content
         assert "第 5 回合" in content

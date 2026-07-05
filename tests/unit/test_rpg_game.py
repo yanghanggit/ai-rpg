@@ -22,7 +22,7 @@ from src.ai_rpg.models import (
     StageComponent,
 )
 from src.ai_rpg.models.agent_event import AgentEvent
-from src.ai_rpg.models.messages import SystemMessage
+from src.ai_rpg.models.messages import HumanMessage, SystemMessage
 
 
 # ---------------------------------------------------------------------------
@@ -152,7 +152,7 @@ class TestAddSystemMessage:
 
     def test_system_message_not_first_raises(self, game: Any, actor: Entity) -> None:
         """context 非空时调用 add_system_message 触发 AssertionError。"""
-        game.add_human_message(actor, "already something here")
+        game.add_human_message(actor, HumanMessage(content="already something here"))
         with pytest.raises(AssertionError):
             game.add_system_message(actor, SystemMessage(content="system prompt"))
 

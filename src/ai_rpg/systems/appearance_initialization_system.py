@@ -4,7 +4,7 @@ from overrides import override
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.dbg_game import DBGGame
-from ..models import ActorComponent, AppearanceComponent, CostumeComponent
+from ..models import ActorComponent, AppearanceComponent, CostumeComponent, HumanMessage
 from ..models.items import CostumeItem
 from .appearance_prompt_builders import (
     build_appearance_synthesis_prompt,
@@ -99,7 +99,11 @@ class AppearanceInitializationSystem(ExecuteProcessor):
         )
         self._game.add_human_message(
             entity,
-            build_wear_costume_message(entity.name, costume.name, new_appearance),
+            HumanMessage(
+                content=build_wear_costume_message(
+                    entity.name, costume.name, new_appearance
+                )
+            ),
         )
         logger.debug(
             f"AppearanceInitializationSystem: 角色 {entity.name} 外观已恢复合成，时装 {costume.name!r}"

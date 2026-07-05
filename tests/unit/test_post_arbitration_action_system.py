@@ -515,7 +515,7 @@ class TestApplyResponse:
         system._apply_response(stage, client)
 
         call_kwargs = mock_game.add_human_message.call_args[1]
-        assert call_kwargs.get("message_content") == "compressed"
+        assert call_kwargs.get("human_message").content == "compressed"
 
 
 # ---------------------------------------------------------------------------

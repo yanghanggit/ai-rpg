@@ -6,6 +6,7 @@ from overrides import override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import (
     HandComponent,
+    HumanMessage,
     PassTurnAction,
     ActorComponent,
     AgentEvent,
@@ -104,9 +105,11 @@ class PassTurnActionSystem(ReactiveProcessor):
             # 给过牌角色发送过牌上下文消息，注入角色的对话历史
             self._game.add_human_message(
                 entity=entity,
-                message_content=_generate_pass_turn_context_prompt(
-                    actor_name=pass_turn_action.name,
-                    round_number=len(current_rounds),
+                human_message=HumanMessage(
+                    content=_generate_pass_turn_context_prompt(
+                        actor_name=pass_turn_action.name,
+                        round_number=len(current_rounds),
+                    )
                 ),
             )
 

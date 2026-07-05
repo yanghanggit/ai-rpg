@@ -14,6 +14,7 @@ from ..models import (
     DeckComponent,
     DrawPileComponent,
     DeathComponent,
+    HumanMessage,
     GenerateDeckAction,
     CharacterStatsComponent,
     Card,
@@ -175,7 +176,7 @@ class DeckGenerationSystem(ReactiveProcessor):
                         f"[{entity.name}] 牌库卡牌「{entry.name}」target_type 无效，已废弃：{entry.target_type!r}"
                     )
                     self._game.add_human_message(
-                        entity=entity, message_content=warn_msg
+                        entity=entity, human_message=HumanMessage(content=warn_msg)
                     )
                     continue
 
@@ -214,8 +215,10 @@ class DeckGenerationSystem(ReactiveProcessor):
             # 将本轮任务提示词与 LLM 回复写入 agent 对话历史
             self._game.add_human_message(
                 entity=entity,
-                message_content=chat_client.compressed_prompt,
-                deck_generation_full_prompt=chat_client.prompt,
+                human_message=HumanMessage(
+                    content=chat_client.compressed_prompt,
+                    deck_generation_full_prompt=chat_client.prompt,
+                ),
             )
             assert chat_client.response_ai_message is not None
             self._game.add_ai_message(

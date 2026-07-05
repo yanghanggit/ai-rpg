@@ -45,7 +45,7 @@ def second_actor(game: Any) -> Entity:
 class TestAddHumanMessage:
     def test_basic(self, game: Any, actor: Entity) -> None:
         """Message is appended; content and type are correct."""
-        game.add_human_message(actor, "hello")
+        game.add_human_message(actor, HumanMessage(content="hello"))
 
         ctx = game.get_agent_context(actor).context
         assert len(ctx) == 1
@@ -57,9 +57,11 @@ class TestAddHumanMessage:
         """Extra kwargs are attached to the message via Pydantic extra='allow'."""
         game.add_human_message(
             actor,
-            "planning prompt",
-            home_actor_planning="TestActor",
-            home_actor_full_prompt="full prompt text",
+            HumanMessage(
+                content="planning prompt",
+                home_actor_planning="TestActor",
+                home_actor_full_prompt="full prompt text",
+            ),
         )
 
         ctx = game.get_agent_context(actor).context
@@ -70,9 +72,9 @@ class TestAddHumanMessage:
 
     def test_multiple_messages_preserve_order(self, game: Any, actor: Entity) -> None:
         """Multiple adds are appended in insertion order."""
-        game.add_human_message(actor, "first")
-        game.add_human_message(actor, "second")
-        game.add_human_message(actor, "third")
+        game.add_human_message(actor, HumanMessage(content="first"))
+        game.add_human_message(actor, HumanMessage(content="second"))
+        game.add_human_message(actor, HumanMessage(content="third"))
 
         ctx = game.get_agent_context(actor).context
         assert [m.content for m in ctx] == ["first", "second", "third"]
@@ -81,8 +83,8 @@ class TestAddHumanMessage:
         self, game: Any, actor: Entity, second_actor: Entity
     ) -> None:
         """Messages for different entities do not bleed into each other."""
-        game.add_human_message(actor, "for actor")
-        game.add_human_message(second_actor, "for other")
+        game.add_human_message(actor, HumanMessage(content="for actor"))
+        game.add_human_message(second_actor, HumanMessage(content="for other"))
 
         assert len(game.get_agent_context(actor).context) == 1
         assert len(game.get_agent_context(second_actor).context) == 1
@@ -140,13 +142,17 @@ class TestAddAiMessage:
 class TestFilterMessagesByAttributes:
     def test_empty_attributes_returns_empty(self, game: Any, actor: Entity) -> None:
         """Empty attribute dict always returns []."""
-        game.add_human_message(actor, "msg", home_actor_planning="TestActor")
+        game.add_human_message(
+            actor, HumanMessage(content="msg", home_actor_planning="TestActor")
+        )
         result = game.filter_messages_by_attributes(actor, {})
         assert result == []
 
     def test_matches_custom_kwarg(self, game: Any, actor: Entity) -> None:
         """Finds a message that has the specified extra field."""
-        game.add_human_message(actor, "planning msg", home_actor_planning="TestActor")
+        game.add_human_message(
+            actor, HumanMessage(content="planning msg", home_actor_planning="TestActor")
+        )
         result = game.filter_messages_by_attributes(
             actor, {"home_actor_planning": "TestActor"}
         )
@@ -155,7 +161,9 @@ class TestFilterMessagesByAttributes:
 
     def test_no_match_returns_empty(self, game: Any, actor: Entity) -> None:
         """Returns [] when no message matches the given attribute value."""
-        game.add_human_message(actor, "msg", home_actor_planning="TestActor")
+        game.add_human_message(
+            actor, HumanMessage(content="msg", home_actor_planning="TestActor")
+        )
         result = game.filter_messages_by_attributes(
             actor, {"home_actor_planning": "NonExistent"}
         )
@@ -165,15 +173,21 @@ class TestFilterMessagesByAttributes:
         self, game: Any, actor: Entity
     ) -> None:
         """Returns [] when no message has the requested attribute at all."""
-        game.add_human_message(actor, "plain msg")
+        game.add_human_message(actor, HumanMessage(content="plain msg"))
         result = game.filter_messages_by_attributes(actor, {"no_such_attr": True})
         assert result == []
 
     def test_multiple_matches(self, game: Any, actor: Entity) -> None:
         """All matching messages are returned."""
-        game.add_human_message(actor, "round 1", home_actor_planning="TestActor")
-        game.add_human_message(actor, "round 2", home_actor_planning="TestActor")
-        game.add_human_message(actor, "other", home_actor_planning="OtherActor")
+        game.add_human_message(
+            actor, HumanMessage(content="round 1", home_actor_planning="TestActor")
+        )
+        game.add_human_message(
+            actor, HumanMessage(content="round 2", home_actor_planning="TestActor")
+        )
+        game.add_human_message(
+            actor, HumanMessage(content="other", home_actor_planning="OtherActor")
+        )
 
         result = game.filter_messages_by_attributes(
             actor, {"home_actor_planning": "TestActor"}
@@ -186,8 +200,12 @@ class TestFilterMessagesByAttributes:
         self, game: Any, actor: Entity
     ) -> None:
         """Default reverse_order=True: most-recently-added message is first."""
-        game.add_human_message(actor, "older", home_actor_planning="TestActor")
-        game.add_human_message(actor, "newer", home_actor_planning="TestActor")
+        game.add_human_message(
+            actor, HumanMessage(content="older", home_actor_planning="TestActor")
+        )
+        game.add_human_message(
+            actor, HumanMessage(content="newer", home_actor_planning="TestActor")
+        )
 
         result = game.filter_messages_by_attributes(
             actor, {"home_actor_planning": "TestActor"}, reverse_order=True
@@ -198,8 +216,12 @@ class TestFilterMessagesByAttributes:
         self, game: Any, actor: Entity
     ) -> None:
         """reverse_order=False: oldest message is first."""
-        game.add_human_message(actor, "older", home_actor_planning="TestActor")
-        game.add_human_message(actor, "newer", home_actor_planning="TestActor")
+        game.add_human_message(
+            actor, HumanMessage(content="older", home_actor_planning="TestActor")
+        )
+        game.add_human_message(
+            actor, HumanMessage(content="newer", home_actor_planning="TestActor")
+        )
 
         result = game.filter_messages_by_attributes(
             actor, {"home_actor_planning": "TestActor"}, reverse_order=False
@@ -210,14 +232,18 @@ class TestFilterMessagesByAttributes:
         """All specified attributes must match — partial match is not enough."""
         game.add_human_message(
             actor,
-            "full match",
-            home_actor_planning="TestActor",
-            home_actor_full_prompt="prompt",
+            HumanMessage(
+                content="full match",
+                home_actor_planning="TestActor",
+                home_actor_full_prompt="prompt",
+            ),
         )
         game.add_human_message(
             actor,
-            "partial only",
-            home_actor_planning="TestActor",
+            HumanMessage(
+                content="partial only",
+                home_actor_planning="TestActor",
+            ),
         )
 
         result = game.filter_messages_by_attributes(
@@ -239,14 +265,14 @@ class TestFilterMessagesByAttributes:
 class TestRemoveMessages:
     def test_empty_input_returns_zero(self, game: Any, actor: Entity) -> None:
         """Passing an empty list returns 0 and leaves the context unchanged."""
-        game.add_human_message(actor, "keep me")
+        game.add_human_message(actor, HumanMessage(content="keep me"))
         count = game.remove_messages(actor, [])
         assert count == 0
         assert len(game.get_agent_context(actor).context) == 1
 
     def test_removes_existing_message(self, game: Any, actor: Entity) -> None:
         """A message that is in the context is removed; return value is 1."""
-        game.add_human_message(actor, "to remove")
+        game.add_human_message(actor, HumanMessage(content="to remove"))
         msg = game.get_agent_context(actor).context[0]
 
         count = game.remove_messages(actor, [msg])
@@ -255,9 +281,9 @@ class TestRemoveMessages:
 
     def test_removes_multiple_messages(self, game: Any, actor: Entity) -> None:
         """Multiple messages are removed and the correct count is returned."""
-        game.add_human_message(actor, "msg1")
-        game.add_human_message(actor, "msg2")
-        game.add_human_message(actor, "keep")
+        game.add_human_message(actor, HumanMessage(content="msg1"))
+        game.add_human_message(actor, HumanMessage(content="msg2"))
+        game.add_human_message(actor, HumanMessage(content="keep"))
 
         ctx = game.get_agent_context(actor).context
         to_remove = [ctx[0], ctx[1]]
@@ -287,7 +313,7 @@ class TestRemoveMessageRange:
     def _fill(self, game: Any, actor: Entity, n: int = 5) -> List[Any]:
         """Helper: add n HumanMessages and return all context objects."""
         for i in range(n):
-            game.add_human_message(actor, f"msg{i}")
+            game.add_human_message(actor, HumanMessage(content=f"msg{i}"))
         return list(game.get_agent_context(actor).context)
 
     def test_same_message_raises(self, game: Any, actor: Entity) -> None:

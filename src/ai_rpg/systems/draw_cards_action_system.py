@@ -15,6 +15,7 @@ from ..models import (
     DiscardPileComponent,
     DrawCardsAction,
     HandComponent,
+    HumanMessage,
     Card,
     TargetType,
     DeathComponent,
@@ -363,8 +364,10 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
             self._game.add_human_message(
                 entity=entity,
-                message_content=chat_client.prompt,
-                draw_cards_round_number=current_round_number,
+                human_message=HumanMessage(
+                    content=chat_client.prompt,
+                    draw_cards_round_number=current_round_number,
+                ),
             )
             assert chat_client.response_ai_message is not None
             self._game.add_ai_message(
@@ -390,5 +393,5 @@ class DrawCardsActionSystem(ReactiveProcessor):
             )
             self._game.add_human_message(
                 entity=entity,
-                message_content=_FALLBACK_ADJUST_SYSTEM_MESSAGE,
+                human_message=HumanMessage(content=_FALLBACK_ADJUST_SYSTEM_MESSAGE),
             )

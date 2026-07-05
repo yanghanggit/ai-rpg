@@ -42,9 +42,6 @@ class RPGAgentContext:
     ###############################################################################################################################################
     def add_system_message(self, entity: Entity, system_message: SystemMessage) -> None:
         """添加系统消息到实体的LLM上下文，必须是第一条消息"""
-        # logger.info(
-        #     f"add_system_message: {entity.name} 添加LLM system prompt:\n{message_content}"
-        # )
         agent_context = self.get_agent_context(entity)
         assert (
             len(agent_context.context) == 0
@@ -52,19 +49,10 @@ class RPGAgentContext:
         agent_context.context.append(system_message)
 
     ###############################################################################################################################################
-    def add_human_message(
-        self, entity: Entity, message_content: str, **kwargs: Any
-    ) -> None:
+    def add_human_message(self, entity: Entity, human_message: HumanMessage) -> None:
         """添加用户消息到实体的LLM上下文"""
-        # logger.debug(
-        #     f"add_human_message: {entity.name} 添加LLM context:\n{message_content}"
-        # )
-        # if len(kwargs) > 0:
-        #     # 如果 **kwargs 不是 空，就打印一下，这种消息比较特殊。
-        #     logger.debug(f"kwargs: {kwargs}")
-
         agent_context = self.get_agent_context(entity)
-        agent_context.context.extend([HumanMessage(content=message_content, **kwargs)])
+        agent_context.context.append(human_message)
 
     ###############################################################################################################################################
     def add_ai_message(

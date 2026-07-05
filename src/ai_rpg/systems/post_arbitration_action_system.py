@@ -15,6 +15,7 @@ from ..models import (
     CharacterStatsComponent,
     DungeonComponent,
     HandComponent,
+    HumanMessage,
     StageComponent,
     PostArbitrationAction,
     StatusEffect,
@@ -309,13 +310,15 @@ class PostArbitrationActionSystem(ReactiveProcessor):
             if self._use_compressed_prompt:
                 self._game.add_human_message(
                     entity=stage_entity,
-                    message_content=chat_client.compressed_prompt,
-                    stage_post_arbitration_full_prompt=chat_client.prompt,
+                    human_message=HumanMessage(
+                        content=chat_client.compressed_prompt,
+                        stage_post_arbitration_full_prompt=chat_client.prompt,
+                    ),
                 )
             else:
                 self._game.add_human_message(
                     entity=stage_entity,
-                    message_content=chat_client.prompt,
+                    human_message=HumanMessage(content=chat_client.prompt),
                 )
 
             # 添加 LLM 响应消息到 stage entity 的对话历史

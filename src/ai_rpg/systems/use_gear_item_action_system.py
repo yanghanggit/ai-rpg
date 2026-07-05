@@ -7,6 +7,7 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..models import (
     EquippedGearComponent,
+    HumanMessage,
     InventoryComponent,
     MonsterComponent,
     PartyMemberComponent,
@@ -149,10 +150,14 @@ class UseGearItemActionSystem(ReactiveProcessor):
             if actor.has(PartyMemberComponent):
                 self._game.add_human_message(
                     entity=actor,
-                    message_content=_generate_party_notice(action, round_number),
+                    human_message=HumanMessage(
+                        content=_generate_party_notice(action, round_number)
+                    ),
                 )
             elif actor.has(MonsterComponent):
                 self._game.add_human_message(
                     entity=actor,
-                    message_content=_generate_enemy_notice(action, round_number),
+                    human_message=HumanMessage(
+                        content=_generate_enemy_notice(action, round_number)
+                    ),
                 )

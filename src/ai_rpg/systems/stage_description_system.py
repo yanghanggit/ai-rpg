@@ -1,5 +1,5 @@
 from typing import Dict, Final, List, Optional, Tuple, final
-from ..models.messages import AIMessage
+from ..models.messages import AIMessage, HumanMessage
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
@@ -276,11 +276,15 @@ class StageDescriptionSystem(ExecuteProcessor):
             if self._use_compressed_prompt:
                 self._game.add_human_message(
                     stage_entity,
-                    compressed_prompt,
-                    stage_description_full_prompt=full_prompt,
+                    HumanMessage(
+                        content=compressed_prompt,
+                        stage_description_full_prompt=full_prompt,
+                    ),
                 )
             else:
-                self._game.add_human_message(stage_entity, full_prompt)
+                self._game.add_human_message(
+                    stage_entity, HumanMessage(content=full_prompt)
+                )
             self._game.add_ai_message(stage_entity, ai_message)
 
             # if format_response.description != "":
@@ -322,11 +326,15 @@ class StageDescriptionSystem(ExecuteProcessor):
             if self._use_compressed_prompt:
                 self._game.add_human_message(
                     stage_entity,
-                    chat_client.compressed_prompt,
-                    stage_description_full_prompt=chat_client.prompt,
+                    HumanMessage(
+                        content=chat_client.compressed_prompt,
+                        stage_description_full_prompt=chat_client.prompt,
+                    ),
                 )
             else:
-                self._game.add_human_message(stage_entity, chat_client.prompt)
+                self._game.add_human_message(
+                    stage_entity, HumanMessage(content=chat_client.prompt)
+                )
             assert chat_client.response_ai_message is not None
             self._game.add_ai_message(stage_entity, chat_client.response_ai_message)
 

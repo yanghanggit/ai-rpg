@@ -14,6 +14,7 @@ from ..models import (
     Dungeon,
     DungeonComponent,
     Combat,
+    HumanMessage,
     PartyMemberComponent,
     PartyRosterComponent,
     HomeComponent,
@@ -161,7 +162,10 @@ def _enter_dungeon_stage(
         if dungeon.current_room_index == 0:
             # 首次进入：仅地下城名称
             dbg_game.add_human_message(
-                party_member, trans_message, dungeon_lifecycle_entry=dungeon.name
+                party_member,
+                HumanMessage(
+                    content=trans_message, dungeon_lifecycle_entry=dungeon.name
+                ),
             )
 
         else:
@@ -169,8 +173,10 @@ def _enter_dungeon_stage(
             # 关卡推进：地下城名称:关卡名称
             dbg_game.add_human_message(
                 party_member,
-                trans_message,
-                dungeon_lifecycle_stage_advance=f"{dungeon.name}:{stage_entity.name}",
+                HumanMessage(
+                    content=trans_message,
+                    dungeon_lifecycle_stage_advance=f"{dungeon.name}:{stage_entity.name}",
+                ),
             )
 
         if party_member.has(DeathComponent):
@@ -455,8 +461,10 @@ def exit_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> None:
 
         dbg_game.add_human_message(
             party_member_entity,
-            _generate_return_home_message(dungeon.name, dest_stage.name),
-            dungeon_lifecycle_completion=dungeon.name,
+            HumanMessage(
+                content=_generate_return_home_message(dungeon.name, dest_stage.name),
+                dungeon_lifecycle_completion=dungeon.name,
+            ),
         )
         stage_transition(dbg_game, {party_member_entity}, dest_stage)
 

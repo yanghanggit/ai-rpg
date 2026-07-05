@@ -6,6 +6,7 @@ from ..game.dbg_game import DBGGame
 from ..models import (
     DeathComponent,
     CombatResult,
+    HumanMessage,
     PartyMemberComponent,
     MonsterComponent,
 )
@@ -134,14 +135,22 @@ class CombatOutcomeSystem(ExecuteProcessor):
             if result == CombatResult.WIN:
                 self._game.add_human_message(
                     entity,
-                    _get_combat_result_notification(combat_stage_entity.name, True),
-                    combat_outcome=combat_stage_entity.name,
+                    HumanMessage(
+                        content=_get_combat_result_notification(
+                            combat_stage_entity.name, True
+                        ),
+                        combat_outcome=combat_stage_entity.name,
+                    ),
                 )
             elif result == CombatResult.LOSE:
                 self._game.add_human_message(
                     entity,
-                    _get_combat_result_notification(combat_stage_entity.name, False),
-                    combat_outcome=combat_stage_entity.name,
+                    HumanMessage(
+                        content=_get_combat_result_notification(
+                            combat_stage_entity.name, False
+                        ),
+                        combat_outcome=combat_stage_entity.name,
+                    ),
                 )
 
     ########################################################################################################################################################################

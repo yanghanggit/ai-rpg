@@ -1,5 +1,5 @@
 from typing import Dict, Final, List, final
-from ..models.messages import AIMessage
+from ..models.messages import AIMessage, HumanMessage
 from loguru import logger
 from overrides import override
 from ..deepseek import DeepSeekClient
@@ -144,15 +144,19 @@ class HomeNpcPlanSystem(ReactiveProcessor):
             )
             self._game.add_human_message(
                 npc_entity,
-                compressed_prompt,
-                home_actor_planning=npc_entity.name,
-                home_actor_full_prompt=prompt,
+                HumanMessage(
+                    content=compressed_prompt,
+                    home_actor_planning=npc_entity.name,
+                    home_actor_full_prompt=prompt,
+                ),
             )
         else:
             self._game.add_human_message(
                 npc_entity,
-                prompt,
-                home_actor_planning=npc_entity.name,
+                HumanMessage(
+                    content=prompt,
+                    home_actor_planning=npc_entity.name,
+                ),
             )
 
         # 注入待命状态的内心独白（passive_mind），并通知自身。
@@ -196,15 +200,19 @@ class HomeNpcPlanSystem(ReactiveProcessor):
             if self._use_compressed_prompt:
                 self._game.add_human_message(
                     actor_entity,
-                    chat_client.compressed_prompt,
-                    home_actor_planning=actor_entity.name,
-                    home_actor_full_prompt=chat_client.prompt,
+                    HumanMessage(
+                        content=chat_client.compressed_prompt,
+                        home_actor_planning=actor_entity.name,
+                        home_actor_full_prompt=chat_client.prompt,
+                    ),
                 )
             else:
                 self._game.add_human_message(
                     actor_entity,
-                    chat_client.prompt,
-                    home_actor_planning=actor_entity.name,
+                    HumanMessage(
+                        content=chat_client.prompt,
+                        home_actor_planning=actor_entity.name,
+                    ),
                 )
 
             # 添加 AI 响应消息到对话历史
@@ -354,7 +362,9 @@ class HomeNpcPlanSystem(ReactiveProcessor):
         )
         self._game.add_human_message(
             actor_entity,
-            "这是一个测试消息，要求你在后续的计划行动中不可以使用trans_stage 来移动场景！",
+            HumanMessage(
+                content="这是一个测试消息，要求你在后续的计划行动中不可以使用trans_stage 来移动场景！"
+            ),
         )
 
     #######################################################################################################################################

@@ -12,6 +12,7 @@ from ..models import (
     CharacterStatsComponent,
     CombatArbitrationEvent,
     EquippedGearComponent,
+    HumanMessage,
     PartyMemberComponent,
     StatusEffect,
     PhaseType,
@@ -170,13 +171,15 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             if self._use_compressed_prompt:
                 self._game.add_human_message(
                     entity=stage_entity,
-                    message_content=chat_client.compressed_prompt,
-                    combat_arbitration_full_prompt=chat_client.prompt,
+                    human_message=HumanMessage(
+                        content=chat_client.compressed_prompt,
+                        combat_arbitration_full_prompt=chat_client.prompt,
+                    ),
                 )
             else:
                 self._game.add_human_message(
                     entity=stage_entity,
-                    message_content=chat_client.prompt,
+                    human_message=HumanMessage(content=chat_client.prompt),
                 )
             assert chat_client.response_ai_message is not None
             self._game.add_ai_message(
@@ -220,7 +223,9 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
 
                 self._game.add_human_message(
                     entity=entity,
-                    message_content=stats_update_notification(new_hp, max_hp),
+                    human_message=HumanMessage(
+                        content=stats_update_notification(new_hp, max_hp)
+                    ),
                 )
 
                 # 回写状态效果计数器补丁

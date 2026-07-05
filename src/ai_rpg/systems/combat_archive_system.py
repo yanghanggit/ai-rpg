@@ -118,7 +118,8 @@ class CombatArchiveSystem(ExecuteProcessor):
 
         # 将原始消息内容附在事件上，供后续流程（如记忆存储）使用
         self._game.add_human_message(
-            entity=processed_actor_entity, message_content=chat_client.prompt
+            entity=processed_actor_entity,
+            human_message=HumanMessage(content=chat_client.prompt),
         )
 
         # 将 LLM 生成的摘要写回角色上下文

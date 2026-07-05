@@ -440,7 +440,7 @@ class TestAddContextForAllActors:
         system._add_context_for_all_actors({actor}, "血色竞技场", "充满杀意的沙场")
 
         _, kwargs = mock_game.add_human_message.call_args
-        assert "血色竞技场" in kwargs["message_content"]
+        assert "血色竞技场" in kwargs["human_message"].content
 
     def test_called_for_each_of_multiple_actors(
         self, context: Context, mock_game: MagicMock, system: CombatInitializationSystem

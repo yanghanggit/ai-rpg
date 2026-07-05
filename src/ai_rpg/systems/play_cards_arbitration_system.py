@@ -12,6 +12,7 @@ from ..models import (
     CharacterStats,
     CharacterStatsComponent,
     CombatArbitrationEvent,
+    HumanMessage,
     StatusEffect,
     PhaseType,
     PostArbitrationAction,
@@ -201,13 +202,15 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             if self._use_compressed_prompt:
                 self._game.add_human_message(
                     entity=stage_entity,
-                    message_content=chat_client.compressed_prompt,
-                    combat_arbitration_full_prompt=chat_client.prompt,
+                    human_message=HumanMessage(
+                        content=chat_client.compressed_prompt,
+                        combat_arbitration_full_prompt=chat_client.prompt,
+                    ),
                 )
             else:
                 self._game.add_human_message(
                     entity=stage_entity,
-                    message_content=chat_client.prompt,
+                    human_message=HumanMessage(content=chat_client.prompt),
                 )
 
             assert (
@@ -262,7 +265,9 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
 
                 self._game.add_human_message(
                     entity=entity,
-                    message_content=stats_update_notification(new_hp, max_hp),
+                    human_message=HumanMessage(
+                        content=stats_update_notification(new_hp, max_hp)
+                    ),
                 )
 
             self._add_status_effects_actions_after_arbitration(

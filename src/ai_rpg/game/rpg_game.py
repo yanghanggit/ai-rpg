@@ -1,7 +1,8 @@
-from typing import Any, Final, Set
+from typing import Final, Set
 from loguru import logger
 from overrides import override
 from ..entitas import Entity
+from ..models.messages import HumanMessage
 from .game_session import GameSession
 from .rpg_agent_context import RPGAgentContext
 from .rpg_entity_manager import RPGEntityManager
@@ -107,7 +108,6 @@ class RPGGame(GameSession, RPGAgentContext, RPGEntityManager, RPGGamePipelineMan
         entity: Entity,
         agent_event: AgentEventUnion,
         exclude_entities: Set[Entity] = set(),
-        **kwargs: Any,
     ) -> None:
         """向场景中的所有存活角色和场景实体广播事件
 
@@ -115,7 +115,6 @@ class RPGGame(GameSession, RPGAgentContext, RPGEntityManager, RPGGamePipelineMan
             entity: 参考实体，用于确定目标场景
             agent_event: 要广播的事件消息
             exclude_entities: 要排除的实体集合
-            **kwargs: 传递给HumanMessage的额外参数
         """
         stage_entity = self.resolve_stage_entity(entity)
         assert stage_entity is not None, "stage is None, actor无所在场景是有问题的"
@@ -128,25 +127,23 @@ class RPGGame(GameSession, RPGAgentContext, RPGEntityManager, RPGGamePipelineMan
         if len(exclude_entities) > 0:
             need_broadcast_entities = need_broadcast_entities - exclude_entities
 
-        self.notify_entities(need_broadcast_entities, agent_event, **kwargs)
+        self.notify_entities(need_broadcast_entities, agent_event)
 
     ###############################################################################################################################################
     def notify_entities(
         self,
         entities: Set[Entity],
         agent_event: AgentEventUnion,
-        **kwargs: Any,
     ) -> None:
         """向指定实体集合发送通知，并同步到玩家客户端
 
         Args:
             entities: 要接收通知的实体集合
             agent_event: 要发送的事件消息
-            **kwargs: 传递给HumanMessage的额外参数
         """
         # 正常的添加记忆。
         for entity in entities:
-            self.add_human_message(entity, agent_event.message, **kwargs)
+            self.add_human_message(entity, HumanMessage(content=agent_event.message))
 
         # 最后都要发给客户端。
         self._player_session.add_agent_event_message(agent_event=agent_event)

@@ -1,7 +1,7 @@
 from typing import final, override, Dict, List
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.rpg_entity_manager import InteractionError
-from ..models import SpeakAction, SpeakEvent
+from ..models import HumanMessage, SpeakAction, SpeakEvent
 from ..game.dbg_game import DBGGame
 
 
@@ -61,8 +61,10 @@ class SpeakActionSystem(ReactiveProcessor):
                     # 添加上下文提示!
                     self._game.add_human_message(
                         entity=entity,
-                        message_content=_format_invalid_target_error(
-                            speak_action.name, target_name
+                        human_message=HumanMessage(
+                            content=_format_invalid_target_error(
+                                speak_action.name, target_name
+                            )
                         ),
                     )
                 continue

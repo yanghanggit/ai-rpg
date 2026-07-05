@@ -22,7 +22,7 @@
 from typing import final, override, Dict, List
 from loguru import logger
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..models import RetreatAction, PartyMemberComponent, DeathComponent
+from ..models import HumanMessage, RetreatAction, PartyMemberComponent, DeathComponent
 from ..game.dbg_game import DBGGame
 
 
@@ -134,8 +134,10 @@ class RetreatActionSystem(ReactiveProcessor):
         retreat_message = _generate_retreat_message(dungeon_name, stage_entity.name)
         self._game.add_human_message(
             entity,
-            retreat_message,
-            dungeon_lifecycle_retreat=f"{dungeon_name}:{stage_entity.name}",
+            HumanMessage(
+                content=retreat_message,
+                dungeon_lifecycle_retreat=f"{dungeon_name}:{stage_entity.name}",
+            ),
         )
 
         logger.info(

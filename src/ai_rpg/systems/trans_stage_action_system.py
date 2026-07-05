@@ -13,7 +13,7 @@
 
 from typing import final, override, Dict, List
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..models import TransStageAction, HomeComponent
+from ..models import HumanMessage, TransStageAction, HomeComponent
 from loguru import logger
 from ..game.dbg_game import DBGGame
 from ..game.stage_transition import stage_transition
@@ -91,7 +91,9 @@ class TransStageActionSystem(ReactiveProcessor):
             # 不存在！
             self._game.add_human_message(
                 entity=entity,
-                message_content=f"# 提示！{entity.name} 触发场景转换动作失败, 找不到目标场景 {trans_stage_action.target_stage_name}.",
+                human_message=HumanMessage(
+                    content=f"# 提示！{entity.name} 触发场景转换动作失败, 找不到目标场景 {trans_stage_action.target_stage_name}."
+                ),
             )
             return
 
@@ -106,7 +108,9 @@ class TransStageActionSystem(ReactiveProcessor):
             # 添加提示，让LLM记住错误
             self._game.add_human_message(
                 entity=entity,
-                message_content=f"# 提示！{entity.name} 触发场景转换动作失败, 目标场景 {trans_stage_action.target_stage_name} 与当前场景 {current_stage_entity.name} 相同.",
+                human_message=HumanMessage(
+                    content=f"# 提示！{entity.name} 触发场景转换动作失败, 目标场景 {trans_stage_action.target_stage_name} 与当前场景 {current_stage_entity.name} 相同."
+                ),
             )
             return
 

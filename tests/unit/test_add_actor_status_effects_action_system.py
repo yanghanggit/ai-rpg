@@ -272,7 +272,8 @@ class TestProcessStatusEffectsResponse:
         )
         system._process_status_effects_response(client)
         assert (
-            mock_game.add_human_message.call_args[1]["message_content"] == "compressed"
+            mock_game.add_human_message.call_args[1]["human_message"].content
+            == "compressed"
         )
 
     def test_full_prompt_mode(
@@ -292,7 +293,7 @@ class TestProcessStatusEffectsResponse:
         )
         system_no_compress._process_status_effects_response(client)
         assert (
-            mock_game.add_human_message.call_args[1]["message_content"]
+            mock_game.add_human_message.call_args[1]["human_message"].content
             == "full prompt content"
         )
 

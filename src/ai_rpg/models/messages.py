@@ -23,6 +23,9 @@ class BaseMessage(BaseModel):
         default_factory=dict
     )  # 显式声明字段，避免与 extra="allow" 冲突导致无法访问, LLM 响应的结构化附属数据（目前专用于存 reasoning_content）
 
+    def __init__(self, **data: Any) -> None:
+        super().__init__(**data)
+
 
 ############################################################################################################
 class SystemMessage(BaseMessage):
@@ -36,6 +39,9 @@ class HumanMessage(BaseMessage):
     """用户消息"""
 
     type: Literal["human"] = "human"
+
+    def __init__(self, **data: Any) -> None:
+        super().__init__(**data)
 
 
 ############################################################################################################

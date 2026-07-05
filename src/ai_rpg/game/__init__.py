@@ -1,6 +1,7 @@
 """Game logic and core game classes."""
 
 from .game_session import GameSession
+from .rpg_agent_context import RPGAgentContext
 from .rpg_game_pipeline_manager import RPGGamePipelineManager, RPGGameProcessPipeline
 from .rpg_game import RPGGame
 from .dbg_game import DBGGame
@@ -18,6 +19,7 @@ from .world_store import (
 
 __all__ = [
     "GameSession",
+    "RPGAgentContext",
     "RPGGamePipelineManager",
     "RPGGameProcessPipeline",
     "RPGGame",

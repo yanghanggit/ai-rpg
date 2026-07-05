@@ -144,7 +144,7 @@ class TestDestroyEntity:
 class TestAddSystemMessage:
     def test_basic_system_message(self, game: Any, actor: Entity) -> None:
         """成功添加 SystemMessage，内容与类型正确。"""
-        game.add_system_message(actor, "system prompt")
+        game.add_system_message(actor, SystemMessage(content="system prompt"))
         ctx = game.get_agent_context(actor).context
         assert len(ctx) == 1
         assert isinstance(ctx[0], SystemMessage)
@@ -154,7 +154,7 @@ class TestAddSystemMessage:
         """context 非空时调用 add_system_message 触发 AssertionError。"""
         game.add_human_message(actor, "already something here")
         with pytest.raises(AssertionError):
-            game.add_system_message(actor, "system prompt")
+            game.add_system_message(actor, SystemMessage(content="system prompt"))
 
 
 # ---------------------------------------------------------------------------

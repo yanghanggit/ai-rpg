@@ -40,7 +40,7 @@ class RPGAgentContext:
             self._world.agents_context.pop(entity.name, None)
 
     ###############################################################################################################################################
-    def add_system_message(self, entity: Entity, message_content: str) -> None:
+    def add_system_message(self, entity: Entity, system_message: SystemMessage) -> None:
         """添加系统消息到实体的LLM上下文，必须是第一条消息"""
         # logger.info(
         #     f"add_system_message: {entity.name} 添加LLM system prompt:\n{message_content}"
@@ -49,7 +49,7 @@ class RPGAgentContext:
         assert (
             len(agent_context.context) == 0
         ), "system message should be the first message"
-        agent_context.context.append(SystemMessage(content=message_content))
+        agent_context.context.append(system_message)
 
     ###############################################################################################################################################
     def add_human_message(

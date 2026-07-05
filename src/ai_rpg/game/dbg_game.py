@@ -51,9 +51,11 @@ from ..models import (
     WorldSystem,
     CostumeComponent,
     EquippedGearComponent,
+    SystemMessage,
+    AnyItem,
+    compute_effective_stats,
+    PlayerSession,
 )
-from ..models.items import AnyItem
-from ..models.utils import compute_effective_stats
 from ..models import PlayerSession
 from ..entitas import Matcher, Entity
 
@@ -257,7 +259,8 @@ class DBGGame(RPGGame):
                 world_system_model.name in world_system_model.system_message
             ), f"world_system_model.system_message 缺少 {world_system_model.name} 的系统消息"
             self.add_system_message(
-                world_system_entity, world_system_model.system_message
+                world_system_entity,
+                SystemMessage(content=world_system_model.system_message),
             )
 
             # 特殊组件，根据 world_system_model.components 数据驱动动态添加
@@ -313,7 +316,9 @@ class DBGGame(RPGGame):
             assert (
                 actor_model.name in actor_model.system_message
             ), f"actor_model.system_message 缺少 {actor_model.name} 的系统消息"
-            self.add_system_message(actor_entity, actor_model.system_message)
+            self.add_system_message(
+                actor_entity, SystemMessage(content=actor_model.system_message)
+            )
 
             # 必要组件：外观
             assert (
@@ -405,7 +410,9 @@ class DBGGame(RPGGame):
 
             # 必要组件：系统消息
             assert stage_model.name in stage_model.system_message
-            self.add_system_message(stage_entity, stage_model.system_message)
+            self.add_system_message(
+                stage_entity, SystemMessage(content=stage_model.system_message)
+            )
 
             # 必要组件：类型
             match stage_model.stage_profile.type:

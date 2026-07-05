@@ -6,10 +6,9 @@ DBG 游戏核心实现
 
 import copy
 import uuid
-from typing import Final, List, Optional
+from typing import Final, List
 from loguru import logger
 from .rpg_game_pipeline_manager import RPGGameProcessPipeline
-from .entity_ops import get_energy
 from .rpg_game import RPGGame
 from .dbg_game_process_pipeline import (
     create_home_pipeline,
@@ -36,7 +35,6 @@ from ..models import (
     PlayerComponent,
     StorageComponent,
     DiscardPileComponent,
-    Round,
     RoundStatsComponent,
     Stage,
     StageComponent,
@@ -466,47 +464,5 @@ class DBGGame(RPGGame):
         for entity in self.get_group(Matcher(RoundStatsComponent)).entities.copy():
             logger.debug(f"clear round stats: {entity.name}")
             entity.remove(RoundStatsComponent)
-
-    ###############################################################################################################################################
-    def get_current_turn_actor(self, round: Round) -> Optional[str]:
-        """从最新回合快照中找出第一个仍有行动力（energy > 0）的角色名。
-
-        Args:
-            round: 当前战斗回合
-
-        Returns:
-            当前应行动的角色名；若所有角色能量耗尽则返回 None
-        """
-        if not round.actor_order_snapshots:
-            return None
-
-        snapshot = round.actor_order_snapshots[-1]
-        for actor_name in snapshot:
-            actor_entity = self.get_actor_entity(actor_name)
-            assert actor_entity is not None, f"无法找到角色实体: {actor_name}"
-            if actor_entity is None:
-                continue
-            assert actor_entity.has(
-                RoundStatsComponent
-            ), f"{actor_name} 缺少 RoundStatsComponent"
-            if not actor_entity.has(RoundStatsComponent):
-                continue
-            if get_energy(actor_entity) > 0:
-                return actor_name
-        return None
-
-    ###############################################################################################################################################
-    def advance_turn(self, round: Round) -> None:
-        """消耗 energy 后重新计算当前 turn 行动者，并写回 round.current_turn_actor_name。
-
-        在每次出牌或过牌消耗 energy 之后调用，保持 Round 模型中 current_turn_actor_name 的最新状态。
-
-        Args:
-            round: 当前战斗回合
-        """
-        round.current_turn_actor_name = self.get_current_turn_actor(round)
-        logger.debug(
-            f"advance_turn: current_turn_actor_name updated to {round.current_turn_actor_name}"
-        )
 
     ################################################################################################################

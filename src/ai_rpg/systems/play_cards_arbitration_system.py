@@ -14,7 +14,7 @@ from ..game.entity_ops import (
     give_energy,
     set_character_hp,
 )
-from ..game.zero_health_processor import process_zero_health_entities
+from ..game.combat_processor import process_zero_health_entities
 from ..models import (
     PlayCardsAction,
     RoundStatsComponent,

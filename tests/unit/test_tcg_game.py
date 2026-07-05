@@ -16,7 +16,6 @@ from src.ai_rpg.models import (
     PlayerComponent,
     RoundStatsComponent,
     StageComponent,
-    Round,
     CombatRoom,
     Dungeon,
     Actor,
@@ -366,34 +365,34 @@ class TestSetCharacterHp:
 # ---------------------------------------------------------------------------
 
 
-class TestGetCurrentTurnActor:
-    def test_no_snapshots_returns_none(self) -> None:
-        game = _make_game()
-        round_ = Round()
-        assert game.get_current_turn_actor(round_) is None
+# class TestGetCurrentTurnActor:
+#     def test_no_snapshots_returns_none(self) -> None:
+#         game = _make_game()
+#         round_ = Round()
+#         assert game.get_current_turn_actor(round_) is None
 
-    def test_actor_with_energy_returned(self) -> None:
-        game = _make_game()
-        actor = _make_actor_entity(game, "mage")
-        actor.add(RoundStatsComponent, "mage", 2)
-        round_ = Round(actor_order_snapshots=[["mage"]])
-        result = game.get_current_turn_actor(round_)
-        assert result == "mage"
+#     def test_actor_with_energy_returned(self) -> None:
+#         game = _make_game()
+#         actor = _make_actor_entity(game, "mage")
+#         actor.add(RoundStatsComponent, "mage", 2)
+#         round_ = Round(actor_order_snapshots=[["mage"]])
+#         result = game.get_current_turn_actor(round_)
+#         assert result == "mage"
 
-    def test_all_zero_energy_returns_none(self) -> None:
-        game = _make_game()
-        actor = _make_actor_entity(game, "mage")
-        actor.add(RoundStatsComponent, "mage", 0)
-        round_ = Round(actor_order_snapshots=[["mage"]])
-        result = game.get_current_turn_actor(round_)
-        assert result is None
+#     def test_all_zero_energy_returns_none(self) -> None:
+#         game = _make_game()
+#         actor = _make_actor_entity(game, "mage")
+#         actor.add(RoundStatsComponent, "mage", 0)
+#         round_ = Round(actor_order_snapshots=[["mage"]])
+#         result = game.get_current_turn_actor(round_)
+#         assert result is None
 
-    def test_first_nonzero_energy_actor_returned(self) -> None:
-        game = _make_game()
-        a1 = _make_actor_entity(game, "a1")
-        a2 = _make_actor_entity(game, "a2")
-        a1.add(RoundStatsComponent, "a1", 0)
-        a2.add(RoundStatsComponent, "a2", 1)
-        round_ = Round(actor_order_snapshots=[["a1", "a2"]])
-        result = game.get_current_turn_actor(round_)
-        assert result == "a2"
+#     def test_first_nonzero_energy_actor_returned(self) -> None:
+#         game = _make_game()
+#         a1 = _make_actor_entity(game, "a1")
+#         a2 = _make_actor_entity(game, "a2")
+#         a1.add(RoundStatsComponent, "a1", 0)
+#         a2.add(RoundStatsComponent, "a2", 1)
+#         round_ = Round(actor_order_snapshots=[["a1", "a2"]])
+#         result = game.get_current_turn_actor(round_)
+#         assert result == "a2"

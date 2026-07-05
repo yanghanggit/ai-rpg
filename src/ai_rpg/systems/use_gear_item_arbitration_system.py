@@ -17,7 +17,7 @@ from ..game.entity_ops import (
     get_status_effects_by_phase,
     set_character_hp,
 )
-from ..game.zero_health_processor import process_zero_health_entities
+from ..game.combat_processor import process_zero_health_entities
 from ..models import (
     UseGearItemAction,
     CharacterStatsComponent,

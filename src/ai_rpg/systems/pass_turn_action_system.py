@@ -14,6 +14,7 @@ from ..models import (
 )
 from ..game.dbg_game import DBGGame
 from ..game.entity_ops import consume_energy, get_energy
+from ..game.combat_processor import get_current_turn_actor, advance_turn
 
 
 #######################################################################################################################################
@@ -80,9 +81,9 @@ class PassTurnActionSystem(ReactiveProcessor):
             pass_turn_action = entity.get(PassTurnAction)
             logger.debug(f"  [{pass_turn_action.name}] 选择过牌（跳过出牌机会）")
 
-            assert entity.name == self._game.get_current_turn_actor(last_round), (
+            assert entity.name == get_current_turn_actor(self._game, last_round), (
                 f"PassTurnActionSystem: 过牌角色 {entity.name} 不是当前 turn 的行动者！"
-                f" current_turn_actor={self._game.get_current_turn_actor(last_round)}"
+                f" current_turn_actor={get_current_turn_actor(self._game, last_round)}"
             )
 
             # 消耗过牌角色的全部行动能量，并按消耗次数追加 completed_actors（与出牌系统保持一致）
@@ -95,7 +96,7 @@ class PassTurnActionSystem(ReactiveProcessor):
                 last_round.completed_actors.append(pass_turn_action.name)
 
             # 结束当前角色的回合，进入下一角色的回合
-            self._game.advance_turn(last_round)
+            advance_turn(self._game, last_round)
 
             # 输出当前回合状态日志
             logger.debug(

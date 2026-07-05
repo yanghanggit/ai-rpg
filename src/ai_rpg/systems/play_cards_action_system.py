@@ -13,6 +13,7 @@ from ..models import (
 )
 from ..game.dbg_game import DBGGame
 from ..game.entity_ops import consume_energy
+from ..game.combat_processor import get_current_turn_actor, advance_turn
 
 
 #######################################################################################################################################
@@ -109,9 +110,9 @@ class PlayCardsActionSystem(ReactiveProcessor):
             )
 
             # 写一个assert 要求 entity.name 必须是当前回合的行动者
-            assert entity.name == self._game.get_current_turn_actor(last_round), (
+            assert entity.name == get_current_turn_actor(self._game, last_round), (
                 f"PlayCardsActionSystem: 出牌角色 {entity.name} 不是当前 turn 的行动者！"
-                f" current_turn_actor={self._game.get_current_turn_actor(last_round)}"
+                f" current_turn_actor={get_current_turn_actor(self._game, last_round)}"
             )
 
             # 将出牌角色写入本回合 completed_actors（允许同一角色多次出现）
@@ -121,7 +122,7 @@ class PlayCardsActionSystem(ReactiveProcessor):
             consume_energy(entity)
 
             # 更新当前行动者（能量消耗后重新计算）
-            self._game.advance_turn(last_round)
+            advance_turn(self._game, last_round)
 
             logger.debug(
                 f"  completed_actors: {last_round.completed_actors} / current_turn_actor_name={last_round.current_turn_actor_name}"

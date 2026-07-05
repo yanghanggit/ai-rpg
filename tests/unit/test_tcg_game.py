@@ -15,9 +15,6 @@ from src.ai_rpg.models import (
     PlayerComponent,
     RoundStatsComponent,
     StageComponent,
-    StatusEffectsComponent,
-    StatusEffect,
-    PhaseType,
     Round,
     CombatRoom,
     Dungeon,
@@ -246,76 +243,6 @@ class TestBuildFromBlueprint:
 
 
 # ---------------------------------------------------------------------------
-# TestSetupDungeonEntities
-# ---------------------------------------------------------------------------
-
-
-class TestSetupDungeonEntities:
-    def test_setup_creates_actor_entity(self) -> None:
-        game = _make_game()
-        dungeon = _make_dungeon_with_enemy("goblin", "cave_stage")
-        game.setup_dungeon_entities(dungeon)
-        assert game.get_actor_entity("goblin") is not None
-
-    def test_setup_creates_stage_entity(self) -> None:
-        game = _make_game()
-        dungeon = _make_dungeon_with_enemy("goblin", "cave_stage")
-        game.setup_dungeon_entities(dungeon)
-        assert game.get_stage_entity("cave_stage") is not None
-
-    def test_setup_marks_setup_entities_true(self) -> None:
-        game = _make_game()
-        dungeon = _make_dungeon_with_enemy("goblin", "cave_stage")
-        game.setup_dungeon_entities(dungeon)
-        assert dungeon.setup_entities is True
-
-    def test_setup_twice_is_skipped(self) -> None:
-        game = _make_game()
-        dungeon = _make_dungeon_with_enemy("goblin", "cave_stage")
-        game.setup_dungeon_entities(dungeon)
-        # Second call should be a no-op (skipped via early return)
-        game.setup_dungeon_entities(dungeon)
-        # Still only one entity for "goblin" — no assertion error
-        assert game.get_actor_entity("goblin") is not None
-
-    def test_npc_actor_type_raises(self) -> None:
-        ally = _make_actor_model("hero", ActorType.NPC)
-        stage = _make_stage_model("cave_stage", StageType.DUNGEON, actors=[ally])
-        room = CombatRoom(stage=stage)
-        dungeon = Dungeon(name="d", rooms=[room], ecology="")
-        game = _make_game()
-        with pytest.raises(AssertionError):
-            game.setup_dungeon_entities(dungeon)
-
-
-# ---------------------------------------------------------------------------
-# TestTeardownDungeonEntities
-# ---------------------------------------------------------------------------
-
-
-class TestTeardownDungeonEntities:
-    def test_teardown_removes_actor_entity(self) -> None:
-        game = _make_game()
-        dungeon = _make_dungeon_with_enemy("goblin", "cave_stage")
-        game.setup_dungeon_entities(dungeon)
-        game.teardown_dungeon_entities(dungeon)
-        assert game.get_actor_entity("goblin") is None
-
-    def test_teardown_removes_stage_entity(self) -> None:
-        game = _make_game()
-        dungeon = _make_dungeon_with_enemy("goblin", "cave_stage")
-        game.setup_dungeon_entities(dungeon)
-        game.teardown_dungeon_entities(dungeon)
-        assert game.get_stage_entity("cave_stage") is None
-
-    def test_teardown_without_setup_is_safe(self) -> None:
-        game = _make_game()
-        dungeon = _make_dungeon_with_enemy("goblin", "cave_stage")
-        # Nothing was set up; teardown should not raise
-        game.teardown_dungeon_entities(dungeon)
-
-
-# ---------------------------------------------------------------------------
 # TestClearRoundState
 # ---------------------------------------------------------------------------
 
@@ -359,31 +286,6 @@ class TestClearRoundState:
             assert entity is not None
             assert not entity.has(HandComponent)
             assert not entity.has(RoundStatsComponent)
-
-
-# ---------------------------------------------------------------------------
-# TestClearStatusEffects
-# ---------------------------------------------------------------------------
-
-
-class TestClearStatusEffects:
-    def test_status_effects_removed(self) -> None:
-        game = _make_game()
-        actor = _make_actor_entity(game, "witch")
-        effect = StatusEffect(
-            name="burn",
-            phase=PhaseType.ARBITRATION,
-            description="burns",
-            duration=2,
-        )
-        actor.add(StatusEffectsComponent, "witch", [effect])
-        game.clear_status_effects()
-        assert not actor.has(StatusEffectsComponent)
-
-    def test_no_actors_with_status_effects_is_safe(self) -> None:
-        game = _make_game()
-        _make_actor_entity(game, "guard")
-        game.clear_status_effects()
 
 
 # ---------------------------------------------------------------------------

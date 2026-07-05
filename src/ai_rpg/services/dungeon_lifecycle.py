@@ -11,15 +11,19 @@ from ..game.config import DUNGEONS_DIR
 from ..game.dbg_game import DBGGame
 from ..game.stage_transition import stage_transition
 from ..models import (
+    ActorType,
     Dungeon,
     DungeonComponent,
     Combat,
+    EquippedGearComponent,
     HumanMessage,
     PartyMemberComponent,
     PartyRosterComponent,
     HomeComponent,
     DeathComponent,
     GearItem,
+    StageType,
+    StatusEffectsComponent,
 )
 from ..entitas import Matcher, Entity
 
@@ -220,15 +224,20 @@ def _restore_gear_durability(dbg_game: DBGGame) -> None:
 
 ###################################################################################################################################################################
 def _clear_combat_state(dbg_game: DBGGame) -> None:
-    """清除一次战斗（Combat）结束后的临时状态。
+    """清除一次战斗（Combat）结束后的临时状态。"""
 
-    - 清除所有角色的手牌与回合动态属性（HandComponent / RoundStatsComponent）
-    - 清除所有角色的状态效果（StatusEffectsComponent）
-    - 移除所有角色的 EquippedGearComponent（物品始终保留在 InventoryComponent）
-    """
+    # 清除战斗回合状态
     dbg_game.clear_round_state()
-    dbg_game.clear_status_effects()
-    dbg_game.clear_equipped_gear()
+
+    # 清除所有角色的状态效果
+    for entity in dbg_game.get_group(Matcher(StatusEffectsComponent)).entities.copy():
+        logger.debug(f"clear status effects: {entity.name}")
+        entity.remove(StatusEffectsComponent)
+
+    # 清除所有角色的装备组件
+    for entity in dbg_game.get_group(Matcher(EquippedGearComponent)).entities.copy():
+        logger.debug(f"clear equipped gear: {entity.name}")
+        entity.remove(EquippedGearComponent)
 
 
 ###################################################################################################################################################################
@@ -289,7 +298,28 @@ def setup_dungeon(dbg_game: DBGGame, dungeon_name: str) -> tuple[bool, str]:
         return True, f"地下城实体已存在，跳过创建: {dungeon.name}"
 
     # 4. 创建地下城实体（内部将 setup_entities 置 True），索引保持 -1
-    dbg_game.setup_dungeon_entities(dungeon)
+    for actor in dungeon.actors:
+        actor_entity = dbg_game.get_actor_entity(actor.name)
+        assert actor_entity is None, "actor_entity is not None"
+        assert (
+            actor.character_sheet.type == ActorType.MONSTER
+        ), "actor_entity is not enemy type"
+
+    # 5. 创建关卡场景实体
+    for room in dungeon.rooms:
+        stage_entity = dbg_game.get_stage_entity(room.stage.name)
+        assert stage_entity is None, "stage_entity is not None"
+        assert (
+            room.stage.stage_profile.type == StageType.DUNGEON
+        ), "stage_entity is not dungeon type"
+
+    # 6. 创建地下城实体（敌人和关卡场景）
+    logger.debug(f"正在根据地下城模型创建实体: {dungeon.name}")
+    dbg_game.create_actor_entities(dungeon.actors)
+    dbg_game.create_stage_entities([room.stage for room in dungeon.rooms])
+
+    # 7. 标记实体已创建
+    dungeon.setup_entities = True
 
     logger.info(f"setup_dungeon 完成: {dungeon.name}")
     return True, f"地下城实体创建完成: {dungeon.name}"
@@ -474,13 +504,21 @@ def exit_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> None:
             f"[return_home] 传送后 {party_member_entity.name} 当前场景={after_stage_name!r}"
         )
 
-    # 5. 清理地下城数据
-    logger.debug(
-        f"[return_home] 开始 teardown_dungeon_entities: dungeon={dungeon.name!r}"
-    )
-    dbg_game.teardown_dungeon_entities(dungeon)
+    # 4. 清理地下城数据
+    logger.debug(f"[return_home] 开始清理地下城实体: dungeon={dungeon.name!r}")
+    for actor in dungeon.actors:
+        destroy_actor_entity = dbg_game.get_actor_entity(actor.name)
+        if destroy_actor_entity is not None:
+            dbg_game.destroy_entity(destroy_actor_entity)
+
+    for room in dungeon.rooms:
+        destroy_stage_entity = dbg_game.get_stage_entity(room.stage.name)
+        if destroy_stage_entity is not None:
+            dbg_game.destroy_entity(destroy_stage_entity)
+
+    # 5 重置地下城数据
     dbg_game._world.dungeon = Dungeon(name="", rooms=[], ecology="")
-    logger.debug("[return_home] teardown_dungeon_entities 完成，dungeon 已重置")
+    logger.debug("[return_home] 地下城实体清理完成，dungeon 已重置")
 
     # 6. 恢复所有远征队成员的战斗状态
     for party_member_entity in party_member_entities:

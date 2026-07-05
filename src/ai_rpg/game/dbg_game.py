@@ -148,10 +148,10 @@ class DBGGame(RPGGame):
         self._create_storage_entity(initial_items)
 
         ## 第2步，创建actor（含牌组与关键词组件挂载）
-        self._create_actor_entities(self._world.blueprint.actors)
+        self.create_actor_entities(self._world.blueprint.actors)
 
         ## 第3步，创建stage
-        self._create_stage_entities(self._world.blueprint.stages)
+        self.create_stage_entities(self._world.blueprint.stages)
 
         ## 第4步，分配玩家控制的actor
         assert self._player_session.name != "", "玩家名字不能为空"
@@ -280,7 +280,7 @@ class DBGGame(RPGGame):
         return world_entities
 
     ###############################################################################################################################################
-    def _create_actor_entities(self, actor_models: List[Actor]) -> List[Entity]:
+    def create_actor_entities(self, actor_models: List[Actor]) -> List[Entity]:
         """创建角色实体（玩家、NPC、敌人），初始化所有组件，并挂载 DBG 所需的牌组与关键词组件
 
         Args:
@@ -376,7 +376,7 @@ class DBGGame(RPGGame):
         return actor_entities
 
     ###############################################################################################################################################
-    def _create_stage_entities(self, stage_models: List[Stage]) -> List[Entity]:
+    def create_stage_entities(self, stage_models: List[Stage]) -> List[Entity]:
         """创建场景实体，并建立角色与场景的关联关系
 
         Args:
@@ -439,64 +439,6 @@ class DBGGame(RPGGame):
 
         return stage_entities
 
-    #######################################################################################################################################
-    def setup_dungeon_entities(self, dungeon_model: Dungeon) -> None:
-        """根据地下城模型初始化并创建相关游戏实体（敌人和场景）
-
-        Args:
-            dungeon_model: 地下城数据模型
-        """
-
-        if dungeon_model.setup_entities:
-            logger.warning(f"地下城实体已设置，跳过创建: {dungeon_model.name}")
-            return
-
-        # 加一步测试: 不可以存在！如果存在说明没有清空。
-        for actor in dungeon_model.actors:
-            actor_entity = self.get_actor_entity(actor.name)
-            assert actor_entity is None, "actor_entity is not None"
-            assert (
-                actor.character_sheet.type == ActorType.MONSTER
-            ), "actor_entity is not enemy type"
-
-        # 加一步测试: 不可以存在！如果存在说明没有清空。
-        for room in dungeon_model.rooms:
-            stage_entity = self.get_stage_entity(room.stage.name)
-            assert stage_entity is None, "stage_entity is not None"
-            assert (
-                room.stage.stage_profile.type == StageType.DUNGEON
-            ), "stage_entity is not dungeon type"
-
-        logger.debug(f"正在根据地下城模型创建实体: {dungeon_model.name}")
-
-        # 创建地下城的怪物（含牌组与关键词组件挂载）
-        self._create_actor_entities(dungeon_model.actors)
-
-        # 创建地下城的场景
-        self._create_stage_entities([room.stage for room in dungeon_model.rooms])
-
-        # 设置标记，避免重复创建。
-        dungeon_model.setup_entities = True
-
-    #######################################################################################################################################
-    def teardown_dungeon_entities(self, dungeon_model: Dungeon) -> None:
-        """根据地下城模型清理并销毁相关游戏实体（敌人和场景）
-
-        Args:
-            dungeon_model: 地下城数据模型
-        """
-        # 清空地下城的怪物。
-        for actor in dungeon_model.actors:
-            destroy_actor_entity = self.get_actor_entity(actor.name)
-            if destroy_actor_entity is not None:
-                self.destroy_entity(destroy_actor_entity)
-
-        # 清空地下城的场景
-        for room in dungeon_model.rooms:
-            destroy_stage_entity = self.get_stage_entity(room.stage.name)
-            if destroy_stage_entity is not None:
-                self.destroy_entity(destroy_stage_entity)
-
     ################################################################################################################
     def clear_round_state(self) -> None:
         """清除所有角色实体的每回合可变状态（手牌）"""
@@ -531,22 +473,6 @@ class DBGGame(RPGGame):
         for entity in self.get_group(Matcher(RoundStatsComponent)).entities.copy():
             logger.debug(f"clear round stats: {entity.name}")
             entity.remove(RoundStatsComponent)
-
-    ################################################################################################################
-    def clear_status_effects(self) -> None:
-        """清除所有角色实体的状态效果组件"""
-
-        actor_entities = self.get_group(Matcher(StatusEffectsComponent)).entities.copy()
-        for entity in actor_entities:
-            logger.debug(f"clear status effects: {entity.name}")
-            entity.remove(StatusEffectsComponent)
-
-    ################################################################################################################
-    def clear_equipped_gear(self) -> None:
-        """清除所有角色实体的装备组件。道具始终留在 InventoryComponent，无需归还。"""
-        for entity in self.get_group(Matcher(EquippedGearComponent)).entities.copy():
-            logger.debug(f"clear equipped gear: {entity.name}")
-            entity.remove(EquippedGearComponent)
 
     ###############################################################################################################################################
     def get_status_effects_by_phase(

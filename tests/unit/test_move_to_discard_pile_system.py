@@ -41,7 +41,7 @@ def _make_entity(context: Context, name: str) -> Entity:
     entity = context.create_entity()
     entity._name = name
     entity.add(ActorComponent, name, "sheet", "dungeon")
-    entity.add(HandComponent, name, [], 1)
+    entity.add(HandComponent, name, [])
     entity.add(DiscardPileComponent, name, [])
     return entity
 

@@ -151,7 +151,7 @@ class HandComponent(MutableComponent):
 
     name: str
     cards: List[Card]
-    round: int  # 当前回合数
+    # round: int  # 当前回合数
 
 
 ############################################################################################################

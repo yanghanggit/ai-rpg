@@ -151,7 +151,7 @@ class DeckDetailScreen(BaseGameScreen):
                 )
                 hand_comp = HandComponent(**hand_raw.data) if hand_raw else None
                 hand_suffix = (
-                    f" | 手牌 {len(hand_comp.cards)} 张（回合 {hand_comp.round}）"
+                    f" | 手牌 {len(hand_comp.cards)} 张"
                     if hand_comp is not None
                     else ""
                 )
@@ -198,9 +198,9 @@ class DeckDetailScreen(BaseGameScreen):
                     log.write(
                         "[dim]──────────────────────────────────────────────────[/]"
                     )
-                    log.write(
-                        f"  [bold green]▸ 当前手牌（HandComponent，回合 {hand_comp.round}）[/]"
-                    )
+                    # log.write(
+                    #     f"  [bold green]▸ 当前手牌（HandComponent，回合 {hand_comp.round}）[/]"
+                    # )
                     if hand_comp.cards:
                         write_hand_table(log, hand_comp.cards, entity.name)
                     else:

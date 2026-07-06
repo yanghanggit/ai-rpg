@@ -254,7 +254,7 @@ def _write_hand(log: RichLog, hand: Optional[HandComponent], entity_name: str) -
     if hand is None:
         log.write("  [dim](无手牌)[/]")
         return
-    log.write(f"  [bold]手牌（回合 {hand.round}，共 {len(hand.cards)} 张）：[/]")
+    log.write(f"  [bold]手牌 {len(hand.cards)} 张）：[/]")
     if hand.cards:
         write_hand_table(log, hand.cards, hand.name)
     else:

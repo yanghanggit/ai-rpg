@@ -33,7 +33,7 @@ def _make_actor_entity(context: Context, name: str) -> Entity:
     entity._name = name
     entity.add(ActorComponent, name, "test_sheet", "test_stage")
     entity.add(StatusEffectsComponent, name, [])
-    entity.add(HandComponent, name, [], 1)
+    entity.add(HandComponent, name, [])
     return entity
 
 

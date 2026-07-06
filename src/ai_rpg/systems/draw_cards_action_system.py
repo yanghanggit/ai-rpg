@@ -261,7 +261,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                     HandComponent,
                     entity.name,
                     entity_drawn_cards[entity.name],
-                    current_round_number,
+                    # current_round_number,
                 )
             logger.debug("所有实体无 DRAW 阶段效果，跳过 LLM 直接写入手牌")
             last_round.draw_completed = True
@@ -297,7 +297,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                     HandComponent,
                     entity.name,
                     entity_drawn_cards[entity.name],
-                    current_round_number,
+                    # current_round_number,
                 )
                 continue
 
@@ -376,9 +376,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 ),
             )
 
-            entity.replace(
-                HandComponent, entity.name, adjusted_cards, current_round_number
-            )
+            entity.replace(HandComponent, entity.name, adjusted_cards)
             logger.debug(
                 f"[{entity.name}] DRAW 效果调整后手牌 {len(adjusted_cards)} 张：{[c.name for c in adjusted_cards]}"
             )
@@ -388,9 +386,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 f"DrawCardsActionSystem 调整失败: {e}\n{chat_client.response_content}"
             )
             # 回退：使用原始抽取手牌，不阻塞回合
-            entity.replace(
-                HandComponent, entity.name, original_cards, current_round_number
-            )
+            entity.replace(HandComponent, entity.name, original_cards)
             self._game.add_human_message(
                 entity=entity,
                 human_message=HumanMessage(content=_FALLBACK_ADJUST_SYSTEM_MESSAGE),

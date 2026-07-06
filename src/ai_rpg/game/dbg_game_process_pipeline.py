@@ -56,7 +56,7 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     processors.add(AppearanceInitializationSystem(dbg_game))
 
     # 规划系统-场景描述系统-角色系统
-    processors.add(StageDescriptionSystem(game=dbg_game, enable_debug_cache=True))
+    processors.add(StageDescriptionSystem(game=dbg_game))
     processors.add(HomePlayerPlanSystem(dbg_game))
     processors.add(HomeNpcPlanSystem(dbg_game))
 
@@ -170,7 +170,7 @@ def create_combat_pipeline(
     processors.add(AppearanceInitializationSystem(dbg_game))
 
     # 战斗场景描述系统
-    processors.add(StageDescriptionSystem(game=dbg_game, enable_debug_cache=True))
+    processors.add(StageDescriptionSystem(game=dbg_game))
 
     # 战斗初始化系统（注入战场上下文、转换战斗状态为进行中、触发初始状态效果
     processors.add(CombatInitializationSystem(dbg_game))

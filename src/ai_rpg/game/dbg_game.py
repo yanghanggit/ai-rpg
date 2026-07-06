@@ -27,7 +27,6 @@ from ..models import (
     Dungeon,
     DungeonComponent,
     MonsterComponent,
-    PartyRosterComponent,
     HandComponent,
     HomeComponent,
     IdentityComponent,
@@ -159,18 +158,7 @@ class DBGGame(RPGGame):
             f"玩家: {self._player_session.name} 选择控制: {self._player_session.actor}"
         )
 
-        ## 第5步，添加 PartyRosterComponent 到玩家角色实体
-        assert not player_actor_entity.has(
-            PartyRosterComponent
-        ), "玩家角色实体不应该已经有 PartyRosterComponent"
-
-        # 添加 PartyRosterComponent 组件，并设置 name 属性为角色实体的名字，方便后续识别和管理玩家的远征队伍
-        player_actor_entity.replace(PartyRosterComponent, player_actor_entity.name, [])
-        logger.debug(
-            f"为玩家角色实体 {player_actor_entity.name} 添加 PartyRosterComponent"
-        )
-
-        ## 第7步，添加 InventoryComponent 到玩家角色实体
+        ## 第5步，添加 InventoryComponent 到玩家角色实体
         assert not player_actor_entity.has(
             InventoryComponent
         ), "玩家角色实体不应该已经有 InventoryComponent"

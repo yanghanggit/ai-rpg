@@ -85,23 +85,21 @@ def _select_party_members(dbg_game: DBGGame, dungeon: Dungeon) -> Set[Entity]:
         远征队成员实体集合
     """
 
-    # 1. 获取玩家实体并验证组件
+    # 1. 获取玩家实体
     player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
-    assert player_entity.has(
-        PartyRosterComponent
-    ), "玩家实体缺少 PartyRosterComponent 组件！"
-    party_roster_comp = player_entity.get(PartyRosterComponent)
-    assert party_roster_comp is not None, "玩家实体缺少 PartyRosterComponent 组件！"
 
-    # 2. 根据名单选择远征队成员，默认仅玩家自己参与
+    # 2. 默认仅玩家自己参与；若存在 PartyRosterComponent 则按名单加入盟友
     party_members: Set[Entity] = {player_entity}
     logger.info(f"玩家 {player_entity.name} 将参与远征")
-    for member_name in party_roster_comp.members:
-        member_entity = dbg_game.get_actor_entity(member_name)
-        assert member_entity is not None, f"远征队名单中的成员 {member_name!r} 不存在！"
-        party_members.add(member_entity)
-        logger.info(f"按名单将 {member_name} 加入远征队")
+    if player_entity.has(PartyRosterComponent):
+        for member_name in player_entity.get(PartyRosterComponent).members:
+            member_entity = dbg_game.get_actor_entity(member_name)
+            assert (
+                member_entity is not None
+            ), f"远征队名单中的成员 {member_name!r} 不存在！"
+            party_members.add(member_entity)
+            logger.info(f"按名单将 {member_name} 加入远征队")
 
     # 打印最终选定的远征队成员名单
     logger.info(
@@ -113,7 +111,6 @@ def _select_party_members(dbg_game: DBGGame, dungeon: Dungeon) -> Set[Entity]:
         party_member.replace(
             PartyMemberComponent,
             party_member.name,
-            dungeon.name,
         )
         logger.debug(f"将 {party_member.name} 加入远征队，目标地下城：{dungeon.name}")
 

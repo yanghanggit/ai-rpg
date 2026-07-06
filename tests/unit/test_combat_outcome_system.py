@@ -40,7 +40,7 @@ def _make_actor(
     entity._name = name
     entity.add(ActorComponent, name, "sheet", "stage")
     if is_ally:
-        entity.add(PartyMemberComponent, name, "test_dungeon")
+        entity.add(PartyMemberComponent, name)
     if is_monster:
         entity.add(MonsterComponent, name)
     if is_dead:

@@ -60,7 +60,7 @@ def _make_player_entity(
 def _make_party_entity(context: Context, name: str) -> Entity:
     entity = context.create_entity()
     entity._name = name
-    entity.add(PartyMemberComponent, name, "dungeon_x")
+    entity.add(PartyMemberComponent, name)
     return entity
 
 

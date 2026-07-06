@@ -209,18 +209,23 @@ def add_party_member(dbg_game: DBGGame, member_name: str) -> Tuple[bool, str]:
 
     player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
-    assert player_entity.has(PartyRosterComponent), "玩家实体缺少 PartyRosterComponent"
 
-    roster = player_entity.get(PartyRosterComponent)
-    if member_name in roster.members:
-        error_detail = f"{member_name} 已在远征队名单中"
-        logger.warning(f"添加远征队成员失败: {error_detail}")
-        return False, error_detail
+    # 检查远征队名单中是否已存在该成员
+    if player_entity.has(PartyRosterComponent):
+        existing_members = list(player_entity.get(PartyRosterComponent).members)
+        if member_name in existing_members:
+            error_detail = f"{member_name} 已在远征队名单中"
+            logger.warning(f"添加远征队成员失败: {error_detail}")
+            return False, error_detail
+        new_members = existing_members + [member_name]
+    else:
+        new_members = [member_name]
 
+    # 更新玩家实体的 PartyRosterComponent
     player_entity.replace(
         PartyRosterComponent,
         player_entity.name,
-        list(roster.members) + [member_name],
+        new_members,
     )
     logger.debug(f"将 {member_name} 加入远征队名单")
     return True, ""
@@ -245,7 +250,11 @@ def remove_party_member(dbg_game: DBGGame, member_name: str) -> Tuple[bool, str]
 
     player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
-    assert player_entity.has(PartyRosterComponent), "玩家实体缺少 PartyRosterComponent"
+
+    if not player_entity.has(PartyRosterComponent):
+        error_detail = f"{member_name} 不在远征队名单中"
+        logger.warning(f"移除远征队成员失败: {error_detail}")
+        return False, error_detail
 
     roster = player_entity.get(PartyRosterComponent)
     if member_name not in roster.members:
@@ -253,11 +262,18 @@ def remove_party_member(dbg_game: DBGGame, member_name: str) -> Tuple[bool, str]
         logger.warning(f"移除远征队成员失败: {error_detail}")
         return False, error_detail
 
-    player_entity.replace(
-        PartyRosterComponent,
-        player_entity.name,
-        [m for m in roster.members if m != member_name],
-    )
+    # 更新远征队名单，若移除后名单为空则移除 PartyRosterComponent
+    new_members = [m for m in roster.members if m != member_name]
+    if new_members:
+        player_entity.replace(
+            PartyRosterComponent,
+            player_entity.name,
+            new_members,
+        )
+    else:
+        player_entity.remove(PartyRosterComponent)
+        logger.debug(f"远征队名单为空，移除 PartyRosterComponent")
+
     logger.debug(f"将 {member_name} 从远征队名单移除")
     return True, ""
 
@@ -275,10 +291,9 @@ def get_party_roster(dbg_game: DBGGame) -> List[str]:
     """
     player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
-    if player_entity is None:
-        return []
+    # if player_entity is None:
+    #     return []
 
-    assert player_entity.has(PartyRosterComponent), "玩家实体缺少 PartyRosterComponent"
     if not player_entity.has(PartyRosterComponent):
         return []
 

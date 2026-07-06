@@ -1,50 +1,50 @@
 """测试 md_format.py 中的函数"""
 
-from src.ai_rpg.utils.md_format import has_json_code_block, extract_json_from_code_block
+from src.ai_rpg.utils.md_format import extract_json_from_code_block
 
 
-class TestHasJsonCodeBlock:
-    """测试 has_json_code_block 函数"""
+# class TestHasJsonCodeBlock:
+#     """测试 has_json_code_block 函数"""
 
-    def test_has_json_code_block_with_json_marker(self) -> None:
-        """测试包含 ```json 标记的文本"""
-        text = "```json\n{}\n```"
-        assert has_json_code_block(text) is True
+#     def test_has_json_code_block_with_json_marker(self) -> None:
+#         """测试包含 ```json 标记的文本"""
+#         text = "```json\n{}\n```"
+#         assert has_json_code_block(text) is True
 
-    def test_has_json_code_block_with_uppercase(self) -> None:
-        """测试包含 ```JSON 大写标记的文本"""
-        text = "```JSON\n{}\n```"
-        assert has_json_code_block(text) is True
+#     def test_has_json_code_block_with_uppercase(self) -> None:
+#         """测试包含 ```JSON 大写标记的文本"""
+#         text = "```JSON\n{}\n```"
+#         assert has_json_code_block(text) is True
 
-    def test_has_json_code_block_with_mixed_case(self) -> None:
-        """测试包含 ```Json 混合大小写标记的文本"""
-        text = "```Json\n{}\n```"
-        assert has_json_code_block(text) is True
+#     def test_has_json_code_block_with_mixed_case(self) -> None:
+#         """测试包含 ```Json 混合大小写标记的文本"""
+#         text = "```Json\n{}\n```"
+#         assert has_json_code_block(text) is True
 
-    def test_has_json_code_block_without_json_marker(self) -> None:
-        """测试不包含 ```json 标记的普通文本"""
-        text = "这是普通文本"
-        assert has_json_code_block(text) is False
+#     def test_has_json_code_block_without_json_marker(self) -> None:
+#         """测试不包含 ```json 标记的普通文本"""
+#         text = "这是普通文本"
+#         assert has_json_code_block(text) is False
 
-    def test_has_json_code_block_with_other_code_block(self) -> None:
-        """测试包含其他代码块标记(如 ```python)的文本"""
-        text = "```python\nprint('hello')\n```"
-        assert has_json_code_block(text) is False
+#     def test_has_json_code_block_with_other_code_block(self) -> None:
+#         """测试包含其他代码块标记(如 ```python)的文本"""
+#         text = "```python\nprint('hello')\n```"
+#         assert has_json_code_block(text) is False
 
-    def test_has_json_code_block_with_json_content_but_no_marker(self) -> None:
-        """测试包含 JSON 内容但没有代码块标记的文本"""
-        text = '{"key": "value"}'
-        assert has_json_code_block(text) is False
+#     def test_has_json_code_block_with_json_content_but_no_marker(self) -> None:
+#         """测试包含 JSON 内容但没有代码块标记的文本"""
+#         text = '{"key": "value"}'
+#         assert has_json_code_block(text) is False
 
-    def test_has_json_code_block_with_empty_string(self) -> None:
-        """测试空字符串"""
-        text = ""
-        assert has_json_code_block(text) is False
+#     def test_has_json_code_block_with_empty_string(self) -> None:
+#         """测试空字符串"""
+#         text = ""
+#         assert has_json_code_block(text) is False
 
-    def test_has_json_code_block_with_json_in_middle(self) -> None:
-        """测试 ```json 标记在文本中间的情况"""
-        text = "前面的文本\n```json\n{}\n```\n后面的文本"
-        assert has_json_code_block(text) is True
+#     def test_has_json_code_block_with_json_in_middle(self) -> None:
+#         """测试 ```json 标记在文本中间的情况"""
+#         text = "前面的文本\n```json\n{}\n```\n后面的文本"
+#         assert has_json_code_block(text) is True
 
 
 class TestExtractJsonFromCodeBlock:

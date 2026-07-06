@@ -1,6 +1,6 @@
 from typing import final, override, Dict, List
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..game.rpg_entity_manager import InteractionError
+from ..game.rpg_actor_interaction import InteractionError, validate_actor_interaction
 from ..models import HumanMessage, SpeakAction, SpeakEvent
 from ..game.dbg_game import DBGGame
 
@@ -54,7 +54,7 @@ class SpeakActionSystem(ReactiveProcessor):
         for target_name, speak_content in speak_action.target_messages.items():
 
             # 验证交互合法性
-            error = self._game.validate_actor_interaction(entity, target_name)
+            error = validate_actor_interaction(self._game, entity, target_name)
             if error != InteractionError.NONE:
                 # 目标不存在，添加提示信息
                 if error == InteractionError.TARGET_NOT_FOUND:

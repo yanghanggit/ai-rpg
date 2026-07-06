@@ -1,6 +1,6 @@
 from typing import final, override, Dict, List
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..game.rpg_entity_manager import InteractionError
+from ..game.rpg_actor_interaction import InteractionError, validate_actor_interaction
 from ..models import HumanMessage, WhisperAction, WhisperEvent
 from ..game.dbg_game import DBGGame
 
@@ -55,7 +55,7 @@ class WhisperActionSystem(ReactiveProcessor):
         for target_name, whisper_content in whisper_action.target_messages.items():
 
             # 判断可交互性
-            error = self._game.validate_actor_interaction(entity, target_name)
+            error = validate_actor_interaction(self._game, entity, target_name)
             if error != InteractionError.NONE:
 
                 # 处理交互错误

@@ -462,7 +462,7 @@ class TestExecute:
         is_initializing: bool = True,
         is_player_in_dungeon_stage: bool = True,
         is_ongoing: bool = True,
-    ) -> tuple[Entity, Entity]:
+    ) -> tuple[Entity, Entity, Set[Entity]]:
         """为 execute() 配置 mock_game 所需的所有返回值。返回 (player_entity, stage_entity)。"""
         stage_entity = context.create_entity()
         stage_entity._name = "测试场景"
@@ -478,9 +478,8 @@ class TestExecute:
         mock_game.is_player_in_dungeon_stage = is_player_in_dungeon_stage
         mock_game.get_player_entity.return_value = player_entity
         mock_game.resolve_stage_entity.return_value = stage_entity
-        mock_game.get_alive_actors_in_stage.return_value = {player_entity, actor_entity}
 
-        return player_entity, stage_entity
+        return player_entity, stage_entity, {player_entity, actor_entity}
 
     @pytest.mark.asyncio
     async def test_skips_when_not_initializing(
@@ -489,19 +488,26 @@ class TestExecute:
         """当 is_initializing 为 False 时，应直接返回，不调用任何下游方法。"""
         mock_game.current_dungeon.is_initializing = False
 
-        await system.execute()
+        with patch(
+            "src.ai_rpg.systems.combat_initialization_system.get_alive_actors_in_stage"
+        ) as mock_alive:
+            await system.execute()
 
         mock_game.get_player_entity.assert_not_called()
-        mock_game.get_alive_actors_in_stage.assert_not_called()
+        mock_alive.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_calls_transition_to_ongoing(
         self, context: Context, mock_game: MagicMock, system: CombatInitializationSystem
     ) -> None:
         """正常执行时应调用 transition_to_ongoing() 一次。"""
-        self._configure_mock_game_for_execute(mock_game, context)
+        _, _, actors = self._configure_mock_game_for_execute(mock_game, context)
 
         with (
+            patch(
+                "src.ai_rpg.systems.combat_initialization_system.get_alive_actors_in_stage",
+                return_value=actors,
+            ),
             patch.object(system, "_add_context_for_all_actors"),
             patch.object(system, "_initialize_actor_status_effects"),
         ):
@@ -514,9 +520,13 @@ class TestExecute:
         self, context: Context, mock_game: MagicMock, system: CombatInitializationSystem
     ) -> None:
         """execute() 应调用 _add_context_for_all_actors。"""
-        self._configure_mock_game_for_execute(mock_game, context)
+        _, _, actors = self._configure_mock_game_for_execute(mock_game, context)
 
         with (
+            patch(
+                "src.ai_rpg.systems.combat_initialization_system.get_alive_actors_in_stage",
+                return_value=actors,
+            ),
             patch.object(system, "_add_context_for_all_actors") as mock_inject,
             patch.object(system, "_initialize_actor_status_effects"),
         ):
@@ -529,9 +539,13 @@ class TestExecute:
         self, context: Context, mock_game: MagicMock, system: CombatInitializationSystem
     ) -> None:
         """execute() 应调用 _initialize_actor_status_effects。"""
-        self._configure_mock_game_for_execute(mock_game, context)
+        _, _, actors = self._configure_mock_game_for_execute(mock_game, context)
 
         with (
+            patch(
+                "src.ai_rpg.systems.combat_initialization_system.get_alive_actors_in_stage",
+                return_value=actors,
+            ),
             patch.object(system, "_add_context_for_all_actors"),
             patch.object(system, "_initialize_actor_piles"),
             patch.object(system, "_initialize_actor_status_effects") as mock_init,
@@ -545,9 +559,13 @@ class TestExecute:
         self, context: Context, mock_game: MagicMock, system: CombatInitializationSystem
     ) -> None:
         """execute() 应调用 _initialize_actor_piles，在上下文注入之前。"""
-        self._configure_mock_game_for_execute(mock_game, context)
+        _, _, actors = self._configure_mock_game_for_execute(mock_game, context)
 
         with (
+            patch(
+                "src.ai_rpg.systems.combat_initialization_system.get_alive_actors_in_stage",
+                return_value=actors,
+            ),
             patch.object(system, "_add_context_for_all_actors"),
             patch.object(system, "_initialize_actor_piles") as mock_pile_init,
             patch.object(system, "_initialize_actor_status_effects"),
@@ -563,12 +581,16 @@ class TestExecute:
         """战场上下文注入应在状态转换之前发生（顺序验证）。"""
         call_order: List[str] = []
 
-        self._configure_mock_game_for_execute(mock_game, context)
+        _, _, actors = self._configure_mock_game_for_execute(mock_game, context)
         mock_game.current_dungeon.transition_to_ongoing.side_effect = (
             lambda: call_order.append("transition")
         )
 
         with (
+            patch(
+                "src.ai_rpg.systems.combat_initialization_system.get_alive_actors_in_stage",
+                return_value=actors,
+            ),
             patch.object(
                 system,
                 "_add_context_for_all_actors",

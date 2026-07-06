@@ -462,11 +462,13 @@ def activate_update_appearance(
 
     # 确定目标实体：为空则默认玩家自身
     if target_name:
+
         target_entity = dbg_game.get_actor_entity(target_name)
         if target_entity is None:
             error_detail = f"目标角色 {target_name!r} 不存在"
             logger.error(f"激活外观更新失败: {error_detail}")
             return False, error_detail
+
         if not target_entity.has(AppearanceComponent):
             error_detail = f"目标角色 {target_name!r} 缺少 AppearanceComponent"
             logger.error(f"激活外观更新失败: {error_detail}")

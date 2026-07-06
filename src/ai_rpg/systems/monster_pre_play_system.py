@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
+from ..game.dbg_combat_processor import get_alive_actors_in_stage
 from ..game.dbg_entity_ops import compute_character_stats
 from ..models import (
     PlayCardsAction,
@@ -291,7 +292,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         monster_stats = compute_character_stats(entity)
 
         # 获取场上存活的远征队成员名称（对手，不传入血量）
-        alive_actors = self._game.get_alive_actors_in_stage(entity)
+        alive_actors = get_alive_actors_in_stage(self._game, entity)
         opponent_names: List[str] = [
             actor.name for actor in alive_actors if actor.has(PartyMemberComponent)
         ]
@@ -402,7 +403,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
                 return
 
             # 根据 target_type 解析出牌目标
-            alive_actors = self._game.get_alive_actors_in_stage(entity)
+            alive_actors = get_alive_actors_in_stage(self._game, entity)
             alive_names = {a.name for a in alive_actors}
 
             match selected_card.target_type:

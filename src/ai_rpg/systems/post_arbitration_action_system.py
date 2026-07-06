@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
+from ..game.dbg_combat_processor import get_alive_actors_in_stage
 from ..game.dbg_entity_ops import compute_character_stats
 from ..models import (
     Card,
@@ -242,7 +243,7 @@ class PostArbitrationActionSystem(ReactiveProcessor):
             action is not None
         ), "PostArbitrationActionSystem: 无法获取 PostArbitrationAction 组件！"
 
-        actor_entities = self._game.get_alive_actors_in_stage(stage_entity)
+        actor_entities = get_alive_actors_in_stage(self._game, stage_entity)
         if not actor_entities:
             logger.debug("PostArbitrationActionSystem: 无存活角色，跳过")
             return

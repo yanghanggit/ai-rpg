@@ -8,6 +8,7 @@ from typing import Final, List, Set, final, override
 from loguru import logger
 from ..entitas import Entity, ExecuteProcessor
 from ..game.dbg_game import DBGGame
+from ..game.dbg_combat_processor import get_alive_actors_in_stage
 from ..game.dbg_entity_ops import compute_character_stats, get_energy
 from ..models import (
     CharacterStatsComponent,
@@ -69,7 +70,7 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
         assert player_entity is not None, "player_entity is None"
 
         # 所有存活角色
-        actors_in_stage = self._game.get_alive_actors_in_stage(player_entity)
+        actors_in_stage = get_alive_actors_in_stage(self._game, player_entity)
         assert len(actors_in_stage) > 0, "actors_in_stage is empty"
         for actor in actors_in_stage:
             assert actor.has(

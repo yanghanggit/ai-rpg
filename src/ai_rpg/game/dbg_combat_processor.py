@@ -5,9 +5,9 @@
 作为模块级函数供 systems 层直接调用。
 """
 
-from typing import Optional
+from typing import Optional, Set
 from loguru import logger
-from ..entitas import Matcher
+from ..entitas import Entity, Matcher
 from ..models import (
     CharacterStatsComponent,
     DeathComponent,
@@ -83,6 +83,23 @@ def advance_turn(game: DBGGame, round: Round) -> None:
     logger.debug(
         f"advance_turn: current_turn_actor_name updated to {round.current_turn_actor_name}"
     )
+
+
+#################################################################################################################################################
+def get_alive_actors_in_stage(game: DBGGame, entity: Entity) -> Set[Entity]:
+    """获取指定场景上存活的 Actor 实体。
+
+    过滤掉带有 DeathComponent 的 Actor，只返回活着的 Actor。
+
+    Args:
+        game: DBG 游戏实例
+        entity: Stage 实体或 Actor 实体
+
+    Returns:
+        Set[Entity]: 该场景上存活的 Actor 实体集合（不包括已死亡的）
+    """
+    ret = game.get_actors_in_stage(entity)
+    return {actor for actor in ret if not actor.has(DeathComponent)}
 
 
 #################################################################################################################################################

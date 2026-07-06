@@ -6,7 +6,6 @@ from ..models import (
     ActorComponent,
     AppearanceComponent,
     ComponentSerialization,
-    DeathComponent,
     EntitySerialization,
     PlayerComponent,
     StorageComponent,
@@ -280,20 +279,13 @@ class RPGEntityManager(Context):
         return None
 
     ###############################################################################################################################################
-    def get_player_entity(self, player_name: Optional[str] = None) -> Optional[Entity]:
-        """获取玩家实体。
-
-        通过 PlayerComponent 查找玩家实体。系统中应该最多只有一个玩家实体。
-        如果不指定 player_name，返回系统中唯一的玩家实体（如果存在）。
-        如果指定 player_name，返回匹配该名称的玩家实体。
-
-        Args:
-            player_name: 玩家名称（PlayerComponent.player_name 字段）。
-                        如果为 None，返回系统中唯一的玩家实体。
+    def get_player_entity(self) -> Optional[Entity]:
+        """获取玩家实体
 
         Returns:
-            Optional[Entity]: 匹配的玩家实体，如果不存在则返回 None
+            Optional[Entity]: 玩家实体，如果不存在则返回 None
         """
+
         player_entities = self.get_group(
             Matcher(
                 all_of=[PlayerComponent],
@@ -301,17 +293,12 @@ class RPGEntityManager(Context):
         ).entities
 
         assert len(player_entities) <= 1, "There should be at most one player entity."
+        if len(player_entities) == 0:
+            logger.warning("No player entity found in the system.")
+            return None
 
         # 如果没有指定 player_name，返回唯一的玩家实体
-        if player_name is None:
-            return next(iter(player_entities), None)
-
-        # 如果指定了 player_name，通过名称匹配
-        for player_entity in player_entities:
-            player_comp = player_entity.get(PlayerComponent)
-            if player_comp.player_name == player_name:
-                return player_entity
-        return None
+        return next(iter(player_entities), None)
 
     ###############################################################################################################################################
     def get_storage_entity(self) -> Optional[Entity]:
@@ -367,21 +354,6 @@ class RPGEntityManager(Context):
             ret.add(actor_entity)
 
         return ret
-
-    ###############################################################################################################################################
-    def get_alive_actors_in_stage(self, entity: Entity) -> Set[Entity]:
-        """获取指定场景上存活的 Actor 实体。
-
-        过滤掉带有 DeathComponent 的 Actor，只返回活着的 Actor。
-
-        Args:
-            entity: Stage 实体或 Actor 实体
-
-        Returns:
-            Set[Entity]: 该场景上存活的 Actor 实体集合（不包括已死亡的）
-        """
-        ret = self.get_actors_in_stage(entity)
-        return {actor for actor in ret if not actor.has(DeathComponent)}
 
     ###############################################################################################################################################
     def get_actor_appearances_in_stage(self, entity: Entity) -> Dict[str, str]:

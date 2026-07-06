@@ -5,6 +5,7 @@ from loguru import logger
 from overrides import override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
+from ..game.dbg_combat_processor import get_alive_actors_in_stage
 from ..models import (
     HumanMessage,
     InventoryComponent,
@@ -140,7 +141,7 @@ class UseConsumableItemActionSystem(ReactiveProcessor):
 
         # 向场景内所有存活角色按阵营注入行动通知上下文
         round_number = len(current_rounds)
-        actor_entities = self._game.get_alive_actors_in_stage(entity)
+        actor_entities = get_alive_actors_in_stage(self._game, entity)
         for actor in actor_entities:
             if actor.has(PartyMemberComponent):
                 self._game.add_human_message(

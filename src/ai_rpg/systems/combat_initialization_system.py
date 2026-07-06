@@ -6,6 +6,7 @@ from ..models.messages import AIMessage, HumanMessage
 from loguru import logger
 from ..entitas import ExecuteProcessor, Entity
 from ..game.dbg_game import DBGGame
+from ..game.dbg_combat_processor import get_alive_actors_in_stage
 from ..game.dbg_entity_ops import (
     accumulate_status_effects_action,
     compute_character_stats,
@@ -140,7 +141,7 @@ class CombatInitializationSystem(ExecuteProcessor):
         stage_description_comp = current_stage_entity.get(StageDescriptionComponent)
 
         # 参与战斗的角色实体列表
-        actor_entities = self._game.get_alive_actors_in_stage(player_entity)
+        actor_entities = get_alive_actors_in_stage(self._game, player_entity)
         assert len(actor_entities) > 0, "不可能出现没人参与战斗的情况！"
 
         # 为所有参战角色初始化战斗临时牌堆（DrawPile / DiscardPile / ExhaustPile）

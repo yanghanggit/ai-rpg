@@ -4,6 +4,7 @@ from typing import Final, final, override
 from loguru import logger
 from ..entitas import ExecuteProcessor
 from ..game.dbg_game import DBGGame
+from ..game.dbg_combat_processor import get_alive_actors_in_stage
 from ..game.dbg_entity_ops import get_energy
 
 
@@ -37,7 +38,7 @@ class CombatRoundCompletionSystem(ExecuteProcessor):
         assert player_entity is not None, "player_entity is None"
         # if player_entity is None:
         #     return
-        actors_in_stage = self._game.get_alive_actors_in_stage(player_entity)
+        actors_in_stage = get_alive_actors_in_stage(self._game, player_entity)
 
         # 判断：所有存活角色均无剩余行动力
         all_energy_exhausted = all(get_energy(actor) <= 0 for actor in actors_in_stage)

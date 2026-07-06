@@ -1,7 +1,7 @@
 """UseConsumableItemActionSystem 单元测试。"""
 
 from typing import List
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -262,9 +262,12 @@ class TestReact:
         item = _make_consumable("治愈药水", count=2)
         player = _make_player_entity(context, "player", [item], item, [])
         party_member = _make_party_entity(context, "队友A")
-        mock_game.get_alive_actors_in_stage.return_value = {party_member}
 
-        await system.react([player])
+        with patch(
+            "src.ai_rpg.systems.use_consumable_item_action_system.get_alive_actors_in_stage",
+            return_value={party_member},
+        ):
+            await system.react([player])
 
         calls = mock_game.add_human_message.call_args_list
         assert len(calls) == 1
@@ -284,9 +287,12 @@ class TestReact:
         item = _make_consumable("毒雾瓶", count=1)
         player = _make_player_entity(context, "player", [item], item, ["怪物A"])
         monster = _make_monster_entity(context, "怪物A")
-        mock_game.get_alive_actors_in_stage.return_value = {monster}
 
-        await system.react([player])
+        with patch(
+            "src.ai_rpg.systems.use_consumable_item_action_system.get_alive_actors_in_stage",
+            return_value={monster},
+        ):
+            await system.react([player])
 
         calls = mock_game.add_human_message.call_args_list
         assert len(calls) == 1
@@ -308,9 +314,12 @@ class TestReact:
         player = _make_player_entity(context, "player", [item], item, ["队友A"])
         party_member = _make_party_entity(context, "队友A")
         monster = _make_monster_entity(context, "怪物X")
-        mock_game.get_alive_actors_in_stage.return_value = {party_member, monster}
 
-        await system.react([player])
+        with patch(
+            "src.ai_rpg.systems.use_consumable_item_action_system.get_alive_actors_in_stage",
+            return_value={party_member, monster},
+        ):
+            await system.react([player])
 
         calls = mock_game.add_human_message.call_args_list
         assert len(calls) == 2
@@ -331,9 +340,12 @@ class TestReact:
 
         item = _make_consumable("治愈药水", count=2)
         player = _make_player_entity(context, "player", [item], item, [])
-        mock_game.get_alive_actors_in_stage.return_value = set()
 
-        await system.react([player])
+        with patch(
+            "src.ai_rpg.systems.use_consumable_item_action_system.get_alive_actors_in_stage",
+            return_value=set(),
+        ):
+            await system.react([player])
 
         inv = player.get(InventoryComponent)
         assert inv.items[0].count == 1
@@ -349,9 +361,12 @@ class TestReact:
 
         item = _make_consumable("最后一瓶药", count=1)
         player = _make_player_entity(context, "player", [item], item, [])
-        mock_game.get_alive_actors_in_stage.return_value = set()
 
-        await system.react([player])
+        with patch(
+            "src.ai_rpg.systems.use_consumable_item_action_system.get_alive_actors_in_stage",
+            return_value=set(),
+        ):
+            await system.react([player])
 
         inv = player.get(InventoryComponent)
         assert len(inv.items) == 0
@@ -368,9 +383,12 @@ class TestReact:
         item = _make_consumable("治愈药水", count=1)
         player = _make_player_entity(context, "player", [item], item, [])
         party_member = _make_party_entity(context, "队友")
-        mock_game.get_alive_actors_in_stage.return_value = {party_member}
 
-        await system.react([player])
+        with patch(
+            "src.ai_rpg.systems.use_consumable_item_action_system.get_alive_actors_in_stage",
+            return_value={party_member},
+        ):
+            await system.react([player])
 
         content = mock_game.add_human_message.call_args.kwargs["human_message"].content
         assert "第 5 回合" in content

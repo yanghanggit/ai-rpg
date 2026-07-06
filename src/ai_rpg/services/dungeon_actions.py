@@ -9,6 +9,7 @@ import random
 from typing import List, Tuple, Optional
 from loguru import logger
 from ..game.dbg_game import DBGGame
+from ..game.dbg_combat_processor import get_alive_actors_in_stage
 from ..models import (
     DrawCardsAction,
     HandComponent,
@@ -49,7 +50,7 @@ def _get_alive_party_members_in_stage(
     Returns:
         存活的远征队成员实体列表
     """
-    actor_entities = dbg_game.get_alive_actors_in_stage(anchor_entity)
+    actor_entities = get_alive_actors_in_stage(dbg_game, anchor_entity)
     return [entity for entity in actor_entities if entity.has(PartyMemberComponent)]
 
 
@@ -69,7 +70,7 @@ def _get_alive_monsters_in_stage(
     Returns:
         存活的怪物实体列表
     """
-    actor_entities = dbg_game.get_alive_actors_in_stage(anchor_entity)
+    actor_entities = get_alive_actors_in_stage(dbg_game, anchor_entity)
     return [entity for entity in actor_entities if entity.has(MonsterComponent)]
 
 

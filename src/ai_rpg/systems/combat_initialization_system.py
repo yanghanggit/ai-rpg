@@ -6,8 +6,10 @@ from ..models.messages import AIMessage, HumanMessage
 from loguru import logger
 from ..entitas import ExecuteProcessor, Entity
 from ..game.dbg_game import DBGGame
-from ..game.dbg_combat_processor import get_alive_actors_in_stage
-from ..game.rpg_actor_appearances import get_actor_appearances_in_stage
+from ..game.dbg_combat_processor import (
+    get_alive_actors_in_stage,
+    determine_camp_relationship,
+)
 from ..game.dbg_entity_ops import (
     accumulate_status_effects_action,
     compute_character_stats,
@@ -21,8 +23,9 @@ from ..models import (
     DrawPileComponent,
     DiscardPileComponent,
     ExhaustPileComponent,
+    CharacterStats,
+    AppearanceComponent,
 )
-from ..models import CharacterStats
 
 
 ###################################################################################################################################################################
@@ -30,7 +33,6 @@ from ..models import CharacterStats
 class OtherActorInfo:
     """其他参战角色的信息"""
 
-    actor_name: str  # 当前角色名称
     other_name: str  # 其他角色名称
     appearance: str  # 其他角色的外观描述
     camp: str  # 阵营关系（友方/敌方）
@@ -145,10 +147,10 @@ class CombatInitializationSystem(ExecuteProcessor):
         assert len(actor_entities) > 0, "不可能出现没人参与战斗的情况！"
 
         # 为所有参战角色初始化战斗临时牌堆（DrawPile / DiscardPile / ExhaustPile）
-        self._initialize_actor_piles(actor_entities)
+        self._initialize_piles(actor_entities)
 
         # 为每个角色注入战场上下文（无 LLM 调用）
-        self._add_context_for_all_actors(
+        self._add_context(
             actor_entities=actor_entities,
             stage_name=current_stage_entity.name,
             stage_description=stage_description_comp.narrative,
@@ -161,15 +163,15 @@ class CombatInitializationSystem(ExecuteProcessor):
         ), "战斗状态转换失败，当前状态非 ONGOING！"
 
         # 为所有参战角色添加 GenerateDeckAction，触发初始牌库生成
-        self._trigger_actor_deck_generation(actor_entities)
+        self._trigger_deck_generation(actor_entities)
 
         # 为所有参战角色添加 AddStatusEffectsAction，触发初始状态效果生成
-        self._initialize_actor_status_effects(actor_entities)
+        self._initialize_status_effects(actor_entities)
 
         # 第一回合由 CombatRoundTransitionSystem 在本 pipeline tick 末创建（同帧创建）
 
     ###################################################################################################################################################################
-    def _initialize_actor_piles(self, actor_entities: Set[Entity]) -> None:
+    def _initialize_piles(self, actor_entities: Set[Entity]) -> None:
         """为所有参战角色初始化战斗临时牌堆：DrawPile / DiscardPile / ExhaustPile。"""
         for actor_entity in actor_entities:
             assert not actor_entity.has(
@@ -183,7 +185,7 @@ class CombatInitializationSystem(ExecuteProcessor):
             )
 
     ###################################################################################################################################################################
-    def _trigger_actor_deck_generation(self, actor_entities: Set[Entity]) -> None:
+    def _trigger_deck_generation(self, actor_entities: Set[Entity]) -> None:
         """为所有参战角色挂载 GenerateDeckAction，触发 DeckGenerationSystem 生成初始牌库。"""
         for actor_entity in actor_entities:
             if actor_entity.has(PartyMemberComponent):
@@ -202,7 +204,7 @@ class CombatInitializationSystem(ExecuteProcessor):
             )
 
     ###################################################################################################################################################################
-    def _initialize_actor_status_effects(self, actor_entities: Set[Entity]) -> None:
+    def _initialize_status_effects(self, actor_entities: Set[Entity]) -> None:
         """为所有参战角色初始化状态效果：注入空 StatusEffectsComponent 并挂载 AddStatusEffectsAction。"""
         for actor_entity in actor_entities:
 
@@ -228,22 +230,38 @@ class CombatInitializationSystem(ExecuteProcessor):
             )
 
     ###################################################################################################################################################################
-    def _add_context_for_all_actors(
+    def _add_context(
         self,
         actor_entities: Set[Entity],
         stage_name: str,
         stage_description: str,
     ) -> None:
         """为所有参战角色注入战场上下文（human message + 模拟 AI 回应），无 LLM 调用。"""
+
         for actor_entity in actor_entities:
+
+            # 生成其他角色信息（包含外观和阵营）
+            copy_entities = actor_entities.copy()
+            copy_entities.remove(actor_entity)
+
+            # 生成其他角色信息列表
+            other_actors_info: List[OtherActorInfo] = []
+            for other_entity in copy_entities:
+
+                appearance_comp = other_entity.get(AppearanceComponent)
+                assert appearance_comp is not None, "每个参战角色都必须有外观组件！"
+
+                # 生成其他角色信息
+                other_actors_info.append(
+                    OtherActorInfo(
+                        other_name=other_entity.name,
+                        appearance=appearance_comp.appearance,
+                        camp=determine_camp_relationship(actor_entity, other_entity),
+                    )
+                )
 
             # 计算角色有效属性（含装备加成）
             actor_stats = compute_character_stats(actor_entity)
-
-            # 生成其他角色信息（包含外观和阵营）
-            other_actors_info = self._generate_other_actors_info(
-                actor_entity, actor_entities
-            )
 
             # 生成战场上下文提示词
             combat_init_prompt = _generate_combat_init_prompt(
@@ -269,48 +287,6 @@ class CombatInitializationSystem(ExecuteProcessor):
             )
 
             logger.debug(f"[{actor_entity.name}] 战斗上下文注入完成（无 LLM 推理）")
-
-    ###################################################################################################################################################################
-    def _determine_camp_relationship(
-        self, actor_entity: Entity, other_entity: Entity
-    ) -> str:
-        """返回两角色间的阵营关系：'友方' 或 '敌方'。"""
-        actor_is_ally = actor_entity.has(PartyMemberComponent)
-        actor_is_enemy = actor_entity.has(MonsterComponent)
-        other_is_ally = other_entity.has(PartyMemberComponent)
-        other_is_enemy = other_entity.has(MonsterComponent)
-
-        # 同是友方或同是敌方
-        if (actor_is_ally and other_is_ally) or (actor_is_enemy and other_is_enemy):
-            return "友方"
-
-        return "敌方"
-
-    ###################################################################################################################################################################
-    def _generate_other_actors_info(
-        self, actor_entity: Entity, actor_entities: Set[Entity]
-    ) -> List[OtherActorInfo]:
-        """生成除自身外所有参战角色的信息列表（名称、外观、阵营）。"""
-        copy_entities = actor_entities.copy()
-        copy_entities.remove(actor_entity)
-
-        appearances = get_actor_appearances_in_stage(self._game, actor_entity)
-        other_actors_info_list: List[OtherActorInfo] = []
-
-        for other_entity in copy_entities:
-            appearance = appearances.get(other_entity.name)
-            assert appearance is not None, "每个参战角色都必须有外观组件！"
-
-            other_actor_info = OtherActorInfo(
-                actor_name=actor_entity.name,
-                other_name=other_entity.name,
-                appearance=appearance,
-                camp=self._determine_camp_relationship(actor_entity, other_entity),
-            )
-
-            other_actors_info_list.append(other_actor_info)
-
-        return other_actors_info_list
 
 
 ###################################################################################################################################################################

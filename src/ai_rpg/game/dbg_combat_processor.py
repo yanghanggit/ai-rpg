@@ -13,6 +13,8 @@ from ..models import (
     DeathComponent,
     HumanMessage,
     Round,
+    PartyMemberComponent,
+    MonsterComponent,
 )
 from .dbg_game import DBGGame
 from .dbg_entity_ops import compute_character_stats, get_energy
@@ -103,3 +105,17 @@ def get_alive_actors_in_stage(game: DBGGame, entity: Entity) -> Set[Entity]:
 
 
 #################################################################################################################################################
+
+
+def determine_camp_relationship(actor_entity: Entity, other_entity: Entity) -> str:
+    """返回两角色间的阵营关系：'友方' 或 '敌方'。"""
+    actor_is_ally = actor_entity.has(PartyMemberComponent)
+    actor_is_enemy = actor_entity.has(MonsterComponent)
+    other_is_ally = other_entity.has(PartyMemberComponent)
+    other_is_enemy = other_entity.has(MonsterComponent)
+
+    # 同是友方或同是敌方
+    if (actor_is_ally and other_is_ally) or (actor_is_enemy and other_is_enemy):
+        return "友方"
+
+    return "敌方"

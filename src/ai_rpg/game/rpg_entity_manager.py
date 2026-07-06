@@ -3,7 +3,6 @@ from ..entitas import Context, Entity, Matcher
 from ..models import (
     COMPONENT_TYPES,
     ActorComponent,
-    AppearanceComponent,
     ComponentSerialization,
     EntitySerialization,
     PlayerComponent,
@@ -336,26 +335,6 @@ class RPGEntityManager(Context):
 
             ret.add(actor_entity)
 
-        return ret
-
-    ###############################################################################################################################################
-    def get_actor_appearances_in_stage(self, entity: Entity) -> Dict[str, str]:
-        """获取场景上存活 Actor 的外观信息映射。
-
-        仅返回存活且具有 AppearanceComponent 的 Actor 的外观信息。
-        常用于生成场景描述或增强消息内容。
-
-        Args:
-            entity: Stage 实体或 Actor 实体
-
-        Returns:
-            Dict[str, str]: 角色名称到外观描述的映射 {角色名: 外观描述}
-        """
-        ret: Dict[str, str] = {}
-        for actor in self.get_actors_in_stage(entity):
-            if actor.has(AppearanceComponent):
-                final_appearance = actor.get(AppearanceComponent)
-                ret.setdefault(final_appearance.name, final_appearance.appearance)
         return ret
 
     ###############################################################################################################################################

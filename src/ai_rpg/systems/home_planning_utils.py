@@ -10,6 +10,7 @@ from ..models import (
     HomeComponent,
 )
 from ..game import DBGGame
+from ..game.rpg_actor_appearances import get_actor_appearances_in_stage
 from ..entitas import Entity, Matcher
 
 # 玩家「主动行动」对应的 Action 组件类型集合。
@@ -250,7 +251,7 @@ def get_other_actors_appearances(
     Returns:
         其他角色的外观描述（角色名 -> 外观）
     """
-    appearances = game.get_actor_appearances_in_stage(current_stage)
+    appearances = get_actor_appearances_in_stage(game, current_stage)
     appearances.pop(actor_entity.name, None)
     return appearances
 

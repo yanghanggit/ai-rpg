@@ -7,6 +7,7 @@ from loguru import logger
 from ..entitas import ExecuteProcessor, Entity
 from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import get_alive_actors_in_stage
+from ..game.rpg_actor_appearances import get_actor_appearances_in_stage
 from ..game.dbg_entity_ops import (
     accumulate_status_effects_action,
     compute_character_stats,
@@ -16,7 +17,6 @@ from ..models import (
     StageDescriptionComponent,
     PartyMemberComponent,
     MonsterComponent,
-    AppearanceComponent,
     StatusEffectsComponent,
     DrawPileComponent,
     DiscardPileComponent,
@@ -291,23 +291,20 @@ class CombatInitializationSystem(ExecuteProcessor):
         self, actor_entity: Entity, actor_entities: Set[Entity]
     ) -> List[OtherActorInfo]:
         """生成除自身外所有参战角色的信息列表（名称、外观、阵营）。"""
-        # copy生成其他参战角色的列表，但是移除自己
         copy_entities = actor_entities.copy()
         copy_entities.remove(actor_entity)
 
-        # 生成返回数据列表！
+        appearances = get_actor_appearances_in_stage(self._game, actor_entity)
         other_actors_info_list: List[OtherActorInfo] = []
 
-        # 生成数据列表
         for other_entity in copy_entities:
-
-            appearance_comp = other_entity.get(AppearanceComponent)
-            assert appearance_comp is not None, "每个参战角色都必须有外观组件！"
+            appearance = appearances.get(other_entity.name)
+            assert appearance is not None, "每个参战角色都必须有外观组件！"
 
             other_actor_info = OtherActorInfo(
                 actor_name=actor_entity.name,
                 other_name=other_entity.name,
-                appearance=appearance_comp.appearance,
+                appearance=appearance,
                 camp=self._determine_camp_relationship(actor_entity, other_entity),
             )
 

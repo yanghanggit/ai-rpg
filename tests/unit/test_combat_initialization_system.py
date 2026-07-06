@@ -226,13 +226,14 @@ class TestGenerateOtherActorsInfo:
         assert result == []
 
     def test_two_actors_returns_one_entry(
-        self, context: Context, system: CombatInitializationSystem
+        self, context: Context, mock_game: MagicMock, system: CombatInitializationSystem
     ) -> None:
         """两个角色时，对方信息应出现在返回列表中。"""
         ally = _make_actor_entity(context, "英雄", is_ally=True, appearance="银甲骑士")
         monster = _make_actor_entity(
             context, "哥布林", is_monster=True, appearance="绿色皮肤"
         )
+        mock_game.get_actors_in_stage.return_value = {ally, monster}
         result = system._generate_other_actors_info(ally, {ally, monster})
         assert len(result) == 1
         entry = result[0]
@@ -241,21 +242,23 @@ class TestGenerateOtherActorsInfo:
         assert entry.camp == "敌方"
 
     def test_entry_actor_name_matches_self(
-        self, context: Context, system: CombatInitializationSystem
+        self, context: Context, mock_game: MagicMock, system: CombatInitializationSystem
     ) -> None:
         """返回条目中的 actor_name 应为当前角色自身。"""
         ally = _make_actor_entity(context, "英雄", is_ally=True)
         monster = _make_actor_entity(context, "哥布林", is_monster=True)
+        mock_game.get_actors_in_stage.return_value = {ally, monster}
         result = system._generate_other_actors_info(ally, {ally, monster})
         assert result[0].actor_name == "英雄"
 
     def test_three_actors_returns_two_entries(
-        self, context: Context, system: CombatInitializationSystem
+        self, context: Context, mock_game: MagicMock, system: CombatInitializationSystem
     ) -> None:
         """三个角色时，当前角色应获得两条其他角色信息。"""
         hero = _make_actor_entity(context, "英雄", is_ally=True)
         goblin = _make_actor_entity(context, "哥布林", is_monster=True)
         troll = _make_actor_entity(context, "巨魔", is_monster=True)
+        mock_game.get_actors_in_stage.return_value = {hero, goblin, troll}
         result = system._generate_other_actors_info(hero, {hero, goblin, troll})
         assert len(result) == 2
         other_names = {r.other_name for r in result}
@@ -381,7 +384,7 @@ class TestAddContextForAllActors:
         context: Context,
         actors: Set[Entity],
     ) -> None:
-        pass
+        mock_game.get_actors_in_stage.return_value = actors
 
     def test_add_human_message_called_once_per_actor(
         self, context: Context, mock_game: MagicMock, system: CombatInitializationSystem

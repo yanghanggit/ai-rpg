@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.dbg_game import DBGGame
+from ..game.rpg_actor_appearances import get_actor_appearances_in_stage
 from ..models import (
     StageDescriptionComponent,
     StageComponent,
@@ -156,8 +157,8 @@ class StageDescriptionSystem(ExecuteProcessor):
         ).entities.copy()
 
         for stage_entity in stage_entities:
-            actor_appearances_in_stage: Dict[str, str] = (
-                self._game.get_actor_appearances_in_stage(stage_entity)
+            actor_appearances_in_stage: Dict[str, str] = get_actor_appearances_in_stage(
+                self._game, stage_entity
             )
             full_prompt = _build_stage_description_prompt(actor_appearances_in_stage)
             compressed_prompt = (

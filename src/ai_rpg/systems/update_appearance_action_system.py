@@ -92,6 +92,8 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
         )
 
         # 广播外观更新事件，通知前端或其他系统角色外观已恢复为基础体型
+        stage_entity = self._game.resolve_stage_entity(entity)
+        assert stage_entity is not None, "actor无所在场景是有问题的"
         self._game.broadcast_to_stage(
             entity,
             AppearanceUpdateEvent(
@@ -99,6 +101,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
                     entity.name, appearance_comp.base_body
                 ),
                 actor=entity.name,
+                stage=stage_entity.name,
                 appearance=appearance_comp.base_body,
             ),
         )
@@ -168,6 +171,8 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
         logger.debug(f"角色 {entity.name} 外观已更新，当前时装: {costume.name!r}")
 
         # 广播外观更新事件，通知前端或其他系统角色外观已更新
+        stage_entity = self._game.resolve_stage_entity(entity)
+        assert stage_entity is not None, "actor无所在场景是有问题的"
         self._game.broadcast_to_stage(
             entity,
             AppearanceUpdateEvent(
@@ -175,6 +180,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
                     entity.name, costume.name, new_appearance
                 ),
                 actor=entity.name,
+                stage=stage_entity.name,
                 appearance=new_appearance,
             ),
         )

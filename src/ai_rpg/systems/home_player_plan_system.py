@@ -141,6 +141,7 @@ class HomePlayerPlanSystem(ReactiveProcessor):
                         player_entity.name, mock_response.mind
                     ),
                     actor=player_entity.name,
+                    stage=current_stage.name,
                     content=mock_response.mind,
                 ),
             )

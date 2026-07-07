@@ -51,6 +51,8 @@ class SpeakActionSystem(ReactiveProcessor):
         """处理实体的对话动作。"""
         # 处理对话动作
         speak_action = entity.get(SpeakAction)
+        stage_entity = self._game.resolve_stage_entity(entity)
+        assert stage_entity is not None, "actor无所在场景是有问题的"
         for target_name, speak_content in speak_action.target_messages.items():
 
             # 验证交互合法性
@@ -82,6 +84,7 @@ class SpeakActionSystem(ReactiveProcessor):
                         speak_action.name, target_name, speak_content
                     ),
                     actor=speak_action.name,
+                    stage=stage_entity.name,
                     target=target_name,
                     content=speak_content,
                 ),

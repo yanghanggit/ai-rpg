@@ -173,6 +173,7 @@ class HomeNpcPlanSystem(ReactiveProcessor):
             MindEvent(
                 message=format_mind_notification(npc_entity.name, passive_mind),
                 actor=npc_entity.name,
+                stage=current_stage.name,
                 content=passive_mind,
             ),
         )
@@ -222,6 +223,8 @@ class HomeNpcPlanSystem(ReactiveProcessor):
             # 添加内心独白: 上下文！，这里做直接添加与通知处理
             if validated_response.mind != "":
 
+                stage_entity = self._game.resolve_stage_entity(actor_entity)
+                assert stage_entity is not None, "actor无所在场景是有问题的"
                 self._game.notify_entities(
                     set({actor_entity}),
                     MindEvent(
@@ -229,6 +232,7 @@ class HomeNpcPlanSystem(ReactiveProcessor):
                             actor_entity.name, validated_response.mind
                         ),
                         actor=actor_entity.name,
+                        stage=stage_entity.name,
                         content=validated_response.mind,
                     ),
                 )

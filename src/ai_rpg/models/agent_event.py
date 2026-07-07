@@ -3,7 +3,7 @@
 from enum import IntEnum, unique
 from typing import Annotated, Literal, Union
 from overrides import final
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 @final
@@ -28,6 +28,9 @@ class EventType(IntEnum):
 class AgentEvent(BaseModel):
     """事件基类"""
 
+    # 禁止额外字段：确保具体子类的 payload 无法被误判为基类事件（详见 AnyAgentEvent 处的说明）
+    model_config = ConfigDict(extra="forbid")
+
     type: int = EventType.NONE
     message: str
 
@@ -40,6 +43,7 @@ class SpeakEvent(AgentEvent):
 
     type: Literal[EventType.SPEAK] = EventType.SPEAK
     actor: str
+    stage: str
     target: str
     content: str
 
@@ -52,6 +56,7 @@ class WhisperEvent(AgentEvent):
 
     type: Literal[EventType.WHISPER] = EventType.WHISPER
     actor: str
+    stage: str
     target: str
     content: str
 
@@ -76,6 +81,7 @@ class MindEvent(AgentEvent):
 
     type: Literal[EventType.MIND] = EventType.MIND
     actor: str
+    stage: str
     content: str
 
 
@@ -86,6 +92,7 @@ class QueryEvent(AgentEvent):
 
     type: Literal[EventType.QUERY] = EventType.QUERY
     actor: str
+    stage: str
     question: str
 
 
@@ -96,8 +103,8 @@ class TransStageEvent(AgentEvent):
 
     type: Literal[EventType.TRANS_STAGE] = EventType.TRANS_STAGE
     actor: str
-    from_stage: str
-    to_stage: str
+    stage: str
+    target: str
 
 
 ####################################################################################################################################
@@ -107,6 +114,7 @@ class CombatInitiationEvent(AgentEvent):
 
     type: Literal[EventType.COMBAT_INITIATION] = EventType.COMBAT_INITIATION
     actor: str
+    stage: str
 
 
 ####################################################################################################################################
@@ -129,6 +137,7 @@ class CombatArchiveEvent(AgentEvent):
 
     type: Literal[EventType.COMBAT_ARCHIVE] = EventType.COMBAT_ARCHIVE
     actor: str
+    stage: str
     summary: str
 
 
@@ -139,14 +148,18 @@ class AppearanceUpdateEvent(AgentEvent):
 
     type: Literal[EventType.APPEARANCE_UPDATE] = EventType.APPEARANCE_UPDATE
     actor: str
+    stage: str
     appearance: str
 
 
 ####################################################################################################################################
-# 判别联合类型：可基于 head 字段进行精确的反序列化
-AnyAgentEvent = Annotated[
+# 具体事件的判别联合类型：基于 type 字段（Literal 值）进行精确的反序列化。
+# 注意：AgentEvent 基类的 type 字段是普通 int（非 Literal），无法作为判别式联合的
+# 成员，因此单独放在外层 Union 中，由 pydantic 的 smart-union 判定
+# （配合 AgentEvent.model_config.extra="forbid"，具体子类特有字段会使基类校验失败，
+# 从而保证反序列化时优先精确匹配到具体子类）。
+_ConcreteAgentEvent = Annotated[
     Union[
-        AgentEvent,
         SpeakEvent,
         WhisperEvent,
         AnnounceEvent,
@@ -160,4 +173,6 @@ AnyAgentEvent = Annotated[
     ],
     Field(discriminator="type"),
 ]
+
+AnyAgentEvent = Union[AgentEvent, _ConcreteAgentEvent]
 ####################################################################################################################################

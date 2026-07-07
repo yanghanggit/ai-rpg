@@ -1,7 +1,7 @@
 from typing import List
 from pydantic import BaseModel
 from .agent_event import AnyAgentEvent
-from .session_message import SessionMessage, MessageType
+from .session_message import SessionMessage
 
 
 ###############################################################################
@@ -45,8 +45,7 @@ class PlayerSession(BaseModel):
         """
 
         agent_event_message = SessionMessage(
-            message_type=MessageType.AGENT_EVENT,  # 消息类型标识
-            data=agent_event.model_dump(),  # 将事件序列化为字典
+            agent_event=agent_event,
         )
 
         self._add_session_message(agent_event_message)

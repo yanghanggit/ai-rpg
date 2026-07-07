@@ -51,6 +51,8 @@ class WhisperActionSystem(ReactiveProcessor):
         """处理实体的耳语动作。"""
 
         whisper_action = entity.get(WhisperAction)
+        stage_entity = self._game.resolve_stage_entity(entity)
+        assert stage_entity is not None, "actor无所在场景是有问题的"
 
         for target_name, whisper_content in whisper_action.target_messages.items():
 
@@ -89,6 +91,7 @@ class WhisperActionSystem(ReactiveProcessor):
                         whisper_action.name, target_name, whisper_content
                     ),
                     actor=whisper_action.name,
+                    stage=stage_entity.name,
                     target=target_name,
                     content=whisper_content,
                 ),

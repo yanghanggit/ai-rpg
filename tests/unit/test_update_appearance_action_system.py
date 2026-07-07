@@ -50,6 +50,13 @@ def _make_storage_entity(
     return entity
 
 
+def _make_stage_entity(
+    entity_manager: RPGEntityManager, name: str = "测试场景"
+) -> Entity:
+    """创建一个用于 resolve_stage_entity 返回值的场景实体。"""
+    return entity_manager._create_entity(name)
+
+
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -69,6 +76,7 @@ def mock_game(entity_manager: RPGEntityManager) -> MagicMock:
     game.get_entity_by_name.side_effect = entity_manager.get_entity_by_name
     game.get_agent_context.return_value = MagicMock(context=[])
     game.get_storage_entity.return_value = None
+    game.resolve_stage_entity.return_value = _make_stage_entity(entity_manager)
     return game
 
 

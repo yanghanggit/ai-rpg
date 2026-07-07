@@ -125,8 +125,8 @@ def _update_actors_stage_membership(
                     current_stage.name, stage_destination.name
                 ),
                 actor=actor_entity.name,
-                from_stage=current_stage.name,
-                to_stage=stage_destination.name,
+                stage=current_stage.name,
+                target=stage_destination.name,
             ),
         )
 

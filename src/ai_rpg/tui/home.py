@@ -7,7 +7,6 @@ from textual.widgets import Input, RichLog, Static
 from .base import BaseGameScreen
 import asyncio
 from loguru import logger
-import json
 
 from .server_client import (
     stream_session_messages,
@@ -17,10 +16,20 @@ from .server_client import (
     home_advance as server_home_advance,
     logout as server_logout,
 )
-from ..models.session_message import MessageType
-from ..models.agent_event import EventType
+from ..models.agent_event import (
+    AnyAgentEvent,
+    SpeakEvent,
+    WhisperEvent,
+    AnnounceEvent,
+    MindEvent,
+    QueryEvent,
+    TransStageEvent,
+    CombatInitiationEvent,
+    CombatArbitrationEvent,
+    CombatArchiveEvent,
+    AppearanceUpdateEvent,
+)
 from .utils import display_name
-from typing import Any, Dict
 
 MENU_TEXT = """\
 [bold yellow]可用操作（输入编号执行）：[/]
@@ -48,62 +57,39 @@ MENU_TEXT = """\
 """
 
 
-def _format_agent_event(data: Dict[str, Any]) -> str:
-    """将 AGENT_EVENT 的 data dict 渲染为 Rich markup 字符串。"""
-    head = data.get("type", EventType.NONE)
-    try:
-        head = EventType(head)
-    except ValueError:
-        head = EventType.NONE
-
-    match head:
-        case EventType.SPEAK:
-            actor = data.get("actor", "?")
-            target = data.get("target", "?")
-            content = data.get("content", "")
+def _format_agent_event(event: AnyAgentEvent) -> str:
+    """将 AnyAgentEvent 渲染为 Rich markup 字符串。"""
+    match event:
+        case SpeakEvent():
             return (
-                f"[bold yellow]{actor}[/] 对 [yellow]{target}[/] 说：\n"
-                f"  「{content}」"
+                f"[bold yellow]{event.actor}[/] 对 [yellow]{event.target}[/] 说：\n"
+                f"  「{event.content}」"
             )
-        case EventType.WHISPER:
-            actor = data.get("actor", "?")
-            target = data.get("target", "?")
-            content = data.get("content", "")
-            return f"[dim]{actor} 悄悄向 {target} 耳语：「{content}」[/]"
-        case EventType.ANNOUNCE:
-            actor = data.get("actor", "?")
-            stage = data.get("stage", "?")
-            content = data.get("content", "")
-            return f"[bold magenta]【{actor}】[/] 在 {stage} 宣告：{content}"
-        case EventType.MIND:
-            actor = data.get("actor", "?")
-            content = data.get("content", "")
-            return f"[dim italic]（{actor} 心想：{content}）[/]"
-        case EventType.QUERY:
-            actor = data.get("actor", "?")
-            question = data.get("question", "")
-            return f"[dim]{actor} 询问：{question}[/]"
-        case EventType.TRANS_STAGE:
-            actor = data.get("actor", "?")
-            from_stage = data.get("from_stage", "?")
-            to_stage = data.get("to_stage", "?")
-            return f"[cyan]▶ {actor}  {from_stage} → {to_stage}[/]"
-        case EventType.COMBAT_INITIATION:
-            actor = data.get("actor", "?")
-            return f"[bold red]⚔ {actor} 发起战斗！[/]"
-        case EventType.COMBAT_ARBITRATION:
-            narrative = data.get("narrative", data.get("message", ""))
-            return f"[bold]{narrative}[/]"
-        case EventType.COMBAT_ARCHIVE:
-            actor = data.get("actor", "?")
-            summary = data.get("summary", "")
-            return f"[dim]{actor} 战斗归档：{summary}[/]"
-        case EventType.APPEARANCE_UPDATE:
-            actor = data.get("actor", "?")
-            appearance = data.get("appearance", "")
-            return f"[bold green]✨ {actor} 外观已更新：[/]\n" f"  [dim]{appearance}[/]"
+        case WhisperEvent():
+            return (
+                f"[dim]{event.actor} 悄悄向 {event.target} 耳语：「{event.content}」[/]"
+            )
+        case AnnounceEvent():
+            return f"[bold magenta]【{event.actor}】[/] 在 {event.stage} 宣告：{event.content}"
+        case MindEvent():
+            return f"[dim italic]（{event.actor} 心想：{event.content}）[/]"
+        case QueryEvent():
+            return f"[dim]{event.actor} 询问：{event.question}[/]"
+        case TransStageEvent():
+            return f"[cyan]▶ {event.actor}  {event.stage} → {event.target}[/]"
+        case CombatInitiationEvent():
+            return f"[bold red]⚔ {event.actor} 发起战斗！[/]"
+        case CombatArbitrationEvent():
+            return f"[bold]{event.narrative}[/]"
+        case CombatArchiveEvent():
+            return f"[dim]{event.actor} 战斗归档：{event.summary}[/]"
+        case AppearanceUpdateEvent():
+            return (
+                f"[bold green]✨ {event.actor} 外观已更新：[/]\n"
+                f"  [dim]{event.appearance}[/]"
+            )
         case _:
-            return f"[dim cyan]{data.get('message', '')}[/]"
+            return f"[dim cyan]{event.message}[/]"
 
 
 class HomeScreen(BaseGameScreen):
@@ -381,22 +367,14 @@ class HomeScreen(BaseGameScreen):
             ):
                 if app.session is None:
                     break
-                if msg.message_type == MessageType.NONE:
-                    continue
                 if msg.sequence_id > app.session.last_sequence_id:
                     app.session.last_sequence_id = msg.sequence_id
+                if msg.agent_event is None:
+                    continue
                 log = self.query_one(RichLog)
-                if msg.message_type == MessageType.AGENT_EVENT:
-                    message_text = msg.data.get(
-                        "message", json.dumps(msg.data, ensure_ascii=False)
-                    )
-                    log.write(f"[bold white]{message_text}[/]")
-                else:
-                    log.write(_format_agent_event(msg.data))
+                log.write(_format_agent_event(msg.agent_event))
                 log.write("--------------------------------------")
-                logger.debug(
-                    f"_poll_messages: 收到消息 seq={msg.sequence_id} type={msg.message_type}"
-                )
+                logger.debug(f"_poll_messages: 收到消息 seq={msg.sequence_id}")
         except Exception as e:
             logger.warning(f"_poll_messages: SSE 流中断 error={e}")
         logger.info(f"_poll_messages: SSE 流已停止 user_name={user_name}")

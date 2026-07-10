@@ -97,9 +97,6 @@ class DBGGame(RPGGame):
         """检查玩家是否在家园场景中"""
         player_entity = self.get_player_entity()
         assert player_entity is not None, "player_entity is None"
-        if player_entity is None:
-            return False
-
         return self.is_actor_in_home_stage(player_entity)
 
     ###############################################################################################################################################
@@ -108,9 +105,6 @@ class DBGGame(RPGGame):
         """检查玩家是否在地下城场景中"""
         player_entity = self.get_player_entity()
         assert player_entity is not None, "player_entity is None"
-        if player_entity is None:
-            return False
-
         return self.is_actor_in_dungeon_stage(player_entity)
 
     ###############################################################################################################################################

@@ -1,8 +1,5 @@
 """
 地下城战斗动作模块
-
-提供战斗回合中的动作激活函数，包括抽牌和打牌等核心战斗行为。
-这些函数通过添加动作组件来驱动战斗流程，由 combat_pipeline 负责执行。
 """
 
 import random
@@ -37,19 +34,7 @@ from ..entitas import Entity, Matcher
 def _get_alive_party_members_in_stage(
     anchor_entity: Entity, dbg_game: DBGGame
 ) -> List[Entity]:
-    """获取锚点实体所在场景中所有存活的远征队成员
-
-    以 anchor_entity 定位其所在场景，然后在该场景中筛选所有带
-    PartyMemberComponent 的存活实体。玩家实体是常用的锚点，
-    但任意处于场景中的实体均可作为 anchor。
-
-    Args:
-        anchor_entity: 用于定位场景的锚点实体
-        dbg_game: DBG游戏实例
-
-    Returns:
-        存活的远征队成员实体列表
-    """
+    """获取锚点实体所在场景中所有存活的远征队成员"""
     actor_entities = get_alive_actors_in_stage(dbg_game, anchor_entity)
     return [entity for entity in actor_entities if entity.has(PartyMemberComponent)]
 
@@ -58,18 +43,7 @@ def _get_alive_party_members_in_stage(
 def _get_alive_monsters_in_stage(
     anchor_entity: Entity, dbg_game: DBGGame
 ) -> List[Entity]:
-    """获取锚点实体所在场景中所有存活的怪物
-
-    以 anchor_entity 定位其所在场景，然后在该场景中筛选所有带
-    MonsterComponent 的存活实体。
-
-    Args:
-        anchor_entity: 用于定位场景的锚点实体
-        dbg_game: DBG游戏实例
-
-    Returns:
-        存活的怪物实体列表
-    """
+    """获取锚点实体所在场景中所有存活的怪物"""
     actor_entities = get_alive_actors_in_stage(dbg_game, anchor_entity)
     return [entity for entity in actor_entities if entity.has(MonsterComponent)]
 
@@ -80,35 +54,42 @@ def activate_all_card_draws(
 ) -> Tuple[bool, str]:
     """
     为当前场景中所有存活的战斗角色（远征队成员 + 敌方）激活抽牌动作。
-
-    Args:
-        dbg_game: DBG游戏实例
-
-    Returns:
-        tuple[bool, str]: (是否成功, 结果消息)
     """
 
-    if not dbg_game.current_dungeon.is_ongoing:
-        return False, "只能在战斗中使用is_ongoing"
+    # 检查当前是否在玩家所在的地下城场景中
+    if not dbg_game.is_player_in_dungeon_stage:
+        error_msg = "只能在玩家所在的地下城场景中使用该操作"
+        logger.error(error_msg)
+        return False, error_msg
 
+    # 检查当前地下城是否处于进行中的战斗状态
+    if not dbg_game.current_dungeon.is_ongoing:
+        error_msg = "只能在战斗中使用is_ongoing"
+        logger.error(error_msg)
+        return False, error_msg
+
+    # 获取玩家实体，作为锚点来定位当前场景中的所有存活战斗角色
     player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "activate_all_card_draws: player_entity is None"
 
+    # 获取当前场景中所有存活的战斗角色，包括远征队成员和怪物
     all_entities = _get_alive_party_members_in_stage(
         player_entity, dbg_game
     ) + _get_alive_monsters_in_stage(player_entity, dbg_game)
 
+    # 如果当前场景中没有存活的战斗角色，则返回错误信息
     if len(all_entities) == 0:
         error_msg = "激活全员抽牌失败: 场景中没有存活的战斗角色"
         logger.error(error_msg)
         return False, error_msg
 
+    # 为每个存活的战斗角色添加抽牌动作组件，如果该角色已经有抽牌动作组件，则会被新的组件覆盖
     for entity in all_entities:
         assert not entity.has(
             DrawCardsAction
         ), f"Entity {entity.name} already has DrawCardsAction, so will be overwritten by new DrawCardsAction"
 
-        # 添加。
+        # 添加抽牌动作组件，组件的标识使用实体的名称
         entity.replace(DrawCardsAction, entity.name)
 
     return True, f"成功为 {len(all_entities)} 个战斗角色激活抽牌动作"
@@ -122,14 +103,8 @@ def _resolve_targets(
     passed_targets: List[str],
     dbg_game: DBGGame,
 ) -> Tuple[List[str], str]:
-    """根据 target_type 解析并验证目标。
+    """根据 target_type 解析并验证目标。"""
 
-    actor_entity 是 PartyMemberComponent 时，"敌方"为 MonsterComponent，"我方"为 PartyMemberComponent。
-    actor_entity 是 MonsterComponent 时，"敌方"为 PartyMemberComponent，"我方"为 MonsterComponent。
-
-    Returns:
-        (resolved_targets, error_msg): error_msg 为空字符串表示成功。
-    """
     is_actor_ally = actor_entity.has(PartyMemberComponent)
 
     def _get_enemies() -> List[Entity]:
@@ -175,40 +150,44 @@ def _validate_play_turn(
     dbg_game: DBGGame,
     actor_name: str,
 ) -> Tuple[Optional[Entity], str]:
-    """校验当前是否轮到指定角色出牌，并返回其实体。
+    """校验当前是否轮到指定角色出牌，并返回其实体。"""
 
-    Returns:
-        (entity, "") 校验通过；(None, error_msg) 校验失败。
-    """
+    # 获取当前回合信息，检查是否存在进行中的回合，以及当前角色是否在行动快照中。
     latest_round = dbg_game.current_dungeon.latest_round
     if latest_round is None:
         return None, "当前没有进行中的回合"
 
+    # 获取当前回合的行动快照，确保该角色在快照中，以验证其是否有资格出牌。
     current_snapshot = (
         latest_round.actor_order_snapshots[-1]
         if latest_round.actor_order_snapshots
         else []
     )
+
+    # 检查该角色是否在当前回合的行动快照中，如果不在，则说明该角色没有资格出牌。
     if actor_name not in current_snapshot:
         return (
             None,
             f"角色 {actor_name} 不在本回合行动快照中: {current_snapshot}",
         )
 
+    # 检查当前回合的行动顺序，确保该角色是当前应出牌的角色。
     next_actor = latest_round.current_turn_actor_name
     if next_actor != actor_name:
         return None, f"现在不是 {actor_name} 的回合，当前应由 {next_actor} 出牌"
 
+    # 获取该角色的实体，确保其存在，并且是战斗角色（PartyMember 或 Monster），且未死亡且拥有手牌组件。
     entity = dbg_game.get_actor_entity(actor_name)
-    if entity is None:
-        return None, f"找不到角色 {actor_name}"
+    assert entity is not None, f"找不到角色 {actor_name}"
+    assert entity.has(PartyMemberComponent) or entity.has(
+        MonsterComponent
+    ), f"角色 {actor_name} 不是战斗角色（非 PartyMember 或 Monster）"
 
-    if not (entity.has(PartyMemberComponent) or entity.has(MonsterComponent)):
-        return None, f"角色 {actor_name} 不是战斗角色（非 PartyMember 或 Monster）"
-
+    # 检查该角色是否已死亡，如果已死亡则无法出牌。
     if entity.has(DeathComponent):
         return None, f"角色 {actor_name} 已死亡，无法出牌"
 
+    # 检查该角色是否拥有手牌组件，如果没有则无法出牌。
     if not entity.has(HandComponent):
         return None, f"角色 {actor_name} 没有 HandComponent"
 
@@ -223,28 +202,24 @@ async def activate_play_cards_specified(
     targets: List[str],
 ) -> Tuple[bool, str]:
     """
-    让指定远征队员打出指定名称的手牌。仅适用于 PartyMemberComponent 角色。
-    敌人出牌请使用 activate_monster_play_trigger。
-
-    Args:
-        dbg_game: DBG游戏实例
-        actor_name: 出牌角色的全名（如 旅行者.无名氏）
-        card_name: 要打出的卡牌名称（须存在于该角色手牌中）
-        targets: 目标名称列表，可为 []
-
-    Returns:
-        tuple[bool, str]: (是否成功, 结果消息)
+    让指定远征队员打出指定名称的手牌。
     """
+
+    # 检查当前是否在远征阶段，如果不在则无法出牌。
+    if not dbg_game.is_player_in_dungeon_stage:
+        msg = "当前不在远征阶段，无法出牌"
+        logger.error(msg)
+        return False, msg
+
+    # 校验当前是否轮到该角色出牌，并获取其实体。如果不符合出牌条件，则返回错误信息。
     entity, error_msg = _validate_play_turn(dbg_game, actor_name)
     if entity is None:
         logger.error(f"activate_play_cards_specified: {error_msg}")
         return False, error_msg
 
-    if not entity.has(PartyMemberComponent):
-        msg = f"角色 {actor_name} 不是远征队员，怪物出牌请使用 activate_monster_play_trigger"
-        logger.error(msg)
-        return False, msg
+    assert entity.has(PartyMemberComponent), f"角色 {actor_name} 不是远征队员"
 
+    # 获取角色的手牌组件，并尝试在手牌中找到指定名称的卡牌。
     hand_comp = entity.get(HandComponent)
     selected_card = next((c for c in hand_comp.cards if c.name == card_name), None)
     if selected_card is None:
@@ -252,9 +227,11 @@ async def activate_play_cards_specified(
         logger.error(msg)
         return False, msg
 
+    # 检查所选卡牌是否可出牌，如果不可出牌则返回错误信息。
     if not selected_card.playable:
         return False, "该卡牌不可出牌"
 
+    # 解析卡牌的目标，根据卡牌的目标类型和命中次数，结合玩家提供的目标名称列表，解析出实际的目标实体列表。
     resolved_targets, resolve_err = _resolve_targets(
         selected_card.target_type, selected_card.hit_count, entity, targets, dbg_game
     )
@@ -265,12 +242,16 @@ async def activate_play_cards_specified(
     logger.debug(
         f"为角色 {actor_name} 激活出牌动作，卡牌: {selected_card.name} 目标: {resolved_targets}"
     )
+
+    # 将出牌动作添加到实体中，PlayCardsAction 组件会被系统监听并处理实际的出牌逻辑。
     entity.replace(
         PlayCardsAction,
         entity.name,
         selected_card,
         resolved_targets,
     )
+
+    # 返回成功信息，表示已经成功为角色激活了出牌动作。
     return True, f"成功为角色 {actor_name} 激活出牌动作（卡牌: {card_name}）"
 
 
@@ -280,30 +261,21 @@ def activate_monster_play_trigger(
     actor_name: str,
 ) -> Tuple[bool, str]:
     """
-    触发指定怪物的出牌决策流程。仅适用于 MonsterComponent 角色。
-    玩家出牌请使用 activate_play_cards_specified。
-
-    同时设置两个组件：
-    - PlayCardsAction：空卡占位，MonsterPrePlaySystem 在 pipeline 中自动选牌并替换为真实卡牌与目标。
-    - MonsterTurnAction：明确标记这是怪物回合，MonsterPrePlaySystem 同时监听两者以触发决策。
-
-    Args:
-        dbg_game: DBG游戏实例
-        actor_name: 怪物角色的全名
-
-    Returns:
-        tuple[bool, str]: (是否成功, 结果消息)
+    触发指定怪物的出牌决策流程。
     """
+
+    # 检查当前是否处于玩家的地下城阶段，如果不是则无法触发怪物的出牌决策。
+    if not dbg_game.is_player_in_dungeon_stage:
+        error_msg = "激活怪物出牌触发失败: 当前不在玩家的地下城阶段"
+        logger.error(error_msg)
+        return False, error_msg
+
     entity, error_msg = _validate_play_turn(dbg_game, actor_name)
     if entity is None:
         logger.error(f"activate_monster_play_trigger: {error_msg}")
         return False, error_msg
 
-    if not entity.has(MonsterComponent):
-        msg = f"角色 {actor_name} 不是怪物，远征队员出牌请使用 activate_play_cards_specified"
-        logger.error(msg)
-        return False, msg
-
+    assert entity.has(MonsterComponent), f"角色 {actor_name} 不是怪物"
     logger.debug(f"为怪物 {actor_name} 触发出牌决策，由 MonsterPrePlaySystem 自动选牌")
 
     # 添加 MonsterTurnAction 标记，触发 MonsterPrePlaySystem 的决策流程
@@ -318,36 +290,27 @@ def activate_retreat(
 ) -> Tuple[bool, str]:
     """
     为所有远征队成员激活撤退动作。
-
-    为每个远征队成员添加 RetreatAction 组件，由 RetreatActionSystem 响应处理。
-    要求当前处于战斗进行中（is_ongoing）状态。
-
-    这是符合 ECS 响应式架构的新实现方式，替代直接操作的 mark_retreat。
-    撤退处理流程：
-    1. 本函数添加 RetreatAction 组件
-    2. RetreatActionSystem 响应并标记死亡、添加叙事消息
-    3. CombatOutcomeSystem 检测死亡并触发战斗失败流程
-
-    Args:
-        dbg_game: DBG游戏实例
-
-    Returns:
-        tuple[bool, str]: (是否成功, 结果消息)
     """
 
+    # 检查当前是否处于玩家的地下城阶段，如果不是则无法激活撤退动作。
+    if not dbg_game.is_player_in_dungeon_stage:
+        error_msg = "激活撤退动作失败: 当前不在玩家的地下城阶段"
+        logger.error(error_msg)
+        return False, error_msg
+
+    # 检查当前地下城是否处于进行中状态，如果不是则无法激活撤退动作。
     if not dbg_game.current_dungeon.is_ongoing:
         error_msg = "激活撤退动作失败: 只能在战斗进行中使用"
         logger.error(error_msg)
         return False, error_msg
 
+    # 获取当前地下城中所有远征队成员实体，用于为他们添加撤退动作组件。
     party_member_entities = dbg_game.get_group(
         Matcher(all_of=[PartyMemberComponent])
     ).entities
-
-    if len(party_member_entities) == 0:
-        error_msg = "激活撤退动作失败: 没有找到远征队成员"
-        logger.error(error_msg)
-        return False, error_msg
+    assert (
+        len(party_member_entities) > 0
+    ), "激活撤退动作失败: 没有找到远征队成员, 至少有一个player"
 
     # 为每个远征队成员添加撤退动作组件
     for party_member_entity in party_member_entities:
@@ -355,6 +318,7 @@ def activate_retreat(
             PartyMemberComponent
         ), f"Entity {party_member_entity.name} must have PartyMemberComponent"
 
+        # 为每个远征队成员添加撤退动作组件，触发 RetreatActionSystem 的处理逻辑
         party_member_entity.replace(
             RetreatAction,
             party_member_entity.name,
@@ -373,54 +337,60 @@ def activate_use_consumable(
     item_name: str,
     targets: List[str],
 ) -> Tuple[bool, str]:
-    """使用队伍背包内的指定消耗品。
+    """使用队伍背包内的指定消耗品。"""
 
-    Args:
-        dbg_game: DBG游戏实例
-        item_name: 要使用的消耗品名称
-        targets: 目标名称列表，
+    # 检查玩家是否在地下城阶段，如果不是则无法使用消耗品。
+    if not dbg_game.is_player_in_dungeon_stage:
+        msg = "使用消耗品失败：玩家不在地下城场景中"
+        logger.error(msg)
+        return False, msg
 
-    Returns:
-        tuple[bool, str]: (是否成功, 结果消息)
-    """
+    # 检查当前地下城是否处于进行中状态，如果不是则无法使用消耗品。
     if not dbg_game.current_dungeon.is_ongoing:
         msg = "使用消耗品失败：战斗未在进行中"
         logger.error(msg)
         return False, msg
 
+    # 获取当前地下城的最新回合，如果没有进行中的回合，则无法使用消耗品。
     latest_round = dbg_game.current_dungeon.latest_round
     if latest_round is None:
         msg = "使用消耗品失败：当前没有进行中的回合"
         logger.error(msg)
         return False, msg
 
+    # 检查当前回合的抽牌阶段是否已完成，如果尚未完成，则无法使用消耗品。
     if not latest_round.draw_completed:
         msg = "使用消耗品失败：抽牌阶段尚未完成"
         logger.error(msg)
         return False, msg
 
+    # 检查当前回合的行动者是否存在，如果不存在则无法使用消耗品。
     current_turn_actor_name = latest_round.current_turn_actor_name
     if current_turn_actor_name is None:
         msg = "使用消耗品失败：当前没有行动角色"
         logger.error(msg)
         return False, msg
 
+    # 获取当前回合的行动者实体，并检查其是否属于玩家阵营，如果不是则无法使用消耗品。
     current_turn_entity = dbg_game.get_actor_entity(current_turn_actor_name)
     if current_turn_entity is None or not current_turn_entity.has(PartyMemberComponent):
         msg = f"使用消耗品失败：当前行动角色 {current_turn_actor_name} 不属于玩家阵营"
         logger.error(msg)
         return False, msg
 
+    # 检查本回合是否已经使用过消耗品，如果已经使用过，则无法再次使用，每回合限用一次。
     if latest_round.consumable_use_count > 0:
         msg = f"使用消耗品失败：本回合已使用过消耗品（consumable_use_count={latest_round.consumable_use_count}），每回合限用一次"
         logger.error(msg)
         return False, msg
 
+    # 获取玩家实体，并确保其具有必要的组件（PartyMemberComponent 和 InventoryComponent），以便使用消耗品。
     player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "activate_use_consumable: player_entity is None"
     assert player_entity.has(PartyMemberComponent), "玩家实体缺少 PartyMemberComponent"
     assert player_entity.has(InventoryComponent), "玩家实体缺少 InventoryComponent"
 
+    # 从玩家实体中获取背包组件，并尝试在背包中找到指定的消耗品，如果找不到则返回错误。
     inventory_comp = player_entity.get(InventoryComponent)
     selected_item = next((i for i in inventory_comp.items if i.name == item_name), None)
     if selected_item is None:
@@ -431,11 +401,13 @@ def activate_use_consumable(
         logger.error(msg)
         return False, msg
 
+    # 检查选中的物品是否为消耗品，如果不是则无法使用。
     if not isinstance(selected_item, ConsumableItem):
         msg = f"物品 '{item_name}' 不是消耗品（类型: {type(selected_item).__name__}）"
         logger.error(msg)
         return False, msg
 
+    # 解析消耗品的目标，根据消耗品的目标类型、数量和玩家实体，结合传入的目标列表，确定最终的目标实体列表。如果解析失败，则返回错误。
     resolved_targets, resolve_err = _resolve_targets(
         selected_item.target_type, 1, player_entity, targets, dbg_game
     )
@@ -446,12 +418,16 @@ def activate_use_consumable(
     logger.debug(
         f"为玩家 {player_entity.name} 激活消耗品使用，物品: {selected_item.name} 目标: {resolved_targets}"
     )
+
+    # 将使用消耗品的动作挂在玩家实体上，记录玩家、消耗品和目标实体列表，以便在游戏逻辑中处理实际的消耗品使用效果。
     player_entity.replace(
         UseConsumableItemAction,
         player_entity.name,
         selected_item,
         resolved_targets,
     )
+
+    # 返回成功消息，表示已成功激活消耗品的使用。
     return True, f"成功激活消耗品使用（物品: {item_name}）"
 
 
@@ -461,52 +437,54 @@ def activate_use_gear(
     item_name: str,
     targets: List[str],
 ) -> Tuple[bool, str]:
-    """使用队伍背包内的指定装备。装备是队伍级别的行为，Action 挂在 Player 实体上。
+    """使用队伍背包内的指定装备。装备是队伍级别的行为."""
 
-    不受当前行动者死活或轮次限制，但要求当前行动角色属于玩家阵营（PartyMemberComponent）。
-    装备使用不消耗 energy，采用替换逻辑：目标只保留一件已装备 GearItem。
+    # 检查玩家是否在地下城场景中，如果不在则无法使用装备。
+    if not dbg_game.is_player_in_dungeon_stage:
+        msg = "使用装备失败：玩家不在地下城场景中"
+        logger.error(msg)
+        return False, msg
 
-    Args:
-        dbg_game: DBG游戏实例
-        item_name: 要使用的装备名称（须存在于玩家 InventoryComponent 中）
-        targets: 目标名称列表，可为 []；target_type 为 SELF_ONLY 时系统自动覆盖
-
-    Returns:
-        tuple[bool, str]: (是否成功, 结果消息)
-    """
+    # 检查当前地下城是否处于进行中状态，如果不是则无法使用装备。
     if not dbg_game.current_dungeon.is_ongoing:
         msg = "使用装备失败：战斗未在进行中"
         logger.error(msg)
         return False, msg
 
+    # 获取当前地下城的最新回合，如果没有进行中的回合，则无法使用装备。
     latest_round = dbg_game.current_dungeon.latest_round
     if latest_round is None:
         msg = "使用装备失败：当前没有进行中的回合"
         logger.error(msg)
         return False, msg
 
+    # 检查当前回合的抽牌阶段是否已完成，如果尚未完成，则无法使用装备。
     if not latest_round.draw_completed:
         msg = "使用装备失败：抽牌阶段尚未完成"
         logger.error(msg)
         return False, msg
 
+    # 获取当前回合的行动者名称，如果没有行动者，则无法使用装备。
     current_turn_actor_name = latest_round.current_turn_actor_name
     if current_turn_actor_name is None:
         msg = "使用装备失败：当前没有行动角色"
         logger.error(msg)
         return False, msg
 
+    # 获取当前回合的行动者实体，并检查其是否属于玩家阵营，如果不是则无法使用装备。
     current_turn_entity = dbg_game.get_actor_entity(current_turn_actor_name)
     if current_turn_entity is None or not current_turn_entity.has(PartyMemberComponent):
         msg = f"使用装备失败：当前行动角色 {current_turn_actor_name} 不属于玩家阵营"
         logger.error(msg)
         return False, msg
 
+    # 获取玩家实体，并确保其具有必要的组件（PartyMemberComponent 和 InventoryComponent），以便使用装备。
     player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "activate_use_gear: player_entity is None"
     assert player_entity.has(PartyMemberComponent), "玩家实体缺少 PartyMemberComponent"
     assert player_entity.has(InventoryComponent), "玩家实体缺少 InventoryComponent"
 
+    # 从玩家实体中获取背包组件，并尝试在背包中找到指定的装备，如果找不到则返回错误。
     inventory_comp = player_entity.get(InventoryComponent)
     selected_item = next((i for i in inventory_comp.items if i.name == item_name), None)
     if selected_item is None:
@@ -517,27 +495,32 @@ def activate_use_gear(
         logger.error(msg)
         return False, msg
 
+    # 检查选中的物品是否为装备，如果不是则无法使用。
     if not isinstance(selected_item, GearItem):
         msg = f"物品 '{item_name}' 不是装备（类型: {type(selected_item).__name__}）"
         logger.error(msg)
         return False, msg
 
+    # 检查装备的耐久度，如果已耗尽则无法使用。
     if selected_item.durability <= 0:
         msg = f"装备 '{item_name}' 耐久已耗尽（durability=0），无法装备"
         logger.error(msg)
         return False, msg
 
+    # 检查该装备是否已经被其他实体装备，如果已被装备则无法再次使用。
     for holder in dbg_game.get_group(Matcher(EquippedGearComponent)).entities:
         if holder.get(EquippedGearComponent).item.uuid == selected_item.uuid:
             msg = f"装备 '{item_name}' 当前已被 {holder.name} 装备中，无法再次使用"
             logger.error(msg)
             return False, msg
 
+    # 检查装备的目标类型，如果是 CARD 类型，则当前版本不支持使用。
     if selected_item.target_type == TargetType.CARD:
         msg = "当前版本暂不支持 target_type=card 的装备使用"
         logger.error(msg)
         return False, msg
 
+    # 根据装备的目标类型解析实际目标，确保目标数量和类型符合装备的要求。
     resolved_targets, resolve_err = _resolve_targets(
         selected_item.target_type, 1, player_entity, targets, dbg_game
     )
@@ -545,6 +528,7 @@ def activate_use_gear(
         logger.error(f"activate_use_gear: {resolve_err}")
         return False, resolve_err
 
+    # 检查解析后的目标数量是否符合装备的要求，如果不是单目标装备则返回错误。
     if len(resolved_targets) != 1:
         msg = f"装备使用要求单目标，解析结果为 {resolved_targets}"
         logger.error(msg)
@@ -553,12 +537,16 @@ def activate_use_gear(
     logger.debug(
         f"为玩家 {player_entity.name} 激活装备使用，物品: {selected_item.name} 目标: {resolved_targets}"
     )
+
+    # 将装备使用动作挂载到玩家实体上，以便在游戏逻辑中处理该动作。
     player_entity.replace(
         UseGearItemAction,
         player_entity.name,
         selected_item,
         resolved_targets,
     )
+
+    # 返回成功消息，表示装备使用动作已成功激活。
     return True, f"成功激活装备使用（物品: {item_name}）"
 
 
@@ -567,20 +555,21 @@ def activate_pass_turn(
     dbg_game: DBGGame,
     actor_name: str,
 ) -> Tuple[bool, str]:
-    """让指定战斗角色跳过本次出牌机会（过牌），消耗 1 点 energy。
+    """让指定战斗角色跳过本次出牌机会（过牌），消耗 1 点 energy。"""
 
-    Args:
-        dbg_game: DBG游戏实例
-        actor_name: 过牌角色的全名
+    # 检查玩家是否在地下城场景中，如果不在则无法执行过牌动作。
+    if not dbg_game.is_player_in_dungeon_stage:
+        msg = "过牌失败：玩家不在地下城场景中"
+        logger.error(msg)
+        return False, msg
 
-    Returns:
-        tuple[bool, str]: (是否成功, 结果消息)
-    """
+    # 验证当前回合是否允许该角色进行操作，包括是否存在该角色以及是否轮到该角色出牌。
     entity, error_msg = _validate_play_turn(dbg_game, actor_name)
     if entity is None:
         logger.error(f"activate_pass_turn: {error_msg}")
         return False, error_msg
 
+    # 激活过牌动作，将 PassTurnAction 挂载到角色实体上，以便在游戏逻辑中处理该动作。
     logger.debug(f"为角色 {actor_name} 激活过牌动作")
     entity.replace(PassTurnAction, entity.name)
     return True, f"成功为角色 {actor_name} 激活过牌动作"
@@ -590,23 +579,19 @@ def activate_pass_turn(
 def collect_combat_loot(
     dbg_game: DBGGame,
 ) -> Tuple[bool, str]:
-    """将战斗战利品背包（CombatLootComponent）中的道具全部转入玩家随身背包（InventoryComponent）。
+    """将战斗战利品背包（CombatLootComponent）中的道具全部转入玩家随身背包（InventoryComponent）。"""
 
-    战斗胜利后，CombatLootSystem 将掉落的 MaterialItem 写入玩家实体的
-    CombatLootComponent。调用本函数后，战利品合并至 InventoryComponent 并移除该临时组件。
-
-    Args:
-        dbg_game: DBG游戏实例
-
-    Returns:
-        tuple[bool, str]: (是否成功, 结果消息)
-    """
-    player_entity = dbg_game.get_player_entity()
-    if player_entity is None:
-        msg = "收取战利品失败：无法获取玩家实体"
+    # 检查玩家是否在地下城场景中，如果不在则无法收取战利品。
+    if not dbg_game.is_player_in_dungeon_stage:
+        msg = "收取战利品失败：玩家不在地下城场景中"
         logger.error(msg)
         return False, msg
 
+    # 获取玩家实体，并确保其存在。
+    player_entity = dbg_game.get_player_entity()
+    assert player_entity is not None, "无法获取玩家实体"
+
+    # 检查玩家实体是否拥有战斗战利品组件，如果没有则无法收取战利品。
     if not player_entity.has(CombatLootComponent):
         msg = (
             "收取战利品失败：玩家身上没有 CombatLootComponent（本场战斗无掉落或已收取）"
@@ -616,6 +601,7 @@ def collect_combat_loot(
 
     assert player_entity.has(InventoryComponent), "玩家实体缺少 InventoryComponent"
 
+    # 获取战斗战利品组件中的道具列表，以便将其合并到玩家的背包中。
     loot_comp = player_entity.get(CombatLootComponent)
     loot_items = loot_comp.items
 

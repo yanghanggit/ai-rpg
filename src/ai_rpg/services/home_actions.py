@@ -1,8 +1,4 @@
-"""家园动作辅助函数模块
-
-提供家园场景中玩家动作的激活和设置功能，包括说话动作、场景转换和行动计划。
-这些函数负责验证前置条件并设置相应的动作组件，实际执行由游戏管道处理。
-"""
+"""家园动作辅助函数模块"""
 
 from typing import List, Tuple, Dict
 from loguru import logger
@@ -38,28 +34,23 @@ def activate_speak_action(
 ) -> Tuple[bool, str]:
     """
     激活玩家的说话动作，并触发当前场景所有角色的行动计划。
-
-    Args:
-        dbg_game: DBG 游戏实例
-        target: 说话目标的角色全名
-        content: 说话内容
-
-    Returns:
-        tuple[bool, str]: (是否成功, 失败时的错误详情)
     """
 
+    # 检查玩家是否在家园场景中，如果不在则无法执行说话动作。
     if not dbg_game.is_player_in_home_stage:
         error_detail = "玩家不在家园场景中，无法执行说话动作"
         logger.error(f"激活说话动作失败: {error_detail}")
         return False, error_detail
 
+    # 检查目标角色名称是否为空，如果为空则无法执行说话动作。
     if not target:
         error_detail = "目标角色名称不能为空"
         logger.error(f"激活说话动作失败: {error_detail}")
         return False, error_detail
 
     # 验证目标角色存在
-    if dbg_game.get_actor_entity(target) is None:
+    target_entity = dbg_game.get_actor_entity(target)
+    if target_entity is None:
         error_detail = f"目标角色 {target} 不存在"
         logger.error(f"激活说话动作失败: {error_detail}")
         return False, error_detail
@@ -67,9 +58,14 @@ def activate_speak_action(
     player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
 
+    # 获取玩家实体，并确保其存在，以便挂载说话动作组件。
     logger.debug(f"激活说话动作: {player_entity.name} -> {target}: {content}")
     player_entity.replace(SpeakAction, player_entity.name, {target: content})
+
+    # 激活当前场景内所有角色的行动计划，以便在下一次游戏推进时执行 AI 决策。
     activate_stage_plan(dbg_game)
+
+    # 返回成功消息，表示说话动作已成功激活。
     return True, ""
 
 
@@ -77,20 +73,15 @@ def activate_speak_action(
 def activate_switch_stage(dbg_game: DBGGame, stage_name: str) -> Tuple[bool, str]:
     """
     激活玩家的场景转换动作，并触发当前场景所有角色的行动计划。
-
-    Args:
-        dbg_game: DBG 游戏实例
-        stage_name: 目标场景全名
-
-    Returns:
-        tuple[bool, str]: (是否成功, 失败时的错误详情)
     """
 
+    # 检查玩家是否在家园场景中，如果不在则无法执行场景转换动作。
     if not dbg_game.is_player_in_home_stage:
-        error_detail = "玩家不在家园场景中，无法执行说话动作"
+        error_detail = "玩家不在家园场景中，无法执行场景转换动作"
         logger.error(f"激活场景转换失败: {error_detail}")
         return False, error_detail
 
+    # 检查目标场景名称是否为空，如果为空则无法执行场景转换动作。
     if not stage_name:
         error_detail = "目标场景名称不能为空"
         logger.error(f"激活场景转换失败: {error_detail}")
@@ -103,6 +94,7 @@ def activate_switch_stage(dbg_game: DBGGame, stage_name: str) -> Tuple[bool, str
         logger.error(f"激活场景转换失败: {error_detail}")
         return False, error_detail
 
+    # 检查目标场景是否为家园场景，如果不是则无法执行场景转换动作。
     if not target_stage_entity.has(HomeComponent):
         error_detail = f"{stage_name} 不是家园场景"
         logger.error(f"激活场景转换失败: {error_detail}")
@@ -111,17 +103,24 @@ def activate_switch_stage(dbg_game: DBGGame, stage_name: str) -> Tuple[bool, str
     player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
 
-    # 验证目标场景与当前场景不同
+    # 验证目标场景与当前场景不同，避免重复转换。
     current_stage_entity = dbg_game.resolve_stage_entity(player_entity)
     assert current_stage_entity is not None, "玩家当前场景实体不存在！"
+
+    # 检查目标场景是否与当前场景相同，如果相同则无需转换。
     if current_stage_entity.name == stage_name:
         error_detail = f"目标场景 {stage_name} 与当前场景相同"
         logger.error(f"激活场景转换失败: {error_detail}")
         return False, error_detail
 
+    # 激活场景转换动作，将玩家从当前场景切换到目标场景，并触发当前场景内所有角色的行动计划。
     logger.debug(f"激活场景转换: {player_entity.name} -> {stage_name}")
     player_entity.replace(TransStageAction, player_entity.name, stage_name)
+
+    # 激活当前场景内所有角色的行动计划，以便在下一次游戏推进时执行 AI 决策。
     activate_stage_plan(dbg_game)
+
+    # 返回成功消息，表示场景转换动作已成功激活。
     return True, ""
 
 
@@ -129,19 +128,11 @@ def activate_switch_stage(dbg_game: DBGGame, stage_name: str) -> Tuple[bool, str
 def activate_stage_plan(dbg_game: DBGGame) -> Tuple[bool, str]:
     """
     为玩家当前场景内所有盟友 NPC 激活行动计划
-
-    获取玩家所在的家园场景，为场景内所有盟友角色添加 PlanAction 组件，
-    使其在下一次游戏推进时执行 AI 决策。
-
-    Args:
-        dbg_game: DBG 游戏实例
-
-    Returns:
-        tuple[bool, str]: (是否成功, 错误详情)
     """
 
+    # 检查玩家是否在家园场景中，如果不在则无法激活行动计划。
     if not dbg_game.is_player_in_home_stage:
-        error_detail = "玩家不在家园场景中，无法执行说话动作"
+        error_detail = "玩家不在家园场景中，无法激活行动计划"
         logger.error(f"激活行动计划失败: {error_detail}")
         return False, error_detail
 
@@ -152,6 +143,7 @@ def activate_stage_plan(dbg_game: DBGGame) -> Tuple[bool, str]:
     # 获取玩家当前场景实体，验证为家园场景
     stage_entity = dbg_game.resolve_stage_entity(player_entity)
     assert stage_entity is not None, "玩家当前场景实体不存在！"
+    # 检查当前场景是否为家园场景，如果不是则无法激活行动计划。
     if not stage_entity.has(HomeComponent):
         error_detail = "当前场景不是家园，无法激活行动计划"
         logger.error(f"激活行动计划失败: {error_detail}")
@@ -164,6 +156,7 @@ def activate_stage_plan(dbg_game: DBGGame) -> Tuple[bool, str]:
     #
     for actor_entity in actors_in_stage:
 
+        # 检查当前角色是否为 NPC，如果不是则无法激活行动计划。
         assert actor_entity.has(
             NPCComponent
         ), f"角色 {actor_entity.name} 不是 NPC，无法激活行动计划！"
@@ -171,6 +164,7 @@ def activate_stage_plan(dbg_game: DBGGame) -> Tuple[bool, str]:
         logger.debug(f"为角色 {actor_entity.name} 添加 PlanAction")
         actor_entity.replace(PlanAction, actor_entity.name)
 
+    # 返回成功消息，表示所有角色的行动计划已成功激活。
     return True, f"成功为 {len(actors_in_stage)} 个角色添加 PlanAction"
 
 
@@ -178,47 +172,53 @@ def activate_stage_plan(dbg_game: DBGGame) -> Tuple[bool, str]:
 def add_party_member(dbg_game: DBGGame, member_name: str) -> Tuple[bool, str]:
     """
     将盟友加入远征队名单。
-
-    Args:
-        dbg_game: DBG 游戏实例
-        member_name: 要加入名单的盟友角色名称
-
-    Returns:
-        tuple[bool, str]: (是否成功, 失败时的错误详情)
     """
+
+    # 检查玩家是否在家园场景中，如果不在则无法修改远征队名单。
     if not dbg_game.is_player_in_home_stage:
         error_detail = "玩家不在家园场景中，无法修改远征队名单"
         logger.error(f"添加远征队成员失败: {error_detail}")
         return False, error_detail
 
+    # 获取要加入远征队的角色实体，验证其存在且为 NPC。
     member_entity = dbg_game.get_actor_entity(member_name)
     if member_entity is None:
         error_detail = f"角色 {member_name} 不存在"
         logger.error(f"添加远征队成员失败: {error_detail}")
         return False, error_detail
 
+    # 检查角色是否为 NPC，如果不是则无法加入远征队。
     if not member_entity.has(NPCComponent):
         error_detail = f"角色 {member_name} 不是 NPC，无法加入远征队"
         logger.error(f"添加远征队成员失败: {error_detail}")
         return False, error_detail
 
+    # 检查角色是否为玩家自身，如果是则无法加入远征队。
     if member_entity.has(PlayerComponent):
         error_detail = "不能将玩家自身加入远征队名单"
         logger.error(f"添加远征队成员失败: {error_detail}")
         return False, error_detail
 
+    # 获取玩家实体，确保玩家实体存在，以便后续操作远征队名单。
     player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
 
     # 检查远征队名单中是否已存在该成员
     if player_entity.has(PartyRosterComponent):
+
+        # 获取玩家实体当前的远征队成员列表，以便检查是否已经存在要添加的成员。
         existing_members = list(player_entity.get(PartyRosterComponent).members)
         if member_name in existing_members:
             error_detail = f"{member_name} 已在远征队名单中"
             logger.warning(f"添加远征队成员失败: {error_detail}")
             return False, error_detail
+
+        # 将新的成员列表添加到现有成员列表中，准备更新玩家实体的 PartyRosterComponent。
         new_members = existing_members + [member_name]
+
     else:
+
+        # 如果玩家实体尚未拥有 PartyRosterComponent，则创建一个新的成员列表，包含当前要加入的成员。
         new_members = [member_name]
 
     # 更新玩家实体的 PartyRosterComponent
@@ -235,27 +235,25 @@ def add_party_member(dbg_game: DBGGame, member_name: str) -> Tuple[bool, str]:
 def remove_party_member(dbg_game: DBGGame, member_name: str) -> Tuple[bool, str]:
     """
     将盟友从远征队名单中移除。
-
-    Args:
-        dbg_game: DBG 游戏实例
-        member_name: 要移除的盟友角色名称
-
-    Returns:
-        tuple[bool, str]: (是否成功, 失败时的错误详情)
     """
+
+    # 检查玩家是否在家园场景中，如果不在则无法修改远征队名单。
     if not dbg_game.is_player_in_home_stage:
         error_detail = "玩家不在家园场景中，无法修改远征队名单"
         logger.error(f"移除远征队成员失败: {error_detail}")
         return False, error_detail
 
+    # 获取玩家实体，确保玩家实体存在，以便后续操作远征队名单。
     player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
 
+    # 检查玩家实体是否拥有 PartyRosterComponent，如果没有则无法移除成员。
     if not player_entity.has(PartyRosterComponent):
         error_detail = f"{member_name} 不在远征队名单中"
         logger.warning(f"移除远征队成员失败: {error_detail}")
         return False, error_detail
 
+    # 获取玩家实体当前的远征队成员列表，以便检查要移除的成员是否存在。
     roster = player_entity.get(PartyRosterComponent)
     if member_name not in roster.members:
         error_detail = f"{member_name} 不在远征队名单中"
@@ -265,15 +263,20 @@ def remove_party_member(dbg_game: DBGGame, member_name: str) -> Tuple[bool, str]
     # 更新远征队名单，若移除后名单为空则移除 PartyRosterComponent
     new_members = [m for m in roster.members if m != member_name]
     if new_members:
+
+        # 如果移除成员后远征队名单仍有其他成员，则更新玩家实体的 PartyRosterComponent。
         player_entity.replace(
             PartyRosterComponent,
             player_entity.name,
             new_members,
         )
     else:
+
+        # 如果移除成员后远征队名单为空，则移除玩家实体的 PartyRosterComponent。
         player_entity.remove(PartyRosterComponent)
         logger.debug(f"远征队名单为空，移除 PartyRosterComponent")
 
+    # 记录移除远征队成员的操作日志，并返回成功状态。
     logger.debug(f"将 {member_name} 从远征队名单移除")
     return True, ""
 
@@ -282,21 +285,13 @@ def remove_party_member(dbg_game: DBGGame, member_name: str) -> Tuple[bool, str]
 def get_party_roster(dbg_game: DBGGame) -> List[str]:
     """
     查阅当前远征队名单（不含玩家自身）。
-
-    Args:
-        dbg_game: DBG 游戏实例
-
-    Returns:
-        远征队同伴名称列表；玩家实体或组件不存在时返回空列表
     """
     player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
-    # if player_entity is None:
-    #     return []
-
     if not player_entity.has(PartyRosterComponent):
-        return []
+        return []  # 玩家实体没有 PartyRosterComponent，返回空列表
 
+    # 返回玩家实体当前的远征队成员列表（不含玩家自身）。
     return list(player_entity.get(PartyRosterComponent).members)
 
 
@@ -304,26 +299,20 @@ def get_party_roster(dbg_game: DBGGame) -> List[str]:
 def activate_generate_dungeon(dbg_game: DBGGame) -> Tuple[bool, str]:
     """
     在家园状态下激活地下城创建动作。
-
-    添加 GenerateDungeonAction 到玩家实体，触发 GenerateDungeonActionSystem 在
-    dungeon_generate_pipeline 的下一次推进时执行地下城文本数据创建（Steps 1-4）。
-    成功后自动添加 IllustrateDungeonAction 触发图片生成。动作组件由 ActionCleanupSystem 自动清除。
-
-    Args:
-        dbg_game: DBG 游戏实例
-
-    Returns:
-        Tuple[bool, str]: (是否成功, 失败时的错误详情)
     """
+
+    # 检查玩家是否在家园场景中，如果不在则无法创建地下城。
     if not dbg_game.is_player_in_home_stage:
         error_detail = "玩家不在家园场景中，无法创建地下城"
         logger.error(f"激活地下城创建失败: {error_detail}")
         return False, error_detail
 
+    # 获取地下城生成系统实体，确保存在且唯一，以便后续激活地下城创建动作。
     world_system_entities = dbg_game.get_group(
         Matcher(all_of=[WorldComponent, DungeonGenerationComponent])
     ).entities.copy()
 
+    # 检查是否找到了地下城生成系统实体，如果没有找到则无法激活地下城创建动作。
     if not world_system_entities:
         error_detail = "未找到地下城生成系统实体，无法激活地下城创建"
         logger.error(f"激活地下城创建失败: {error_detail}")
@@ -332,11 +321,13 @@ def activate_generate_dungeon(dbg_game: DBGGame) -> Tuple[bool, str]:
     assert len(world_system_entities) == 1, "存在多个地下城生成系统实体，数据异常"
     world_system_entity = next(iter(world_system_entities))
 
+    # 检查地下城生成系统实体是否已经有 GenerateDungeonAction，如果有则说明动作已激活，避免重复激活。
     if world_system_entity.has(GenerateDungeonAction):
         error_detail = "地下城创建动作已存在，请勿重复激活"
         logger.warning(f"激活地下城创建失败: {error_detail}")
         return False, error_detail
 
+    # 激活地下城创建动作，将 GenerateDungeonAction 添加到地下城生成系统实体中。
     logger.debug(f"激活地下城创建: {world_system_entity.name}")
     world_system_entity.replace(GenerateDungeonAction, world_system_entity.name)
     return True, ""
@@ -347,32 +338,29 @@ def move_item_to_inventory(
     dbg_game: DBGGame,
     item_name: str,
 ) -> Tuple[bool, str]:
-    """将道具从玩家储物箱（StorageComponent）移动到随身背包（InventoryComponent）。
+    """将道具从玩家储物箱（StorageComponent）移动到随身背包（InventoryComponent）。"""
 
-    Args:
-        dbg_game: DBG 游戏实例
-        item_name: 要移动的道具名称（精确匹配）
-
-    Returns:
-        Tuple[bool, str]: (是否成功, 失败时的错误详情)
-    """
+    # 获取玩家实体和全局储物箱实体，并确保它们存在且具有相应的组件。
     player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
+
+    # 获取全局储物箱实体，并确保它存在且具有 StorageComponent。
     storage_entity = dbg_game.get_storage_entity()
     assert storage_entity is not None, "全局储物箱实体不存在！"
-
     assert storage_entity.has(StorageComponent), "全局储物箱实体缺少 StorageComponent"
     assert player_entity.has(InventoryComponent), "玩家实体缺少 InventoryComponent"
 
     storage = storage_entity.get(StorageComponent)
     inventory = player_entity.get(InventoryComponent)
 
+    # 在储物箱中查找指定名称的道具，如果不存在则返回错误。
     target = next((item for item in storage.items if item.name == item_name), None)
     if target is None:
         error_detail = f"储物箱中不存在名为 {item_name!r} 的道具"
         logger.error(f"移动道具到背包失败: {error_detail}")
         return False, error_detail
 
+    # 检查道具类型，如果是时装道具则不允许移入随身背包。
     if target.type == ItemType.COSTUME_ITEM:
         error_detail = (
             f"时装 {item_name!r} 不允许移入随身背包，请通过外观更新功能直接使用"
@@ -380,9 +368,11 @@ def move_item_to_inventory(
         logger.error(f"移动道具到背包失败: {error_detail}")
         return False, error_detail
 
+    # 将道具从储物箱中移除，并添加到玩家随身背包中。
     new_storage_items = [item for item in storage.items if item is not target]
     new_inventory_items = list(inventory.items) + [target]
 
+    # 使用 ECS 的 replace 方法更新储物箱和玩家随身背包的组件数据。
     storage_entity.replace(StorageComponent, storage.name, new_storage_items)
     player_entity.replace(InventoryComponent, player_entity.name, new_inventory_items)
 
@@ -395,35 +385,33 @@ def move_item_to_storage(
     dbg_game: DBGGame,
     item_name: str,
 ) -> Tuple[bool, str]:
-    """将道具从玩家随身背包（InventoryComponent）移动到储物箱（StorageComponent）。
+    """将道具从玩家随身背包（InventoryComponent）移动到储物箱（StorageComponent）。"""
 
-    Args:
-        dbg_game: DBG 游戏实例
-        item_name: 要移动的道具名称（精确匹配）
-
-    Returns:
-        Tuple[bool, str]: (是否成功, 失败时的错误详情)
-    """
+    # 获取玩家实体和全局储物箱实体，并确保它们存在且具有相应的组件。
     player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
+
+    # 获取全局储物箱实体，并确保它存在且具有 StorageComponent。
     storage_entity = dbg_game.get_storage_entity()
     assert storage_entity is not None, "全局储物箱实体不存在！"
-
     assert player_entity.has(InventoryComponent), "玩家实体缺少 InventoryComponent"
     assert storage_entity.has(StorageComponent), "全局储物箱实体缺少 StorageComponent"
 
     inventory = player_entity.get(InventoryComponent)
     storage = storage_entity.get(StorageComponent)
 
+    # 在玩家随身背包中查找指定名称的道具，如果不存在则返回错误。
     target = next((item for item in inventory.items if item.name == item_name), None)
     if target is None:
         error_detail = f"随身背包中不存在名为 {item_name!r} 的道具"
         logger.error(f"移动道具到储物箱失败: {error_detail}")
         return False, error_detail
 
+    # 将道具从玩家随身背包中移除，并添加到全局储物箱中。
     new_inventory_items = [item for item in inventory.items if item is not target]
     new_storage_items = list(storage.items) + [target]
 
+    # 使用 ECS 的 replace 方法更新玩家随身背包和全局储物箱的组件数据。
     player_entity.replace(InventoryComponent, player_entity.name, new_inventory_items)
     storage_entity.replace(StorageComponent, storage.name, new_storage_items)
 
@@ -433,48 +421,45 @@ def move_item_to_storage(
 
 ###################################################################################################################################################################
 def activate_update_appearance(
-    dbg_game: DBGGame, item_name: str, target_name: str = ""
+    dbg_game: DBGGame, item_name: str, target_name: str
 ) -> Tuple[bool, str]:
     """
     为指定角色激活外观更新动作，时装来源为玩家的背包或储物箱（全局）。
-    target_name 为空时默认作用于玩家自身。
-    传入空字符串 item_name 表示移除当前时装，将外观重置为基础体型描述。
-
-    Args:
-        dbg_game: DBG 游戏实例
-        item_name: CostumeItem 的精确名称；传入空字符串表示移除时装
-        target_name: 目标角色全名；为空时默认为玩家自身
-
-    Returns:
-        Tuple[bool, str]: (是否成功, 失败时的错误详情)
     """
 
+    # 检查玩家是否在家园场景中，如果不在则无法更新外观。
     if not dbg_game.is_player_in_home_stage:
         error_detail = "玩家不在家园场景中，无法更新外观"
         logger.error(f"激活外观更新失败: {error_detail}")
         return False, error_detail
 
+    # 获取玩家实体和全局储物箱实体，并确保它们存在且具有相应的组件。
     player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
+
+    # 获取全局储物箱实体，并确保它存在且具有 StorageComponent。
     storage_entity = dbg_game.get_storage_entity()
     assert storage_entity is not None, "全局储物箱实体不存在！"
     assert storage_entity.has(StorageComponent), "全局储物箱实体缺少 StorageComponent"
 
     # 确定目标实体：为空则默认玩家自身
-    if target_name:
+    if not target_name:
+        error_detail = "目标角色名称不能为空"
+        logger.error(f"激活外观更新失败: {error_detail}")
+        return False, error_detail
 
-        target_entity = dbg_game.get_actor_entity(target_name)
-        if target_entity is None:
-            error_detail = f"目标角色 {target_name!r} 不存在"
-            logger.error(f"激活外观更新失败: {error_detail}")
-            return False, error_detail
+    # 获取目标角色实体，并确保它存在且具有 AppearanceComponent。
+    target_entity = dbg_game.get_actor_entity(target_name)
+    if target_entity is None:
+        error_detail = f"目标角色 {target_name!r} 不存在"
+        logger.error(f"激活外观更新失败: {error_detail}")
+        return False, error_detail
 
-        if not target_entity.has(AppearanceComponent):
-            error_detail = f"目标角色 {target_name!r} 缺少 AppearanceComponent"
-            logger.error(f"激活外观更新失败: {error_detail}")
-            return False, error_detail
-    else:
-        target_entity = player_entity
+    # 检查目标角色是否具有 AppearanceComponent，如果没有则无法更新外观。
+    if not target_entity.has(AppearanceComponent):
+        error_detail = f"目标角色 {target_name!r} 缺少 AppearanceComponent"
+        logger.error(f"激活外观更新失败: {error_detail}")
+        return False, error_detail
 
     # 空字符串：脱装，直接触发动作
     if not item_name:
@@ -492,15 +477,20 @@ def activate_update_appearance(
         ),
         None,
     )
+
+    # 如果在储物箱中未找到指定的时装，则返回错误。
     if costume is None:
         error_detail = f"储物箱中不存在名为 {item_name!r} 的时装"
         logger.error(f"激活外观更新失败: {error_detail}")
         return False, error_detail
 
+    # 在储物箱中找到指定的时装后，触发更新外观动作，将目标实体的外观更新为该时装。
     logger.debug(f"激活外观更新: {target_entity.name} <- {item_name}")
     target_entity.replace(
         UpdateAppearanceAction, target_entity.name, item_name, costume
     )
+
+    # 外观更新动作激活成功，返回 True 表示激活成功。
     return True, ""
 
 
@@ -511,28 +501,24 @@ def activate_craft_consumable(
 ) -> Tuple[bool, str]:
     """
     在家园状态下激活工坊合成消耗品动作。
-
-    Args:
-        dbg_game: DBG 游戏实例
-        material_names: 参与合成的材料名称列表（精确匹配，允许重复代表多份）
-
-    Returns:
-        Tuple[bool, str]: (是否成功, 失败时的错误详情)
     """
+
+    # 检查玩家是否在家园场景中，如果不在则无法激活合成动作。
     if not dbg_game.is_player_in_home_stage:
         error_detail = "玩家不在家园场景中，无法激活合成动作"
         logger.error(f"激活合成消耗品失败: {error_detail}")
         return False, error_detail
 
+    # 检查材料列表是否为空，如果为空则无法激活合成动作。
     if not material_names:
         error_detail = "材料列表为空，至少需要一种材料"
         logger.error(f"激活合成消耗品失败: {error_detail}")
         return False, error_detail
 
+    # 获取全局储物箱实体，并确保它存在且具有 StorageComponent。
     storage_entity = dbg_game.get_storage_entity()
     assert storage_entity is not None, "全局储物箱实体不存在！"
     assert storage_entity.has(StorageComponent), "全局储物箱实体缺少 StorageComponent"
-
     storage = storage_entity.get(StorageComponent)
 
     # 校验每种材料在储物箱中存在且类型为 MATERIAL_ITEM（按 count 追踪可用数量）
@@ -541,17 +527,19 @@ def activate_craft_consumable(
         if item.type == ItemType.MATERIAL_ITEM:
             available[item.name] = available.get(item.name, 0) + item.count
 
+    # 统计每种材料的需求数量（按 count 追踪所需数量）
     demand: Dict[str, int] = {}
     for name in material_names:
         demand[name] = demand.get(name, 0) + 1
 
+    # 检查每种材料在储物箱中的可用数量是否满足需求，如果不足则返回错误。
     for name, required in demand.items():
         if available.get(name, 0) < required:
             error_detail = f"储物箱中材料 {name!r} 数量不足（需要 {required}，当前 {available.get(name, 0)}）"
             logger.error(f"激活合成消耗品失败: {error_detail}")
             return False, error_detail
 
-    # 收集材料对象（count = 本次使用量），预填入 action
+    # 收集材料对象（count = 本次使用量），预填入 action，确保每种材料在储物箱中存在且类型正确
     material_items: List[MaterialItem] = []
     for mat_name, used in demand.items():
         source = next(
@@ -567,23 +555,28 @@ def activate_craft_consumable(
         copied.count = used
         material_items.append(copied)
 
+    # 获取工坊世界系统实体，并确保只存在一个实体，否则返回错误。
     workshop_entities = dbg_game.get_group(
         Matcher(all_of=[WorldComponent, WorkshopComponent])
     ).entities.copy()
 
+    # 检查是否存在工坊世界系统实体，如果不存在则返回错误。
     if not workshop_entities:
         error_detail = "未找到工坊世界系统实体，无法激活合成动作"
         logger.error(f"激活合成消耗品失败: {error_detail}")
         return False, error_detail
 
+    # 确保只存在一个工坊世界系统实体，否则返回错误。
     assert len(workshop_entities) == 1, "存在多个工坊世界系统实体，数据异常"
     workshop_entity = next(iter(workshop_entities))
 
+    # 检查工坊世界系统实体是否已经存在合成动作，如果存在则返回错误。
     if workshop_entity.has(CraftConsumableAction):
         error_detail = "合成动作已存在，请勿重复激活"
         logger.warning(f"激活合成消耗品失败: {error_detail}")
         return False, error_detail
 
+    # 激活合成消耗品动作，将材料信息填入工坊世界系统实体的 CraftConsumableAction 中。
     logger.debug(f"激活合成消耗品: {workshop_entity.name}, 材料={material_names}")
     workshop_entity.replace(
         CraftConsumableAction,
@@ -591,6 +584,8 @@ def activate_craft_consumable(
         list(material_names),
         material_items,
     )
+
+    # 返回激活成功的结果。
     return True, ""
 
 
@@ -599,29 +594,24 @@ def activate_craft_gear_item(
     dbg_game: DBGGame,
     material_names: List[str],
 ) -> Tuple[bool, str]:
-    """预校验材料并激活装备合成动作（CraftGearItemAction），实际合成由 CraftGearItemActionSystem 执行。
+    """预校验材料并激活装备合成动作（CraftGearItemAction），实际合成由 CraftGearItemActionSystem 执行。"""
 
-    Args:
-        dbg_game: DBG 游戏实例
-        material_names: 参与合成的材料名称列表（允许重复代表多份）
-
-    Returns:
-        (True, "") 表示激活成功；(False, error_detail) 表示前置校验失败
-    """
+    # 检查玩家是否在家园场景中，如果不在则无法激活合成动作。
     if not dbg_game.is_player_in_home_stage:
         error_detail = "玩家不在家园场景中，无法激活合成动作"
         logger.error(f"激活合成装备失败: {error_detail}")
         return False, error_detail
 
+    # 检查材料列表是否为空，如果为空则无法激活合成动作。
     if not material_names:
         error_detail = "材料列表为空，至少需要一种材料"
         logger.error(f"激活合成装备失败: {error_detail}")
         return False, error_detail
 
+    # 获取全局储物箱实体，用于检查和收集材料。
     storage_entity = dbg_game.get_storage_entity()
     assert storage_entity is not None, "全局储物箱实体不存在！"
     assert storage_entity.has(StorageComponent), "全局储物箱实体缺少 StorageComponent"
-
     storage = storage_entity.get(StorageComponent)
 
     # 校验每种材料在储物箱中存在且类型为 MATERIAL_ITEM（按 count 追踪可用数量）
@@ -630,10 +620,12 @@ def activate_craft_gear_item(
         if item.type == ItemType.MATERIAL_ITEM:
             available[item.name] = available.get(item.name, 0) + item.count
 
+    # 统计每种材料的需求数量（按 count 追踪需要的数量）
     demand: Dict[str, int] = {}
     for name in material_names:
         demand[name] = demand.get(name, 0) + 1
 
+    # 检查每种材料的可用数量是否满足需求，如果不足则无法激活合成动作。
     for name, required in demand.items():
         if available.get(name, 0) < required:
             error_detail = f"储物箱中材料 {name!r} 数量不足（需要 {required}，当前 {available.get(name, 0)}）"
@@ -656,27 +648,34 @@ def activate_craft_gear_item(
         copied.count = used
         material_items.append(copied)
 
+    # 获取工坊世界系统实体，用于激活合成动作。
     workshop_entities = dbg_game.get_group(
         Matcher(all_of=[WorldComponent, WorkshopComponent])
     ).entities.copy()
 
+    # 如果没有找到工坊世界系统实体，则无法激活合成动作。
     if not workshop_entities:
         error_detail = "未找到工坊世界系统实体，无法激活合成动作"
         logger.error(f"激活合成装备失败: {error_detail}")
         return False, error_detail
 
+    # 确保只存在一个工坊世界系统实体，否则数据异常。
     assert len(workshop_entities) == 1, "存在多个工坊世界系统实体，数据异常"
     workshop_entity = next(iter(workshop_entities))
 
+    # 检查工坊世界系统实体是否已经存在合成动作，如果存在则无法重复激活。
     if workshop_entity.has(CraftGearItemAction):
         error_detail = "合成动作已存在，请勿重复激活"
         logger.warning(f"激活合成装备失败: {error_detail}")
         return False, error_detail
 
+    # 激活合成动作，将材料信息填入工坊世界系统实体的 CraftGearItemAction 中。
     logger.debug(f"激活合成装备: {workshop_entity.name}, 材料={material_names}")
     workshop_entity.replace(
         CraftGearItemAction, workshop_entity.name, list(material_names), material_items
     )
+
+    # 激活合成动作成功，返回 True 表示激活成功。
     return True, ""
 
 
@@ -685,29 +684,24 @@ def activate_craft_costume_item(
     dbg_game: DBGGame,
     material_names: List[str],
 ) -> Tuple[bool, str]:
-    """预校验材料并激活时装制作动作（CraftCostumeItemAction），实际制作由 CraftCostumeItemActionSystem 执行。
+    """预校验材料并激活时装制作动作（CraftCostumeItemAction），实际制作由 CraftCostumeItemActionSystem 执行。"""
 
-    Args:
-        dbg_game: DBG 游戏实例
-        material_names: 参与制作的材料名称列表（允许重复代表多份）
-
-    Returns:
-        (True, "") 表示激活成功；(False, error_detail) 表示前置校验失败
-    """
+    # 检查玩家是否在家园场景中，如果不在则无法激活制作动作。
     if not dbg_game.is_player_in_home_stage:
         error_detail = "玩家不在家园场景中，无法激活制作动作"
         logger.error(f"激活制作时装失败: {error_detail}")
         return False, error_detail
 
+    # 检查材料列表是否为空，如果为空则无法激活制作动作。
     if not material_names:
         error_detail = "材料列表为空，至少需要一种材料"
         logger.error(f"激活制作时装失败: {error_detail}")
         return False, error_detail
 
+    # 获取全局储物箱实体，用于检查和收集材料。
     storage_entity = dbg_game.get_storage_entity()
     assert storage_entity is not None, "全局储物箱实体不存在！"
     assert storage_entity.has(StorageComponent), "全局储物箱实体缺少 StorageComponent"
-
     storage = storage_entity.get(StorageComponent)
 
     # 校验每种材料在储物箱中存在且类型为 MATERIAL_ITEM（按 count 追踪可用数量）
@@ -716,17 +710,19 @@ def activate_craft_costume_item(
         if item.type == ItemType.MATERIAL_ITEM:
             available[item.name] = available.get(item.name, 0) + item.count
 
+    # 统计每种材料的需求数量（按 count 追踪需要的数量）
     demand: Dict[str, int] = {}
     for name in material_names:
         demand[name] = demand.get(name, 0) + 1
 
+    # 检查每种材料的可用数量是否满足需求，如果不足则无法激活制作动作。
     for name, required in demand.items():
         if available.get(name, 0) < required:
             error_detail = f"储物箱中材料 {name!r} 数量不足（需要 {required}，当前 {available.get(name, 0)}）"
             logger.error(f"激活制作时装失败: {error_detail}")
             return False, error_detail
 
-    # 收集材料对象（count = 本次使用量），预填入 action
+    # 收集材料对象（count = 本次使用量），预填入 CraftCostumeItemAction 中。
     material_items: List[MaterialItem] = []
     for mat_name, used in demand.items():
         source = next(
@@ -742,23 +738,28 @@ def activate_craft_costume_item(
         copied.count = used
         material_items.append(copied)
 
+    # 获取工坊世界系统实体，用于激活制作动作。
     workshop_entities = dbg_game.get_group(
         Matcher(all_of=[WorldComponent, WorkshopComponent])
     ).entities.copy()
 
+    # 如果没有找到工坊世界系统实体，则无法激活制作动作。
     if not workshop_entities:
         error_detail = "未找到工坊世界系统实体，无法激活制作动作"
         logger.error(f"激活制作时装失败: {error_detail}")
         return False, error_detail
 
+    # 确保只存在一个工坊世界系统实体，否则数据异常。
     assert len(workshop_entities) == 1, "存在多个工坊世界系统实体，数据异常"
     workshop_entity = next(iter(workshop_entities))
 
+    # 检查工坊世界系统实体是否已经存在制作动作，如果存在则无法重复激活。
     if workshop_entity.has(CraftCostumeItemAction):
         error_detail = "制作动作已存在，请勿重复激活"
         logger.warning(f"激活制作时装失败: {error_detail}")
         return False, error_detail
 
+    # 激活制作动作，将材料信息填入工坊世界系统实体的 CraftCostumeItemAction 中。
     logger.debug(f"激活制作时装: {workshop_entity.name}, 材料={material_names}")
     workshop_entity.replace(
         CraftCostumeItemAction,
@@ -766,4 +767,6 @@ def activate_craft_costume_item(
         list(material_names),
         material_items,
     )
+
+    # 制作动作激活成功，返回 True 表示激活成功。
     return True, ""

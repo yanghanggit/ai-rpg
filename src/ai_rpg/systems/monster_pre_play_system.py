@@ -262,14 +262,8 @@ class MonsterPrePlaySystem(ReactiveProcessor):
 
         # 解析并替换 PlayCardsAction
         for client in chat_clients:
-
-            found_entity = self._game.get_entity_by_name(client.name)
-            assert (
-                found_entity is not None
-            ), f"MonsterPrePlaySystem: 无法找到实体 {client.name}"
-
             # 解析 LLM 响应，替换 PlayCardsAction
-            self._process_monster_decision(found_entity, client)
+            self._process_monster_decision(client)
 
     ####################################################################################################################################
     def _create_monster_decision_client(self, entity: Entity) -> DeepSeekClient:
@@ -353,108 +347,118 @@ class MonsterPrePlaySystem(ReactiveProcessor):
     #         logger.debug(f"[mock context] [{entity.name}] 注入 pass_turn 引导 context")
 
     ####################################################################################################################################
-    def _process_monster_decision(self, entity: Entity, client: DeepSeekClient) -> None:
+    def _process_monster_decision(self, client: DeepSeekClient) -> None:
         """解析 LLM 决策响应，替换怪物的 PlayCardsAction。
 
         Args:
             entity: 怪物实体
             client: 包含 LLM 响应的 DeepSeekClient
         """
+
+        entity = self._game.get_entity_by_name(client.name)
+        assert entity is not None, f"MonsterPrePlaySystem: 无法找到实体 {client.name}"
+
+        # 检查 LLM 是否返回了有效的 AI 消息，如果没有则记录错误并执行过牌
+        if client.response_ai_message is None:
+            logger.error(
+                f"MonsterPrePlaySystem: [{entity.name}] LLM 返回空响应，执行过牌"
+            )
+            entity.replace(PassTurnAction, entity.name)
+            return
+
         try:
             decision = MonsterDecisionResponse.model_validate_json(
                 extract_json_from_code_block(client.response_content)
             )
-
-            # 写对话历史（压缩版 prompt + AI 原文，附挂全量 prompt 供检索）
-            current_round_number = len(self._game.current_dungeon.current_rounds or [])
-            self._game.add_human_message(
-                entity=entity,
-                human_message=HumanMessage(
-                    content=client.compressed_prompt,
-                    draw_cards_round_number=current_round_number,
-                    draw_cards_full_prompt=client.prompt,
-                ),
-            )
-            assert (
-                client.response_ai_message is not None
-            ), "MonsterPrePlaySystem: AI 消息不能为空"
-            self._game.add_ai_message(entity, client.response_ai_message)
-
-            if decision.pass_turn:
-                entity.replace(PassTurnAction, entity.name)
-                logger.debug(
-                    f"MonsterPrePlaySystem: [{entity.name}] 决策过牌（跳过本次出牌机会）"
-                )
-                return
-
-            hand_comp = entity.get(HandComponent)
-            assert hand_comp is not None, "MonsterPrePlaySystem: HandComponent 不能为空"
-
-            selected_card = next(
-                (c for c in hand_comp.cards if c.name == decision.card_name),
-                None,
-            )
-            if selected_card is None:
-                logger.error(
-                    f"MonsterPrePlaySystem: [{entity.name}] LLM 返回的卡牌名 '{decision.card_name}' "
-                    f"不在手牌中：{[c.name for c in hand_comp.cards]}，执行过牌"
-                )
-                entity.replace(PassTurnAction, entity.name)
-                return
-
-            # 根据 target_type 解析出牌目标
-            alive_actors = get_alive_actors_in_stage(self._game, entity)
-            alive_names = {a.name for a in alive_actors}
-
-            match selected_card.target_type:
-                case TargetType.ENEMY_ALL:
-                    # 自动填充所有存活的远征队成员（对怪物来说"敌方"= PartyMember）
-                    valid_targets = [
-                        a.name for a in alive_actors if a.has(PartyMemberComponent)
-                    ]
-                case TargetType.ENEMY_RANDOM_MULTI:
-                    # 每段独立随机命中一名存活远征队成员（对怪物来说"敌方"= PartyMember）
-                    party_members = [
-                        a for a in alive_actors if a.has(PartyMemberComponent)
-                    ]
-                    valid_targets = (
-                        [
-                            e.name
-                            for e in random.choices(
-                                party_members, k=selected_card.hit_count
-                            )
-                        ]
-                        if party_members
-                        else []
-                    )
-                case TargetType.SELF_ONLY:
-                    # 仅作用于施法者自身
-                    valid_targets = [entity.name]
-                case _:
-                    # ENEMY_SINGLE / ALLY_* — 过滤掉不存在的目标名
-                    valid_targets = [t for t in decision.targets if t in alive_names]
-                    if len(valid_targets) != len(decision.targets):
-                        logger.warning(
-                            f"MonsterPrePlaySystem: [{entity.name}] 过滤无效目标 "
-                            f"{set(decision.targets) - alive_names}"
-                        )
-
-            # 替换 PlayCardsAction，填入真实卡牌和目标
-            entity.replace(
-                PlayCardsAction,
-                entity.name,
-                selected_card,
-                valid_targets,
-            )
-            logger.debug(
-                f"MonsterPrePlaySystem: [{entity.name}] 决策出牌 '{selected_card.name}'，目标：{valid_targets}"
-            )
-
         except Exception as e:
             logger.error(f"{client.response_content}")
             logger.error(
                 f"MonsterPrePlaySystem: [{entity.name}] 解析 LLM 响应失败，执行过牌。Exception: {e}"
             )
             entity.replace(PassTurnAction, entity.name)
+            return
+
+        # 写对话历史（压缩版 prompt + AI 原文，附挂全量 prompt 供检索）
+        current_round_number = len(self._game.current_dungeon.current_rounds or [])
+        self._game.add_human_message(
+            entity=entity,
+            human_message=HumanMessage(
+                content=client.compressed_prompt,
+                draw_cards_round_number=current_round_number,
+                draw_cards_full_prompt=client.prompt,
+            ),
+        )
+        assert (
+            client.response_ai_message is not None
+        ), "MonsterPrePlaySystem: AI 消息不能为空"
+        self._game.add_ai_message(entity, client.response_ai_message)
+
+        if decision.pass_turn:
+            entity.replace(PassTurnAction, entity.name)
+            logger.debug(
+                f"MonsterPrePlaySystem: [{entity.name}] 决策过牌（跳过本次出牌机会）"
+            )
+            return
+
+        hand_comp = entity.get(HandComponent)
+        assert hand_comp is not None, "MonsterPrePlaySystem: HandComponent 不能为空"
+
+        selected_card = next(
+            (c for c in hand_comp.cards if c.name == decision.card_name),
+            None,
+        )
+        if selected_card is None:
+            logger.error(
+                f"MonsterPrePlaySystem: [{entity.name}] LLM 返回的卡牌名 '{decision.card_name}' "
+                f"不在手牌中：{[c.name for c in hand_comp.cards]}，执行过牌"
+            )
+            entity.replace(PassTurnAction, entity.name)
+            return
+
+        # 根据 target_type 解析出牌目标
+        alive_actors = get_alive_actors_in_stage(self._game, entity)
+        alive_names = {a.name for a in alive_actors}
+
+        match selected_card.target_type:
+            case TargetType.ENEMY_ALL:
+                # 自动填充所有存活的远征队成员（对怪物来说"敌方"= PartyMember）
+                valid_targets = [
+                    a.name for a in alive_actors if a.has(PartyMemberComponent)
+                ]
+            case TargetType.ENEMY_RANDOM_MULTI:
+                # 每段独立随机命中一名存活远征队成员（对怪物来说"敌方"= PartyMember）
+                party_members = [a for a in alive_actors if a.has(PartyMemberComponent)]
+                valid_targets = (
+                    [
+                        e.name
+                        for e in random.choices(
+                            party_members, k=selected_card.hit_count
+                        )
+                    ]
+                    if party_members
+                    else []
+                )
+            case TargetType.SELF_ONLY:
+                # 仅作用于施法者自身
+                valid_targets = [entity.name]
+            case _:
+                # ENEMY_SINGLE / ALLY_* — 过滤掉不存在的目标名
+                valid_targets = [t for t in decision.targets if t in alive_names]
+                if len(valid_targets) != len(decision.targets):
+                    logger.warning(
+                        f"MonsterPrePlaySystem: [{entity.name}] 过滤无效目标 "
+                        f"{set(decision.targets) - alive_names}"
+                    )
+
+        # 替换 PlayCardsAction，填入真实卡牌和目标
+        entity.replace(
+            PlayCardsAction,
+            entity.name,
+            selected_card,
+            valid_targets,
+        )
+        logger.debug(
+            f"MonsterPrePlaySystem: [{entity.name}] 决策出牌 '{selected_card.name}'，目标：{valid_targets}"
+        )
 
     ####################################################################################################################################

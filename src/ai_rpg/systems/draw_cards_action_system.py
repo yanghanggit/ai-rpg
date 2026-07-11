@@ -286,24 +286,28 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 )
             )
 
+        # 并行发送所有 LLM 请求，等待所有实体的 DRAW 阶段调整完成
         await DeepSeekClient.batch_chat(clients=chat_clients)
 
+        # 所有 LLM 请求完成后，标记本轮 DRAW 阶段已完成，准备解析调整结果
         last_round.draw_completed = True
+
         # 第三步：解析调整结果并写入 HandComponent
         adjusted_entity_names = {e.name for e in entities_with_effects}
         for entity in entities:
+
+            # 如果当前实体没有被调整过（即没有 DRAW 阶段效果），直接写入原始抽取手牌
             if entity.name not in adjusted_entity_names:
                 entity.replace(
                     HandComponent,
                     entity.name,
                     entity_drawn_cards[entity.name],
-                    # current_round_number,
                 )
                 continue
 
+            # 当前实体有 DRAW 阶段效果，需要解析 LLM 的调整响应并更新手牌
             chat_client = next(c for c in chat_clients if c.name == entity.name)
             self._process_adjust_response(
-                entity=entity,
                 chat_client=chat_client,
                 original_cards=entity_drawn_cards[entity.name],
                 current_round_number=current_round_number,
@@ -312,82 +316,100 @@ class DrawCardsActionSystem(ReactiveProcessor):
     #######################################################################################################################################
     def _process_adjust_response(
         self,
-        entity: Entity,
         chat_client: DeepSeekClient,
         original_cards: List[Card],
         current_round_number: int,
     ) -> None:
         """解析 LLM 调整响应并写入 HandComponent。解析失败时回退使用原始抽取手牌。"""
 
+        # 根据 chat_client 的名字获取对应的实体对象，确保后续操作有正确的实体上下文
+        entity = self._game.get_entity_by_name(chat_client.name)
+        assert entity is not None, f"无法找到角色实体: {chat_client.name}"
+
+        # 检查 LLM 是否返回了有效的 AI 消息，若无则回退使用原始抽取手牌
+        if chat_client.response_ai_message is None:
+            logger.error(f"[{entity.name}] LLM 返回空响应，DRAW 效果调整回退为原始手牌")
+            self._fallback_to_original_hand(entity, original_cards)
+            return
+
+        # 尝试解析 LLM 返回的 JSON 内容，构建 DrawAdjustResponse 对象
         try:
             response = DrawAdjustResponse.model_validate_json(
                 extract_json_from_code_block(chat_client.response_content)
             )
-
-            valid_target_types = {e.value for e in TargetType}
-            adjusted_cards: List[Card] = []
-            for i, entry in enumerate(response.cards):
-                if i >= len(original_cards):
-                    break
-                if entry.target_type not in valid_target_types:
-                    logger.warning(
-                        f"[{entity.name}] 调整后卡牌「{entry.name}」target_type 无效 {entry.target_type!r}，保留原值"
-                    )
-                    entry.target_type = original_cards[i].target_type.value
-
-                orig = original_cards[i]
-                adjusted_cards.append(
-                    Card(
-                        uuid=orig.uuid,  # 保留副本 uuid，确保跨系统身份一致
-                        name=orig.name,  # 保持原名
-                        description=entry.description,
-                        affixes=entry.affixes,
-                        modifiers=entry.modifiers,
-                        playable=entry.playable,
-                        exhaust=entry.exhaust,
-                        damage_dealt=entry.damage_dealt,
-                        energy_delta=entry.energy_delta,
-                        hit_count=entry.hit_count,
-                        target_type=TargetType(entry.target_type),
-                        source=orig.source,
-                        # 首次修改时快照原始牌；若原始牌本身已是副本则保留其快照，确保还原点始终指向最原始版本
-                        original_data=(
-                            orig if orig.original_data is None else orig.original_data
-                        ),
-                    )
-                )
-
-            # LLM 返回张数不足时用原始牌补足
-            if len(adjusted_cards) < len(original_cards):
-                adjusted_cards.extend(original_cards[len(adjusted_cards) :])
-
-            self._game.add_human_message(
-                entity=entity,
-                human_message=HumanMessage(
-                    content=chat_client.prompt,
-                    draw_cards_round_number=current_round_number,
-                ),
-            )
-            assert chat_client.response_ai_message is not None
-            self._game.add_ai_message(
-                entity,
-                chat_client.response_ai_message.model_copy(
-                    update={"draw_cards_round_number": current_round_number}
-                ),
-            )
-
-            entity.replace(HandComponent, entity.name, adjusted_cards)
-            logger.debug(
-                f"[{entity.name}] DRAW 效果调整后手牌 {len(adjusted_cards)} 张：{[c.name for c in adjusted_cards]}"
-            )
-
         except Exception as e:
             logger.error(
                 f"DrawCardsActionSystem 调整失败: {e}\n{chat_client.response_content}"
             )
-            # 回退：使用原始抽取手牌，不阻塞回合
-            entity.replace(HandComponent, entity.name, original_cards)
-            self._game.add_human_message(
-                entity=entity,
-                human_message=HumanMessage(content=_FALLBACK_ADJUST_SYSTEM_MESSAGE),
+            self._fallback_to_original_hand(entity, original_cards)
+            return
+
+        valid_target_types = {e.value for e in TargetType}
+        adjusted_cards: List[Card] = []
+        for i, entry in enumerate(response.cards):
+            if i >= len(original_cards):
+                break
+            if entry.target_type not in valid_target_types:
+                logger.warning(
+                    f"[{entity.name}] 调整后卡牌「{entry.name}」target_type 无效 {entry.target_type!r}，保留原值"
+                )
+                entry.target_type = original_cards[i].target_type.value
+
+            orig = original_cards[i]
+            adjusted_cards.append(
+                Card(
+                    uuid=orig.uuid,  # 保留副本 uuid，确保跨系统身份一致
+                    name=orig.name,  # 保持原名
+                    description=entry.description,
+                    affixes=entry.affixes,
+                    modifiers=entry.modifiers,
+                    playable=entry.playable,
+                    exhaust=entry.exhaust,
+                    damage_dealt=entry.damage_dealt,
+                    energy_delta=entry.energy_delta,
+                    hit_count=entry.hit_count,
+                    target_type=TargetType(entry.target_type),
+                    source=orig.source,
+                    # 首次修改时快照原始牌；若原始牌本身已是副本则保留其快照，确保还原点始终指向最原始版本
+                    original_data=(
+                        orig if orig.original_data is None else orig.original_data
+                    ),
+                )
             )
+
+        # LLM 返回张数不足时用原始牌补足
+        if len(adjusted_cards) < len(original_cards):
+            adjusted_cards.extend(original_cards[len(adjusted_cards) :])
+
+        # 将本轮的 prompt 和 AI 回复写入 agent 上下文，保持对话连续性
+        self._game.add_human_message(
+            entity=entity,
+            human_message=HumanMessage(
+                content=chat_client.prompt,
+                draw_cards_round_number=current_round_number,
+            ),
+        )
+        # assert chat_client.response_ai_message is not None
+        self._game.add_ai_message(
+            entity,
+            chat_client.response_ai_message.model_copy(
+                update={"draw_cards_round_number": current_round_number}
+            ),
+        )
+
+        # 将调整后的手牌写入实体的 HandComponent，确保后续系统使用的是最新的手牌
+        entity.replace(HandComponent, entity.name, adjusted_cards)
+        logger.debug(
+            f"[{entity.name}] DRAW 效果调整后手牌 {len(adjusted_cards)} 张：{[c.name for c in adjusted_cards]}"
+        )
+
+    #######################################################################################################################################
+    def _fallback_to_original_hand(
+        self, entity: Entity, original_cards: List[Card]
+    ) -> None:
+        """回退：使用原始抽取手牌，不阻塞回合。"""
+        entity.replace(HandComponent, entity.name, original_cards)
+        self._game.add_human_message(
+            entity=entity,
+            human_message=HumanMessage(content=_FALLBACK_ADJUST_SYSTEM_MESSAGE),
+        )

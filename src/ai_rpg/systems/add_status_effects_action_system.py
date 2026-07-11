@@ -105,6 +105,7 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
             task_hints=add_status_effects_action.task_hints,
         )
 
+        # 如果启用了压缩提示词，则生成压缩后的提示词，用于在与 LLM 交互时减少上下文长度，提高效率
         compressed_message: Optional[str] = None
         if self._use_compressed_prompt:
             compressed_message = generate_compressed_add_status_effects_prompt(
@@ -113,6 +114,7 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
                 task_hints=add_status_effects_action.task_hints,
             )
 
+        # 构建 DeepSeekClient 实例，用于与 LLM 交互，传入实体名称、提示词、压缩提示词以及实体上下文信息
         return DeepSeekClient(
             name=entity.name,
             prompt=prompt,
@@ -156,10 +158,14 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
     def _process_status_effects_response(self, chat_client: DeepSeekClient) -> None:
         """解析 LLM 响应并追加新状态效果；将本轮对话写入实体上下文。"""
 
+        # 检查 LLM 是否返回了有效的 AI 消息，如果没有则记录错误并返回
+        if chat_client.response_ai_message is None:
+            logger.error(f"[{chat_client.name}] LLM 返回空响应")
+            return
+
         ## 获取对应实体
         entity = self._game.get_entity_by_name(chat_client.name)
         assert entity is not None, f"无法找到角色实体: {chat_client.name}"
-
         assert entity.has(
             StatusEffectsComponent
         ), f"Entity {entity.name} must have StatusEffectsComponent"
@@ -168,52 +174,52 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
         try:
             json_content = extract_json_from_code_block(chat_client.response_content)
             format_response = AddStatusEffectsResponse.model_validate_json(json_content)
-
-            # 将本轮 prompt 写入角色上下文（Human 端）
-            if self._use_compressed_prompt:
-                self._game.add_human_message(
-                    entity=entity,
-                    human_message=HumanMessage(
-                        content=chat_client.compressed_prompt,
-                        add_status_effects_full_prompt=chat_client.prompt,
-                    ),
-                )
-            else:
-                self._game.add_human_message(
-                    entity=entity,
-                    human_message=HumanMessage(content=chat_client.prompt),
-                )
-
-            # 将 LLM 回复写入角色上下文（AI 端），完成本轮对话
-            assert chat_client.response_ai_message is not None
-            self._game.add_ai_message(
-                entity=entity, ai_message=chat_client.response_ai_message
-            )
-
-            # 添加新效果到现有列表
-            if format_response.add_effects:
-
-                # 将新增效果的 source 字段设置为角色名称，便于后续追踪来源
-                for effect in format_response.add_effects:
-                    effect.source = entity.name
-
-                # 追加新效果到 CombatStatusEffectsComponent
-                combat_status_effects = entity.get(StatusEffectsComponent)
-                combat_status_effects.status_effects.extend(format_response.add_effects)
-                logger.debug(
-                    f"[{entity.name}] 新增 {len(format_response.add_effects)} 个状态效果"
-                )
-                for effect in format_response.add_effects:
-                    logger.debug(
-                        f"[{entity.name}] 新增效果: 「{effect.name}」 phase={effect.phase} duration={effect.duration}"
-                    )
-
-            else:
-                logger.debug(f"[{entity.name}] 本回合无新增状态效果")
-
         except Exception as e:
             logger.error(f"[{entity.name}] 解析状态效果评估失败: {e}")
             logger.error(f"原始响应: {chat_client.response_content}")
+            return
+
+        # 将本轮 prompt 写入角色上下文（Human 端）
+        if self._use_compressed_prompt:
+            self._game.add_human_message(
+                entity=entity,
+                human_message=HumanMessage(
+                    content=chat_client.compressed_prompt,
+                    add_status_effects_full_prompt=chat_client.prompt,
+                ),
+            )
+        else:
+            self._game.add_human_message(
+                entity=entity,
+                human_message=HumanMessage(content=chat_client.prompt),
+            )
+
+        # 将 LLM 回复写入角色上下文（AI 端），完成本轮对话
+        assert chat_client.response_ai_message is not None
+        self._game.add_ai_message(
+            entity=entity, ai_message=chat_client.response_ai_message
+        )
+
+        # 添加新效果到现有列表
+        if format_response.add_effects:
+
+            # 将新增效果的 source 字段设置为角色名称，便于后续追踪来源
+            for effect in format_response.add_effects:
+                effect.source = entity.name
+
+            # 追加新效果到 CombatStatusEffectsComponent
+            combat_status_effects = entity.get(StatusEffectsComponent)
+            combat_status_effects.status_effects.extend(format_response.add_effects)
+            logger.debug(
+                f"[{entity.name}] 新增 {len(format_response.add_effects)} 个状态效果"
+            )
+            for effect in format_response.add_effects:
+                logger.debug(
+                    f"[{entity.name}] 新增效果: 「{effect.name}」 phase={effect.phase} duration={effect.duration}"
+                )
+
+        else:
+            logger.debug(f"[{entity.name}] 本回合无新增状态效果")
 
 
 #######################################################################################################################################

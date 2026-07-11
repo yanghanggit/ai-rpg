@@ -150,90 +150,94 @@ class DeckGenerationSystem(ReactiveProcessor):
     ) -> None:
         """解析 LLM 响应，将生成卡牌洗牌填入 DrawPileComponent。解析失败时跳过（DrawPile 保持空）。"""
 
+        # 检查 LLM 是否返回了有效的 AI 消息，如果没有则记录错误并返回
+        if chat_client.response_ai_message is None:
+            logger.error(f"[{chat_client.name}] LLM 返回空响应，跳过牌库生成")
+            return
+
         entity = self._game.get_entity_by_name(chat_client.name)
         assert (
             entity is not None
         ), f"DeckGenerationSystem: 无法找到实体 {chat_client.name} 以处理生成结果"
 
         try:
-
             # 解析 LLM 响应 JSON
             response = DeckGenerateResponse.model_validate_json(
                 extract_json_from_code_block(chat_client.response_content)
             )
-
-            valid_target_types = {e.value for e in TargetType}
-            cards: List[Card] = []
-            for entry in response.cards:
-
-                # 验证 target_type 字段值是否合法，非法则跳过该卡并发出警告
-                if entry.target_type not in valid_target_types:
-                    warn_msg = (
-                        f"[系统警告] 你刚才生成的牌库卡牌「{entry.name}」的 target_type 字段值为"
-                        f"「{entry.target_type}」，不属于有效值（{sorted(valid_target_types)}），"
-                        f"该卡已被系统废弃。"
-                    )
-                    logger.warning(
-                        f"[{entity.name}] 牌库卡牌「{entry.name}」target_type 无效，已废弃：{entry.target_type!r}"
-                    )
-                    self._game.add_human_message(
-                        entity=entity, human_message=HumanMessage(content=warn_msg)
-                    )
-                    continue
-
-                cards.append(
-                    Card(
-                        name=entry.name,
-                        description=entry.description,
-                        affixes=entry.affixes,
-                        modifiers=entry.modifiers,
-                        playable=entry.playable,
-                        exhaust=entry.exhaust,
-                        damage_dealt=entry.damage_dealt,
-                        energy_delta=entry.energy_delta,
-                        hit_count=entry.hit_count,
-                        target_type=TargetType(entry.target_type),
-                        source=entity.name,
-                    )
-                )
-
-            if len(cards) != num_cards:
-                logger.warning(
-                    f"[{entity.name}] 牌库生成卡牌数量（{len(cards)}）与预期（{num_cards}）不符"
-                )
-
-            # 累积到原始牌库：本次新生成的牌追加到 DeckComponent
-            deck_comp = entity.get(DeckComponent)
-            assert deck_comp is not None, f"{entity.name} 缺少 DeckComponent"
-            deck_comp.cards.extend(cards)
-
-            # 洗牌后将本次新牌副本追加到 DrawPile（只操作本批次 cards，不受历史牌影响）
-            random.shuffle(cards)
-            draw_pile = entity.get(DrawPileComponent)
-            assert draw_pile is not None, f"{entity.name} 缺少 DrawPileComponent"
-            draw_pile.cards.extend([c.model_copy() for c in cards])
-
-            # 将本轮任务提示词与 LLM 回复写入 agent 对话历史
-            self._game.add_human_message(
-                entity=entity,
-                human_message=HumanMessage(
-                    content=chat_client.compressed_prompt,
-                    deck_generation_full_prompt=chat_client.prompt,
-                ),
-            )
-            assert chat_client.response_ai_message is not None
-            self._game.add_ai_message(
-                entity=entity, ai_message=chat_client.response_ai_message
-            )
-
-            logger.debug(
-                f"[{entity.name}] 牌库生成完成：本次 {len(cards)} 张副本已洗牌填入 DrawPile"
-                f"，DeckComponent 共 {len(deck_comp.cards)} 张原始牌（含本次）"
-                f"：{[c.name for c in cards]}"
-            )
-
         except Exception as e:
             logger.error(
                 f"DeckGenerationSystem 解析失败 [{entity.name}]: {e}\n{chat_client.response_content}"
             )
             # 解析失败：DrawPile 保持空，DrawCardsActionSystem 回合首次抽牌时会插入兜底牌
+            return
+
+        valid_target_types = {e.value for e in TargetType}
+        cards: List[Card] = []
+        for entry in response.cards:
+
+            # 验证 target_type 字段值是否合法，非法则跳过该卡并发出警告
+            if entry.target_type not in valid_target_types:
+                warn_msg = (
+                    f"[系统警告] 你刚才生成的牌库卡牌「{entry.name}」的 target_type 字段值为"
+                    f"「{entry.target_type}」，不属于有效值（{sorted(valid_target_types)}），"
+                    f"该卡已被系统废弃。"
+                )
+                logger.warning(
+                    f"[{entity.name}] 牌库卡牌「{entry.name}」target_type 无效，已废弃：{entry.target_type!r}"
+                )
+                self._game.add_human_message(
+                    entity=entity, human_message=HumanMessage(content=warn_msg)
+                )
+                continue
+
+            cards.append(
+                Card(
+                    name=entry.name,
+                    description=entry.description,
+                    affixes=entry.affixes,
+                    modifiers=entry.modifiers,
+                    playable=entry.playable,
+                    exhaust=entry.exhaust,
+                    damage_dealt=entry.damage_dealt,
+                    energy_delta=entry.energy_delta,
+                    hit_count=entry.hit_count,
+                    target_type=TargetType(entry.target_type),
+                    source=entity.name,
+                )
+            )
+
+        if len(cards) != num_cards:
+            logger.warning(
+                f"[{entity.name}] 牌库生成卡牌数量（{len(cards)}）与预期（{num_cards}）不符"
+            )
+
+        # 累积到原始牌库：本次新生成的牌追加到 DeckComponent
+        deck_comp = entity.get(DeckComponent)
+        assert deck_comp is not None, f"{entity.name} 缺少 DeckComponent"
+        deck_comp.cards.extend(cards)
+
+        # 洗牌后将本次新牌副本追加到 DrawPile（只操作本批次 cards，不受历史牌影响）
+        random.shuffle(cards)
+        draw_pile = entity.get(DrawPileComponent)
+        assert draw_pile is not None, f"{entity.name} 缺少 DrawPileComponent"
+        draw_pile.cards.extend([c.model_copy() for c in cards])
+
+        # 将本轮任务提示词与 LLM 回复写入 agent 对话历史
+        self._game.add_human_message(
+            entity=entity,
+            human_message=HumanMessage(
+                content=chat_client.compressed_prompt,
+                deck_generation_full_prompt=chat_client.prompt,
+            ),
+        )
+        assert chat_client.response_ai_message is not None
+        self._game.add_ai_message(
+            entity=entity, ai_message=chat_client.response_ai_message
+        )
+
+        logger.debug(
+            f"[{entity.name}] 牌库生成完成：本次 {len(cards)} 张副本已洗牌填入 DrawPile"
+            f"，DeckComponent 共 {len(deck_comp.cards)} 张原始牌（含本次）"
+            f"：{[c.name for c in cards]}"
+        )

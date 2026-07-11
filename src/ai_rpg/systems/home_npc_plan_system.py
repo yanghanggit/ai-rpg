@@ -94,11 +94,7 @@ class HomeNpcPlanSystem(ReactiveProcessor):
 
         # 解析 LLM 响应并转化为游戏行动组件，保存对话历史
         for chat_client in chat_clients:
-            response_entity = self._game.get_entity_by_name(chat_client.name)
-            assert (
-                response_entity is not None
-            ), f"Cannot find entity by name: {chat_client.name}"
-            self._execute_actor_actions(response_entity, chat_client)
+            self._execute_actor_actions(chat_client)
 
     #######################################################################################################################################
     def _inject_npc_standby_context(
@@ -179,9 +175,7 @@ class HomeNpcPlanSystem(ReactiveProcessor):
         )
 
     #######################################################################################################################################
-    def _execute_actor_actions(
-        self, actor_entity: Entity, chat_client: DeepSeekClient
-    ) -> None:
+    def _execute_actor_actions(self, chat_client: DeepSeekClient) -> None:
         """执行角色的行动决策。
 
         解析 AI 响应并转化为游戏行动组件，保存对话历史。
@@ -190,89 +184,99 @@ class HomeNpcPlanSystem(ReactiveProcessor):
             actor_entity: 角色实体
             chat_client: 聊天客户端（包含 AI 响应）
         """
-        try:
 
+        actor_entity = self._game.get_entity_by_name(chat_client.name)
+        assert (
+            actor_entity is not None
+        ), f"Cannot find entity by name: {chat_client.name}"
+
+        # 检查 LLM 是否返回了有效的 AI 消息，如果没有则记录错误并返回
+        if chat_client.response_ai_message is None:
+            logger.error(f"HomeNpcPlanSystem: [{actor_entity.name}] LLM 返回空响应")
+            return
+
+        try:
             # 验证响应
             validated_response = ActionPlanResponse.model_validate_json(
                 extract_json_from_code_block(chat_client.response_content)
             )
-
-            # 添加上下文！存入压缩版 prompt，附挂原始全量 prompt 供检索
-            if self._use_compressed_prompt:
-                self._game.add_human_message(
-                    actor_entity,
-                    HumanMessage(
-                        content=chat_client.compressed_prompt,
-                        home_actor_planning=actor_entity.name,
-                        home_actor_full_prompt=chat_client.prompt,
-                    ),
-                )
-            else:
-                self._game.add_human_message(
-                    actor_entity,
-                    HumanMessage(
-                        content=chat_client.prompt,
-                        home_actor_planning=actor_entity.name,
-                    ),
-                )
-
-            # 添加 AI 响应消息到对话历史
-            assert chat_client.response_ai_message is not None
-            self._game.add_ai_message(actor_entity, chat_client.response_ai_message)
-
-            # 添加内心独白: 上下文！，这里做直接添加与通知处理
-            if validated_response.mind != "":
-
-                stage_entity = self._game.resolve_stage_entity(actor_entity)
-                assert stage_entity is not None, "actor无所在场景是有问题的"
-                self._game.notify_entities(
-                    set({actor_entity}),
-                    MindEvent(
-                        message=format_mind_notification(
-                            actor_entity.name, validated_response.mind
-                        ),
-                        actor=actor_entity.name,
-                        stage=stage_entity.name,
-                        content=validated_response.mind,
-                    ),
-                )
-
-            # 添加说话动作
-            if len(validated_response.speak) > 0:
-                actor_entity.replace(
-                    SpeakAction, actor_entity.name, validated_response.speak
-                )
-
-            # 添加耳语动作
-            if len(validated_response.whisper) > 0:
-                actor_entity.replace(
-                    WhisperAction, actor_entity.name, validated_response.whisper
-                )
-
-            # 添加宣布动作
-            if validated_response.announce != "":
-                actor_entity.replace(
-                    AnnounceAction,
-                    actor_entity.name,
-                    validated_response.announce,
-                )
-
-            # 添加查询动作
-            if validated_response.query != "":
-                actor_entity.replace(
-                    QueryAction, actor_entity.name, validated_response.query
-                )
-
-            # 最后：如果需要可以添加传送场景。
-            if validated_response.trans_stage != "":
-                actor_entity.replace(
-                    TransStageAction,
-                    actor_entity.name,
-                    validated_response.trans_stage,
-                )
-
         except Exception as e:
             logger.error(f"Exception: {e}")
+            return
+
+        # 添加上下文！存入压缩版 prompt，附挂原始全量 prompt 供检索
+        if self._use_compressed_prompt:
+            self._game.add_human_message(
+                actor_entity,
+                HumanMessage(
+                    content=chat_client.compressed_prompt,
+                    home_actor_planning=actor_entity.name,
+                    home_actor_full_prompt=chat_client.prompt,
+                ),
+            )
+        else:
+            self._game.add_human_message(
+                actor_entity,
+                HumanMessage(
+                    content=chat_client.prompt,
+                    home_actor_planning=actor_entity.name,
+                ),
+            )
+
+        # 添加 AI 响应消息到对话历史
+        assert chat_client.response_ai_message is not None
+        self._game.add_ai_message(actor_entity, chat_client.response_ai_message)
+
+        # 添加内心独白: 上下文！，这里做直接添加与通知处理
+        if validated_response.mind != "":
+
+            stage_entity = self._game.resolve_stage_entity(actor_entity)
+            assert stage_entity is not None, "actor无所在场景是有问题的"
+            self._game.notify_entities(
+                set({actor_entity}),
+                MindEvent(
+                    message=format_mind_notification(
+                        actor_entity.name, validated_response.mind
+                    ),
+                    actor=actor_entity.name,
+                    stage=stage_entity.name,
+                    content=validated_response.mind,
+                ),
+            )
+
+        # 添加说话动作
+        if len(validated_response.speak) > 0:
+            actor_entity.replace(
+                SpeakAction, actor_entity.name, validated_response.speak
+            )
+
+        # 添加耳语动作
+        if len(validated_response.whisper) > 0:
+            actor_entity.replace(
+                WhisperAction, actor_entity.name, validated_response.whisper
+            )
+
+        # 添加宣布动作
+        if validated_response.announce != "":
+            actor_entity.replace(
+                AnnounceAction,
+                actor_entity.name,
+                validated_response.announce,
+            )
+
+        # 添加查询动作
+        if validated_response.query != "":
+            actor_entity.replace(
+                QueryAction, actor_entity.name, validated_response.query
+            )
+
+        # 最后：如果需要可以添加传送场景。
+        if validated_response.trans_stage != "":
+            actor_entity.replace(
+                TransStageAction,
+                actor_entity.name,
+                validated_response.trans_stage,
+            )
 
     #######################################################################################################################################
     def _create_actor_chat_clients(

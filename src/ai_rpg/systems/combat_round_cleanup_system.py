@@ -150,7 +150,7 @@ class CombatRoundCleanupSystem(ExecuteProcessor):
         logger.debug("清除旧回合手牌状态")
         self._game.clear_round_state()
 
-        """并发为所有持有 ROUND_END 效果的实体调用 LLM 推理 HP 变化。"""
+        # 为所有持有 ROUND_END 状态效果的实体创建聊天客户端，用于并发调用 LLM 推理 HP 变化
         entities = self._game.get_group(Matcher(StatusEffectsComponent)).entities.copy()
         chat_clients = [
             client
@@ -261,33 +261,42 @@ class CombatRoundCleanupSystem(ExecuteProcessor):
     def _apply_round_end_effect_response(self, chat_client: DeepSeekClient) -> None:
         """解析单个实体的 ROUND_END LLM 响应，更新 HP 并写入 agent 上下文。"""
 
+        # 检查 LLM 是否返回了有效的 AI 消息，如果没有则记录错误并返回
+        if chat_client.response_ai_message is None:
+            logger.error(
+                f"[{chat_client.name}] LLM 返回空响应，跳过 ROUND_END 效果结算"
+            )
+            return
+
         entity = self._game.get_entity_by_name(chat_client.name)
         assert entity is not None, f"无法找到角色实体: {chat_client.name}"
 
+        # 尝试解析 LLM 返回的 JSON 内容，构建 ROUND_END 效果响应对象
         try:
             json_content = extract_json_from_code_block(chat_client.response_content)
             response = _RoundEndEffectResponse.model_validate_json(json_content)
-
-            # 将本轮 prompt 和 AI 回复写入 agent 上下文，完成对话
-            self._game.add_human_message(
-                entity, HumanMessage(content=chat_client.prompt)
-            )
-            assert chat_client.response_ai_message is not None
-            self._game.add_ai_message(entity, chat_client.response_ai_message)
-
-            after_stats = set_character_hp(entity, response.hp)
-            new_hp = after_stats.hp
-            max_hp = after_stats.max_hp
-            logger.info(
-                f"[{entity.name}] ROUND_END tick: {new_hp}/{max_hp}, log={response.combat_log!r}"
-            )
-
-            self._game.add_human_message(
-                entity,
-                HumanMessage(content=_make_round_end_hp_update_message(new_hp, max_hp)),
-            )
-
         except Exception as e:
             logger.error(f"[{entity.name}] ROUND_END 效果结算异常: {e}")
+            logger.error(f"原始响应: {chat_client.response_content}")
+            return
+
+        # 将本轮 prompt 和 AI 回复写入 agent 上下文，完成对话
+        self._game.add_human_message(entity, HumanMessage(content=chat_client.prompt))
+        assert chat_client.response_ai_message is not None
+        self._game.add_ai_message(entity, chat_client.response_ai_message)
+
+        # 应用 ROUND_END 效果，更新角色 HP，并记录日志
+        after_stats = set_character_hp(entity, response.hp)
+        new_hp = after_stats.hp
+        max_hp = after_stats.max_hp
+        logger.info(
+            f"[{entity.name}] ROUND_END tick: {new_hp}/{max_hp}, log={response.combat_log!r}"
+        )
+
+        # 将本轮 HP 更新写入 agent 上下文，通知 AI 本轮的 HP 变化
+        self._game.add_human_message(
+            entity,
+            HumanMessage(content=_make_round_end_hp_update_message(new_hp, max_hp)),
+        )
 
     ################################################################################################################

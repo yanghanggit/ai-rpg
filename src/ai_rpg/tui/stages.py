@@ -63,8 +63,7 @@ class StagesScreen(BaseGameScreen):
             return
         user_name = app.session.user_name
         game_name = app.session.game_name
-        bp = app.session.blueprint
-        player_actor = bp.player_actor
+        player_actor = app.session.actor_name
 
         logger.info(
             f"StagesScreen._load_stages_and_desc: user_name={user_name} game_name={game_name}"

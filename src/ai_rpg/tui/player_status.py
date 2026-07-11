@@ -187,7 +187,7 @@ class PlayerStatusScreen(BaseGameScreen):
         user_name = app.session.user_name
         game_name = app.session.game_name
         bp = app.session.blueprint
-        player_actor = bp.player_actor
+        player_actor = app.session.actor_name
 
         # 基础信息
         log.write(

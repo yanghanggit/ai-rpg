@@ -190,8 +190,7 @@ class HomeScreen(BaseGameScreen):
         app = self.game_client
         if app.session is None:
             return
-        bp = app.session.blueprint
-        player_actor = bp.player_actor
+        player_actor = app.session.actor_name
 
         if not player_actor:
             self.query_one("#home-status", Static).update(

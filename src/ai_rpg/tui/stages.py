@@ -6,9 +6,10 @@ from textual.app import ComposeResult
 from textual.widgets import RichLog
 
 from .base import BaseGameScreen
+from ..models import StageDescriptionComponent
 from .server_client import fetch_entities_details, fetch_stages_state
 from .utils import display_name
-from typing import Dict, Set
+from typing import Dict
 
 STAGES_HEADER = """\
 [bold cyan]╔══════════════════════════════════════════════════╗[/]
@@ -79,8 +80,7 @@ class StagesScreen(BaseGameScreen):
 
         all_stage_names = list(stages_resp.mapping.keys())
 
-        # ── 2. 一次性获取全部场景实体详情（PlayerOnlyStageComponent + 场景描述） ──
-        player_only_stages: Set[str] = set()
+        # ── 2. 一次性获取全部场景实体详情（场景描述） ──
         stage_narratives: Dict[str, str] = {}
         if all_stage_names:
             try:
@@ -89,9 +89,7 @@ class StagesScreen(BaseGameScreen):
                 )
                 for entity in entities_resp.entities_serialization:
                     for comp in entity.components:
-                        if comp.name == "PlayerOnlyStageComponent":
-                            player_only_stages.add(entity.name)
-                        elif comp.name == "StageDescriptionComponent":
+                        if comp.name == StageDescriptionComponent.__name__:
                             narrative = comp.data.get("narrative", "")
                             if narrative:
                                 stage_narratives[entity.name] = narrative
@@ -111,12 +109,7 @@ class StagesScreen(BaseGameScreen):
                     if actors
                     else "[dim]（空）[/]"
                 )
-                if stage in player_only_stages:
-                    log.write(
-                        f"  [bold magenta]{display_name(stage)} ★玩家专属场景[/] → {actors_str}"
-                    )
-                else:
-                    log.write(f"  [bold cyan]{display_name(stage)}[/] → {actors_str}")
+                log.write(f"  [bold cyan]{display_name(stage)}[/] → {actors_str}")
                 # 定位玩家当前场景
                 if player_actor and player_actor in actors:
                     current_stage = stage

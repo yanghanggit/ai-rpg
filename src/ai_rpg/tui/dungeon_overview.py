@@ -10,7 +10,7 @@ from textual.widgets import Input, RichLog, Static
 
 from .base import BaseGameScreen
 
-from ..models import Dungeon, ActorType
+from ..models import Dungeon, ActorType, PartyRosterComponent
 from .server_client import (
     fetch_dungeon_list,
     fetch_entities_details,
@@ -299,7 +299,7 @@ class DungeonOverviewScreen(BaseGameScreen):
                 members: List[str] = []
                 for entity in resp.entities_serialization:
                     for comp in entity.components:
-                        if comp.name == "PartyRosterComponent":
+                        if comp.name == PartyRosterComponent.__name__:
                             members = list(comp.data.get("members", []))
                             break
                 roster = [player_actor] + members

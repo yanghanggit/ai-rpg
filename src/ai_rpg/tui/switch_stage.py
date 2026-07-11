@@ -11,6 +11,7 @@ from textual.widgets import Input, RichLog, Static
 
 from .base import BaseGameScreen
 
+from ..models import HomeComponent
 from .server_client import (
     fetch_entities_details,
     fetch_stages_state,
@@ -141,13 +142,8 @@ class SwitchStageScreen(BaseGameScreen):
                 home_stages = {
                     entity.name
                     for entity in details_resp.entities_serialization
-                    if any(comp.name == "HomeComponent" for comp in entity.components)
-                }
-                player_only_stages = {
-                    entity.name
-                    for entity in details_resp.entities_serialization
                     if any(
-                        comp.name == "PlayerOnlyStageComponent"
+                        comp.name == HomeComponent.__name__
                         for comp in entity.components
                     )
                 }
@@ -156,7 +152,6 @@ class SwitchStageScreen(BaseGameScreen):
                     f"SwitchStageScreen._load_stages: 获取 HomeComponent 失败，回退到全部场景 error={e}"
                 )
                 home_stages = set(all_stages)
-                player_only_stages = set()
 
             available = [
                 stage
@@ -183,14 +178,9 @@ class SwitchStageScreen(BaseGameScreen):
                     if actors
                     else "[dim]（空）[/]"
                 )
-                if stage in player_only_stages:
-                    log.write(
-                        f"  [bold green]{i}.[/] [bold magenta]{display_name(stage)} ★玩家专属[/]  → {actors_str}"
-                    )
-                else:
-                    log.write(
-                        f"  [bold green]{i}.[/] [cyan]{display_name(stage)}[/]  → {actors_str}"
-                    )
+                log.write(
+                    f"  [bold green]{i}.[/] [cyan]{display_name(stage)}[/]  → {actors_str}"
+                )
             log.write("")
             log.write("[dim]输入编号切换场景：[/]")
             logger.info(

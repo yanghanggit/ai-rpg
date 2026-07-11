@@ -20,3 +20,7 @@ class GameSession:
     @property
     def game_name(self) -> str:
         return self.player_session.game
+
+    @property
+    def actor_name(self) -> str:
+        return self.player_session.actor

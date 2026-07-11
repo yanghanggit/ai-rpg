@@ -1,17 +1,16 @@
 """远征队管理 Screen"""
 
 from typing import List, Set
-
 from loguru import logger
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.widgets import Input, RichLog, Static
-
 from .base import BaseGameScreen
-
+from ..models import NPCComponent, PartyRosterComponent, PlayerComponent
 from .server_client import (
     fetch_entities_details,
+    fetch_stages_state,
     home_roster_add,
     home_roster_remove,
 )
@@ -122,7 +121,7 @@ class RosterScreen(BaseGameScreen):
 
     @work
     async def _load_roster(self) -> None:
-        """从 Blueprint 获取盟友列表，从服务器读取当前远征队名单。"""
+        """从全部场景实际存在的 NPC 中获取盟友列表，从服务器读取当前远征队名单。"""
         log = self.query_one(RichLog)
         log.write("[dim]正在加载远征队信息...[/]")
 
@@ -132,24 +131,58 @@ class RosterScreen(BaseGameScreen):
             return
         user_name = app.session.user_name
         game_name = app.session.game_name
-        bp = app.session.blueprint
-        player_actor = bp.player_actor
-        self._npc_list = [
-            actor.name for actor in bp.actors if actor.name != player_actor
+        player_actor_name = app.session.actor_name
+
+        # 1. 获取全部场景分布，汇总场景内出现过的角色名称
+        try:
+            stages_resp = await fetch_stages_state(user_name, game_name)
+        except Exception as e:
+            logger.error(
+                f"RosterScreen._load_roster: fetch_stages_state 失败 error={e}"
+            )
+            log.write(f"[bold red]❌ 场景状态查询失败: {e}[/]")
+            return
+
+        all_actor_names: List[str] = [
+            actor_name
+            for actor_names in stages_resp.mapping.values()
+            for actor_name in actor_names
         ]
+
+        # 2. 批量查询实体详情，筛选出持有 NPCComponent 且非 PlayerComponent 的角色
+        self._npc_list = []
+        if all_actor_names:
+            try:
+                entities_resp = await fetch_entities_details(
+                    user_name, game_name, all_actor_names
+                )
+                for entity in entities_resp.entities_serialization:
+                    component_names = {comp.name for comp in entity.components}
+                    if (
+                        NPCComponent.__name__ in component_names
+                        and PlayerComponent.__name__ not in component_names
+                    ):
+                        self._npc_list.append(entity.name)
+            except Exception as e:
+                logger.error(f"RosterScreen._load_roster: 查询 NPC 列表失败 error={e}")
+                log.write(f"[bold red]❌ 读取盟友列表失败: {e}[/]")
+                return
 
         if not self._npc_list:
             log.write("[yellow]没有可加入远征队的盟友。[/]")
             return
 
-        # 从服务器读取 player entity，取得 PartyRosterComponent
+        # 3. 使用玩家控制角色名，读取 PartyRosterComponent，取得当前远征队名单
         try:
-            resp = await fetch_entities_details(user_name, game_name, [player_actor])
+            resp = await fetch_entities_details(
+                user_name, game_name, [player_actor_name]
+            )
             for entity in resp.entities_serialization:
                 for comp in entity.components:
-                    if comp.name == "PartyRosterComponent":
-                        members = comp.data.get("members", [])
-                        self._current_roster = set(members)
+                    if comp.name == PartyRosterComponent.__name__:
+                        self._current_roster = set(
+                            PartyRosterComponent(**comp.data).members
+                        )
                         break
 
             logger.info(

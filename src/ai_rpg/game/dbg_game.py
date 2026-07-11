@@ -131,7 +131,9 @@ class DBGGame(RPGGame):
         self._create_storage_entity(initial_items)
 
         ## 第2步，创建actor（含牌组与关键词组件挂载）
-        self.create_actor_entities(self._world.blueprint.actors)
+        self.create_actor_entities(
+            [actor for stage in self._world.blueprint.stages for actor in stage.actors]
+        )
 
         ## 第3步，创建stage
         self.create_stage_entities(self._world.blueprint.stages)

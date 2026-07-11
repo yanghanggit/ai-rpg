@@ -2,9 +2,7 @@
 
 from typing import List, Optional
 from unittest.mock import AsyncMock, MagicMock, patch
-
 import pytest
-
 from src.ai_rpg.entitas import Entity
 from src.ai_rpg.game.rpg_entity_manager import RPGEntityManager
 from src.ai_rpg.game.dbg_game import DBGGame
@@ -266,13 +264,13 @@ class TestProcessWearCostume:
         assert entity.get(AppearanceComponent).appearance == "穿着铁甲的英勇战士"
 
     @pytest.mark.asyncio
-    async def test_fallback_on_empty_llm_response(
+    async def test_empty_llm_response_results_in_empty_appearance(
         self,
         entity_manager: RPGEntityManager,
         mock_game: MagicMock,
         system: UpdateAppearanceActionSystem,
     ) -> None:
-        """LLM 返回空字符串时，外观应退回 base_body + costume.description 的拼接。"""
+        """LLM 返回空字符串时，无兜底逻辑，外观直接更新为空字符串。"""
         entity = _make_actor_entity(entity_manager, "hero")
         entity.add(UpdateAppearanceAction, "hero", _COSTUME.name, _COSTUME)
         mock_game.get_storage_entity.return_value = _make_storage_entity(
@@ -285,9 +283,7 @@ class TestProcessWearCostume:
             MockClient.return_value = mock_client
             await system._process_wear_costume(entity)
 
-        assert entity.get(AppearanceComponent).appearance == (
-            f"{_BASE_BODY}，{_COSTUME.description}"
-        )
+        assert entity.get(AppearanceComponent).appearance == ""
 
     @pytest.mark.asyncio
     async def test_broadcasts_event(

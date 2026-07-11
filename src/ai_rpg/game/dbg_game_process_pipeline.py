@@ -56,7 +56,7 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     processors.add(AppearanceInitializationSystem(dbg_game))
 
     # 规划系统-场景描述系统-角色系统
-    processors.add(StageDescriptionSystem(game=dbg_game))
+    processors.add(StageDescriptionSystem(dbg_game))
     processors.add(HomePlayerPlanSystem(dbg_game))
     processors.add(HomeNpcPlanSystem(dbg_game))
 

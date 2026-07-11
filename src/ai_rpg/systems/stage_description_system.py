@@ -50,17 +50,7 @@ def _build_compressed_stage_description_prompt(
 def _build_stage_description_prompt(
     actor_appearances_in_stage: Dict[str, str],
 ) -> str:
-    """为场景描述请求构建 prompt。
-
-    指示 AI 根据场景内角色外观推断其对环境的间接影响，并将影响效果融入场景描述，
-    但最终输出不得提及任何角色本身。
-
-    Args:
-        actor_appearances_in_stage: 角色名称 → 外貌描述的映射。
-
-    Returns:
-        包含角色外观列表与 JSON 输出格式要求的 prompt 字符串。
-    """
+    """为场景描述请求构建 prompt。"""
 
     # 构建角色外观信息列表，若无角色则注明“无”以避免 AI 误以为输入遗漏导致解析错误
     actor_appearances_in_stage_info = []
@@ -138,6 +128,7 @@ class StageDescriptionSystem(ExecuteProcessor):
         actor_appearances: Dict[str, str] = get_actor_appearances_in_stage(
             self._game, stage_entity
         )
+
         return DeepSeekClient(
             name=stage_entity.name,
             prompt=_build_stage_description_prompt(actor_appearances),
@@ -153,57 +144,59 @@ class StageDescriptionSystem(ExecuteProcessor):
     def _process_stage_description_response(
         self,
         chat_client: DeepSeekClient,
-    ) -> None:
-        """解析 AI 响应，更新 StageDescriptionComponent 并存入对话历史。
+    ) -> bool:
+        """解析 AI 响应，更新 StageDescriptionComponent 并存入对话历史。"""
 
-        Args:
-            stage_entity: 目标场景实体。
-            chat_client: 已完成请求的 DeepSeekClient。
-        """
+        # 如果 AI 响应为空，则记录警告并返回 False。
+        if chat_client.response_ai_message is None:
+            logger.warning(
+                f"StageDescriptionSystem: AI 响应为空，name={chat_client.name}"
+            )
+            return False
 
         stage_entity = self._game.get_entity_by_name(chat_client.name)
         assert (
             stage_entity is not None
         ), f"stage_entity is None, name={chat_client.name}"
 
+        # 尝试解析 AI 响应的 JSON 内容，构建 StageDescriptionResponse 对象。
         try:
-
             format_response = StageDescriptionResponse.model_validate_json(
                 extract_json_from_code_block(chat_client.response_content)
             )
-
-            if self._use_compressed_prompt:
-
-                # 使用压缩 prompt 作为 HumanMessage 的内容，并将完整 prompt 存入 stage_description_full_prompt 字段
-                self._game.add_human_message(
-                    stage_entity,
-                    HumanMessage(
-                        content=chat_client.compressed_prompt,
-                        stage_description_full_prompt=chat_client.prompt,
-                    ),
-                )
-            else:
-
-                # 直接使用完整 prompt 作为 HumanMessage 的内容
-                self._game.add_human_message(
-                    stage_entity, HumanMessage(content=chat_client.prompt)
-                )
-
-            # 断言 AI 响应不为空，并将其添加到对话历史中
-            assert (
-                chat_client.response_ai_message is not None
-            ), f"chat_client.response_ai_message is None, name={chat_client.name}"
-            self._game.add_ai_message(stage_entity, chat_client.response_ai_message)
-
-            # 更新环境描写
-            stage_entity.replace(
-                StageDescriptionComponent,
-                stage_entity.name,
-                format_response.description,
-            )
-
         except Exception as e:
             logger.error(f"Exception: {e}")
+            return False
+
+        # 添加上下文。
+        if self._use_compressed_prompt:
+
+            # 使用压缩 prompt 加入上下文。
+            self._game.add_human_message(
+                stage_entity,
+                HumanMessage(
+                    content=chat_client.compressed_prompt,
+                    stage_description_full_prompt=chat_client.prompt,
+                ),
+            )
+        else:
+
+            # 直接使用完整 prompt 加入上下文。
+            self._game.add_human_message(
+                stage_entity, HumanMessage(content=chat_client.prompt)
+            )
+
+        # 添加上下文。
+        self._game.add_ai_message(stage_entity, chat_client.response_ai_message)
+
+        # 更新环境描写
+        stage_entity.replace(
+            StageDescriptionComponent,
+            stage_entity.name,
+            format_response.description,
+        )
+
+        return True
 
 
 #######################################################################################################################################

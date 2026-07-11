@@ -79,8 +79,8 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
         ), "全局储物箱实体缺少 StorageComponent"
         storage_entity.get(StorageComponent).items.append(costume_item)
 
-        appearance_comp = entity.get(AppearanceComponent)
         # 重置外观为基础体型
+        appearance_comp = entity.get(AppearanceComponent)
         entity.replace(
             AppearanceComponent,
             appearance_comp.name,
@@ -150,16 +150,18 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             context=self._game.get_agent_context(entity).context,
         )
 
-        # 发送请求并等待响应
-        await client.chat()
+        try:
+            # 发送请求并等待响应
+            await client.chat()
+
+        except Exception as e:
+
+            logger.error(f"LLM 外观合成请求失败，角色 {entity.name}，错误: {e}")
+            return
 
         # 将 LLM 响应应用回对应角色的外观组件
         new_appearance = client.response_content.strip()
-
-        # 如果 LLM 返回空字符串，则退回 base_body + costume.description 的拼接
-        if not new_appearance:
-            logger.warning(f"LLM 外观合成返回空响应，角色 {entity.name} 退回简单拼接")
-            new_appearance = f"{appearance_comp.base_body}，{costume.description}"
+        logger.debug(f"LLM 外观合成返回: {new_appearance}")
 
         # 更新外观组件
         entity.replace(

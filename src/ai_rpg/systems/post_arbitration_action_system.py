@@ -1,7 +1,5 @@
 """仲裁后效果系统模块"""
 
-from enum import StrEnum, unique
-import random
 from typing import Final, List, Optional, Set, final, Dict
 from loguru import logger
 from overrides import override
@@ -28,17 +26,6 @@ from ..utils import extract_json_from_code_block
 from .arbitration_prompt_builders import fmt_duration
 from .card_prompt_builders import build_card_field_description
 from .status_effect_prompt_builders import build_status_effect_field_description
-
-
-#######################################################################################################################################
-# 塞牌位置策略枚举
-@final
-@unique
-class CardInjectStrategy(StrEnum):
-    """仲裁后塞牌位置策略"""
-
-    APPEND = "append"  # 追加到手牌尾部（默认）
-    RANDOM_INSERT = "random_insert"  # 随机插入到原有手牌队列中
 
 
 #######################################################################################################################################
@@ -201,12 +188,10 @@ class PostArbitrationActionSystem(ReactiveProcessor):
     def __init__(
         self,
         game: DBGGame,
-        strategy: CardInjectStrategy = CardInjectStrategy.APPEND,
         use_compressed_prompt: bool = True,
     ) -> None:
         super().__init__(game)
         self._game: Final[DBGGame] = game
-        self._strategy: Final[CardInjectStrategy] = strategy
         self._use_compressed_prompt: Final[bool] = use_compressed_prompt
 
     #######################################################################################################################################
@@ -276,15 +261,37 @@ class PostArbitrationActionSystem(ReactiveProcessor):
         logger.debug(
             f"PostArbitrationActionSystem: [{stage_entity.name}] 进行仲裁后干预评估"
         )
-        await DeepSeekClient.batch_chat(clients=[chat_client])
 
-        self._apply_response(stage_entity, chat_client)
+        # 发起 LLM 请求，捕获异常以防止整个流程崩溃
+        try:
+            await chat_client.chat()
+        except Exception as e:
+            logger.error(
+                f"PostArbitrationActionSystem: [{stage_entity.name}] LLM 请求失败: {e}"
+            )
+            return
+
+        if chat_client.response_ai_message is None:
+            logger.warning(
+                f"PostArbitrationActionSystem: [{stage_entity.name}] LLM 响应为空，跳过"
+            )
+            return
+
+        self._apply_response(chat_client)
 
     #######################################################################################################################################
-    def _apply_response(
-        self, stage_entity: Entity, chat_client: DeepSeekClient
-    ) -> None:
+    def _apply_response(self, chat_client: DeepSeekClient) -> None:
         """解析 LLM 响应并应用状态效果与塞牌"""
+
+        stage_entity = self._game.get_entity_by_name(chat_client.name)
+        assert stage_entity is not None, f"找不到舞台实体: {chat_client.name}"
+
+        if chat_client.response_ai_message is None:
+            logger.warning(
+                f"PostArbitrationActionSystem: [{chat_client.name}] LLM 响应为空，跳过"
+            )
+            return
+
         try:
 
             # 解析 LLM 响应为 StagePostArbitrationResponse
@@ -292,64 +299,65 @@ class PostArbitrationActionSystem(ReactiveProcessor):
                 extract_json_from_code_block(chat_client.response_content)
             )
 
-            # 预验证所有目标角色是否存在，避免部分指令生效导致的状态不一致
-            for directive in response.per_actor:
-                target_entity = self._game.get_entity_by_name(directive.target)
-                if target_entity is None:
-                    logger.warning(
-                        f"[{stage_entity.name}] 找不到目标角色: {directive.target}，跳过"
-                    )
-                    raise ValueError(f"找不到目标角色: {directive.target}")
-
-                assert target_entity.has(
-                    StatusEffectsComponent
-                ), f"目标角色 {directive.target} 缺少 StatusEffectsComponent"
-                assert target_entity.has(
-                    HandComponent
-                ), f"目标角色 {directive.target} 缺少 HandComponent"
-
-            # 添加上下文消息到 stage entity 的对话历史，便于后续回顾与调试
-            if self._use_compressed_prompt:
-                self._game.add_human_message(
-                    entity=stage_entity,
-                    human_message=HumanMessage(
-                        content=chat_client.compressed_prompt,
-                        stage_post_arbitration_full_prompt=chat_client.prompt,
-                    ),
-                )
-            else:
-                self._game.add_human_message(
-                    entity=stage_entity,
-                    human_message=HumanMessage(content=chat_client.prompt),
-                )
-
-            # 添加 LLM 响应消息到 stage entity 的对话历史
-            assert chat_client.response_ai_message is not None
-            self._game.add_ai_message(
-                entity=stage_entity,
-                ai_message=chat_client.response_ai_message,
-            )
-
-            # 解析每个角色的指令，应用状态效果与塞牌
-            if not response.per_actor:
-                logger.debug(f"[{stage_entity.name}] 仲裁后无干预指令")
-                return
-
-            for directive in response.per_actor:
-                target_entity = self._game.get_entity_by_name(directive.target)
-                assert (
-                    target_entity is not None
-                ), f"预验证阶段未发现目标角色: {directive.target}"
-
-                if directive.add_effects:
-                    self._apply_status_effects(stage_entity, target_entity, directive)
-
-                if directive.inject_cards:
-                    self._inject_cards(stage_entity, target_entity, directive)
-
         except Exception as e:
             logger.error(f"[{stage_entity.name}] 解析仲裁后干预响应失败: {e}")
             logger.error(f"原始响应: {chat_client.response_content}")
+            return
+
+        # 预验证所有目标角色是否存在，避免部分指令生效导致的状态不一致
+        for directive in response.per_actor:
+            target_entity = self._game.get_entity_by_name(directive.target)
+            if target_entity is None:
+                logger.warning(
+                    f"[{stage_entity.name}] 找不到目标角色: {directive.target}，跳过"
+                )
+                return
+
+            assert target_entity.has(
+                StatusEffectsComponent
+            ), f"目标角色 {directive.target} 缺少 StatusEffectsComponent"
+            assert target_entity.has(
+                HandComponent
+            ), f"目标角色 {directive.target} 缺少 HandComponent"
+
+        # 添加上下文消息到 stage entity 的对话历史，便于后续回顾与调试
+        if self._use_compressed_prompt:
+            self._game.add_human_message(
+                entity=stage_entity,
+                human_message=HumanMessage(
+                    content=chat_client.compressed_prompt,
+                    stage_post_arbitration_full_prompt=chat_client.prompt,
+                ),
+            )
+        else:
+            self._game.add_human_message(
+                entity=stage_entity,
+                human_message=HumanMessage(content=chat_client.prompt),
+            )
+
+        # 添加 LLM 响应消息到 stage entity 的对话历史
+        assert chat_client.response_ai_message is not None
+        self._game.add_ai_message(
+            entity=stage_entity,
+            ai_message=chat_client.response_ai_message,
+        )
+
+        # 解析每个角色的指令，应用状态效果与塞牌
+        if not response.per_actor:
+            logger.debug(f"[{stage_entity.name}] 仲裁后无干预指令")
+            return
+
+        for directive in response.per_actor:
+            target_entity = self._game.get_entity_by_name(directive.target)
+            assert (
+                target_entity is not None
+            ), f"预验证阶段未发现目标角色: {directive.target}"
+
+            if directive.add_effects:
+                self._apply_status_effects(stage_entity, target_entity, directive)
+
+            if directive.inject_cards:
+                self._inject_cards(stage_entity, target_entity, directive)
 
     #######################################################################################################################################
     def _apply_status_effects(
@@ -417,13 +425,8 @@ class PostArbitrationActionSystem(ReactiveProcessor):
         if not new_cards:
             return
 
-        if self._strategy == CardInjectStrategy.RANDOM_INSERT:
-            for card in new_cards:
-                insert_pos = random.randint(0, len(hand_comp.cards))
-                hand_comp.cards.insert(insert_pos, card)
-        else:  # APPEND
-            hand_comp.cards = hand_comp.cards + new_cards
-
+        # 将新的卡牌追加到手牌中
+        hand_comp.cards = hand_comp.cards + new_cards
         logger.debug(
             f"[{stage_entity.name}] → [{directive.target}] "
             f"塞入 {len(new_cards)} 张卡牌"

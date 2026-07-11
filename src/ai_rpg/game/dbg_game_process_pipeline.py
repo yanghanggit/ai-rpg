@@ -142,7 +142,6 @@ def create_combat_pipeline(
     )
     from ..systems.post_arbitration_action_system import (
         PostArbitrationActionSystem,
-        CardInjectStrategy,
     )
     from ..systems.combat_archive_system import CombatArchiveSystem
     from ..systems.combat_loot_system import CombatLootSystem
@@ -170,7 +169,7 @@ def create_combat_pipeline(
     processors.add(AppearanceInitializationSystem(dbg_game))
 
     # 战斗场景描述系统
-    processors.add(StageDescriptionSystem(game=dbg_game))
+    processors.add(StageDescriptionSystem(dbg_game))
 
     # 战斗初始化系统（注入战场上下文、转换战斗状态为进行中、触发初始状态效果
     processors.add(CombatInitializationSystem(dbg_game))
@@ -195,9 +194,7 @@ def create_combat_pipeline(
     processors.add(AddStatusEffectsActionSystem(dbg_game))
 
     # 仲裁结算后，由 stage agent（地牢主视角）决定是否对场内角色追加状态效果或塞牌
-    processors.add(
-        PostArbitrationActionSystem(dbg_game, strategy=CardInjectStrategy.RANDOM_INSERT)
-    )
+    processors.add(PostArbitrationActionSystem(dbg_game))
 
     # 回合完成判定系统
     processors.add(CombatRoundCompletionSystem(dbg_game))

@@ -256,7 +256,7 @@ class TestFilterPlayerActions:
             "src.ai_rpg.systems.player_action_audit_system.DeepSeekClient"
         ) as MockClient:
             MockClient.return_value.response_content = _approved_json()
-            MockClient.batch_chat = AsyncMock()
+            MockClient.return_value.chat = AsyncMock()
 
             await system._filter_player_actions(player, world)
 
@@ -279,7 +279,7 @@ class TestFilterPlayerActions:
             "src.ai_rpg.systems.player_action_audit_system.DeepSeekClient"
         ) as MockClient:
             MockClient.return_value.response_content = _rejected_json()
-            MockClient.batch_chat = AsyncMock()
+            MockClient.return_value.chat = AsyncMock()
 
             await system._filter_player_actions(player, world)
 
@@ -287,13 +287,13 @@ class TestFilterPlayerActions:
         assert not player.has(AnnounceAction)
 
     @pytest.mark.asyncio
-    async def test_batch_chat_exception_removes_actions(
+    async def test_chat_exception_removes_actions(
         self,
         context: Context,
         mock_game: MagicMock,
         system: PlayerActionAuditSystem,
     ) -> None:
-        """batch_chat 抛出异常时，fail-safe 应移除所有动作组件。"""
+        """chat() 抛出异常时，fail-safe 应移除所有动作组件。"""
         player = self._make_player_entity(context)
         player.add(SpeakAction, *_SPEAK_ARGS)
         world = self._make_audit_entity(context)
@@ -301,7 +301,9 @@ class TestFilterPlayerActions:
         with patch(
             "src.ai_rpg.systems.player_action_audit_system.DeepSeekClient"
         ) as MockClient:
-            MockClient.batch_chat = AsyncMock(side_effect=RuntimeError("网络错误"))
+            MockClient.return_value.chat = AsyncMock(
+                side_effect=RuntimeError("网络错误")
+            )
 
             await system._filter_player_actions(player, world)
 
@@ -323,7 +325,7 @@ class TestFilterPlayerActions:
             "src.ai_rpg.systems.player_action_audit_system.DeepSeekClient"
         ) as MockClient:
             MockClient.return_value.response_content = "这不是JSON"
-            MockClient.batch_chat = AsyncMock()
+            MockClient.return_value.chat = AsyncMock()
 
             await system._filter_player_actions(player, world)
 
@@ -343,11 +345,9 @@ class TestFilterPlayerActions:
         with patch(
             "src.ai_rpg.systems.player_action_audit_system.DeepSeekClient"
         ) as MockClient:
-            MockClient.batch_chat = AsyncMock()
-
             await system._filter_player_actions(player, world)
 
-        MockClient.batch_chat.assert_not_called()
+        MockClient.assert_not_called()
 
 
 # ---------------------------------------------------------------------------

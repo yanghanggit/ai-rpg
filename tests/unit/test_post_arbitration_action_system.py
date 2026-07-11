@@ -16,7 +16,6 @@ from src.ai_rpg.models import (
 from src.ai_rpg.models import Card, StatusEffect, PhaseType, AIMessage
 from src.ai_rpg.systems.post_arbitration_action_system import (
     ActorPostArbitrationDirective,
-    CardInjectStrategy,
     PostArbitrationActionSystem,
 )
 from src.ai_rpg.systems.arbitration_prompt_builders import fmt_duration
@@ -84,6 +83,12 @@ def _make_mock_chat_client(
     return client
 
 
+def _configure_lookup(mock_game: MagicMock, *entities: Entity) -> None:
+    """配置 mock_game.get_entity_by_name 按名称返回对应实体，未匹配时返回 None。"""
+    lookup = {e.name: e for e in entities}
+    mock_game.get_entity_by_name.side_effect = lambda name: lookup.get(name)
+
+
 def _build_response_json(
     target: str,
     effects: Optional[List[StatusEffect]] = None,
@@ -139,16 +144,6 @@ def mock_game() -> MagicMock:
 def system(mock_game: MagicMock) -> PostArbitrationActionSystem:
     return PostArbitrationActionSystem(
         mock_game,
-        strategy=CardInjectStrategy.APPEND,
-        use_compressed_prompt=True,
-    )
-
-
-@pytest.fixture()
-def system_random_insert(mock_game: MagicMock) -> PostArbitrationActionSystem:
-    return PostArbitrationActionSystem(
-        mock_game,
-        strategy=CardInjectStrategy.RANDOM_INSERT,
         use_compressed_prompt=True,
     )
 
@@ -384,27 +379,6 @@ class TestInjectCards:
 
         assert len(target.get(HandComponent).cards) == 1
 
-    def test_random_insert_card_appears_in_hand(
-        self,
-        context: Context,
-        mock_game: MagicMock,
-        system_random_insert: PostArbitrationActionSystem,
-    ) -> None:
-        """RANDOM_INSERT 策略下，卡牌应出现在 hand.cards 中（不验证具体位置）。"""
-        stage = _make_stage_entity(context, "地下城")
-        target = _make_actor_entity(context, "游侠")
-        # 预置若干手牌
-        target.get(HandComponent).cards = [_make_card(f"牌{i}") for i in range(4)]
-
-        directive = ActorPostArbitrationDirective(
-            target="游侠", inject_cards=[_make_card("奇袭")]
-        )
-        system_random_insert._inject_cards(stage, target, directive)
-
-        names = [c.name for c in target.get(HandComponent).cards]
-        assert "奇袭" in names
-        assert len(names) == 5
-
 
 class TestApplyResponse:
     """`PostArbitrationActionSystem._apply_response` 的单元测试。"""
@@ -417,7 +391,7 @@ class TestApplyResponse:
     ) -> None:
         stage = _make_stage_entity(context, "地下城")
         target = _make_actor_entity(context, "英雄")
-        mock_game.get_entity_by_name.return_value = target
+        _configure_lookup(mock_game, stage, target)
 
         response_json = _build_response_json(
             "英雄",
@@ -426,7 +400,7 @@ class TestApplyResponse:
         )
         client = _make_mock_chat_client("地下城", response_json)
 
-        system._apply_response(stage, client)
+        system._apply_response(client)
 
         assert len(target.get(StatusEffectsComponent).status_effects) == 1
         assert len(target.get(HandComponent).cards) == 1
@@ -439,10 +413,10 @@ class TestApplyResponse:
     ) -> None:
         stage = _make_stage_entity(context, "地下城")
         target = _make_actor_entity(context, "战士")
-        mock_game.get_entity_by_name.return_value = target
+        _configure_lookup(mock_game, stage, target)
 
         client = _make_mock_chat_client("地下城", '{"per_actor": []}')
-        system._apply_response(stage, client)
+        system._apply_response(client)
 
         assert target.get(StatusEffectsComponent).status_effects == []
         assert target.get(HandComponent).cards == []
@@ -455,7 +429,7 @@ class TestApplyResponse:
     ) -> None:
         """target 不存在时应 log error 并不抛出。"""
         stage = _make_stage_entity(context, "地下城")
-        mock_game.get_entity_by_name.return_value = None
+        _configure_lookup(mock_game, stage)
 
         response_json = _build_response_json(
             "不存在的角色", effects=[_make_effect("燃烧")]
@@ -463,36 +437,23 @@ class TestApplyResponse:
         client = _make_mock_chat_client("地下城", response_json)
 
         # 不应抛出异常
-        system._apply_response(stage, client)
+        system._apply_response(client)
 
-    def test_calls_add_human_message_once(
+    def test_writes_context_messages_once(
         self,
         context: Context,
         mock_game: MagicMock,
         system: PostArbitrationActionSystem,
     ) -> None:
+        """human/ai 消息应各写入 stage entity 对话历史一次。"""
         stage = _make_stage_entity(context, "地下城")
         target = _make_actor_entity(context, "法师")
-        mock_game.get_entity_by_name.return_value = target
+        _configure_lookup(mock_game, stage, target)
 
         client = _make_mock_chat_client("地下城", '{"per_actor": []}')
-        system._apply_response(stage, client)
+        system._apply_response(client)
 
         mock_game.add_human_message.assert_called_once()
-
-    def test_calls_add_ai_message_once(
-        self,
-        context: Context,
-        mock_game: MagicMock,
-        system: PostArbitrationActionSystem,
-    ) -> None:
-        stage = _make_stage_entity(context, "地下城")
-        target = _make_actor_entity(context, "法师")
-        mock_game.get_entity_by_name.return_value = target
-
-        client = _make_mock_chat_client("地下城", '{"per_actor": []}')
-        system._apply_response(stage, client)
-
         mock_game.add_ai_message.assert_called_once()
 
     def test_compressed_prompt_forwarded_to_add_human_message(
@@ -504,7 +465,7 @@ class TestApplyResponse:
         """use_compressed_prompt=True 时，compressed_prompt 应传入 add_human_message。"""
         stage = _make_stage_entity(context, "地下城")
         target = _make_actor_entity(context, "牧师")
-        mock_game.get_entity_by_name.return_value = target
+        _configure_lookup(mock_game, stage, target)
 
         client = _make_mock_chat_client(
             "地下城",
@@ -512,7 +473,7 @@ class TestApplyResponse:
             prompt="full prompt",
             compressed_prompt="compressed",
         )
-        system._apply_response(stage, client)
+        system._apply_response(client)
 
         call_kwargs = mock_game.add_human_message.call_args[1]
         assert call_kwargs.get("human_message").content == "compressed"
@@ -533,16 +494,15 @@ class TestPostArbitrationActionSystemReact:
         mock_game: MagicMock,
         system: PostArbitrationActionSystem,
     ) -> None:
-        """战斗未进行中时，batch_chat 不应被调用。"""
+        """战斗未进行中时，_process_stage 不应被调用。"""
         mock_game.current_dungeon.is_ongoing = False
         stage = _make_stage_entity(context, "地下城")
 
-        with patch(
-            "src.ai_rpg.systems.post_arbitration_action_system.DeepSeekClient.batch_chat",
-            new_callable=AsyncMock,
-        ) as mock_batch:
+        with patch.object(
+            system, "_process_stage", new_callable=AsyncMock
+        ) as mock_process:
             await system.react([stage])
-            mock_batch.assert_not_called()
+            mock_process.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_process_stage_called_for_stage_entity(

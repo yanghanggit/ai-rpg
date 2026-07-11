@@ -104,22 +104,11 @@ class PlayerActionAuditSystem(ReactiveProcessor):
 
         # 单机游戏，应该只有一个玩家实体
         assert len(entities) == 1, "单机游戏，玩家实体不应该超过1个"
-        player_entity = entities[0]
-        await self._filter_player_actions(player_entity, world_system_entity)
+        await self._filter_player_actions(entities[0], world_system_entity)
 
     ####################################################################################################################################
     def _extract_all_action_contents(self, player_entity: Entity) -> str:
-        """从实体中提取所有需要审核的动作内容。
-
-        同时检查 SpeakAction、WhisperAction、AnnounceAction，
-        将所有存在的动作内容拼接成一个完整的审核文本。
-
-        Args:
-            player_entity: 玩家实体
-
-        Returns:
-            拼接后的完整审核内容文本，如果没有任何动作则返回空字符串
-        """
+        """从实体中提取所有需要审核的动作内容。"""
         content_parts: List[str] = []
 
         # 提取 SpeakAction
@@ -153,13 +142,7 @@ class PlayerActionAuditSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     def _remove_all_actions(self, entity: Entity) -> None:
-        """移除实体上所有待审核的动作组件。
-
-        用于在内容审核不通过时，阻止所有形式的消息发送。
-
-        Args:
-            entity: 玩家实体
-        """
+        """移除实体上所有待审核的动作组件"""
         if entity.has(SpeakAction):
             entity.remove(SpeakAction)
         if entity.has(WhisperAction):
@@ -171,20 +154,7 @@ class PlayerActionAuditSystem(ReactiveProcessor):
     async def _filter_player_actions(
         self, entity: Entity, world_system_entity: Entity
     ) -> None:
-        """审核玩家动作内容。
-
-        提取玩家实体上的所有待审核动作（SpeakAction、WhisperAction、AnnounceAction），
-        通过审计世界系统的 AI 进行内容审核。审核不通过时移除所有动作组件，阻止消息发送。
-
-        Args:
-            entity: 玩家实体
-            world_system_entity: 玩家行动审计系统实体
-
-        Note:
-            - 任何异常情况（AI 连接失败、响应解析错误等）都默认拒绝，确保安全性
-            - 审核通过的动作继续保留在实体上，由后续系统处理
-            - 审核不通过时移除所有动作，等同于取消本回合的所有发言
-        """
+        """审核玩家动作内容。"""
         # 提取所有需要审核的内容
         content = self._extract_all_action_contents(entity)
 
@@ -192,54 +162,49 @@ class PlayerActionAuditSystem(ReactiveProcessor):
             logger.warning(f"实体 {entity.name} 没有需要审核的内容")
             return
 
-        # 执行AI审核检查
+        # 构建审核提示词
+        prompt = _build_audit_prompt(content)
+
+        # 获取审计世界系统的AI上下文
+        agent_context = self._game.get_agent_context(world_system_entity)
+        assert isinstance(
+            agent_context.context[0], SystemMessage
+        ), "审计世界系统AI上下文的第一条消息必须是SystemMessage类型"
+
+        # 创建AI审核请求（使用审计世界系统的system prompt）
+        chat_client = DeepSeekClient(
+            name=world_system_entity.name,
+            prompt=prompt,
+            context=[agent_context.context[0]],
+        )
+
+        # 发送审核请求；出错时默认拒绝，保证安全性
         try:
-            # 构建审核提示词
-            prompt = _build_audit_prompt(content)
-
-            # 获取审计世界系统的AI上下文
-            agent_context = self._game.get_agent_context(world_system_entity)
-            assert isinstance(
-                agent_context.context[0], SystemMessage
-            ), "审计世界系统AI上下文的第一条消息必须是SystemMessage类型"
-
-            # 创建AI审核请求（使用审计世界系统的system prompt）
-            chat_client = DeepSeekClient(
-                name=world_system_entity.name,
-                prompt=prompt,
-                context=[agent_context.context[0]],
-            )
-
-            # 发送审核请求
-            await DeepSeekClient.batch_chat(clients=[chat_client])
-
-            # 解析AI响应
-            response_content = chat_client.response_content
-            logger.debug(f"AI审核响应: {response_content}")
-
-            try:
-                audit_response = ContentAuditResponse.model_validate_json(
-                    extract_json_from_code_block(response_content)
-                )
-                is_approved = audit_response.is_approved
-                reason = audit_response.reason
-
-            except Exception as e:
-                logger.error(f"解析AI审核响应失败: {e}")
-                logger.error(f"原始响应: {response_content}")
-                # 解析失败时默认拒绝,保证安全性
-                is_approved = False
-                reason = "AI审核响应格式错误,请重试"
-
+            await chat_client.chat()
         except Exception as e:
             logger.error(f"AI审核过程出错: {e}")
-            # 出错时默认拒绝,保证安全性
-            is_approved = False
-            reason = "审核系统异常,请稍后重试"
+            logger.warning("玩家输入未通过AI审核: 审核系统异常,请稍后重试")
+            self._remove_all_actions(entity)
+            return
+
+        # 解析AI响应；解析失败时默认拒绝，保证安全性
+        response_content = chat_client.response_content
+        logger.debug(f"AI审核响应: {response_content}")
+
+        try:
+            audit_response = ContentAuditResponse.model_validate_json(
+                extract_json_from_code_block(response_content)
+            )
+        except Exception as e:
+            logger.error(f"解析AI审核响应失败: {e}")
+            logger.error(f"原始响应: {response_content}")
+            logger.warning("玩家输入未通过AI审核: AI审核响应格式错误,请重试")
+            self._remove_all_actions(entity)
+            return
 
         # 处理审核结果
-        if not is_approved:
-            logger.warning(f"玩家输入未通过AI审核: {reason}")
+        if not audit_response.is_approved:
+            logger.warning(f"玩家输入未通过AI审核: {audit_response.reason}")
             self._remove_all_actions(entity)
         else:
             logger.info(f"玩家输入通过AI审核")

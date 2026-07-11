@@ -115,11 +115,6 @@ class CraftConsumableActionSystem(ReactiveProcessor):
 
         storage_entity = self._game.get_storage_entity()
         assert storage_entity is not None, "storage_entity is None"
-        # if storage_entity is None or not storage_entity.has(StorageComponent):
-        #     logger.error(
-        #         "[CraftConsumableActionSystem] 全局储物箱实体不存在或缺少 StorageComponent"
-        #     )
-        #     return
 
         # 材料列表由 activate_craft_consumable 预填充（count = 本次使用量）
         materials = action.material_items
@@ -167,27 +162,36 @@ class CraftConsumableActionSystem(ReactiveProcessor):
             prompt=prompt,
             context=self._game.get_agent_context(entity).context,
         )
-        await chat_client.chat()
 
-        raw = chat_client.response_content
-        if not raw:
-            logger.error("[CraftConsumableActionSystem] LLM 返回空响应")
+        # 发起 LLM 请求，捕获异常以防止整个流程崩溃
+        try:
+            await chat_client.chat()
+        except Exception as e:
+            logger.error(f"[CraftConsumableActionSystem] LLM 请求失败: {e}")
             return None
 
+        # 检查 LLM 的响应是否为空，如果为空则记录错误并返回 None
+        if chat_client.response_ai_message is None:
+            logger.error("[CraftConsumableActionSystem] LLM 回复消息为空")
+            return None
+
+        # 尝试从 LLM 的回复中提取 JSON 并解析为 _CraftConsumableResponse 对象
         try:
-            json_str = extract_json_from_code_block(raw)
+            json_str = extract_json_from_code_block(chat_client.response_content)
             response = _CraftConsumableResponse.model_validate_json(json_str)
-            assert response.name, "LLM 返回的 name 不能为空"
+            # assert response.name, "LLM 返回的 name 不能为空"
         except Exception as e:
             logger.error(
-                f"[CraftConsumableActionSystem] 解析 LLM 响应失败: {e}\n原始内容:\n{raw}"
+                f"[CraftConsumableActionSystem] 解析 LLM 响应失败: {e}\n原始内容:\n{chat_client.response_content}"
             )
             return None
 
+        # 再次检查解析后的 response 对象的 name 字段是否为空，确保 LLM 返回的内容有效
         if not response.name:
             logger.error("[CraftConsumableActionSystem] LLM 返回的 name 为空")
             return None
 
+        # 返回解析成功的 response 对象，供调用方使用
         return response
 
     ####################################################################################################################################

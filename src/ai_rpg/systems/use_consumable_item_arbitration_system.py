@@ -68,34 +68,25 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
         assert (
             len(entities) == 1
         ), "UseConsumableItemArbitrationSystem 期望每次仅处理一个 UseConsumableItemAction 实体"
-
-        # for entity in entities:
-        entity = entities[0]
-        stage_entity = self._game.resolve_stage_entity(entity)
-        assert (
-            stage_entity is not None
-        ), f"UseConsumableItemArbitrationSystem: 无法获取 {entity.name} 所在场景实体！"
-
-        logger.debug(
-            f"UseConsumableItemArbitrationSystem: [{entity.name}] 触发消耗品仲裁"
-        )
-        await self._request_consumable_arbitration(stage_entity, entity)
+        await self._request_consumable_arbitration(entities[0])
 
     #######################################################################################################################################
-    async def _request_consumable_arbitration(
-        self, stage_entity: Entity, actor_entity: Entity
-    ) -> None:
+    async def _request_consumable_arbitration(self, actor_entity: Entity) -> None:
 
+        # 获取当前实体的 UseConsumableItemAction，用于后续的仲裁逻辑
         action = actor_entity.get(UseConsumableItemAction)
 
+        # 获取所有目标实体的当前属性，用于生成仲裁提示信息
         target_stats: Dict[str, CharacterStats] = {}
         for target_name in dict.fromkeys(action.targets):
             target_entity = self._game.get_entity_by_name(target_name)
             assert target_entity is not None, f"无法找到目标实体: {target_name}"
             target_stats[target_name] = compute_character_stats(target_entity)
 
+        # 获取当前回合数，用于生成仲裁提示信息
         current_round_number = len(self._game.current_dungeon.current_rounds or [])
 
+        # 获取所有目标实体在仲裁阶段的状态效果，用于生成仲裁提示信息
         target_arbitration_effects: Dict[str, List[StatusEffect]] = {
             target_name: get_status_effects_by_phase(
                 self._game.get_entity_by_name(target_name),  # type: ignore[arg-type]
@@ -104,6 +95,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             for target_name in dict.fromkeys(action.targets)
         }
 
+        # 获取所有目标实体的装备附加属性，用于生成仲裁提示信息
         target_gear_modifiers: Dict[str, List[str]] = {}
         for _tgt_name in dict.fromkeys(action.targets):
             _tgt_entity = self._game.get_entity_by_name(_tgt_name)
@@ -117,6 +109,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
         # 判断是否为友方阵营行为（用于广播消息）
         is_party_action = actor_entity.has(PartyMemberComponent)
 
+        # 生成仲裁提示信息，包括当前行动、目标属性、回合数、目标状态效果和装备附加属性
         message = generate_consumable_arbitration_prompt(
             action=action,
             target_stats=target_stats,
@@ -125,6 +118,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             target_gear_modifiers=target_gear_modifiers,
         )
 
+        # 生成压缩后的仲裁提示信息，用于在需要时向 LLM 提供更简洁的上下文
         compressed_message = (
             generate_compressed_consumable_arbitration_prompt(
                 action=action,
@@ -137,6 +131,11 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             else None
         )
 
+        # 获取当前行动者所在的场景实体，确保后续的仲裁请求能够正确发送到对应的场景上下文
+        stage_entity = self._game.resolve_stage_entity(actor_entity)
+        assert stage_entity is not None, f"无法找到 {actor_entity.name} 所在的场景实体"
+
+        # 初始化 DeepSeekClient，用于与 LLM 进行交互，并发送仲裁提示信息请求
         chat_client = DeepSeekClient(
             name=stage_entity.name,
             prompt=message,
@@ -144,25 +143,50 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             context=self._game.get_agent_context(stage_entity).context,
             timeout=60 * 2,
         )
-        await chat_client.chat()
 
+        # 发送仲裁请求给 LLM，并捕获可能的异常，确保整个流程不会因 LLM 请求失败而中断
+        try:
+            await chat_client.chat()
+        except Exception as e:
+            logger.error(f"[UseConsumableItemArbitrationSystem] LLM 请求失败: {e}")
+            return
+
+        # 检查 LLM 是否返回了有效的消息对象，如果为空则记录错误并返回
+        if chat_client.response_ai_message is None:
+            logger.error("[UseConsumableItemArbitrationSystem] LLM 回复消息为空")
+            return
+
+        # 将 LLM 的仲裁结果应用到游戏中，包括解析 JSON 响应并更新游戏状态
         self._apply_item_arbitration_result(
-            stage_entity, chat_client, actor_entity, action, is_party_action
+            chat_client, actor_entity, action, is_party_action
         )
 
+        # 处理血量为零的实体，确保游戏状态与仲裁结果一致
         process_zero_health_entities(self._game)
 
     #######################################################################################################################################
     def _apply_item_arbitration_result(
         self,
-        stage_entity: Entity,
+        # stage_entity: Entity,
         chat_client: DeepSeekClient,
         actor_entity: Entity,
         action: UseConsumableItemAction,
         is_party_action: bool,
     ) -> None:
-        # 第一步：解析 JSON 响应
+
+        if chat_client.response_ai_message is None:
+            logger.error("[UseConsumableItemArbitrationSystem] LLM 回复内容为空")
+            return
+
+        # 获取当前行动者所在的场景实体，确保后续的仲裁结果能够正确应用到对应的场景上下文
+        stage_entity = self._game.resolve_stage_entity(actor_entity)
+        assert (
+            stage_entity is not None
+        ), f"UseConsumableItemArbitrationSystem: 无法获取 {actor_entity.name} 所在场景实体！"
+
         try:
+
+            # 解析 LLM 返回的 JSON 响应，构建 ArbitrationResponse 对象，用于后续的游戏状态更新和广播处理
             response = ArbitrationResponse.model_validate_json(
                 extract_json_from_code_block(chat_client.response_content)
             )
@@ -174,6 +198,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                         f"final_stats 中的实体不存在于游戏中: {entity_name}"
                     )
 
+            # 根据是否使用压缩提示，向游戏中添加人类消息，确保 LLM 的请求和响应能够在游戏中被记录和追踪
             if self._use_compressed_prompt:
                 self._game.add_human_message(
                     entity=stage_entity,
@@ -211,6 +236,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                 exclude_entities={stage_entity},
             )
 
+            # 遍历仲裁结果中的最终状态，更新每个实体的属性，包括 HP 和状态效果计数器，并向游戏中添加相应的通知消息
             for entity_name, entity_stats in response.final_stats.items():
                 entity = self._game.get_entity_by_name(entity_name)
                 assert (

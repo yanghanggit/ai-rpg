@@ -73,42 +73,40 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
         )
 
         for entity in entities:
-
-            stage_entity = self._game.resolve_stage_entity(entity)
-            assert stage_entity is not None, f"无法获取 {entity.name} 所在场景实体！"
-
-            logger.debug(f"PlayCardsArbitrationSystem: [{entity.name}] 触发仲裁")
-            await self._request_combat_arbitration(stage_entity, entity)
+            await self._request_combat_arbitration(entity)
 
     #######################################################################################################################################
-    async def _request_combat_arbitration(
-        self, stage_entity: Entity, actor_entity: Entity
-    ) -> None:
+    async def _request_combat_arbitration(self, actor_entity: Entity) -> None:
+
+        stage_entity = self._game.resolve_stage_entity(actor_entity)
+        assert stage_entity is not None, f"无法获取 {actor_entity.name} 所在场景实体！"
+
         """驱动单次出牌的完整仲裁流程。"""
         assert actor_entity.has(
             PlayCardsAction
         ), f"实体 {actor_entity.name} 缺少 PlayCardsAction 组件！"
         play_cards_action = actor_entity.get(PlayCardsAction)
 
-        target_stats: Dict[str, CharacterStats] = {}
-
         # dict.fromkeys 去重并保序（ENEMY_RANDOM_MULTI 的 targets 长度=hit_count，可能含重复名）
+        target_stats: Dict[str, CharacterStats] = {}
         for target_name in dict.fromkeys(play_cards_action.targets):
-
             target_entity = self._game.get_entity_by_name(target_name)
             assert target_entity is not None, f"无法找到目标实体: {target_name}"
-
             target_stats[target_name] = compute_character_stats(target_entity)
 
         assert actor_entity.has(
             RoundStatsComponent
         ), f"出牌实体 {actor_entity.name} 缺少 RoundStatsComponent！"
+
+        # 获取当前回合数，用于仲裁提示生成
         current_round_number = len(self._game.current_dungeon.current_rounds or [])
 
+        # 获取出牌实体和目标实体在仲裁阶段的状态效果，用于生成仲裁提示
         actor_arbitration_effects: List[StatusEffect] = get_status_effects_by_phase(
             actor_entity, PhaseType.ARBITRATION
         )
 
+        # 获取目标实体在仲裁阶段的状态效果，用于生成仲裁提示
         target_arbitration_effects: Dict[str, List[StatusEffect]] = {}
         for target_name in dict.fromkeys(play_cards_action.targets):
             target_entity = self._game.get_entity_by_name(target_name)
@@ -117,11 +115,14 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                 target_entity, PhaseType.ARBITRATION
             )
 
+        # 获取出牌实体和目标实体的装备附加属性，用于生成仲裁提示
         actor_gear_modifiers: List[str] = (
             actor_entity.get(EquippedGearComponent).item.modifiers
             if actor_entity.has(EquippedGearComponent)
             else []
         )
+
+        # 获取目标实体的装备附加属性，用于生成仲裁提示
         target_gear_modifiers: Dict[str, List[str]] = {}
         for _tgt_name in dict.fromkeys(play_cards_action.targets):
             _tgt_entity = self._game.get_entity_by_name(_tgt_name)
@@ -132,6 +133,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                 else []
             )
 
+        # 生成仲裁提示消息，包括出牌实体、目标实体的状态效果和装备附加属性等信息
         message = generate_combat_arbitration_prompt(
             actor_entity.name,
             compute_character_stats(actor_entity),
@@ -144,6 +146,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             target_gear_modifiers,
         )
 
+        # 生成压缩后的仲裁提示消息，用于在需要时向 LLM 提供更简洁的上下文信息
         compressed_message = (
             generate_compressed_combat_arbitration_prompt(
                 actor_entity.name,
@@ -167,6 +170,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
         #         "（系统测试指令）本回合为第 1 回合，请将 trigger_post_arbitration 强制设为 true，以验证场景干预系统的完整调用路径。其余字段按实际情况正常推理输出。",
         #     )
 
+        # 初始化 DeepSeekClient，用于与 LLM 进行交互，传入生成的仲裁提示消息和压缩提示消息（如果启用）
         chat_client = DeepSeekClient(
             name=stage_entity.name,
             prompt=message,
@@ -174,25 +178,48 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             context=self._game.get_agent_context(stage_entity).context,
             timeout=60 * 2,
         )
-        await chat_client.chat()
 
-        self._apply_arbitration_result(
-            stage_entity, chat_client, actor_entity, play_cards_action
-        )
+        # 发起 LLM 请求，捕获异常以防止整个流程崩溃
+        try:
+            await chat_client.chat()
+        except Exception as e:
+            logger.error(f"[PlayCardsArbitrationSystem] LLM 请求失败: {e}")
+            return
 
+        # 检查 LLM 是否返回了有效的响应内容，如果为空则记录错误并返回
+        if chat_client.response_ai_message is None:
+            logger.error("[PlayCardsArbitrationSystem] LLM 返回空响应")
+            return
+
+        # 解析 LLM 的响应内容，提取 JSON 并转换为 ArbitrationResponse 对象，供后续处理使用
+        self._apply_arbitration_result(chat_client, actor_entity, play_cards_action)
+
+        # 处理血量为零的实体，触发相应的游戏逻辑，例如移除实体或触发死亡事件
         process_zero_health_entities(self._game)
 
     #######################################################################################################################################
     def _apply_arbitration_result(
         self,
-        stage_entity: Entity,
+        # stage_entity: Entity,
         chat_client: DeepSeekClient,
         actor_entity: Entity,
         action: PlayCardsAction,
     ) -> None:
         """解析 AI 仲裁响应，更新 HP/状态效果，广播仲裁事件，写入回合记录。解析失败仅记录 error。"""
+
+        if chat_client.response_ai_message is None:
+            logger.error("[PlayCardsArbitrationSystem] LLM 回复内容为空")
+            return
+
+        # 获取当前行动者所在的场景实体，确保后续的仲裁结果能够正确应用到对应的场景上下文
+        stage_entity = self._game.resolve_stage_entity(actor_entity)
+        assert (
+            stage_entity is not None
+        ), f"PlayCardsArbitrationSystem: 无法获取 {actor_entity.name} 所在场景实体！"
+
         try:
 
+            # 解析 LLM 返回的 JSON 响应，构建 ArbitrationResponse 对象，用于后续的游戏状态更新和广播处理
             format_response = ArbitrationResponse.model_validate_json(
                 extract_json_from_code_block(chat_client.response_content)
             )
@@ -204,6 +231,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                         f"final_stats 中的实体不存在于游戏中: {entity_name}"
                     )
 
+            # 根据是否使用压缩提示，添加上下文。
             if self._use_compressed_prompt:
                 self._game.add_human_message(
                     entity=stage_entity,
@@ -218,14 +246,13 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                     human_message=HumanMessage(content=chat_client.prompt),
                 )
 
-            assert (
-                chat_client.response_ai_message is not None
-            ), "chat_client.response_ai_message 不应为 None"
+            # 将 AI 的响应消息添加到游戏上下文中，便于后续的回合记录和状态更新。
             self._game.add_ai_message(
                 entity=stage_entity,
                 ai_message=chat_client.response_ai_message,
             )
 
+            # 广播当前回合的仲裁结果，包括战斗日志和叙事内容，通知场景中的所有实体（除当前场景实体外）
             current_round_number = len(self._game.current_dungeon.current_rounds or [])
             self._game.broadcast_to_stage(
                 entity=stage_entity,
@@ -243,6 +270,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                 exclude_entities={stage_entity},
             )
 
+            # 更新每个实体在仲裁后的 HP 状态，并记录状态效果的变化，确保游戏状态与仲裁结果保持一致。
             post_arbitration_hp: Dict[str, Tuple[int, int]] = {}
             for entity_name, entity_stats in format_response.final_stats.items():
 
@@ -273,6 +301,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                     ),
                 )
 
+            # 根据仲裁后的状态，为出牌者与所有目标添加状态效果动作，确保状态效果在游戏中正确生效。
             self._add_status_effects_actions_after_arbitration(
                 actor_entity=actor_entity,
                 play_cards_action=action,
@@ -290,11 +319,13 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                             f"[{target_name}] energy_delta {action.card.energy_delta:+d}"
                         )
 
+            # 将本回合的战斗日志和叙事内容添加到当前回合的记录中，便于后续回合的回顾和游戏状态的追踪。
             latest_round = self._game.current_dungeon.latest_round
             assert latest_round is not None, "current_rounds 不应为 None"
             latest_round.cards_combat_log.append(format_response.combat_log)
             latest_round.cards_narrative.append(format_response.narrative)
 
+            # 如果仲裁结果触发了后置仲裁动作（trigger_post_arbitration 为 True），则在当前场景实体中添加 PostArbitrationAction，以便在后续阶段执行相应的逻辑。
             if format_response.trigger_post_arbitration:
                 logger.debug(
                     f"仲裁结果 trigger_post_arbitration=True，触发 PostArbitrationAction"

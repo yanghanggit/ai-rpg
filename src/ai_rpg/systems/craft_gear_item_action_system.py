@@ -168,42 +168,45 @@ class CraftGearItemActionSystem(ReactiveProcessor):
         entity: Entity,
         materials: List[MaterialItem],
     ) -> Optional[_CraftGearItemResponse]:
-        """调用工坊 agent 推理生成装备属性。
+        """调用工坊 agent 推理生成装备属性。"""
 
-        Args:
-            entity: 携带 CraftGearItemAction 的工坊世界系统实体
-            materials: 合并后的材料列表（count = 本次使用量）
-
-        Returns:
-            解析成功的响应对象；解析失败返回 None
-        """
+        # 构建 LLM 提示并初始化 DeepSeekClient，用于与 LLM 进行交互
         prompt = _build_craft_gear_prompt(materials)
         chat_client = DeepSeekClient(
             name=entity.name,
             prompt=prompt,
             context=self._game.get_agent_context(entity).context,
         )
-        await chat_client.chat()
 
-        raw = chat_client.response_content
-        if not raw:
-            logger.error("[CraftGearItemActionSystem] LLM 返回空响应")
+        # 发起 LLM 请求，捕获异常以防止整个流程崩溃
+        try:
+            await chat_client.chat()
+        except Exception as e:
+            logger.error(f"[CraftGearItemActionSystem] LLM 请求失败: {e}")
             return None
 
+        # 检查 LLM 是否返回了有效的消息对象，如果为空则记录错误并返回 None
+        if chat_client.response_ai_message is None:
+            logger.error("[CraftGearItemActionSystem] LLM 回复消息为空")
+            return None
+
+        # 尝试从 LLM 的回复中提取 JSON 并解析为 _CraftGearItemResponse 对象
         try:
-            json_str = extract_json_from_code_block(raw)
+            json_str = extract_json_from_code_block(chat_client.response_content)
             response = _CraftGearItemResponse.model_validate_json(json_str)
             assert response.name, "LLM 返回的 name 不能为空"
         except Exception as e:
             logger.error(
-                f"[CraftGearItemActionSystem] 解析 LLM 响应失败: {e}\n原始内容:\n{raw}"
+                f"[CraftGearItemActionSystem] 解析 LLM 响应失败: {e}\n原始内容:\n{chat_client.response_content}"
             )
             return None
 
+        # 再次检查解析后的 response 对象的 name 字段是否为空，确保 LLM 返回的内容有效
         if not response.name:
             logger.error("[CraftGearItemActionSystem] LLM 返回的 name 为空")
             return None
 
+        # 返回解析成功的 response 对象，供调用方使用
         return response
 
     ####################################################################################################################################

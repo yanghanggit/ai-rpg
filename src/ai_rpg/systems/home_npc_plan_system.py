@@ -33,18 +33,7 @@ from .home_planning_utils import (
 #######################################################################################################################################
 @final
 class HomeNpcPlanSystem(ReactiveProcessor):
-    """家园 NPC 自主行动规划系统。
-
-    响应式处理器，监听 PlanAction 组件触发，仅处理非玩家控制（无 PlayerComponent）的 NPC 实体。
-    生成行动规划提示词，调用 LLM 获取决策，并转化为游戏行动组件。
-    若玩家本轮有主动行动，NPC 进入待命模式（跳过 LLM 推理）。
-
-    Attributes:
-        _game: 游戏实例引用
-        _use_compressed_prompt: 是否使用压缩 prompt 机制。
-            True（默认）：对话历史存压缩版，full prompt 附挂在 home_actor_full_prompt 字段；
-            False：与旧行为一致，对话历史直接存完整 prompt，不附挂额外字段。
-    """
+    """家园 NPC 自主行动规划系统。"""
 
     def __init__(self, game: DBGGame, use_compressed_prompt: bool = True) -> None:
         super().__init__(game)
@@ -81,8 +70,11 @@ class HomeNpcPlanSystem(ReactiveProcessor):
             )
             return
 
-        # NPC：调用 LLM 进行行动规划
-        chat_clients: List[DeepSeekClient] = self._create_actor_chat_clients(entities)
+        # 构建每个 NPC 的聊天客户端，并注入待命上下文（即使不立即请求 LLM，也为后续可能的请求做准备）
+        chat_clients: List[DeepSeekClient] = []
+        for actor_entity in entities:
+            chat_clients.append(self._build_client(actor_entity))
+            self._inject_npc_standby_context(actor_entity)
 
         # 批量请求 LLM 合成行动规划
         await DeepSeekClient.batch_chat(clients=chat_clients)
@@ -93,13 +85,7 @@ class HomeNpcPlanSystem(ReactiveProcessor):
 
     #######################################################################################################################################
     def _inject_npc_standby_context(self, npc_entity: Entity) -> None:
-        """向 NPC 实体注入待命状态（跳过 LLM 推理）。
-
-        玩家本轮有主动行动时，NPC 不进行推理，直接注入 passive_mind 并保持对话历史连贯。
-
-        Args:
-            npc_entity: NPC 实体
-        """
+        """向 NPC 实体注入待命状态（跳过 LLM 推理）。"""
         current_stage = self._game.resolve_stage_entity(npc_entity)
         assert current_stage is not None
 
@@ -166,14 +152,7 @@ class HomeNpcPlanSystem(ReactiveProcessor):
 
     #######################################################################################################################################
     def _execute_actor_actions(self, chat_client: DeepSeekClient) -> None:
-        """执行角色的行动决策。
-
-        解析 AI 响应并转化为游戏行动组件，保存对话历史。
-
-        Args:
-            actor_entity: 角色实体
-            chat_client: 聊天客户端（包含 AI 响应）
-        """
+        """执行角色的行动决策。"""
 
         actor_entity = self._game.get_entity_by_name(chat_client.name)
         assert (
@@ -213,9 +192,17 @@ class HomeNpcPlanSystem(ReactiveProcessor):
                 ),
             )
 
-        # 添加 AI 响应消息到对话历史
-        assert chat_client.response_ai_message is not None
+        # 添加 AI 响应消息到上下文。
         self._game.add_ai_message(actor_entity, chat_client.response_ai_message)
+
+        # 将验证后的行动规划响应转化为游戏行动组件，并处理内心独白通知
+        self._apply_actor_action_response(actor_entity, validated_response)
+
+    #######################################################################################################################################
+    def _apply_actor_action_response(
+        self, actor_entity: Entity, validated_response: ActionPlanResponse
+    ) -> None:
+        """将验证后的行动规划响应转化为游戏行动组件，并处理内心独白通知。"""
 
         # 添加内心独白: 上下文！，这里做直接添加与通知处理
         if validated_response.mind != "":
@@ -269,92 +256,52 @@ class HomeNpcPlanSystem(ReactiveProcessor):
             )
 
     #######################################################################################################################################
-    def _create_actor_chat_clients(
-        self, actor_entities: List[Entity]
-    ) -> List[DeepSeekClient]:
-        """为角色创建聊天客户端。
+    def _build_client(self, entity: Entity) -> DeepSeekClient:
+        """为角色创建聊天客户端。"""
+        # 找到当前场景
+        current_stage = self._game.resolve_stage_entity(entity)
+        assert current_stage is not None, "当前角色所在的场景不存在"
 
-        收集场景上下文并生成提示词，创建聊天客户端。
+        # 找到当前场景内所有角色 & 他们的外观描述（不含自己）
+        other_actors_appearances = get_other_actors_appearances(
+            self._game, entity, current_stage
+        )
 
-        Args:
-            actor_entities: 角色实体列表
+        # 找到当前场景可去往的家园场景
+        available_home_stages = get_available_home_stages(
+            self._game, entity, current_stage
+        )
 
-        Returns:
-            聊天客户端列表
-        """
-        chat_clients: List[DeepSeekClient] = []
+        # 生成请求处理器
+        stage_narrative = current_stage.get(StageDescriptionComponent).narrative
+        available_stage_names = [e.name for e in available_home_stages]
 
-        for actor_entity in actor_entities:
+        # 生成行动规划提示词
 
-            # 找到当前场景
-            current_stage = self._game.resolve_stage_entity(actor_entity)
-            assert current_stage is not None
-
-            # 找到当前场景内所有角色 & 他们的外观描述（不含自己）
-            other_actors_appearances = get_other_actors_appearances(
-                self._game, actor_entity, current_stage
-            )
-
-            # 找到当前场景可去往的家园场景
-            available_home_stages = get_available_home_stages(
-                self._game, actor_entity, current_stage
-            )
-
-            # 生成请求处理器
-            stage_narrative = current_stage.get(StageDescriptionComponent).narrative
-            available_stage_names = [e.name for e in available_home_stages]
-
-            # 生成行动规划提示词
-            chat_clients.append(
-                DeepSeekClient(
-                    name=actor_entity.name,
-                    prompt=build_action_planning_prompt(
-                        current_stage=current_stage.name,
-                        current_stage_narration=stage_narrative,
-                        other_actors_appearances=other_actors_appearances,
-                        available_home_stages=available_stage_names,
-                    ),
-                    compressed_prompt=(
-                        build_compressed_planning_prompt(
-                            current_stage=current_stage.name,
-                            current_stage_narration=stage_narrative,
-                            other_actors_appearances=other_actors_appearances,
-                            available_home_stages=available_stage_names,
-                        )
-                        if self._use_compressed_prompt
-                        else None
-                    ),
-                    context=self._game.get_agent_context(actor_entity).context,
+        return DeepSeekClient(
+            name=entity.name,
+            prompt=build_action_planning_prompt(
+                current_stage=current_stage.name,
+                current_stage_narration=stage_narrative,
+                other_actors_appearances=other_actors_appearances,
+                available_home_stages=available_stage_names,
+            ),
+            compressed_prompt=(
+                build_compressed_planning_prompt(
+                    current_stage=current_stage.name,
+                    current_stage_narration=stage_narrative,
+                    other_actors_appearances=other_actors_appearances,
+                    available_home_stages=available_stage_names,
                 )
-            )
-
-            # 测试用：向非玩家盟友注入一组连续的 mock 消息，模拟强制发起特定行动的场景。
-            self._mock_inject_context(actor_entity)
-
-        return chat_clients
+                if self._use_compressed_prompt
+                else None
+            ),
+            context=self._game.get_agent_context(entity).context,
+        )
 
     #######################################################################################################################################
     def _mock_inject_context(self, actor_entity: Entity) -> None:
-        """【测试用】向非玩家盟友注入一组连续的 mock 消息，模拟强制发起特定行动的场景。
-
-        只对非玩家 NPC（NPCComponent & ~PlayerComponent）生效。
-
-        Args:
-            actor_entity: 待注入的角色实体
-        """
-        # if not actor_entity.has(NPCComponent) or actor_entity.has(PlayerComponent):
-        #     return
-
-        assert actor_entity.has(
-            NPCComponent
-        ), f"actor_entity {actor_entity.name} must have NPCComponent"
-        assert not actor_entity.has(
-            PlayerComponent
-        ), f"actor_entity {actor_entity.name} must not have PlayerComponent"
-
-        logger.debug(
-            "这里清醒mock一个message 添加给学者的上下文，要求在后续的计划行动中不可以使用trans_stage 来移动场景！"
-        )
+        """【测试用】向非玩家盟友注入一组连续的 mock 消息，模拟强制发起特定行动的场景。"""
         self._game.add_human_message(
             actor_entity,
             HumanMessage(

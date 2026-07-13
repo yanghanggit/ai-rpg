@@ -179,39 +179,3 @@ class HomePlayerPlanSystem(ReactiveProcessor):
         return response
 
     #######################################################################################################################################
-    # def _get_other_actors_appearances(
-    #     self, actor_entity: Entity, current_stage: Entity
-    # ) -> Dict[str, str]:
-    #     """获取当前场景内除自身以外的所有角色外观描述。
-
-    #     Args:
-    #         actor_entity: 当前角色实体（将被排除）
-    #         current_stage: 当前所在场景实体
-
-    #     Returns:
-    #         其他角色的外观描述（角色名 -> 外观）
-    #     """
-    #     appearances = self._game.get_actor_appearances_in_stage(current_stage)
-    #     appearances.pop(actor_entity.name, None)
-    #     return appearances
-
-    # #######################################################################################################################################
-    # def _get_available_home_stages(
-    #     self, actor_entity: Entity, current_stage: Entity
-    # ) -> set[Entity]:
-    #     """获取玩家可前往的家园场景集合（排除当前场景）。
-
-    #     Args:
-    #         actor_entity: 玩家实体
-    #         current_stage: 当前所在场景实体
-
-    #     Returns:
-    #         可前往的家园场景实体集合
-    #     """
-    #     home_stage_entities = self._game.get_group(
-    #         Matcher(all_of=[HomeComponent])
-    #     ).entities.copy()
-    #     home_stage_entities.discard(current_stage)
-    #     return home_stage_entities
-
-    #######################################################################################################################################

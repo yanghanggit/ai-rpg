@@ -1,6 +1,7 @@
 """家园玩家上下文注入系统。"""
 
-from typing import Dict, Final, final, Dict, List
+from typing import Dict, Final, List, Optional, final
+from loguru import logger
 from ..models.messages import AIMessage, HumanMessage
 from overrides import override
 from ..entitas import Entity, Matcher, GroupEvent, ReactiveProcessor
@@ -11,7 +12,6 @@ from ..models import (
     WhisperAction,
     PlanAction,
     TransStageAction,
-    MindEvent,
     ActorComponent,
     PlayerComponent,
     NPCComponent,
@@ -19,10 +19,8 @@ from ..models import (
 from ..game import DBGGame
 from .home_planning_utils import (
     ActionPlanResponse,
-    _PLAYER_ACTIVE_ACTION_TYPES,
     build_action_planning_prompt,
     build_compressed_planning_prompt,
-    format_mind_notification,
     get_other_actors_appearances,
     get_available_home_stages,
 )
@@ -56,37 +54,50 @@ class HomePlayerPlanSystem(ReactiveProcessor):
     #######################################################################################################################################
     @override
     async def react(self, entities: List[Entity]) -> None:
-        for player_entity in entities:
-            self._inject_player_scene_context(player_entity)
+        assert (
+            len(entities) == 1
+        ), "HomePlayerPlanSystem expects exactly one player entity at a time."
+        self._inject_player_scene_context(entities[0])
 
     #######################################################################################################################################
     def _inject_player_scene_context(self, player_entity: Entity) -> None:
-        """向玩家实体注入当前场景观察信息（不调用 LLM）。
+        """向玩家实体注入当前场景观察信息（不调用 LLM）。"""
 
-        Args:
-            player_entity: 玩家实体
-        """
+        mock_response = self._build_player_action_response(player_entity)
+        assert (
+            mock_response is not None
+        ), f"玩家 {player_entity.name} 无法构建影子 plan，跳过家园上下文注入。"
+
         current_stage = self._game.resolve_stage_entity(player_entity)
         assert (
             current_stage is not None
         ), f"玩家 {player_entity.name} 不在任何场景中，无法注入家园规划上下文。"
 
+        # 获取当前场景中除玩家自身外的其他角色的外观信息
         other_actors_appearances = get_other_actors_appearances(
             self._game, player_entity, current_stage
         )
+
+        # 获取玩家可用的家园场景列表
         available_home_stages = get_available_home_stages(
             self._game, player_entity, current_stage
         )
 
+        # 获取当前场景的叙事描述
         stage_narrative = current_stage.get(StageDescriptionComponent).narrative
+
+        # 提取可用家园场景的名称列表
         available_stage_names = [e.name for e in available_home_stages]
 
+        # 构建完整的行动规划提示，包括当前场景、场景叙事、其他角色外观信息以及可用家园场景列表
         full_prompt = build_action_planning_prompt(
             current_stage=current_stage.name,
             current_stage_narration=stage_narrative,
             other_actors_appearances=other_actors_appearances,
             available_home_stages=available_stage_names,
         )
+
+        # 如果配置了使用压缩提示，则构建压缩后的行动规划提示并发送给游戏系统
         if self._use_compressed_prompt:
             compressed_prompt = build_compressed_planning_prompt(
                 current_stage=current_stage.name,
@@ -94,6 +105,8 @@ class HomePlayerPlanSystem(ReactiveProcessor):
                 other_actors_appearances=other_actors_appearances,
                 available_home_stages=available_stage_names,
             )
+
+            # 将压缩后的行动规划提示发送给游戏系统，附带玩家的全量提示以便参考
             self._game.add_human_message(
                 player_entity,
                 HumanMessage(
@@ -103,6 +116,8 @@ class HomePlayerPlanSystem(ReactiveProcessor):
                 ),
             )
         else:
+
+            # 如果未配置使用压缩提示，则直接将完整的行动规划提示发送给游戏系统
             self._game.add_human_message(
                 player_entity,
                 HumanMessage(
@@ -111,47 +126,17 @@ class HomePlayerPlanSystem(ReactiveProcessor):
                 ),
             )
 
-        # 判断玩家本轮是否有主动动作
-        has_action = any(
-            player_entity.has(action_type)
-            for action_type in _PLAYER_ACTIVE_ACTION_TYPES
-        )
-        passive_mind = "" if has_action else f"身处{current_stage.name}，待命。"
-
-        mock_response = self._build_player_action_response(player_entity, passive_mind)
+        # 将 AI 的响应消息添加上下文。
         self._game.add_ai_message(
             player_entity, AIMessage(content=mock_response.model_dump_json(indent=2))
         )
 
-        # 被动观察轮：模拟 mind 通知，与 NPC 路径对齐
-        if mock_response.mind != "":
-            self._game.notify_entities(
-                {player_entity},
-                MindEvent(
-                    message=format_mind_notification(
-                        player_entity.name, mock_response.mind
-                    ),
-                    actor=player_entity.name,
-                    stage=current_stage.name,
-                    content=mock_response.mind,
-                ),
-            )
-
     #######################################################################################################################################
     def _build_player_action_response(
-        self, player_entity: Entity, passive_mind: str = ""
-    ) -> ActionPlanResponse:
-        """根据玩家当前动作组件构建等效的 ActionPlanResponse。
+        self, player_entity: Entity
+    ) -> Optional[ActionPlanResponse]:
+        """根据玩家当前挂载的主动行动组件构建等效的 ActionPlanResponse（影子 plan）。"""
 
-        有主动动作时 mind 为空；无任何动作（被动观察轮）时用 passive_mind 填入。
-
-        Args:
-            player_entity: 玩家实体
-            passive_mind: 被动观察轮时使用的 mind 文本
-
-        Returns:
-            模拟的 ActionPlanResponse
-        """
         response = ActionPlanResponse()
 
         if player_entity.has(SpeakAction):
@@ -174,7 +159,10 @@ class HomePlayerPlanSystem(ReactiveProcessor):
                 response.trans_stage,
             ]
         ):
-            response.mind = passive_mind
+            logger.warning(
+                f"HomePlayerPlanSystem: 玩家 {player_entity.name} 被挂载 PlanAction 但没有任何主动行动组件，跳过影子 plan 构建"
+            )
+            return None
 
         return response
 

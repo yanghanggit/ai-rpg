@@ -1,58 +1,22 @@
 """家园规划系统共享工具模块。"""
 
-from typing import Any, Dict, Final, List, Set
+from typing import Any, Dict, List, Set
 from pydantic import BaseModel, field_validator
-from ..models import (
-    AnnounceAction,
-    SpeakAction,
-    WhisperAction,
-    TransStageAction,
-    HomeComponent,
-)
+from ..models import HomeComponent
 from ..game import DBGGame
 from ..game.rpg_actor_appearances import get_actor_appearances_in_stage
 from ..entitas import Entity, Matcher
 
-# 玩家「主动行动」对应的 Action 组件类型集合。
-# 仅供 HomePlayerPlanSystem 自身判断本轮是否有真实动作（决定 mind 字段内容）使用，
-# 不再跨系统供 NPC 规划系统查询。新增/删除行动类型时只在此处修改。
-_PLAYER_ACTIVE_ACTION_TYPES: Final = (
-    SpeakAction,
-    WhisperAction,
-    AnnounceAction,
-    TransStageAction,
-)
-
 
 #######################################################################################################################################
 def format_mind_notification(actor_name: str, mind_content: str) -> str:
-    """格式化内心活动通知消息。
-
-    Args:
-        actor_name: 角色名称
-        mind_content: 内心活动内容
-
-    Returns:
-        格式化后的通知消息
-    """
+    """格式化内心活动通知消息。"""
     return f"# {actor_name} 内心活动: {mind_content}"
 
 
 #######################################################################################################################################
 class ActionPlanResponse(BaseModel):
-    """角色行动规划响应数据模型。
-
-    用于解析和验证 AI 返回的角色行动决策 JSON 数据，
-    确保响应结构符合预期格式并包含所有必要的行动信息。
-
-    Attributes:
-        mind: 内心独白
-        query: 数据库检索关键词
-        speak: 说话行动（目标角色名 -> 内容）
-        whisper: 耳语行动（目标角色名 -> 内容）
-        announce: 公开宣布
-        trans_stage: 移动目标场景名
-    """
+    """角色行动规划响应数据模型。"""
 
     mind: str = ""
     query: str = ""
@@ -79,19 +43,7 @@ def build_action_planning_prompt(
     other_actors_appearances: Dict[str, str],
     available_home_stages: List[str],
 ) -> str:
-    """构建角色行动规划提示词（完整版，含所有行动类型）。
-
-    包含：query、speak、whisper、announce、trans_stage。
-
-    Args:
-        current_stage: 场景名称
-        current_stage_narration: 场景环境描述
-        other_actors_appearances: 其他角色的外观（角色名 -> 外观）
-        available_home_stages: 可前往的场景列表
-
-    Returns:
-        完整的行动规划提示词
-    """
+    """构建角色行动规划提示词（完整版，含所有行动类型）。"""
     # 场景内角色外观描述
     other_actors_appearance_info = []
     for actor_name, appearance in other_actors_appearances.items():
@@ -178,20 +130,7 @@ def build_compressed_planning_prompt(
     other_actors_appearances: Dict[str, str],
     available_home_stages: List[str],
 ) -> str:
-    """构建角色行动规划提示词（压缩版，仅保留动态上下文）。
-
-    仅包含每轮变化的感知信息（场景/角色），省略静态规则与格式说明，
-    用于写入对话历史，减少后续推理时的重复 token 消耗。
-
-    Args:
-        current_stage: 场景名称
-        current_stage_narration: 场景环境描述
-        other_actors_appearances: 其他角色的外观（角色名 -> 外观）
-        available_home_stages: 可前往的场景列表
-
-    Returns:
-        压缩版行动规划提示词
-    """
+    """构建角色行动规划提示词（压缩版，仅保留动态上下文）。"""
     other_actors_appearance_info = []
     for actor_name, appearance in other_actors_appearances.items():
         other_actors_appearance_info.append(f"{actor_name}: {appearance}")
@@ -215,15 +154,7 @@ def build_compressed_planning_prompt(
 def get_other_actors_appearances(
     game: DBGGame, actor_entity: Entity, current_stage: Entity
 ) -> Dict[str, str]:
-    """获取当前场景内除自身以外的所有角色外观描述。
-
-    Args:
-        actor_entity: 当前角色实体（将被排除）
-        current_stage: 当前所在场景实体
-
-    Returns:
-        其他角色的外观描述（角色名 -> 外观）
-    """
+    """获取当前场景内除自身以外的所有角色外观描述。"""
     appearances = get_actor_appearances_in_stage(game, current_stage)
     appearances.pop(actor_entity.name, None)
     return appearances
@@ -233,15 +164,7 @@ def get_other_actors_appearances(
 def get_available_home_stages(
     game: DBGGame, actor_entity: Entity, current_stage: Entity
 ) -> Set[Entity]:
-    """获取玩家可前往的家园场景集合（排除当前场景）。
-
-    Args:
-        actor_entity: 玩家实体
-        current_stage: 当前所在场景实体
-
-    Returns:
-        可前往的家园场景实体集合
-    """
+    """获取玩家可前往的家园场景集合（排除当前场景）。"""
     home_stage_entities = game.get_group(
         Matcher(all_of=[HomeComponent])
     ).entities.copy()

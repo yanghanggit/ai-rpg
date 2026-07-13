@@ -58,8 +58,6 @@ class HomeNpcPlanSystem(ReactiveProcessor):
     @override
     async def react(self, entities: List[Entity]) -> None:
 
-        # 能进入本系统的 NPC 均已由客户端显式指定需要本轮真正规划，无需再根据玩家状态判断是否进入待命。
-
         # 构建每个 NPC 的聊天客户端
         chat_clients: List[DeepSeekClient] = []
         for actor_entity in entities:
@@ -199,10 +197,11 @@ class HomeNpcPlanSystem(ReactiveProcessor):
 
         # 生成请求处理器
         stage_narrative = current_stage.get(StageDescriptionComponent).narrative
+
+        # 提取可用家园场景的名称列表
         available_stage_names = [e.name for e in available_home_stages]
 
         # 生成行动规划提示词
-
         return DeepSeekClient(
             name=entity.name,
             prompt=build_action_planning_prompt(

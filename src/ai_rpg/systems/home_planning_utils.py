@@ -14,8 +14,8 @@ from ..game.rpg_actor_appearances import get_actor_appearances_in_stage
 from ..entitas import Entity, Matcher
 
 # 玩家「主动行动」对应的 Action 组件类型集合。
-# 当任一玩家持有其中任意类型时，视为本轮「有主动行动」，NPC 将进入待命模式。
-# 新增/删除行动类型时只在此处修改，其余判断逻辑均引用此常量。
+# 仅供 HomePlayerPlanSystem 自身判断本轮是否有真实动作（决定 mind 字段内容）使用，
+# 不再跨系统供 NPC 规划系统查询。新增/删除行动类型时只在此处修改。
 _PLAYER_ACTIVE_ACTION_TYPES: Final = (
     SpeakAction,
     WhisperAction,
@@ -209,27 +209,6 @@ def build_compressed_planning_prompt(
 {"\n".join(other_actors_appearance_info)}
 
 > 请以JSON格式输出你的行动决策。"""
-
-
-#######################################################################################################################################
-def is_player_active(game: DBGGame) -> bool:
-    """判断本轮玩家是否具有主动行动。
-
-    玩家持有 _PLAYER_ACTIVE_ACTION_TYPES 中任意类型的组件时，视为本轮有主动行动。
-    供 HomeNpcPlanSystem 等系统直接调用，无需感知内部实现细节。
-
-    Args:
-        game: 游戏实例
-
-    Returns:
-        玩家持有主动行动组件则返回 True；玩家不存在时返回 False
-    """
-    player_entity = game.get_player_entity()
-    if player_entity is None:
-        return False
-    return any(
-        player_entity.has(action_type) for action_type in _PLAYER_ACTIVE_ACTION_TYPES
-    )
 
 
 #######################################################################################################################################

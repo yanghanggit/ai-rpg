@@ -14,6 +14,7 @@ sys.path.insert(
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from loguru import logger
+from typing import Dict, List
 from ai_rpg.models import PlayerSession
 from ai_rpg.game.dbg_game import DBGGame
 from ai_rpg.models import CombatState, World
@@ -36,18 +37,22 @@ from agent_game_core import restore_game
 async def advance_game(
     world: World,
     player_session: PlayerSession,
+    actor_names: List[str],
     save_dir: Path,
 ) -> DBGGame:
     """从存档复位，执行一轮家园推进（等同于终端命令 /ad），并归档新状态。
 
-    调用 activate_stage_plan 为玩家当前场景内所有 NPC 激活行动计划，
+    调用 activate_stage_plan 为调用方显式指定的角色列表激活行动计划，
     然后驱动 home_pipeline.process() 完成本轮推理与叙事生成。
+
+    调用前应先用 stages_game() 查询当前场景的角色名单，确定 actor_names。
 
     前置条件：玩家必须处于家园模式（is_player_in_home_stage）。
 
     Args:
         world: 由 restore_world() 反序列化的世界数据。
         player_session: 由 restore_world() 反序列化的玩家会话。
+        actor_names: 本轮需要真正触发行动规划的角色名称列表（须为当前家园场景内的 NPC/玩家）。
         save_dir: 新存档写入目录（由命令层根据时间戳预先构造）。
 
     Returns:
@@ -55,7 +60,7 @@ async def advance_game(
     """
     terminal_game = await restore_game(world, player_session)
 
-    success, error_detail = activate_stage_plan(terminal_game)
+    success, error_detail = activate_stage_plan(terminal_game, actor_names)
     if not success:
         logger.debug(f"激活行动计划失败: {error_detail}")
 
@@ -67,6 +72,27 @@ async def advance_game(
         save_dir=save_dir,
     )
     return terminal_game
+
+
+###############################################################################
+async def stages_game(
+    world: World,
+    player_session: PlayerSession,
+) -> Dict[str, List[str]]:
+    """从存档复位，返回场景与角色的分布映射（只读，不写新存档）。
+
+    与服务端 /api/stages/v1/{user}/{game}/state（fetch_stages_state）功能对等，
+    供调用方在执行 advance 前查询当前场景内的角色名单，用于构造 --actors 参数。
+
+    Args:
+        world: 由 restore_world() 反序列化的世界数据。
+        player_session: 由 restore_world() 反序列化的玩家会话。
+
+    Returns:
+        场景名称 -> 角色名称列表 的映射。
+    """
+    terminal_game = await restore_game(world, player_session)
+    return terminal_game.get_actors_by_stage_as_names()
 
 
 ###############################################################################

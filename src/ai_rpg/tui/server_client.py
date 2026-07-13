@@ -253,15 +253,17 @@ async def watch_task_until_done(task_id: str, timeout_seconds: int = 120) -> Tas
     raise TimeoutError(f"任务 {task_id} 等待超时")
 
 
-async def home_advance(user_name: str, game_name: str) -> HomeAdvanceResponse:
-    """触发家园推进流程，返回后台任务ID。"""
+async def home_advance(
+    user_name: str, game_name: str, actors: List[str]
+) -> HomeAdvanceResponse:
+    """触发家园推进流程，为 actors 指定的角色激活行动计划，返回后台任务ID。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
             server_config.base_url + "/api/home/advance/v1/",
             json=HomeAdvanceRequest(
                 user_name=user_name,
                 game_name=game_name,
-                actors=[],
+                actors=actors,
             ).model_dump(),
         )
         response.raise_for_status()

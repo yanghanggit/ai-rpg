@@ -1,5 +1,5 @@
 from typing import Dict, Final, List, final
-from ..models.messages import AIMessage, HumanMessage
+from ..models.messages import HumanMessage
 from loguru import logger
 from overrides import override
 from ..deepseek import DeepSeekClient
@@ -24,7 +24,6 @@ from .home_planning_utils import (
     build_action_planning_prompt,
     build_compressed_planning_prompt,
     format_mind_notification,
-    is_player_active,
     get_other_actors_appearances,
     get_available_home_stages,
 )
@@ -59,22 +58,15 @@ class HomeNpcPlanSystem(ReactiveProcessor):
     @override
     async def react(self, entities: List[Entity]) -> None:
 
-        # 若玩家本轮有主动行动，NPC 进入待命模式（跳过 LLM 推理）
-        if is_player_active(self._game):
-            for npc_entity in entities:
-                self._inject_npc_standby_context(npc_entity)
+        # 能进入本系统的 NPC 均已由客户端显式指定需要本轮真正规划，无需再根据玩家状态判断是否进入待命。
 
-            # 若玩家本轮有主动行动，NPC 进入待命模式（跳过 LLM 推理），无需继续处理
-            logger.debug(
-                f"HomeNpcPlanSystem: 玩家本轮有主动行动，NPC 进入待命模式（跳过 LLM 推理），本轮规划结束。"
-            )
-            return
-
-        # 构建每个 NPC 的聊天客户端，并注入待命上下文（即使不立即请求 LLM，也为后续可能的请求做准备）
+        # 构建每个 NPC 的聊天客户端
         chat_clients: List[DeepSeekClient] = []
         for actor_entity in entities:
             chat_clients.append(self._build_client(actor_entity))
-            self._inject_npc_standby_context(actor_entity)
+
+            # 这句是为了防止NPC乱跑用的，暂时先放这里。
+            self._mock_inject_context(actor_entity)
 
         # 批量请求 LLM 合成行动规划
         await DeepSeekClient.batch_chat(clients=chat_clients)
@@ -82,73 +74,6 @@ class HomeNpcPlanSystem(ReactiveProcessor):
         # 解析 LLM 响应并转化为游戏行动组件，保存对话历史
         for chat_client in chat_clients:
             self._execute_actor_actions(chat_client)
-
-    #######################################################################################################################################
-    def _inject_npc_standby_context(self, npc_entity: Entity) -> None:
-        """向 NPC 实体注入待命状态（跳过 LLM 推理）。"""
-        current_stage = self._game.resolve_stage_entity(npc_entity)
-        assert current_stage is not None
-
-        other_actors_appearances = get_other_actors_appearances(
-            self._game, npc_entity, current_stage
-        )
-        available_home_stages = get_available_home_stages(
-            self._game, npc_entity, current_stage
-        )
-
-        stage_narrative = current_stage.get(StageDescriptionComponent).narrative
-        available_stage_names = [e.name for e in available_home_stages]
-
-        prompt = build_action_planning_prompt(
-            current_stage=current_stage.name,
-            current_stage_narration=stage_narrative,
-            other_actors_appearances=other_actors_appearances,
-            available_home_stages=available_stage_names,
-        )
-
-        # 测试用：向非玩家盟友注入一组连续的 mock 消息，模拟强制发起特定行动的场景。
-        if self._use_compressed_prompt:
-            compressed_prompt = build_compressed_planning_prompt(
-                current_stage=current_stage.name,
-                current_stage_narration=stage_narrative,
-                other_actors_appearances=other_actors_appearances,
-                available_home_stages=available_stage_names,
-            )
-            self._game.add_human_message(
-                npc_entity,
-                HumanMessage(
-                    content=compressed_prompt,
-                    home_actor_planning=npc_entity.name,
-                    home_actor_full_prompt=prompt,
-                ),
-            )
-        else:
-            self._game.add_human_message(
-                npc_entity,
-                HumanMessage(
-                    content=prompt,
-                    home_actor_planning=npc_entity.name,
-                ),
-            )
-
-        # 注入待命状态的内心独白（passive_mind），并通知自身。
-        passive_mind = f"身处{current_stage.name}，待命。"
-        standby_response = ActionPlanResponse(mind=passive_mind)
-        self._game.add_ai_message(
-            npc_entity,
-            AIMessage(content=standby_response.model_dump_json(indent=2)),
-        )
-
-        # 向自身注入内心独白的通知事件（MindEvent），以便在游戏中显示。
-        self._game.notify_entities(
-            {npc_entity},
-            MindEvent(
-                message=format_mind_notification(npc_entity.name, passive_mind),
-                actor=npc_entity.name,
-                stage=current_stage.name,
-                content=passive_mind,
-            ),
-        )
 
     #######################################################################################################################################
     def _execute_actor_actions(self, chat_client: DeepSeekClient) -> None:

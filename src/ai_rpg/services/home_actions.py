@@ -62,8 +62,8 @@ def activate_speak_action(
     logger.debug(f"激活说话动作: {player_entity.name} -> {target}: {content}")
     player_entity.replace(SpeakAction, player_entity.name, {target: content})
 
-    # 激活当前场景内所有角色的行动计划，以便在下一次游戏推进时执行 AI 决策。
-    activate_stage_plan(dbg_game)
+    # 为玩家自身激活行动计划（写入影子 plan，记录本轮上下文），是否让 NPC 也在本轮真正规划由调用方另行决定。
+    activate_stage_plan(dbg_game, [player_entity.name])
 
     # 返回成功消息，表示说话动作已成功激活。
     return True, ""
@@ -113,21 +113,27 @@ def activate_switch_stage(dbg_game: DBGGame, stage_name: str) -> Tuple[bool, str
         logger.error(f"激活场景转换失败: {error_detail}")
         return False, error_detail
 
-    # 激活场景转换动作，将玩家从当前场景切换到目标场景，并触发当前场景内所有角色的行动计划。
+    # 激活场景转换动作，将玩家从当前场景切换到目标场景。
     logger.debug(f"激活场景转换: {player_entity.name} -> {stage_name}")
     player_entity.replace(TransStageAction, player_entity.name, stage_name)
 
-    # 激活当前场景内所有角色的行动计划，以便在下一次游戏推进时执行 AI 决策。
-    activate_stage_plan(dbg_game)
+    # 为玩家自身激活行动计划（写入影子 plan，记录本轮上下文），是否让 NPC 也在本轮真正规划由调用方另行决定。
+    activate_stage_plan(dbg_game, [player_entity.name])
 
     # 返回成功消息，表示场景转换动作已成功激活。
     return True, ""
 
 
 ###################################################################################################################################################################
-def activate_stage_plan(dbg_game: DBGGame) -> Tuple[bool, str]:
+def activate_stage_plan(dbg_game: DBGGame, actor_names: List[str]) -> Tuple[bool, str]:
     """
-    为玩家当前场景内所有盟友 NPC 激活行动计划
+    为调用方（客户端）显式指定的角色列表激活行动计划（PlanAction）。
+
+    是否让玩家自身、哪些 NPC 在本轮真正触发 LLM 规划，完全由调用方决定；
+    本函数只负责校验并挂载 PlanAction，不再遍历场景内的全部角色。
+
+    校验规则：角色须存在、持有 NPCComponent（玩家角色也持有该组件，因此无需特殊区分）、
+    且当前处于某个家园场景（不要求与玩家在同一场景）。
     """
 
     # 检查玩家是否在家园场景中，如果不在则无法激活行动计划。
@@ -136,36 +142,41 @@ def activate_stage_plan(dbg_game: DBGGame) -> Tuple[bool, str]:
         logger.error(f"激活行动计划失败: {error_detail}")
         return False, error_detail
 
-    # 获取玩家实体和当前场景实体，验证场景为家园
-    player_entity = dbg_game.get_player_entity()
-    assert player_entity is not None, "玩家实体不存在！"
-
-    # 获取玩家当前场景实体，验证为家园场景
-    stage_entity = dbg_game.resolve_stage_entity(player_entity)
-    assert stage_entity is not None, "玩家当前场景实体不存在！"
-    # 检查当前场景是否为家园场景，如果不是则无法激活行动计划。
-    if not stage_entity.has(HomeComponent):
-        error_detail = "当前场景不是家园，无法激活行动计划"
+    # 检查角色名称列表是否为空，如果为空则无法激活行动计划。
+    if not actor_names:
+        error_detail = "角色名称列表不能为空"
         logger.error(f"激活行动计划失败: {error_detail}")
         return False, error_detail
 
-    # 获取当前场景中的所有角色实体，验证至少有一个角色存在
-    actors_in_stage = dbg_game.get_actors_in_stage(player_entity)
-    assert len(actors_in_stage) > 0, f"当前场景没有角色，无法激活行动计划！"
+    # 逐一校验角色：必须存在、必须是 NPC 阵营角色（含玩家自身）、必须在家园场景中。
+    resolved_entities = []
+    for actor_name in actor_names:
 
-    #
-    for actor_entity in actors_in_stage:
+        actor_entity = dbg_game.get_actor_entity(actor_name)
+        if actor_entity is None:
+            error_detail = f"角色 {actor_name} 不存在"
+            logger.error(f"激活行动计划失败: {error_detail}")
+            return False, error_detail
 
-        # 检查当前角色是否为 NPC，如果不是则无法激活行动计划。
-        assert actor_entity.has(
-            NPCComponent
-        ), f"角色 {actor_entity.name} 不是 NPC，无法激活行动计划！"
+        if not actor_entity.has(NPCComponent):
+            error_detail = f"角色 {actor_name} 不是 NPC 阵营角色，无法激活行动计划"
+            logger.error(f"激活行动计划失败: {error_detail}")
+            return False, error_detail
 
+        if not dbg_game.is_actor_in_home_stage(actor_entity):
+            error_detail = f"角色 {actor_name} 不在家园场景中，无法激活行动计划"
+            logger.error(f"激活行动计划失败: {error_detail}")
+            return False, error_detail
+
+        resolved_entities.append(actor_entity)
+
+    # 校验全部通过后再统一挂载，避免部分角色已挂载、部分校验失败导致的状态不一致。
+    for actor_entity in resolved_entities:
         logger.debug(f"为角色 {actor_entity.name} 添加 PlanAction")
         actor_entity.replace(PlanAction, actor_entity.name)
 
     # 返回成功消息，表示所有角色的行动计划已成功激活。
-    return True, f"成功为 {len(actors_in_stage)} 个角色添加 PlanAction"
+    return True, f"成功为 {len(resolved_entities)} 个角色添加 PlanAction"
 
 
 ###################################################################################################################################################################

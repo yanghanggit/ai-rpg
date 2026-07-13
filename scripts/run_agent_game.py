@@ -21,12 +21,13 @@
 
 游戏状态机（两种模式）：
     【家园模式 Home】玩家在某个 HomeComponent 场景中
-        可用命令：new / advance / speak / switch-stage / enter-dungeon
+        可用命令：new / stages / advance / speak / switch-stage / enter-dungeon
     【地下城模式 Dungeon】玩家在某个地下城场景中
         可用命令：draw-cards / play-cards / exit-dungeon / next-dungeon / retreat
 
 典型家园流程：
-    new  →  advance（循环推进 NPC）
+    new  →  stages（查询当前场景角色名单）
+         →  advance --actors <NPC1> [--actors <NPC2> ...]（仅让指定角色本轮真正规划，循环推进）
          →  speak --target <角色> --content <内容>
          →  switch-stage --stage <场景名>
          →  enter-dungeon  →【进入地下城模式】
@@ -41,7 +42,8 @@
 
 命令速查表：
     python scripts/run_agent_game.py new [--user NAME] [--game GAME] [--dungeon DUNGEON]
-    python scripts/run_agent_game.py advance           --snapshot PATH
+    python scripts/run_agent_game.py stages             --snapshot PATH
+    python scripts/run_agent_game.py advance            --snapshot PATH --actors ACTOR [--actors ACTOR2 ...]
     python scripts/run_agent_game.py speak             --snapshot PATH --target ACTOR --content TEXT
     python scripts/run_agent_game.py switch-stage      --snapshot PATH --stage STAGE_NAME
     python scripts/run_agent_game.py equip-item        --snapshot PATH [--weapon ITEM] [--armor ITEM] [--accessory ITEM]
@@ -107,6 +109,7 @@ from agent_game_home import (
     switch_stage_game,
     enter_dungeon_game,
     generate_dungeon_game,
+    stages_game,
 )
 from agent_game_combat import (
     draw_cards_game,
@@ -184,17 +187,59 @@ def new_game(user: str, game: str, dungeon: str) -> None:
 
 
 ###############################################################################################################################################
+@main.command("stages")
+@click.option(
+    "--snapshot",
+    required=True,
+    help="存档目录路径",
+)
+def stages(snapshot: str) -> None:
+    """从存档复位，打印所有场景与角色的分布映射（只读，不写新存档）。
+
+    与服务端 /api/stages/v1 功能对等。用于在调用 advance --actors 之前，
+    先确认当前场景（及其他家园场景）内存在哪些角色，以便精确构造 --actors 参数。
+    输出格式：每行一个场景，后跟该场景内的角色名单（逗号分隔）。
+    """
+    snapshot_path = Path(snapshot)
+    if not snapshot_path.exists():
+        raise click.BadParameter(
+            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+        )
+
+    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
+    _setup_logger(_log_file)
+
+    world, player_session = restore_world(snapshot_path)
+
+    logger.info(f"本次运行日志文件：{_log_file}")
+    logger.info(f"读取存档：{snapshot_path}")
+
+    mapping = asyncio.run(stages_game(world, player_session))
+    for stage_name, actor_names in mapping.items():
+        click.echo(f"{stage_name}: {', '.join(actor_names)}")
+
+
+###############################################################################################################################################
 @main.command("advance")
 @click.option(
     "--snapshot",
     required=True,
     help="存档目录路径（如 .worlds/玩家名/Game1/2026-03-12_12-53-25）",
 )
-def advance(snapshot: str) -> None:
-    """从存档复位游戏，执行一轮家园推进（NPC 行动），并写入新存档。
+@click.option(
+    "--actors",
+    multiple=True,
+    required=True,
+    help="本轮需要真正触发行动规划的角色全名，可重复使用（如 --actors 术士.云音 --actors 旅行者.无名氏）。"
+    "调用前建议先用 stages --snapshot PATH 查询当前场景内的角色名单。",
+)
+def advance(snapshot: str, actors: tuple[str, ...]) -> None:
+    """从存档复位游戏，为指定角色激活行动规划并推进一轮，并写入新存档。
 
     等同于人类在终端输入 /ad。适用于【家园模式】。
-    LLM 为场景内所有 NPC 生成行动，推进叙事。
+    LLM 仅为 --actors 指定的角色生成行动，其他未列入的角色本轮不会规划。
+    --actors 必须是当前家园场景内的 NPC 或玩家自身（可先用 stages 命令查询）。
     """
 
     snapshot_path = Path(snapshot)
@@ -216,7 +261,7 @@ def advance(snapshot: str) -> None:
     logger.info(f"读取存档：{snapshot_path}")
     logger.info(f"本次存档目录：{_save_dir}")
 
-    asyncio.run(advance_game(world, player_session, _save_dir))
+    asyncio.run(advance_game(world, player_session, list(actors), _save_dir))
 
 
 ###############################################################################################################################################

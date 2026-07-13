@@ -204,8 +204,8 @@ async def home_advance(
             game_server,
         )
 
-        # 根据请求参数选择性激活指定角色的行动计划
-        success, error_detail = activate_stage_plan(rpg_game)
+        # 根据请求参数（payload.actors）为客户端显式指定的角色激活行动计划
+        success, error_detail = activate_stage_plan(rpg_game, payload.actors)
         if not success:
             # 行动计划激活失败，抛出包含具体错误信息的异常
             raise HTTPException(

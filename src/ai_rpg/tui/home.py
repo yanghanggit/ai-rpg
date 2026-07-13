@@ -299,12 +299,17 @@ class HomeScreen(BaseGameScreen):
 
     @work
     async def _do_advance(self) -> None:
-        """执行一轮家园推进（home pipeline），推进期间禁用输入框并轮询任务状态。"""
+        """执行一轮家园推进（home pipeline），推进期间禁用输入框并轮询任务状态。
+
+        推进前先查询场景状态，确定玩家当前所在场景内的全部角色（含玩家自身），
+        将其作为 actors 传给服务端，让这些角色本轮真正触发行动规划。
+        """
         app = self.game_client
         if app.session is None:
             return
         user_name = app.session.user_name
         game_name = app.session.game_name
+        player_actor = app.session.actor_name
 
         log = self.query_one(RichLog)
         inp = self.query_one(Input)
@@ -318,7 +323,32 @@ class HomeScreen(BaseGameScreen):
         task_id: str = ""
         success = False
         try:
-            resp = await server_home_advance(user_name, game_name)
+            stages_resp = await fetch_stages_state(user_name, game_name)
+
+            # 找到 player_actor 所在 stage，取出该场景内的全部角色（含玩家自身）
+            current_stage: str = ""
+            if player_actor:
+                for stage, actors in stages_resp.mapping.items():
+                    if player_actor in actors:
+                        current_stage = stage
+                        break
+
+            if not current_stage:
+                log.write("[bold red]❌ 无法确定玩家当前所在场景，推进已取消[/]")
+                logger.error("_do_advance: 无法确定玩家当前所在场景")
+                inp.disabled = False
+                inp.focus()
+                return
+
+            actor_names = stages_resp.mapping.get(current_stage, [])
+            if not actor_names:
+                log.write("[bold red]❌ 当前场景没有可推进的角色[/]")
+                logger.error(f"_do_advance: 场景 {current_stage} 没有角色")
+                inp.disabled = False
+                inp.focus()
+                return
+
+            resp = await server_home_advance(user_name, game_name, actor_names)
             task_id = resp.task_id
             log.write(f"[dim]任务已创建：{task_id}[/]")
             logger.info(f"_do_advance: 任务已创建 task_id={task_id}")

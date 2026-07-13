@@ -78,7 +78,6 @@ def build_action_planning_prompt(
     current_stage_narration: str,
     other_actors_appearances: Dict[str, str],
     available_home_stages: List[str],
-    planning_turn_index: int,
 ) -> str:
     """构建角色行动规划提示词（完整版，含所有行动类型）。
 
@@ -89,7 +88,6 @@ def build_action_planning_prompt(
         current_stage_narration: 场景环境描述
         other_actors_appearances: 其他角色的外观（角色名 -> 外观）
         available_home_stages: 可前往的场景列表
-        planning_turn_index: 全局家园规划回合编号
 
     Returns:
         完整的行动规划提示词
@@ -102,8 +100,6 @@ def build_action_planning_prompt(
         other_actors_appearance_info.append("无")
 
     return f"""# 决定你要做什么，以JSON格式输出。
-
-## 当前回合: {planning_turn_index}
 
 ## 你所在场景信息
 
@@ -181,11 +177,10 @@ def build_compressed_planning_prompt(
     current_stage_narration: str,
     other_actors_appearances: Dict[str, str],
     available_home_stages: List[str],
-    planning_turn_index: int,
 ) -> str:
     """构建角色行动规划提示词（压缩版，仅保留动态上下文）。
 
-    仅包含每轮变化的感知信息（回合/场景/角色），省略静态规则与格式说明，
+    仅包含每轮变化的感知信息（场景/角色），省略静态规则与格式说明，
     用于写入对话历史，减少后续推理时的重复 token 消耗。
 
     Args:
@@ -193,7 +188,6 @@ def build_compressed_planning_prompt(
         current_stage_narration: 场景环境描述
         other_actors_appearances: 其他角色的外观（角色名 -> 外观）
         available_home_stages: 可前往的场景列表
-        planning_turn_index: 全局家园规划回合编号
 
     Returns:
         压缩版行动规划提示词
@@ -204,7 +198,7 @@ def build_compressed_planning_prompt(
     if not other_actors_appearance_info:
         other_actors_appearance_info.append("无")
 
-    return f"""# 回合 {planning_turn_index} 场景感知
+    return f"""# 场景感知
 
 ## 场景: {current_stage} | {current_stage_narration}
 

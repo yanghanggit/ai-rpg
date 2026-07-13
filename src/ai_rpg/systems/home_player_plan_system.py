@@ -56,22 +56,15 @@ class HomePlayerPlanSystem(ReactiveProcessor):
     #######################################################################################################################################
     @override
     async def react(self, entities: List[Entity]) -> None:
-        # 自增全局家园规划回合计数器（本系统注册在 HomeActorPlanSystem 之前，负责 turn 推进）
-        self._game._world.home_planning_turn_index += 1
-        planning_turn = self._game._world.home_planning_turn_index
-
         for player_entity in entities:
-            self._inject_player_scene_context(player_entity, planning_turn)
+            self._inject_player_scene_context(player_entity)
 
     #######################################################################################################################################
-    def _inject_player_scene_context(
-        self, player_entity: Entity, planning_turn_index: int
-    ) -> None:
+    def _inject_player_scene_context(self, player_entity: Entity) -> None:
         """向玩家实体注入当前场景观察信息（不调用 LLM）。
 
         Args:
             player_entity: 玩家实体
-            planning_turn_index: 全局家园规划回合编号
         """
         current_stage = self._game.resolve_stage_entity(player_entity)
         assert (
@@ -93,7 +86,6 @@ class HomePlayerPlanSystem(ReactiveProcessor):
             current_stage_narration=stage_narrative,
             other_actors_appearances=other_actors_appearances,
             available_home_stages=available_stage_names,
-            planning_turn_index=planning_turn_index,
         )
         if self._use_compressed_prompt:
             compressed_prompt = build_compressed_planning_prompt(
@@ -101,7 +93,6 @@ class HomePlayerPlanSystem(ReactiveProcessor):
                 current_stage_narration=stage_narrative,
                 other_actors_appearances=other_actors_appearances,
                 available_home_stages=available_stage_names,
-                planning_turn_index=planning_turn_index,
             )
             self._game.add_human_message(
                 player_entity,

@@ -40,7 +40,7 @@ async def agent_loop(
             logger.error(
                 f"[agent_loop:{name}] LLM 请求失败，第 {round_num} 轮，中止: {e}"
             )
-            continue # 继续下一轮，而不是中止整个循环
+            continue  # 继续下一轮，而不是中止整个循环
 
         # 检查 LLM 的 finish_reason，决定下一步动作
         if client.finish_reason == "stop":

@@ -70,13 +70,10 @@ class HomeNpcPlanSystem(ReactiveProcessor):
     @override
     async def react(self, entities: List[Entity]) -> None:
 
-        # turn counter 由 HomePlayerContextSystem（注册在前）负责自增，此处直接读取。
-        planning_turn = self._game._world.home_planning_turn_index
-
         # 若玩家本轮有主动行动，NPC 进入待命模式（跳过 LLM 推理）
         if is_player_active(self._game):
             for npc_entity in entities:
-                self._inject_npc_standby_context(npc_entity, planning_turn)
+                self._inject_npc_standby_context(npc_entity)
 
             # 若玩家本轮有主动行动，NPC 进入待命模式（跳过 LLM 推理），无需继续处理
             logger.debug(
@@ -85,9 +82,7 @@ class HomeNpcPlanSystem(ReactiveProcessor):
             return
 
         # NPC：调用 LLM 进行行动规划
-        chat_clients: List[DeepSeekClient] = self._create_actor_chat_clients(
-            entities, planning_turn
-        )
+        chat_clients: List[DeepSeekClient] = self._create_actor_chat_clients(entities)
 
         # 批量请求 LLM 合成行动规划
         await DeepSeekClient.batch_chat(clients=chat_clients)
@@ -97,16 +92,13 @@ class HomeNpcPlanSystem(ReactiveProcessor):
             self._execute_actor_actions(chat_client)
 
     #######################################################################################################################################
-    def _inject_npc_standby_context(
-        self, npc_entity: Entity, planning_turn_index: int
-    ) -> None:
+    def _inject_npc_standby_context(self, npc_entity: Entity) -> None:
         """向 NPC 实体注入待命状态（跳过 LLM 推理）。
 
         玩家本轮有主动行动时，NPC 不进行推理，直接注入 passive_mind 并保持对话历史连贯。
 
         Args:
             npc_entity: NPC 实体
-            planning_turn_index: 全局家园规划回合编号
         """
         current_stage = self._game.resolve_stage_entity(npc_entity)
         assert current_stage is not None
@@ -126,7 +118,6 @@ class HomeNpcPlanSystem(ReactiveProcessor):
             current_stage_narration=stage_narrative,
             other_actors_appearances=other_actors_appearances,
             available_home_stages=available_stage_names,
-            planning_turn_index=planning_turn_index,
         )
 
         # 测试用：向非玩家盟友注入一组连续的 mock 消息，模拟强制发起特定行动的场景。
@@ -136,7 +127,6 @@ class HomeNpcPlanSystem(ReactiveProcessor):
                 current_stage_narration=stage_narrative,
                 other_actors_appearances=other_actors_appearances,
                 available_home_stages=available_stage_names,
-                planning_turn_index=planning_turn_index,
             )
             self._game.add_human_message(
                 npc_entity,
@@ -280,7 +270,7 @@ class HomeNpcPlanSystem(ReactiveProcessor):
 
     #######################################################################################################################################
     def _create_actor_chat_clients(
-        self, actor_entities: List[Entity], planning_turn_index: int
+        self, actor_entities: List[Entity]
     ) -> List[DeepSeekClient]:
         """为角色创建聊天客户端。
 
@@ -288,7 +278,6 @@ class HomeNpcPlanSystem(ReactiveProcessor):
 
         Args:
             actor_entities: 角色实体列表
-            planning_turn_index: 全局家园规划回合编号
 
         Returns:
             聊天客户端列表
@@ -324,7 +313,6 @@ class HomeNpcPlanSystem(ReactiveProcessor):
                         current_stage_narration=stage_narrative,
                         other_actors_appearances=other_actors_appearances,
                         available_home_stages=available_stage_names,
-                        planning_turn_index=planning_turn_index,
                     ),
                     compressed_prompt=(
                         build_compressed_planning_prompt(
@@ -332,7 +320,6 @@ class HomeNpcPlanSystem(ReactiveProcessor):
                             current_stage_narration=stage_narrative,
                             other_actors_appearances=other_actors_appearances,
                             available_home_stages=available_stage_names,
-                            planning_turn_index=planning_turn_index,
                         )
                         if self._use_compressed_prompt
                         else None

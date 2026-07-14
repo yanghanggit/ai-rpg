@@ -14,19 +14,23 @@
     # 然后用实际 IP 启动（--public-url 告诉客户端用哪个地址连 WebSocket）：
     uv run python scripts/run_tui_client.py --web --host 0.0.0.0 --port 8080 --public-url http://192.168.1.100:8080
     # 同事浏览器打开 http://192.168.1.100:8080
+
+    python scripts/run_tui_client.py --dev-screen combat-room
+
 """
 
 import sys
 import os
 from datetime import datetime
 from typing import Final, Optional
-
+from textual_serve.server import Server
 import click
 from loguru import logger
-
 from config import LOGS_DIR
 from ai_rpg.tui import GameClient
 from ai_rpg.tui.config import server_config
+from ai_rpg.tui.connecting import ConnectingScreen
+from ai_rpg.tui.combat_room import CombatRoomScreen
 
 # PyInstaller frozen bundle 检测：打包后 sys.frozen = True
 _IS_FROZEN: bool = getattr(sys, "frozen", False)
@@ -77,6 +81,12 @@ logger.add(
     default=None,
     help="WebSocket 公开地址，局域网模式必填，例如 http://192.168.1.100:8080",
 )
+@click.option(
+    "--dev-screen",
+    type=click.Choice(["combat-room"]),
+    default=None,
+    help="[开发用] 跳过登录流程，启动后直接进入指定页面（当前仅支持 combat-room）",
+)
 def main(
     server_host: str,
     server_port: int,
@@ -84,6 +94,7 @@ def main(
     port: int,
     host: str,
     public_url: Optional[str],
+    dev_screen: Optional[str],
 ) -> None:
     server_config.host = server_host
     server_config.port = server_port
@@ -97,18 +108,21 @@ def main(
             )
             sys.exit(1)
 
-        from textual_serve.server import Server
-
         command = (
             f"{sys.executable} {os.path.abspath(__file__)}"
             f" --server-host {server_host} --server-port {server_port}"
         )
+        if dev_screen is not None:
+            command += f" --dev-screen {dev_screen}"
         server = Server(command, host=host, port=port, public_url=public_url)
         display_url = public_url or f"http://{host}:{port}"
         click.echo(f"启动 Web 模式，请在浏览器打开: {display_url}")
         server.serve()
     else:
-        app = GameClient()
+        launch_screen = (
+            CombatRoomScreen if dev_screen == "combat-room" else ConnectingScreen
+        )
+        app = GameClient(launch_screen=launch_screen)
         app.run()
 
 

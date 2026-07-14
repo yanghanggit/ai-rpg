@@ -2,7 +2,6 @@ from enum import StrEnum, unique
 from typing import Dict, List, final
 from pydantic import BaseModel
 from .session_message import SessionMessage
-from .combat import Combat
 from .dungeon import Dungeon, CombatRoom
 from .player_session import PlayerSession
 from .serialization import EntitySerialization
@@ -397,16 +396,6 @@ class DungeonCombatDrawCardsResponse(BaseModel):
 @final
 class DungeonStateResponse(BaseModel):
     dungeon: Dungeon
-
-
-################################################################################################################
-################################################################################################################
-################################################################################################################
-
-
-@final
-class DungeonCombatResponse(BaseModel):
-    combat: Combat
 
 
 ################################################################################################################

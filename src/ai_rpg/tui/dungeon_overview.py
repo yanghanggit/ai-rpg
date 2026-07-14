@@ -7,19 +7,18 @@ from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.widgets import Input, RichLog, Static
-
 from .base import BaseGameScreen
-
 from ..models import Dungeon, ActorType, PartyRosterComponent
 from .server_client import (
     fetch_dungeon_list,
     fetch_entities_details,
     watch_task_until_done,
     TaskFailedError,
-    home_enter_dungeon as server_home_enter_dungeon,
+    home_enter_dungeon,
 )
 from .server_client import home_generate_dungeon as server_home_generate_dungeon
 from .utils import display_name
+from .combat_room import CombatRoomScreen
 
 MENU_TEXT = """\
 [bold cyan]── 地下城总览 ──────────────────────────────────────[/]
@@ -202,12 +201,11 @@ class DungeonOverviewScreen(BaseGameScreen):
         game_name = app.session.game_name
 
         try:
-            await server_home_enter_dungeon(user_name, game_name, dungeon_name)
+            await home_enter_dungeon(user_name, game_name, dungeon_name)
             log.write(f"[bold green]✅ 已进入地下城：{dungeon_name}[/]")
             logger.info(
                 f"DungeonOverviewScreen._do_enter_dungeon: 进入成功 dungeon={dungeon_name}"
             )
-            from .combat_room import CombatRoomScreen
 
             self.app.push_screen(CombatRoomScreen())
         except Exception as e:

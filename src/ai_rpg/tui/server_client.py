@@ -15,7 +15,7 @@ from ..models import (
     DungeonCombatUseConsumableItemResponse,
     DungeonCombatUseGearItemRequest,
     DungeonCombatUseGearItemResponse,
-    DungeonCombatResponse,
+    # DungeonCombatResponse,
     DungeonCombatRetreatRequest,
     DungeonCombatRetreatResponse,
     DungeonExitRequest,
@@ -305,16 +305,6 @@ async def fetch_dungeon_room(user_name: str, game_name: str) -> DungeonRoomRespo
         )
         response.raise_for_status()
         return DungeonRoomResponse.model_validate(response.json())
-
-
-async def fetch_dungeon_combat(user_name: str, game_name: str) -> DungeonCombatResponse:
-    """查询当前地下城战斗状态。"""
-    async with httpx.AsyncClient(timeout=10) as client:
-        response = await client.get(
-            server_config.base_url + f"/api/dungeons/v1/{user_name}/{game_name}/combat",
-        )
-        response.raise_for_status()
-        return DungeonCombatResponse.model_validate(response.json())
 
 
 async def dungeon_exit(user_name: str, game_name: str) -> DungeonExitResponse:

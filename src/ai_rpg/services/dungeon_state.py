@@ -9,7 +9,7 @@ from loguru import logger
 from .game_server_dependencies import CurrentGameServer
 from ..models import (
     DungeonStateResponse,
-    DungeonCombatResponse,
+    # DungeonCombatResponse,
     DungeonRoomResponse,
     DungeonListResponse,
     Dungeon,
@@ -73,70 +73,6 @@ async def get_dungeon_state(
     return DungeonStateResponse(
         dungeon=current_room._dbg_game.current_dungeon,
     )
-
-
-###################################################################################################################################################################
-###################################################################################################################################################################
-###################################################################################################################################################################
-@dungeon_state_api_router.get(
-    path="/api/dungeons/v1/{user_name}/{game_name}/combat",
-    response_model=DungeonCombatResponse,
-)
-async def get_dungeon_combat(
-    game_server: CurrentGameServer,
-    user_name: str,
-    game_name: str,
-) -> DungeonCombatResponse:
-    """查询副本战斗状态接口
-
-    查询 DBG 游戏中当前副本的战斗状态信息，包括当前战斗对象。
-
-    Args:
-        game_server: 游戏服务器实例
-        user_name: 用户名
-        game_name: 游戏名称
-
-    Returns:
-        DungeonCombatResponse: 包含当前战斗对象的响应
-
-    Raises:
-        HTTPException(404): 用户房间或游戏实例不存在
-    """
-
-    logger.info(
-        f"/dungeons/v1/{user_name}/{game_name}/combat: {user_name}, {game_name}"
-    )
-
-    # 检查房间是否存在
-    if not game_server.has_room(user_name):
-        logger.error(f"get_dungeon_combat: {user_name} has no room")
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="没有房间",
-        )
-
-    # 获取房间实例并检查 DBG 游戏是否存在
-    current_room = game_server.get_room(user_name)
-    assert current_room is not None, "get_dungeon_combat: room instance is None"
-    if current_room._dbg_game is None:
-        logger.error(f"get_dungeon_combat: {user_name} has no game")
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="没有游戏",
-        )
-
-    # 获取当前战斗，不应该出现没有战斗的情况，因为只有在战斗阶段才会调用这个接口，但为了安全起见，还是加个检查
-    current_combat = current_room._dbg_game.current_dungeon.current_combat
-    assert current_combat is not None, "当前地下城没有进行中的战斗"
-    if current_combat is None:
-        logger.error(f"get_dungeon_combat: {user_name} has no current combat")
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="没有进行中的战斗",
-        )
-
-    # 返回当前战斗状态
-    return DungeonCombatResponse(combat=current_combat)
 
 
 ###################################################################################################################################################################

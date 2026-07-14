@@ -18,7 +18,7 @@ class CharacterStats(BaseModel):
     # 防御力
     defense: int = 3
     # 每回合行动次数（能量）；决定该角色在 action_order 中出现几次
-    energy: int = 3
+    energy: int = 2
     # 速度；决定 SPEED_ORDER 策略下的出手优先级，值越大越靠前
     speed: int = 0
 

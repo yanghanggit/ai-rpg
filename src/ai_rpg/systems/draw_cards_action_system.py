@@ -331,7 +331,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
         # 检查 LLM 是否返回了有效的 AI 消息，若无则回退使用原始抽取手牌
         if chat_client.response_ai_message is None:
             logger.error(f"[{entity.name}] LLM 返回空响应，DRAW 效果调整回退为原始手牌")
-            self._fallback_to_original_hand(entity, original_cards)
+            # self._fallback_to_original_hand(entity, original_cards)
             return
 
         # 尝试解析 LLM 返回的 JSON 内容，构建 DrawAdjustResponse 对象
@@ -343,7 +343,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
             logger.error(
                 f"DrawCardsActionSystem 调整失败: {e}\n{chat_client.response_content}"
             )
-            self._fallback_to_original_hand(entity, original_cards)
+            # self._fallback_to_original_hand(entity, original_cards)
             return
 
         valid_target_types = {e.value for e in TargetType}
@@ -407,12 +407,12 @@ class DrawCardsActionSystem(ReactiveProcessor):
         )
 
     #######################################################################################################################################
-    def _fallback_to_original_hand(
-        self, entity: Entity, original_cards: List[Card]
-    ) -> None:
-        """回退：使用原始抽取手牌，不阻塞回合。"""
-        entity.replace(HandComponent, entity.name, original_cards)
-        self._game.add_human_message(
-            entity=entity,
-            human_message=HumanMessage(content=_FALLBACK_ADJUST_SYSTEM_MESSAGE),
-        )
+    # def _fallback_to_original_hand(
+    #     self, entity: Entity, original_cards: List[Card]
+    # ) -> None:
+    #     """回退：使用原始抽取手牌，不阻塞回合。"""
+    #     entity.replace(HandComponent, entity.name, original_cards)
+    #     self._game.add_human_message(
+    #         entity=entity,
+    #         human_message=HumanMessage(content=_FALLBACK_ADJUST_SYSTEM_MESSAGE),
+    #     )

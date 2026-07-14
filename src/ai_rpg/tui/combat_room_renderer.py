@@ -195,7 +195,7 @@ def _write_entity_header_block(
         f"  [red]ATK:{stats.attack}[/red]"
         f"  [blue]DEF:{stats.defense}[/blue]"
         f"  [cyan]SPD:{stats.speed}[/cyan]"
-        f"  行动:{stats.energy}次/回合"
+        f"  能量:{stats.energy}次/回合"
     )
 
 

@@ -499,16 +499,15 @@ class PlayCardsMixin(BaseGameScreen):
         )
 
         prev_round_idx = -1
-        prev_completed_count = 0
-        prev_energy = 0
+        prev_narrative_count = 0
+        prev_combat_log_count = 0
         try:
             pre_room = await fetch_dungeon_room(self._user_name, self._game_name)
             pre_rounds = pre_room.room.combat.rounds
             if pre_rounds:
                 prev_round_idx = len(pre_rounds) - 1
-                prev_completed_count = len(pre_rounds[-1].completed_actors)
-                snapshot = pre_rounds[-1].actor_order_snapshots
-                prev_energy = len(snapshot[-1] if snapshot else [])
+                prev_narrative_count = len(pre_rounds[-1].cards_narrative)
+                prev_combat_log_count = len(pre_rounds[-1].cards_combat_log)
         except Exception as e:
             logger.warning(f"_do_play_card: 出牌前快照失败 error={e}")
 
@@ -548,13 +547,14 @@ class PlayCardsMixin(BaseGameScreen):
         except Exception as e:
             logger.warning(f"_do_play_card: 等待任务失败 error={e}")
 
-        await self._show_play_results(prev_round_idx, prev_completed_count)
+        await self._show_play_results(
+            prev_round_idx, prev_narrative_count, prev_combat_log_count
+        )
 
-        if prev_energy > 0 and prev_round_idx >= 0:
+        if prev_round_idx >= 0:
             try:
                 post_room = await fetch_dungeon_room(self._user_name, self._game_name)
                 post_combat = post_room.room.combat
-                post_rounds = post_combat.rounds
                 log = self.query_one(RichLog)
 
                 if post_combat.state in (CombatState.COMPLETE, CombatState.POST_COMBAT):
@@ -567,13 +567,6 @@ class PlayCardsMixin(BaseGameScreen):
                         log.write("\n[bold yellow]⚔ 战斗已结束。[/]")
                     self._enter_round_done()
                     return
-
-                if (
-                    prev_round_idx < len(post_rounds)
-                    and len(post_rounds[prev_round_idx].completed_actors) >= prev_energy
-                ):
-                    self._enter_round_done()
-                    return
             except Exception as e:
                 logger.warning(f"_do_play_card: 出牌后状态检查失败 error={e}")
 
@@ -583,7 +576,7 @@ class PlayCardsMixin(BaseGameScreen):
     # 显示本次出牌的战斗演绎与计算日志
     # ──────────────────────────────────────────────
     async def _show_play_results(
-        self, prev_round_idx: int, prev_completed_count: int
+        self, prev_round_idx: int, prev_narrative_count: int, prev_combat_log_count: int
     ) -> None:
         if prev_round_idx < 0:
             return
@@ -594,10 +587,10 @@ class PlayCardsMixin(BaseGameScreen):
             if prev_round_idx >= len(rounds):
                 return
             cur = rounds[prev_round_idx]
-            for text in cur.cards_narrative[prev_completed_count:]:
+            for text in cur.cards_narrative[prev_narrative_count:]:
                 if text:
                     log.write(f"  [italic]{text}[/]")
-            for text in cur.cards_combat_log[prev_completed_count:]:
+            for text in cur.cards_combat_log[prev_combat_log_count:]:
                 if text:
                     log.write(f"  [dim cyan]{text}[/]")
         except Exception as e:

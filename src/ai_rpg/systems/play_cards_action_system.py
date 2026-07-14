@@ -13,7 +13,7 @@ from ..models import (
 )
 from ..game.dbg_game import DBGGame
 from ..game.dbg_entity_ops import consume_energy
-from ..game.dbg_combat_processor import get_current_turn_actor, advance_turn
+from ..game.dbg_combat_processor import get_current_turn_actor
 
 
 #######################################################################################################################################
@@ -114,14 +114,10 @@ class PlayCardsActionSystem(ReactiveProcessor):
                 f" current_turn_actor={get_current_turn_actor(self._game, last_round)}"
             )
 
-            # 将出牌角色写入本回合 completed_actors（允许同一角色多次出现）
-            last_round.completed_actors.append(play_cards_action.name)
-
-            # 每出一张牌消耗卡牌费用对应的 energy 点数
+            # 每出一张牌消耗卡牌费用对应的 energy 点数（出牌本身不视为"完成行动"，
+            # 仅 pass turn 才会写入 completed_actors 并真正交出行动权，见 PassTurnActionSystem；
+            # 因此这里不调用 advance_turn ——是否轮到下一角色完全由 completed_actors 决定）
             consume_energy(entity, play_cards_action.card.cost)
-
-            # 更新当前行动者（能量消耗后重新计算）
-            advance_turn(self._game, last_round)
 
             logger.debug(
                 f"  completed_actors: {last_round.completed_actors} / current_turn_actor_name={last_round.current_turn_actor_name}"

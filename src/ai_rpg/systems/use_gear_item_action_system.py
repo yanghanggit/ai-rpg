@@ -5,7 +5,7 @@ from loguru import logger
 from overrides import override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
-from ..game.dbg_combat_processor import get_alive_actors_in_stage, advance_turn
+from ..game.dbg_combat_processor import get_alive_actors_in_stage
 from ..game.dbg_entity_ops import consume_energy, get_energy
 from ..models import (
     EquippedGearComponent,
@@ -129,12 +129,12 @@ class UseGearItemActionSystem(ReactiveProcessor):
             f"UseGearItemActionSystem: [{entity.name}] 已为 [{target_name}] 装备 '{item.name}'"
         )
 
-        # 消耗被装备目标本回合 1 点 energy（替代已移除的耐久系统），并刷新当前 turn 行动者
+        # 消耗被装备目标本回合 1 点 energy（替代已移除的耐久系统）；不调用 advance_turn ——
+        # 行动权推进完全由 completed_actors（仅 pass turn 写入）决定，装备动作本身不结束任何人的回合
         consume_energy(target_entity, 1)
         logger.debug(
             f"UseGearItemActionSystem: '{target_entity.name}' 装备消耗 1 点 energy，剩余 {get_energy(target_entity)}"
         )
-        advance_turn(self._game, latest_round)
 
         # 向场景内所有存活角色按阵营注入行动通知上下文
         round_number = len(current_rounds)

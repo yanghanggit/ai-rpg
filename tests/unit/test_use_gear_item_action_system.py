@@ -129,35 +129,6 @@ class TestReact:
         assert target.get(EquippedGearComponent).item.name == "装备.测试"
 
     @pytest.mark.asyncio
-    async def test_advance_turn_called_after_equip(
-        self,
-        context: Context,
-        mock_game: MagicMock,
-        system: UseGearItemActionSystem,
-    ) -> None:
-        _setup_mock_dungeon(mock_game)
-        gear = _make_gear("装备.测试")
-        player = _make_player_entity(context, "player", [gear], gear, ["队友A"])
-        target = _make_party_entity(context, "队友A", energy=1)
-        mock_game.get_entity_by_name.return_value = target
-
-        with (
-            patch(
-                "src.ai_rpg.systems.use_gear_item_action_system.get_alive_actors_in_stage",
-                return_value=set(),
-            ),
-            patch(
-                "src.ai_rpg.systems.use_gear_item_action_system.advance_turn"
-            ) as mock_advance_turn,
-        ):
-            await system.react([player])
-
-        mock_advance_turn.assert_called_once_with(
-            mock_game, mock_game.current_dungeon.latest_round
-        )
-        assert target.get(RoundStatsComponent).energy == 0
-
-    @pytest.mark.asyncio
     async def test_raises_when_target_energy_already_zero(
         self,
         context: Context,

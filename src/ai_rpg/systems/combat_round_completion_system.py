@@ -5,7 +5,6 @@ from loguru import logger
 from ..entitas import ExecuteProcessor
 from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import get_alive_actors_in_stage
-from ..game.dbg_entity_ops import get_energy
 
 
 ###############################################################################################################################################
@@ -40,12 +39,14 @@ class CombatRoundCompletionSystem(ExecuteProcessor):
         #     return
         actors_in_stage = get_alive_actors_in_stage(self._game, player_entity)
 
-        # 判断：所有存活角色均无剩余行动力
-        all_energy_exhausted = all(get_energy(actor) <= 0 for actor in actors_in_stage)
+        # 判断：所有存活角色均已 pass turn（completed_actors 是行动权推进的唯一依据，
+        # 与 energy 是否耗尽无关；死亡角色已被 get_alive_actors_in_stage 过滤，不会阻塞回合结束）
+        completed = set(latest_round.completed_actors)
+        all_passed = all(actor.name in completed for actor in actors_in_stage)
 
-        if all_energy_exhausted:
+        if all_passed:
             latest_round.is_completed = True
             logger.info(
-                f"回合完成：所有存活角色 energy 耗尽，is_completed = True"
+                f"回合完成：所有存活角色均已 pass turn，is_completed = True"
                 f"（actor_order_snapshots={latest_round.actor_order_snapshots}）"
             )

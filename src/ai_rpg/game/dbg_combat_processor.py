@@ -17,7 +17,7 @@ from ..models import (
     MonsterComponent,
 )
 from .dbg_game import DBGGame
-from .dbg_entity_ops import compute_character_stats, get_energy
+from .dbg_entity_ops import compute_character_stats
 
 
 #################################################################################################################################################
@@ -49,24 +49,33 @@ def process_zero_health_entities(game: DBGGame) -> None:
 
 #################################################################################################################################################
 def get_current_turn_actor(game: DBGGame, round: Round) -> Optional[str]:
-    """从最新回合快照中找出第一个仍有行动力（energy > 0）的角色名。
+    """从最新回合快照中找出第一个尚未 pass turn 的角色名。
+
+    行动权的推进完全由 `round.completed_actors`（已明确 pass turn 的角色）决定，
+    与 energy 是否耗尽无关：即使角色 energy 已耗尽，也必须显式 pass turn 才会
+    交出行动权（Slay the Spire 式“手动结束回合”）。
+    途中死亡但尚未 pass turn 的角色会被跳过，避免其永久卡住行动顺序。
 
     Args:
         game: DBG 游戏实例
         round: 当前战斗回合
 
     Returns:
-        当前应行动的角色名；若所有角色能量耗尽则返回 None
+        当前应行动的角色名；若快照中所有角色均已 pass turn（或已死亡）则返回 None
     """
     if not round.actor_order_snapshots:
         return None
 
+    completed = set(round.completed_actors)
     snapshot = round.actor_order_snapshots[-1]
     for actor_name in snapshot:
+        if actor_name in completed:
+            continue
         actor_entity = game.get_actor_entity(actor_name)
         assert actor_entity is not None, f"无法找到角色实体: {actor_name}"
-        if get_energy(actor_entity) > 0:
-            return actor_name
+        if actor_entity.has(DeathComponent):
+            continue
+        return actor_name
 
     return None
 

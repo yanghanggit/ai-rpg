@@ -19,6 +19,7 @@ class DeckCardEntry(BaseModel):
     modifiers: List[str] = []
     playable: bool = True
     exhaust: bool = False
+    cost: int = 1
     damage_dealt: int
     energy_delta: int = 0
     hit_count: int = 1
@@ -48,6 +49,7 @@ def build_card_field_description() -> str:
 | modifiers | 即时修正词缀列表，格式 `[名称]:即时修正描述`；直接注入本次仲裁计算；无则 [] |
 | playable | 是否可出牌；默认 true |
 | exhaust | 出牌后是否永久消耗（归入消耗堆）；默认 false |
+| cost | 出牌费用，消耗行动者当前 energy 点数；默认 1；多数卡应为 1，仅显著强力/多段/高价值效果卡可设为 2；纯功能性/无实质收益卡可设为 0 |
 | damage_dealt | 单次命中造成的伤害（以角色攻击力为基数计算；无伤害取 0） |
 | energy_delta | 改变目标行动次数（正值增加，负值剥夺）；默认 0 |
 | hit_count | 攻击次数（默认 1；多段可设 2~4，每段独立作用） |
@@ -104,9 +106,9 @@ def generate_deck_prompt(
 
 ## 角色属性
 
-| HP | 攻击 | 防御 |
-|---|---|---|
-| {actor_stats.hp}/{actor_stats.max_hp} | {actor_stats.attack} | {actor_stats.defense} |
+| HP | 攻击 | 防御 | 每回合行动次数 |
+|---|---|---|---|
+| {actor_stats.hp}/{actor_stats.max_hp} | {actor_stats.attack} | {actor_stats.defense} | {actor_stats.energy} |
 
 ## 设计约束
 
@@ -131,6 +133,7 @@ def generate_deck_prompt(
       "modifiers": [],
       "playable": true,
       "exhaust": false,
+      "cost": 1,
       "damage_dealt": 0,
       "energy_delta": 0,
       "hit_count": 1,
@@ -153,7 +156,7 @@ def generate_compressed_deck_prompt(
     return f"""\
 # 战斗牌库生成（{num_cards} 张）
 
-HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense}
+HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense} | 行动次数:{actor_stats.energy}
 
 {design_principle}"""
 

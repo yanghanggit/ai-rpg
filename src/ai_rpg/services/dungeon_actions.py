@@ -232,6 +232,14 @@ async def activate_play_cards_specified(
     if not selected_card.playable:
         return False, "该卡牌不可出牌"
 
+    # 检查角色当前 energy 是否足以支付卡牌费用，不足则禁止出牌。
+    current_energy = get_energy(entity)
+    if current_energy < selected_card.cost:
+        return (
+            False,
+            f"能量不足，无法出牌『{card_name}』（需要{selected_card.cost}点，当前剩余{current_energy}点）",
+        )
+
     # 解析卡牌的目标，根据卡牌的目标类型和命中次数，结合玩家提供的目标名称列表，解析出实际的目标实体列表。
     resolved_targets, resolve_err = _resolve_targets(
         selected_card.target_type, selected_card.hit_count, entity, targets, dbg_game

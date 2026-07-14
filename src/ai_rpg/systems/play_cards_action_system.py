@@ -117,8 +117,8 @@ class PlayCardsActionSystem(ReactiveProcessor):
             # 将出牌角色写入本回合 completed_actors（允许同一角色多次出现）
             last_round.completed_actors.append(play_cards_action.name)
 
-            # 每出一张牌消耗 1 点 energy
-            consume_energy(entity)
+            # 每出一张牌消耗卡牌费用对应的 energy 点数
+            consume_energy(entity, play_cards_action.card.cost)
 
             # 更新当前行动者（能量消耗后重新计算）
             advance_turn(self._game, last_round)

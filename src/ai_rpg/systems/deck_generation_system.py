@@ -199,6 +199,7 @@ class DeckGenerationSystem(ReactiveProcessor):
                     modifiers=entry.modifiers,
                     playable=entry.playable,
                     exhaust=entry.exhaust,
+                    cost=entry.cost,
                     damage_dealt=entry.damage_dealt,
                     energy_delta=entry.energy_delta,
                     hit_count=entry.hit_count,

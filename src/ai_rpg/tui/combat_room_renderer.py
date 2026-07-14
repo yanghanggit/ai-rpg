@@ -52,8 +52,19 @@ _PHASE_LABEL: Final[Dict[str, str]] = {
 }
 
 
-def write_hand_table(log: RichLog, cards: List[Card], entity_name: str) -> None:
-    """将手牌列表以表格形式写入 RichLog。"""
+def write_hand_table(
+    log: RichLog,
+    cards: List[Card],
+    entity_name: str,
+    current_energy: Optional[int] = None,
+) -> None:
+    """将手牌列表以表格形式写入 RichLog。
+
+    Args:
+        current_energy: 当前行动者剩余 energy 点数；仅在展示可出牌的实时手牌时传入，
+            用于在标记列中提示费用超出可用 energy 的卡牌。传 None 时不展示该提示（如
+            浏览牌库/弃牌堆/消耗堆等无实时 energy 上下文的场景）。
+    """
     hand_table = Table(
         show_header=True,
         show_lines=True,
@@ -63,6 +74,7 @@ def write_hand_table(log: RichLog, cards: List[Card], entity_name: str) -> None:
     )
     hand_table.add_column("#", style="cyan", width=3, no_wrap=True)
     hand_table.add_column("名称", style="bold", min_width=10, no_wrap=True)
+    hand_table.add_column("费用", style="yellow", width=5, no_wrap=True)
     hand_table.add_column("伤害", style="red", width=9, no_wrap=True)
     hand_table.add_column("目标", width=10, no_wrap=True)
     hand_table.add_column("描述 / affixes / modifiers", ratio=1)
@@ -94,12 +106,14 @@ def write_hand_table(log: RichLog, cards: List[Card], entity_name: str) -> None:
             desc_parts.append(f"[cyan]modifiers: {'、'.join(card.modifiers)}[/]")
         desc_cell = "\n".join(desc_parts)
 
-        # ── 标记列：playable / exhaust / source ──
+        # ── 标记列：playable / exhaust / energy 不足 / source ──
         flag_parts: List[str] = []
         if not card.playable:
             flag_parts.append("[bold orange1]不可出牌[/]")
         if card.exhaust:
             flag_parts.append("[bold orange1]消耗牌[/]")
+        if current_energy is not None and current_energy < card.cost:
+            flag_parts.append("[bold red]能量不足[/]")
         if card.source and card.source != entity_name:
             flag_parts.append(f"[dim]来源:{display_name(card.source)}[/]")
         flag_cell = "\n".join(flag_parts)
@@ -107,6 +121,7 @@ def write_hand_table(log: RichLog, cards: List[Card], entity_name: str) -> None:
         hand_table.add_row(
             str(idx),
             card.name,
+            str(card.cost),
             dmg_cell,
             tt_str,
             desc_cell,

@@ -22,6 +22,7 @@ from ..models import (
     HandComponent,
     MonsterComponent,
     PartyMemberComponent,
+    RoundStatsComponent,
 )
 from .combat_room_renderer import (
     write_battlefield_block,
@@ -151,11 +152,14 @@ class PlayCardsMixin(BaseGameScreen):
             return
 
         hand_cards: List[Card] = []
+        current_energy: Optional[int] = None
         for entity in all_details.entities_serialization:
             if entity.name == current_actor:
                 for comp in entity.components:
                     if comp.name == HandComponent.__name__:
                         hand_cards = HandComponent(**comp.data).cards
+                    elif comp.name == RoundStatsComponent.__name__:
+                        current_energy = RoundStatsComponent(**comp.data).energy
                 break
 
         if not hand_cards:
@@ -188,7 +192,7 @@ class PlayCardsMixin(BaseGameScreen):
             e for e in all_details.entities_serialization if e.name == current_actor
         ]
         write_full_entities_block(log, actor_entities, show_hand=False)
-        write_hand_table(log, hand_cards, current_actor)
+        write_hand_table(log, hand_cards, current_actor, current_energy)
         log.write("")
         log.write("[dim]──────────────────────────────────────────────────[/]")
         self._current_actor = current_actor

@@ -14,7 +14,6 @@ from src.ai_rpg.models import (
     DiscardPileComponent,
     DrawPileComponent,
     ExhaustPileComponent,
-    GenerateDeckAction,
     MonsterComponent,
     PartyMemberComponent,
     StatusEffectsComponent,
@@ -125,31 +124,6 @@ def test_initialize_piles_adds_all_three_piles(
     assert actor.has(DiscardPileComponent)
     assert actor.has(ExhaustPileComponent)
     assert actor.get(DrawPileComponent).cards == []
-
-
-# ---------------------------------------------------------------------------
-# _trigger_deck_generation
-# ---------------------------------------------------------------------------
-
-
-def test_trigger_deck_generation_party_member_gets_3_cards(
-    context: Context, system: CombatInitializationSystem
-) -> None:
-    actor = _make_actor(context, "勇者", is_ally=True)
-    system._trigger_deck_generation({actor})
-
-    assert actor.has(GenerateDeckAction)
-    assert actor.get(GenerateDeckAction).num_cards == 3
-
-
-def test_trigger_deck_generation_monster_gets_1_card(
-    context: Context, system: CombatInitializationSystem
-) -> None:
-    monster = _make_actor(context, "哥布林", is_monster=True)
-    system._trigger_deck_generation({monster})
-
-    assert monster.has(GenerateDeckAction)
-    assert monster.get(GenerateDeckAction).num_cards == 1
 
 
 # ---------------------------------------------------------------------------

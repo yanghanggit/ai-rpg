@@ -189,13 +189,13 @@ class CombatInitializationSystem(ExecuteProcessor):
         """为所有参战角色挂载 GenerateDeckAction，触发 DeckGenerationSystem 生成初始牌库。"""
         for actor_entity in actor_entities:
             if actor_entity.has(PartyMemberComponent):
-                cards_per_combat = 3
+                cards_per_combat = 5
             else:
                 # MonsterComponent 与 PartyMemberComponent 全局互斥，此处默认怪物
                 assert actor_entity.has(
                     MonsterComponent
                 ), f"角色 {actor_entity.name} 既无 PartyMemberComponent 也无 MonsterComponent！"
-                cards_per_combat = 1
+                cards_per_combat = 3
             actor_entity.replace(
                 GenerateDeckAction, actor_entity.name, cards_per_combat
             )

@@ -213,7 +213,7 @@ class PostArbitrationActionSystem(ReactiveProcessor):
     #######################################################################################################################################
     @override
     async def react(self, entities: List[Entity]) -> None:
-        if not self._game.current_dungeon.is_ongoing:
+        if not self._game.current_combat_room.combat.is_ongoing:
             logger.debug("PostArbitrationActionSystem: 战斗未进行中，跳过")
             return
 
@@ -235,7 +235,7 @@ class PostArbitrationActionSystem(ReactiveProcessor):
             logger.debug("PostArbitrationActionSystem: 无存活角色，跳过")
             return
 
-        current_round_number = len(self._game.current_dungeon.current_rounds or [])
+        current_round_number = len(self._game.current_combat_room.combat.rounds or [])
 
         prompt = _generate_stage_post_arbitration_prompt(
             game=self._game,

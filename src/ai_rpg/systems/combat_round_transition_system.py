@@ -51,16 +51,16 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
     @override
     async def execute(self) -> None:
         # 状态守护：战斗未进行中 / 最新回合未完成 → 静默跳过
-        if not self._game.current_dungeon.is_ongoing:
+        if not self._game.current_combat_room.combat.is_ongoing:
             logger.debug("当前战斗状态非 ONGOING，跳过回合创建")
             return
 
         logger.debug("检查战斗回合状态，判断是否需要创建新回合...")
 
-        current_rounds = self._game.current_dungeon.current_rounds or []
+        current_rounds = self._game.current_combat_room.combat.rounds or []
 
         if len(current_rounds) > 0:
-            last_round = self._game.current_dungeon.latest_round
+            last_round = self._game.current_combat_room.combat.latest_round
             assert last_round is not None, "latest_round is None"
             if not last_round.is_completed:
                 return
@@ -107,20 +107,19 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
     def _start_new_round(self, actors: set[Entity]) -> Round:
         """创建并追加新回合，同时重置所有参战角色的 RoundStatsComponent。"""
         assert (
-            self._game.current_dungeon.current_combat is not None
-        ), "current_combat is None"
-        assert self._game.current_dungeon.is_ongoing, "当前战斗未进行中，无法开始新回合"
+            self._game.current_combat_room.combat.is_ongoing
+        ), "当前战斗未进行中，无法开始新回合"
 
         # 守卫：若当前已有回合，则必须确保上一回合已完成
-        current_rounds = self._game.current_dungeon.current_rounds or []
+        current_rounds = self._game.current_combat_room.combat.rounds or []
         if len(current_rounds) > 0:
-            last_round = self._game.current_dungeon.latest_round
+            last_round = self._game.current_combat_room.combat.latest_round
             assert last_round is not None, "latest_round is None"
             assert last_round.is_completed, "上一回合尚未完成，无法创建新回合"
 
         # 创建新回合并追加到当前战斗
         new_round = Round()
-        self._game.current_dungeon.current_combat.rounds.append(new_round)
+        self._game.current_combat_room.combat.rounds.append(new_round)
 
         # 重置所有参战角色的 RoundStatsComponent
         for actor in actors:

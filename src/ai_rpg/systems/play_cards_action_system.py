@@ -75,7 +75,7 @@ class PlayCardsActionSystem(ReactiveProcessor):
     @override
     async def react(self, entities: List[Entity]) -> None:
         """处理出牌动作。"""
-        if not self._game.current_dungeon.is_ongoing:
+        if not self._game.current_combat_room.combat.is_ongoing:
             # 必须是 进行中的阶段！
             logger.debug("PlayCardsActionSystem: 战斗未进行中，跳过出牌处理")
             return
@@ -86,12 +86,12 @@ class PlayCardsActionSystem(ReactiveProcessor):
         )
 
         # 获取当前回合数
-        current_rounds = self._game.current_dungeon.current_rounds
+        current_rounds = self._game.current_combat_room.combat.rounds
         assert (
             current_rounds is not None
         ), "PlayCardsActionSystem: current_rounds is None"
 
-        last_round = self._game.current_dungeon.latest_round
+        last_round = self._game.current_combat_room.combat.latest_round
         assert last_round is not None, "PlayCardsActionSystem: latest_round is None"
 
         logger.debug(

@@ -59,7 +59,7 @@ def context() -> Context:
 @pytest.fixture()
 def mock_game() -> MagicMock:
     game = MagicMock(spec=DBGGame)
-    game.current_dungeon.is_ongoing = True
+    game.current_combat_room.combat.is_ongoing = True
     return game
 
 
@@ -83,7 +83,7 @@ class TestMoveToDiscardPileSystemSkip:
         mock_game: MagicMock,
         system: MoveToDiscardPileSystem,
     ) -> None:
-        mock_game.current_dungeon.is_ongoing = False
+        mock_game.current_combat_room.combat.is_ongoing = False
         entity = _make_entity(context, "英雄")
         card = _make_card("闪击", source="英雄")
         entity.get(HandComponent).cards.append(card)

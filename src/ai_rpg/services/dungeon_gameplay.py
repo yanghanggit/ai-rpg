@@ -119,11 +119,11 @@ def _validate_dungeon_prerequisites(
         )
 
     # 5. 验证存在可进行的战斗
+    # assert (
+    #     dbg_game.current_dungeon.current_combat_room is not None
+    # ), f"地下城操作失败: 玩家 {user_name} 当前尚未进入任何战斗房间"
     assert (
-        dbg_game.current_dungeon.current_combat_room is not None
-    ), f"地下城操作失败: 玩家 {user_name} 当前尚未进入任何战斗房间"
-    assert (
-        dbg_game.current_dungeon.current_combat_room.combat.state != CombatState.NONE
+        dbg_game.current_combat_room.combat.state != CombatState.NONE
     ), f"地下城操作失败: 玩家 {user_name} 没有可进行的战斗"
 
     return dbg_game
@@ -172,7 +172,7 @@ async def dungeon_combat_retreat(
             game_server=game_server,
         )
 
-        if not rpg_game.current_dungeon.is_ongoing:
+        if not rpg_game.current_combat_room.combat.is_ongoing:
             logger.error(f"玩家 {payload.user_name} 撤退失败: 战斗未在进行中")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -253,14 +253,14 @@ async def dungeon_advance_stage(
             game_server=game_server,
         )
 
-        if not rpg_game.current_dungeon.is_post_combat:
+        if not rpg_game.current_combat_room.combat.is_post_combat:
             logger.error(f"玩家 {payload.user_name} 前进下一关失败: 战斗未处于等待阶段")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="战斗未处于等待阶段",
             )
 
-        if rpg_game.current_dungeon.is_won:
+        if rpg_game.current_combat_room.combat.is_won:
             # next_stage = rpg_game.current_dungeon.peek_next_stage()
             # if next_stage is None:
             #     logger.info(f"玩家 {payload.user_name} 地下城全部通关")
@@ -284,7 +284,7 @@ async def dungeon_advance_stage(
 
             # 推进地下城到下一房间后，返回成功消息
             return DungeonAdvanceStageResponse(message="已前进到下一关")
-        elif rpg_game.current_dungeon.is_lost:
+        elif rpg_game.current_combat_room.combat.is_lost:
             logger.warning(f"玩家 {payload.user_name} 战斗失败")
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
@@ -343,7 +343,7 @@ async def dungeon_combat_init(
         )
 
         # 校验战斗处于初始化阶段
-        if not rpg_game.current_dungeon.is_initializing:
+        if not rpg_game.current_combat_room.combat.is_initializing:
             logger.error(f"玩家 {payload.user_name} 战斗初始化失败: 战斗未处于开始阶段")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -415,7 +415,7 @@ async def dungeon_exit(
         )
 
         # 验证战斗是否已结束
-        if not dbg_game.current_dungeon.is_post_combat:
+        if not dbg_game.current_combat_room.combat.is_post_combat:
             logger.error(f"玩家 {payload.user_name} 返回家园失败: 战斗未结束")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -532,7 +532,7 @@ async def dungeon_combat_draw_cards(
             game_server=game_server,
         )
 
-        if not rpg_game.current_dungeon.is_ongoing:
+        if not rpg_game.current_combat_room.combat.is_ongoing:
             logger.error(f"玩家 {payload.user_name} 全员抽卡失败: 战斗未在进行中")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -609,14 +609,14 @@ async def dungeon_combat_play_cards(
             game_server=game_server,
         )
 
-        if not rpg_game.current_dungeon.is_ongoing:
+        if not rpg_game.current_combat_room.combat.is_ongoing:
             logger.error(f"玩家 {payload.user_name} 出牌失败: 战斗未在进行中")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="战斗未在进行中",
             )
 
-        last_round = rpg_game.current_dungeon.latest_round
+        last_round = rpg_game.current_combat_room.combat.latest_round
         if last_round is None or last_round.is_completed:
             logger.error(f"玩家 {payload.user_name} 出牌失败: 当前没有未完成的回合")
             raise HTTPException(
@@ -683,14 +683,14 @@ async def dungeon_combat_pass_turn(
             game_server=game_server,
         )
 
-        if not rpg_game.current_dungeon.is_ongoing:
+        if not rpg_game.current_combat_room.combat.is_ongoing:
             logger.error(f"玩家 {payload.user_name} 过牌失败: 战斗未在进行中")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="战斗未在进行中",
             )
 
-        last_round = rpg_game.current_dungeon.latest_round
+        last_round = rpg_game.current_combat_room.combat.latest_round
         if last_round is None or last_round.is_completed:
             logger.error(f"玩家 {payload.user_name} 过牌失败: 当前没有未完成的回合")
             raise HTTPException(
@@ -756,14 +756,14 @@ async def dungeon_combat_use_consumable(
             game_server=game_server,
         )
 
-        if not rpg_game.current_dungeon.is_ongoing:
+        if not rpg_game.current_combat_room.combat.is_ongoing:
             logger.error(f"玩家 {payload.user_name} 使用消耗品失败: 战斗未在进行中")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="战斗未在进行中",
             )
 
-        last_round = rpg_game.current_dungeon.latest_round
+        last_round = rpg_game.current_combat_room.combat.latest_round
         if last_round is None or last_round.is_completed:
             logger.error(
                 f"玩家 {payload.user_name} 使用消耗品失败: 当前没有未完成的回合"
@@ -827,14 +827,14 @@ async def dungeon_combat_use_gear(
             game_server=game_server,
         )
 
-        if not rpg_game.current_dungeon.is_ongoing:
+        if not rpg_game.current_combat_room.combat.is_ongoing:
             logger.error(f"玩家 {payload.user_name} 使用装备失败: 战斗未在进行中")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="战斗未在进行中",
             )
 
-        last_round = rpg_game.current_dungeon.latest_round
+        last_round = rpg_game.current_combat_room.combat.latest_round
         if last_round is None or last_round.is_completed:
             logger.error(f"玩家 {payload.user_name} 使用装备失败: 当前没有未完成的回合")
             raise HTTPException(

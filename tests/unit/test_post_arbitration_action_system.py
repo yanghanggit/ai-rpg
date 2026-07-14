@@ -495,7 +495,7 @@ class TestPostArbitrationActionSystemReact:
         system: PostArbitrationActionSystem,
     ) -> None:
         """战斗未进行中时，_process_stage 不应被调用。"""
-        mock_game.current_dungeon.is_ongoing = False
+        mock_game.current_combat_room.combat.is_ongoing = False
         stage = _make_stage_entity(context, "地下城")
 
         with patch.object(
@@ -512,7 +512,7 @@ class TestPostArbitrationActionSystemReact:
         system: PostArbitrationActionSystem,
     ) -> None:
         """stage entity → _process_stage 应被调用一次。"""
-        mock_game.current_dungeon.is_ongoing = True
+        mock_game.current_combat_room.combat.is_ongoing = True
         stage = _make_stage_entity(context, "地下城")
 
         with patch.object(

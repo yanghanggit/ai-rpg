@@ -78,7 +78,7 @@ class UseGearItemActionSystem(ReactiveProcessor):
     #######################################################################################################################################
     @override
     async def react(self, entities: List[Entity]) -> None:
-        if not self._game.current_dungeon.is_ongoing:
+        if not self._game.current_combat_room.combat.is_ongoing:
             logger.debug("UseGearItemActionSystem: 战斗未进行中，跳过")
             return
 
@@ -87,12 +87,12 @@ class UseGearItemActionSystem(ReactiveProcessor):
         ), f"UseGearItemActionSystem: 同一时间不应有多个实体触发 UseGearItemAction，当前数量: {len(entities)}"
         logger.debug(f"UseGearItemActionSystem: 触发实体数量 {len(entities)}")
 
-        current_rounds = self._game.current_dungeon.current_rounds
+        current_rounds = self._game.current_combat_room.combat.rounds
         assert (
             current_rounds is not None
         ), "UseGearItemActionSystem: current_rounds is None"
 
-        latest_round = self._game.current_dungeon.latest_round
+        latest_round = self._game.current_combat_room.combat.latest_round
         assert latest_round is not None, "UseGearItemActionSystem: latest_round is None"
 
         entity = entities[0]

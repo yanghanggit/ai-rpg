@@ -196,7 +196,7 @@ def test_apply_invalid_response_no_raise(mock_set_hp: MagicMock, ctx: Context) -
 async def test_execute_skips_when_not_ongoing(
     game: MagicMock, system: CombatRoundCleanupSystem
 ) -> None:
-    game.current_dungeon.is_ongoing = False
+    game.current_combat_room.combat.is_ongoing = False
     await system.execute()
     game.clear_round_state.assert_not_called()
 
@@ -205,8 +205,8 @@ async def test_execute_skips_when_not_ongoing(
 async def test_execute_skips_when_no_rounds(
     game: MagicMock, system: CombatRoundCleanupSystem
 ) -> None:
-    game.current_dungeon.is_ongoing = True
-    game.current_dungeon.current_rounds = []
+    game.current_combat_room.combat.is_ongoing = True
+    game.current_combat_room.combat.rounds = []
     await system.execute()
     game.clear_round_state.assert_not_called()
 
@@ -215,9 +215,9 @@ async def test_execute_skips_when_no_rounds(
 async def test_execute_skips_when_round_not_completed(
     game: MagicMock, system: CombatRoundCleanupSystem
 ) -> None:
-    game.current_dungeon.is_ongoing = True
-    game.current_dungeon.current_rounds = [MagicMock()]
-    game.current_dungeon.latest_round.is_completed = False
+    game.current_combat_room.combat.is_ongoing = True
+    game.current_combat_room.combat.rounds = [MagicMock()]
+    game.current_combat_room.combat.latest_round.is_completed = False
     await system.execute()
     game.clear_round_state.assert_not_called()
 
@@ -226,8 +226,8 @@ async def test_execute_skips_when_round_not_completed(
 async def test_execute_clears_state_when_completed(
     game: MagicMock, system: CombatRoundCleanupSystem
 ) -> None:
-    game.current_dungeon.is_ongoing = True
-    game.current_dungeon.current_rounds = [MagicMock()]
-    game.current_dungeon.latest_round.is_completed = True
+    game.current_combat_room.combat.is_ongoing = True
+    game.current_combat_room.combat.rounds = [MagicMock()]
+    game.current_combat_room.combat.latest_round.is_completed = True
     await system.execute()
     game.clear_round_state.assert_called_once()

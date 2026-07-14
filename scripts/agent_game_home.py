@@ -222,12 +222,11 @@ async def enter_dungeon_game(
         logger.error(f"进入地下城第一关失败: {error_detail}")
         return terminal_game
 
+    # assert (
+    #     terminal_game.current_dungeon.current_combat_room is not None
+    # ), "当前尚未进入任何战斗房间"
     assert (
-        terminal_game.current_dungeon.current_combat_room is not None
-    ), "当前尚未进入任何战斗房间"
-    assert (
-        terminal_game.current_dungeon.current_combat_room.combat.state
-        != CombatState.NONE
+        terminal_game.current_combat_room.combat.state != CombatState.NONE
     ), "没有战斗可以进行"
 
     # 进入地下城后直接执行一次 combat_pipeline，完成战斗的初始推理与叙事生成（场景描述、角色状态效果、第一回合及行动顺序）

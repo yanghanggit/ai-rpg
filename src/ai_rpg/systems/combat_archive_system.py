@@ -43,12 +43,13 @@ class CombatArchiveSystem(ExecuteProcessor):
     @override
     async def execute(self) -> None:
         """每帧检查战斗是否结束；未结束则立即返回，结束则触发归档流程。"""
-        if not self._game.current_dungeon.is_combat_completed:
+        if not self._game.current_combat_room.combat.is_combat_completed:
             # 不是本阶段就直接返回, 如果过了，要么胜利，要么失败。
             return
 
         assert (
-            self._game.current_dungeon.is_won or self._game.current_dungeon.is_lost
+            self._game.current_combat_room.combat.is_won
+            or self._game.current_combat_room.combat.is_lost
         ), "战斗结果状态异常！"
 
         # 压缩总结战斗结果。
@@ -67,7 +68,7 @@ class CombatArchiveSystem(ExecuteProcessor):
         Returns:
             配置好的 DeepSeekClient
         """
-        total_rounds = len(self._game.current_dungeon.current_rounds or [])
+        total_rounds = len(self._game.current_combat_room.combat.rounds or [])
 
         combat_stage_entity = self._game.resolve_stage_entity(combat_actor)
         assert (

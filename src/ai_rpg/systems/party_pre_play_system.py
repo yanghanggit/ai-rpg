@@ -40,7 +40,7 @@ class PartyPrePlaySystem(ReactiveProcessor):
     #######################################################################################################################################
     @override
     async def react(self, entities: List[Entity]) -> None:
-        if not self._game.current_dungeon.is_ongoing:
+        if not self._game.current_combat_room.combat.is_ongoing:
             logger.debug("PartyPrePlaySystem: 战斗未进行中，跳过")
             return
 

@@ -378,15 +378,15 @@ def advance_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> None:
         dungeon: 地下城实例
     """
 
-    if not dbg_game.current_dungeon.is_post_combat:
+    if not dbg_game.current_combat_room.combat.is_post_combat:
         logger.error("当前不处于战斗后状态，无法推进地下城关卡")
         return
 
-    if dbg_game.current_dungeon.is_lost:
+    if dbg_game.current_combat_room.combat.is_lost:
         logger.info("英雄失败，应该返回营地！！！！")
         return
 
-    if not dbg_game.current_dungeon.is_won:
+    if not dbg_game.current_combat_room.combat.is_won:
         assert False, "不可能出现的情况！"
 
     # 1. 推进地下城索引到下一关
@@ -428,7 +428,7 @@ def exit_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> None:
         dbg_game: DBG游戏实例
         dungeon: 地下城实例
     """
-    cs = dbg_game.current_dungeon
+    cs = dbg_game.current_combat_room.combat
     logger.debug(
         f"[return_home] 入参 dungeon={dungeon.name!r}, "
         f"world.dungeon={dbg_game._world.dungeon.name!r}, "

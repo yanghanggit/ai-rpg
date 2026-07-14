@@ -87,7 +87,7 @@ class RetreatActionSystem(ReactiveProcessor):
         """
 
         # 状态守卫：仅在战斗进行中执行撤退处理
-        if not self._game.current_dungeon.is_ongoing:
+        if not self._game.current_combat_room.combat.is_ongoing:
             logger.debug("RetreatActionSystem: 战斗未进行中，跳过撤退处理")
             return
 
@@ -102,10 +102,10 @@ class RetreatActionSystem(ReactiveProcessor):
             self._process_retreat_action(entity, dungeon.name)
 
         # 标记当前战斗为撤退状态
-        assert (
-            dungeon.current_combat_room is not None
-        ), "RetreatActionSystem: 当前房间没有战斗记录"
-        dungeon.current_combat_room.combat.retreated = True
+        # assert (
+        #     dungeon.current_combat_room is not None
+        # ), "RetreatActionSystem: 当前房间没有战斗记录"
+        self._game.current_combat_room.combat.retreated = True
 
     ####################################################################################################################################
     def _process_retreat_action(self, entity: Entity, dungeon_name: str) -> None:

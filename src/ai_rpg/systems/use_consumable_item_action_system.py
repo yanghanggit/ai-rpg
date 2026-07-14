@@ -93,16 +93,16 @@ class UseConsumableItemActionSystem(ReactiveProcessor):
             f"UseConsumableItemActionSystem: 触发 {len(entities)} 个体使用消耗品前置动作系统"
         )
 
-        if not self._game.current_dungeon.is_ongoing:
+        if not self._game.current_combat_room.combat.is_ongoing:
             logger.debug("UseConsumableItemActionSystem: 战斗未进行中，跳过")
             return
 
-        current_rounds = self._game.current_dungeon.current_rounds
+        current_rounds = self._game.current_combat_room.combat.rounds
         assert (
             current_rounds is not None
         ), "UseConsumableItemActionSystem: current_rounds is None"
 
-        latest_round = self._game.current_dungeon.latest_round
+        latest_round = self._game.current_combat_room.combat.latest_round
         assert (
             latest_round is not None
         ), "UseConsumableItemActionSystem: latest_round is None"

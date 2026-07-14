@@ -36,7 +36,7 @@ class CombatOutcomeSystem(ExecuteProcessor):
     @override
     async def execute(self) -> None:
         """检测阵营全灭条件，调用 complete_combat() 结束战斗并广播结果；战斗未 ONGOING 时静默跳过。"""
-        if not self._game.current_dungeon.is_ongoing:
+        if not self._game.current_combat_room.combat.is_ongoing:
             logger.debug("当前不在战斗阶段，无需判定战斗胜负")
             return  # 不是本阶段就直接返回
 

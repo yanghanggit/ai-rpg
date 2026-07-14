@@ -64,7 +64,7 @@ def activate_all_card_draws(
         return False, error_msg
 
     # 检查当前地下城是否处于进行中的战斗状态
-    if not dbg_game.current_dungeon.is_ongoing:
+    if not dbg_game.current_combat_room.combat.is_ongoing:
         error_msg = "只能在战斗中使用is_ongoing"
         logger.error(error_msg)
         return False, error_msg
@@ -154,7 +154,7 @@ def _validate_play_turn(
     """校验当前是否轮到指定角色出牌，并返回其实体。"""
 
     # 获取当前回合信息，检查是否存在进行中的回合，以及当前角色是否在行动快照中。
-    latest_round = dbg_game.current_dungeon.latest_round
+    latest_round = dbg_game.current_combat_room.combat.latest_round
     if latest_round is None:
         return None, "当前没有进行中的回合"
 
@@ -304,7 +304,7 @@ def activate_retreat(
         return False, error_msg
 
     # 检查当前地下城是否处于进行中状态，如果不是则无法激活撤退动作。
-    if not dbg_game.current_dungeon.is_ongoing:
+    if not dbg_game.current_combat_room.combat.is_ongoing:
         error_msg = "激活撤退动作失败: 只能在战斗进行中使用"
         logger.error(error_msg)
         return False, error_msg
@@ -351,13 +351,13 @@ def activate_use_consumable(
         return False, msg
 
     # 检查当前地下城是否处于进行中状态，如果不是则无法使用消耗品。
-    if not dbg_game.current_dungeon.is_ongoing:
+    if not dbg_game.current_combat_room.combat.is_ongoing:
         msg = "使用消耗品失败：战斗未在进行中"
         logger.error(msg)
         return False, msg
 
     # 获取当前地下城的最新回合，如果没有进行中的回合，则无法使用消耗品。
-    latest_round = dbg_game.current_dungeon.latest_round
+    latest_round = dbg_game.current_combat_room.combat.latest_round
     if latest_round is None:
         msg = "使用消耗品失败：当前没有进行中的回合"
         logger.error(msg)
@@ -451,13 +451,13 @@ def activate_use_gear(
         return False, msg
 
     # 检查当前地下城是否处于进行中状态，如果不是则无法使用装备。
-    if not dbg_game.current_dungeon.is_ongoing:
+    if not dbg_game.current_combat_room.combat.is_ongoing:
         msg = "使用装备失败：战斗未在进行中"
         logger.error(msg)
         return False, msg
 
     # 获取当前地下城的最新回合，如果没有进行中的回合，则无法使用装备。
-    latest_round = dbg_game.current_dungeon.latest_round
+    latest_round = dbg_game.current_combat_room.combat.latest_round
     if latest_round is None:
         msg = "使用装备失败：当前没有进行中的回合"
         logger.error(msg)

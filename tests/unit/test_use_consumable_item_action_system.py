@@ -73,9 +73,9 @@ def _make_monster_entity(context: Context, name: str) -> Entity:
 
 def _setup_mock_dungeon(mock_game: MagicMock, *, round_count: int = 2) -> None:
     """为 mock_game 配置进行中的战斗状态。"""
-    mock_game.current_dungeon.is_ongoing = True
-    mock_game.current_dungeon.current_rounds = [MagicMock()] * round_count
-    mock_game.current_dungeon.latest_round.consumable_use_count = 0
+    mock_game.current_combat_room.combat.is_ongoing = True
+    mock_game.current_combat_room.combat.rounds = [MagicMock()] * round_count
+    mock_game.current_combat_room.combat.latest_round.consumable_use_count = 0
 
 
 # ---------------------------------------------------------------------------
@@ -242,7 +242,7 @@ class TestReact:
         mock_game: MagicMock,
         system: UseConsumableItemActionSystem,
     ) -> None:
-        mock_game.current_dungeon.is_ongoing = False
+        mock_game.current_combat_room.combat.is_ongoing = False
         item = _make_consumable("治愈药水", count=2)
         entity = _make_player_entity(context, "player", [item], item, [])
 

@@ -45,6 +45,7 @@ from ..models import (
     SystemMessage,
     AnyItem,
     PlayerSession,
+    CombatRoom,
 )
 from ..entitas import Matcher, Entity
 
@@ -91,7 +92,6 @@ class DBGGame(RPGGame):
         return self._world.dungeon
 
     ###############################################################################################################################################
-
     @property
     def is_player_in_home_stage(self) -> bool:
         """检查玩家是否在家园场景中"""
@@ -106,6 +106,17 @@ class DBGGame(RPGGame):
         player_entity = self.get_player_entity()
         assert player_entity is not None, "player_entity is None"
         return self.is_actor_in_dungeon_stage(player_entity)
+
+    ###############################################################################################################################################
+    @property
+    def current_combat_room(self) -> CombatRoom:
+        """断言当前处于战斗房间中，返回战斗房间"""
+        assert self._world.dungeon is not None, "当前地下城不存在"
+        assert self._world.dungeon.current_room is not None, "当前地下城房间不存在"
+        assert isinstance(
+            self._world.dungeon.current_room, CombatRoom
+        ), "当前地下城房间不是战斗房间"
+        return self._world.dungeon.current_room
 
     ###############################################################################################################################################
     def build_from_blueprint(self) -> "DBGGame":

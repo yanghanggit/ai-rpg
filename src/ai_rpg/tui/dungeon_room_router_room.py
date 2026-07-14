@@ -27,7 +27,7 @@ class DungeonRoomRouterRoom(BaseGameScreen):
     @work
     async def _route(self) -> None:
         """查询当前地下城状态，取 current_room_index 对应的房间，根据其
-        room_type 判别字段分发到具体房间 Screen。"""
+        type 判别字段分发到具体房间 Screen。"""
         assert self.game_client.session is not None
         user_name = self.game_client.session.user_name
         game_name = self.game_client.session.game_name
@@ -55,8 +55,6 @@ class DungeonRoomRouterRoom(BaseGameScreen):
             self.app.switch_screen(CombatRoomScreen())
         else:
             logger.warning(
-                f"DungeonRoomRouterRoom._route: 未知房间类型 room_type={room.room_type}"
+                f"DungeonRoomRouterRoom._route: 未知房间类型 type={room.type}"
             )
-            self.query_one(Static).update(
-                f"[bold red]❌ 未知房间类型：{room.room_type}[/]"
-            )
+            self.query_one(Static).update(f"[bold red]❌ 未知房间类型：{room.type}[/]")

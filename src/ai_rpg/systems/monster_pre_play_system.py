@@ -226,7 +226,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
     async def react(self, entities: List[Entity]) -> None:
 
         # 验证战斗状态
-        if not self._game.current_dungeon.is_ongoing:
+        if not self._game.current_combat_room.combat.is_ongoing:
             logger.debug("MonsterPrePlaySystem: 战斗未进行中，跳过决策")
             return
 
@@ -282,13 +282,13 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         ]
 
         # 获取本回合行动顺序信息
-        latest_round = self._game.current_dungeon.latest_round
+        latest_round = self._game.current_combat_room.combat.latest_round
         action_order: List[str] = latest_round.action_order if latest_round else []
         completed_actors: List[str] = (
             latest_round.completed_actors if latest_round else []
         )
 
-        current_round_number = len(self._game.current_dungeon.current_rounds or [])
+        current_round_number = len(self._game.current_combat_room.combat.rounds or [])
 
         prompt = _generate_monster_decision_prompt(
             monster_name=entity.name,
@@ -365,7 +365,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
             return
 
         # 写对话历史（压缩版 prompt + AI 原文，附挂全量 prompt 供检索）
-        current_round_number = len(self._game.current_dungeon.current_rounds or [])
+        current_round_number = len(self._game.current_combat_room.combat.rounds or [])
         self._game.add_human_message(
             entity=entity,
             human_message=HumanMessage(

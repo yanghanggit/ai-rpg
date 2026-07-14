@@ -49,7 +49,7 @@ async def execute_init_combat_task(
             rpg_game = current_room._dbg_game
             assert isinstance(rpg_game, DBGGame), "Invalid game type"
 
-            if not rpg_game.current_dungeon.is_initializing:
+            if not rpg_game.current_combat_room.combat.is_initializing:
                 raise ValueError("战斗未处于开始阶段")
 
             await rpg_game._combat_pipeline.process()
@@ -110,7 +110,7 @@ async def execute_retreat_task(
             await rpg_game._combat_pipeline.execute()
 
             # 确认已进入 post_combat 状态
-            if not rpg_game.current_dungeon.is_post_combat:
+            if not rpg_game.current_combat_room.combat.is_post_combat:
                 raise RuntimeError(
                     "战斗管线执行后未进入 post_combat 状态，撤退流程异常"
                 )
@@ -167,7 +167,7 @@ async def execute_draw_cards_task(
             assert isinstance(rpg_game, DBGGame), "Invalid game type"
 
             # 验证战斗状态
-            if not rpg_game.current_dungeon.is_ongoing:
+            if not rpg_game.current_combat_room.combat.is_ongoing:
                 raise ValueError("战斗未在进行中")
 
             # 推进战斗流程处理抽牌
@@ -231,7 +231,7 @@ async def execute_play_cards_task(
             assert isinstance(rpg_game, DBGGame), "Invalid game type"
 
             # 验证战斗状态
-            if not rpg_game.current_dungeon.is_ongoing:
+            if not rpg_game.current_combat_room.combat.is_ongoing:
                 raise ValueError("战斗未在进行中")
 
             actor_entity = rpg_game.get_actor_entity(actor_name)
@@ -289,7 +289,7 @@ async def execute_pass_turn_task(
             rpg_game = current_room._dbg_game
             assert isinstance(rpg_game, DBGGame), "Invalid game type"
 
-            if not rpg_game.current_dungeon.is_ongoing:
+            if not rpg_game.current_combat_room.combat.is_ongoing:
                 raise ValueError("战斗未在进行中")
 
             success, message = activate_pass_turn(rpg_game, actor_name)
@@ -338,7 +338,7 @@ async def execute_use_consumable_task(
             rpg_game = current_room._dbg_game
             assert isinstance(rpg_game, DBGGame), "Invalid game type"
 
-            if not rpg_game.current_dungeon.is_ongoing:
+            if not rpg_game.current_combat_room.combat.is_ongoing:
                 raise ValueError("战斗未在进行中")
 
             success, message = activate_use_consumable(rpg_game, item_name, targets)
@@ -388,7 +388,7 @@ async def execute_use_gear_task(
             rpg_game = current_room._dbg_game
             assert isinstance(rpg_game, DBGGame), "Invalid game type"
 
-            if not rpg_game.current_dungeon.is_ongoing:
+            if not rpg_game.current_combat_room.combat.is_ongoing:
                 raise ValueError("战斗未在进行中")
 
             success, message = activate_use_gear(rpg_game, item_name, targets)

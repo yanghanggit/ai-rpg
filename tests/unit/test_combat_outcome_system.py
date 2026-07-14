@@ -70,7 +70,7 @@ def context() -> Context:
 def mock_game() -> MagicMock:
     """MagicMock DBGGame，预设战斗 ONGOING。"""
     game = MagicMock(spec=DBGGame)
-    game.current_dungeon.is_ongoing = True
+    game.current_combat_room.combat.is_ongoing = True
     return game
 
 
@@ -231,7 +231,7 @@ class TestExecute:
         self, context: Context, mock_game: MagicMock, system: CombatOutcomeSystem
     ) -> None:
         """战斗非 ONGOING 时，complete_combat / clear_round_state 均不应调用。"""
-        mock_game.current_dungeon.is_ongoing = False
+        mock_game.current_combat_room.combat.is_ongoing = False
         await system.execute()
         mock_game.current_dungeon.complete_combat.assert_not_called()
         mock_game.clear_round_state.assert_not_called()

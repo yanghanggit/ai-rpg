@@ -41,7 +41,7 @@ class MoveToDiscardPileSystem(ReactiveProcessor):
     @override
     async def react(self, entities: List[Entity]) -> None:
         """将出牌从 Hand 移入 DiscardPile。"""
-        if not self._game.current_dungeon.is_ongoing:
+        if not self._game.current_combat_room.combat.is_ongoing:
             logger.debug("MoveToDiscardPileSystem: 战斗未进行中，跳过出牌路由")
             return
 

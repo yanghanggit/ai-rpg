@@ -59,7 +59,7 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
         """并发为所有实体调用 LLM 评估并追加状态效果。"""
 
         # 仅在战斗进行中时触发
-        if not self._game.current_dungeon.is_ongoing:
+        if not self._game.current_combat_room.combat.is_ongoing:
             return
 
         logger.debug(
@@ -85,7 +85,7 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
     def _build_client(self, entity: Entity) -> DeepSeekClient:
 
         # 获取当前回合数
-        current_round_number = len(self._game.current_dungeon.current_rounds or [])
+        current_round_number = len(self._game.current_combat_room.combat.rounds or [])
 
         combat_status_effects = entity.get(StatusEffectsComponent)
         assert (

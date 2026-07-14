@@ -46,7 +46,7 @@ class ExhaustCardsActionSystem(ReactiveProcessor):
 
         将 exhaust=True 的自有牌从 DiscardPile 移至 ExhaustPile。
         """
-        if not self._game.current_dungeon.is_ongoing:
+        if not self._game.current_combat_room.combat.is_ongoing:
             logger.debug("ExhaustCardsActionSystem: 战斗未进行中，跳过消耗牌处理")
             return
 

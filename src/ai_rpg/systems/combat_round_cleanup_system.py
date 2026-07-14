@@ -134,15 +134,15 @@ class CombatRoundCleanupSystem(ExecuteProcessor):
     @override
     async def execute(self) -> None:
 
-        if not self._game.current_dungeon.is_ongoing:
+        if not self._game.current_combat_room.combat.is_ongoing:
             logger.debug("当前战斗状态非 ONGOING，跳过旧回合状态清除")
             return
 
-        current_rounds = self._game.current_dungeon.current_rounds or []
+        current_rounds = self._game.current_combat_room.combat.rounds or []
         if len(current_rounds) == 0:
             return
 
-        last_round = self._game.current_dungeon.latest_round
+        last_round = self._game.current_combat_room.combat.latest_round
         assert last_round is not None, "latest_round is None"
         if not last_round.is_completed:
             return

@@ -50,7 +50,7 @@ class PassTurnActionSystem(ReactiveProcessor):
     @override
     async def react(self, entities: List[Entity]) -> None:
 
-        if not self._game.current_dungeon.is_ongoing:
+        if not self._game.current_combat_room.combat.is_ongoing:
             logger.debug("PassTurnActionSystem: 战斗未进行中，跳过过牌处理")
             return
 
@@ -59,12 +59,12 @@ class PassTurnActionSystem(ReactiveProcessor):
         assert len(entities) == 1, "PassTurnActionSystem: 一次只能处理一个过牌动作实体"
         entity = entities[0]
 
-        current_rounds = self._game.current_dungeon.current_rounds
+        current_rounds = self._game.current_combat_room.combat.rounds
         assert (
             current_rounds is not None
         ), "PassTurnActionSystem: current_rounds is None"
 
-        last_round = self._game.current_dungeon.latest_round
+        last_round = self._game.current_combat_room.combat.latest_round
         assert last_round is not None, "PassTurnActionSystem: latest_round is None"
 
         pass_turn_action = entity.get(PassTurnAction)

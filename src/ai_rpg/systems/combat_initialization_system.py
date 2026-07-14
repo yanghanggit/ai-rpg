@@ -117,7 +117,7 @@ class CombatInitializationSystem(ExecuteProcessor):
     @override
     async def execute(self) -> None:
 
-        if not self._game.current_dungeon.is_initializing:
+        if not self._game.current_combat_room.combat.is_initializing:
             logger.debug("当前战斗状态非 initializing，跳过战斗初始化")
             return
 
@@ -125,7 +125,7 @@ class CombatInitializationSystem(ExecuteProcessor):
 
         assert self._game.is_player_in_dungeon_stage, "战斗初始化阶段玩家必须在场景中！"
         assert (
-            len(self._game.current_dungeon.current_rounds or []) == 0
+            len(self._game.current_combat_room.combat.rounds or []) == 0
         ), "战斗触发阶段不允许有回合数！"
 
         # 获取玩家实体，player 所在场景即战斗场景
@@ -159,7 +159,7 @@ class CombatInitializationSystem(ExecuteProcessor):
         # 设置战斗为进行中（第一回合将由 CombatRoundTransitionSystem 创建）
         self._game.current_dungeon.transition_to_ongoing()
         assert (
-            self._game.current_dungeon.is_ongoing
+            self._game.current_combat_room.combat.is_ongoing
         ), "战斗状态转换失败，当前状态非 ONGOING！"
 
         # 为所有参战角色添加 GenerateDeckAction，触发初始牌库生成

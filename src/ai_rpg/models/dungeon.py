@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Annotated, List, Literal, Optional, Union, final
 from pydantic import BaseModel, Field
-from .combat import CombatState, CombatResult, Combat, Round
+from .combat import CombatState, CombatResult, Combat
 from .entities import Stage
 from .image import GeneratedImage
 
@@ -10,7 +10,7 @@ from .image import GeneratedImage
 class DungeonRoom(BaseModel):
     """地下城房间基类（关卡包装）"""
 
-    room_type: Literal["base"] = "base"  # 判别字段，子类收窄为对应 Literal 值
+    type: Literal["base"] = "base"  # 判别字段，子类收窄为对应 Literal 值
     stage: Stage  # 必须，对应关卡场景
     image: GeneratedImage = GeneratedImage()  # 当前房间的文生图数据，默认为空
 
@@ -20,15 +20,15 @@ class DungeonRoom(BaseModel):
 class CombatRoom(DungeonRoom):
     """战斗房间（含战斗数据）"""
 
-    room_type: Literal["combat"] = "combat"  # type: ignore[assignment]
+    type: Literal["combat"] = "combat"  # type: ignore[assignment]
     combat: Combat = Combat(name="")  # 当前房间的战斗数据，默认为空战斗（state=NONE）
 
 
 ###############################################################################################################################################
-# 判别联合类型：可基于 room_type 字段进行精确的反序列化
+# 判别联合类型：可基于 type 字段进行精确的反序列化
 AnyDungeonRoom = Annotated[
     Union[DungeonRoom, CombatRoom],
-    Field(discriminator="room_type"),
+    Field(discriminator="type"),
 ]
 
 
@@ -71,83 +71,83 @@ class Dungeon(BaseModel):
     ########################################################################################################################
     # ============ 战斗状态代理（内联自原 CombatSequence） ============
     ########################################################################################################################
-    @property
-    def current_combat(self) -> Optional[Combat]:
-        if self.current_combat_room is None:
-            return None
-        return self.current_combat_room.combat
+    # @property
+    # def current_combat(self) -> Optional[Combat]:
+    #     if self.current_combat_room is None:
+    #         return None
+    #     return self.current_combat_room.combat
 
     ########################################################################################################################
-    @property
-    def current_rounds(self) -> Optional[List[Round]]:
-        if self.current_combat is None:
-            return None
-        return self.current_combat.rounds
+    # @property
+    # def current_rounds(self) -> Optional[List[Round]]:
+    #     if self.current_combat is None:
+    #         return None
+    #     return self.current_combat.rounds
 
     ########################################################################################################################
-    @property
-    def latest_round(self) -> Optional[Round]:
-        if self.current_combat is None:
-            return None
-        if len(self.current_combat.rounds) == 0:
-            return None
-        return self.current_combat.rounds[-1]
+    # @property
+    # def latest_round(self) -> Optional[Round]:
+    #     if self.current_combat is None:
+    #         return None
+    #     if len(self.current_combat.rounds) == 0:
+    #         return None
+    #     return self.current_combat.rounds[-1]
 
     ########################################################################################################################
-    @property
-    def current_result(self) -> Optional[CombatResult]:
-        if self.current_combat is None:
-            return None
-        return self.current_combat.result
+    # @property
+    # def current_result(self) -> Optional[CombatResult]:
+    #     if self.current_combat is None:
+    #         return None
+    #     return self.current_combat.result
 
     ########################################################################################################################
-    @property
-    def current_state(self) -> Optional[CombatState]:
-        if self.current_combat is None:
-            return None
-        return self.current_combat.state
+    # @property
+    # def current_state(self) -> Optional[CombatState]:
+    #     if self.current_combat is None:
+    #         return None
+    #     return self.current_combat.state
 
     ########################################################################################################################
-    @property
-    def is_ongoing(self) -> bool:
-        if self.current_combat_room is None:
-            return False
-        return self.current_combat_room.combat.state == CombatState.ONGOING
+    # @property
+    # def is_ongoing(self) -> bool:
+    #     if self.current_combat_room is None:
+    #         return False
+    #     return self.current_combat_room.combat.state == CombatState.ONGOING
 
-    ########################################################################################################################
-    @property
-    def is_combat_completed(self) -> bool:
-        if self.current_combat_room is None:
-            return False
-        return self.current_combat_room.combat.state == CombatState.COMPLETE
+    # ########################################################################################################################
+    # @property
+    # def is_combat_completed(self) -> bool:
+    #     if self.current_combat_room is None:
+    #         return False
+    #     return self.current_combat_room.combat.state == CombatState.COMPLETE
 
-    ########################################################################################################################
-    @property
-    def is_initializing(self) -> bool:
-        if self.current_combat_room is None:
-            return False
-        return self.current_combat_room.combat.state == CombatState.INITIALIZATION
+    # ########################################################################################################################
+    # @property
+    # def is_initializing(self) -> bool:
+    #     if self.current_combat_room is None:
+    #         return False
+    #     return self.current_combat_room.combat.state == CombatState.INITIALIZATION
 
-    ########################################################################################################################
-    @property
-    def is_post_combat(self) -> bool:
-        if self.current_combat_room is None:
-            return False
-        return self.current_combat_room.combat.state == CombatState.POST_COMBAT
+    # ########################################################################################################################
+    # @property
+    # def is_post_combat(self) -> bool:
+    #     if self.current_combat_room is None:
+    #         return False
+    #     return self.current_combat_room.combat.state == CombatState.POST_COMBAT
 
-    ########################################################################################################################
-    @property
-    def is_won(self) -> bool:
-        if self.current_combat_room is None:
-            return False
-        return self.current_combat_room.combat.result == CombatResult.WIN
+    # ########################################################################################################################
+    # @property
+    # def is_won(self) -> bool:
+    #     if self.current_combat_room is None:
+    #         return False
+    #     return self.current_combat_room.combat.result == CombatResult.WIN
 
-    ########################################################################################################################
-    @property
-    def is_lost(self) -> bool:
-        if self.current_combat_room is None:
-            return False
-        return self.current_combat_room.combat.result == CombatResult.LOSE
+    # ########################################################################################################################
+    # @property
+    # def is_lost(self) -> bool:
+    #     if self.current_combat_room is None:
+    #         return False
+    #     return self.current_combat_room.combat.result == CombatResult.LOSE
 
     ########################################################################################################################
     def start_combat(self, combat: Combat) -> None:

@@ -31,8 +31,7 @@ class CombatPileTeardownSystem(ExecuteProcessor):
 
         logger.debug("CombatPileTeardownSystem: 执行战斗堆拆除系统")
 
-        dungeon = self._game.current_dungeon
-        if not dungeon.is_post_combat:
+        if not self._game.current_combat_room.combat.is_post_combat:
             logger.debug("CombatPileTeardownSystem: 当前非战斗后阶段，跳过")
             return
 

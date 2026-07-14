@@ -70,5 +70,42 @@ class Combat(BaseModel):
     rounds: List[Round] = []
     retreated: bool = False  # 是否通过撤退结束本次战斗
 
+    ########################################################################################################################
+    @property
+    def is_ongoing(self) -> bool:
+        return self.state == CombatState.ONGOING
+
+    ########################################################################################################################
+    @property
+    def is_combat_completed(self) -> bool:
+        return self.state == CombatState.COMPLETE
+
+    ########################################################################################################################
+    @property
+    def is_initializing(self) -> bool:
+        return self.state == CombatState.INITIALIZATION
+
+    ########################################################################################################################
+    @property
+    def is_post_combat(self) -> bool:
+        return self.state == CombatState.POST_COMBAT
+
+    ########################################################################################################################
+    @property
+    def is_won(self) -> bool:
+        return self.result == CombatResult.WIN
+
+    ########################################################################################################################
+    @property
+    def is_lost(self) -> bool:
+        return self.result == CombatResult.LOSE
+
+    ########################################################################################################################
+    @property
+    def latest_round(self) -> Optional[Round]:
+        if len(self.rounds) == 0:
+            return None
+        return self.rounds[-1]
+
 
 ###############################################################################################################################################

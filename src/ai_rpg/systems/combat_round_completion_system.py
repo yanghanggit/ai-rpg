@@ -19,10 +19,10 @@ class CombatRoundCompletionSystem(ExecuteProcessor):
     @override
     async def execute(self) -> None:
         # 守卫①：战斗未进行中 → 跳过
-        if not self._game.current_dungeon.is_ongoing:
+        if not self._game.current_combat_room.combat.is_ongoing:
             return
 
-        latest_round = self._game.current_dungeon.latest_round
+        latest_round = self._game.current_combat_room.combat.latest_round
 
         # 守卫②：无回合，或回合已标记完成 → 跳过
         if latest_round is None or latest_round.is_completed:

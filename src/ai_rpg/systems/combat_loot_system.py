@@ -129,10 +129,10 @@ class CombatLootSystem(ExecuteProcessor):
     @override
     async def execute(self) -> None:
         """每帧检查战斗是否胜利结束；未胜利则直接返回，胜利则推理掉落并写入 CombatLootComponent。"""
-        if not self._game.current_dungeon.is_combat_completed:
+        if not self._game.current_combat_room.combat.is_combat_completed:
             return
 
-        if not self._game.current_dungeon.is_won:
+        if not self._game.current_combat_room.combat.is_won:
             return
 
         player_entity = self._game.get_player_entity()
@@ -176,7 +176,7 @@ class CombatLootSystem(ExecuteProcessor):
         Returns:
             配置好的 DeepSeekClient
         """
-        total_rounds = len(self._game.current_dungeon.current_rounds or [])
+        total_rounds = len(self._game.current_combat_room.combat.rounds or [])
 
         player_entity = self._game.get_player_entity()
         assert player_entity is not None

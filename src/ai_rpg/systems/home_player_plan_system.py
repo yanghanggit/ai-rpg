@@ -17,7 +17,7 @@ from ..models import (
     NPCComponent,
 )
 from ..game import DBGGame
-from .home_planning_utils import (
+from .home_planning_prompt_builders import (
     ActionPlanResponse,
     build_action_planning_prompt,
     build_compressed_planning_prompt,

@@ -19,7 +19,7 @@ from ..models import (
 )
 from ..utils import extract_json_from_code_block
 from ..game import DBGGame
-from .home_planning_utils import (
+from .home_planning_prompt_builders import (
     ActionPlanResponse,
     build_action_planning_prompt,
     build_compressed_planning_prompt,

@@ -8,9 +8,7 @@
 
 from typing import List
 from unittest.mock import MagicMock, patch
-
 import pytest
-
 from src.ai_rpg.entitas.context import Context
 from src.ai_rpg.entitas.entity import Entity
 from src.ai_rpg.game.dbg_game import DBGGame
@@ -27,7 +25,7 @@ from src.ai_rpg.models import (
 )
 from src.ai_rpg.models.messages import AIMessage
 from src.ai_rpg.systems.home_npc_plan_system import HomeNpcPlanSystem
-from src.ai_rpg.systems.home_planning_utils import ActionPlanResponse
+from src.ai_rpg.systems.home_planning_prompt_builders import ActionPlanResponse
 
 
 # ---------------------------------------------------------------------------

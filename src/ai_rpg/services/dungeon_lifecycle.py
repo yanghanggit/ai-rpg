@@ -24,6 +24,7 @@ from ..models import (
     DeathComponent,
     StageType,
     StatusEffectsComponent,
+    CombatRoom,
 )
 from ..entitas import Matcher, Entity
 
@@ -139,7 +140,13 @@ def _enter_dungeon_stage(
         return False
 
     # 1. 验证前置条件 - 获取当前关卡数据
-    stage_model = dungeon.get_current_stage()
+    current_room = dungeon.current_room
+    if current_room is None:
+        logger.error("当前地下城房间不存在，无法进入关卡")
+        return False
+
+    assert isinstance(current_room, CombatRoom), "当前地下城房间必须是战斗房间"
+    stage_model = current_room.stage
     assert stage_model is not None, f"{dungeon.name} 地下城关卡数据异常！"
 
     # 2. 获取关卡实体
@@ -276,12 +283,13 @@ def setup_dungeon(dbg_game: DBGGame, dungeon_name: str) -> tuple[bool, str]:
         return True, f"地下城实体已存在，跳过创建: {dungeon.name}"
 
     # 4. 创建地下城实体（内部将 setup_entities 置 True），索引保持 -1
-    for actor in dungeon.actors:
-        actor_entity = dbg_game.get_actor_entity(actor.name)
-        assert actor_entity is None, "actor_entity is not None"
-        assert (
-            actor.character_sheet.type == ActorType.MONSTER
-        ), "actor_entity is not enemy type"
+    for room in dungeon.rooms:
+        for actor in room.stage.actors:
+            actor_entity = dbg_game.get_actor_entity(actor.name)
+            assert actor_entity is None, "actor_entity is not None"
+            assert (
+                actor.character_sheet.type == ActorType.MONSTER
+            ), "actor_entity is not enemy type"
 
     # 5. 创建关卡场景实体
     for room in dungeon.rooms:
@@ -293,7 +301,9 @@ def setup_dungeon(dbg_game: DBGGame, dungeon_name: str) -> tuple[bool, str]:
 
     # 6. 创建地下城实体（敌人和关卡场景）
     logger.debug(f"正在根据地下城模型创建实体: {dungeon.name}")
-    dbg_game.create_actor_entities(dungeon.actors)
+    dbg_game.create_actor_entities(
+        [actor for room in dungeon.rooms for actor in room.stage.actors]
+    )
     dbg_game.create_stage_entities([room.stage for room in dungeon.rooms])
 
     # 7. 标记实体已创建
@@ -380,11 +390,14 @@ def advance_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> None:
         assert False, "不可能出现的情况！"
 
     # 1. 推进地下城索引到下一关
-    next_stage = dungeon.advance_to_next_stage()
-    if next_stage is None:
-        logger.error("地下城前进失败，没有更多关卡")
-        # assert False, "地下城前进失败，没有更多关卡"  # 不可能发生！
+    next_room_index = dungeon.current_room_index + 1
+    next_room = dungeon.get_room(next_room_index)
+    if next_room is None:
+        logger.error("地下城前进失败，没有更多房间")
         return
+
+    assert isinstance(next_room, CombatRoom), "下一房间必须是战斗房间"
+    dungeon.current_room_index = next_room_index
 
     # 2. 获取所有远征队成员
     party_member_entities = dbg_game.get_group(
@@ -481,10 +494,11 @@ def exit_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> None:
 
     # 4. 清理地下城数据
     logger.debug(f"[return_home] 开始清理地下城实体: dungeon={dungeon.name!r}")
-    for actor in dungeon.actors:
-        destroy_actor_entity = dbg_game.get_actor_entity(actor.name)
-        if destroy_actor_entity is not None:
-            dbg_game.destroy_entity(destroy_actor_entity)
+    for room in dungeon.rooms:
+        for actor in room.stage.actors:
+            destroy_actor_entity = dbg_game.get_actor_entity(actor.name)
+            if destroy_actor_entity is not None:
+                dbg_game.destroy_entity(destroy_actor_entity)
 
     for room in dungeon.rooms:
         destroy_stage_entity = dbg_game.get_stage_entity(room.stage.name)

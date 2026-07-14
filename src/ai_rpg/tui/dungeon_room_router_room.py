@@ -1,15 +1,4 @@
-"""地下城房间路由 Screen（DungeonRoomRouterRoom）
-
-进入地下城后的统一入口：本 Screen 不负责任何具体房间的 UI，只负责查询当前
-房间数据，根据其判别字段 room_type（参见 ai_rpg.models.dungeon.DungeonRoom /
-CombatRoom）决定应该展示哪一种具体房间 Screen，再 switch 过去。
-
-目前地下城只有 CombatRoom 一种房间类型，因此本路由只有一个分支
-（"combat" -> CombatRoomScreen）。后续新增房间类型（例如探索房间、
-事件房间等）时，只需在 `_route` 中补充对应分支并 switch 到新 Screen，
-调用方（如 DungeonOverviewScreen._do_enter_dungeon）无需感知具体房间类型，
-统一 push 本 Screen 即可。
-"""
+"""地下城房间路由 Screen（DungeonRoomRouterRoom）"""
 
 from typing import final
 

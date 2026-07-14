@@ -385,12 +385,22 @@ async def next_dungeon_game(
     if not terminal_game.current_dungeon.is_won:
         assert False, "不可能出现的情况！"
 
-    next_level = terminal_game.current_dungeon.peek_next_stage()
-    if next_level is None:
-        logger.info("没有下一关，你胜利了，应该返回营地")
+    # next_level = terminal_game.current_dungeon.peek_next_stage()
+    # if next_level is None:
+    #     logger.info("没有下一关，你胜利了，应该返回营地")
+    #     return terminal_game
+
+    # 获取下一房间索引和房间实例，确保存在下一房间，否则无法推进地下城
+    next_room_index = terminal_game.current_dungeon.current_room_index + 1
+    next_room = terminal_game.current_dungeon.get_room(next_room_index)
+    if next_room is None:
+        logger.error("地下城前进失败，没有更多房间")
         return terminal_game
 
+    # 推进地下城到下一房间，更新当前房间索引和状态
     advance_dungeon(terminal_game, terminal_game.current_dungeon)
+
+    # 进入下一关卡后，驱动战斗流水线处理新关卡的初始化，包括场景描述、初始状态效果、创建新回合等
     await terminal_game._combat_pipeline.process()
 
     archive_world(

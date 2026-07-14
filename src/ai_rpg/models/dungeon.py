@@ -1,9 +1,8 @@
 from datetime import datetime, timezone
 from typing import Annotated, List, Literal, Optional, Union, final
-from loguru import logger
 from pydantic import BaseModel, Field
 from .combat import CombatState, CombatResult, Combat, Round
-from .entities import Actor, Stage
+from .entities import Stage
 from .image import GeneratedImage
 
 
@@ -27,7 +26,7 @@ class CombatRoom(DungeonRoom):
 
 ###############################################################################################################################################
 # 判别联合类型：可基于 room_type 字段进行精确的反序列化
-DungeonRoomUnion = Annotated[
+AnyDungeonRoom = Annotated[
     Union[DungeonRoom, CombatRoom],
     Field(discriminator="room_type"),
 ]
@@ -39,7 +38,7 @@ class Dungeon(BaseModel):
     """地下城模型"""
 
     name: str
-    rooms: List[DungeonRoomUnion]
+    rooms: List[AnyDungeonRoom]
     ecology: str
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc)
@@ -52,18 +51,15 @@ class Dungeon(BaseModel):
 
     ########################################################################################################################
     @property
-    def actors(self) -> List[Actor]:
-        """
-        获取当前地下城所有房间中存在的角色列表（去重），目前就是敌人角色，玩家角色不在地下城模型中，由游戏世界的玩家实体承载。
-        """
-        return [actor for room in self.rooms for actor in room.stage.actors]
+    def current_room(self) -> Optional[AnyDungeonRoom]:
+        return self.get_room(self.current_room_index)
 
     ########################################################################################################################
-    @property
-    def current_room(self) -> Optional[DungeonRoomUnion]:
-        if not self._is_valid_room_index(self.current_room_index):
-            return None
-        return self.rooms[self.current_room_index]
+    def get_room(self, index: int) -> Optional[AnyDungeonRoom]:
+        """根据索引获取房间，如果索引无效返回 None。"""
+        if index >= 0 and index < len(self.rooms):
+            return self.rooms[index]
+        return None
 
     ########################################################################################################################
     @property
@@ -192,55 +188,5 @@ class Dungeon(BaseModel):
         )
         assert self.current_combat_room.combat.state == CombatState.COMPLETE
         self.current_combat_room.combat.state = CombatState.POST_COMBAT
-
-    ########################################################################################################################
-    # ============ 关卡导航 ============
-    ########################################################################################################################
-    def get_current_stage(self) -> Optional[Stage]:
-        """获取当前关卡"""
-        if len(self.rooms) == 0:
-            logger.warning("地下城系统为空！")
-            return None
-
-        if not self._is_valid_room_index(self.current_room_index):
-            logger.warning("当前地下城关卡已经完成！或者尚未开始！")
-            return None
-
-        return self.rooms[self.current_room_index].stage
-
-    ########################################################################################################################
-    def peek_next_stage(self) -> Optional[Stage]:
-        """预览下一关卡"""
-        if len(self.rooms) == 0:
-            logger.warning("地下城系统为空！")
-            return None
-
-        if not self._is_valid_room_index(self.current_room_index):
-            logger.warning("当前地下城关卡已经完成！或者尚未开始！")
-            return None
-
-        return (
-            self.rooms[self.current_room_index + 1].stage
-            if self.current_room_index + 1 < len(self.rooms)
-            else None
-        )
-
-    ########################################################################################################################
-    def advance_to_next_stage(self) -> Optional[Stage]:
-        """前进到下一关卡"""
-        if len(self.rooms) == 0:
-            logger.warning("地下城系统为空！")
-            return None
-
-        if not self._is_valid_room_index(self.current_room_index):
-            logger.warning("当前地下城关卡已经完成！或者尚未开始！")
-            return None
-
-        self.current_room_index += 1
-        return self.get_current_stage()
-
-    ########################################################################################################################
-    def _is_valid_room_index(self, position: int) -> bool:
-        return position >= 0 and position < len(self.rooms)
 
     ########################################################################################################################

@@ -78,18 +78,13 @@ def _generate_monster_decision_prompt(
 
     # 构造行动序列文本，标注自己的位置
     order_display = " → ".join(
-        f"你（{name.split('.')[-1]}）" if name == monster_name else name.split(".")[-1]
-        for name in action_order
+        f"你（{name}）" if name == monster_name else name for name in action_order
     )
     my_position = next(
         (i + 1 for i, name in enumerate(action_order) if name == monster_name), None
     )
     position_text = f"第 {my_position} 位" if my_position is not None else "未知"
-    completed_text = (
-        "、".join(name.split(".")[-1] for name in completed_actors)
-        if completed_actors
-        else "无"
-    )
+    completed_text = "、".join(completed_actors) if completed_actors else "无"
 
     card_names_json = ", ".join(f'"{c.name}"' for c in hand_cards)
 
@@ -164,18 +159,13 @@ def _generate_compressed_monster_decision_prompt(
     )
 
     order_display = " → ".join(
-        f"你（{name.split('.')[-1]}）" if name == monster_name else name.split(".")[-1]
-        for name in action_order
+        f"你（{name}）" if name == monster_name else name for name in action_order
     )
     my_position = next(
         (i + 1 for i, name in enumerate(action_order) if name == monster_name), None
     )
     position_text = f"第 {my_position} 位" if my_position is not None else "未知"
-    completed_text = (
-        "、".join(name.split(".")[-1] for name in completed_actors)
-        if completed_actors
-        else "无"
-    )
+    completed_text = "、".join(completed_actors) if completed_actors else "无"
 
     card_names_json = ", ".join(f'"{c.name}"' for c in hand_cards)
 

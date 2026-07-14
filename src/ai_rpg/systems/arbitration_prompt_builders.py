@@ -208,8 +208,7 @@ def build_random_multi_sections(
         return RandomMultiSections("", "")
 
     hit_lines = "\n".join(
-        f"  第{i + 1}击 → {t.split('.')[-1]}"
-        for i, t in enumerate(play_cards_action.targets)
+        f"  第{i + 1}击 → {t}" for i, t in enumerate(play_cards_action.targets)
     )
     hit_assignment = (
         f"\n## 命中分配（系统预先随机确定，共 {play_cards_action.card.hit_count} 击）\n\n"
@@ -379,7 +378,7 @@ def generate_combat_arbitration_broadcast(
         combat_log,
         narrative,
         current_round_number,
-        f"{actor_name.split('.')[-1]} 出牌仲裁",
+        f"{actor_name} 出牌仲裁",
     )
 
 
@@ -630,7 +629,7 @@ def generate_play_cards_actor_task_hints(
     card = play_cards_action.card
     if not card.affixes:
         return []
-    targets_str = "、".join(t.split(".")[-1] for t in play_cards_action.targets) or "无"
+    targets_str = "、".join(play_cards_action.targets) or "无"
     energy_part = f"，能量{card.energy_delta:+d}" if card.energy_delta != 0 else ""
     base = f"[卡牌·出牌者] 「{card.name}」→{targets_str}，{card.damage_dealt}伤×{card.hit_count}击{energy_part}"
     return [f"{base}；词缀 → {affix}" for affix in card.affixes]
@@ -650,10 +649,9 @@ def generate_play_cards_target_task_hints(
     card = play_cards_action.card
     if not card.affixes:
         return []
-    actor_short = actor_name.split(".")[-1]
     energy_part = f"，能量{card.energy_delta:+d}" if card.energy_delta != 0 else ""
     base = (
-        f"[卡牌·受击者] {actor_short}的「{card.name}」命中，"
+        f"[卡牌·受击者] {actor_name}的「{card.name}」命中，"
         f"{card.damage_dealt}伤×{card.hit_count}击{energy_part}，HP {new_hp}/{max_hp}"
     )
     return [f"{base}；词缀 → {affix}" for affix in card.affixes]
@@ -673,10 +671,9 @@ def generate_gear_on_hit_task_hints(
     """
     if not gear_item.on_hit_affixes:
         return []
-    actor_short = actor_name.split(".")[-1]
     card = play_cards_action.card
     base = (
-        f"[装备命中·受击者] {actor_short}持「{gear_item.name}」命中"
+        f"[装备命中·受击者] {actor_name}持「{gear_item.name}」命中"
         f"（「{card.name}」），HP {new_hp}/{max_hp}"
     )
     return [f"{base}；装备词缀 → {affix}" for affix in gear_item.on_hit_affixes]
@@ -693,7 +690,7 @@ def generate_gear_equip_task_hints(
     item = action.item
     if not item.equip_affixes:
         return []
-    targets_str = "、".join(t.split(".")[-1] for t in action.targets) or "无"
+    targets_str = "、".join(action.targets) or "无"
     stats_str = _fmt_stat_bonuses_compact(item.stat_bonuses)
     if entity.has(PartyMemberComponent):
         camp = "友方"
@@ -716,7 +713,7 @@ def generate_consumable_task_hints(
     item = action.item
     if not item.affixes:
         return []
-    targets_str = "、".join(t.split(".")[-1] for t in action.targets) or "无"
+    targets_str = "、".join(action.targets) or "无"
     if entity.has(PartyMemberComponent):
         camp = "友方"
     elif entity.has(MonsterComponent):

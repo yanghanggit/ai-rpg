@@ -45,8 +45,7 @@ def _generate_play_card_context_prompt(
 #######################################################################################################################################
 def _generate_action_notice_for_others(actor_name: str, round_number: int) -> str:
     """生成出牌行动预告，广播给场景内其他角色，维护观察者视角的上下文连贯性。"""
-    actor_short_name = actor_name.split(".")[-1]
-    return f"【第 {round_number} 回合】{actor_short_name} 正在出牌。"
+    return f"【第 {round_number} 回合】{actor_name} 正在出牌。"
 
 
 #######################################################################################################################################

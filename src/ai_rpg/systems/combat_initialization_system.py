@@ -157,7 +157,7 @@ class CombatInitializationSystem(ExecuteProcessor):
         )
 
         # 设置战斗为进行中（第一回合将由 CombatRoundTransitionSystem 创建）
-        self._game.current_dungeon.transition_to_ongoing()
+        self._game.current_combat_room.combat.transition_to_ongoing()
         assert (
             self._game.current_combat_room.combat.is_ongoing
         ), "战斗状态转换失败，当前状态非 ONGOING！"

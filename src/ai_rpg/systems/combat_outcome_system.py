@@ -44,12 +44,12 @@ class CombatOutcomeSystem(ExecuteProcessor):
 
         if self._is_player_side_eliminated():
             logger.info("ally side eliminated!!!")
-            self._game.current_dungeon.complete_combat(CombatResult.LOSE)
+            self._game.current_combat_room.combat.complete_combat(CombatResult.LOSE)
             self._game.clear_round_state()
             self._broadcast_result_to_party_members(CombatResult.LOSE)
         elif self._is_enemy_side_eliminated():
             logger.info("enemy side eliminated!!!")
-            self._game.current_dungeon.complete_combat(CombatResult.WIN)
+            self._game.current_combat_room.combat.complete_combat(CombatResult.WIN)
             self._game.clear_round_state()
             self._broadcast_result_to_party_members(CombatResult.WIN)
         else:

@@ -107,5 +107,31 @@ class Combat(BaseModel):
             return None
         return self.rounds[-1]
 
+    ########################################################################################################################
+    def complete_combat(self, result: CombatResult) -> None:
+        """完成战斗，设置结果"""
+        assert self.state == CombatState.ONGOING
+        assert result == CombatResult.WIN or result == CombatResult.LOSE
+        assert self.result == CombatResult.NONE
+        self.state = CombatState.COMPLETE
+        self.result = result
+
+    ########################################################################################################################
+    def transition_to_ongoing(self) -> None:
+        """将战斗状态转换为进行中"""
+        assert self.state == CombatState.INITIALIZATION
+        assert self.result == CombatResult.NONE
+        self.state = CombatState.ONGOING
+
+    ########################################################################################################################
+    def transition_to_post_combat(self) -> None:
+        """将战斗状态转换为战后阶段"""
+        assert self.result in (
+            CombatResult.WIN,
+            CombatResult.LOSE,
+        )
+        assert self.state == CombatState.COMPLETE
+        self.state = CombatState.POST_COMBAT
+
 
 ###############################################################################################################################################

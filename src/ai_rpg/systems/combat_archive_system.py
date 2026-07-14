@@ -56,7 +56,7 @@ class CombatArchiveSystem(ExecuteProcessor):
         await self._archive_all_combat_records()
 
         # 标记战斗已归档，触发后续流程（如记忆存储、场景过渡等）
-        self._game.current_dungeon.transition_to_post_combat()
+        self._game.current_combat_room.combat.transition_to_post_combat()
 
     #######################################################################################################################################
     def _create_combat_summary_client(self, combat_actor: Entity) -> DeepSeekClient:

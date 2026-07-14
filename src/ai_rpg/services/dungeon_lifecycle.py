@@ -25,6 +25,7 @@ from ..models import (
     StageType,
     StatusEffectsComponent,
     CombatRoom,
+    CombatState,
 )
 from ..entitas import Matcher, Entity
 
@@ -202,8 +203,12 @@ def _enter_dungeon_stage(
     # 4. 执行场景传送
     stage_transition(dbg_game, party_member_entities, stage_entity)
 
-    # 6. 初始化战斗状态
-    dungeon.start_combat(Combat(name=stage_entity.name))
+    # 5. 创建战斗实例并初始化状态
+    # combat_room = cast(CombatRoom, current_room)
+    combat = Combat(name=stage_entity.name)
+    combat.state = CombatState.INITIALIZATION
+    current_room.combat = combat
+
     return True
 
 

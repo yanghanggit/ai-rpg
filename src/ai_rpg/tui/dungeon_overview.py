@@ -18,7 +18,7 @@ from .server_client import (
 )
 from .server_client import home_generate_dungeon as server_home_generate_dungeon
 from .utils import display_name
-from .combat_room import CombatRoomScreen
+from .dungeon_room_router_room import DungeonRoomRouterRoom
 
 MENU_TEXT = """\
 [bold cyan]── 地下城总览 ──────────────────────────────────────[/]
@@ -207,7 +207,7 @@ class DungeonOverviewScreen(BaseGameScreen):
                 f"DungeonOverviewScreen._do_enter_dungeon: 进入成功 dungeon={dungeon_name}"
             )
 
-            self.app.push_screen(CombatRoomScreen())
+            self.app.push_screen(DungeonRoomRouterRoom())
         except Exception as e:
             logger.error(f"DungeonOverviewScreen._do_enter_dungeon: 进入失败 error={e}")
             log.write(f"[bold red]❌ 进入地下城失败: {e}[/]")

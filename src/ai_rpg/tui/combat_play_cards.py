@@ -122,11 +122,9 @@ class PlayCardsMixin(BaseGameScreen):
             inp.focus()
             return
 
-        current_actor = cur.current_turn_actor_name
+        current_actor = cur.current_actor
         round_num = len(combat.rounds)
-        action_order = list(
-            cur.actor_order_snapshots[-1] if cur.actor_order_snapshots else []
-        )
+        action_order = list(cur.action_order)
         completed_actors = list(cur.completed_actors)
 
         if current_actor is None:

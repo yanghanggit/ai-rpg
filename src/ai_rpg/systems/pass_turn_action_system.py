@@ -91,7 +91,7 @@ class PassTurnActionSystem(ReactiveProcessor):
         # 输出当前回合状态日志
         logger.debug(
             f"  completed_actors: {last_round.completed_actors} / "
-            f"current_turn_actor_name={last_round.current_turn_actor_name}"
+            f"current_turn_actor_name={last_round.current_actor}"
         )
 
         # 广播过牌通知给场景内所有角色（含过牌者本人），仅排除场景实体

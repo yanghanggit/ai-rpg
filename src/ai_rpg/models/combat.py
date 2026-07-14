@@ -6,7 +6,7 @@
 
 from enum import IntEnum, unique
 from typing import List, Optional, final
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 ###############################################################################################################################################
@@ -37,10 +37,10 @@ class Round(BaseModel):
     """战斗回合"""
 
     completed_actors: List[str] = []  # 已完成出牌的角色名称（按出手顺序追加，允许重复）
-    actor_order_snapshots: List[List[str]] = Field(
-        default_factory=list
-    )  # 每次回合开始时的有行动力角色快照（去重、按优先级排列）；
-    current_turn_actor_name: Optional[str] = (
+    action_order: List[str] = (
+        []
+    )  # 回合开始时确定的行动顺序快照（去重、按优先级排列）；写入后本回合内不再变动
+    current_actor: Optional[str] = (
         None  # 当前 turn 应行动的角色名；由系统写入，供 TUI 等无 ECS 访问的消费点读取
     )
     is_completed: bool = False  # 回合结束标记；

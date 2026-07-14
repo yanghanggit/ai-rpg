@@ -304,13 +304,10 @@ class CombatRoomScreen(PlayCardsMixin, UseConsumableMixin, UseGearMixin):
             action_order = []
             if combat.rounds:
                 cur = combat.rounds[-1]
-                snapshot = (
-                    cur.actor_order_snapshots[-1] if cur.actor_order_snapshots else []
-                )
-                action_order = list(snapshot)
+                action_order = list(cur.action_order)
                 order_str = (
-                    " => ".join(display_name(a) for a in snapshot)
-                    if snapshot
+                    " => ".join(display_name(a) for a in action_order)
+                    if action_order
                     else "[dim]（无）[/]"
                 )
                 done_str = (
@@ -319,8 +316,8 @@ class CombatRoomScreen(PlayCardsMixin, UseConsumableMixin, UseGearMixin):
                     else "[dim]（无）[/]"
                 )
                 current_actor_str = (
-                    f"[bold yellow]{display_name(cur.current_turn_actor_name)}[/]"
-                    if cur.current_turn_actor_name
+                    f"[bold yellow]{display_name(cur.current_actor)}[/]"
+                    if cur.current_actor
                     else "[dim]（回合已结束）[/]"
                 )
                 log.write(f"  [bold]行动顺序：[/] {order_str}")

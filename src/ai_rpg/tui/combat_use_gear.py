@@ -133,7 +133,7 @@ class UseGearMixin(UseItemMixin):
                 self._return_to_menu("[yellow]⚠ 抽牌阶段尚未完成，请先输入 2 抽牌。[/]")
                 return
 
-            if latest_round.current_turn_actor_name is None:
+            if latest_round.current_actor is None:
                 self._return_to_menu(
                     "[yellow]⚠ 本回合所有角色已出手，无法使用装备。[/]"
                 )
@@ -146,7 +146,7 @@ class UseGearMixin(UseItemMixin):
                 self._user_name, self._game_name, actor_names
             )
 
-            current_actor = latest_round.current_turn_actor_name
+            current_actor = latest_round.current_actor
             current_actor_is_party_member = any(
                 e.name == current_actor
                 and any(c.name == PartyMemberComponent.__name__ for c in e.components)

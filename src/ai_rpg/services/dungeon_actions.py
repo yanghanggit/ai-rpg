@@ -158,22 +158,18 @@ def _validate_play_turn(
     if latest_round is None:
         return None, "当前没有进行中的回合"
 
-    # 获取当前回合的行动快照，确保该角色在快照中，以验证其是否有资格出牌。
-    current_snapshot = (
-        latest_round.actor_order_snapshots[-1]
-        if latest_round.actor_order_snapshots
-        else []
-    )
+    # 获取当前回合的行动顺序，确保该角色在其中，以验证其是否有资格出牌。
+    action_order = latest_round.action_order
 
-    # 检查该角色是否在当前回合的行动快照中，如果不在，则说明该角色没有资格出牌。
-    if actor_name not in current_snapshot:
+    # 检查该角色是否在当前回合的行动顺序中，如果不在，则说明该角色没有资格出牌。
+    if actor_name not in action_order:
         return (
             None,
-            f"角色 {actor_name} 不在本回合行动快照中: {current_snapshot}",
+            f"角色 {actor_name} 不在本回合行动顺序中: {action_order}",
         )
 
     # 检查当前回合的行动顺序，确保该角色是当前应出牌的角色。
-    next_actor = latest_round.current_turn_actor_name
+    next_actor = latest_round.current_actor
     if next_actor != actor_name:
         return None, f"现在不是 {actor_name} 的回合，当前应由 {next_actor} 出牌"
 
@@ -374,7 +370,7 @@ def activate_use_consumable(
         return False, msg
 
     # 检查当前回合的行动者是否存在，如果不存在则无法使用消耗品。
-    current_turn_actor_name = latest_round.current_turn_actor_name
+    current_turn_actor_name = latest_round.current_actor
     if current_turn_actor_name is None:
         msg = "使用消耗品失败：当前没有行动角色"
         logger.error(msg)
@@ -474,7 +470,7 @@ def activate_use_gear(
         return False, msg
 
     # 获取当前回合的行动者名称，如果没有行动者，则无法使用装备。
-    current_turn_actor_name = latest_round.current_turn_actor_name
+    current_turn_actor_name = latest_round.current_actor
     if current_turn_actor_name is None:
         msg = "使用装备失败：当前没有行动角色"
         logger.error(msg)

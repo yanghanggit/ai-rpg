@@ -96,16 +96,12 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
         else:  # CREATION_ORDER（含未知策略回退）
             snapshot_entities = self._sorted_actors_by_creation_order(actors_in_stage)
 
-        new_round.actor_order_snapshots.append(
-            [entity.name for entity in snapshot_entities]
-        )
-        new_round.current_turn_actor_name = (
+        new_round.action_order = [entity.name for entity in snapshot_entities]
+        new_round.current_actor = (
             snapshot_entities[0].name if snapshot_entities else None
         )
-        logger.debug(f"设置当前 turn 行动角色: {new_round.current_turn_actor_name}")
-        logger.info(
-            f"创建第 {round_number} 回合，快照行动顺序: {new_round.actor_order_snapshots[-1]}"
-        )
+        logger.debug(f"设置当前 turn 行动角色: {new_round.current_actor}")
+        logger.info(f"创建第 {round_number} 回合，行动顺序: {new_round.action_order}")
 
     ############################################################################################################
     def _start_new_round(self, actors: set[Entity]) -> Round:

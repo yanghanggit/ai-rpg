@@ -281,13 +281,9 @@ class MonsterPrePlaySystem(ReactiveProcessor):
             actor.name for actor in alive_actors if actor.has(PartyMemberComponent)
         ]
 
-        # 获取本回合行动序列信息
+        # 获取本回合行动顺序信息
         latest_round = self._game.current_dungeon.latest_round
-        action_order: List[str] = (
-            latest_round.actor_order_snapshots[-1]
-            if latest_round and latest_round.actor_order_snapshots
-            else []
-        )
+        action_order: List[str] = latest_round.action_order if latest_round else []
         completed_actors: List[str] = (
             latest_round.completed_actors if latest_round else []
         )

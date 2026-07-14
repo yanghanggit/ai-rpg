@@ -28,15 +28,15 @@ class CombatRoundCompletionSystem(ExecuteProcessor):
         if latest_round is None or latest_round.is_completed:
             return
 
-        # 守卫③：init round（无快照） → 跳过
-        if not latest_round.actor_order_snapshots:
+        # 守卫③：init round（无行动顺序） → 跳过
+        if not latest_round.action_order:
             return
 
         # 获取本场景所有存活角色
         player_entity = self._game.get_player_entity()
         assert player_entity is not None, "player_entity is None"
-        # if player_entity is None:
-        #     return
+
+        # 获取本场景所有存活角色（不包括已死亡的角色）
         actors_in_stage = get_alive_actors_in_stage(self._game, player_entity)
 
         # 判断：所有存活角色均已 pass turn（completed_actors 是行动权推进的唯一依据，
@@ -48,5 +48,5 @@ class CombatRoundCompletionSystem(ExecuteProcessor):
             latest_round.is_completed = True
             logger.info(
                 f"回合完成：所有存活角色均已 pass turn，is_completed = True"
-                f"（actor_order_snapshots={latest_round.actor_order_snapshots}）"
+                f"（action_order={latest_round.action_order}）"
             )

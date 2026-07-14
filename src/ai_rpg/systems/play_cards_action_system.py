@@ -120,7 +120,7 @@ class PlayCardsActionSystem(ReactiveProcessor):
             consume_energy(entity, play_cards_action.card.cost)
 
             logger.debug(
-                f"  completed_actors: {last_round.completed_actors} / current_turn_actor_name={last_round.current_turn_actor_name}"
+                f"  completed_actors: {last_round.completed_actors} / current_turn_actor_name={last_round.current_actor}"
             )
 
             # 为出牌角色注入本回合出牌上下文，作为其对话历史的一部分

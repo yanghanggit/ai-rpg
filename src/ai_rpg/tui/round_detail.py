@@ -90,10 +90,11 @@ class RoundDetailScreen(BaseGameScreen):
                 )
                 log.write(f"{prefix}{title}  {completed_mark}")
 
-                snapshot = (
-                    rnd.actor_order_snapshots[-1] if rnd.actor_order_snapshots else []
+                order_str = (
+                    "  →  ".join(rnd.action_order)
+                    if rnd.action_order
+                    else "[dim]（无）[/]"
                 )
-                order_str = "  →  ".join(snapshot) if snapshot else "[dim]（无）[/]"
                 done_str = (
                     "、".join(rnd.completed_actors)
                     if rnd.completed_actors
@@ -101,9 +102,9 @@ class RoundDetailScreen(BaseGameScreen):
                 )
                 log.write(f"    行动顺序：{order_str}")
                 log.write(f"    已出手：  {done_str}")
-                if rnd.current_turn_actor_name is not None:
+                if rnd.current_actor is not None:
                     log.write(
-                        f"    [bold]当前 turn：[/] [bold yellow]{display_name(rnd.current_turn_actor_name)}[/]"
+                        f"    [bold]当前 turn：[/] [bold yellow]{display_name(rnd.current_actor)}[/]"
                     )
 
                 if rnd.cards_combat_log or rnd.cards_narrative:

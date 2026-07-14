@@ -63,12 +63,11 @@ def get_current_turn_actor(game: DBGGame, round: Round) -> Optional[str]:
     Returns:
         当前应行动的角色名；若快照中所有角色均已 pass turn（或已死亡）则返回 None
     """
-    if not round.actor_order_snapshots:
+    if not round.action_order:
         return None
 
     completed = set(round.completed_actors)
-    snapshot = round.actor_order_snapshots[-1]
-    for actor_name in snapshot:
+    for actor_name in round.action_order:
         if actor_name in completed:
             continue
         actor_entity = game.get_actor_entity(actor_name)
@@ -90,9 +89,9 @@ def advance_turn(game: DBGGame, round: Round) -> None:
         game: DBG 游戏实例
         round: 当前战斗回合
     """
-    round.current_turn_actor_name = get_current_turn_actor(game, round)
+    round.current_actor = get_current_turn_actor(game, round)
     logger.debug(
-        f"advance_turn: current_turn_actor_name updated to {round.current_turn_actor_name}"
+        f"advance_turn: current_turn_actor_name updated to {round.current_actor}"
     )
 
 

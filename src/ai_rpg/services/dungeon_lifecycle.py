@@ -22,7 +22,6 @@ from ..models import (
     PartyRosterComponent,
     HomeComponent,
     DeathComponent,
-    GearItem,
     StageType,
     StatusEffectsComponent,
 )
@@ -202,25 +201,6 @@ def _enter_dungeon_stage(
 
 
 ###################################################################################################################################################################
-def _restore_gear_durability(dbg_game: DBGGame) -> None:
-    """将所有 InventoryComponent 中 GearItem 的 durability 恢复至 max_durability。
-
-    在进入地下城第一关之前和从地下城返回家园之后调用。
-    """
-    from ..models import InventoryComponent
-
-    for entity in dbg_game.get_group(Matcher(InventoryComponent)).entities:
-        inv = entity.get(InventoryComponent)
-        for item in inv.items:
-            if isinstance(item, GearItem) and item.durability != item.max_durability:
-                logger.debug(
-                    f"_restore_gear_durability: [{entity.name}] '{item.name}' "
-                    f"{item.durability} → {item.max_durability}"
-                )
-                item.durability = item.max_durability
-
-
-###################################################################################################################################################################
 def _clear_combat_state(dbg_game: DBGGame) -> None:
     """清除一次战斗（Combat）结束后的临时状态。"""
 
@@ -362,9 +342,6 @@ def enter_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> tuple[bool, str]:
 
     # 选择远征队成员（玩家 + 最多1个随机盟友）
     party_member_entities = _select_party_members(dbg_game, dungeon)
-
-    # 进入地下城前恢复所有背包装备的耐久度
-    _restore_gear_durability(dbg_game)
 
     # 传送并初始化战斗
     if not _enter_dungeon_stage(dbg_game, dungeon, party_member_entities):
@@ -547,10 +524,7 @@ def exit_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> None:
     # 8. 清除战斗临时状态
     _clear_combat_state(dbg_game)
 
-    # 9. 返回家园后恢复所有背包装备的耐久度
-    _restore_gear_durability(dbg_game)
-
-    # 10. 将运行时实体状态同步回序列化字段（stage_transition 只更新内存，必须显式 flush）
+    # 9. 将运行时实体状态同步回序列化字段（stage_transition 只更新内存，必须显式 flush）
     dbg_game.flush_entities()
 
 

@@ -29,7 +29,6 @@ class _CraftGearItemResponse(BaseModel):
     equip_affixes: List[str] = []
     on_hit_affixes: List[str] = []
     modifiers: List[str] = []
-    max_durability: int = 3
 
 
 #######################################################################################################################################
@@ -70,7 +69,6 @@ def _build_craft_gear_prompt(materials: List[MaterialItem]) -> str:
 - **equip_affixes**：装备时对装备者触发的延迟词缀列表，格式 `[名称]:触发倾向描述`（如 `[皮革韧性]:承受重击时可能激活韧性层，减少下一次伤害`）；无持续效果时输出 []
 - **on_hit_affixes**：出牌命中目标时触发的延迟词缀列表，格式同上（如 `[撕裂伤]:命中后可能引发持续流血`）；无命中效果时输出 []
 - **modifiers**：即时修正词缀列表，格式 `[名称]:即时修正描述`，直接注入本次仲裁计算（如 `[穿甲]:无视目标防御的一部分`）；无即时修正时输出 []
-- **max_durability**：最大耐久度，建议范围 2~5，根据材料品质决定
 
 ## 输出格式
 
@@ -82,8 +80,7 @@ def _build_craft_gear_prompt(materials: List[MaterialItem]) -> str:
   "target_type": "ally_single",
   "equip_affixes": [],
   "on_hit_affixes": ["[撕裂伤]:命中后可能引发持续流血"],
-  "modifiers": ["[穿甲]:无视目标防御的一部分"],
-  "max_durability": 3
+  "modifiers": ["[穿甲]:无视目标防御的一部分"]
 }}
 ```
 
@@ -149,8 +146,6 @@ class CraftGearItemActionSystem(ReactiveProcessor):
             equip_affixes=result.equip_affixes,
             on_hit_affixes=result.on_hit_affixes,
             modifiers=result.modifiers,
-            max_durability=result.max_durability,
-            durability=result.max_durability,
             craft_materials=action.material_items,
         )
         self._update_storage(storage_entity, action.material_names, new_item)
@@ -159,7 +154,7 @@ class CraftGearItemActionSystem(ReactiveProcessor):
             f"[CraftGearItemActionSystem] 合成完成: {new_item.name} "
             f"(target={new_item.target_type}, stat_bonuses={new_item.stat_bonuses}, "
             f"equip_affixes={new_item.equip_affixes}, on_hit_affixes={new_item.on_hit_affixes}, "
-            f"modifiers={new_item.modifiers}, max_durability={new_item.max_durability})"
+            f"modifiers={new_item.modifiers})"
         )
 
     ####################################################################################################################################

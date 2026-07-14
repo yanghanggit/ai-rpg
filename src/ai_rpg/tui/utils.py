@@ -41,9 +41,7 @@ def render_item(item: AnyItem) -> str:
     lines = []
 
     if isinstance(item, GearItem):
-        lines.append(
-            f"[bold]{item.name}[/]{count_str} [yellow]【装备】[/]  [dim]耐久 {item.durability}/{item.max_durability}[/]"
-        )
+        lines.append(f"[bold]{item.name}[/]{count_str} [yellow]【装备】[/]")
         lines.append(f"  [dim]{item.description}[/]")
         s = item.stat_bonuses
         bonus_parts = []

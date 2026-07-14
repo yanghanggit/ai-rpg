@@ -5,7 +5,8 @@ from loguru import logger
 from overrides import override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
-from ..game.dbg_combat_processor import get_alive_actors_in_stage
+from ..game.dbg_combat_processor import get_alive_actors_in_stage, advance_turn
+from ..game.dbg_entity_ops import consume_energy, get_energy
 from ..models import (
     EquippedGearComponent,
     HumanMessage,
@@ -65,22 +66,6 @@ class UseGearItemActionSystem(ReactiveProcessor):
                 holder.remove(EquippedGearComponent)
 
     ####################################################################################################################################
-    def _deduct_gear_durability(self, entity: Entity, item: GearItem) -> None:
-        """扣减 InventoryComponent 中原始 GearItem 的耐久度。"""
-        inventory_comp = entity.get(InventoryComponent)
-        for inventory_item in inventory_comp.items:
-            if inventory_item.uuid == item.uuid:
-                assert isinstance(
-                    inventory_item, GearItem
-                ), f"UseGearItemActionSystem: uuid 匹配到的物品非 GearItem: {inventory_item}"
-                inventory_item.durability -= 1
-                inventory_item.durability = max(inventory_item.durability, 0)
-                logger.debug(
-                    f"UseGearItemActionSystem: '{item.name}' 耐久 {inventory_item.durability + 1} → {inventory_item.durability}"
-                )
-                break
-
-    ####################################################################################################################################
     @override
     def get_trigger(self) -> Dict[Matcher, GroupEvent]:
         return {Matcher(UseGearItemAction): GroupEvent.ADDED}
@@ -106,6 +91,9 @@ class UseGearItemActionSystem(ReactiveProcessor):
         assert (
             current_rounds is not None
         ), "UseGearItemActionSystem: current_rounds is None"
+
+        latest_round = self._game.current_dungeon.latest_round
+        assert latest_round is not None, "UseGearItemActionSystem: latest_round is None"
 
         entity = entities[0]
         action = entity.get(UseGearItemAction)
@@ -141,8 +129,12 @@ class UseGearItemActionSystem(ReactiveProcessor):
             f"UseGearItemActionSystem: [{entity.name}] 已为 [{target_name}] 装备 '{item.name}'"
         )
 
-        # 扣减背包中的装备耐久度
-        self._deduct_gear_durability(entity, item)
+        # 消耗被装备目标本回合 1 点 energy（替代已移除的耐久系统），并刷新当前 turn 行动者
+        consume_energy(target_entity, 1)
+        logger.debug(
+            f"UseGearItemActionSystem: '{target_entity.name}' 装备消耗 1 点 energy，剩余 {get_energy(target_entity)}"
+        )
+        advance_turn(self._game, latest_round)
 
         # 向场景内所有存活角色按阵营注入行动通知上下文
         round_number = len(current_rounds)

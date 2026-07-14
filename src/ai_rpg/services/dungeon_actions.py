@@ -7,6 +7,7 @@ from typing import List, Tuple, Optional
 from loguru import logger
 from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import get_alive_actors_in_stage
+from ..game.dbg_entity_ops import get_energy
 from ..models import (
     DrawCardsAction,
     HandComponent,
@@ -501,12 +502,6 @@ def activate_use_gear(
         logger.error(msg)
         return False, msg
 
-    # 检查装备的耐久度，如果已耗尽则无法使用。
-    if selected_item.durability <= 0:
-        msg = f"装备 '{item_name}' 耐久已耗尽（durability=0），无法装备"
-        logger.error(msg)
-        return False, msg
-
     # 检查该装备是否已经被其他实体装备，如果已被装备则无法再次使用。
     for holder in dbg_game.get_group(Matcher(EquippedGearComponent)).entities:
         if holder.get(EquippedGearComponent).item.uuid == selected_item.uuid:
@@ -531,6 +526,16 @@ def activate_use_gear(
     # 检查解析后的目标数量是否符合装备的要求，如果不是单目标装备则返回错误。
     if len(resolved_targets) != 1:
         msg = f"装备使用要求单目标，解析结果为 {resolved_targets}"
+        logger.error(msg)
+        return False, msg
+
+    # 获取目标实体，并检查其当前回合剩余能量，如果能量不足则无法为其装备。
+    target_entity = dbg_game.get_entity_by_name(resolved_targets[0])
+    assert (
+        target_entity is not None
+    ), f"activate_use_gear: 无法找到目标实体 {resolved_targets[0]}"
+    if get_energy(target_entity) <= 0:
+        msg = f"目标 '{target_entity.name}' 当前能量不足（energy=0），无法为其装备"
         logger.error(msg)
         return False, msg
 

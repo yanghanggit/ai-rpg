@@ -333,7 +333,6 @@ class CraftGearItemScreen(BaseGameScreen):
                         str(a) for a in item.get("on_hit_affixes", [])
                     ]
                     modifiers: List[str] = [str(m) for m in item.get("modifiers", [])]
-                    durability = item.get("max_durability", 3)
                     log.write(f"  [bold magenta]装备[/]：{display_name(name)}")
                     if desc:
                         log.write(f"  [dim]{desc}[/]")
@@ -352,7 +351,6 @@ class CraftGearItemScreen(BaseGameScreen):
                         log.write(f"  [cyan]命中词缀[/]：{', '.join(on_hit_affixes)}")
                     if modifiers:
                         log.write(f"  [cyan]即时修正[/]：{', '.join(modifiers)}")
-                    log.write(f"  [cyan]耐久度[/]：{durability}")
                     log.write("")
 
         if not shown:

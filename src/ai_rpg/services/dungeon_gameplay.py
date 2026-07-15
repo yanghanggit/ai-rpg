@@ -261,14 +261,6 @@ async def dungeon_advance_stage(
             )
 
         if rpg_game.current_combat_room.combat.is_won:
-            # next_stage = rpg_game.current_dungeon.peek_next_stage()
-            # if next_stage is None:
-            #     logger.info(f"玩家 {payload.user_name} 地下城全部通关")
-            #     raise HTTPException(
-            #         status_code=status.HTTP_409_CONFLICT,
-            #         detail="地下城已全部通关，请返回营地",
-            #     )
-
             # 获取下一房间索引和房间实例，确保存在下一房间，否则无法推进地下城
             next_room_index = rpg_game.current_dungeon.current_room_index + 1
             next_room = rpg_game.current_dungeon.get_room(next_room_index)

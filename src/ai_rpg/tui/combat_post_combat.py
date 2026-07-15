@@ -1,13 +1,4 @@
-"""战斗结束处理 Screen（CombatPostCombatScreen）
-
-CombatState.COMPLETE / POST_COMBAT 阶段的专属页面。复用 CombatOngoingScreen 的
-基础信息展示（战斗宏观状态 / 回合信息 / 场景内角色有效属性）与查阅型（GET）指令
-入口（查阅牌组 / 查阅背包 / 查阅指定实体信息 / 查阅历史回合详情）。
-真正的战斗结算处理（胜负结果、战利品收取、退出地下城等）后续逐步补充。
-
-由 CombatOngoingScreen 在检测到战斗进入 COMPLETE / POST_COMBAT 阶段后，通过
-指令 5 push 至此。
-"""
+"""战斗结束处理 Screen（CombatPostCombatScreen）"""
 
 from typing import List, Tuple, final
 
@@ -17,7 +8,7 @@ from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.widgets import Input, RichLog, Static
 
-from ..models import CombatRoom
+from ..models import CombatRoom, CombatState
 from .base import BaseGameScreen
 from .combat_common import (
     find_stage_of_actor,
@@ -26,6 +17,7 @@ from .combat_common import (
 )
 from .combat_data_access import (
     get_dungeon_room,
+    get_dungeon_state,
     get_entities_details,
     get_stages_state,
     is_mock_mode,
@@ -36,7 +28,8 @@ from .combat_entity_inspect import CombatEntityInspectScreen
 from .combat_inventory_view import CombatInventoryViewScreen
 from .combat_loot_view import CombatLootViewScreen
 from .combat_round_history import CombatRoundHistoryScreen
-from .server_client import dungeon_exit
+from .mock_data import set_mock_combat_state, set_mock_current_room_index
+from .server_client import dungeon_advance_stage, dungeon_exit
 from .home import HomeScreen
 
 BASE_INFO_HEADER = """\
@@ -53,6 +46,7 @@ POST_COMBAT_COMMANDS_MENU = """\
   [bold green]4[/]  查阅历史回合详情
   [bold green]5[/]  退出地下城，返回家园
   [bold green]6[/]  查阅战利品
+  [bold green]7[/]  进入下一关（房间）
 """
 
 
@@ -174,11 +168,11 @@ class CombatPostCombatScreen(BaseGameScreen):
     @work
     async def _dispatch_command(self, raw: str) -> None:
         """指令分发：1-4、6 为查阅型（GET）指令，每次都重新 GET 场景花名册，避免使用过期数据；
-        指令 5（退出地下城）会改变状态，单独处理。"""
+        指令 5（退出地下城）/ 7（进入下一关）会改变状态，单独处理。"""
         log = self.query_one(RichLog)
 
-        if raw not in ("1", "2", "3", "4", "5", "6"):
-            log.write("[red]无效指令，请输入 1-6[/]")
+        if raw not in ("1", "2", "3", "4", "5", "6", "7"):
+            log.write("[red]无效指令，请输入 1-7[/]")
             return
 
         if raw == "5":
@@ -187,6 +181,10 @@ class CombatPostCombatScreen(BaseGameScreen):
 
         if raw == "6":
             self.app.push_screen(CombatLootViewScreen())
+            return
+
+        if raw == "7":
+            self._do_advance_stage()
             return
 
         try:
@@ -235,15 +233,7 @@ class CombatPostCombatScreen(BaseGameScreen):
     ########################################################################################################################
     @work
     async def _do_exit_dungeon(self) -> None:
-        """退出地下城，返回家园。
-
-        - mock 模式（session 为 None，即通过 `--dev-screen combat-post-combat` 跳过登录
-          直接进入本页调试）：不存在真实后端会话可退出，直接退出应用，与
-          `action_go_back` 中的判断保持一致。
-        - 正式流程：调用 /api/dungeon/exit/v1/（服务端 exit_dungeon）退出地下城，
-          成功后 switch_screen 到 HomeScreen（与 new_game.py 创建游戏成功后进入
-          HomeScreen 的方式一致）。
-        """
+        """退出地下城，返回家园。"""
         log = self.query_one(RichLog)
 
         if is_mock_mode(self.game_client):
@@ -275,3 +265,69 @@ class CombatPostCombatScreen(BaseGameScreen):
         )
 
         self.app.switch_screen(HomeScreen())
+
+    ########################################################################################################################
+    @work
+    async def _do_advance_stage(self) -> None:
+        """进入下一关（房间）。"""
+        log = self.query_one(RichLog)
+        log.write("[dim]▶ 正在检查是否存在下一关...[/]")
+
+        try:
+            state_resp = await get_dungeon_state(self.game_client)
+            dungeon = state_resp.dungeon
+        except Exception as e:
+            logger.error(
+                f"CombatPostCombatScreen._do_advance_stage: 查询地下城状态失败 error={e}"
+            )
+            log.write(f"[bold red]❌ 查询地下城状态失败：{e}[/]")
+            return
+
+        if dungeon.current_room_index + 1 >= len(dungeon.rooms):
+            log.write("[yellow]当前已是地下城最后一关，没有下一关可进入。[/]")
+            return
+
+        if is_mock_mode(self.game_client):
+            logger.info(
+                "CombatPostCombatScreen._do_advance_stage: mock 模式，模拟推进到下一关"
+            )
+            set_mock_current_room_index(dungeon.current_room_index + 1)
+            set_mock_combat_state(CombatState.INITIALIZATION)
+            log.write(
+                "[bold yellow]\\[mock][/] 已模拟推进到下一关卡（未调用真实接口）。"
+            )
+
+            # mock 就直接退掉。
+            self.app.exit()
+            return
+
+        inp = self.query_one(Input)
+        inp.disabled = True
+        log.write("[dim]▶ 正在推进到下一关...[/]")
+
+        try:
+            user_name, game_name, _ = resolve_identity(self.game_client)
+            resp = await dungeon_advance_stage(user_name, game_name)
+        except Exception as e:
+            logger.error(
+                f"CombatPostCombatScreen._do_advance_stage: 推进失败 error={e}"
+            )
+            log.write(f"[bold red]❌ 推进到下一关失败：{e}[/]")
+            inp.disabled = False
+            inp.focus()
+            return
+
+        log.write(f"[bold green]✅ {resp.message}[/]")
+        logger.info(
+            f"CombatPostCombatScreen._do_advance_stage: 推进成功 user_name={user_name} "
+            f"game_name={game_name} message={resp.message}"
+        )
+
+        # 切换到地下城房间路由屏幕，进入下一关
+        # 注：此处必须在方法内部延迟导入 DungeonRoomRouterRoom，不能提到模块顶层：
+        # dungeon_room_router_room.py 会 import combat_room.py，combat_room.py 又
+        # import combat_ongoing.py，combat_ongoing.py 又 import 本模块
+        # （CombatPostCombatScreen），顶层导入会形成循环导入。
+        from .dungeon_room_router_room import DungeonRoomRouterRoom
+
+        self.app.switch_screen(DungeonRoomRouterRoom())

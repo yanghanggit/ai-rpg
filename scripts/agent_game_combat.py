@@ -385,11 +385,6 @@ async def next_dungeon_game(
     if not terminal_game.current_combat_room.combat.is_won:
         assert False, "不可能出现的情况！"
 
-    # next_level = terminal_game.current_dungeon.peek_next_stage()
-    # if next_level is None:
-    #     logger.info("没有下一关，你胜利了，应该返回营地")
-    #     return terminal_game
-
     # 获取下一房间索引和房间实例，确保存在下一房间，否则无法推进地下城
     next_room_index = terminal_game.current_dungeon.current_room_index + 1
     next_room = terminal_game.current_dungeon.get_room(next_room_index)

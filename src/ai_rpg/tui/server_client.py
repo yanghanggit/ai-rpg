@@ -5,6 +5,8 @@ from typing import Any, AsyncGenerator, Dict, List, cast
 import httpx
 from ..models import (
     BlueprintListResponse,
+    DungeonAdvanceStageRequest,
+    DungeonAdvanceStageResponse,
     DungeonCombatDrawCardsRequest,
     DungeonCombatDrawCardsResponse,
     DungeonCombatInitRequest,
@@ -319,6 +321,22 @@ async def dungeon_exit(user_name: str, game_name: str) -> DungeonExitResponse:
         )
         response.raise_for_status()
         return DungeonExitResponse.model_validate(response.json())
+
+
+async def dungeon_advance_stage(
+    user_name: str, game_name: str
+) -> DungeonAdvanceStageResponse:
+    """推进地下城到下一关卡（关卡内战斗结束进入 post_combat 后调用）。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.post(
+            server_config.base_url + "/api/dungeon/progress/advance_stage/v1/",
+            json=DungeonAdvanceStageRequest(
+                user_name=user_name,
+                game_name=game_name,
+            ).model_dump(),
+        )
+        response.raise_for_status()
+        return DungeonAdvanceStageResponse.model_validate(response.json())
 
 
 async def dungeon_combat_collect_loot(

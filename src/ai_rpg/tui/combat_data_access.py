@@ -8,18 +8,25 @@
 
 from typing import List, Tuple
 
-from ..models import DungeonRoomResponse, EntitiesDetailsResponse, StagesStateResponse
+from ..models import (
+    DungeonRoomResponse,
+    DungeonStateResponse,
+    EntitiesDetailsResponse,
+    StagesStateResponse,
+)
 from .app import GameClient
 from .mock_data import (
     MOCK_ACTOR_NAME,
     MOCK_GAME_NAME,
     MOCK_USER_NAME,
     build_mock_dungeon_room_response,
+    build_mock_dungeon_state_response,
     build_mock_entities_details_response,
     build_mock_stages_state_response,
 )
 from .server_client import (
     fetch_dungeon_room,
+    fetch_dungeon_state,
     fetch_entities_details,
     fetch_stages_state,
 )
@@ -48,6 +55,15 @@ async def get_dungeon_room(game_client: GameClient) -> DungeonRoomResponse:
         return build_mock_dungeon_room_response()
     user_name, game_name, _ = resolve_identity(game_client)
     return await fetch_dungeon_room(user_name, game_name)
+
+
+###############################################################################################################################################
+async def get_dungeon_state(game_client: GameClient) -> DungeonStateResponse:
+    """获取当前地下城完整状态（含 rooms 列表与 current_room_index，用于判断是否存在下一关）。"""
+    if is_mock_mode(game_client):
+        return build_mock_dungeon_state_response()
+    user_name, game_name, _ = resolve_identity(game_client)
+    return await fetch_dungeon_state(user_name, game_name)
 
 
 ###############################################################################################################################################

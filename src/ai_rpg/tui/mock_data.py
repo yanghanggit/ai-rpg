@@ -25,8 +25,10 @@ from ..models import (
     DeckComponent,
     DiscardPileComponent,
     DrawPileComponent,
+    Dungeon,
     DungeonComponent,
     DungeonRoomResponse,
+    DungeonStateResponse,
     EntitiesDetailsResponse,
     EntitySerialization,
     ExhaustPileComponent,
@@ -60,8 +62,14 @@ MOCK_MONSTER_2_NAME: Final[str] = "哥布林-乙"
 
 MOCK_COMBAT_NAME: Final[str] = f"{MOCK_STAGE_NAME}-combat"
 
+MOCK_DUNGEON_NAME: Final[str] = "回廊地下城"
+MOCK_NEXT_STAGE_NAME: Final[str] = "回廊-地下城-次关"
+
 # ── 可变 mock 战斗状态（仅开发调试用：模拟服务端状态推进，例如确认开始战斗后置为 ONGOING）──
 _mock_combat_state: CombatState = CombatState.INITIALIZATION
+
+# ── 可变 mock 地下城房间索引（仅开发调试用：模拟"进入下一关"后 current_room_index 前进）──
+_mock_current_room_index: int = 0
 
 
 def set_mock_combat_state(state: CombatState) -> None:
@@ -72,6 +80,16 @@ def set_mock_combat_state(state: CombatState) -> None:
 
 def get_mock_combat_state() -> CombatState:
     return _mock_combat_state
+
+
+def set_mock_current_room_index(index: int) -> None:
+    """开发调试用：切换 mock 地下城当前房间索引（如"进入下一关"成功后前进）。"""
+    global _mock_current_room_index
+    _mock_current_room_index = index
+
+
+def get_mock_current_room_index() -> int:
+    return _mock_current_room_index
 
 
 ###############################################################################################################################################
@@ -160,6 +178,39 @@ def build_mock_dungeon_room_response() -> DungeonRoomResponse:
 
     room = CombatRoom(stage=stage, combat=combat, image=GeneratedImage())
     return DungeonRoomResponse(room=room)
+
+
+###############################################################################################################################################
+def build_mock_dungeon_state_response() -> DungeonStateResponse:
+    """构造固定的地下城完整状态响应：固定 2 个房间（当前战斗房间 + 下一关占位房间），
+    current_room_index 由 `_mock_current_room_index` 控制（默认 0），用于支持
+    「进入下一关（房间）」命令按 `current_room_index` 与 `len(rooms)` 的关系判断
+    是否存在下一关。"""
+    current_room = build_mock_dungeon_room_response().room
+
+    next_stage = DungeonStage(
+        name=MOCK_NEXT_STAGE_NAME,
+        stage_profile=StageProfile(
+            name=MOCK_NEXT_STAGE_NAME,
+            type="Dungeon",
+            profile="模拟地下城下一关卡占位数据，用于本地无服务器调试。",
+        ),
+        system_message="",
+        actors=[],
+    )
+    next_room = CombatRoom(
+        stage=next_stage,
+        combat=Combat(name=f"{MOCK_NEXT_STAGE_NAME}-combat"),
+    )
+
+    dungeon = Dungeon(
+        name=MOCK_DUNGEON_NAME,
+        rooms=[current_room, next_room],
+        ecology="模拟地下城生态描述，用于本地无服务器调试。",
+        current_room_index=_mock_current_room_index,
+        setup_entities=True,
+    )
+    return DungeonStateResponse(dungeon=dungeon)
 
 
 ###############################################################################################################################################

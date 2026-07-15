@@ -13,6 +13,7 @@ from ..models import (
     AnyItem,
     Card,
     Combat,
+    CombatLootComponent,
     CombatResult,
     CombatRoom,
     CombatState,
@@ -34,6 +35,7 @@ from ..models import (
     HandComponent,
     IdentityComponent,
     InventoryComponent,
+    MaterialItem,
     MonsterComponent,
     NPCComponent,
     PartyMemberComponent,
@@ -210,6 +212,17 @@ def _inventory_component_serialization(
 
 
 ###############################################################################################################################################
+def _combat_loot_component_serialization(
+    name: str, items: List[AnyItem]
+) -> ComponentSerialization:
+    """构造 CombatLootComponent 序列化数据（仅玩家持有，用于「查阅战利品」命令）。"""
+    return ComponentSerialization(
+        name=CombatLootComponent.__name__,
+        data=CombatLootComponent(name=name, items=list(items)).model_dump(),
+    )
+
+
+###############################################################################################################################################
 def _ongoing_battle_pile_components(
     name: str,
     hand_cards: List[Card],
@@ -331,6 +344,17 @@ def build_mock_entities_details_response(
                         stat_bonuses=CharacterStats(
                             hp=0, max_hp=0, attack=2, defense=0, energy=0, speed=1
                         ),
+                    ),
+                ],
+            ),
+            _combat_loot_component_serialization(
+                MOCK_ACTOR_NAME,
+                [
+                    MaterialItem(
+                        name="哥布林牙", description="哥布林掉落的牙齿，可用于合成。"
+                    ),
+                    MaterialItem(
+                        name="哥布林皮", description="哥布林掉落的皮革，可用于合成。"
                     ),
                 ],
             ),

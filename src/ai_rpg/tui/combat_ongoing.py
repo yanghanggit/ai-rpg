@@ -36,6 +36,7 @@ from .combat_data_access import (
 from .combat_deck_view import CombatDeckViewScreen
 from .combat_entity_inspect import CombatEntityInspectScreen
 from .combat_inventory_view import CombatInventoryViewScreen
+from .combat_round_history import CombatRoundHistoryScreen
 
 BASE_INFO_HEADER = """\
 [bold cyan]── 战斗进行中（ONGOING） ──────────────────────────────────────[/]
@@ -47,8 +48,8 @@ ONGOING_COMMANDS_MENU = """\
 [bold yellow]── 可用操作（ONGOING 阶段） ─────────────[/]
   [bold green]1[/]  查阅牌组（双方）
   [bold green]2[/]  查阅我方背包
-  [bold green]3[/]  查阅指定实体信息（场景 / 角色）
-"""
+  [bold green]3[/]  查阅指定实体信息（场景 / 角色）  
+  [bold green]4[/]  查阅历史回合详情"""
 
 
 def _render_round_info(log: RichLog, combat: Combat) -> None:
@@ -199,8 +200,8 @@ class CombatOngoingScreen(BaseGameScreen):
         错误判断或跳转。"""
         log = self.query_one(RichLog)
 
-        if raw not in ("1", "2", "3"):
-            log.write("[red]无效指令，请输入 1-3[/]")
+        if raw not in ("1", "2", "3", "4"):
+            log.write("[red]无效指令，请输入 1-4[/]")
             return
 
         try:
@@ -223,6 +224,10 @@ class CombatOngoingScreen(BaseGameScreen):
             log.write(
                 f"[yellow]当前战斗状态为 {combat.state.name}，暂不支持这些指令。[/]"
             )
+            return
+
+        if raw == "4":
+            self.app.push_screen(CombatRoundHistoryScreen(combat.rounds))
             return
 
         try:

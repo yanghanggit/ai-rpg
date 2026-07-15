@@ -10,6 +10,7 @@ from textual.widgets import RichLog
 
 from ..models import (
     CharacterStatsComponent,
+    DeathComponent,
     EntitySerialization,
     EquippedGearComponent,
     HandComponent,
@@ -122,8 +123,10 @@ def render_stage_actors(
             base_stats, status_effects, equipped_gear
         )
         label = role_label(entity)
+        is_dead = find_component_data(entity, DeathComponent.__name__) is not None
+        death_mark = "  [bold red]（已战死）[/]" if is_dead else ""
         line = (
-            f"  {label} [bold]{display_name(entity.name)}[/]  "
+            f"  {label} [bold]{display_name(entity.name)}[/]{death_mark}  "
             f"HP:[yellow]{effective_stats.hp}/{effective_stats.max_hp}[/]  "
             f"攻:{effective_stats.attack}  防:{effective_stats.defense}  "
             f"能量:{effective_stats.energy}  速度:{effective_stats.speed}"

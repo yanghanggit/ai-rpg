@@ -20,11 +20,12 @@ from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.widgets import Input, RichLog, Static
 
-from ..models import Combat, CombatRoom, CombatState
+from ..models import CombatRoom, CombatState
 from .base import BaseGameScreen
 from .combat_common import (
     find_stage_of_actor,
     render_combat_summary,
+    render_round_info,
     render_stage_actors,
 )
 from .combat_data_access import (
@@ -53,42 +54,6 @@ ONGOING_COMMANDS_MENU = """\
   [bold green]4[/]  查阅历史回合详情"""
 
 POST_COMBAT_COMMAND_LINE = "\n  [bold green]5[/]  结束战斗"
-
-
-def _render_round_info(log: RichLog, combat: Combat) -> None:
-    """渲染当前局数 + 最新一局的基本信息。"""
-    round_count = len(combat.rounds)
-    log.write("[bold yellow]── 回合信息 ─────────────────────────────────────[/]")
-    log.write(f"  当前局数：   [bold]{round_count}[/]")
-
-    latest = combat.latest_round
-    if latest is None:
-        log.write("  [dim]（尚无回合数据）[/]")
-        log.write("")
-        return
-
-    completed_str = (
-        "、".join(latest.completed_actors)
-        if latest.completed_actors
-        else "[dim]（无）[/]"
-    )
-    order_str = (
-        "  →  ".join(latest.action_order) if latest.action_order else "[dim]（无）[/]"
-    )
-    current_actor_str = latest.current_actor or "[dim]（无）[/]"
-
-    log.write(f"  已出手角色： {completed_str}")
-    log.write(f"  行动顺序：   {order_str}")
-    log.write(f"  当前 turn：  [bold yellow]{current_actor_str}[/]")
-    log.write(
-        f"  回合已结束： {'[green]是[/]' if latest.is_completed else '[yellow]否[/]'}"
-    )
-    log.write(
-        f"  抽牌已完成： {'[green]是[/]' if latest.draw_completed else '[yellow]否[/]'}"
-    )
-    log.write(f"  消耗品使用次数： [bold]{latest.consumable_use_count}[/]")
-    log.write(f"  装备使用次数：   [bold]{latest.gear_use_count}[/]")
-    log.write("")
 
 
 @final
@@ -176,7 +141,7 @@ class CombatOngoingScreen(BaseGameScreen):
         render_combat_summary(
             log, combat.name, combat.state.name, combat.result.name, combat.retreated
         )
-        _render_round_info(log, combat)
+        render_round_info(log, combat)
         render_stage_actors(log, stage_name, entities_resp.entities_serialization)
 
         # 1-4 为查阅型（GET）指令，从不改变任何状态，无论战斗处于哪个阶段都可用；

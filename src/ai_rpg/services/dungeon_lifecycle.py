@@ -1,8 +1,5 @@
 """
 地下城关卡转换和推进模块
-
-管理地下城的完整生命周期，包括进入、推进和退出流程。
-协调关卡索引管理、场景传送、战斗初始化和状态清理等核心流程。
 """
 
 from typing import Set
@@ -36,16 +33,7 @@ def _generate_dungeon_entry_message(
     dungeon_stage_name: str,
     is_first_stage: bool,
 ) -> str:
-    """生成地下城进入提示消息
-
-    Args:
-        dungeon_name: 地下城名称
-        dungeon_stage_name: 地下城关卡名称
-        is_first_stage: 是否为首个关卡
-
-    Returns:
-        str: 格式化的进入提示消息
-    """
+    """生成地下城进入提示消息"""
     if is_first_stage:
         return f"""# 进入地下城：{dungeon_name}，开始关卡场景：{dungeon_stage_name}"""
 
@@ -57,34 +45,13 @@ def _generate_dungeon_entry_message(
 def _generate_return_home_message(
     dungeon_name: str, destination_stage_name: str
 ) -> str:
-    """生成返回家园的提示消息
-
-    Args:
-        dungeon_name: 地下城名称
-        destination_stage_name: 目标场景名称
-
-    Returns:
-        str: 格式化的返回提示消息
-    """
+    """生成返回家园的提示消息"""
     return f"""# 提示！地下城：{dungeon_name} 结束，返回家园场景：{destination_stage_name}"""
 
 
 ###################################################################################################################################################################
 def _select_party_members(dbg_game: DBGGame, dungeon: Dungeon) -> Set[Entity]:
-    """选择参与地下城远征的队伍成员
-
-    依据玩家实体上的 PartyRosterComponent 决定队伍构成，规则：
-    1. 玩家角色（PlayerComponent）无条件参与
-    2. 若玩家实体有 PartyRosterComponent 且 members 非空，则按名单查找对应盟友加入
-    3. 名单为空或组件不存在时，玩家独自冒险
-
-    Args:
-        dbg_game: DBG游戏实例
-        dungeon: 地下城实例
-
-    Returns:
-        远征队成员实体集合
-    """
+    """选择参与地下城远征的队伍成员"""
 
     # 1. 获取玩家实体
     player_entity = dbg_game.get_player_entity()
@@ -124,16 +91,6 @@ def _enter_dungeon_stage(
 ) -> bool:
     """
     进入地下城关卡并初始化战斗环境
-
-    协调关卡进入流程：验证前置条件、生成叙事消息、执行场景传送、设置战斗环境。
-
-    Args:
-        dbg_game: DBG游戏实例
-        dungeon: 地下城实例
-        party_member_entities: 远征队成员实体集合
-
-    Returns:
-        bool: 是否成功进入关卡
     """
     # 验证远征队非空
     if len(party_member_entities) == 0:
@@ -232,20 +189,7 @@ def _clear_combat_state(dbg_game: DBGGame) -> None:
 
 ###################################################################################################################################################################
 def setup_dungeon(dbg_game: DBGGame, dungeon_name: str) -> tuple[bool, str]:
-    """从文件加载地下城数据、赋值到游戏世界，并创建全部游戏实体（敌人和场景）。（幂等）
-
-    从 DUNGEONS_DIR/{dungeon_name}.json 读取并实例化 Dungeon，赋值给 dbg_game._world.dungeon，
-    再创建对应的运行时 Entity（敌人和关卡场景）。
-    若实体已创建（dungeon.setup_entities == True），跳过实体创建直接返回成功。
-    仅在 current_room_index == -1（尚未进入）时允许调用。
-
-    Args:
-        dbg_game: DBG游戏实例
-        dungeon_name: 地下城名称（对应 DUNGEONS_DIR 下的 JSON 文件名，不含扩展名）
-
-    Returns:
-        tuple[bool, str]: (是否成功, 结果消息)
-    """
+    """从文件加载地下城数据、赋值到游戏世界，并创建全部游戏实体（敌人和场景）。（幂等）"""
     # 1. 校验名称并加载文件
     if not dungeon_name:
         error_msg = "setup_dungeon 失败: dungeon_name 为空"
@@ -320,18 +264,7 @@ def setup_dungeon(dbg_game: DBGGame, dungeon_name: str) -> tuple[bool, str]:
 
 ###################################################################################################################################################################
 def enter_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> tuple[bool, str]:
-    """组建远征队并传送至地下城第一关，启动首个战斗序列。
-
-    必须在 setup_dungeon 成功后调用（依赖 dungeon.setup_entities == True）。
-    负责选择远征队成员（玩家 + 最多1个随机盟友）、执行场景传送、初始化战斗状态。
-
-    Args:
-        dbg_game: DBG游戏实例
-        dungeon: 地下城实例（须已完成 setup_dungeon）
-
-    Returns:
-        tuple[bool, str]: (是否成功, 结果消息)
-    """
+    """组建远征队并传送至地下城第一关，启动首个战斗序列。"""
     if not dungeon.setup_entities:
         error_msg = f"enter_dungeon_first_stage 失败: {dungeon.name} 实体尚未创建，请先调用 setup_dungeon"
         logger.error(error_msg)
@@ -375,12 +308,6 @@ def enter_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> tuple[bool, str]:
 def advance_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> None:
     """
     推进到地下城的下一个关卡
-
-    将地下城索引推进到下一关，然后让所有远征队成员进入该关卡。
-
-    Args:
-        dbg_game: DBG游戏实例
-        dungeon: 地下城实例
     """
 
     if not dbg_game.current_combat_room.combat.is_post_combat:
@@ -422,17 +349,8 @@ def advance_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> None:
 def exit_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> None:
     """
     退出地下城并将角色传送回家园
-
-    将远征队成员传送回家园、清理地下城数据、重置战斗状态并解散远征队。
-    玩家传送到专属场景，盟友传送到普通家园场景。
-
-    本函数用于所有地下城结束场景：战斗胜利、战斗失败、主动撤退等。
-    函数是中性的，不区分成功或失败，只负责清理和返回流程。
-
-    Args:
-        dbg_game: DBG游戏实例
-        dungeon: 地下城实例
     """
+
     cs = dbg_game.current_combat_room.combat
     logger.debug(
         f"[return_home] 入参 dungeon={dungeon.name!r}, "
@@ -442,7 +360,7 @@ def exit_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> None:
     )
 
     # 严格要求：只能在战斗后状态退出（无论胜负）
-    if not cs.is_post_combat:
+    if not dbg_game.current_combat_room.combat.is_post_combat:
         logger.error(
             f"当前不处于战斗后状态，无法退出地下城！"
             f"必须先完成战斗进入 post_combat 状态。"

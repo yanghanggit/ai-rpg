@@ -16,13 +16,14 @@
     # 同事浏览器打开 http://192.168.1.100:8080
 
     python scripts/run_tui_client.py --dev-screen combat-room
+    python scripts/run_tui_client.py --dev-screen combat-post-combat
 
 """
 
 import sys
 import os
 from datetime import datetime
-from typing import Final, Optional
+from typing import Final, Optional, Type
 from textual_serve.server import Server
 import click
 from loguru import logger
@@ -31,6 +32,8 @@ from ai_rpg.tui import GameClient
 from ai_rpg.tui.config import server_config
 from ai_rpg.tui.connecting import ConnectingScreen
 from ai_rpg.tui.combat_room import CombatRoomScreen
+from ai_rpg.tui.combat_post_combat import CombatPostCombatScreen
+from textual.screen import Screen
 
 # PyInstaller frozen bundle 检测：打包后 sys.frozen = True
 _IS_FROZEN: bool = getattr(sys, "frozen", False)
@@ -83,9 +86,9 @@ logger.add(
 )
 @click.option(
     "--dev-screen",
-    type=click.Choice(["combat-room"]),
+    type=click.Choice(["combat-room", "combat-post-combat"]),
     default=None,
-    help="[开发用] 跳过登录流程，启动后直接进入指定页面（当前仅支持 combat-room）",
+    help="[开发用] 跳过登录流程，启动后直接进入指定页面（combat-room / combat-post-combat）",
 )
 def main(
     server_host: str,
@@ -119,9 +122,17 @@ def main(
         click.echo(f"启动 Web 模式，请在浏览器打开: {display_url}")
         server.serve()
     else:
-        launch_screen = (
-            CombatRoomScreen if dev_screen == "combat-room" else ConnectingScreen
-        )
+
+        # 分叉逻辑。
+        launch_screen: Type[Screen[None]]
+        if dev_screen == "combat-post-combat":
+            launch_screen = CombatPostCombatScreen
+        elif dev_screen == "combat-room":
+            launch_screen = CombatRoomScreen
+        else:
+            launch_screen = ConnectingScreen
+
+        # 启动 TUI 应用，传入选择的初始页面（launch_screen）
         app = GameClient(launch_screen=launch_screen)
         app.run()
 

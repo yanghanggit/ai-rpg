@@ -139,6 +139,8 @@ async def get_dungeon_room(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="当前房间不是战斗房间",
         )
+
+    # 返回当前地下城房间的响应对象，包含房间的关卡场景和战斗数据
     return DungeonRoomResponse(room=current_dungeon_room)
 
 

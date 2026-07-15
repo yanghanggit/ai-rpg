@@ -2,7 +2,7 @@ from enum import StrEnum, unique
 from typing import Dict, List, final
 from pydantic import BaseModel
 from .session_message import SessionMessage
-from .dungeon import Dungeon, CombatRoom
+from .dungeon import Dungeon, AnyDungeonRoom
 from .player_session import PlayerSession
 from .serialization import EntitySerialization
 from .task import TaskRecord
@@ -405,7 +405,7 @@ class DungeonStateResponse(BaseModel):
 
 @final
 class DungeonRoomResponse(BaseModel):
-    room: CombatRoom
+    room: AnyDungeonRoom
 
 
 ################################################################################################################

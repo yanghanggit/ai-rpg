@@ -39,12 +39,14 @@ from .combat_data_access import (
     get_dungeon_room,
     get_entities_details,
     get_stages_state,
+    is_mock_mode,
     resolve_identity,
 )
 from .combat_deck_view import CombatDeckViewScreen
 from .combat_entity_inspect import CombatEntityInspectScreen
 from .combat_inventory_view import CombatInventoryViewScreen
-from .combat_start_action import CombatStartActionScreen
+from .combat_ongoing import CombatOngoingScreen
+from .server_client import TaskFailedError, dungeon_combat_init, watch_task_until_done
 from .utils import display_name
 
 BASE_INFO_HEADER = """\
@@ -98,6 +100,12 @@ class CombatRoomScreen(BaseGameScreen):
     BINDINGS = [
         ("escape", "app.quit", "退出"),
     ]
+
+    def __init__(self) -> None:
+        super().__init__()
+        # 仅为本页内内嵌确认对话的瞬时 UI 状态（是否正在等待“开始战斗”确认输入），
+        # 不是 GET 快照缓存，不存在过期风险。
+        self._awaiting_start_confirmation = False
 
     def compose(self) -> ComposeResult:
         yield RichLog(id="combat-room-log", highlight=True, markup=True, wrap=True)
@@ -274,6 +282,12 @@ class CombatRoomScreen(BaseGameScreen):
         event.input.clear()
         if not raw:
             return
+
+        if self._awaiting_start_confirmation:
+            self._awaiting_start_confirmation = False
+            self._confirm_start_combat(raw)
+            return
+
         self._dispatch_command(raw)
 
     ########################################################################################################################
@@ -311,7 +325,11 @@ class CombatRoomScreen(BaseGameScreen):
             return
 
         if raw == "1":
-            self.app.push_screen(CombatStartActionScreen())
+            log.write(
+                "[yellow]即将触发战斗初始化（DungeonCombatInitAction）。"
+                "输入 [bold]y[/] 确认开始，其他任意输入取消。[/]"
+            )
+            self._awaiting_start_confirmation = True
             return
 
         try:
@@ -336,3 +354,38 @@ class CombatRoomScreen(BaseGameScreen):
             candidates: List[Tuple[str, str]] = [(stage_name, "场景")]
             candidates.extend((name, "角色") for name in participant_names)
             self.app.push_screen(CombatEntityInspectScreen(candidates))
+
+    ########################################################################################################################
+    @work
+    async def _confirm_start_combat(self, raw: str) -> None:
+        """处理“开始战斗”确认输入：确认后触发战斗初始化并等待完成，成功后跳转至
+        代表 CombatState.ONGOING 的专属页面。"""
+        log = self.query_one(RichLog)
+
+        if raw.strip().lower() != "y":
+            log.write("[yellow]已取消开始战斗。[/]")
+            return
+
+        logger.info("CombatRoomScreen._confirm_start_combat: 触发战斗初始化")
+
+        if is_mock_mode(self.game_client):
+            log.write(
+                "[bold yellow]\\[mock][/] 已模拟触发战斗初始化（未调用真实接口）。"
+            )
+            log.write("[dim]正在进入战斗（ONGOING）...[/]")
+            self.app.switch_screen(CombatOngoingScreen())
+            return
+
+        try:
+            user_name, game_name, _ = resolve_identity(self.game_client)
+            resp = await dungeon_combat_init(user_name, game_name)
+            log.write(f"[dim]任务已提交：{resp.task_id}，等待完成...[/]")
+            record = await watch_task_until_done(resp.task_id)
+            log.write(f"[bold green]✅ 战斗初始化完成：{record.status}[/]")
+            self.app.switch_screen(CombatOngoingScreen())
+        except TaskFailedError as e:
+            logger.error(f"CombatRoomScreen._confirm_start_combat: 任务失败 error={e}")
+            log.write(f"[bold red]❌ 战斗初始化失败：{e}[/]")
+        except Exception as e:
+            logger.error(f"CombatRoomScreen._confirm_start_combat: 请求失败 error={e}")
+            log.write(f"[bold red]❌ 请求失败：{e}[/]")

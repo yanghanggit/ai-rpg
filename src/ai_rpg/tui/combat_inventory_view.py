@@ -91,5 +91,8 @@ class CombatInventoryViewScreen(BaseGameScreen):
             log.write("  [dim]（背包为空）[/]")
         else:
             log.write(f"  共 [bold]{len(inventory.items)}[/] 件道具：")
+            log.write("  " + "-" * 40)
             for item in inventory.items:
                 log.write("  " + render_item(item))
+                # 写一个分割线
+                log.write("  " + "-" * 40)

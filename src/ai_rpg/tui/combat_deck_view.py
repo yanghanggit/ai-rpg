@@ -10,10 +10,17 @@ from textual import work
 from textual.app import ComposeResult
 from textual.widgets import RichLog
 
-from ..models import Card, DeckComponent
+from ..models import (
+    Card,
+    DeckComponent,
+    DiscardPileComponent,
+    DrawPileComponent,
+    ExhaustPileComponent,
+)
 from .base import BaseGameScreen
+from .combat_common import find_component_data
 from .combat_data_access import get_entities_details
-from .utils import display_name
+from .utils import display_name, render_card
 
 HEADER = """\
 [bold cyan]── 查阅牌组（双方） ──────────────────────────────────────[/]
@@ -22,13 +29,12 @@ HEADER = """\
 """
 
 
-def _render_card(card: Card) -> str:
-    exhaust_mark = "[dim]（消耗）[/]" if card.exhaust else ""
-    return (
-        f"    [bold]{card.name}[/]{exhaust_mark}  "
-        f"费用:{card.cost}  伤害:{card.damage_dealt}  连击:{card.hit_count}\n"
-        f"      [dim]{card.description}[/]"
-    )
+def _render_pile(log: RichLog, label: str, cards: List[Card]) -> None:
+    """渲染一个战斗子牌堆（抽牌堆/消耗堆/弃牌堆）的归属数。"""
+    if not cards:
+        log.write(f"  {label}：[dim]（空）[/]")
+        return
+    log.write(f"  {label}：共 [bold]{len(cards)}[/] 张")
 
 
 @final
@@ -85,10 +91,7 @@ class CombatDeckViewScreen(BaseGameScreen):
             return
 
         for entity in resp.entities_serialization:
-            deck_data = next(
-                (c.data for c in entity.components if c.name == DeckComponent.__name__),
-                None,
-            )
+            deck_data = find_component_data(entity, DeckComponent.__name__)
             log.write(f"[bold yellow]── {display_name(entity.name)} ──[/]")
             if deck_data is None:
                 log.write("  [dim]（无牌组组件）[/]")
@@ -103,5 +106,28 @@ class CombatDeckViewScreen(BaseGameScreen):
             else:
                 log.write(f"  共 [bold]{len(deck.cards)}[/] 张：")
                 for card in deck.cards:
-                    log.write(_render_card(card))
+                    log.write(render_card(card))
+
+            # 以下三个子牌堆仅在 ONGOING 阶段才存在（INITIALIZATION 阶段尚未创建），
+            # 若实体不存在相应组件则跳过不显示。
+            draw_pile_data = find_component_data(entity, DrawPileComponent.__name__)
+            if draw_pile_data is not None:
+                _render_pile(log, "抽牌堆", DrawPileComponent(**draw_pile_data).cards)
+
+            exhaust_pile_data = find_component_data(
+                entity, ExhaustPileComponent.__name__
+            )
+            if exhaust_pile_data is not None:
+                _render_pile(
+                    log, "消耗堆", ExhaustPileComponent(**exhaust_pile_data).cards
+                )
+
+            discard_pile_data = find_component_data(
+                entity, DiscardPileComponent.__name__
+            )
+            if discard_pile_data is not None:
+                _render_pile(
+                    log, "弃牌堆", DiscardPileComponent(**discard_pile_data).cards
+                )
+
             log.write("")

@@ -1,6 +1,14 @@
 """无状态工具方法"""
 
-from ..models.items import AnyItem, CostumeItem, ConsumableItem, GearItem, MaterialItem
+from typing import List
+from ..models import (
+    AnyItem,
+    CostumeItem,
+    ConsumableItem,
+    GearItem,
+    MaterialItem,
+    Card,
+)
 
 # 这些类别前缀保留在显示名中（不剥离首段）
 # _KEEP_PREFIXES = {"地下城"}
@@ -25,7 +33,7 @@ def display_name(full_name: str) -> str:
     # return full_name[first_dot + 1 :]
 
 
-_TARGET_MAP = {
+TARGET_MAP = {
     "self_only": "己方",
     "enemy_single": "单体敌方",
     "enemy_all": "全体敌方",
@@ -57,7 +65,7 @@ def render_item(item: AnyItem) -> str:
                 bonus_parts.append(fmt.format(val))
         if bonus_parts:
             lines.append(f"  [dim]属性: {', '.join(bonus_parts)}[/]")
-        target_label = _TARGET_MAP.get(item.target_type.value, item.target_type.value)
+        target_label = TARGET_MAP.get(item.target_type.value, item.target_type.value)
         lines.append(f"  [dim]目标: {target_label}[/]")
         if item.equip_affixes:
             for affix in item.equip_affixes:
@@ -74,7 +82,7 @@ def render_item(item: AnyItem) -> str:
         lines.append(f"  [dim]{item.description}[/]")
 
     elif isinstance(item, ConsumableItem):
-        target_label = _TARGET_MAP.get(item.target_type.value, item.target_type.value)
+        target_label = TARGET_MAP.get(item.target_type.value, item.target_type.value)
         lines.append(
             f"[bold]{item.name}[/]{count_str} [green]【消耗品】[/]  [dim]目标: {target_label}[/]"
         )
@@ -90,5 +98,41 @@ def render_item(item: AnyItem) -> str:
         assert isinstance(item, MaterialItem)
         lines.append(f"[bold]{item.name}[/]{count_str} [dim]【材料】[/]")
         lines.append(f"  [dim]{item.description}[/]")
+
+    return "\n".join(lines)
+
+
+def render_card(card: Card) -> str:
+    """渲染单张卡牌的全部字段（除 uuid 与 original_data 外）。"""
+    flags: List[str] = []
+    if not card.playable:
+        flags.append("[bold orange1]不可出牌[/]")
+    if card.exhaust:
+        flags.append("[bold orange1]消耗牌[/]")
+    flag_mark = "  " + " ".join(flags) if flags else ""
+
+    target_label = TARGET_MAP.get(card.target_type.value, card.target_type.value)
+
+    lines = [
+        f"    [bold]{card.name}[/]{flag_mark}",
+        f"      [dim]{card.description}[/]",
+    ]
+
+    stat_parts = [
+        f"费用:{card.cost}",
+        f"伤害:{card.damage_dealt}",
+        f"连击:{card.hit_count}",
+        f"目标:{target_label}",
+    ]
+    if card.energy_delta:
+        stat_parts.append(f"行动改变:{card.energy_delta:+d}")
+    lines.append("      " + "  ".join(stat_parts))
+
+    if card.affixes:
+        lines.append(f"      [yellow]affixes: {'、'.join(card.affixes)}[/]")
+    if card.modifiers:
+        lines.append(f"      [cyan]modifiers: {'、'.join(card.modifiers)}[/]")
+    if card.source:
+        lines.append(f"      [dim]来源: {card.source}[/]")
 
     return "\n".join(lines)

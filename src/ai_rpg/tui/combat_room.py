@@ -14,7 +14,7 @@
 故渲染逻辑对两条路径完全复用，无需分支。
 """
 
-from typing import Any, Dict, List, Optional, Tuple, final
+from typing import List, Tuple, final
 
 from loguru import logger
 from textual import on, work
@@ -22,19 +22,13 @@ from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.widgets import Input, RichLog, Static
 
-from ..models import (
-    CharacterStatsComponent,
-    CombatRoom,
-    CombatState,
-    EntitySerialization,
-    EquippedGearComponent,
-    MonsterComponent,
-    NPCComponent,
-    PlayerComponent,
-    StatusEffectsComponent,
-    compute_effective_stats,
-)
+from ..models import CombatRoom, CombatState
 from .base import BaseGameScreen
+from .combat_common import (
+    find_stage_of_actor,
+    render_combat_summary,
+    render_stage_actors,
+)
 from .combat_data_access import (
     get_dungeon_room,
     get_entities_details,
@@ -46,8 +40,8 @@ from .combat_deck_view import CombatDeckViewScreen
 from .combat_entity_inspect import CombatEntityInspectScreen
 from .combat_inventory_view import CombatInventoryViewScreen
 from .combat_ongoing import CombatOngoingScreen
+from .mock_data import set_mock_combat_state
 from .server_client import TaskFailedError, dungeon_combat_init, watch_task_until_done
-from .utils import display_name
 
 BASE_INFO_HEADER = """\
 [bold cyan]── 战斗房间 ──────────────────────────────────────[/]
@@ -139,7 +133,7 @@ class CombatRoomScreen(BaseGameScreen):
             assert room.type == "combat"
             combat = room.combat
 
-            stage_name = self._find_stage_of_actor(stages_resp.mapping, actor_name)
+            stage_name = find_stage_of_actor(stages_resp.mapping, actor_name)
             assert (
                 stage_name is not None
             ), f"未能在场景映射中找到玩家角色所在场景：actor={actor_name}"
@@ -156,10 +150,10 @@ class CombatRoomScreen(BaseGameScreen):
         # 注意：此处不缓存 combat.state / stage_name / actor_names 供后续指令使用。
         # 这些数据来自 GET 快照，仅用于当次页面渲染；指令实际派发时（handle_input /
         # _dispatch_command）会重新 GET 校验，避免使用过期状态做出错误判断。
-        self._render_combat_summary(
+        render_combat_summary(
             log, combat.name, combat.state.name, combat.result.name, combat.retreated
         )
-        self._render_stage_actors(log, stage_name, entities_resp.entities_serialization)
+        render_stage_actors(log, stage_name, entities_resp.entities_serialization)
 
         if combat.state == CombatState.INITIALIZATION:
             log.write(INIT_COMMANDS_MENU)
@@ -168,112 +162,6 @@ class CombatRoomScreen(BaseGameScreen):
                 f"[dim]当前战斗状态为 {combat.state.name}，本页仅处理 "
                 "INITIALIZATION 阶段的操作；ONGOING 等状态将在专属页面处理（开发中）。[/]"
             )
-
-    ########################################################################################################################
-    @staticmethod
-    def _find_stage_of_actor(
-        mapping: Dict[str, List[str]], actor_name: str
-    ) -> Optional[str]:
-        """在场景映射中查找玩家控制角色所在的场景名。"""
-        for stage_name, names in mapping.items():
-            if actor_name in names:
-                return stage_name
-        return None
-
-    ########################################################################################################################
-    @staticmethod
-    def _find_component_data(
-        entity: EntitySerialization, component_name: str
-    ) -> Optional[Dict[str, Any]]:
-        """在实体的组件序列化列表中按类名查找组件数据。"""
-        for component in entity.components:
-            if component.name == component_name:
-                return component.data
-        return None
-
-    ########################################################################################################################
-    def _render_combat_summary(
-        self,
-        log: RichLog,
-        name: str,
-        state_name: str,
-        result_name: str,
-        retreated: bool,
-    ) -> None:
-        """渲染战斗宏观信息（不含 rounds 细节）。"""
-        log.write("[bold yellow]── 战斗宏观状态 ─────────────────────────────────[/]")
-        log.write(f"  名称：   [bold]{name}[/]")
-        log.write(f"  状态：   [cyan]{state_name}[/]")
-        log.write(f"  结果：   [magenta]{result_name}[/]")
-        log.write(f"  已撤退： {'[red]是[/]' if retreated else '[green]否[/]'}")
-        log.write("")
-
-    ########################################################################################################################
-    def _render_stage_actors(
-        self,
-        log: RichLog,
-        stage_name: str,
-        entities: List[EntitySerialization],
-    ) -> None:
-        """渲染场景名 + 场景内所有 actor 的有效属性。"""
-        log.write(f"[bold yellow]── 场景：{display_name(stage_name)} ─────────────[/]")
-
-        actor_entities = [e for e in entities if e.name != stage_name]
-        if not actor_entities:
-            log.write("  [dim]（场景内暂无角色）[/]")
-            log.write("")
-            return
-
-        for entity in actor_entities:
-            stats_data = self._find_component_data(
-                entity, CharacterStatsComponent.__name__
-            )
-            if stats_data is None:
-                log.write(f"  [dim]{display_name(entity.name)}：缺少属性组件，跳过[/]")
-                continue
-
-            base_stats = CharacterStatsComponent(**stats_data).stats
-
-            status_effects_data = self._find_component_data(
-                entity, StatusEffectsComponent.__name__
-            )
-            status_effects = (
-                StatusEffectsComponent(**status_effects_data).status_effects
-                if status_effects_data is not None
-                else None
-            )
-
-            equipped_gear_data = self._find_component_data(
-                entity, EquippedGearComponent.__name__
-            )
-            equipped_gear = (
-                EquippedGearComponent(**equipped_gear_data).item
-                if equipped_gear_data is not None
-                else None
-            )
-
-            effective_stats = compute_effective_stats(
-                base_stats, status_effects, equipped_gear
-            )
-            role_label = self._role_label(entity)
-            log.write(
-                f"  {role_label} [bold]{display_name(entity.name)}[/]  "
-                f"HP:[yellow]{effective_stats.hp}/{effective_stats.max_hp}[/]  "
-                f"攻:{effective_stats.attack}  防:{effective_stats.defense}  "
-                f"能量:{effective_stats.energy}  速度:{effective_stats.speed}"
-            )
-        log.write("")
-
-    ########################################################################################################################
-    def _role_label(self, entity: EntitySerialization) -> str:
-        """依据实体挂载的阵营标记组件返回展示标签。"""
-        if self._find_component_data(entity, PlayerComponent.__name__) is not None:
-            return "[bold green]👑玩家[/]"
-        if self._find_component_data(entity, NPCComponent.__name__) is not None:
-            return "[bold cyan]🤝队友[/]"
-        if self._find_component_data(entity, MonsterComponent.__name__) is not None:
-            return "[bold red]👹怪物[/]"
-        return "[dim]？[/]"
 
     ########################################################################################################################
     @on(Input.Submitted, "#combat-room-input")
@@ -334,7 +222,7 @@ class CombatRoomScreen(BaseGameScreen):
 
         try:
             stages_resp = await get_stages_state(self.game_client)
-            stage_name = self._find_stage_of_actor(stages_resp.mapping, actor_name)
+            stage_name = find_stage_of_actor(stages_resp.mapping, actor_name)
             assert (
                 stage_name is not None
             ), f"未能在场景映射中找到玩家角色所在场景：actor={actor_name}"
@@ -372,6 +260,7 @@ class CombatRoomScreen(BaseGameScreen):
             log.write(
                 "[bold yellow]\\[mock][/] 已模拟触发战斗初始化（未调用真实接口）。"
             )
+            set_mock_combat_state(CombatState.ONGOING)
             log.write("[dim]正在进入战斗（ONGOING）...[/]")
             self.app.switch_screen(CombatOngoingScreen())
             return

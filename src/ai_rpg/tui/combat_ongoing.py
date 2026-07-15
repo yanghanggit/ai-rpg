@@ -36,6 +36,7 @@ from .combat_data_access import (
 from .combat_deck_view import CombatDeckViewScreen
 from .combat_entity_inspect import CombatEntityInspectScreen
 from .combat_inventory_view import CombatInventoryViewScreen
+from .combat_post_combat import CombatPostCombatScreen
 from .combat_round_history import CombatRoundHistoryScreen
 
 BASE_INFO_HEADER = """\
@@ -45,11 +46,13 @@ BASE_INFO_HEADER = """\
 """
 
 ONGOING_COMMANDS_MENU = """\
-[bold yellow]── 可用操作（ONGOING 阶段） ─────────────[/]
+[bold yellow]── 可用操作 ─────────[/]
   [bold green]1[/]  查阅牌组（双方）
   [bold green]2[/]  查阅我方背包
-  [bold green]3[/]  查阅指定实体信息（场景 / 角色）  
+  [bold green]3[/]  查阅指定实体信息（场景 / 角色）
   [bold green]4[/]  查阅历史回合详情"""
+
+POST_COMBAT_COMMAND_LINE = "\n  [bold green]5[/]  结束战斗"
 
 
 def _render_round_info(log: RichLog, combat: Combat) -> None:
@@ -176,13 +179,17 @@ class CombatOngoingScreen(BaseGameScreen):
         _render_round_info(log, combat)
         render_stage_actors(log, stage_name, entities_resp.entities_serialization)
 
-        if combat.state == CombatState.ONGOING:
-            log.write(ONGOING_COMMANDS_MENU)
+        # 1-4 为查阅型（GET）指令，从不改变任何状态，无论战斗处于哪个阶段都可用；
+        # 指令 5（结束战斗）仅在战斗已进入 COMPLETE / POST_COMBAT 阶段时才显示与可用。
+        menu = ONGOING_COMMANDS_MENU
+        if combat.state in (CombatState.COMPLETE, CombatState.POST_COMBAT):
+            menu += POST_COMBAT_COMMAND_LINE
         else:
-            log.write(
-                f"[dim]当前战斗状态为 {combat.state.name}，本页仅处理 "
-                "ONGOING 阶段的操作。[/]"
+            logger.info(
+                "CombatOngoingScreen._load_base_info: 战斗未进入 COMPLETE / POST_COMBAT 阶段，隐藏指令 5"
             )
+
+        log.write(menu)
 
     ########################################################################################################################
     @on(Input.Submitted, "#combat-ongoing-input")
@@ -197,11 +204,15 @@ class CombatOngoingScreen(BaseGameScreen):
     @work
     async def _dispatch_command(self, raw: str) -> None:
         """指令分发：每次都重新 GET 校验战斗状态与场景花名册，避免使用过期数据做出
-        错误判断或跳转。"""
+        错误判断或跳转。
+
+        1-4 为查阅型（GET）指令，从不改变任何状态，因此不需要根据 combat.state 限制使用；
+        指令 5（结束战斗）仅在 combat.state 为 COMPLETE / POST_COMBAT 时才允许执行。
+        """
         log = self.query_one(RichLog)
 
-        if raw not in ("1", "2", "3", "4"):
-            log.write("[red]无效指令，请输入 1-4[/]")
+        if raw not in ("1", "2", "3", "4", "5"):
+            log.write("[red]无效指令，请输入 1-5[/]")
             return
 
         try:
@@ -220,10 +231,11 @@ class CombatOngoingScreen(BaseGameScreen):
             log.write(f"[bold red]❌ 校验战斗状态失败：{e}[/]")
             return
 
-        if combat.state != CombatState.ONGOING:
-            log.write(
-                f"[yellow]当前战斗状态为 {combat.state.name}，暂不支持这些指令。[/]"
-            )
+        if raw == "5":
+            if combat.state in (CombatState.COMPLETE, CombatState.POST_COMBAT):
+                self.app.push_screen(CombatPostCombatScreen())
+            else:
+                log.write(f"[yellow]还没有实现。[/]")
             return
 
         if raw == "4":

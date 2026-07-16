@@ -41,12 +41,15 @@ from ..models import (
     MonsterComponent,
     NPCComponent,
     PartyMemberComponent,
+    PhaseType,
     PlayerComponent,
     Round,
     Stage as DungeonStage,
     StageComponent,
     StageProfile,
     StagesStateResponse,
+    StatusEffect,
+    StatusEffectsComponent,
     Actor as DungeonActor,
 )
 
@@ -274,6 +277,24 @@ def _combat_loot_component_serialization(
 
 
 ###############################################################################################################################################
+def _status_effects_component_serialization(
+    name: str, status_effects: List[StatusEffect]
+) -> ComponentSerialization:
+    """构造 StatusEffectsComponent 序列化数据。
+
+    与真实 ECS 行为一致：StatusEffectsComponent 在 CombatInitializationSystem 中于
+    INITIALIZATION 阶段即注入（初始为空列表，随后由 LLM 评估填充），故本函数不像
+    `_ongoing_battle_pile_components` 那样按 `_mock_combat_state` 分支返回空列表，
+    而是始终返回该组件（允许 status_effects 为空列表）。"""
+    return ComponentSerialization(
+        name=StatusEffectsComponent.__name__,
+        data=StatusEffectsComponent(
+            name=name, status_effects=status_effects
+        ).model_dump(),
+    )
+
+
+###############################################################################################################################################
 def _ongoing_battle_pile_components(
     name: str,
     hand_cards: List[Card],
@@ -409,6 +430,28 @@ def build_mock_entities_details_response(
                     ),
                 ],
             ),
+            _status_effects_component_serialization(
+                MOCK_ACTOR_NAME,
+                [
+                    StatusEffect(
+                        name="鼓舞",
+                        description="士气高涨，速度提升。",
+                        duration=2,
+                        phase=PhaseType.ARBITRATION,
+                        speed=1,
+                        source=MOCK_TEAMMATE_NAME,
+                    ),
+                    StatusEffect(
+                        name="轻微灼伤",
+                        description="持续受到灼烧，防御下降。",
+                        duration=1,
+                        phase=PhaseType.ROUND_END,
+                        defense=-1,
+                        counter=2,
+                        source=MOCK_MONSTER_1_NAME,
+                    ),
+                ],
+            ),
             *_ongoing_battle_pile_components(
                 MOCK_ACTOR_NAME,
                 hand_cards=[
@@ -471,6 +514,18 @@ def build_mock_entities_details_response(
                 ],
                 keywords=["辅助", "法术"],
             ),
+            _status_effects_component_serialization(
+                MOCK_TEAMMATE_NAME,
+                [
+                    StatusEffect(
+                        name="集中注意力",
+                        description="精神高度集中，下次抽牌更容易抽到伤害牌。",
+                        duration=-1,
+                        phase=PhaseType.DRAW,
+                        source=MOCK_TEAMMATE_NAME,
+                    ),
+                ],
+            ),
             *_ongoing_battle_pile_components(
                 MOCK_TEAMMATE_NAME,
                 hand_cards=[
@@ -508,6 +563,19 @@ def build_mock_entities_details_response(
                     ),
                 ],
                 keywords=["野蛮"],
+            ),
+            _status_effects_component_serialization(
+                MOCK_MONSTER_1_NAME,
+                [
+                    StatusEffect(
+                        name="狂暴",
+                        description="陷入狂暴状态，攻势凶猛但破绽增多。",
+                        duration=3,
+                        phase=PhaseType.ARBITRATION,
+                        defense=-2,
+                        source=MOCK_MONSTER_1_NAME,
+                    ),
+                ],
             ),
             *_ongoing_battle_pile_components(
                 MOCK_MONSTER_1_NAME,
@@ -547,6 +615,7 @@ def build_mock_entities_details_response(
                 ],
                 keywords=["野蛮"],
             ),
+            _status_effects_component_serialization(MOCK_MONSTER_2_NAME, []),
             *_ongoing_battle_pile_components(
                 MOCK_MONSTER_2_NAME,
                 hand_cards=[

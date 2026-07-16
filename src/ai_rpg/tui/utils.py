@@ -1,6 +1,6 @@
 """无状态工具方法"""
 
-from typing import List
+from typing import List, Dict, Final
 from ..models import (
     AnyItem,
     CostumeItem,
@@ -8,32 +8,10 @@ from ..models import (
     GearItem,
     MaterialItem,
     Card,
+    StatusEffect,
 )
 
-# 这些类别前缀保留在显示名中（不剥离首段）
-# _KEEP_PREFIXES = {"地下城"}
-
-
-def display_name(full_name: str) -> str:
-    return full_name  # 临时处理。
-    # """从实体全名中提取 UI 显示名。
-
-    # 规则：去掉首段类别前缀，但 ``地下城`` 类别保留全名。
-
-    # 例如：
-    #     ``旅行者.无名氏``    →  ``旅行者.无名氏``
-    #     ``场景.断壁石室``    →  ``断壁石室``
-    #     ``地下城.残柱外沿``  →  ``地下城.残柱外沿``
-    # """
-    # first_dot = full_name.find(".")
-    #     return full_name
-    # prefix = full_name[:first_dot]
-    # if prefix in _KEEP_PREFIXES:
-    #     return full_name
-    # return full_name[first_dot + 1 :]
-
-
-TARGET_MAP = {
+TARGET_MAP: Final[Dict[str, str]] = {
     "self_only": "己方",
     "enemy_single": "单体敌方",
     "enemy_all": "全体敌方",
@@ -41,6 +19,18 @@ TARGET_MAP = {
     "ally_single": "单体友方",
     "ally_all": "全体友方",
 }
+
+# 状态效果阶段标签；键为 PhaseType 的字符串值。
+PHASE_LABEL: Final[Dict[str, str]] = {
+    "draw": "抽牌",
+    "arbitration": "仲裁",
+    "round_end": "回合末",
+}
+
+
+def display_name(full_name: str) -> str:
+    """从实体全名中提取 UI 显示名。"""
+    return full_name
 
 
 def render_item(item: AnyItem) -> str:
@@ -136,3 +126,28 @@ def render_card(card: Card) -> str:
         lines.append(f"      [dim]来源: {card.source}[/]")
 
     return "\n".join(lines)
+
+
+def render_status_effect(effect: StatusEffect, entity_name: str = "") -> str:
+    """渲染单个状态效果的全部关键字段。
+
+    entity_name: 效果所挂载实体的名称；当 effect.source 与之不同时才附加显示来源，
+    避免自身施加的效果冗余标注来源。
+    """
+    duration_str = "永久" if effect.duration == -1 else f"剩余{effect.duration}回合"
+    phase_label = PHASE_LABEL.get(effect.phase.value, effect.phase.value)
+    meta_parts = [duration_str, f"阶段:{phase_label}"]
+    if effect.counter:
+        meta_parts.append(f"计数:{effect.counter}")
+    if effect.speed:
+        meta_parts.append(f"速度:{effect.speed:+d}")
+    if effect.defense:
+        meta_parts.append(f"防御:{effect.defense:+d}")
+    if effect.source and effect.source != entity_name:
+        meta_parts.append(f"来源:{display_name(effect.source)}")
+    meta = "  ".join(meta_parts)
+
+    return (
+        f"    • [bold]{effect.name}[/]  [dim]{meta}[/]\n"
+        f"      [dim]{effect.description}[/]"
+    )

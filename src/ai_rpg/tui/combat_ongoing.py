@@ -25,6 +25,7 @@ from .combat_data_access import (
 )
 from .combat_deck_view import CombatDeckViewScreen
 from .combat_entity_inspect import CombatEntityInspectScreen
+from .combat_hand_status_view import CombatHandStatusViewScreen
 from .combat_inventory_view import CombatInventoryViewScreen
 from .combat_post_combat import CombatPostCombatScreen
 from .combat_round_history import CombatRoundHistoryScreen
@@ -50,6 +51,7 @@ ONGOING_COMMANDS_MENU = """\
 
 RETREAT_COMMAND_LINE = "\n  [bold green]5[/]  战斗中撤退"
 POST_COMBAT_COMMAND_LINE = "\n  [bold green]5[/]  结束战斗"
+HAND_STATUS_COMMAND_LINE = "\n  [bold green]6[/]  查看手牌 + 状态效果"
 
 
 @final
@@ -153,6 +155,8 @@ class CombatOngoingScreen(BaseGameScreen):
                 "CombatOngoingScreen._load_base_info: 战斗处于其它阶段，隐藏指令 5"
             )
 
+        menu += HAND_STATUS_COMMAND_LINE
+
         log.write(menu)
 
     ########################################################################################################################
@@ -172,8 +176,8 @@ class CombatOngoingScreen(BaseGameScreen):
         """
         log = self.query_one(RichLog)
 
-        if raw not in ("1", "2", "3", "4", "5"):
-            log.write("[red]无效指令，请输入 1-5[/]")
+        if raw not in ("1", "2", "3", "4", "5", "6"):
+            log.write("[red]无效指令，请输入 1-6[/]")
             return
 
         try:
@@ -227,6 +231,8 @@ class CombatOngoingScreen(BaseGameScreen):
             candidates: List[Tuple[str, str]] = [(stage_name, "场景")]
             candidates.extend((name, "角色") for name in participant_names)
             self.app.push_screen(CombatEntityInspectScreen(candidates))
+        elif raw == "6":
+            self.app.push_screen(CombatHandStatusViewScreen(participant_names))
 
     ########################################################################################################################
     @work

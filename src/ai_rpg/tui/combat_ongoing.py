@@ -24,6 +24,7 @@ from .combat_data_access import (
     resolve_identity,
 )
 from .combat_deck_view import CombatDeckViewScreen
+from .combat_draw_cards import CombatDrawCardsScreen
 from .combat_entity_inspect import CombatEntityInspectScreen
 from .combat_hand_status_view import CombatHandStatusViewScreen
 from .combat_inventory_view import CombatInventoryViewScreen
@@ -49,9 +50,11 @@ ONGOING_COMMANDS_MENU = """\
   [bold green]3[/]  查阅指定实体信息（场景 / 角色）
   [bold green]4[/]  查阅历史回合详情"""
 
-RETREAT_COMMAND_LINE = "\n  [bold green]5[/]  战斗中撤退"
-POST_COMBAT_COMMAND_LINE = "\n  [bold green]5[/]  结束战斗"
-HAND_STATUS_COMMAND_LINE = "\n  [bold green]6[/]  查看手牌 + 状态效果"
+HAND_STATUS_COMMAND_LINE = "\n  [bold green]5[/]  查看手牌 + 状态效果"
+RETREAT_COMMAND_LINE = "\n  [bold green]6[/]  战斗中撤退"
+POST_COMBAT_COMMAND_LINE = "\n  [bold green]6[/]  结束战斗"
+DRAW_CARDS_COMMAND_LINE = "\n  [bold green]7[/]  抽牌"
+PLAY_CARDS_COMMAND_LINE = "\n  [bold green]7[/]  出牌"
 
 
 @final
@@ -97,8 +100,17 @@ class CombatOngoingScreen(BaseGameScreen):
             yield Input(placeholder="输入指令编号...", id="combat-ongoing-input")
 
     def on_mount(self) -> None:
+        """仅写入一次性的静态页头；实际数据加载统一交给 on_screen_resume 处理
+        （Textual 在首次 push/switch 到本页时，on_mount 与 on_screen_resume 都会
+        触发一次，若在两处都调用 _load_base_info 会导致内容重复渲染两遍）。"""
         log = self.query_one(RichLog)
         log.write(BASE_INFO_HEADER)
+
+    def on_screen_resume(self) -> None:
+        """本页成为当前活动页面时触发：既覆盖首次进入，也覆盖从子 Screen（如抽牌 /
+        查阅手牌等）返回的情况，统一在此处（重新）加载战斗基础信息，确保手牌数、
+        抽牌完成标记等随最新状态刷新。"""
+        logger.info("CombatOngoingScreen: on_screen_resume，加载/刷新战斗基础信息")
         self._load_base_info()
         self.query_one(Input).focus()
 
@@ -142,20 +154,27 @@ class CombatOngoingScreen(BaseGameScreen):
         render_round_info(log, combat)
         render_stage_actors(log, stage_name, entities_resp.entities_serialization)
 
-        # 1-4 为查阅型（GET）指令，从不改变任何状态，无论战斗处于哪个阶段都可用；
-        # 指令 5 依 combat.state 而变：ONGOING 阶段为「战斗中撤退」，
-        # COMPLETE / POST_COMBAT 阶段为「结束战斗」，其余阶段不显示。
+        # 1-5 为查阅型（GET）指令，从不改变任何状态，无论战斗处于哪个阶段都可用；
+        # 指令 6 依 combat.state 而变：ONGOING 阶段为「战斗中撤退」，
+        # COMPLETE / POST_COMBAT 阶段为「结束战斗」，其余阶段不显示；
+        # 指令 7 仅在 ONGOING 阶段出现，依最新回合 draw_completed 而变：
+        # 未完成为「抽牌」，已完成为「出牌」（尚未实现）。
         menu = ONGOING_COMMANDS_MENU
+        menu += HAND_STATUS_COMMAND_LINE
+
         if combat.state == CombatState.ONGOING:
             menu += RETREAT_COMMAND_LINE
+            latest_round = combat.latest_round
+            if latest_round is not None and not latest_round.draw_completed:
+                menu += DRAW_CARDS_COMMAND_LINE
+            else:
+                menu += PLAY_CARDS_COMMAND_LINE
         elif combat.state in (CombatState.COMPLETE, CombatState.POST_COMBAT):
             menu += POST_COMBAT_COMMAND_LINE
         else:
             logger.info(
-                "CombatOngoingScreen._load_base_info: 战斗处于其它阶段，隐藏指令 5"
+                "CombatOngoingScreen._load_base_info: 战斗处于其它阶段，隐藏指令 6/7"
             )
-
-        menu += HAND_STATUS_COMMAND_LINE
 
         log.write(menu)
 
@@ -176,8 +195,8 @@ class CombatOngoingScreen(BaseGameScreen):
         """
         log = self.query_one(RichLog)
 
-        if raw not in ("1", "2", "3", "4", "5", "6"):
-            log.write("[red]无效指令，请输入 1-6[/]")
+        if raw not in ("1", "2", "3", "4", "5", "6", "7"):
+            log.write("[red]无效指令，请输入 1-7[/]")
             return
 
         try:
@@ -196,7 +215,7 @@ class CombatOngoingScreen(BaseGameScreen):
             log.write(f"[bold red]❌ 校验战斗状态失败：{e}[/]")
             return
 
-        if raw == "5":
+        if raw == "6":
             if combat.state == CombatState.ONGOING:
                 self._do_retreat()
             elif combat.state in (CombatState.COMPLETE, CombatState.POST_COMBAT):
@@ -231,8 +250,16 @@ class CombatOngoingScreen(BaseGameScreen):
             candidates: List[Tuple[str, str]] = [(stage_name, "场景")]
             candidates.extend((name, "角色") for name in participant_names)
             self.app.push_screen(CombatEntityInspectScreen(candidates))
-        elif raw == "6":
+        elif raw == "5":
             self.app.push_screen(CombatHandStatusViewScreen(participant_names))
+        elif raw == "7":
+            latest_round = combat.latest_round
+            if combat.state == CombatState.ONGOING and (
+                latest_round is not None and not latest_round.draw_completed
+            ):
+                self.app.push_screen(CombatDrawCardsScreen(participant_names))
+            else:
+                log.write(f"[yellow]还没有实现。[/]")
 
     ########################################################################################################################
     @work

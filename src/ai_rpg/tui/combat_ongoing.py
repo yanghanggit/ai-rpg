@@ -1,16 +1,4 @@
-"""战斗进行中 Screen（CombatOngoingScreen）
-
-CombatState.ONGOING 阶段的专属页面。战斗核心交互（出牌/抽牌/使用道具/装备等）
-后续逐步补充；当前先提供与 CombatRoomScreen 类似的基础信息展示：
-    1) 战斗宏观状态：name / state / result / retreated
-    2) 场景名字 + 场景内所有 actor 的有效属性（含手牌数量 / 状态效果数量）
-    3) 当前回合信息：局数 + 最新一局的 completed_actors / action_order /
-       current_actor / is_completed / draw_completed / consumable_use_count /
-       gear_use_count
-    4) 查阅型（GET）命令：查阅牌组（双方）/ 查阅我方背包 / 查阅指定实体信息
-
-由 CombatRoomScreen 在战斗初始化成功后 switch_screen 至此。
-"""
+"""战斗进行中 Screen（CombatOngoingScreen）"""
 
 from typing import List, Tuple, final
 
@@ -32,6 +20,7 @@ from .combat_data_access import (
     get_dungeon_room,
     get_entities_details,
     get_stages_state,
+    is_mock_mode,
     resolve_identity,
 )
 from .combat_deck_view import CombatDeckViewScreen
@@ -39,6 +28,12 @@ from .combat_entity_inspect import CombatEntityInspectScreen
 from .combat_inventory_view import CombatInventoryViewScreen
 from .combat_post_combat import CombatPostCombatScreen
 from .combat_round_history import CombatRoundHistoryScreen
+from .home import HomeScreen
+from .server_client import (
+    TaskFailedError,
+    dungeon_combat_retreat,
+    watch_task_until_done,
+)
 
 BASE_INFO_HEADER = """\
 [bold cyan]── 战斗进行中（ONGOING） ──────────────────────────────────────[/]
@@ -53,6 +48,7 @@ ONGOING_COMMANDS_MENU = """\
   [bold green]3[/]  查阅指定实体信息（场景 / 角色）
   [bold green]4[/]  查阅历史回合详情"""
 
+RETREAT_COMMAND_LINE = "\n  [bold green]5[/]  战斗中撤退"
 POST_COMBAT_COMMAND_LINE = "\n  [bold green]5[/]  结束战斗"
 
 
@@ -145,13 +141,16 @@ class CombatOngoingScreen(BaseGameScreen):
         render_stage_actors(log, stage_name, entities_resp.entities_serialization)
 
         # 1-4 为查阅型（GET）指令，从不改变任何状态，无论战斗处于哪个阶段都可用；
-        # 指令 5（结束战斗）仅在战斗已进入 COMPLETE / POST_COMBAT 阶段时才显示与可用。
+        # 指令 5 依 combat.state 而变：ONGOING 阶段为「战斗中撤退」，
+        # COMPLETE / POST_COMBAT 阶段为「结束战斗」，其余阶段不显示。
         menu = ONGOING_COMMANDS_MENU
-        if combat.state in (CombatState.COMPLETE, CombatState.POST_COMBAT):
+        if combat.state == CombatState.ONGOING:
+            menu += RETREAT_COMMAND_LINE
+        elif combat.state in (CombatState.COMPLETE, CombatState.POST_COMBAT):
             menu += POST_COMBAT_COMMAND_LINE
         else:
             logger.info(
-                "CombatOngoingScreen._load_base_info: 战斗未进入 COMPLETE / POST_COMBAT 阶段，隐藏指令 5"
+                "CombatOngoingScreen._load_base_info: 战斗处于其它阶段，隐藏指令 5"
             )
 
         log.write(menu)
@@ -170,9 +169,6 @@ class CombatOngoingScreen(BaseGameScreen):
     async def _dispatch_command(self, raw: str) -> None:
         """指令分发：每次都重新 GET 校验战斗状态与场景花名册，避免使用过期数据做出
         错误判断或跳转。
-
-        1-4 为查阅型（GET）指令，从不改变任何状态，因此不需要根据 combat.state 限制使用；
-        指令 5（结束战斗）仅在 combat.state 为 COMPLETE / POST_COMBAT 时才允许执行。
         """
         log = self.query_one(RichLog)
 
@@ -197,7 +193,9 @@ class CombatOngoingScreen(BaseGameScreen):
             return
 
         if raw == "5":
-            if combat.state in (CombatState.COMPLETE, CombatState.POST_COMBAT):
+            if combat.state == CombatState.ONGOING:
+                self._do_retreat()
+            elif combat.state in (CombatState.COMPLETE, CombatState.POST_COMBAT):
                 self.app.push_screen(CombatPostCombatScreen())
             else:
                 log.write(f"[yellow]还没有实现。[/]")
@@ -229,3 +227,42 @@ class CombatOngoingScreen(BaseGameScreen):
             candidates: List[Tuple[str, str]] = [(stage_name, "场景")]
             candidates.extend((name, "角色") for name in participant_names)
             self.app.push_screen(CombatEntityInspectScreen(candidates))
+
+    ########################################################################################################################
+    @work
+    async def _do_retreat(self) -> None:
+        """战斗中撤退（仅 CombatState.ONGOING 阶段可用）：调用"""
+        log = self.query_one(RichLog)
+
+        if is_mock_mode(self.game_client):
+            logger.info("CombatOngoingScreen._do_retreat: mock 模式，直接退出应用")
+            log.write("[dim]mock 模式：无真实会话可撤退，直接退出应用[/]")
+            self.app.exit()
+            return
+
+        inp = self.query_one(Input)
+        inp.disabled = True
+        log.write("[dim]▶ 正在撤退...[/]")
+
+        try:
+            user_name, game_name, _ = resolve_identity(self.game_client)
+            resp = await dungeon_combat_retreat(user_name, game_name)
+            log.write(f"[dim]任务已提交：{resp.task_id}，等待完成...[/]")
+            await watch_task_until_done(resp.task_id)
+        except TaskFailedError as e:
+            logger.error(f"CombatOngoingScreen._do_retreat: 撤退任务失败 error={e}")
+            log.write(f"[bold red]❌ 撤退失败：{e}[/]")
+            inp.disabled = False
+            inp.focus()
+            return
+        except Exception as e:
+            logger.error(f"CombatOngoingScreen._do_retreat: 撤退请求失败 error={e}")
+            log.write(f"[bold red]❌ 撤退请求失败：{e}[/]")
+            inp.disabled = False
+            inp.focus()
+            return
+
+        log.write("[bold green]✅ 撤退成功[/]")
+        logger.info("CombatOngoingScreen._do_retreat: 撤退成功，返回家园")
+
+        self.app.switch_screen(HomeScreen())

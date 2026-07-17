@@ -31,6 +31,7 @@ from .combat_inventory_view import CombatInventoryViewScreen
 from .combat_play_cards import CombatPlayCardsScreen
 from .combat_post_combat import CombatPostCombatScreen
 from .combat_round_history import CombatRoundHistoryScreen
+from .combat_use_consumable import CombatUseConsumableScreen
 from .home import HomeScreen
 from .server_client import (
     TaskFailedError,
@@ -56,6 +57,7 @@ RETREAT_COMMAND_LINE = "\n  [bold green]6[/]  战斗中撤退"
 POST_COMBAT_COMMAND_LINE = "\n  [bold green]6[/]  结束战斗"
 DRAW_CARDS_COMMAND_LINE = "\n  [bold green]7[/]  抽牌"
 PLAY_CARDS_COMMAND_LINE = "\n  [bold green]7[/]  出牌"
+USE_CONSUMABLE_COMMAND_LINE = "\n  [bold green]8[/]  使用消耗品"
 
 
 @final
@@ -162,7 +164,10 @@ class CombatOngoingScreen(BaseGameScreen):
         # 指令 6 依 combat.state 而变：ONGOING 阶段为「战斗中撤退」，
         # COMPLETE / POST_COMBAT 阶段为「结束战斗」，其余阶段不显示；
         # 指令 7 仅在 ONGOING 阶段出现，依最新回合 draw_completed 而变：
-        # 未完成为「抽牌」，已完成为「出牌」（尚未实现）。
+        # 未完成为「抽牌」，已完成为「出牌」；
+        # 指令 8（使用消耗品）仅在 ONGOING 阶段出现，具体前置条件（抽牌是否完成 /
+        # 当前 turn 是否为我方 / 本回合是否已使用过）交由 CombatUseConsumableScreen
+        # 自身校验并提示，本页不做过滤。
         menu = ONGOING_COMMANDS_MENU
         menu += HAND_STATUS_COMMAND_LINE
 
@@ -173,11 +178,12 @@ class CombatOngoingScreen(BaseGameScreen):
                 menu += DRAW_CARDS_COMMAND_LINE
             else:
                 menu += PLAY_CARDS_COMMAND_LINE
+            menu += USE_CONSUMABLE_COMMAND_LINE
         elif combat.state in (CombatState.COMPLETE, CombatState.POST_COMBAT):
             menu += POST_COMBAT_COMMAND_LINE
         else:
             logger.info(
-                "CombatOngoingScreen._load_base_info: 战斗处于其它阶段，隐藏指令 6/7"
+                "CombatOngoingScreen._load_base_info: 战斗处于其它阶段，隐藏指令 6/7/8"
             )
 
         log.write(menu)
@@ -199,8 +205,8 @@ class CombatOngoingScreen(BaseGameScreen):
         """
         log = self.query_one(RichLog)
 
-        if raw not in ("1", "2", "3", "4", "5", "6", "7"):
-            log.write("[red]无效指令，请输入 1-7[/]")
+        if raw not in ("1", "2", "3", "4", "5", "6", "7", "8"):
+            log.write("[red]无效指令，请输入 1-8[/]")
             return
 
         try:
@@ -268,6 +274,8 @@ class CombatOngoingScreen(BaseGameScreen):
                 self.app.push_screen(CombatPlayCardsScreen())
             else:
                 log.write(f"[yellow]还没有实现。[/]")
+        elif raw == "8":
+            self.app.push_screen(CombatUseConsumableScreen())
 
     ########################################################################################################################
     @work

@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional
 from textual.widgets import RichLog
 
 from ..models import (
+    CharacterStats,
     CharacterStatsComponent,
     Combat,
     DeathComponent,
@@ -56,6 +57,56 @@ def role_label(entity: EntitySerialization) -> str:
     if find_component_data(entity, MonsterComponent.__name__) is not None:
         return "[bold red]👹怪物[/]"
     return "[dim]？[/]"
+
+
+###############################################################################################################################################
+def classify_faction(entity: Optional[EntitySerialization]) -> str:
+    """依据阵营标记组件返回 "party"（玩家 + 队友）/ "monster"（怪物）/ "unknown"。
+
+    供出牌 / 使用消耗品等需要按 TargetType 解析目标候选的页面共用，避免各自
+    重复实现同一套阵营判断逻辑。
+    """
+    if entity is None:
+        return "unknown"
+    if find_component_data(entity, PlayerComponent.__name__) is not None:
+        return "party"
+    if find_component_data(entity, NPCComponent.__name__) is not None:
+        return "party"
+    if find_component_data(entity, MonsterComponent.__name__) is not None:
+        return "monster"
+    return "unknown"
+
+
+###############################################################################################################################################
+def is_alive(entity: EntitySerialization) -> bool:
+    """实体是否存活（未挂载 DeathComponent）。"""
+    return find_component_data(entity, DeathComponent.__name__) is None
+
+
+###############################################################################################################################################
+def compute_effective_stats_for(
+    entity: EntitySerialization,
+) -> Optional[CharacterStats]:
+    """计算实体的有效属性（聚合状态效果 + 已装备加成）；缺少 CharacterStatsComponent 时返回 None。"""
+    stats_data = find_component_data(entity, CharacterStatsComponent.__name__)
+    if stats_data is None:
+        return None
+
+    status_data = find_component_data(entity, StatusEffectsComponent.__name__)
+    equipped_gear_data = find_component_data(entity, EquippedGearComponent.__name__)
+    status_comp = (
+        StatusEffectsComponent(**status_data) if status_data is not None else None
+    )
+    equipped_gear = (
+        EquippedGearComponent(**equipped_gear_data).item
+        if equipped_gear_data is not None
+        else None
+    )
+    return compute_effective_stats(
+        CharacterStatsComponent(**stats_data).stats,
+        status_comp.status_effects if status_comp is not None else None,
+        equipped_gear,
+    )
 
 
 ###############################################################################################################################################

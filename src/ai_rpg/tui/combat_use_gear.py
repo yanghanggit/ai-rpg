@@ -1,8 +1,8 @@
-"""战斗使用消耗品 Screen（CombatUseConsumableScreen）"""
+"""战斗使用装备 Screen（CombatUseGearScreen）"""
 
 from dataclasses import dataclass, field
 from itertools import zip_longest
-from typing import Dict, List, Optional, Tuple, final
+from typing import Dict, List, Optional, Set, Tuple, final
 
 from loguru import logger
 from textual import on, work
@@ -12,9 +12,10 @@ from textual.widgets import Input, RichLog, Static
 
 from ..models import (
     CombatRoom,
-    ConsumableItem,
     DeathComponent,
     EntitySerialization,
+    EquippedGearComponent,
+    GearItem,
     InventoryComponent,
     StatusEffectsComponent,
     TargetType,
@@ -39,27 +40,27 @@ from .combat_data_access import (
 )
 from .server_client import (
     TaskFailedError,
-    dungeon_combat_use_consumable,
+    dungeon_combat_use_gear,
     watch_task_until_done,
 )
 from .utils import display_name, render_item, render_status_effect
 
 BASE_INFO_HEADER = """\
-[bold cyan]── 使用消耗品 ──────────────────────────────────────[/]
+[bold cyan]── 使用装备 ──────────────────────────────────────[/]
 
-[dim]展示消耗品使用状态 / 场景角色摘要 / 我方消耗品，选择消耗品与目标后确认使用。[/]
+[dim]展示装备使用状态 / 场景角色摘要 / 我方装备，选择装备与目标后确认使用。[/]
 """
 
 COMMANDS_MENU_TEMPLATE = """\
 [bold yellow]── 可用操作 ─────────[/]
-  [bold green]1[/]  使用消耗品
+  [bold green]1[/]  使用装备
   [bold green]2[/]  清屏（刷新基础信息 + 清除历史信息）"""
 
 
 ###############################################################################################################################################
 @dataclass
-class _ConsumableSnapshot:
-    """使用消耗品页从服务器拉取到的战斗快照缓存。"""
+class _GearSnapshot:
+    """使用装备页从服务器拉取到的战斗快照缓存。"""
 
     stage_name: Optional[str] = None
     entities_map: Dict[str, EntitySerialization] = field(default_factory=dict)
@@ -68,17 +69,20 @@ class _ConsumableSnapshot:
     current_actor: Optional[str] = None
     current_actor_is_party: bool = False
     draw_completed: bool = False
-    consumable_use_count: int = 0
-    consumable_items: List[ConsumableItem] = field(default_factory=list)
+    gear_use_count: int = 0
+    gear_items: List[GearItem] = field(default_factory=list)
+    # 当前已被任意实体装备中的装备 uuid 集合；命中的道具服务端会拒绝再次使用
+    # （见 activate_use_gear 的“已被装备”前置校验），本页据此提前过滤/提示。
+    equipped_uuids: Set[str] = field(default_factory=set)
 
 
 ###############################################################################################################################################
 @dataclass
-class _UseFlowState:
-    """使用消耗品多步交互（选择消耗品 → 选择目标 → 确认）的临时状态。"""
+class _GearFlowState:
+    """使用装备多步交互（选择装备 → 选择目标 → 确认）的临时状态。"""
 
     step: str = "menu"
-    selected_item: Optional[ConsumableItem] = None
+    selected_item: Optional[GearItem] = None
     pending_targets: List[str] = field(default_factory=list)
     target_candidates: List[Tuple[str, EntitySerialization]] = field(
         default_factory=list
@@ -86,53 +90,65 @@ class _UseFlowState:
 
 
 ###############################################################################################################################################
-def _write_indexed_item(log: RichLog, index: int, item: ConsumableItem) -> None:
-    """渲染单件消耗品，并将编号与物品名写在同一行（而非单独一行编号后换行）。"""
+def _write_indexed_gear(
+    log: RichLog, index: int, item: GearItem, equipped_uuids: Set[str]
+) -> None:
+    """渲染单件装备，并将编号与物品名写在同一行；若该装备当前已被装备中，标注
+    「已装备，不可再次使用」提示（而非单独一行编号后换行）。"""
     lines = render_item(item).split("\n")
     if lines:
-        lines[0] = f"  [bold green]{index}[/] {lines[0].strip()}"
+        marker = (
+            "  [red]（已装备，不可再次使用）[/]" if item.uuid in equipped_uuids else ""
+        )
+        lines[0] = f"  [bold green]{index}[/] {lines[0].strip()}{marker}"
     for line in lines:
         log.write(line)
 
 
 @final
-class CombatUseConsumableScreen(BaseGameScreen):
-    """战斗 ONGOING 阶段的使用消耗品页面：展示消耗品使用状态 + 场景内角色有效
-    属性 + 我方消耗品列表，并提供使用消耗品 / 清屏指令入口。
+class CombatUseGearScreen(BaseGameScreen):
+    """战斗 ONGOING 阶段的使用装备页面：展示装备使用状态 + 场景内角色有效属性 +
+    我方装备列表，并提供使用装备 / 清屏指令入口。
 
-    使用消耗品为多步交互（选择消耗品 → 选择目标 → 确认），通过 ``self._flow.step``
+    使用装备为多步交互（选择装备 → 选择目标 → 确认），通过 ``self._flow.step``
     记录当前所处步骤，同一个 Input 在不同步骤下承载不同语义；Escape 在任意步骤
     都会直接返回上一页（CombatOngoingScreen），中断进行中的使用流程。
 
-    消耗品是队伍级行为，始终挂在玩家自身实体上（而非当前 turn 角色），因此目标
-    解析的阵营锚点固定为玩家；但服务端要求当前 turn 必须是我方角色才允许使用，
-    故基础信息里仍会展示当前 turn 角色，便于玩家判断当前是否可用。
+    装备同样是队伍级行为，始终挂在玩家自身实体上，目标解析的阵营锚点固定为玩家；
+    与消耗品的关键差异：
+    - 目标恒为单一友方（可含玩家自身），服务端要求解析结果恰好 1 个目标，其余
+      target_type（ENEMY_ALL / ALLY_ALL / ENEMY_RANDOM_MULTI / CARD 等）本页不
+      支持选择，直接提示并返回菜单；
+    - 消耗的是**目标**（而非玩家）本回合剩余 energy（`RoundStatsComponent`），
+      能量不足的目标无法为其装备；
+    - 无「每回合限用一次」的限制，但同一件装备若已被任意实体装备中则不可再次
+      使用，直到下一关 / 退出地下城清空。
     """
 
     CSS = """
-    CombatUseConsumableScreen {
+    CombatUseGearScreen {
         align: center middle;
     }
 
-    #combat-use-consumable-log {
+    #combat-use-gear-log {
         border: solid $primary;
         padding: 0 1;
         height: 1fr;
     }
 
-    #combat-use-consumable-input-row {
+    #combat-use-gear-input-row {
         height: 3;
         dock: bottom;
     }
 
-    #combat-use-consumable-prompt {
+    #combat-use-gear-prompt {
         width: 6;
         height: 3;
         content-align: left middle;
         color: $success;
     }
 
-    #combat-use-consumable-input {
+    #combat-use-gear-input {
         width: 1fr;
     }
     """
@@ -143,16 +159,14 @@ class CombatUseConsumableScreen(BaseGameScreen):
 
     def __init__(self) -> None:
         super().__init__()
-        self._snapshot = _ConsumableSnapshot()
-        self._flow = _UseFlowState()
+        self._snapshot = _GearSnapshot()
+        self._flow = _GearFlowState()
 
     def compose(self) -> ComposeResult:
-        yield RichLog(
-            id="combat-use-consumable-log", highlight=True, markup=True, wrap=True
-        )
-        with Horizontal(id="combat-use-consumable-input-row"):
-            yield Static("> ", id="combat-use-consumable-prompt")
-            yield Input(placeholder="输入指令编号...", id="combat-use-consumable-input")
+        yield RichLog(id="combat-use-gear-log", highlight=True, markup=True, wrap=True)
+        with Horizontal(id="combat-use-gear-input-row"):
+            yield Static("> ", id="combat-use-gear-prompt")
+            yield Input(placeholder="输入指令编号...", id="combat-use-gear-input")
 
     def on_mount(self) -> None:
         self._load_base_info()
@@ -215,8 +229,9 @@ class CombatUseConsumableScreen(BaseGameScreen):
         """重新从服务器拉取最新数据并整体替换 `self._snapshot`，不写日志、不改变
         `self._flow`。返回 (是否成功, 失败时的错误描述)。
 
-        使用消耗品会改变场景内任意实体的属性/状态，且消耗品本身来自玩家背包，
-        因此绝不能复用旧快照；本方法是 `_snapshot` 的唯一写入点。
+        使用装备会改变目标实体的 `EquippedGearComponent` 与本回合剩余 energy，
+        且装备本身来自玩家背包，因此绝不能复用旧快照；本方法是 `_snapshot` 的
+        唯一写入点。
         """
         try:
             _, _, actor_name = resolve_identity(self.game_client)
@@ -240,8 +255,8 @@ class CombatUseConsumableScreen(BaseGameScreen):
 
             entities_resp = await get_entities_details(self.game_client, entity_names)
         except Exception as e:
-            msg = f"加载消耗品基础信息失败：{e}"
-            logger.error(f"CombatUseConsumableScreen._fetch_state: {msg}")
+            msg = f"加载装备基础信息失败：{e}"
+            logger.error(f"CombatUseGearScreen._fetch_state: {msg}")
             return False, msg
 
         entities_map = {
@@ -259,9 +274,7 @@ class CombatUseConsumableScreen(BaseGameScreen):
         draw_completed = (
             latest_round.draw_completed if latest_round is not None else False
         )
-        consumable_use_count = (
-            latest_round.consumable_use_count if latest_round is not None else 0
-        )
+        gear_use_count = latest_round.gear_use_count if latest_round is not None else 0
 
         player_entity = entities_map.get(actor_name)
         inventory_data = (
@@ -269,17 +282,23 @@ class CombatUseConsumableScreen(BaseGameScreen):
             if player_entity is not None
             else None
         )
-        consumable_items = (
+        gear_items = (
             [
                 item
                 for item in InventoryComponent(**inventory_data).items
-                if isinstance(item, ConsumableItem)
+                if isinstance(item, GearItem)
             ]
             if inventory_data is not None
             else []
         )
 
-        self._snapshot = _ConsumableSnapshot(
+        equipped_uuids: Set[str] = set()
+        for entity in entities_map.values():
+            equipped_data = find_component_data(entity, EquippedGearComponent.__name__)
+            if equipped_data is not None:
+                equipped_uuids.add(EquippedGearComponent(**equipped_data).item.uuid)
+
+        self._snapshot = _GearSnapshot(
             stage_name=stage_name,
             entities_map=entities_map,
             entities_serialization=entities_resp.entities_serialization,
@@ -287,14 +306,15 @@ class CombatUseConsumableScreen(BaseGameScreen):
             current_actor=current_actor,
             current_actor_is_party=current_actor_is_party,
             draw_completed=draw_completed,
-            consumable_use_count=consumable_use_count,
-            consumable_items=consumable_items,
+            gear_use_count=gear_use_count,
+            gear_items=gear_items,
+            equipped_uuids=equipped_uuids,
         )
         return True, ""
 
     ########################################################################################################################
     async def _load_base_info_impl(self, clear: bool = True) -> None:
-        """重新拉取最新数据并渲染消耗品使用状态 + 场景内角色摘要 + 我方消耗品列表。
+        """重新拉取最新数据并渲染装备使用状态 + 场景内角色摘要 + 我方装备列表。
 
         clear=True（初次进入 / 清屏）：先清空 RichLog 再整体重写；clear=False
         （使用结果反馈之后）：不清空，只在已展示的结果之后追加最新信息。
@@ -304,9 +324,7 @@ class CombatUseConsumableScreen(BaseGameScreen):
         if clear:
             log.clear()
             log.write(BASE_INFO_HEADER)
-        logger.info(
-            f"CombatUseConsumableScreen._load_base_info_impl: 开始加载 clear={clear}"
-        )
+        logger.info(f"CombatUseGearScreen._load_base_info_impl: 开始加载 clear={clear}")
 
         ok, err = await self._fetch_state()
         if not ok:
@@ -325,38 +343,35 @@ class CombatUseConsumableScreen(BaseGameScreen):
         draw_label = (
             "[green]是[/]" if self._snapshot.draw_completed else "[yellow]否[/]"
         )
-        used_label = (
-            f"[red]是[/]（已用 {self._snapshot.consumable_use_count} 次）"
-            if self._snapshot.consumable_use_count > 0
-            else "[green]否[/]"
-        )
 
-        log.write("[bold yellow]── 消耗品使用状态 ─────────────────────────────[/]")
+        log.write("[bold yellow]── 装备使用状态 ─────────────────────────────[/]")
         log.write(
             f"  当前 turn 角色： [bold yellow]{current_actor_label}[/]"
             f"（我方：{party_label}）"
         )
         log.write(f"  抽牌已完成：     {draw_label}")
-        log.write(f"  本回合已使用：   {used_label}")
+        log.write(
+            f"  本回合已使用：   [bold]{self._snapshot.gear_use_count}[/] 次（无次数上限）"
+        )
         log.write("")
 
         render_stage_actors(
             log, self._snapshot.stage_name, self._snapshot.entities_serialization
         )
 
-        log.write("[bold yellow]── 我方消耗品 ─────────────────────────────[/]")
-        if not self._snapshot.consumable_items:
-            log.write("  [dim]（背包中没有消耗品）[/]")
+        log.write("[bold yellow]── 我方装备 ─────────────────────────────[/]")
+        if not self._snapshot.gear_items:
+            log.write("  [dim]（背包中没有装备）[/]")
         else:
-            for i, item in enumerate(self._snapshot.consumable_items, start=1):
-                _write_indexed_item(log, i, item)
+            for i, item in enumerate(self._snapshot.gear_items, start=1):
+                _write_indexed_gear(log, i, item, self._snapshot.equipped_uuids)
         log.write("")
 
-        self._flow = _UseFlowState()
+        self._flow = _GearFlowState()
         log.write(COMMANDS_MENU_TEMPLATE)
 
     ########################################################################################################################
-    @on(Input.Submitted, "#combat-use-consumable-input")
+    @on(Input.Submitted, "#combat-use-gear-input")
     def handle_input(self, event: Input.Submitted) -> None:
         raw = event.value.strip()
         event.input.clear()
@@ -378,7 +393,7 @@ class CombatUseConsumableScreen(BaseGameScreen):
 
     ########################################################################################################################
     def _back_to_menu(self, log: RichLog) -> None:
-        self._flow = _UseFlowState()
+        self._flow = _GearFlowState()
         log.write(COMMANDS_MENU_TEMPLATE)
 
     ########################################################################################################################
@@ -394,23 +409,20 @@ class CombatUseConsumableScreen(BaseGameScreen):
     ########################################################################################################################
     def _enter_select_item(self, log: RichLog) -> None:
         if not self._snapshot.draw_completed:
-            log.write("[yellow]本回合抽牌阶段尚未完成，暂时无法使用消耗品。[/]")
+            log.write("[yellow]本回合抽牌阶段尚未完成，暂时无法使用装备。[/]")
             return
         if not self._snapshot.current_actor_is_party:
-            log.write("[yellow]当前不是我方回合，暂时无法使用消耗品。[/]")
+            log.write("[yellow]当前不是我方回合，暂时无法使用装备。[/]")
             return
-        if self._snapshot.consumable_use_count > 0:
-            log.write("[yellow]本回合已使用过消耗品，每回合限用一次。[/]")
-            return
-        if not self._snapshot.consumable_items:
-            log.write("[yellow]背包中没有可用的消耗品。[/]")
+        if not self._snapshot.gear_items:
+            log.write("[yellow]背包中没有可用的装备。[/]")
             return
 
-        log.write("[bold yellow]── 选择消耗品 ─────────────────────────────────[/]")
-        for i, item in enumerate(self._snapshot.consumable_items, start=1):
-            _write_indexed_item(log, i, item)
+        log.write("[bold yellow]── 选择装备 ─────────────────────────────────[/]")
+        for i, item in enumerate(self._snapshot.gear_items, start=1):
+            _write_indexed_gear(log, i, item, self._snapshot.equipped_uuids)
         log.write("")
-        log.write("[dim]输入编号选择要使用的消耗品；输入 0 取消，返回菜单。[/]")
+        log.write("[dim]输入编号选择要使用的装备；输入 0 取消，返回菜单。[/]")
         self._flow.step = "select_item"
 
     ########################################################################################################################
@@ -421,18 +433,25 @@ class CombatUseConsumableScreen(BaseGameScreen):
             self._back_to_menu(log)
             return
         if not raw.isdigit():
-            log.write("[red]请输入消耗品编号，或输入 0 取消。[/]")
+            log.write("[red]请输入装备编号，或输入 0 取消。[/]")
             return
 
         idx = int(raw)
-        items = self._snapshot.consumable_items
+        items = self._snapshot.gear_items
         if idx < 1 or idx > len(items):
             log.write(
                 f"[red]编号超出范围（1-{len(items)}），请重新输入，或输入 0 取消。[/]"
             )
             return
 
-        self._flow.selected_item = items[idx - 1]
+        item = items[idx - 1]
+        if item.uuid in self._snapshot.equipped_uuids:
+            log.write(
+                f"[red]『{item.name}』当前已被装备中，无法再次使用，请重新选择，或输入 0 取消。[/]"
+            )
+            return
+
+        self._flow.selected_item = item
         self._enter_select_target(log)
 
     ########################################################################################################################
@@ -440,28 +459,18 @@ class CombatUseConsumableScreen(BaseGameScreen):
         item = self._flow.selected_item
         assert item is not None
 
+        if item.target_type == TargetType.CARD:
+            log.write(
+                "[red]当前版本暂不支持 target_type=card 的装备使用，已取消，返回菜单。[/]"
+            )
+            self._back_to_menu(log)
+            return
+
         player_name = self._snapshot.player_name
-        actor_faction = "party"  # 消耗品固定挂在玩家（我方）实体上，锚点恒为 party
+        actor_faction = "party"  # 装备固定挂在玩家（我方）实体上，锚点恒为 party
 
         if item.target_type == TargetType.SELF_ONLY:
             self._flow.pending_targets = [player_name] if player_name else []
-            self._enter_confirm(log)
-            return
-
-        if item.target_type in (TargetType.ENEMY_ALL, TargetType.ENEMY_RANDOM_MULTI):
-            # 由服务端按 target_type 自动解析目标，客户端传空列表即可。
-            self._flow.pending_targets = []
-            self._enter_confirm(log)
-            return
-
-        if item.target_type == TargetType.ALLY_ALL:
-            self._flow.pending_targets = [
-                name
-                for name, entity in self._snapshot.entities_map.items()
-                if name != player_name
-                and classify_faction(entity) == actor_faction
-                and is_alive(entity)
-            ]
             self._enter_confirm(log)
             return
 
@@ -473,20 +482,21 @@ class CombatUseConsumableScreen(BaseGameScreen):
                 and is_alive(entity)
             ]
         elif item.target_type == TargetType.ALLY_SINGLE:
+            # 装备目标可以是玩家自身（如给自己装备武器），故不像消耗品那样排除自身。
             candidates = [
                 (name, entity)
                 for name, entity in self._snapshot.entities_map.items()
-                if name != player_name
-                and classify_faction(entity) == actor_faction
-                and is_alive(entity)
+                if classify_faction(entity) == actor_faction and is_alive(entity)
             ]
         else:
-            # TargetType.CARD 等暂不在本页支持选择目标，直接以空目标使用，交由服务端处理。
+            # ENEMY_ALL / ALLY_ALL / ENEMY_RANDOM_MULTI 等解析结果通常不为单一目标，
+            # 而装备要求解析结果恰好 1 个目标（服务端会直接拒绝），本页不支持在这些
+            # target_type 下选择目标。
             log.write(
-                f"[yellow]目标类型 {item.target_type.value} 暂不支持在本页选择目标，使用时将不指定目标。[/]"
+                f"[yellow]目标类型 {item.target_type.value} 暂不支持在本页选择目标"
+                "（装备要求恰好 1 个目标），使用已取消，返回菜单。[/]"
             )
-            self._flow.pending_targets = []
-            self._enter_confirm(log)
+            self._back_to_menu(log)
             return
 
         if not candidates:
@@ -533,16 +543,30 @@ class CombatUseConsumableScreen(BaseGameScreen):
     def _enter_confirm(self, log: RichLog) -> None:
         item = self._flow.selected_item
         assert item is not None
+        assert len(self._flow.pending_targets) == 1, "装备要求恰好 1 个目标"
 
-        targets_label = (
-            "、".join(display_name(t) for t in self._flow.pending_targets)
-            if self._flow.pending_targets
-            else "（由服务端自动指定）"
-        )
+        target_name = self._flow.pending_targets[0]
+        target_entity = self._snapshot.entities_map.get(target_name)
+        if target_entity is None:
+            log.write(
+                f"[red]找不到目标『{display_name(target_name)}』，使用已取消，返回菜单。[/]"
+            )
+            self._back_to_menu(log)
+            return
+
+        effective_stats = compute_effective_stats_for(target_entity)
+        current_energy = resolve_current_energy(target_entity, effective_stats)
+        if current_energy <= 0:
+            log.write(
+                f"[red]目标『{display_name(target_name)}』本回合能量不足"
+                f"（剩余{current_energy}），无法为其装备，使用已取消，返回菜单。[/]"
+            )
+            self._back_to_menu(log)
+            return
 
         log.write("[bold yellow]── 确认使用 ─────────────────────────────────[/]")
         log.write(render_item(item))
-        log.write(f"  目标： {targets_label}")
+        log.write(f"  目标： {display_name(target_name)}")
         log.write("")
         log.write("  [bold green]1[/]  确认使用")
         log.write("  [bold green]0[/]  取消，返回菜单")
@@ -559,7 +583,7 @@ class CombatUseConsumableScreen(BaseGameScreen):
             log.write("[red]请输入 1 确认使用，或输入 0 取消。[/]")
             return
 
-        self._confirm_and_use()
+        self._confirm_and_use_gear()
 
     ########################################################################################################################
     async def _finish_use_flow(self, inp: Input) -> None:
@@ -569,44 +593,45 @@ class CombatUseConsumableScreen(BaseGameScreen):
         ok, err = await self._fetch_state()
         if not ok:
             logger.warning(
-                f"CombatUseConsumableScreen._finish_use_flow: 静默刷新缓存失败（{err}），"
+                f"CombatUseGearScreen._finish_use_flow: 静默刷新缓存失败（{err}），"
                 "建议手动输入 2 清屏重试"
             )
-        self._flow = _UseFlowState()
+        self._flow = _GearFlowState()
         inp.disabled = False
         inp.focus()
 
     ########################################################################################################################
     @work
-    async def _confirm_and_use(self) -> None:
-        """提交使用消耗品请求并等待后台任务完成，展示本回合新增的
-        consumable_combat_log / consumable_narrative 作为使用结果。结果展示完毕后
-        不再自动刷新，交由玩家自行按 Escape 返回或输入 2 清屏。"""
+    async def _confirm_and_use_gear(self) -> None:
+        """提交使用装备请求并等待后台任务完成，展示本回合新增的 gear_combat_log /
+        gear_narrative 作为使用结果。结果展示完毕后不再自动刷新，交由玩家自行按
+        Escape 返回或输入 2 清屏。"""
         log = self.query_one(RichLog)
         item = self._flow.selected_item
-        assert item is not None, "_confirm_and_use: 未选择消耗品"
+        assert item is not None, "_confirm_and_use_gear: 未选择装备"
+        assert (
+            len(self._flow.pending_targets) == 1
+        ), "_confirm_and_use_gear: 目标数量应恰为 1"
         targets = list(self._flow.pending_targets)
+        target_label = display_name(targets[0])
 
         inp = self.query_one(Input)
         inp.disabled = True
 
-        targets_label = (
-            "、".join(display_name(t) for t in targets) if targets else "（自动目标）"
-        )
-        log.write(f"[dim]▶ 正在使用：{item.name} → {targets_label} ...[/]")
+        log.write(f"[dim]▶ 正在使用：{item.name} → {target_label} ...[/]")
 
         if is_mock_mode(self.game_client):
             logger.info(
-                "CombatUseConsumableScreen._confirm_and_use: mock 模式，模拟使用结果"
+                "CombatUseGearScreen._confirm_and_use_gear: mock 模式，模拟使用结果"
             )
             log.write(
-                "[bold yellow]\\[mock][/] 已模拟提交使用消耗品请求（未调用真实接口）。"
+                "[bold yellow]\\[mock][/] 已模拟提交使用装备请求（未调用真实接口）。"
             )
             log.write("[bold green]✅ 使用完成[/]")
             log.write("[bold yellow]── 使用结果 ─────────────────────────────────[/]")
-            log.write(f"  [dim]战斗：[/] 使用『{item.name}』对 {targets_label} 生效。")
+            log.write(f"  [dim]战斗：[/] 为 {target_label} 装备了『{item.name}』。")
             log.write(
-                f"  [dim]叙事：[/] 一股暖流涌入体内，『{item.name}』的效力发挥了作用。"
+                f"  [dim]叙事：[/] {target_label}握紧『{item.name}』，感受到一股全新的力量。"
             )
             log.write("")
             await self._finish_use_flow(inp)
@@ -615,27 +640,27 @@ class CombatUseConsumableScreen(BaseGameScreen):
         try:
             user_name, game_name, _ = resolve_identity(self.game_client)
 
-            # 使用前先重新 GET 一次，记录当前回合消耗品日志/叙事的基线长度，
+            # 使用前先重新 GET 一次，记录当前回合装备日志/叙事的基线长度，
             # 便于使用完成后精确 diff 出本次新增的条目。
             baseline_room_resp = await get_dungeon_room(self.game_client)
             baseline_room = baseline_room_resp.room
             assert isinstance(baseline_room, CombatRoom)
             baseline_round = baseline_room.combat.latest_round
             baseline_log_count = (
-                len(baseline_round.consumable_combat_log) if baseline_round else 0
+                len(baseline_round.gear_combat_log) if baseline_round else 0
             )
             baseline_narrative_count = (
-                len(baseline_round.consumable_narrative) if baseline_round else 0
+                len(baseline_round.gear_narrative) if baseline_round else 0
             )
 
-            resp = await dungeon_combat_use_consumable(
+            resp = await dungeon_combat_use_gear(
                 user_name, game_name, item.name, targets
             )
             log.write(f"[dim]任务已提交：{resp.task_id}，等待完成...[/]")
             await watch_task_until_done(resp.task_id)
         except TaskFailedError as e:
             logger.error(
-                f"CombatUseConsumableScreen._confirm_and_use: 使用任务失败 error={e}"
+                f"CombatUseGearScreen._confirm_and_use_gear: 使用任务失败 error={e}"
             )
             log.write(f"[bold red]❌ 使用失败：{e}[/]")
             log.write("")
@@ -643,7 +668,7 @@ class CombatUseConsumableScreen(BaseGameScreen):
             return
         except Exception as e:
             logger.error(
-                f"CombatUseConsumableScreen._confirm_and_use: 使用请求失败 error={e}"
+                f"CombatUseGearScreen._confirm_and_use_gear: 使用请求失败 error={e}"
             )
             log.write(f"[bold red]❌ 使用请求失败：{e}[/]")
             log.write("")
@@ -659,7 +684,7 @@ class CombatUseConsumableScreen(BaseGameScreen):
             latest_round = result_room.combat.latest_round
         except Exception as e:
             logger.error(
-                f"CombatUseConsumableScreen._confirm_and_use: 加载使用结果失败 error={e}"
+                f"CombatUseGearScreen._confirm_and_use_gear: 加载使用结果失败 error={e}"
             )
             log.write(f"[bold red]❌ 加载使用结果失败：{e}[/]")
             log.write("")
@@ -667,10 +692,8 @@ class CombatUseConsumableScreen(BaseGameScreen):
             return
 
         if latest_round is not None:
-            new_logs = latest_round.consumable_combat_log[baseline_log_count:]
-            new_narratives = latest_round.consumable_narrative[
-                baseline_narrative_count:
-            ]
+            new_logs = latest_round.gear_combat_log[baseline_log_count:]
+            new_narratives = latest_round.gear_narrative[baseline_narrative_count:]
             if new_logs or new_narratives:
                 log.write(
                     "[bold yellow]── 使用结果 ─────────────────────────────────[/]"

@@ -17,7 +17,7 @@ from ..models import (
     compute_effective_stats,
 )
 from .base import BaseGameScreen
-from .combat_common import find_component_data, role_label
+from .combat_common import find_component_data, resolve_current_energy, role_label
 from .combat_data_access import get_entities_details
 from .utils import display_name, render_card, render_status_effect
 
@@ -147,7 +147,7 @@ class CombatHandStatusViewScreen(BaseGameScreen):
         log.write(
             f"  HP:[yellow]{effective_stats.hp}/{effective_stats.max_hp}[/]  "
             f"攻:{effective_stats.attack}  防:{effective_stats.defense}  "
-            f"能量:{effective_stats.energy}  速度:{effective_stats.speed}"
+            f"能量:{resolve_current_energy(entity, effective_stats)}  速度:{effective_stats.speed}"
         )
         log.write("")
 

@@ -19,6 +19,7 @@ from ..models import (
     MonsterComponent,
     NPCComponent,
     PlayerComponent,
+    RoundStatsComponent,
     StatusEffectsComponent,
     compute_effective_stats,
 )
@@ -107,6 +108,26 @@ def compute_effective_stats_for(
         status_comp.status_effects if status_comp is not None else None,
         equipped_gear,
     )
+
+
+###############################################################################################################################################
+def resolve_current_energy(
+    entity: EntitySerialization, effective_stats: Optional[CharacterStats]
+) -> int:
+    """解析实体本回合剩余可用 energy。
+
+    优先读取 `RoundStatsComponent.energy`——这是本回合真正剩余的行动次数，由
+    `CombatRoundTransitionSystem._start_new_round` 在回合开始时以
+    `compute_character_stats(actor).energy` 初始化，此后随出牌/装备/过牌等消耗
+    动作实时递减，只在回合开始的瞬间与 `effective_stats.energy` 相等。
+
+    若实体尚未挂载该组件（如 INITIALIZATION 阶段战斗尚未进入任何回合），退回调用方
+    已计算好的 `effective_stats.energy` 作为近似；`effective_stats` 为 None 时返回 0。
+    """
+    round_stats_data = find_component_data(entity, RoundStatsComponent.__name__)
+    if round_stats_data is not None:
+        return RoundStatsComponent(**round_stats_data).energy
+    return effective_stats.energy if effective_stats is not None else 0
 
 
 ###############################################################################################################################################
@@ -220,6 +241,7 @@ def render_stage_actors(
         effective_stats = compute_effective_stats(
             base_stats, status_effects, equipped_gear
         )
+        current_energy = resolve_current_energy(entity, effective_stats)
         label = role_label(entity)
         is_dead = find_component_data(entity, DeathComponent.__name__) is not None
         death_mark = "  [bold red]（已战死）[/]" if is_dead else ""
@@ -227,7 +249,7 @@ def render_stage_actors(
             f"  {label} [bold]{display_name(entity.name)}[/]{death_mark}  "
             f"HP:[yellow]{effective_stats.hp}/{effective_stats.max_hp}[/]  "
             f"攻:{effective_stats.attack}  防:{effective_stats.defense}  "
-            f"能量:{effective_stats.energy}  速度:{effective_stats.speed}"
+            f"能量:{current_energy}  速度:{effective_stats.speed}"
         )
 
         hand_data = find_component_data(entity, HandComponent.__name__)

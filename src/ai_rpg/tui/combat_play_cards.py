@@ -27,6 +27,7 @@ from .combat_common import (
     find_stage_of_actor,
     is_alive,
     render_stage_actors,
+    resolve_current_energy,
     role_label,
 )
 from .combat_data_access import (
@@ -193,7 +194,7 @@ class CombatPlayCardsScreen(BaseGameScreen):
         log.write(
             f"    HP:[yellow]{effective_stats.hp}/{effective_stats.max_hp}[/]  "
             f"攻:{effective_stats.attack}  防:{effective_stats.defense}  "
-            f"能量:{effective_stats.energy}  速度:{effective_stats.speed}"
+            f"能量:{resolve_current_energy(entity, effective_stats)}  速度:{effective_stats.speed}"
         )
 
         if status_comp is not None and status_comp.status_effects:
@@ -273,7 +274,9 @@ class CombatPlayCardsScreen(BaseGameScreen):
             else None
         )
         current_actor_energy = (
-            effective_stats.energy if effective_stats is not None else 0
+            resolve_current_energy(current_entity, effective_stats)
+            if current_entity is not None
+            else 0
         )
 
         self._snapshot = _CombatSnapshot(

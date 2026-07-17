@@ -100,11 +100,8 @@ class CombatOngoingScreen(BaseGameScreen):
             yield Input(placeholder="输入指令编号...", id="combat-ongoing-input")
 
     def on_mount(self) -> None:
-        """仅写入一次性的静态页头；实际数据加载统一交给 on_screen_resume 处理
-        （Textual 在首次 push/switch 到本页时，on_mount 与 on_screen_resume 都会
-        触发一次，若在两处都调用 _load_base_info 会导致内容重复渲染两遍）。"""
-        log = self.query_one(RichLog)
-        log.write(BASE_INFO_HEADER)
+        """本页首次挂载时不做任何渲染；实际（重新）渲染统一交给 on_screen_resume
+        处理，避免与其重复写入。"""
 
     def on_screen_resume(self) -> None:
         """本页成为当前活动页面时触发：既覆盖首次进入，也覆盖从子 Screen（如抽牌 /
@@ -117,8 +114,14 @@ class CombatOngoingScreen(BaseGameScreen):
     ########################################################################################################################
     @work
     async def _load_base_info(self) -> None:
-        """加载并渲染战斗宏观状态 + 回合信息 + 场景内角色有效属性（含手牌/状态效果数量）。"""
+        """加载并渲染战斗宏观状态 + 回合信息 + 场景内角色有效属性（含手牌/状态效果数量）。
+
+        注意：每次调用都会先清空 RichLog 再重新写入全部内容，避免从子 Screen（如
+        抽牌 / 查阅手牌等）返回触发 on_screen_resume 重新加载时，内容在原有基础上
+        不断追加、重复堆叠。"""
         log = self.query_one(RichLog)
+        log.clear()
+        log.write(BASE_INFO_HEADER)
         logger.info("CombatOngoingScreen._load_base_info: 开始加载")
 
         try:

@@ -43,20 +43,7 @@ def _generate_monster_decision_prompt(
     completed_actors: List[str],
     current_round_number: int,
 ) -> str:
-    """生成怪物出牌决策的 LLM 提示词。
-
-    Args:
-        monster_name: 怪物名称
-        monster_stats: 怪物当前战斗属性
-        hand_cards: 当前手牌列表
-        opponent_names: 场上存活对手名称列表（不含血量）
-        action_order: 本回合完整行动序列
-        completed_actors: 已完成出牌的角色名称列表
-        current_round_number: 当前回合数
-
-    Returns:
-        格式化的完整提示词
-    """
+    """生成怪物出牌决策的 LLM 提示词。"""
     stats = monster_stats
     self_info = (
         f"HP:{stats.hp}/{stats.max_hp} | 攻击:{stats.attack} | 防御:{stats.defense}"
@@ -240,7 +227,6 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         chat_clients: List[DeepSeekClient] = []
         for entity in entities:
             client = self._create_monster_decision_client(entity)
-            # if client is not None:
             chat_clients.append(client)
 
         if not chat_clients:
@@ -269,9 +255,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
             HandComponent
         ), f"MonsterPrePlaySystem: 怪物 {entity.name} 缺少 HandComponent"
         hand_comp = entity.get(HandComponent)
-        # if hand_comp is None or len(hand_comp.cards) == 0:
-        #     logger.error(f"MonsterPrePlaySystem: 怪物 {entity.name} 没有手牌，无法决策")
-        #     return None
+        assert hand_comp is not None, f"MonsterPrePlaySystem: HandComponent 不能为空"
 
         monster_stats = compute_character_stats(entity)
 
@@ -334,12 +318,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
 
     ####################################################################################################################################
     def _process_monster_decision(self, client: DeepSeekClient) -> None:
-        """解析 LLM 决策响应，替换怪物的 PlayCardsAction。
-
-        Args:
-            entity: 怪物实体
-            client: 包含 LLM 响应的 DeepSeekClient
-        """
+        """解析 LLM 决策响应，替换怪物的 PlayCardsAction。"""
 
         entity = self._game.get_entity_by_name(client.name)
         assert entity is not None, f"MonsterPrePlaySystem: 无法找到实体 {client.name}"
@@ -374,9 +353,9 @@ class MonsterPrePlaySystem(ReactiveProcessor):
                 draw_cards_full_prompt=client.prompt,
             ),
         )
-        assert (
-            client.response_ai_message is not None
-        ), "MonsterPrePlaySystem: AI 消息不能为空"
+        # assert (
+        #     client.response_ai_message is not None
+        # ), "MonsterPrePlaySystem: AI 消息不能为空"
         self._game.add_ai_message(entity, client.response_ai_message)
 
         if decision.pass_turn:

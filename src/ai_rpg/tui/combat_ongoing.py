@@ -36,6 +36,7 @@ from .combat_use_gear import CombatUseGearScreen
 from .home import HomeScreen
 from .server_client import (
     TaskFailedError,
+    dungeon_combat_pass_turn,
     dungeon_combat_retreat,
     watch_task_until_done,
 )
@@ -60,6 +61,7 @@ DRAW_CARDS_COMMAND_LINE = "\n  [bold green]7[/]  抽牌"
 PLAY_CARDS_COMMAND_LINE = "\n  [bold green]7[/]  出牌"
 USE_CONSUMABLE_COMMAND_LINE = "\n  [bold green]8[/]  使用消耗品"
 USE_GEAR_COMMAND_LINE = "\n  [bold green]9[/]  使用装备"
+PASS_TURN_COMMAND_LINE = "\n  [bold green]10[/] 过牌"
 
 
 @final
@@ -173,17 +175,32 @@ class CombatOngoingScreen(BaseGameScreen):
         menu = ONGOING_COMMANDS_MENU
         menu += HAND_STATUS_COMMAND_LINE
 
+        # 准备数据
+        latest_round = combat.latest_round
+
         if combat.state == CombatState.ONGOING:
+
+            # 6（战斗中撤退）仅在 ONGOING 阶段出现
             menu += RETREAT_COMMAND_LINE
-            latest_round = combat.latest_round
+
+            # 7（抽牌 / 出牌）仅在 ONGOING 阶段出现，依最新回合 draw_completed 而变：
             if latest_round is not None and not latest_round.draw_completed:
                 menu += DRAW_CARDS_COMMAND_LINE
             else:
                 menu += PLAY_CARDS_COMMAND_LINE
+
+            # 8/9（使用消耗品 / 使用装备）仅在 ONGOING 阶段出现，具体前置条件交由各自 Screen 自身校验并提示，本页不做过滤
             menu += USE_CONSUMABLE_COMMAND_LINE
             menu += USE_GEAR_COMMAND_LINE
+
+            # 10（过牌）仅在 ONGOING 阶段出现
+            menu += PASS_TURN_COMMAND_LINE
+
         elif combat.state in (CombatState.COMPLETE, CombatState.POST_COMBAT):
+
+            # 6（结束战斗）仅在 COMPLETE / POST_COMBAT 阶段出现
             menu += POST_COMBAT_COMMAND_LINE
+
         else:
             logger.info(
                 "CombatOngoingScreen._load_base_info: 战斗处于其它阶段，隐藏指令 6/7/8/9"
@@ -208,11 +225,14 @@ class CombatOngoingScreen(BaseGameScreen):
         """
         log = self.query_one(RichLog)
 
-        if raw not in ("1", "2", "3", "4", "5", "6", "7", "8", "9"):
-            log.write("[red]无效指令，请输入 1-9[/]")
+        # 校验输入合法性
+        if raw not in ("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"):
+            log.write("[red]无效指令，请输入 1-9 或 10[/]")
             return
 
         try:
+
+            # 获取当前身份信息、战斗房间状态、场景花名册
             _, _, actor_name = resolve_identity(self.game_client)
             room_resp = await get_dungeon_room(self.game_client)
             room = room_resp.room
@@ -228,6 +248,12 @@ class CombatOngoingScreen(BaseGameScreen):
             log.write(f"[bold red]❌ 校验战斗状态失败：{e}[/]")
             return
 
+        # 指令 4 / 6 / 10 不需要场景花名册（participant_names），因此提前在
+        # 获取花名册之前处理，避免多做一次不必要的 get_stages_state 请求；
+        # 这只是网络请求的先后顺序问题，与「是否会返回本页」无关——
+        # 撤退（_do_retreat 成功后 switch_screen 到 HomeScreen）确实不会再回到
+        # 本页，但 push_screen(CombatPostCombatScreen()) 与其余 1/2/3/5/7/8/9
+        # 一样，目标页支持 Escape 返回，回来后会重新触发 on_screen_resume 刷新。
         if raw == "6":
             if combat.state == CombatState.ONGOING:
                 self._do_retreat()
@@ -239,6 +265,23 @@ class CombatOngoingScreen(BaseGameScreen):
 
         if raw == "4":
             self.app.push_screen(CombatRoundHistoryScreen(combat.rounds))
+            return
+
+        # 10（过牌）仅在 ONGOING 阶段、当前回合未结束时可用（详见服务端校验）
+        latest_round = combat.latest_round
+        assert (
+            latest_round is not None
+        ), "进入到本阶段就意味着至少有一个回合已开始，latest_round 不应为 None"
+
+        if raw == "10":
+            if combat.state == CombatState.ONGOING:
+                current_actor = latest_round.current_actor
+                assert (
+                    current_actor is not None
+                ), "当前回合未结束时，current_actor 不应为 None, 服务器来保证"
+
+                self._do_pass_turn(current_actor)
+
             return
 
         try:
@@ -266,19 +309,19 @@ class CombatOngoingScreen(BaseGameScreen):
         elif raw == "5":
             self.app.push_screen(CombatHandStatusViewScreen(participant_names))
         elif raw == "7":
-            latest_round = combat.latest_round
-            if combat.state == CombatState.ONGOING and (
-                latest_round is not None and not latest_round.draw_completed
-            ):
-                self.app.push_screen(CombatDrawCardsScreen(participant_names))
-            elif combat.state == CombatState.ONGOING and (
-                latest_round is not None and latest_round.draw_completed
-            ):
-                self.app.push_screen(CombatPlayCardsScreen())
+            if combat.state == CombatState.ONGOING:
+                if latest_round.draw_completed:
+                    # 抽牌完成，就会进入出牌页
+                    self.app.push_screen(CombatPlayCardsScreen())
+                else:
+                    # 没抽牌，就会进入抽牌页，
+                    self.app.push_screen(CombatDrawCardsScreen(participant_names))
             else:
                 log.write(f"[yellow]还没有实现。[/]")
+
         elif raw == "8":
             self.app.push_screen(CombatUseConsumableScreen())
+
         elif raw == "9":
             self.app.push_screen(CombatUseGearScreen())
 
@@ -320,3 +363,46 @@ class CombatOngoingScreen(BaseGameScreen):
         logger.info("CombatOngoingScreen._do_retreat: 撤退成功，返回家园")
 
         self.app.switch_screen(HomeScreen())
+
+    ########################################################################################################################
+    @work
+    async def _do_pass_turn(self, actor_name: str) -> None:
+        """过牌（仅 CombatState.ONGOING 阶段、当前回合抽牌已完成时可用）：本页不
+        创建新页面，成功后需要重新加载基础信息，因为当前 turn 的角色已变化。"""
+        log = self.query_one(RichLog)
+
+        if is_mock_mode(self.game_client):
+            logger.info("CombatOngoingScreen._do_pass_turn: mock 模式，模拟过牌结果")
+            log.write(
+                f"[bold yellow]\\[mock][/] 已模拟提交过牌请求（未调用真实接口）：{actor_name}"
+            )
+            log.write("[bold green]✅ 过牌完成[/]")
+            self._load_base_info()
+            return
+
+        inp = self.query_one(Input)
+        inp.disabled = True
+        log.write(f"[dim]▶ 正在为 {actor_name} 过牌...[/]")
+
+        try:
+            user_name, game_name, _ = resolve_identity(self.game_client)
+            resp = await dungeon_combat_pass_turn(user_name, game_name, actor_name)
+            log.write(f"[dim]任务已提交：{resp.task_id}，等待完成...[/]")
+            await watch_task_until_done(resp.task_id)
+        except TaskFailedError as e:
+            logger.error(f"CombatOngoingScreen._do_pass_turn: 过牌任务失败 error={e}")
+            log.write(f"[bold red]❌ 过牌失败：{e}[/]")
+            inp.disabled = False
+            inp.focus()
+            return
+        except Exception as e:
+            logger.error(f"CombatOngoingScreen._do_pass_turn: 过牌请求失败 error={e}")
+            log.write(f"[bold red]❌ 过牌请求失败：{e}[/]")
+            inp.disabled = False
+            inp.focus()
+            return
+
+        log.write("[bold green]✅ 过牌成功[/]")
+        logger.info("CombatOngoingScreen._do_pass_turn: 过牌成功，刷新本页")
+        inp.disabled = False
+        self._load_base_info()

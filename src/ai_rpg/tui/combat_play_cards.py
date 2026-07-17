@@ -13,10 +13,8 @@ from textual.widgets import Input, RichLog, Static
 from ..models import (
     Card,
     CombatRoom,
-    DeathComponent,
     EntitySerialization,
     HandComponent,
-    StatusEffectsComponent,
     TargetType,
 )
 from .base import BaseGameScreen
@@ -28,7 +26,7 @@ from .combat_common import (
     is_alive,
     render_stage_actors,
     resolve_current_energy,
-    role_label,
+    write_actor_detail,
 )
 from .combat_data_access import (
     get_dungeon_room,
@@ -42,7 +40,7 @@ from .server_client import (
     dungeon_combat_play_cards,
     watch_task_until_done,
 )
-from .utils import display_name, render_card, render_status_effect
+from .utils import display_name, render_card
 
 BASE_INFO_HEADER = """\
 [bold cyan]── 出牌 ──────────────────────────────────────[/]
@@ -53,11 +51,6 @@ BASE_INFO_HEADER = """\
 COMMANDS_MENU_TEMPLATE = """\
 [bold yellow]── 可用操作 ─────────[/]
   [bold green]1[/]  {current_actor_label} 出牌
-  [bold green]2[/]  清屏（刷新基础信息 + 清除历史信息）"""
-
-MONSTER_TURN_COMMANDS_MENU_TEMPLATE = """\
-[bold yellow]── 可用操作 ─────────[/]
-  [bold green]1[/]  推进 {current_actor_label} 的回合（由 AI 自动出牌/过牌）
   [bold green]2[/]  清屏（刷新基础信息 + 清除历史信息）"""
 
 
@@ -72,7 +65,6 @@ class _CombatSnapshot:
     current_actor: Optional[str] = None
     current_actor_energy: int = 0
     hand_cards: List[Card] = field(default_factory=list)
-    is_monster_turn: bool = False
 
 
 ###############################################################################################################################################
@@ -164,63 +156,7 @@ class CombatPlayCardsScreen(BaseGameScreen):
             if self._snapshot.current_actor
             else "（无）"
         )
-        template = (
-            MONSTER_TURN_COMMANDS_MENU_TEMPLATE
-            if self._snapshot.is_monster_turn
-            else COMMANDS_MENU_TEMPLATE
-        )
-        return template.format(current_actor_label=current_actor_label)
-
-    ########################################################################################################################
-    def _write_actor_detail(
-        self, log: RichLog, entity: EntitySerialization, index_label: str = ""
-    ) -> None:
-        """渲染单个角色的有效属性 + 状态效果 + 手牌完整详情。
-
-        index_label: 非空时与角色名写在同一行前面（如目标候选列表的编号）。
-        """
-        effective_stats = compute_effective_stats_for(entity)
-        if effective_stats is None:
-            log.write(
-                f"  {index_label}[yellow]{display_name(entity.name)} 缺少属性组件，跳过[/]"
-            )
-            return
-
-        status_data = find_component_data(entity, StatusEffectsComponent.__name__)
-        hand_data = find_component_data(entity, HandComponent.__name__)
-
-        status_comp = (
-            StatusEffectsComponent(**status_data) if status_data is not None else None
-        )
-        hand_comp = HandComponent(**hand_data) if hand_data is not None else None
-        death_mark = (
-            "  [bold red]（已战死）[/]"
-            if find_component_data(entity, DeathComponent.__name__) is not None
-            else ""
-        )
-
-        log.write(
-            f"  {index_label}{role_label(entity)} [bold]{display_name(entity.name)}[/]{death_mark}"
-        )
-        log.write(
-            f"    HP:[yellow]{effective_stats.hp}/{effective_stats.max_hp}[/]  "
-            f"攻:{effective_stats.attack}  防:{effective_stats.defense}  "
-            f"能量:{resolve_current_energy(entity, effective_stats)}  速度:{effective_stats.speed}"
-        )
-
-        if status_comp is not None and status_comp.status_effects:
-            log.write(f"    状态效果（{len(status_comp.status_effects)}）：")
-            for effect in status_comp.status_effects:
-                log.write(render_status_effect(effect, entity.name))
-        else:
-            log.write("    状态效果： [dim]（无）[/]")
-
-        if hand_comp is not None and hand_comp.cards:
-            log.write(f"    手牌（{len(hand_comp.cards)}）：")
-            for card in hand_comp.cards:
-                log.write(render_card(card))
-        else:
-            log.write("    手牌： [dim]（无）[/]")
+        return COMMANDS_MENU_TEMPLATE.format(current_actor_label=current_actor_label)
 
     ########################################################################################################################
     @work
@@ -289,10 +225,6 @@ class CombatPlayCardsScreen(BaseGameScreen):
             if current_entity is not None
             else 0
         )
-        # 怪物的出牌决策由服务端 MonsterPrePlaySystem（LLM）自动完成，本页提交的
-        # card_name / targets 会被服务端忽略；据此区分菜单展示与指令 1 的行为，
-        # 避免误导玩家以为自己在为怪物选牌。
-        is_monster_turn = classify_faction(current_entity) == "monster"
 
         self._snapshot = _CombatSnapshot(
             stage_name=stage_name,
@@ -301,7 +233,6 @@ class CombatPlayCardsScreen(BaseGameScreen):
             current_actor=current_actor,
             current_actor_energy=current_actor_energy,
             hand_cards=hand_cards,
-            is_monster_turn=is_monster_turn,
         )
         return True, ""
 
@@ -335,7 +266,7 @@ class CombatPlayCardsScreen(BaseGameScreen):
 
         log.write("[bold yellow]── 当前 turn ─────────────────────────────────[/]")
         if current_entity is not None:
-            self._write_actor_detail(log, current_entity)
+            write_actor_detail(log, current_entity)
         else:
             log.write("  [dim]（无当前出牌角色）[/]")
         log.write("")
@@ -377,10 +308,7 @@ class CombatPlayCardsScreen(BaseGameScreen):
     def _handle_menu_command(self, raw: str) -> None:
         log = self.query_one(RichLog)
         if raw == "1":
-            if self._snapshot.is_monster_turn:
-                self._trigger_monster_turn()
-            else:
-                self._enter_select_card(log)
+            self._enter_select_card(log)
         elif raw == "2":
             self._load_base_info(clear=True)
         else:
@@ -505,7 +433,7 @@ class CombatPlayCardsScreen(BaseGameScreen):
         log.write("")
         for i, (_, entity) in enumerate(candidates, start=1):
             log.write("[dim]────────────────────────────[/]")
-            self._write_actor_detail(log, entity, index_label=f"[bold green]{i}[/] ")
+            write_actor_detail(log, entity, index_label=f"[bold green]{i}[/] ")
 
         log.write("")
         log.write("[dim]输入编号选择目标；输入 0 取消，返回菜单。[/]")
@@ -681,106 +609,6 @@ class CombatPlayCardsScreen(BaseGameScreen):
                 log.write(
                     "[bold yellow]── 出牌结果 ─────────────────────────────────[/]"
                 )
-                for combat_log, narrative in zip_longest(new_logs, new_narratives):
-                    log.write(f"  [dim]战斗：[/] {combat_log or '[dim]（无）[/]'}")
-                    log.write(f"  [dim]叙事：[/] {narrative or '[dim]（无）[/]'}")
-        log.write("")
-
-        await self._finish_play_flow(inp)
-
-    ########################################################################################################################
-    @work
-    async def _trigger_monster_turn(self) -> None:
-        """推进怪物回合：怪物的出牌/过牌决策由服务端 MonsterPrePlaySystem（LLM）
-        自动完成，本页提交的 card_name / targets 会被服务端忽略，仅用于触发流程
-        推进。结果展示完毕后不再自动刷新，交由玩家自行按 Escape 返回或输入 2 清屏。"""
-        log = self.query_one(RichLog)
-        actor_name = self._snapshot.current_actor
-        assert actor_name is not None, "_trigger_monster_turn: 当前无行动角色"
-        assert self._snapshot.is_monster_turn, "_trigger_monster_turn: 当前不是怪物回合"
-
-        inp = self.query_one(Input)
-        inp.disabled = True
-
-        actor_label = display_name(actor_name)
-        log.write(f"[dim]▶ 正在推进 {actor_label} 的回合（AI 自动决策）...[/]")
-
-        if is_mock_mode(self.game_client):
-            logger.info(
-                "CombatPlayCardsScreen._trigger_monster_turn: mock 模式，模拟怪物回合结果"
-            )
-            log.write(
-                "[bold yellow]\\[mock][/] 已模拟提交怪物回合请求（未调用真实接口）。"
-            )
-            log.write("[bold green]✅ 怪物回合推进完成[/]")
-            log.write("[bold yellow]── 回合结果 ─────────────────────────[/]")
-            log.write(f"  [dim]战斗：[/] {actor_label} 自动出牌，造成若干伤害。")
-            log.write(f"  [dim]叙事：[/] {actor_label}发起了攻击！")
-            log.write("")
-            await self._finish_play_flow(inp)
-            return
-
-        try:
-            user_name, game_name, _ = resolve_identity(self.game_client)
-
-            # 推进前先重新 GET 一次，记录当前回合出牌日志/叙事的基线长度，
-            # 便于推进完成后精确 diff 出本次新增的条目。
-            baseline_room_resp = await get_dungeon_room(self.game_client)
-            baseline_room = baseline_room_resp.room
-            assert isinstance(baseline_room, CombatRoom)
-            baseline_round = baseline_room.combat.latest_round
-            baseline_log_count = (
-                len(baseline_round.cards_combat_log) if baseline_round else 0
-            )
-            baseline_narrative_count = (
-                len(baseline_round.cards_narrative) if baseline_round else 0
-            )
-
-            # card_name / targets 仅作占位，服务端在识别到 actor 为怪物时会忽略它们，
-            # 改由 activate_monster_play_trigger 触发 MonsterPrePlaySystem 自动决策。
-            resp = await dungeon_combat_play_cards(
-                user_name, game_name, actor_name, "", []
-            )
-            log.write(f"[dim]任务已提交：{resp.task_id}，等待完成...[/]")
-            await watch_task_until_done(resp.task_id)
-        except TaskFailedError as e:
-            logger.error(
-                f"CombatPlayCardsScreen._trigger_monster_turn: 怪物回合任务失败 error={e}"
-            )
-            log.write(f"[bold red]❌ 怪物回合推进失败：{e}[/]")
-            log.write("")
-            await self._finish_play_flow(inp)
-            return
-        except Exception as e:
-            logger.error(
-                f"CombatPlayCardsScreen._trigger_monster_turn: 怪物回合请求失败 error={e}"
-            )
-            log.write(f"[bold red]❌ 怪物回合请求失败：{e}[/]")
-            log.write("")
-            await self._finish_play_flow(inp)
-            return
-
-        log.write("[bold green]✅ 怪物回合推进完成[/]")
-
-        try:
-            result_room_resp = await get_dungeon_room(self.game_client)
-            result_room = result_room_resp.room
-            assert isinstance(result_room, CombatRoom)
-            latest_round = result_room.combat.latest_round
-        except Exception as e:
-            logger.error(
-                f"CombatPlayCardsScreen._trigger_monster_turn: 加载回合结果失败 error={e}"
-            )
-            log.write(f"[bold red]❌ 加载回合结果失败：{e}[/]")
-            log.write("")
-            await self._finish_play_flow(inp)
-            return
-
-        if latest_round is not None:
-            new_logs = latest_round.cards_combat_log[baseline_log_count:]
-            new_narratives = latest_round.cards_narrative[baseline_narrative_count:]
-            if new_logs or new_narratives:
-                log.write("[bold yellow]── 回合结果 ─────────────────────────[/]")
                 for combat_log, narrative in zip_longest(new_logs, new_narratives):
                     log.write(f"  [dim]战斗：[/] {combat_log or '[dim]（无）[/]'}")
                     log.write(f"  [dim]叙事：[/] {narrative or '[dim]（无）[/]'}")

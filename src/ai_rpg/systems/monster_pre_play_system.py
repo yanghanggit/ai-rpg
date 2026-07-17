@@ -243,14 +243,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
 
     ####################################################################################################################################
     def _create_monster_decision_client(self, entity: Entity) -> DeepSeekClient:
-        """为单个怪物实体创建出牌决策的 DeepSeekClient。
-
-        Args:
-            entity: 怪物实体
-
-        Returns:
-            DeepSeekClient，若缺少必要组件则返回 None
-        """
+        """为单个怪物实体创建出牌决策的 DeepSeekClient。"""
         assert entity.has(
             HandComponent
         ), f"MonsterPrePlaySystem: 怪物 {entity.name} 缺少 HandComponent"
@@ -353,11 +346,11 @@ class MonsterPrePlaySystem(ReactiveProcessor):
                 draw_cards_full_prompt=client.prompt,
             ),
         )
-        # assert (
-        #     client.response_ai_message is not None
-        # ), "MonsterPrePlaySystem: AI 消息不能为空"
+
+        # 写入 LLM 原文响应
         self._game.add_ai_message(entity, client.response_ai_message)
 
+        # 根据 LLM 决策替换 PlayCardsAction 或 PassTurnAction
         if decision.pass_turn:
             entity.replace(PassTurnAction, entity.name)
             logger.debug(
@@ -368,6 +361,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         hand_comp = entity.get(HandComponent)
         assert hand_comp is not None, "MonsterPrePlaySystem: HandComponent 不能为空"
 
+        # 根据 LLM 决策的 card_name 查找手牌
         selected_card = next(
             (c for c in hand_comp.cards if c.name == decision.card_name),
             None,
@@ -384,6 +378,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         alive_actors = get_alive_actors_in_stage(self._game, entity)
         alive_names = {a.name for a in alive_actors}
 
+        # 根据卡牌的 target_type 解析出牌目标
         match selected_card.target_type:
             case TargetType.ENEMY_ALL:
                 # 自动填充所有存活的远征队成员（对怪物来说"敌方"= PartyMember）

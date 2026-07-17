@@ -23,7 +23,7 @@ from ..models import (
     StatusEffectsComponent,
     compute_effective_stats,
 )
-from .utils import display_name
+from .utils import display_name, render_card, render_status_effect
 
 
 ###############################################################################################################################################
@@ -128,6 +128,61 @@ def resolve_current_energy(
     if round_stats_data is not None:
         return RoundStatsComponent(**round_stats_data).energy
     return effective_stats.energy if effective_stats is not None else 0
+
+
+###############################################################################################################################################
+def write_actor_detail(
+    log: RichLog,
+    entity: EntitySerialization,
+    index_label: str = "",
+) -> None:
+    """渲染单个角色的有效属性 + 状态效果 + 手牌完整详情，供出牌 / 怪物回合等
+    需要展示当前 turn 角色详情的页面复用，避免各自重复实现。
+
+    index_label: 非空时与角色名写在同一行前面（如目标候选列表的编号）。
+    """
+    effective_stats = compute_effective_stats_for(entity)
+    if effective_stats is None:
+        log.write(
+            f"  {index_label}[yellow]{display_name(entity.name)} 缺少属性组件，跳过[/]"
+        )
+        return
+
+    status_data = find_component_data(entity, StatusEffectsComponent.__name__)
+    hand_data = find_component_data(entity, HandComponent.__name__)
+
+    status_comp = (
+        StatusEffectsComponent(**status_data) if status_data is not None else None
+    )
+    hand_comp = HandComponent(**hand_data) if hand_data is not None else None
+    death_mark = (
+        "  [bold red]（已战死）[/]"
+        if find_component_data(entity, DeathComponent.__name__) is not None
+        else ""
+    )
+
+    log.write(
+        f"  {index_label}{role_label(entity)} [bold]{display_name(entity.name)}[/]{death_mark}"
+    )
+    log.write(
+        f"    HP:[yellow]{effective_stats.hp}/{effective_stats.max_hp}[/]  "
+        f"攻:{effective_stats.attack}  防:{effective_stats.defense}  "
+        f"能量:{resolve_current_energy(entity, effective_stats)}  速度:{effective_stats.speed}"
+    )
+
+    if status_comp is not None and status_comp.status_effects:
+        log.write(f"    状态效果（{len(status_comp.status_effects)}）：")
+        for effect in status_comp.status_effects:
+            log.write(render_status_effect(effect, entity.name))
+    else:
+        log.write("    状态效果： [dim]（无）[/]")
+
+    if hand_comp is not None and hand_comp.cards:
+        log.write(f"    手牌（{len(hand_comp.cards)}）：")
+        for card in hand_comp.cards:
+            log.write(render_card(card))
+    else:
+        log.write("    手牌： [dim]（无）[/]")
 
 
 ###############################################################################################################################################

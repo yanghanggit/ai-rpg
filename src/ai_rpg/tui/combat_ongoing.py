@@ -11,6 +11,7 @@ from textual.widgets import Input, RichLog, Static
 from ..models import CombatRoom, CombatState
 from .base import BaseGameScreen
 from .combat_common import (
+    classify_faction,
     find_stage_of_actor,
     render_combat_summary,
     render_round_info,
@@ -28,6 +29,7 @@ from .combat_draw_cards import CombatDrawCardsScreen
 from .combat_entity_inspect import CombatEntityInspectScreen
 from .combat_hand_status_view import CombatHandStatusViewScreen
 from .combat_inventory_view import CombatInventoryViewScreen
+from .combat_monster_turn import CombatMonsterTurnScreen
 from .combat_play_cards import CombatPlayCardsScreen
 from .combat_post_combat import CombatPostCombatScreen
 from .combat_round_history import CombatRoundHistoryScreen
@@ -59,6 +61,7 @@ RETREAT_COMMAND_LINE = "\n  [bold green]6[/]  战斗中撤退"
 POST_COMBAT_COMMAND_LINE = "\n  [bold green]6[/]  结束战斗"
 DRAW_CARDS_COMMAND_LINE = "\n  [bold green]7[/]  抽牌"
 PLAY_CARDS_COMMAND_LINE = "\n  [bold green]7[/]  出牌"
+MONSTER_TURN_COMMAND_LINE = "\n  [bold green]7[/]  推进怪物回合"
 USE_CONSUMABLE_COMMAND_LINE = "\n  [bold green]8[/]  使用消耗品"
 USE_GEAR_COMMAND_LINE = "\n  [bold green]9[/]  使用装备"
 PASS_TURN_COMMAND_LINE = "\n  [bold green]10[/] 过牌"
@@ -168,7 +171,8 @@ class CombatOngoingScreen(BaseGameScreen):
         # 指令 6 依 combat.state 而变：ONGOING 阶段为「战斗中撤退」，
         # COMPLETE / POST_COMBAT 阶段为「结束战斗」，其余阶段不显示；
         # 指令 7 仅在 ONGOING 阶段出现，依最新回合 draw_completed 而变：
-        # 未完成为「抽牌」，已完成为「出牌」；
+        # 未完成为「抽牌」，已完成后依当前 turn 角色阵营而变：
+        # 怪物回合为「推进怪物回合」，我方回合为「出牌」；
         # 指令 8（使用消耗品）/ 9（使用装备）仅在 ONGOING 阶段出现，具体前置条件
         # （抽牌是否完成 / 当前 turn 是否为我方 / 每回合限用一次 / 装备是否已被
         # 占用 / 目标能量是否充足等）交由各自 Screen 自身校验并提示，本页不做过滤。
@@ -183,11 +187,22 @@ class CombatOngoingScreen(BaseGameScreen):
             # 6（战斗中撤退）仅在 ONGOING 阶段出现
             menu += RETREAT_COMMAND_LINE
 
-            # 7（抽牌 / 出牌）仅在 ONGOING 阶段出现，依最新回合 draw_completed 而变：
+            # 7（抽牌 / 出牌 / 推进怪物回合）仅在 ONGOING 阶段出现，依最新回合
+            # draw_completed 及当前 turn 角色阵营而变；entities_resp 已在上方拉取，
+            # 复用它判断阵营，无需额外发起网络请求。
             if latest_round is not None and not latest_round.draw_completed:
                 menu += DRAW_CARDS_COMMAND_LINE
             else:
-                menu += PLAY_CARDS_COMMAND_LINE
+                entities_map = {e.name: e for e in entities_resp.entities_serialization}
+                current_entity = (
+                    entities_map.get(latest_round.current_actor)
+                    if latest_round is not None and latest_round.current_actor
+                    else None
+                )
+                if classify_faction(current_entity) == "monster":
+                    menu += MONSTER_TURN_COMMAND_LINE
+                else:
+                    menu += PLAY_CARDS_COMMAND_LINE
 
             # 8/9（使用消耗品 / 使用装备）仅在 ONGOING 阶段出现，具体前置条件交由各自 Screen 自身校验并提示，本页不做过滤
             menu += USE_CONSUMABLE_COMMAND_LINE
@@ -311,8 +326,27 @@ class CombatOngoingScreen(BaseGameScreen):
         elif raw == "7":
             if combat.state == CombatState.ONGOING:
                 if latest_round.draw_completed:
-                    # 抽牌完成，就会进入出牌页
-                    self.app.push_screen(CombatPlayCardsScreen())
+                    # 抽牌完成：需要先判断当前 turn 角色阵营，怪物回合与我方回合
+                    # 分别路由到不同的专用页面。
+                    current_actor = latest_round.current_actor
+                    assert (
+                        current_actor is not None
+                    ), "抽牌已完成时，current_actor 不应为 None，服务器来保证"
+                    actor_entities_resp = await get_entities_details(
+                        self.game_client, [current_actor]
+                    )
+                    current_entity = next(
+                        (
+                            e
+                            for e in actor_entities_resp.entities_serialization
+                            if e.name == current_actor
+                        ),
+                        None,
+                    )
+                    if classify_faction(current_entity) == "monster":
+                        self.app.push_screen(CombatMonsterTurnScreen())
+                    else:
+                        self.app.push_screen(CombatPlayCardsScreen())
                 else:
                     # 没抽牌，就会进入抽牌页，
                     self.app.push_screen(CombatDrawCardsScreen(participant_names))

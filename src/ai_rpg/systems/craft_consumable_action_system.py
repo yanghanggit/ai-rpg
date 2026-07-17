@@ -59,7 +59,7 @@ def _build_craft_prompt(materials: List[MaterialItem]) -> str:
   - ally_all：作用于全体友方
   - enemy_single：作用于单个敌方（伤害、削弱）
   - enemy_all：作用于全体敌方
-  - enemy_random_multi：随机多次打击敌方
+  - enemy_spread：对全体敌方散射攻击（命中次数>敌人数时保底每人至少一次，其余随机）
 - **affixes**：延迟词缀列表，格式 `[名称]:触发倾向描述`，使用后独立推理生成持续状态效果（如 `[燃烧]:可能引发持续扣血`）；无持续效果时输出 []
 - **modifiers**：即时修正词缀列表，格式 `[名称]:即时修正描述`，直接注入本次仲裁计算（如 `[穿甲]:无视目标防御`）；无即时修正时输出 []
 

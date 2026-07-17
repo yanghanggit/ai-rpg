@@ -191,103 +191,98 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                 extract_json_from_code_block(chat_client.response_content)
             )
 
-            # 验证 final_stats 中的实体是否都存在于游戏中
-            for entity_name in response.final_stats:
-                if self._game.get_entity_by_name(entity_name) is None:
-                    raise ValueError(
-                        f"final_stats 中的实体不存在于游戏中: {entity_name}"
-                    )
-
-            # 根据是否使用压缩提示，向游戏中添加人类消息，确保 LLM 的请求和响应能够在游戏中被记录和追踪
-            if self._use_compressed_prompt:
-                self._game.add_human_message(
-                    entity=stage_entity,
-                    human_message=HumanMessage(
-                        content=chat_client.compressed_prompt,
-                        combat_arbitration_full_prompt=chat_client.prompt,
-                    ),
-                )
-            else:
-                self._game.add_human_message(
-                    entity=stage_entity,
-                    human_message=HumanMessage(content=chat_client.prompt),
-                )
-            assert chat_client.response_ai_message is not None
-            self._game.add_ai_message(
-                entity=stage_entity,
-                ai_message=chat_client.response_ai_message,
-            )
-
-            current_round_number = len(
-                self._game.current_combat_room.combat.rounds or []
-            )
-            self._game.broadcast_to_stage(
-                entity=stage_entity,
-                agent_event=CombatArbitrationEvent(
-                    message=generate_consumable_arbitration_broadcast(
-                        response.combat_log,
-                        response.narrative,
-                        current_round_number,
-                        is_party_action,
-                        action.item.name,
-                    ),
-                    stage=stage_entity.name,
-                    combat_log=response.combat_log,
-                    narrative=response.narrative,
-                ),
-                exclude_entities={stage_entity},
-            )
-
-            # 遍历仲裁结果中的最终状态，更新每个实体的属性，包括 HP 和状态效果计数器，并向游戏中添加相应的通知消息
-            for entity_name, entity_stats in response.final_stats.items():
-                entity = self._game.get_entity_by_name(entity_name)
-                assert (
-                    entity is not None
-                ), f"无法找到 final_stats 中的实体: {entity_name}"
-
-                assert entity.has(
-                    CharacterStatsComponent
-                ), f"实体 {entity_name} 缺少 CharacterStatsComponent！"
-
-                old_hp = compute_character_stats(entity).hp
-                after_stats = set_character_hp(entity, int(entity_stats.hp))
-                new_hp = after_stats.hp
-                max_hp = after_stats.max_hp
-                logger.info(f"更新 {entity_name} HP: {old_hp} → {new_hp}/{max_hp}")
-
-                self._game.add_human_message(
-                    entity=entity,
-                    human_message=HumanMessage(
-                        content=stats_update_notification(new_hp, max_hp)
-                    ),
-                )
-
-                # 回写状态效果计数器补丁
-                for patch in entity_stats.status_effect_patches:
-                    apply_status_effect_patch(entity, patch.name, patch.counter)
-
-            # 更新本回合的消耗品仲裁日志和计数
-            latest_round = self._game.current_combat_room.combat.latest_round
-            assert latest_round is not None, "latest_round 不应为 None"
-            latest_round.consumable_combat_log.append(response.combat_log)
-            latest_round.consumable_narrative.append(response.narrative)
-            latest_round.consumable_use_count += 1
-
-            # 根据仲裁结果判断是否触发后续场景干预
-            self._trigger_add_status_effects(action)
-
-            # 根据 response.trigger_post_arbitration 决定是否触发 PostArbitrationAction
-            if response.trigger_post_arbitration:
-                logger.debug(
-                    f"仲裁结果 trigger_post_arbitration=True，触发 PostArbitrationAction"
-                )
-                stage_entity.replace(
-                    PostArbitrationAction, stage_entity.name, actor_entity.name
-                )
-
         except Exception as e:
             error_msg = f"消耗品仲裁结果应用失败: {e}"
             logger.error(error_msg)
+            return
+
+        # 验证 final_stats 中的实体是否都存在于游戏中
+        for entity_name in response.final_stats:
+            if self._game.get_entity_by_name(entity_name) is None:
+                raise ValueError(f"final_stats 中的实体不存在于游戏中: {entity_name}")
+
+        # 根据是否使用压缩提示，向游戏中添加人类消息，确保 LLM 的请求和响应能够在游戏中被记录和追踪
+        if self._use_compressed_prompt:
+            self._game.add_human_message(
+                entity=stage_entity,
+                human_message=HumanMessage(
+                    content=chat_client.compressed_prompt,
+                    combat_arbitration_full_prompt=chat_client.prompt,
+                ),
+            )
+        else:
+            self._game.add_human_message(
+                entity=stage_entity,
+                human_message=HumanMessage(content=chat_client.prompt),
+            )
+        assert chat_client.response_ai_message is not None
+        self._game.add_ai_message(
+            entity=stage_entity,
+            ai_message=chat_client.response_ai_message,
+        )
+
+        current_round_number = len(self._game.current_combat_room.combat.rounds or [])
+        self._game.broadcast_to_stage(
+            entity=stage_entity,
+            agent_event=CombatArbitrationEvent(
+                message=generate_consumable_arbitration_broadcast(
+                    response.combat_log,
+                    response.narrative,
+                    current_round_number,
+                    is_party_action,
+                    action.item.name,
+                ),
+                stage=stage_entity.name,
+                combat_log=response.combat_log,
+                narrative=response.narrative,
+            ),
+            exclude_entities={stage_entity},
+        )
+
+        # 遍历仲裁结果中的最终状态，更新每个实体的属性，包括 HP 和状态效果计数器，并向游戏中添加相应的通知消息
+        for entity_name, entity_stats in response.final_stats.items():
+            entity = self._game.get_entity_by_name(entity_name)
+            assert entity is not None, f"无法找到 final_stats 中的实体: {entity_name}"
+
+            assert entity.has(
+                CharacterStatsComponent
+            ), f"实体 {entity_name} 缺少 CharacterStatsComponent！"
+
+            old_hp = compute_character_stats(entity).hp
+            after_stats = set_character_hp(entity, int(entity_stats.hp))
+            new_hp = after_stats.hp
+            max_hp = after_stats.max_hp
+            logger.info(f"更新 {entity_name} HP: {old_hp} → {new_hp}/{max_hp}")
+
+            self._game.add_human_message(
+                entity=entity,
+                human_message=HumanMessage(
+                    content=stats_update_notification(new_hp, max_hp)
+                ),
+            )
+
+            # 回写状态效果计数器补丁
+            for patch in entity_stats.status_effect_patches:
+                apply_status_effect_patch(entity, patch.name, patch.counter)
+
+        # 更新本回合的消耗品仲裁日志和计数
+        latest_round = self._game.current_combat_room.combat.latest_round
+        assert latest_round is not None, "latest_round 不应为 None"
+        latest_round.consumable_combat_log.append(response.combat_log)
+        latest_round.consumable_narrative.append(response.narrative)
+        latest_round.consumable_use_count += 1
+
+        # 根据仲裁结果判断是否触发后续场景干预
+        self._trigger_add_status_effects(action)
+
+        # 根据 response.trigger_post_arbitration 决定是否触发 PostArbitrationAction
+        if response.trigger_post_arbitration:
+            logger.debug(
+                f"仲裁结果 trigger_post_arbitration=True，触发 PostArbitrationAction"
+            )
+            stage_entity.replace(
+                PostArbitrationAction, stage_entity.name, actor_entity.name
+            )
 
     #######################################################################################################################################
     def _trigger_add_status_effects(

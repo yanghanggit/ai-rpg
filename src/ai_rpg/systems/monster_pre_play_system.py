@@ -1,11 +1,10 @@
-import random
 from typing import Final, List, final, override, Dict
 from loguru import logger
 from pydantic import BaseModel
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
-from ..game.dbg_combat_processor import get_alive_actors_in_stage
+from ..game.dbg_combat_processor import get_alive_actors_in_stage, pick_spread_targets
 from ..game.dbg_entity_ops import compute_character_stats
 from ..models import (
     PlayCardsAction,
@@ -385,19 +384,13 @@ class MonsterPrePlaySystem(ReactiveProcessor):
                 valid_targets = [
                     a.name for a in alive_actors if a.has(PartyMemberComponent)
                 ]
-            case TargetType.ENEMY_RANDOM_MULTI:
-                # 每段独立随机命中一名存活远征队成员（对怪物来说"敌方"= PartyMember）
+            case TargetType.ENEMY_SPREAD:
+                # 对全体存活远征队成员进行散射攻击（对怪物来说"敌方"= PartyMember）
                 party_members = [a for a in alive_actors if a.has(PartyMemberComponent)]
-                valid_targets = (
-                    [
-                        e.name
-                        for e in random.choices(
-                            party_members, k=selected_card.hit_count
-                        )
-                    ]
-                    if party_members
-                    else []
-                )
+                valid_targets = [
+                    e.name
+                    for e in pick_spread_targets(party_members, selected_card.hit_count)
+                ]
             case TargetType.SELF_ONLY:
                 # 仅作用于施法者自身
                 valid_targets = [entity.name]

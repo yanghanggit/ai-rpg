@@ -59,7 +59,7 @@ def build_card_field_description() -> str:
 |---|---|
 | `{TargetType.ENEMY_SINGLE}` | 攻击单体敌方（默认） |
 | `{TargetType.ENEMY_ALL}` | 攻击全体敌方 |
-| `{TargetType.ENEMY_RANDOM_MULTI}` | 每段独立随机命中一名敌方（需配合较高 hit_count） |
+| `{TargetType.ENEMY_SPREAD}` | 对全体存活敌方散射攻击：hit_count 大于敌方数量时保证每个敌人至少命中一次，多余次数随机；否则纯随机（可能重复或遗漏） |
 | `{TargetType.ALLY_SINGLE}` | 治疗/增益单体友方 |
 | `{TargetType.ALLY_ALL}` | 治疗/增益全体友方 |
 | `{TargetType.SELF_ONLY}` | 仅作用于自身（防御、自损诅咒等） |"""

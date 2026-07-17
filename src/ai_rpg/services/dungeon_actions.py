@@ -2,11 +2,10 @@
 地下城战斗动作模块
 """
 
-import random
 from typing import List, Tuple, Optional
 from loguru import logger
 from ..game.dbg_game import DBGGame
-from ..game.dbg_combat_processor import get_alive_actors_in_stage
+from ..game.dbg_combat_processor import get_alive_actors_in_stage, pick_spread_targets
 from ..game.dbg_entity_ops import get_energy
 from ..models import (
     DrawCardsAction,
@@ -133,11 +132,11 @@ def _resolve_targets(
         case TargetType.ENEMY_ALL:
             return [e.name for e in _get_enemies()], ""
 
-        case TargetType.ENEMY_RANDOM_MULTI:
+        case TargetType.ENEMY_SPREAD:
             enemies = _get_enemies()
             if not enemies:
-                return [], "ENEMY_RANDOM_MULTI：场上无存活敌方"
-            return [e.name for e in random.choices(enemies, k=hit_count)], ""
+                return [], "ENEMY_SPREAD：场上无存活敌方"
+            return [e.name for e in pick_spread_targets(enemies, hit_count)], ""
 
         case TargetType.SELF_ONLY:
             return [actor_entity.name], ""
@@ -513,11 +512,11 @@ def activate_use_gear(
             logger.error(msg)
             return False, msg
 
-    # 检查装备的目标类型，如果是 CARD 类型，则当前版本不支持使用。
-    if selected_item.target_type == TargetType.CARD:
-        msg = "当前版本暂不支持 target_type=card 的装备使用"
-        logger.error(msg)
-        return False, msg
+    # # 检查装备的目标类型，如果是 CARD 类型，则当前版本不支持使用。
+    # if selected_item.target_type == TargetType.CARD:
+    #     msg = "当前版本暂不支持 target_type=card 的装备使用"
+    #     logger.error(msg)
+    #     return False, msg
 
     # 根据装备的目标类型解析实际目标，确保目标数量和类型符合装备的要求。
     resolved_targets, resolve_err = _resolve_targets(

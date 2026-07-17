@@ -178,104 +178,99 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
                 extract_json_from_code_block(chat_client.response_content)
             )
 
-            # 验证 final_stats 中的实体是否都存在于游戏中，确保仲裁结果的有效性
-            for entity_name in response.final_stats:
-                if self._game.get_entity_by_name(entity_name) is None:
-                    raise ValueError(
-                        f"final_stats 中的实体不存在于游戏中: {entity_name}"
-                    )
-
-            # 根据是否使用压缩提示，添加上下文。
-            if self._use_compressed_prompt:
-                self._game.add_human_message(
-                    entity=stage_entity,
-                    human_message=HumanMessage(
-                        content=chat_client.compressed_prompt,
-                        combat_arbitration_full_prompt=chat_client.prompt,
-                    ),
-                )
-            else:
-                self._game.add_human_message(
-                    entity=stage_entity,
-                    human_message=HumanMessage(content=chat_client.prompt),
-                )
-
-            # 添加 AI 消息到游戏上下文中，以便后续的仲裁逻辑能够参考 LLM 的响应内容
-            self._game.add_ai_message(
-                entity=stage_entity,
-                ai_message=chat_client.response_ai_message,
-            )
-
-            # 广播当前回合的仲裁结果，包括战斗日志和叙事内容，通知场景中的所有实体（除当前场景实体外）
-            current_round_number = len(
-                self._game.current_combat_room.combat.rounds or []
-            )
-            self._game.broadcast_to_stage(
-                entity=stage_entity,
-                agent_event=CombatArbitrationEvent(
-                    message=generate_gear_arbitration_broadcast(
-                        response.combat_log,
-                        response.narrative,
-                        current_round_number,
-                        is_party_action,
-                        action.item.name,
-                    ),
-                    stage=stage_entity.name,
-                    combat_log=response.combat_log,
-                    narrative=response.narrative,
-                ),
-                exclude_entities={stage_entity},
-            )
-
-            # 更新每个实体的最终状态，包括血量和状态效果，并将这些更新通知到游戏上下文中
-            for entity_name, entity_stats in response.final_stats.items():
-                entity = self._game.get_entity_by_name(entity_name)
-                assert (
-                    entity is not None
-                ), f"无法找到 final_stats 中的实体: {entity_name}"
-
-                assert entity.has(
-                    CharacterStatsComponent
-                ), f"实体 {entity_name} 缺少 CharacterStatsComponent！"
-
-                old_hp = compute_character_stats(entity).hp
-                after_stats = set_character_hp(entity, int(entity_stats.hp))
-                new_hp = after_stats.hp
-                max_hp = after_stats.max_hp
-                logger.info(f"更新 {entity_name} HP: {old_hp} → {new_hp}/{max_hp}")
-
-                self._game.add_human_message(
-                    entity=entity,
-                    human_message=HumanMessage(
-                        content=stats_update_notification(new_hp, max_hp)
-                    ),
-                )
-
-                for patch in entity_stats.status_effect_patches:
-                    apply_status_effect_patch(entity, patch.name, patch.counter)
-
-            # 将本回合的装备使用战斗日志和叙事内容记录到当前地下城的最新回合中，并增加装备使用计数
-            latest_round = self._game.current_combat_room.combat.latest_round
-            assert latest_round is not None, "latest_round 不应为 None"
-            latest_round.gear_combat_log.append(response.combat_log)
-            latest_round.gear_narrative.append(response.narrative)
-            latest_round.gear_use_count += 1
-
-            # 触发装备附加状态效果的逻辑，将根据装备的附加属性为目标实体添加相应的状态效果
-            self._trigger_add_status_effects(action)
-
-            # 如果仲裁结果指示需要触发后续行动（trigger_post_arbitration=True），则为当前场景实体添加 PostArbitrationAction，以便在下一步逻辑中处理后续行动
-            if response.trigger_post_arbitration:
-                logger.debug(
-                    "仲裁结果 trigger_post_arbitration=True，触发 PostArbitrationAction"
-                )
-                stage_entity.replace(
-                    PostArbitrationAction, stage_entity.name, actor_entity.name
-                )
-
         except Exception as e:
             error_msg = f"装备仲裁结果应用失败: {e}"
             logger.error(error_msg)
+            return
+
+        # 验证 final_stats 中的实体是否都存在于游戏中，确保仲裁结果的有效性
+        for entity_name in response.final_stats:
+            if self._game.get_entity_by_name(entity_name) is None:
+                raise ValueError(f"final_stats 中的实体不存在于游戏中: {entity_name}")
+
+        # 根据是否使用压缩提示，添加上下文。
+        if self._use_compressed_prompt:
+            self._game.add_human_message(
+                entity=stage_entity,
+                human_message=HumanMessage(
+                    content=chat_client.compressed_prompt,
+                    combat_arbitration_full_prompt=chat_client.prompt,
+                ),
+            )
+        else:
+            self._game.add_human_message(
+                entity=stage_entity,
+                human_message=HumanMessage(content=chat_client.prompt),
+            )
+
+        # 添加 AI 消息到游戏上下文中，以便后续的仲裁逻辑能够参考 LLM 的响应内容
+        self._game.add_ai_message(
+            entity=stage_entity,
+            ai_message=chat_client.response_ai_message,
+        )
+
+        # 广播当前回合的仲裁结果，包括战斗日志和叙事内容，通知场景中的所有实体（除当前场景实体外）
+        current_round_number = len(self._game.current_combat_room.combat.rounds or [])
+        self._game.broadcast_to_stage(
+            entity=stage_entity,
+            agent_event=CombatArbitrationEvent(
+                message=generate_gear_arbitration_broadcast(
+                    response.combat_log,
+                    response.narrative,
+                    current_round_number,
+                    is_party_action,
+                    action.item.name,
+                ),
+                stage=stage_entity.name,
+                combat_log=response.combat_log,
+                narrative=response.narrative,
+            ),
+            exclude_entities={stage_entity},
+        )
+
+        # 更新每个实体的最终状态，包括血量和状态效果，并将这些更新通知到游戏上下文中
+        for entity_name, entity_stats in response.final_stats.items():
+            entity = self._game.get_entity_by_name(entity_name)
+            assert entity is not None, f"无法找到 final_stats 中的实体: {entity_name}"
+
+            assert entity.has(
+                CharacterStatsComponent
+            ), f"实体 {entity_name} 缺少 CharacterStatsComponent！"
+
+            old_hp = compute_character_stats(entity).hp
+            after_stats = set_character_hp(entity, int(entity_stats.hp))
+            new_hp = after_stats.hp
+            max_hp = after_stats.max_hp
+            logger.info(f"更新 {entity_name} HP: {old_hp} → {new_hp}/{max_hp}")
+
+            self._game.add_human_message(
+                entity=entity,
+                human_message=HumanMessage(
+                    content=stats_update_notification(new_hp, max_hp)
+                ),
+            )
+
+            for patch in entity_stats.status_effect_patches:
+                apply_status_effect_patch(entity, patch.name, patch.counter)
+
+        # 将本回合的装备使用战斗日志和叙事内容记录到当前地下城的最新回合中，并增加装备使用计数
+        latest_round = self._game.current_combat_room.combat.latest_round
+        assert latest_round is not None, "latest_round 不应为 None"
+        latest_round.gear_combat_log.append(response.combat_log)
+        latest_round.gear_narrative.append(response.narrative)
+        latest_round.gear_use_count += 1
+
+        # 触发装备附加状态效果的逻辑，将根据装备的附加属性为目标实体添加相应的状态效果
+        self._trigger_add_status_effects(action)
+
+        # 如果仲裁结果指示需要触发后续行动（trigger_post_arbitration=True），则为当前场景实体添加 PostArbitrationAction，以便在下一步逻辑中处理后续行动
+        if response.trigger_post_arbitration:
+            logger.debug(
+                "仲裁结果 trigger_post_arbitration=True，触发 PostArbitrationAction"
+            )
+            stage_entity.replace(
+                PostArbitrationAction, stage_entity.name, actor_entity.name
+            )
 
     #######################################################################################################################################
     def _trigger_add_status_effects(

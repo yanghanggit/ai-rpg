@@ -5,7 +5,8 @@
 作为模块级函数供 systems 层直接调用。
 """
 
-from typing import Optional, Set
+import random
+from typing import List, Optional, Set
 from loguru import logger
 from ..entitas import Entity, Matcher
 from ..models import (
@@ -110,6 +111,31 @@ def get_alive_actors_in_stage(game: DBGGame, entity: Entity) -> Set[Entity]:
     """
     ret = game.get_actors_in_stage(entity)
     return {actor for actor in ret if not actor.has(DeathComponent)}
+
+
+#################################################################################################################################################
+def pick_spread_targets(enemies: List[Entity], hit_count: int) -> List[Entity]:
+    """按 hit_count 与候选敌人数量的关系，选取"散射"命中列表（ENEMY_SPREAD 专用）。
+
+    - hit_count > 敌人数量：保证每个敌人至少命中一次，多出的次数随机补齐，最终整体打乱顺序。
+    - hit_count <= 敌人数量（含相等）：直接随机抽取（不保证覆盖，允许重复或遗漏）。
+
+    Args:
+        enemies: 候选敌人实体列表（通常为场上全部存活敌方）
+        hit_count: 命中次数
+
+    Returns:
+        List[Entity]: 长度为 hit_count 的命中目标列表（enemies 为空时返回空列表）
+    """
+    if not enemies:
+        return []
+
+    if hit_count > len(enemies):
+        assigned = list(enemies) + random.choices(enemies, k=hit_count - len(enemies))
+        random.shuffle(assigned)
+        return assigned
+
+    return random.choices(enemies, k=hit_count)
 
 
 #################################################################################################################################################

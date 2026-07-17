@@ -117,7 +117,7 @@ class CombatUseGearScreen(BaseGameScreen):
     装备同样是队伍级行为，始终挂在玩家自身实体上，目标解析的阵营锚点固定为玩家；
     与消耗品的关键差异：
     - 目标恒为单一友方（可含玩家自身），服务端要求解析结果恰好 1 个目标，其余
-      target_type（ENEMY_ALL / ALLY_ALL / ENEMY_RANDOM_MULTI / CARD 等）本页不
+      target_type（ENEMY_ALL / ALLY_ALL / ENEMY_SPREAD / CARD 等）本页不
       支持选择，直接提示并返回菜单；
     - 消耗的是**目标**（而非玩家）本回合剩余 energy（`RoundStatsComponent`），
       能量不足的目标无法为其装备；
@@ -459,12 +459,12 @@ class CombatUseGearScreen(BaseGameScreen):
         item = self._flow.selected_item
         assert item is not None
 
-        if item.target_type == TargetType.CARD:
-            log.write(
-                "[red]当前版本暂不支持 target_type=card 的装备使用，已取消，返回菜单。[/]"
-            )
-            self._back_to_menu(log)
-            return
+        # if item.target_type == TargetType.CARD:
+        #     log.write(
+        #         "[red]当前版本暂不支持 target_type=card 的装备使用，已取消，返回菜单。[/]"
+        #     )
+        #     self._back_to_menu(log)
+        #     return
 
         player_name = self._snapshot.player_name
         actor_faction = "party"  # 装备固定挂在玩家（我方）实体上，锚点恒为 party
@@ -489,7 +489,7 @@ class CombatUseGearScreen(BaseGameScreen):
                 if classify_faction(entity) == actor_faction and is_alive(entity)
             ]
         else:
-            # ENEMY_ALL / ALLY_ALL / ENEMY_RANDOM_MULTI 等解析结果通常不为单一目标，
+            # ENEMY_ALL / ALLY_ALL / ENEMY_SPREAD 等解析结果通常不为单一目标，
             # 而装备要求解析结果恰好 1 个目标（服务端会直接拒绝），本页不支持在这些
             # target_type 下选择目标。
             log.write(

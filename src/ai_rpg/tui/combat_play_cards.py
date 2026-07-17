@@ -381,7 +381,7 @@ class CombatPlayCardsScreen(BaseGameScreen):
             self._enter_confirm(log)
             return
 
-        if card.target_type in (TargetType.ENEMY_ALL, TargetType.ENEMY_RANDOM_MULTI):
+        if card.target_type in (TargetType.ENEMY_ALL, TargetType.ENEMY_SPREAD):
             # 由服务端按 target_type 自动解析目标，客户端传空列表即可。
             self._flow.pending_targets = []
             self._enter_confirm(log)

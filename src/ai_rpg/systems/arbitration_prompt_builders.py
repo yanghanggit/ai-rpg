@@ -185,27 +185,27 @@ CALC_RULES_SECTION: Final[
 
 
 #######################################################################################################################################
-# ENEMY_RANDOM_MULTI 专属 prompt 片段（卡牌仲裁用）
+# ENEMY_SPREAD 专属 prompt 片段（卡牌仲裁用）
 #######################################################################################################################################
 
 
 @dataclass
-class RandomMultiSections:
-    """ENEMY_RANDOM_MULTI 专属 prompt 片段"""
+class SpreadSections:
+    """ENEMY_SPREAD 专属 prompt 片段"""
 
     hit_assignment: str
     log_example: str
 
 
-def build_random_multi_sections(
+def build_spread_sections(
     play_cards_action: PlayCardsAction,
-) -> RandomMultiSections:
-    """为 ENEMY_RANDOM_MULTI 卡牌构建仲裁 prompt 中的专属片段。
+) -> SpreadSections:
+    """为 ENEMY_SPREAD 卡牌构建仲裁 prompt 中的专属片段。
 
-    当 target_type 不是 ENEMY_RANDOM_MULTI 时，所有字段均为空字符串。
+    当 target_type 不是 ENEMY_SPREAD 时，所有字段均为空字符串。
     """
-    if play_cards_action.card.target_type != TargetType.ENEMY_RANDOM_MULTI:
-        return RandomMultiSections("", "")
+    if play_cards_action.card.target_type != TargetType.ENEMY_SPREAD:
+        return SpreadSections("", "")
 
     hit_lines = "\n".join(
         f"  第{i + 1}击 → {t}" for i, t in enumerate(play_cards_action.targets)
@@ -215,8 +215,8 @@ def build_random_multi_sections(
         f"{hit_lines}\n\n"
         f"按上方命中分配逐段结算，final_stats 须包含**所有被命中过的不重复目标**。"
     )
-    log_example = "\nrandom_multi 示例：`[英雄|回旋镖→随机:3×3段,敌A×2伤害5,敌B×1伤害3] HP:敌A 15→10 敌B 12→9`"
-    return RandomMultiSections(hit_assignment=hit_assignment, log_example=log_example)
+    log_example = "\nspread 示例：`[英雄|回旋镖→随机:3×3段,敌A×2伤害5,敌B×1伤害3] HP:敌A 15→10 敌B 12→9`"
+    return SpreadSections(hit_assignment=hit_assignment, log_example=log_example)
 
 
 #######################################################################################################################################
@@ -241,7 +241,7 @@ def generate_combat_arbitration_prompt(
     arbitration_effects_lines = build_combat_arbitration_effects_lines(
         actor_name, actor_arbitration_effects, target_arbitration_effects
     )
-    rm = build_random_multi_sections(play_cards_action)
+    spread = build_spread_sections(play_cards_action)
 
     modifiers = play_cards_action.card.modifiers
     modifiers_line = (
@@ -266,7 +266,7 @@ def generate_combat_arbitration_prompt(
 - 卡牌：{play_cards_action.card.name}
 - damage_dealt：{play_cards_action.card.damage_dealt}（单次伤害）
 - hit_count：{play_cards_action.card.hit_count}（攻击次数）
-{f'- energy_delta：{play_cards_action.card.energy_delta:+d}（改变目标行动次数，已由系统直接结算）\n' if play_cards_action.card.energy_delta != 0 else ''}{modifiers_line}{actor_gear_modifiers_line}{rm.hit_assignment}
+{f'- energy_delta：{play_cards_action.card.energy_delta:+d}（改变目标行动次数，已由系统直接结算）\n' if play_cards_action.card.energy_delta != 0 else ''}{modifiers_line}{actor_gear_modifiers_line}{spread.hit_assignment}
 
 ## 目标
 
@@ -294,7 +294,7 @@ def generate_combat_arbitration_prompt(
 ### combat_log（简名 = 全名最后一段）
 
 正常：`[出牌者简名|卡牌→目标:damage Xx击_count次,伤害Z] HP:目标简名 旧→新`
-多段示例：`[英雄|回旋镖→石缝蜥:3x3次,伤害7] HP:石缝蜥 15→8`{rm.log_example}
+多段示例：`[英雄|回旋镖→石缝蜥:3x3次,伤害7] HP:石缝蜥 15→8`{spread.log_example}
 阵亡跳过：`[出牌者简名|已阵亡，卡牌无法执行]`
 
 {FINAL_STATS_DESCRIPTION}
@@ -320,7 +320,7 @@ def generate_compressed_combat_arbitration_prompt(
     arbitration_effects_lines = build_combat_arbitration_effects_lines(
         actor_name, actor_arbitration_effects, target_arbitration_effects
     )
-    rm = build_random_multi_sections(play_cards_action)
+    spread = build_spread_sections(play_cards_action)
 
     modifiers = play_cards_action.card.modifiers
     modifiers_line = (
@@ -345,7 +345,7 @@ def generate_compressed_combat_arbitration_prompt(
 - 卡牌：{play_cards_action.card.name}
 - damage_dealt：{play_cards_action.card.damage_dealt}（单次伤害）
 - hit_count：{play_cards_action.card.hit_count}（攻击次数）
-{f'- energy_delta：{play_cards_action.card.energy_delta:+d}（改变目标行动次数，已由系统直接结算）\n' if play_cards_action.card.energy_delta != 0 else ''}{modifiers_line}{actor_gear_modifiers_line}{rm.hit_assignment}
+{f'- energy_delta：{play_cards_action.card.energy_delta:+d}（改变目标行动次数，已由系统直接结算）\n' if play_cards_action.card.energy_delta != 0 else ''}{modifiers_line}{actor_gear_modifiers_line}{spread.hit_assignment}
 
 ## 目标
 

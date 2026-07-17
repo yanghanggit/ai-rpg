@@ -28,6 +28,7 @@ from .combat_draw_cards import CombatDrawCardsScreen
 from .combat_entity_inspect import CombatEntityInspectScreen
 from .combat_hand_status_view import CombatHandStatusViewScreen
 from .combat_inventory_view import CombatInventoryViewScreen
+from .combat_play_cards import CombatPlayCardsScreen
 from .combat_post_combat import CombatPostCombatScreen
 from .combat_round_history import CombatRoundHistoryScreen
 from .home import HomeScreen
@@ -261,6 +262,10 @@ class CombatOngoingScreen(BaseGameScreen):
                 latest_round is not None and not latest_round.draw_completed
             ):
                 self.app.push_screen(CombatDrawCardsScreen(participant_names))
+            elif combat.state == CombatState.ONGOING and (
+                latest_round is not None and latest_round.draw_completed
+            ):
+                self.app.push_screen(CombatPlayCardsScreen())
             else:
                 log.write(f"[yellow]还没有实现。[/]")
 

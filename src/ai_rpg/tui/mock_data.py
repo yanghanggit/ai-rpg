@@ -174,7 +174,7 @@ def build_mock_dungeon_room_response() -> DungeonRoomResponse:
                 ],
                 current_actor=MOCK_ACTOR_NAME,
                 is_completed=False,
-                draw_completed=False,
+                draw_completed=True,
             )
         ],
     )

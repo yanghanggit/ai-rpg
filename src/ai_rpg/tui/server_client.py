@@ -13,11 +13,12 @@ from ..models import (
     DungeonCombatInitResponse,
     DungeonCombatPlayCardsRequest,
     DungeonCombatPlayCardsResponse,
+    DungeonCombatPassTurnRequest,
+    DungeonCombatPassTurnResponse,
     DungeonCombatUseConsumableItemRequest,
     DungeonCombatUseConsumableItemResponse,
     DungeonCombatUseGearItemRequest,
     DungeonCombatUseGearItemResponse,
-    # DungeonCombatResponse,
     DungeonCombatRetreatRequest,
     DungeonCombatRetreatResponse,
     DungeonExitRequest,
@@ -424,6 +425,25 @@ async def dungeon_combat_play_cards(
         )
         response.raise_for_status()
         return DungeonCombatPlayCardsResponse.model_validate(response.json())
+
+
+async def dungeon_combat_pass_turn(
+    user_name: str,
+    game_name: str,
+    actor_name: str,
+) -> DungeonCombatPassTurnResponse:
+    """让指定角色过牌，返回后台任务ID。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.post(
+            server_config.base_url + "/api/dungeon/combat/pass_turn/v1/",
+            json=DungeonCombatPassTurnRequest(
+                user_name=user_name,
+                game_name=game_name,
+                actor_name=actor_name,
+            ).model_dump(),
+        )
+        response.raise_for_status()
+        return DungeonCombatPassTurnResponse.model_validate(response.json())
 
 
 async def dungeon_combat_use_consumable(

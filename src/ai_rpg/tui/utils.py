@@ -55,8 +55,7 @@ def render_item(item: AnyItem) -> str:
                 bonus_parts.append(fmt.format(val))
         if bonus_parts:
             lines.append(f"  [dim]属性: {', '.join(bonus_parts)}[/]")
-        target_label = TARGET_MAP.get(item.target_type.value, item.target_type.value)
-        lines.append(f"  [dim]目标: {target_label}[/]")
+        lines.append(f"  [dim]费用: 目标 energy -{item.cost}[/]")
         if item.equip_affixes:
             for affix in item.equip_affixes:
                 lines.append(f"  [dim]词缀(装备时) {affix}[/]")

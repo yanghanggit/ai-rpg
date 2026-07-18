@@ -13,7 +13,6 @@ from ..models import (
 )
 from ..models.items import AnyItem, GearItem, ItemType, MaterialItem
 from ..models.stats import CharacterStats
-from ..models.target_type import TargetType
 from ..utils import extract_json_from_code_block
 
 
@@ -25,7 +24,7 @@ class _CraftGearItemResponse(BaseModel):
     name: str = ""
     description: str = ""
     stat_bonuses: CharacterStats = CharacterStats()
-    target_type: TargetType = TargetType.ALLY_SINGLE
+    cost: int = 1
     equip_affixes: List[str] = []
     on_hit_affixes: List[str] = []
     modifiers: List[str] = []
@@ -44,7 +43,6 @@ def _build_craft_gear_prompt(materials: List[MaterialItem]) -> str:
     material_lines = "\n".join(
         f"- **{m.name}**（数量 {m.count}）：{m.description}" for m in materials
     )
-    target_type_options = "、".join(t.value for t in TargetType)
 
     return f"""# 任务：根据材料创意合成一件装备
 
@@ -63,9 +61,7 @@ def _build_craft_gear_prompt(materials: List[MaterialItem]) -> str:
   - defense：防御力加成（防具类可给 2~5）
   - energy：行动次数加成（通常为 0）
   - speed：速度加成（轻型装备或饰品可给 1~2）
-- **target_type**：装备作用目标，从以下选项中选一个：{target_type_options}
-  - ally_single：作用于单个友方（大多数武器防具默认）
-  - self_only：仅作用于自身
+- **cost**：装备费用，表示穿戴目标需要消耗的当前回合 energy。普通装备为 1；强力、重型或复杂装备可为 2；不要输出负数
 - **equip_affixes**：装备时对装备者触发的延迟词缀列表，格式 `[名称]:触发倾向描述`（如 `[皮革韧性]:承受重击时可能激活韧性层，减少下一次伤害`）；无持续效果时输出 []
 - **on_hit_affixes**：出牌命中目标时触发的延迟词缀列表，格式同上（如 `[撕裂伤]:命中后可能引发持续流血`）；无命中效果时输出 []
 - **modifiers**：即时修正词缀列表，格式 `[名称]:即时修正描述`，直接注入本次仲裁计算（如 `[穿甲]:无视目标防御的一部分`）；无即时修正时输出 []
@@ -77,7 +73,7 @@ def _build_craft_gear_prompt(materials: List[MaterialItem]) -> str:
   "name": "装备.XXX",
   "description": "...",
   "stat_bonuses": {{"hp": 0, "max_hp": 0, "attack": 3, "defense": 0, "energy": 0, "speed": 0}},
-  "target_type": "ally_single",
+    "cost": 1,
   "equip_affixes": [],
   "on_hit_affixes": ["[撕裂伤]:命中后可能引发持续流血"],
   "modifiers": ["[穿甲]:无视目标防御的一部分"]
@@ -142,7 +138,7 @@ class CraftGearItemActionSystem(ReactiveProcessor):
             name=result.name,
             description=result.description,
             stat_bonuses=result.stat_bonuses,
-            target_type=result.target_type,
+            cost=result.cost,
             equip_affixes=result.equip_affixes,
             on_hit_affixes=result.on_hit_affixes,
             modifiers=result.modifiers,
@@ -152,7 +148,7 @@ class CraftGearItemActionSystem(ReactiveProcessor):
 
         logger.info(
             f"[CraftGearItemActionSystem] 合成完成: {new_item.name} "
-            f"(target={new_item.target_type}, stat_bonuses={new_item.stat_bonuses}, "
+            f"(cost={new_item.cost}, stat_bonuses={new_item.stat_bonuses}, "
             f"equip_affixes={new_item.equip_affixes}, on_hit_affixes={new_item.on_hit_affixes}, "
             f"modifiers={new_item.modifiers})"
         )

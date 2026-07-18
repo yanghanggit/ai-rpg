@@ -40,7 +40,9 @@ class GearItem(Item):
             hp=0, max_hp=0, attack=0, defense=0, energy=0, speed=0
         )
     )
-    target_type: TargetType = TargetType.ALLY_SINGLE  # 作用目标类型，默认作用于单个友方
+    cost: int = Field(
+        default=1, ge=0
+    )  # 装备费用；消耗被装备目标当前 energy 的点数；energy 不足时无法装备
     equip_affixes: List[str] = (
         []
     )  # 装备时对装备者触发的延迟词缀；格式同 Card.affixes；由 UseGearItemArbitrationSystem 评估

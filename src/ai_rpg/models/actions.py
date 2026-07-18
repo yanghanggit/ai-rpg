@@ -308,9 +308,7 @@ class UseGearItemAction(Component):
 
     name: str
     item: GearItem  # 使用的装备对象（从 InventoryComponent 检索后填入）
-    targets: List[
-        str
-    ]  # 装备目标角色名列表（由 target_type 解析后填入；当前期望单目标）
+    targets: List[str]  # 装备目标角色名列表（固定为单一友方目标）
 
 
 ############################################################################################################

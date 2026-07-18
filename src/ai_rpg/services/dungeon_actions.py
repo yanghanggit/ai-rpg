@@ -29,6 +29,7 @@ from ..models import (
     UseConsumableItemAction,
     GearItem,
     ConsumableItem,
+    TargetType,
 )
 from ..entitas import Entity, Matcher
 
@@ -404,18 +405,17 @@ def activate_use_gear(
         logger.error(msg)
         return False, msg
 
-    # 获取当前回合的行动者实体，并检查其是否属于玩家阵营，如果不是则无法使用装备。
-    current_turn_entity = dbg_game.get_actor_entity(current_turn_actor_name)
-    if current_turn_entity is None or not current_turn_entity.has(PartyMemberComponent):
-        msg = f"使用装备失败：当前行动角色 {current_turn_actor_name} 不属于玩家阵营"
-        logger.error(msg)
-        return False, msg
-
     # 获取玩家实体，并确保其具有必要的组件（PartyMemberComponent 和 InventoryComponent），以便使用装备。
     player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "activate_use_gear: player_entity is None"
     assert player_entity.has(PartyMemberComponent), "玩家实体缺少 PartyMemberComponent"
     assert player_entity.has(InventoryComponent), "玩家实体缺少 InventoryComponent"
+
+    # 只有背包持有者本人是当前行动者时，才允许发动装备使用。
+    if current_turn_actor_name != player_entity.name:
+        msg = f"使用装备失败：当前行动角色 {current_turn_actor_name} 不是背包持有者 {player_entity.name}"
+        logger.error(msg)
+        return False, msg
 
     # 从玩家实体中获取背包组件，并尝试在背包中找到指定的装备，如果找不到则返回错误。
     inventory_comp = player_entity.get(InventoryComponent)
@@ -441,15 +441,9 @@ def activate_use_gear(
             logger.error(msg)
             return False, msg
 
-    # # 检查装备的目标类型，如果是 CARD 类型，则当前版本不支持使用。
-    # if selected_item.target_type == TargetType.CARD:
-    #     msg = "当前版本暂不支持 target_type=card 的装备使用"
-    #     logger.error(msg)
-    #     return False, msg
-
-    # 根据装备的目标类型解析实际目标，确保目标数量和类型符合装备的要求。
+    # 装备固定作用于单一友方目标，确保目标数量和阵营符合装备要求。
     resolved_targets, resolve_err = resolve_targets(
-        selected_item.target_type, 1, player_entity, targets, dbg_game
+        TargetType.ALLY_SINGLE, 1, player_entity, targets, dbg_game
     )
     if resolve_err:
         logger.error(f"activate_use_gear: {resolve_err}")
@@ -466,8 +460,9 @@ def activate_use_gear(
     assert (
         target_entity is not None
     ), f"activate_use_gear: 无法找到目标实体 {resolved_targets[0]}"
-    if get_energy(target_entity) <= 0:
-        msg = f"目标 '{target_entity.name}' 当前能量不足（energy=0），无法为其装备"
+    current_energy = get_energy(target_entity)
+    if current_energy < selected_item.cost:
+        msg = f"目标 '{target_entity.name}' 当前能量不足（需要{selected_item.cost}点，当前剩余{current_energy}点），无法为其装备"
         logger.error(msg)
         return False, msg
 

@@ -18,7 +18,6 @@ from ..models import (
     GearItem,
     InventoryComponent,
     StatusEffectsComponent,
-    TargetType,
 )
 from .base import BaseGameScreen
 from .combat_common import (
@@ -67,7 +66,7 @@ class _GearSnapshot:
     entities_serialization: List[EntitySerialization] = field(default_factory=list)
     player_name: Optional[str] = None
     current_actor: Optional[str] = None
-    current_actor_is_party: bool = False
+    current_actor_is_player: bool = False
     draw_completed: bool = False
     gear_use_count: int = 0
     gear_items: List[GearItem] = field(default_factory=list)
@@ -114,13 +113,11 @@ class CombatUseGearScreen(BaseGameScreen):
     记录当前所处步骤，同一个 Input 在不同步骤下承载不同语义；Escape 在任意步骤
     都会直接返回上一页（CombatOngoingScreen），中断进行中的使用流程。
 
-    装备同样是队伍级行为，始终挂在玩家自身实体上，目标解析的阵营锚点固定为玩家；
+        装备同样是队伍级行为，始终挂在玩家自身实体上，且必须由玩家本人回合发动；
     与消耗品的关键差异：
-    - 目标恒为单一友方（可含玩家自身），服务端要求解析结果恰好 1 个目标，其余
-      target_type（ENEMY_ALL / ALLY_ALL / ENEMY_SPREAD / CARD 等）本页不
-      支持选择，直接提示并返回菜单；
+        - 目标恒为单一友方（可含玩家自身），服务端要求解析结果恰好 1 个目标；
     - 消耗的是**目标**（而非玩家）本回合剩余 energy（`RoundStatsComponent`），
-      能量不足的目标无法为其装备；
+            目标 energy 不足以支付装备 cost 时无法为其装备；
     - 无「每回合限用一次」的限制，但同一件装备若已被任意实体装备中则不可再次
       使用，直到下一关 / 退出地下城清空。
     """
@@ -267,10 +264,7 @@ class CombatUseGearScreen(BaseGameScreen):
 
         latest_round = combat.latest_round
         current_actor = latest_round.current_actor if latest_round is not None else None
-        current_actor_entity = (
-            entities_map.get(current_actor) if current_actor else None
-        )
-        current_actor_is_party = classify_faction(current_actor_entity) == "party"
+        current_actor_is_player = current_actor == actor_name
         draw_completed = (
             latest_round.draw_completed if latest_round is not None else False
         )
@@ -304,7 +298,7 @@ class CombatUseGearScreen(BaseGameScreen):
             entities_serialization=entities_resp.entities_serialization,
             player_name=actor_name,
             current_actor=current_actor,
-            current_actor_is_party=current_actor_is_party,
+            current_actor_is_player=current_actor_is_player,
             draw_completed=draw_completed,
             gear_use_count=gear_use_count,
             gear_items=gear_items,
@@ -337,8 +331,8 @@ class CombatUseGearScreen(BaseGameScreen):
             if self._snapshot.current_actor
             else "（无）"
         )
-        party_label = (
-            "[green]是[/]" if self._snapshot.current_actor_is_party else "[red]否[/]"
+        player_turn_label = (
+            "[green]是[/]" if self._snapshot.current_actor_is_player else "[red]否[/]"
         )
         draw_label = (
             "[green]是[/]" if self._snapshot.draw_completed else "[yellow]否[/]"
@@ -347,7 +341,7 @@ class CombatUseGearScreen(BaseGameScreen):
         log.write("[bold yellow]── 装备使用状态 ─────────────────────────────[/]")
         log.write(
             f"  当前 turn 角色： [bold yellow]{current_actor_label}[/]"
-            f"（我方：{party_label}）"
+            f"（玩家本人：{player_turn_label}）"
         )
         log.write(f"  抽牌已完成：     {draw_label}")
         log.write(
@@ -411,8 +405,8 @@ class CombatUseGearScreen(BaseGameScreen):
         if not self._snapshot.draw_completed:
             log.write("[yellow]本回合抽牌阶段尚未完成，暂时无法使用装备。[/]")
             return
-        if not self._snapshot.current_actor_is_party:
-            log.write("[yellow]当前不是我方回合，暂时无法使用装备。[/]")
+        if not self._snapshot.current_actor_is_player:
+            log.write("[yellow]当前不是玩家本人回合，暂时无法使用装备。[/]")
             return
         if not self._snapshot.gear_items:
             log.write("[yellow]背包中没有可用的装备。[/]")
@@ -459,45 +453,11 @@ class CombatUseGearScreen(BaseGameScreen):
         item = self._flow.selected_item
         assert item is not None
 
-        # if item.target_type == TargetType.CARD:
-        #     log.write(
-        #         "[red]当前版本暂不支持 target_type=card 的装备使用，已取消，返回菜单。[/]"
-        #     )
-        #     self._back_to_menu(log)
-        #     return
-
-        player_name = self._snapshot.player_name
-        actor_faction = "party"  # 装备固定挂在玩家（我方）实体上，锚点恒为 party
-
-        if item.target_type == TargetType.SELF_ONLY:
-            self._flow.pending_targets = [player_name] if player_name else []
-            self._enter_confirm(log)
-            return
-
-        if item.target_type == TargetType.ENEMY_SINGLE:
-            candidates = [
-                (name, entity)
-                for name, entity in self._snapshot.entities_map.items()
-                if classify_faction(entity) not in ("unknown", actor_faction)
-                and is_alive(entity)
-            ]
-        elif item.target_type == TargetType.ALLY_SINGLE:
-            # 装备目标可以是玩家自身（如给自己装备武器），故不像消耗品那样排除自身。
-            candidates = [
-                (name, entity)
-                for name, entity in self._snapshot.entities_map.items()
-                if classify_faction(entity) == actor_faction and is_alive(entity)
-            ]
-        else:
-            # ENEMY_ALL / ALLY_ALL / ENEMY_SPREAD 等解析结果通常不为单一目标，
-            # 而装备要求解析结果恰好 1 个目标（服务端会直接拒绝），本页不支持在这些
-            # target_type 下选择目标。
-            log.write(
-                f"[yellow]目标类型 {item.target_type.value} 暂不支持在本页选择目标"
-                "（装备要求恰好 1 个目标），使用已取消，返回菜单。[/]"
-            )
-            self._back_to_menu(log)
-            return
+        candidates = [
+            (name, entity)
+            for name, entity in self._snapshot.entities_map.items()
+            if classify_faction(entity) == "party" and is_alive(entity)
+        ]
 
         if not candidates:
             log.write("[red]当前没有可选的目标，使用已取消，返回菜单。[/]")
@@ -556,10 +516,10 @@ class CombatUseGearScreen(BaseGameScreen):
 
         effective_stats = compute_effective_stats_for(target_entity)
         current_energy = resolve_current_energy(target_entity, effective_stats)
-        if current_energy <= 0:
+        if current_energy < item.cost:
             log.write(
                 f"[red]目标『{display_name(target_name)}』本回合能量不足"
-                f"（剩余{current_energy}），无法为其装备，使用已取消，返回菜单。[/]"
+                f"（需要{item.cost}，剩余{current_energy}），无法为其装备，使用已取消，返回菜单。[/]"
             )
             self._back_to_menu(log)
             return
@@ -567,6 +527,7 @@ class CombatUseGearScreen(BaseGameScreen):
         log.write("[bold yellow]── 确认使用 ─────────────────────────────────[/]")
         log.write(render_item(item))
         log.write(f"  目标： {display_name(target_name)}")
+        log.write(f"  费用： 消耗目标 {item.cost} 点 energy")
         log.write("")
         log.write("  [bold green]1[/]  确认使用")
         log.write("  [bold green]0[/]  取消，返回菜单")

@@ -16,7 +16,6 @@ from src.ai_rpg.models import (
     UseGearItemAction,
 )
 from src.ai_rpg.models.items import GearItem
-from src.ai_rpg.models.target_type import TargetType
 from src.ai_rpg.systems.use_gear_item_action_system import UseGearItemActionSystem
 
 
@@ -25,11 +24,11 @@ from src.ai_rpg.systems.use_gear_item_action_system import UseGearItemActionSyst
 # ---------------------------------------------------------------------------
 
 
-def _make_gear(name: str) -> GearItem:
+def _make_gear(name: str, cost: int = 1) -> GearItem:
     return GearItem(
         name=name,
         description="测试装备",
-        target_type=TargetType.ALLY_SINGLE,
+        cost=cost,
     )
 
 
@@ -107,14 +106,14 @@ class TestReact:
         mock_game.get_entity_by_name.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_target_energy_deducted_by_one(
+    async def test_target_energy_deducted_by_item_cost(
         self,
         context: Context,
         mock_game: MagicMock,
         system: UseGearItemActionSystem,
     ) -> None:
         _setup_mock_dungeon(mock_game)
-        gear = _make_gear("装备.测试")
+        gear = _make_gear("装备.测试", cost=2)
         player = _make_player_entity(context, "player", [gear], gear, ["队友A"])
         target = _make_party_entity(context, "队友A", energy=3)
         mock_game.get_entity_by_name.return_value = target
@@ -125,22 +124,22 @@ class TestReact:
         ):
             await system.react([player])
 
-        assert target.get(RoundStatsComponent).energy == 2
+        assert target.get(RoundStatsComponent).energy == 1
         assert target.get(EquippedGearComponent).item.name == "装备.测试"
 
     @pytest.mark.asyncio
-    async def test_raises_when_target_energy_already_zero(
+    async def test_raises_when_target_energy_less_than_item_cost(
         self,
         context: Context,
         mock_game: MagicMock,
         system: UseGearItemActionSystem,
     ) -> None:
-        """系统信任调用方（activate_use_gear）已校验目标 energy>0；
-        若目标 energy 已耗尽仍被调用，consume_energy 内部断言应失败。"""
+        """系统信任调用方（activate_use_gear）已校验目标 energy>=cost；
+        若目标 energy 不足仍被调用，系统层断言应失败。"""
         _setup_mock_dungeon(mock_game)
-        gear = _make_gear("装备.测试")
+        gear = _make_gear("装备.测试", cost=2)
         player = _make_player_entity(context, "player", [gear], gear, ["队友A"])
-        target = _make_party_entity(context, "队友A", energy=0)
+        target = _make_party_entity(context, "队友A", energy=1)
         mock_game.get_entity_by_name.return_value = target
 
         with patch(

@@ -108,8 +108,7 @@ class UseGearItemActionSystem(ReactiveProcessor):
         target_name = action.targets[0]
 
         logger.debug(
-            f"UseGearItemActionSystem: 使用装备 '{item.name}'"
-            f" | target_type={item.target_type} | 目标: {action.targets}"
+            f"UseGearItemActionSystem: 使用装备 '{item.name}' | cost={item.cost} | 目标: {action.targets}"
         )
 
         # 保证全局唯一：移除所有持有同名装备的 EquippedGearComponent
@@ -120,6 +119,9 @@ class UseGearItemActionSystem(ReactiveProcessor):
         assert (
             target_entity is not None
         ), f"UseGearItemActionSystem: 无法找到目标 {target_name}"
+        assert (
+            get_energy(target_entity) >= item.cost
+        ), f"{target_entity.name} 能量不足！需要 energy={item.cost}，当前 energy={get_energy(target_entity)}"
         target_entity.replace(
             EquippedGearComponent,
             target_entity.name,
@@ -129,11 +131,12 @@ class UseGearItemActionSystem(ReactiveProcessor):
             f"UseGearItemActionSystem: [{entity.name}] 已为 [{target_name}] 装备 '{item.name}'"
         )
 
-        # 消耗被装备目标本回合 1 点 energy（替代已移除的耐久系统）；不调用 advance_turn ——
+        # 消耗被装备目标本回合指定 energy；不调用 advance_turn ——
         # 行动权推进完全由 completed_actors（仅 pass turn 写入）决定，装备动作本身不结束任何人的回合
-        consume_energy(target_entity, 1)
+        if item.cost > 0:
+            consume_energy(target_entity, item.cost)
         logger.debug(
-            f"UseGearItemActionSystem: '{target_entity.name}' 装备消耗 1 点 energy，剩余 {get_energy(target_entity)}"
+            f"UseGearItemActionSystem: '{target_entity.name}' 装备消耗 {item.cost} 点 energy，剩余 {get_energy(target_entity)}"
         )
 
         # 向场景内所有存活角色按阵营注入行动通知上下文

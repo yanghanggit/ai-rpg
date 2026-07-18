@@ -8,7 +8,7 @@ from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import get_alive_actors_in_stage
-from ..game.dbg_entity_ops import compute_character_stats
+from ..game.dbg_combat_processor import compute_character_stats
 from ..models import (
     Card,
     TargetType,

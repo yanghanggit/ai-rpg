@@ -10,7 +10,7 @@ from ..game.dbg_combat_processor import (
     get_alive_actors_in_stage,
     determine_camp_relationship,
 )
-from ..game.dbg_entity_ops import (
+from ..game.dbg_combat_processor import (
     accumulate_status_effects_action,
     compute_character_stats,
 )

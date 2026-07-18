@@ -6,7 +6,7 @@ from typing import Set
 from loguru import logger
 from ..game.config import DUNGEONS_DIR
 from ..game.dbg_game import DBGGame
-from ..game.dbg_entity_ops import compute_character_stats, set_character_hp
+from ..game.dbg_combat_processor import compute_character_stats, set_character_hp
 from ..game.rpg_stage_transition import stage_transition
 from ..models import (
     ActorType,

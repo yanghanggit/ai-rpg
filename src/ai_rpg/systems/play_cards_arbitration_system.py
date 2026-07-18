@@ -6,7 +6,7 @@ from overrides import override
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
-from ..game.dbg_entity_ops import (
+from ..game.dbg_combat_processor import (
     accumulate_status_effects_action,
     apply_status_effect_patch,
     compute_character_stats,

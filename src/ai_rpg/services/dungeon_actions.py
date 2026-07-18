@@ -5,8 +5,12 @@
 from typing import List, Tuple, Optional
 from loguru import logger
 from ..game.dbg_game import DBGGame
-from ..game.dbg_combat_processor import get_alive_actors_in_stage, pick_spread_targets
-from ..game.dbg_entity_ops import get_energy
+from ..game.dbg_combat_processor import (
+    get_alive_party_members_in_stage,
+    get_alive_monsters_in_stage,
+    get_energy,
+    resolve_targets,
+)
 from ..models import (
     DrawCardsAction,
     HandComponent,
@@ -17,7 +21,6 @@ from ..models import (
     DeathComponent,
     RetreatAction,
     MonsterTurnAction,
-    TargetType,
     HandComponent,
     InventoryComponent,
     CombatLootComponent,
@@ -28,24 +31,6 @@ from ..models import (
     ConsumableItem,
 )
 from ..entitas import Entity, Matcher
-
-
-###################################################################################################################################################################
-def _get_alive_party_members_in_stage(
-    anchor_entity: Entity, dbg_game: DBGGame
-) -> List[Entity]:
-    """获取锚点实体所在场景中所有存活的远征队成员"""
-    actor_entities = get_alive_actors_in_stage(dbg_game, anchor_entity)
-    return [entity for entity in actor_entities if entity.has(PartyMemberComponent)]
-
-
-###################################################################################################################################################################
-def _get_alive_monsters_in_stage(
-    anchor_entity: Entity, dbg_game: DBGGame
-) -> List[Entity]:
-    """获取锚点实体所在场景中所有存活的怪物"""
-    actor_entities = get_alive_actors_in_stage(dbg_game, anchor_entity)
-    return [entity for entity in actor_entities if entity.has(MonsterComponent)]
 
 
 ###################################################################################################################################################################
@@ -73,9 +58,9 @@ def activate_all_card_draws(
     assert player_entity is not None, "activate_all_card_draws: player_entity is None"
 
     # 获取当前场景中所有存活的战斗角色，包括远征队成员和怪物
-    all_entities = _get_alive_party_members_in_stage(
+    all_entities = get_alive_party_members_in_stage(
         player_entity, dbg_game
-    ) + _get_alive_monsters_in_stage(player_entity, dbg_game)
+    ) + get_alive_monsters_in_stage(player_entity, dbg_game)
 
     # 如果当前场景中没有存活的战斗角色，则返回错误信息
     if len(all_entities) == 0:
@@ -93,56 +78,6 @@ def activate_all_card_draws(
         entity.replace(DrawCardsAction, entity.name)
 
     return True, f"成功为 {len(all_entities)} 个战斗角色激活抽牌动作"
-
-
-###################################################################################################################################################################
-def _resolve_targets(
-    target_type: TargetType,
-    hit_count: int,
-    actor_entity: Entity,
-    passed_targets: List[str],
-    dbg_game: DBGGame,
-) -> Tuple[List[str], str]:
-    """根据 target_type 解析并验证目标。"""
-
-    is_actor_ally = actor_entity.has(PartyMemberComponent)
-
-    def _get_enemies() -> List[Entity]:
-        return (
-            _get_alive_monsters_in_stage(actor_entity, dbg_game)
-            if is_actor_ally
-            else _get_alive_party_members_in_stage(actor_entity, dbg_game)
-        )
-
-    match target_type:
-        case TargetType.ENEMY_SINGLE:
-            enemy_names = {e.name for e in _get_enemies()}
-            if len(passed_targets) != 1:
-                return (
-                    [],
-                    f"ENEMY_SINGLE 目标数量必须为 1，实际收到 {len(passed_targets)} 个",
-                )
-            if passed_targets[0] not in enemy_names:
-                return (
-                    [],
-                    f"目标 '{passed_targets[0]}' 不在存活敌方列表中: {sorted(enemy_names)}",
-                )
-            return list(passed_targets), ""
-
-        case TargetType.ENEMY_ALL:
-            return [e.name for e in _get_enemies()], ""
-
-        case TargetType.ENEMY_SPREAD:
-            enemies = _get_enemies()
-            if not enemies:
-                return [], "ENEMY_SPREAD：场上无存活敌方"
-            return [e.name for e in pick_spread_targets(enemies, hit_count)], ""
-
-        case TargetType.SELF_ONLY:
-            return [actor_entity.name], ""
-
-        case _:  # ALLY_SINGLE / ALLY_ALL — 不限制目标
-            return list(passed_targets), ""
 
 
 ###################################################################################################################################################################
@@ -236,7 +171,7 @@ async def activate_play_cards_specified(
         )
 
     # 解析卡牌的目标，根据卡牌的目标类型和命中次数，结合玩家提供的目标名称列表，解析出实际的目标实体列表。
-    resolved_targets, resolve_err = _resolve_targets(
+    resolved_targets, resolve_err = resolve_targets(
         selected_card.target_type, selected_card.hit_count, entity, targets, dbg_game
     )
     if resolve_err:
@@ -375,18 +310,18 @@ def activate_use_consumable(
         logger.error(msg)
         return False, msg
 
-    # 获取当前回合的行动者实体，并检查其是否属于玩家阵营，如果不是则无法使用消耗品。
-    current_turn_entity = dbg_game.get_actor_entity(current_turn_actor_name)
-    if current_turn_entity is None or not current_turn_entity.has(PartyMemberComponent):
-        msg = f"使用消耗品失败：当前行动角色 {current_turn_actor_name} 不属于玩家阵营"
-        logger.error(msg)
-        return False, msg
-
     # 获取玩家实体，并确保其具有必要的组件（PartyMemberComponent 和 InventoryComponent），以便使用消耗品。
     player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "activate_use_consumable: player_entity is None"
     assert player_entity.has(PartyMemberComponent), "玩家实体缺少 PartyMemberComponent"
     assert player_entity.has(InventoryComponent), "玩家实体缺少 InventoryComponent"
+
+    # 只有背包持有者本人是当前行动者时，才允许发起消耗品使用。
+    current_turn_entity = dbg_game.get_actor_entity(current_turn_actor_name)
+    if current_turn_entity is None or current_turn_actor_name != player_entity.name:
+        msg = f"使用消耗品失败：当前行动角色 {current_turn_actor_name} 不是背包持有者 {player_entity.name}"
+        logger.error(msg)
+        return False, msg
 
     # 从玩家实体中获取背包组件，并尝试在背包中找到指定的消耗品，如果找不到则返回错误。
     inventory_comp = player_entity.get(InventoryComponent)
@@ -406,7 +341,7 @@ def activate_use_consumable(
         return False, msg
 
     # 解析消耗品的目标，根据消耗品的目标类型、数量和玩家实体，结合传入的目标列表，确定最终的目标实体列表。如果解析失败，则返回错误。
-    resolved_targets, resolve_err = _resolve_targets(
+    resolved_targets, resolve_err = resolve_targets(
         selected_item.target_type, 1, player_entity, targets, dbg_game
     )
     if resolve_err:
@@ -513,7 +448,7 @@ def activate_use_gear(
     #     return False, msg
 
     # 根据装备的目标类型解析实际目标，确保目标数量和类型符合装备的要求。
-    resolved_targets, resolve_err = _resolve_targets(
+    resolved_targets, resolve_err = resolve_targets(
         selected_item.target_type, 1, player_entity, targets, dbg_game
     )
     if resolve_err:

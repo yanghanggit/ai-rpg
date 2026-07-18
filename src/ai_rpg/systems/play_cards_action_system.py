@@ -12,7 +12,7 @@ from ..models import (
     AgentEvent,
 )
 from ..game.dbg_game import DBGGame
-from ..game.dbg_entity_ops import consume_energy
+from ..game.dbg_combat_processor import consume_energy
 from ..game.dbg_combat_processor import get_current_turn_actor
 
 

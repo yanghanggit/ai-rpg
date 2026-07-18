@@ -9,7 +9,7 @@ from loguru import logger
 from ..entitas import Entity, ExecuteProcessor
 from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import get_alive_actors_in_stage
-from ..game.dbg_entity_ops import compute_character_stats, get_energy
+from ..game.dbg_combat_processor import compute_character_stats, get_energy
 from ..models import (
     CharacterStatsComponent,
     DeathComponent,

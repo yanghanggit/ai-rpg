@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.dbg_game import DBGGame
-from ..game.dbg_entity_ops import (
+from ..game.dbg_combat_processor import (
     compute_character_stats,
     get_status_effects_by_phase,
     set_character_hp,

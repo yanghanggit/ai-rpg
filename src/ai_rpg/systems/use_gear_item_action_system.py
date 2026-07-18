@@ -6,7 +6,7 @@ from overrides import override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import get_alive_actors_in_stage
-from ..game.dbg_entity_ops import consume_energy, get_energy
+from ..game.dbg_combat_processor import consume_energy, get_energy
 from ..models import (
     EquippedGearComponent,
     HumanMessage,

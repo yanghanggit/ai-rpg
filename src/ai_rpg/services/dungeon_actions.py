@@ -382,12 +382,6 @@ def activate_use_consumable(
         logger.error(msg)
         return False, msg
 
-    # 检查本回合是否已经使用过消耗品，如果已经使用过，则无法再次使用，每回合限用一次。
-    if latest_round.consumable_use_count > 0:
-        msg = f"使用消耗品失败：本回合已使用过消耗品（consumable_use_count={latest_round.consumable_use_count}），每回合限用一次"
-        logger.error(msg)
-        return False, msg
-
     # 获取玩家实体，并确保其具有必要的组件（PartyMemberComponent 和 InventoryComponent），以便使用消耗品。
     player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "activate_use_consumable: player_entity is None"

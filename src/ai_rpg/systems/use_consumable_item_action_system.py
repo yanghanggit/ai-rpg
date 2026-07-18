@@ -107,10 +107,6 @@ class UseConsumableItemActionSystem(ReactiveProcessor):
             latest_round is not None
         ), "UseConsumableItemActionSystem: latest_round is None"
         assert (
-            latest_round.consumable_use_count == 0
-        ), f"UseConsumableItemActionSystem: 本回合已使用过消耗品（consumable_use_count={latest_round.consumable_use_count}），应由 dungeon_actions 拦截"
-
-        assert (
             len(entities) == 1
         ), f"UseConsumableItemActionSystem: 同一时间不应有多个实体触发使用消耗品前置动作，当前数量={len(entities)}"
 

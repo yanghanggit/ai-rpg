@@ -11,10 +11,7 @@ from ..models import (
     AddStatusEffectsAction,
     HumanMessage,
     StatusEffectsComponent,
-    StatusEffect,
-    PhaseType,
     DeathComponent,
-    MonsterComponent,
 )
 from ..utils import extract_json_from_code_block
 from .status_effect_prompt_builders import (
@@ -123,36 +120,36 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
         )
 
     #######################################################################################################################################
-    def _mock_inject_counter_effect(self, entity: Entity) -> None:
-        """[测试用] 若实体为怪物，强制注入一个计数型状态效果，用于验证 counter 机制。
+    # def _mock_inject_counter_effect(self, entity: Entity) -> None:
+    #     """[测试用] 若实体为怪物，强制注入一个计数型状态效果，用于验证 counter 机制。
 
-        规则：前3次受击伤害锁定为1；counter 初始为 3，仲裁 LLM 每次受击后将其递减 1，
-        counter 归零后效果不再触发。已注入则跳过（避免重复）。
-        """
-        if not entity.has(MonsterComponent):
-            return
+    #     规则：前3次受击伤害锁定为1；counter 初始为 3，仲裁 LLM 每次受击后将其递减 1，
+    #     counter 归零后效果不再触发。已注入则跳过（避免重复）。
+    #     """
+    #     if not entity.has(MonsterComponent):
+    #         return
 
-        combat_status_effects = entity.get(StatusEffectsComponent)
-        assert combat_status_effects is not None
+    #     combat_status_effects = entity.get(StatusEffectsComponent)
+    #     assert combat_status_effects is not None
 
-        mock_effect_name = "伤害锁定"
-        if any(
-            e.name == mock_effect_name for e in combat_status_effects.status_effects
-        ):
-            return
+    #     mock_effect_name = "伤害锁定"
+    #     if any(
+    #         e.name == mock_effect_name for e in combat_status_effects.status_effects
+    #     ):
+    #         return
 
-        mock_effect = StatusEffect(
-            name=mock_effect_name,
-            description="前3次受击伤害锁定为1；每次受击后 counter 递减1，counter 归零后效果失效",
-            duration=-1,
-            phase=PhaseType.ARBITRATION,
-            counter=3,
-            source="[mock]",
-        )
-        combat_status_effects.status_effects.append(mock_effect)
-        logger.debug(
-            f"[{entity.name}] [mock] 注入测试效果: 「{mock_effect.name}」counter={mock_effect.counter}"
-        )
+    #     mock_effect = StatusEffect(
+    #         name=mock_effect_name,
+    #         description="前3次受击伤害锁定为1；每次受击后 counter 递减1，counter 归零后效果失效",
+    #         duration=-1,
+    #         phase=PhaseType.ARBITRATION,
+    #         counter=3,
+    #         source="[mock]",
+    #     )
+    #     combat_status_effects.status_effects.append(mock_effect)
+    #     logger.debug(
+    #         f"[{entity.name}] [mock] 注入测试效果: 「{mock_effect.name}」counter={mock_effect.counter}"
+    #     )
 
     #######################################################################################################################################
     def _process_status_effects_response(self, chat_client: DeepSeekClient) -> None:

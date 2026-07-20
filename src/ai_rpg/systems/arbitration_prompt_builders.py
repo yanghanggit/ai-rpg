@@ -2,17 +2,13 @@
 
 from typing import Dict, Final, List, Optional, final
 from pydantic import BaseModel
-from ..entitas import Entity
 from ..models import (
-    PlayCardsAction,
-    UseGearItemAction,
-    UseConsumableItemAction,
+    Card,
     CharacterStats,
+    ConsumableItem,
     StatusEffect,
     TargetType,
     GearItem,
-    MonsterComponent,
-    PartyMemberComponent,
 )
 from dataclasses import dataclass
 
@@ -198,20 +194,19 @@ class SpreadSections:
 
 
 def build_spread_sections(
-    play_cards_action: PlayCardsAction,
+    card: Card,
+    targets: List[str],
 ) -> SpreadSections:
     """为 ENEMY_SPREAD 卡牌构建仲裁 prompt 中的专属片段。
 
     当 target_type 不是 ENEMY_SPREAD 时，所有字段均为空字符串。
     """
-    if play_cards_action.card.target_type != TargetType.ENEMY_SPREAD:
+    if card.target_type != TargetType.ENEMY_SPREAD:
         return SpreadSections("", "")
 
-    hit_lines = "\n".join(
-        f"  第{i + 1}击 → {t}" for i, t in enumerate(play_cards_action.targets)
-    )
+    hit_lines = "\n".join(f"  第{i + 1}击 → {t}" for i, t in enumerate(targets))
     hit_assignment = (
-        f"\n## 命中分配（系统预先随机确定，共 {play_cards_action.card.hit_count} 击）\n\n"
+        f"\n## 命中分配（系统预先随机确定，共 {card.hit_count} 击）\n\n"
         f"{hit_lines}\n\n"
         f"按上方命中分配逐段结算，final_stats 须包含**所有被命中过的不重复目标**。"
     )
@@ -227,7 +222,8 @@ def build_spread_sections(
 def generate_combat_arbitration_prompt(
     actor_name: str,
     actor_stats: CharacterStats,
-    play_cards_action: PlayCardsAction,
+    card: Card,
+    targets: List[str],
     target_stats: Dict[str, CharacterStats],
     current_round_number: int,
     actor_arbitration_effects: List[StatusEffect],
@@ -241,9 +237,9 @@ def generate_combat_arbitration_prompt(
     arbitration_effects_lines = build_combat_arbitration_effects_lines(
         actor_name, actor_arbitration_effects, target_arbitration_effects
     )
-    spread = build_spread_sections(play_cards_action)
+    spread = build_spread_sections(card, targets)
 
-    modifiers = play_cards_action.card.modifiers
+    modifiers = card.modifiers
     modifiers_line = (
         "\n- 即时修正词缀：\n" + "\n".join(f"  - {a}" for a in modifiers)
         if modifiers
@@ -263,10 +259,10 @@ def generate_combat_arbitration_prompt(
 
 ## 出牌
 
-- 卡牌：{play_cards_action.card.name}
-- damage_dealt：{play_cards_action.card.damage_dealt}（单次伤害）
-- hit_count：{play_cards_action.card.hit_count}（攻击次数）
-{f'- energy_delta：{play_cards_action.card.energy_delta:+d}（改变目标行动次数，已由系统直接结算）\n' if play_cards_action.card.energy_delta != 0 else ''}{modifiers_line}{actor_gear_modifiers_line}{spread.hit_assignment}
+- 卡牌：{card.name}
+- damage_dealt：{card.damage_dealt}（单次伤害）
+- hit_count：{card.hit_count}（攻击次数）
+{f'- energy_delta：{card.energy_delta:+d}（改变目标行动次数，已由系统直接结算）\n' if card.energy_delta != 0 else ''}{modifiers_line}{actor_gear_modifiers_line}{spread.hit_assignment}
 
 ## 目标
 
@@ -305,7 +301,8 @@ def generate_combat_arbitration_prompt(
 def generate_compressed_combat_arbitration_prompt(
     actor_name: str,
     actor_stats: CharacterStats,
-    play_cards_action: PlayCardsAction,
+    card: Card,
+    targets: List[str],
     target_stats: Dict[str, CharacterStats],
     current_round_number: int,
     actor_arbitration_effects: List[StatusEffect],
@@ -320,9 +317,9 @@ def generate_compressed_combat_arbitration_prompt(
     arbitration_effects_lines = build_combat_arbitration_effects_lines(
         actor_name, actor_arbitration_effects, target_arbitration_effects
     )
-    spread = build_spread_sections(play_cards_action)
+    spread = build_spread_sections(card, targets)
 
-    modifiers = play_cards_action.card.modifiers
+    modifiers = card.modifiers
     modifiers_line = (
         "\n- 即时修正词缀：\n" + "\n".join(f"  - {a}" for a in modifiers)
         if modifiers
@@ -342,10 +339,10 @@ def generate_compressed_combat_arbitration_prompt(
 
 ## 出牌
 
-- 卡牌：{play_cards_action.card.name}
-- damage_dealt：{play_cards_action.card.damage_dealt}（单次伤害）
-- hit_count：{play_cards_action.card.hit_count}（攻击次数）
-{f'- energy_delta：{play_cards_action.card.energy_delta:+d}（改变目标行动次数，已由系统直接结算）\n' if play_cards_action.card.energy_delta != 0 else ''}{modifiers_line}{actor_gear_modifiers_line}{spread.hit_assignment}
+- 卡牌：{card.name}
+- damage_dealt：{card.damage_dealt}（单次伤害）
+- hit_count：{card.hit_count}（攻击次数）
+{f'- energy_delta：{card.energy_delta:+d}（改变目标行动次数，已由系统直接结算）\n' if card.energy_delta != 0 else ''}{modifiers_line}{actor_gear_modifiers_line}{spread.hit_assignment}
 
 ## 目标
 
@@ -388,7 +385,7 @@ def generate_combat_arbitration_broadcast(
 
 
 def generate_gear_arbitration_prompt(
-    action: UseGearItemAction,
+    item: GearItem,
     target_stats: Dict[str, CharacterStats],
     current_round_number: int,
     target_arbitration_effects: Dict[str, List[StatusEffect]],
@@ -398,7 +395,6 @@ def generate_gear_arbitration_prompt(
     arbitration_effects_lines = build_arbitration_effects_lines(
         target_arbitration_effects
     )
-    item = action.item
     modifiers_line = (
         "\n- 即时修正词缀：\n" + "\n".join(f"  - {m}" for m in item.modifiers)
         if item.modifiers
@@ -443,7 +439,7 @@ def generate_gear_arbitration_prompt(
 
 
 def generate_compressed_gear_arbitration_prompt(
-    action: UseGearItemAction,
+    item: GearItem,
     target_stats: Dict[str, CharacterStats],
     current_round_number: int,
     target_arbitration_effects: Dict[str, List[StatusEffect]],
@@ -453,7 +449,6 @@ def generate_compressed_gear_arbitration_prompt(
     arbitration_effects_lines = build_arbitration_effects_lines(
         target_arbitration_effects
     )
-    item = action.item
     modifiers_line = (
         "\n- 即时修正词缀：\n" + "\n".join(f"  - {m}" for m in item.modifiers)
         if item.modifiers
@@ -497,7 +492,7 @@ def generate_gear_arbitration_broadcast(
 
 
 def generate_consumable_arbitration_prompt(
-    action: UseConsumableItemAction,
+    item: ConsumableItem,
     target_stats: Dict[str, CharacterStats],
     current_round_number: int,
     target_arbitration_effects: Dict[str, List[StatusEffect]],
@@ -509,7 +504,7 @@ def generate_consumable_arbitration_prompt(
         target_arbitration_effects
     )
 
-    modifiers = action.item.modifiers
+    modifiers = item.modifiers
     modifiers_line = (
         "\n- 即时修正词缀：\n" + "\n".join(f"  - {m}" for m in modifiers)
         if modifiers
@@ -520,8 +515,8 @@ def generate_consumable_arbitration_prompt(
 
 ## 消耗品
 
-- 名称：{action.item.name}
-- 描述：{action.item.description}{modifiers_line}
+- 名称：{item.name}
+- 描述：{item.description}{modifiers_line}
 
 ## 目标
 
@@ -557,7 +552,7 @@ def generate_consumable_arbitration_prompt(
 
 
 def generate_compressed_consumable_arbitration_prompt(
-    action: UseConsumableItemAction,
+    item: ConsumableItem,
     target_stats: Dict[str, CharacterStats],
     current_round_number: int,
     target_arbitration_effects: Dict[str, List[StatusEffect]],
@@ -569,7 +564,7 @@ def generate_compressed_consumable_arbitration_prompt(
         target_arbitration_effects
     )
 
-    modifiers = action.item.modifiers
+    modifiers = item.modifiers
     modifiers_line = (
         "\n- 即时修正词缀：\n" + "\n".join(f"  - {m}" for m in modifiers)
         if modifiers
@@ -580,8 +575,8 @@ def generate_compressed_consumable_arbitration_prompt(
 
 ## 消耗品
 
-- 名称：{action.item.name}
-- 描述：{action.item.description}{modifiers_line}
+- 名称：{item.name}
+- 描述：{item.description}{modifiers_line}
 
 ## 目标
 
@@ -611,107 +606,67 @@ def generate_consumable_arbitration_broadcast(
 #######################################################################################################################################
 
 
-def generate_play_cards_actor_task_hints(
+def generate_play_cards_affix_task_hints(
     actor_name: str,
-    play_cards_action: PlayCardsAction,
+    card: Card,
+    targets: List[str],
 ) -> List[str]:
-    """生成出牌者视角的 AddStatusEffectsAction task_hints（card.affixes）。
+    """生成卡牌词缀的 AddStatusEffectsAction task_hints（card.affixes）。
 
-    格式：[卡牌·出牌者] 「{card}」→{targets}，{damage}伤×{hits}击；词缀 → {affix}
+    格式：[卡牌] {actor}的「{card}」→{targets}；词缀 → {affix}
+    伤害/HP 变化已经通过仲裁广播（combat_log）与个人 HP 更新通知同步给相关实体，此处无需重复。
     """
-    card = play_cards_action.card
     if not card.affixes:
         return []
-    targets_str = "、".join(play_cards_action.targets) or "无"
-    energy_part = f"，能量{card.energy_delta:+d}" if card.energy_delta != 0 else ""
-    base = f"[卡牌·出牌者] 「{card.name}」→{targets_str}，{card.damage_dealt}伤×{card.hit_count}击{energy_part}"
-    return [f"{base}；词缀 → {affix}" for affix in card.affixes]
-
-
-def generate_play_cards_target_task_hints(
-    actor_name: str,
-    play_cards_action: PlayCardsAction,
-    new_hp: int,
-    max_hp: int,
-) -> List[str]:
-    """生成受击目标视角的 AddStatusEffectsAction task_hints（card.affixes）。
-
-    格式：[卡牌·受击者] {actor}的「{card}」命中，{damage}伤×{hits}击，HP {new}/{max}；词缀 → {affix}
-    补入仲裁后 HP 数据（D），使 LLM 推理更精准。
-    """
-    card = play_cards_action.card
-    if not card.affixes:
-        return []
-    energy_part = f"，能量{card.energy_delta:+d}" if card.energy_delta != 0 else ""
-    base = (
-        f"[卡牌·受击者] {actor_name}的「{card.name}」命中，"
-        f"{card.damage_dealt}伤×{card.hit_count}击{energy_part}，HP {new_hp}/{max_hp}"
-    )
+    targets_str = "、".join(targets) or "无"
+    base = f"[卡牌] {actor_name}的「{card.name}」→{targets_str}"
     return [f"{base}；词缀 → {affix}" for affix in card.affixes]
 
 
 def generate_gear_on_hit_task_hints(
     actor_name: str,
-    play_cards_action: PlayCardsAction,
+    card_name: str,
     gear_item: GearItem,
-    new_hp: int,
-    max_hp: int,
 ) -> List[str]:
     """生成装备 on_hit_affixes 的 AddStatusEffectsAction task_hints（仅目标视角）。
 
-    格式：[装备命中·受击者] {actor}持「{gear}」命中（「{card}」），HP {new}/{max}；装备词缀 → {affix}
-    补入仲裁后 HP 数据（D），填补原缺失上下文。
+    格式：[装备命中·受击者] {actor}持「{gear}」命中（「{card}」）；装备词缀 → {affix}
+    HP 变化已经通过仲裁广播与个人 HP 更新通知同步给该实体，此处无需重复。
     """
     if not gear_item.on_hit_affixes:
         return []
-    card = play_cards_action.card
     base = (
-        f"[装备命中·受击者] {actor_name}持「{gear_item.name}」命中"
-        f"（「{card.name}」），HP {new_hp}/{max_hp}"
+        f"[装备命中·受击者] {actor_name}持「{gear_item.name}」命中（「{card_name}」）"
     )
     return [f"{base}；装备词缀 → {affix}" for affix in gear_item.on_hit_affixes]
 
 
 def generate_gear_equip_task_hints(
-    action: UseGearItemAction,
-    entity: Entity,
+    item: GearItem,
+    targets: List[str],
 ) -> List[str]:
     """生成装备穿戴 equip_affixes 的 AddStatusEffectsAction task_hints。
 
-    格式：[装备穿戴·{阵营}] 「{item}」→{targets}（{stats}）；词缀 → {affix}
+    格式：[装备穿戴] 「{item}」→{targets}（{stats}）；词缀 → {affix}
     """
-    item = action.item
     if not item.equip_affixes:
         return []
-    targets_str = "、".join(action.targets) or "无"
+    targets_str = "、".join(targets) or "无"
     stats_str = _fmt_stat_bonuses_compact(item.stat_bonuses)
-    if entity.has(PartyMemberComponent):
-        camp = "友方"
-    elif entity.has(MonsterComponent):
-        camp = "敌方"
-    else:
-        camp = "未知"
-    base = f"[装备穿戴·{camp}] 「{item.name}」→{targets_str}（{stats_str}）"
+    base = f"[装备穿戴] 「{item.name}」→{targets_str}（{stats_str}）"
     return [f"{base}；词缀 → {affix}" for affix in item.equip_affixes]
 
 
 def generate_consumable_task_hints(
-    action: UseConsumableItemAction,
-    entity: Entity,
+    item: ConsumableItem,
+    targets: List[str],
 ) -> List[str]:
     """生成消耗品 affixes 的 AddStatusEffectsAction task_hints。
 
-    格式：[消耗品·{阵营}] 「{item}」→{targets}；词缀 → {affix}
+    格式：[消耗品] 「{item}」→{targets}；词缀 → {affix}
     """
-    item = action.item
     if not item.affixes:
         return []
-    targets_str = "、".join(action.targets) or "无"
-    if entity.has(PartyMemberComponent):
-        camp = "友方"
-    elif entity.has(MonsterComponent):
-        camp = "敌方"
-    else:
-        camp = "未知"
-    base = f"[消耗品·{camp}] 「{item.name}」→{targets_str}"
+    targets_str = "、".join(targets) or "无"
+    base = f"[消耗品] 「{item.name}」→{targets_str}"
     return [f"{base}；词缀 → {affix}" for affix in item.affixes]

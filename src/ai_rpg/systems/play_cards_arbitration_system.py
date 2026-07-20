@@ -1,6 +1,6 @@
 """战斗仲裁动作系统模块。"""
 
-from typing import Dict, Final, List, Tuple, final
+from typing import Dict, Final, List, final
 from loguru import logger
 from overrides import override
 from ..deepseek import DeepSeekClient
@@ -9,7 +9,12 @@ from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import (
     accumulate_status_effects_action,
     apply_status_effect_patch,
+    collect_target_arbitration_effects,
+    collect_target_character_stats,
+    collect_target_gear_modifiers,
     compute_character_stats,
+    get_gear_modifiers,
+    get_gear_on_hit_affixes,
     get_status_effects_by_phase,
     give_energy,
     set_character_hp,
@@ -18,7 +23,6 @@ from ..game.dbg_combat_processor import process_zero_health_entities
 from ..models import (
     PlayCardsAction,
     RoundStatsComponent,
-    CharacterStats,
     CharacterStatsComponent,
     CombatArbitrationEvent,
     HumanMessage,
@@ -34,8 +38,7 @@ from .arbitration_prompt_builders import (
     generate_compressed_combat_arbitration_prompt,
     generate_combat_arbitration_broadcast,
     stats_update_notification,
-    generate_play_cards_actor_task_hints,
-    generate_play_cards_target_task_hints,
+    generate_play_cards_affix_task_hints,
     generate_gear_on_hit_task_hints,
 )
 
@@ -72,8 +75,8 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             f"PlayCardsArbitrationSystem: 触发仲裁，找到 {len(entities)} 个符合条件的出牌实体"
         )
 
-        for entity in entities:
-            await self._request_combat_arbitration(entity)
+        # for entity in entities:
+        await self._request_combat_arbitration(entities[0])
 
     #######################################################################################################################################
     async def _request_combat_arbitration(self, actor_entity: Entity) -> None:
@@ -87,57 +90,39 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
         ), f"实体 {actor_entity.name} 缺少 PlayCardsAction 组件！"
         play_cards_action = actor_entity.get(PlayCardsAction)
 
-        # dict.fromkeys 去重并保序（ENEMY_SPREAD 的 targets 长度=hit_count，可能含重复名）
-        target_stats: Dict[str, CharacterStats] = {}
-        for target_name in dict.fromkeys(play_cards_action.targets):
-            target_entity = self._game.get_entity_by_name(target_name)
-            assert target_entity is not None, f"无法找到目标实体: {target_name}"
-            target_stats[target_name] = compute_character_stats(target_entity)
-
         assert actor_entity.has(
             RoundStatsComponent
         ), f"出牌实体 {actor_entity.name} 缺少 RoundStatsComponent！"
 
-        # 获取当前回合数，用于仲裁提示生成
-        current_round_number = len(self._game.current_combat_room.combat.rounds or [])
+        # dict.fromkeys 去重并保序（ENEMY_SPREAD 的 targets 长度=hit_count，可能含重复名）
+        # 获取目标实体的当前属性、仲裁阶段状态效果、装备附加属性，用于生成仲裁提示
+        target_stats = collect_target_character_stats(
+            self._game, play_cards_action.targets
+        )
+        target_arbitration_effects = collect_target_arbitration_effects(
+            self._game, play_cards_action.targets
+        )
+        target_gear_modifiers = collect_target_gear_modifiers(
+            self._game, play_cards_action.targets
+        )
 
-        # 获取出牌实体和目标实体在仲裁阶段的状态效果，用于生成仲裁提示
+        # 获取出牌实体在仲裁阶段的状态效果，用于生成仲裁提示
         actor_arbitration_effects: List[StatusEffect] = get_status_effects_by_phase(
             actor_entity, PhaseType.ARBITRATION
         )
 
-        # 获取目标实体在仲裁阶段的状态效果，用于生成仲裁提示
-        target_arbitration_effects: Dict[str, List[StatusEffect]] = {}
-        for target_name in dict.fromkeys(play_cards_action.targets):
-            target_entity = self._game.get_entity_by_name(target_name)
-            assert target_entity is not None, f"无法找到目标实体: {target_name}"
-            target_arbitration_effects[target_name] = get_status_effects_by_phase(
-                target_entity, PhaseType.ARBITRATION
-            )
+        # 获取出牌实体的装备附加属性，用于生成仲裁提示
+        actor_gear_modifiers: List[str] = get_gear_modifiers(actor_entity)
 
-        # 获取出牌实体和目标实体的装备附加属性，用于生成仲裁提示
-        actor_gear_modifiers: List[str] = (
-            actor_entity.get(EquippedGearComponent).item.modifiers
-            if actor_entity.has(EquippedGearComponent)
-            else []
-        )
-
-        # 获取目标实体的装备附加属性，用于生成仲裁提示
-        target_gear_modifiers: Dict[str, List[str]] = {}
-        for _tgt_name in dict.fromkeys(play_cards_action.targets):
-            _tgt_entity = self._game.get_entity_by_name(_tgt_name)
-            assert _tgt_entity is not None, f"无法找到目标实体: {_tgt_name}"
-            target_gear_modifiers[_tgt_name] = (
-                _tgt_entity.get(EquippedGearComponent).item.modifiers
-                if _tgt_entity.has(EquippedGearComponent)
-                else []
-            )
+        # 获取当前回合数，用于仲裁提示生成
+        current_round_number = len(self._game.current_combat_room.combat.rounds or [])
 
         # 生成仲裁提示消息，包括出牌实体、目标实体的状态效果和装备附加属性等信息
         message = generate_combat_arbitration_prompt(
             actor_entity.name,
             compute_character_stats(actor_entity),
-            play_cards_action,
+            play_cards_action.card,
+            play_cards_action.targets,
             target_stats,
             current_round_number,
             actor_arbitration_effects,
@@ -151,7 +136,8 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             generate_compressed_combat_arbitration_prompt(
                 actor_entity.name,
                 compute_character_stats(actor_entity),
-                play_cards_action,
+                play_cards_action.card,
+                play_cards_action.targets,
                 target_stats,
                 current_round_number,
                 actor_arbitration_effects,
@@ -217,18 +203,22 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
         ), f"PlayCardsArbitrationSystem: 无法获取 {actor_entity.name} 所在场景实体！"
 
         try:
+
             # 解析 LLM 返回的 JSON 响应，构建 ArbitrationResponse 对象，用于后续的游戏状态更新和广播处理
             format_response = ArbitrationResponse.model_validate_json(
                 extract_json_from_code_block(chat_client.response_content)
             )
+
+            # 验证 final_stats 中的实体名称是否存在于游戏中
+            for entity_name, entity_stats in format_response.final_stats.items():
+                if self._game.get_entity_by_name(entity_name) is None:
+                    raise ValueError(
+                        f"final_stats 中的实体不存在于游戏中: {entity_name}"
+                    )
+
         except Exception as e:
             logger.error(f"Exception: {e}")
             return
-
-        # 验证 final_stats 中的实体名称是否存在于游戏中
-        for entity_name, entity_stats in format_response.final_stats.items():
-            if self._game.get_entity_by_name(entity_name) is None:
-                raise ValueError(f"final_stats 中的实体不存在于游戏中: {entity_name}")
 
         # 根据是否使用压缩提示，添加上下文。
         if self._use_compressed_prompt:
@@ -270,7 +260,6 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
         )
 
         # 更新每个实体在仲裁后的 HP 状态，并记录状态效果的变化，确保游戏状态与仲裁结果保持一致。
-        post_arbitration_hp: Dict[str, Tuple[int, int]] = {}
         for entity_name, entity_stats in format_response.final_stats.items():
 
             entity = self._game.get_entity_by_name(entity_name)
@@ -284,7 +273,6 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             after_stats = set_character_hp(entity, int(entity_stats.hp))
             new_hp = after_stats.hp
             max_hp = after_stats.max_hp
-            post_arbitration_hp[entity_name] = (new_hp, max_hp)
             logger.info(f"更新 {entity_name} HP: {old_hp} → {new_hp}/{max_hp}")
 
             # 回写仲裁阶段状态效果的 counter（更新特殊计数器）
@@ -299,12 +287,40 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             )
 
         # 根据仲裁后的状态，为出牌者与所有目标添加状态效果动作，确保状态效果在游戏中正确生效。
-        self._add_status_effects_actions_after_arbitration(
-            actor_entity=actor_entity,
-            play_cards_action=action,
-            affected_entity_names=list(format_response.final_stats.keys()),
-            post_arbitration_hp=post_arbitration_hp,
-        )
+        # card.affixes 与装备 on_hit_affixes 均为空时，本次出牌无延迟状态效果，直接跳过。
+        card_affixes = action.card.affixes
+        gear_on_hit_affixes = get_gear_on_hit_affixes(actor_entity)
+        if not card_affixes and not gear_on_hit_affixes:
+            logger.debug(
+                f"[{actor_entity.name}] 出牌卡牌无延迟词缀且装备无 on_hit_affixes，跳过 AddStatusEffectsAction"
+            )
+        else:
+
+            for entity_name in format_response.final_stats.keys():
+
+                entity = self._game.get_entity_by_name(entity_name)
+                assert entity is not None, f"无法找到实体: {entity_name}"
+
+                # 生成任务提示列表，用于在仲裁后为出牌者和目标添加状态效果动作，确保状态效果在游戏中正确生效。
+                task_hints: List[str] = []
+                if card_affixes:
+                    task_hints += generate_play_cards_affix_task_hints(
+                        actor_name=actor_entity.name,
+                        card=action.card,
+                        targets=action.targets,
+                    )
+
+                # on_hit_affixes 仅作用于命中目标（非出牌者自身）
+                if gear_on_hit_affixes and entity_name != actor_entity.name:
+                    task_hints += generate_gear_on_hit_task_hints(
+                        actor_name=actor_entity.name,
+                        card_name=action.card.name,
+                        gear_item=actor_entity.get(EquippedGearComponent).item,
+                    )
+
+                if task_hints:
+                    accumulate_status_effects_action(entity, task_hints)
+                    logger.debug(f"[{entity_name}] 仲裁后添加 AddStatusEffectsAction")
 
         # 确定性结算 energy_delta：直接改变每个目标行动次数（正值增加/负值剥夺），不经 LLM 仲裁
         if action.card.energy_delta != 0:
@@ -330,66 +346,5 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             stage_entity.replace(
                 PostArbitrationAction, stage_entity.name, actor_entity.name
             )
-
-    #######################################################################################################################################
-    def _add_status_effects_actions_after_arbitration(
-        self,
-        actor_entity: Entity,
-        play_cards_action: PlayCardsAction,
-        affected_entity_names: List[str],
-        post_arbitration_hp: Dict[str, Tuple[int, int]],
-    ) -> None:
-        """仲裁结算后为出牌者与所有目标添加 AddStatusEffectsAction。card.affixes 与装备 on_hit_affixes 均为空时跳过。
-        """
-        card_affixes = play_cards_action.card.affixes
-        has_equipped = actor_entity.has(EquippedGearComponent)
-        gear_on_hit_affixes: List[str] = (
-            actor_entity.get(EquippedGearComponent).item.on_hit_affixes
-            if has_equipped
-            else []
-        )
-
-        if not card_affixes and not gear_on_hit_affixes:
-            logger.debug(
-                f"[{actor_entity.name}] 出牌卡牌无延迟词缀且装备无 on_hit_affixes，跳过 AddStatusEffectsAction"
-            )
-            return
-
-        for entity_name in affected_entity_names:
-
-            entity = self._game.get_entity_by_name(entity_name)
-            assert entity is not None, f"无法找到实体: {entity_name}"
-
-            task_hints: List[str] = []
-
-            if card_affixes:
-                if entity_name == actor_entity.name:
-                    task_hints += generate_play_cards_actor_task_hints(
-                        actor_name=actor_entity.name,
-                        play_cards_action=play_cards_action,
-                    )
-                else:
-                    new_hp, max_hp = post_arbitration_hp.get(entity_name, (0, 0))
-                    task_hints += generate_play_cards_target_task_hints(
-                        actor_name=actor_entity.name,
-                        play_cards_action=play_cards_action,
-                        new_hp=new_hp,
-                        max_hp=max_hp,
-                    )
-
-            # on_hit_affixes 仅作用于命中目标（非出牌者自身）
-            if gear_on_hit_affixes and entity_name != actor_entity.name:
-                new_hp, max_hp = post_arbitration_hp.get(entity_name, (0, 0))
-                task_hints += generate_gear_on_hit_task_hints(
-                    actor_name=actor_entity.name,
-                    play_cards_action=play_cards_action,
-                    gear_item=actor_entity.get(EquippedGearComponent).item,
-                    new_hp=new_hp,
-                    max_hp=max_hp,
-                )
-
-            if task_hints:
-                accumulate_status_effects_action(entity, task_hints)
-                logger.debug(f"[{entity_name}] 仲裁后添加 AddStatusEffectsAction")
 
     #######################################################################################################################################

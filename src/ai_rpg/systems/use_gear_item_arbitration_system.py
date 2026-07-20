@@ -82,7 +82,7 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
 
         # 生成装备仲裁提示消息，包括使用装备动作、目标实体的状态效果、当前回合数等信息
         message = generate_gear_arbitration_prompt(
-            action=action,
+            item=action.item,
             target_stats=target_stats,
             current_round_number=current_round_number,
             target_arbitration_effects=target_arbitration_effects,
@@ -91,7 +91,7 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
         # 生成压缩后的装备仲裁提示消息，用于在需要时向 LLM 提供更简洁的上下文信息
         compressed_message = (
             generate_compressed_gear_arbitration_prompt(
-                action=action,
+                item=action.item,
                 target_stats=target_stats,
                 current_round_number=current_round_number,
                 target_arbitration_effects=target_arbitration_effects,
@@ -248,8 +248,8 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
 
                 # 生成装备触发的任务提示，并将这些任务提示应用为状态效果
                 task_hints = generate_gear_equip_task_hints(
-                    action=action,
-                    entity=entity,
+                    item=action.item,
+                    targets=action.targets,
                 )
 
                 # 将任务提示应用为状态效果，确保这些效果在后续的游戏逻辑中能够被正确处理

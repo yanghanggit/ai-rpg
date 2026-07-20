@@ -87,7 +87,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
 
         # 生成仲裁提示信息，包括当前行动、目标属性、回合数、目标状态效果和装备附加属性
         message = generate_consumable_arbitration_prompt(
-            action=action,
+            item=action.item,
             target_stats=target_stats,
             current_round_number=current_round_number,
             target_arbitration_effects=target_arbitration_effects,
@@ -97,7 +97,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
         # 生成压缩后的仲裁提示信息，用于在需要时向 LLM 提供更简洁的上下文
         compressed_message = (
             generate_compressed_consumable_arbitration_prompt(
-                action=action,
+                item=action.item,
                 target_stats=target_stats,
                 current_round_number=current_round_number,
                 target_arbitration_effects=target_arbitration_effects,
@@ -253,8 +253,8 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                 assert entity is not None, f"无法找到实体: {entity_name}"
 
                 task_hints = generate_consumable_task_hints(
-                    action=action,
-                    entity=entity,
+                    item=action.item,
+                    targets=action.targets,
                 )
                 accumulate_status_effects_action(entity, task_hints)
                 logger.debug(f"[{entity_name}] 消耗品仲裁后添加 AddStatusEffectsAction")

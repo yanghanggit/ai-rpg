@@ -45,8 +45,8 @@ def build_card_field_description() -> str:
 |---|---|
 | name | 卡牌名称（≤8字），富有想象力，体现行动意图 |
 | description | 第三人称，客观描述卡牌对应的战斗行为（不含数值，不重述数值字段已确定的效果） |
-| affixes | 延迟词缀列表，格式 `[名称]:触发倾向描述`；出牌后独立推理生成持续状态效果；凡涉及"下回合/持续N回合/未来生效"等跨回合影响的效果（如降低命中、致盲、压制、禁锢等）必须放在这里；无则 [] |
-| modifiers | 即时修正词缀列表，格式 `[名称]:即时修正描述`；仅描述**本次**仲裁计算内立即生效、一次性叠加的数值修正（如无视防御、伤害加成），严禁出现"下回合/持续N回合"等跨回合表述；无则 [] |
+| affixes | 延迟词缀列表；**每个元素必须是单个字符串**（禁止输出 `{{"name": ..., "description": ...}}` 这样的对象），格式为 `名称:触发倾向描述`，例如 `"沙尘入眼:视线受阻，下回合命中降低"`；出牌后独立推理生成持续状态效果；凡涉及"下回合/持续N回合/未来生效"等跨回合影响的效果（如降低命中、致盲、压制、禁锢等）必须放在这里；无则 [] |
+| modifiers | 即时修正词缀列表；**每个元素必须是单个字符串**（禁止输出 `{{"name": ..., "description": ...}}` 这样的对象），格式为 `名称:即时修正描述`，例如 `"无视防御:本次攻击无视目标防御"`；仅描述**本次**仲裁计算内立即生效、一次性叠加的数值修正（如无视防御、伤害加成），严禁出现"下回合/持续N回合"等跨回合表述；无则 [] |
 | playable | 是否可出牌；默认 true |
 | exhaust | 出牌后是否永久消耗（归入消耗堆）；默认 false |
 | cost | 出牌费用，消耗行动者当前 energy 点数；默认 1；多数卡应为 1，仅显著强力/多段/高价值效果卡可设为 2；纯功能性/无实质收益卡可设为 0 |
@@ -101,8 +101,7 @@ def generate_deck_prompt(
 
     design_principle = build_design_principle_prompt(num_cards, keywords, dice_rolls)
 
-    return f"""\
-# 战斗开始：生成 {num_cards} 张初始牌库卡牌
+    return f"""# 战斗开始：生成 {num_cards} 张初始牌库卡牌
 
 ## 角色属性
 
@@ -131,7 +130,7 @@ def generate_deck_prompt(
       "name": "...",
       "description": "...",
       "affixes": [],
-      "modifiers": [],
+      "modifiers": ["无视防御:本次攻击无视目标防御"],
       "playable": true,
       "exhaust": false,
       "cost": 1,
@@ -142,7 +141,9 @@ def generate_deck_prompt(
     }}
   ]
 }}
-```"""
+```
+
+（`affixes`/`modifiers` 无内容时输出 `[]`；有内容时数组元素必须是如上示例的字符串，禁止输出对象）"""
 
 
 #######################################################################################################################################
@@ -154,8 +155,7 @@ def generate_compressed_deck_prompt(
 ) -> str:
     """生成牌库生成 prompt 的压缩版（写入对话历史，减少 token 消耗）。"""
     design_principle = build_design_principle_prompt(num_cards, keywords, dice_rolls)
-    return f"""\
-# 战斗牌库生成（{num_cards} 张）
+    return f"""# 战斗牌库生成（{num_cards} 张）
 
 HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense} | 行动次数:{actor_stats.energy}
 

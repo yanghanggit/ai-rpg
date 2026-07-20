@@ -132,8 +132,7 @@ def _generate_adjust_prompt(
 class PostDrawCardsSystem(ReactiveProcessor):
     """
     DRAW 阶段的通用后置处理钩子：响应 DrawCardsAction，对存在 DRAW 阶段状态效果的实体
-    并发调用 LLM 按效果内容改动已抽得手牌（当前实现为数值调整，未来可扩展为插入/删除卡牌），
-    并负责标记本回合 DRAW 阶段已完成（draw_completed）。
+    并发调用 LLM 按效果内容改动已抽得手牌（当前实现为数值调整，未来可扩展为插入/删除卡牌）。
     """
 
     def __init__(self, game: DBGGame) -> None:
@@ -169,8 +168,6 @@ class PostDrawCardsSystem(ReactiveProcessor):
             current_rounds is not None and len(current_rounds) > 0
         ), "当前回合未创建，检查 CombatRoundTransitionSystem 是否正常执行"
 
-        last_round = self._game.current_combat_room.combat.latest_round
-        assert last_round is not None, "无法获取当前回合信息！"
         current_round_number = len(current_rounds)
 
         # 检查 DRAW 阶段状态效果；有效果时并行 LLM 调整
@@ -181,24 +178,33 @@ class PostDrawCardsSystem(ReactiveProcessor):
         ]
 
         if not entities_with_effects:
-            # 无 DRAW 效果：原始手牌已由 DrawCardsActionSystem 写入，直接标记完成
+            # 无 DRAW 效果：原始手牌已由 DrawCardsActionSystem 写入，无需调整
             logger.debug("所有实体无 DRAW 阶段效果，跳过 LLM 调整")
-            last_round.draw_completed = True
             return
 
         # 为有 DRAW 效果的实体构建 LLM 调整请求
         chat_clients: List[DeepSeekClient] = []
         for entity in entities_with_effects:
+
+            # 获取角色属性、当前回合数、已抽得手牌和 DRAW 阶段状态效果
             combat_stats = compute_character_stats(entity)
             draw_effects = get_status_effects_by_phase(entity, PhaseType.DRAW)
+
+            # 获取已抽得手牌
             hand = entity.get(HandComponent)
-            assert hand is not None
+            assert (
+                hand is not None
+            ), f"[{entity.name}] HandComponent 不存在，无法进行 DRAW 效果调整"
+
+            # 生成 LLM 调整 prompt
             prompt = _generate_adjust_prompt(
                 actor_stats=combat_stats,
                 current_round_number=current_round_number,
                 drawn_cards=hand.cards,
                 draw_status_effects=draw_effects,
             )
+
+            # 构建 DeepSeekClient 并加入并行请求列表
             chat_clients.append(
                 DeepSeekClient(
                     name=entity.name,
@@ -210,14 +216,15 @@ class PostDrawCardsSystem(ReactiveProcessor):
         # 并行发送所有 LLM 请求，等待所有实体的 DRAW 阶段调整完成
         await DeepSeekClient.batch_chat(clients=chat_clients)
 
-        # 所有 LLM 请求完成后，标记本轮 DRAW 阶段已完成，准备解析调整结果
-        last_round.draw_completed = True
-
         # 解析调整结果并写入 HandComponent（未被调整的实体已持有 DrawCardsActionSystem 写入的原始手牌）
         for entity in entities_with_effects:
             chat_client = next(c for c in chat_clients if c.name == entity.name)
             hand = entity.get(HandComponent)
-            assert hand is not None
+            assert (
+                hand is not None
+            ), f"[{entity.name}] HandComponent 不存在，无法进行 DRAW 效果调整"
+
+            # 解析 LLM 调整响应并写入 HandComponent，解析失败时保留原始手牌
             self._process_adjust_response(
                 chat_client=chat_client,
                 original_cards=hand.cards,
@@ -256,14 +263,19 @@ class PostDrawCardsSystem(ReactiveProcessor):
         valid_target_types = {e.value for e in TargetType}
         adjusted_cards: List[Card] = []
         for i, entry in enumerate(response.cards):
+
+            # 验证 target_type 字段值是否合法，非法则跳过该卡并发出警告
             if i >= len(original_cards):
                 break
+
+            # 如果 target_type 无效，则保留原始牌的 target_type
             if entry.target_type not in valid_target_types:
                 logger.warning(
                     f"[{entity.name}] 调整后卡牌「{entry.name}」target_type 无效 {entry.target_type!r}，保留原值"
                 )
                 entry.target_type = original_cards[i].target_type.value
 
+            # 构建调整后的 Card 对象，保留原始牌的 uuid 和 source，确保跨系统身份一致
             orig = original_cards[i]
             adjusted_cards.append(
                 Card(

@@ -165,7 +165,7 @@ def _generate_stage_post_arbitration_prompt(
           "name": "碎柱投掷",
           "description": "抓起地面的断柱碎块用力掷向对方，造成钝击伤害",
           "affixes": [],
-          "modifiers": [],
+          "modifiers": ["无视防御:本次攻击无视目标防御"],
           "playable": true,
           "exhaust": true,
           "cost": 0,
@@ -179,6 +179,8 @@ def _generate_stage_post_arbitration_prompt(
   ]
 }}
 ```
+
+（`affixes`/`modifiers` 无内容时输出 `[]`；有内容时数组元素必须是如上示例的字符串，禁止输出对象）
 
 **无干预时输出空的 per_actor 数组，只输出 JSON。**"""
 

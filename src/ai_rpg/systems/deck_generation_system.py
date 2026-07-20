@@ -4,7 +4,7 @@
 
 import random
 from enum import IntEnum, unique
-from typing import Dict, Final, List, final, override
+from typing import Dict, Final, List, final, override, Tuple
 from loguru import logger
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
@@ -15,7 +15,6 @@ from ..models import (
     DeckComponent,
     DrawPileComponent,
     DeathComponent,
-    HumanMessage,
     GenerateDeckAction,
     CharacterStatsComponent,
     Card,
@@ -100,20 +99,23 @@ class DeckGenerationSystem(ReactiveProcessor):
             )
 
     #######################################################################################################################################
-    def _build_deck_chat_client(self, entity: Entity) -> tuple[DeepSeekClient, int]:
+    def _build_deck_chat_client(self, entity: Entity) -> Tuple[DeepSeekClient, int]:
         """为单个实体构建牌库生成的 DeepSeekClient，同时返回本次目标卡牌数。"""
+
         generate_deck_action = entity.get(GenerateDeckAction)
-        assert generate_deck_action is not None
+        assert (
+            generate_deck_action is not None
+        ), f"{entity.name} 缺少 GenerateDeckAction"
+
         num_cards = generate_deck_action.num_cards
 
-        combat_stats = compute_character_stats(entity)
-
         deck_comp_for_keywords = entity.get(DeckComponent)
-        assert deck_comp_for_keywords is not None
+        assert deck_comp_for_keywords is not None, f"{entity.name} 缺少 DeckComponent"
         sampled_keywords = _sample_keywords(
             deck_comp_for_keywords.keywords, k=num_cards
         )
 
+        # 生成随机骰值列表，长度为 num_cards，每个骰值在 DiceValue.MIN 和 DiceValue.MAX 之间
         dice_rolls = [
             random.randint(DiceValue.MIN, DiceValue.MAX) for _ in range(num_cards)
         ]
@@ -121,12 +123,16 @@ class DeckGenerationSystem(ReactiveProcessor):
             f"[{entity.name}] 关键词: {[k[:20] for k in sampled_keywords]}  骰值: {dice_rolls}"
         )
 
+        # 生成完整提示词，供 LLM 生成卡牌
+        combat_stats = compute_character_stats(entity)
         prompt = generate_deck_prompt(
             actor_stats=combat_stats,
             num_cards=num_cards,
             keywords=sampled_keywords,
             dice_rolls=dice_rolls,
         )
+
+        # 生成压缩提示词，减少 LLM token 消耗
         compressed_prompt = generate_compressed_deck_prompt(
             actor_stats=combat_stats,
             num_cards=num_cards,
@@ -134,6 +140,7 @@ class DeckGenerationSystem(ReactiveProcessor):
             dice_rolls=dice_rolls,
         )
 
+        # 构建 DeepSeekClient，传入完整提示词、压缩提示词和上下文
         client = DeepSeekClient(
             name=entity.name,
             prompt=prompt,
@@ -178,17 +185,17 @@ class DeckGenerationSystem(ReactiveProcessor):
 
             # 验证 target_type 字段值是否合法，非法则跳过该卡并发出警告
             if entry.target_type not in valid_target_types:
-                warn_msg = (
-                    f"[系统警告] 你刚才生成的牌库卡牌「{entry.name}」的 target_type 字段值为"
-                    f"「{entry.target_type}」，不属于有效值（{sorted(valid_target_types)}），"
-                    f"该卡已被系统废弃。"
-                )
-                logger.warning(
-                    f"[{entity.name}] 牌库卡牌「{entry.name}」target_type 无效，已废弃：{entry.target_type!r}"
-                )
-                self._game.add_human_message(
-                    entity=entity, human_message=HumanMessage(content=warn_msg)
-                )
+                # warn_msg = (
+                #     f"[系统警告] 你刚才生成的牌库卡牌「{entry.name}」的 target_type 字段值为"
+                #     f"「{entry.target_type}」，不属于有效值（{sorted(valid_target_types)}），"
+                #     f"该卡已被系统废弃。"
+                # )
+                # logger.warning(
+                #     f"[{entity.name}] 牌库卡牌「{entry.name}」target_type 无效，已废弃：{entry.target_type!r}"
+                # )
+                # self._game.add_human_message(
+                #     entity=entity, human_message=HumanMessage(content=warn_msg)
+                # )
                 continue
 
             cards.append(
@@ -225,17 +232,18 @@ class DeckGenerationSystem(ReactiveProcessor):
         draw_pile.cards.extend([c.model_copy() for c in cards])
 
         # 将本轮任务提示词与 LLM 回复写入 agent 对话历史
-        self._game.add_human_message(
-            entity=entity,
-            human_message=HumanMessage(
-                content=chat_client.compressed_prompt,
-                deck_generation_full_prompt=chat_client.prompt,
-            ),
-        )
-        assert chat_client.response_ai_message is not None
-        self._game.add_ai_message(
-            entity=entity, ai_message=chat_client.response_ai_message
-        )
+        # self._game.add_human_message(
+        #     entity=entity,
+        #     human_message=HumanMessage(
+        #         content=chat_client.compressed_prompt,
+        #         deck_generation_full_prompt=chat_client.prompt,
+        #     ),
+        # )
+
+        # # 将 LLM 回复写入 agent 对话历史
+        # self._game.add_ai_message(
+        #     entity=entity, ai_message=chat_client.response_ai_message
+        # )
 
         logger.debug(
             f"[{entity.name}] 牌库生成完成：本次 {len(cards)} 张副本已洗牌填入 DrawPile"

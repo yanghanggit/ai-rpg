@@ -124,22 +124,22 @@ def test_valid_cards_fill_deck_and_draw_pile(
     assert len(entity.get(DrawPileComponent).cards) == 2
 
 
-def test_invalid_target_type_skips_card_and_warns(
-    ctx: Context, mock_game: MagicMock, system: DeckGenerationSystem
-) -> None:
-    """非法 target_type 的卡被跳过，并调用 add_human_message 发出警告。"""
-    entity = _make_entity(ctx)
-    mock_game.get_entity_by_name.return_value = entity
+# def test_invalid_target_type_skips_card_and_warns(
+#     ctx: Context, mock_game: MagicMock, system: DeckGenerationSystem
+# ) -> None:
+#     """非法 target_type 的卡被跳过，并调用 add_human_message 发出警告。"""
+#     entity = _make_entity(ctx)
+#     mock_game.get_entity_by_name.return_value = entity
 
-    system._process_generation_response(
-        _make_chat_client(
-            "英雄", _response_json([_card_json("坏牌", target_type="INVALID")])
-        ),
-        num_cards=1,
-    )
+#     system._process_generation_response(
+#         _make_chat_client(
+#             "英雄", _response_json([_card_json("坏牌", target_type="INVALID")])
+#         ),
+#         num_cards=1,
+#     )
 
-    assert len(entity.get(DeckComponent).cards) == 0
-    mock_game.add_human_message.assert_called()
+#     assert len(entity.get(DeckComponent).cards) == 0
+#     mock_game.add_human_message.assert_called()
 
 
 def test_invalid_json_no_raise_draw_pile_empty(

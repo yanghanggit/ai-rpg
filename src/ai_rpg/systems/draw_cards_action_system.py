@@ -94,4 +94,9 @@ class DrawCardsActionSystem(ReactiveProcessor):
             )
             entity.replace(HandComponent, entity.name, drawn)
 
+        # 标记本回合 DRAW 阶段已完成（后续 PostDrawCardsSystem 可能仍会异步调整手牌数值）
+        last_round = self._game.current_combat_room.combat.latest_round
+        assert last_round is not None, "无法获取当前回合信息！"
+        last_round.draw_completed = True
+
     #######################################################################################################################################

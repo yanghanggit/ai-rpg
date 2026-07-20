@@ -41,7 +41,7 @@ def _make_stage_entity(context: Context, name: str) -> Entity:
     entity._name = name
     entity.add(StageComponent, name, "test_stage_sheet")
     entity.add(DungeonComponent, name)
-    entity.add(PostArbitrationAction, name, "行动者", "测试交互摘要")
+    entity.add(PostArbitrationAction, name, "测试交互摘要")
     return entity
 
 
@@ -187,7 +187,7 @@ class TestApplyStatusEffects:
             target="英雄", add_effects=[_make_effect("燃烧")]
         )
 
-        system._apply_status_effects(stage, target, directive)
+        system._apply_status_effects(stage, target, directive.add_effects)
 
         effects = target.get(StatusEffectsComponent).status_effects
         assert len(effects) == 1
@@ -207,7 +207,7 @@ class TestApplyStatusEffects:
         directive = ActorPostArbitrationDirective(
             target="英雄", add_effects=[_make_effect("燃烧")]
         )
-        system._apply_status_effects(stage, target, directive)
+        system._apply_status_effects(stage, target, directive.add_effects)
 
         # 依然只有 1 个
         assert len(target.get(StatusEffectsComponent).status_effects) == 1
@@ -224,7 +224,7 @@ class TestApplyStatusEffects:
             target="战士", add_effects=[_make_effect("中毒")]
         )
 
-        system._apply_status_effects(stage, target, directive)
+        system._apply_status_effects(stage, target, directive.add_effects)
 
         effects = target.get(StatusEffectsComponent).status_effects
         assert effects[0].source == "石牢"
@@ -244,7 +244,7 @@ class TestApplyStatusEffects:
             target="法师",
             add_effects=[_make_effect("燃烧"), _make_effect("冰冻")],
         )
-        system._apply_status_effects(stage, target, directive)
+        system._apply_status_effects(stage, target, directive.add_effects)
 
         names = [e.name for e in target.get(StatusEffectsComponent).status_effects]
         assert names.count("燃烧") == 1
@@ -264,7 +264,7 @@ class TestApplyStatusEffects:
             target="盗贼",
             add_effects=[_make_effect("疾风", speed=99)],
         )
-        system._apply_status_effects(stage, target, directive)
+        system._apply_status_effects(stage, target, directive.add_effects)
 
         effects = target.get(StatusEffectsComponent).status_effects
         assert effects[0].speed == 1
@@ -282,7 +282,7 @@ class TestApplyStatusEffects:
             target="骑士",
             add_effects=[_make_effect("沙土护身", defense=3)],
         )
-        system._apply_status_effects(stage, target, directive)
+        system._apply_status_effects(stage, target, directive.add_effects)
 
         effects = target.get(StatusEffectsComponent).status_effects
         assert effects[0].defense == 3
@@ -300,7 +300,7 @@ class TestApplyStatusEffects:
             target="弓手",
             add_effects=[_make_effect("破甲", defense=-2)],
         )
-        system._apply_status_effects(stage, target, directive)
+        system._apply_status_effects(stage, target, directive.add_effects)
 
         effects = target.get(StatusEffectsComponent).status_effects
         assert effects[0].defense == -2
@@ -321,7 +321,7 @@ class TestInjectCards:
             target="英雄", inject_cards=[_make_card("斩击")]
         )
 
-        system._inject_cards(stage, target, directive)
+        system._inject_cards(stage, target, directive.inject_cards)
 
         cards = target.get(HandComponent).cards
         assert len(cards) == 1
@@ -340,7 +340,7 @@ class TestInjectCards:
         directive = ActorPostArbitrationDirective(
             target="英雄", inject_cards=[_make_card("斩击")]
         )
-        system._inject_cards(stage, target, directive)
+        system._inject_cards(stage, target, directive.inject_cards)
 
         assert len(target.get(HandComponent).cards) == 1
 
@@ -356,7 +356,7 @@ class TestInjectCards:
             target="弓手", inject_cards=[_make_card("火石投掷")]
         )
 
-        system._inject_cards(stage, target, directive)
+        system._inject_cards(stage, target, directive.inject_cards)
 
         cards = target.get(HandComponent).cards
         assert cards[0].source == "熔岩洞穴"
@@ -375,7 +375,7 @@ class TestInjectCards:
         directive = ActorPostArbitrationDirective(
             target="法师", inject_cards=[_make_card("火球")]
         )
-        system._inject_cards(stage, target, directive)
+        system._inject_cards(stage, target, directive.inject_cards)
 
         assert len(target.get(HandComponent).cards) == 1
 

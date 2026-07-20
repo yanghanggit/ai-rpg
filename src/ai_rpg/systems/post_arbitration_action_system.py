@@ -47,9 +47,10 @@ class StagePostArbitrationResponse(BaseModel):
 
 
 #######################################################################################################################################
-def _build_actors_summary(game: DBGGame, actor_entities: Set[Entity]) -> str:
+def _build_actors_summary(actor_entities: Set[Entity]) -> str:
     """格式化场内存活角色状态摘要，供 prompt 函数复用。"""
     actor_lines: List[str] = []
+
     for entity in actor_entities:
 
         assert entity.has(
@@ -77,24 +78,24 @@ def _build_actors_summary(game: DBGGame, actor_entities: Set[Entity]) -> str:
         actor_lines.append(
             f"- **{entity.name}**  {hp_str}  " f"状态效果: {effects_str}"
         )
+
+    #
     return "\n".join(actor_lines) if actor_lines else "  （无存活角色）"
 
 
 #######################################################################################################################################
 def _generate_compressed_stage_post_arbitration_prompt(
-    game: DBGGame,
     actor_entities: Set[Entity],
-    current_turn_actor_name: str,
     current_round_number: int,
     interaction_summary: str,
 ) -> str:
     """生成压缩版仲裁后场景效果提示词（仅动态感知部分，省略静态规则/格式说明）"""
 
-    actors_summary = _build_actors_summary(game, actor_entities)
+    actors_summary = _build_actors_summary(actor_entities)
 
     return f"""# 第 {current_round_number} 回合 — 仲裁后场景干预
 
-**{current_turn_actor_name}** 刚刚完成出牌，仲裁结算已在上下文中记录。
+仲裁结算已在上下文中记录。
 
 ## 本次触发依据（仲裁阶段提取的场景交互摘要）
 
@@ -107,19 +108,17 @@ def _generate_compressed_stage_post_arbitration_prompt(
 
 #######################################################################################################################################
 def _generate_stage_post_arbitration_prompt(
-    game: DBGGame,
     actor_entities: Set[Entity],
-    current_turn_actor_name: str,
     current_round_number: int,
     interaction_summary: str,
 ) -> str:
     """生成仲裁后场景效果提示词"""
 
-    actors_summary = _build_actors_summary(game, actor_entities)
+    actors_summary = _build_actors_summary(actor_entities)
 
     return f"""# 第 {current_round_number} 回合 — 仲裁后场景干预
 
-**{current_turn_actor_name}** 刚刚完成出牌，仲裁结算已在上下文中记录。
+仲裁结算已在上下文中记录。
 
 ## 本次触发依据（仲裁阶段提取的场景交互摘要）
 
@@ -130,6 +129,7 @@ def _generate_stage_post_arbitration_prompt(
 {actors_summary}
 
 **干预原则**：
+
 - ✅ 塞牌/加状态效果均须有据：仅可将上下文叙事中已明确描述的环境要素（沙尘入眼、热浪灼烧、松软地面失稳、碎石可用、断柱可借力等）转化为卡牌或状态效果，不得凭空引入场景中未出现的物件
 - ✅ 干预前先推断该物件当前状态（完好/部分损耗/已触发/已取走/仍可操作…），仅状态允许进一步交互时才可转化；若当前不可用，需在 `description` 中体现，并将对应卡牌的 `playable` 设为 `false`
 - ❌ 禁止：勇气、恐惧、神圣、复仇、祝福、诅咒等角色内在情绪或来源不明的魔法效果
@@ -239,9 +239,7 @@ class PostArbitrationActionSystem(ReactiveProcessor):
         current_round_number = len(self._game.current_combat_room.combat.rounds or [])
 
         prompt = _generate_stage_post_arbitration_prompt(
-            game=self._game,
             actor_entities=actor_entities,
-            current_turn_actor_name=action.current_turn_actor_name,
             current_round_number=current_round_number,
             interaction_summary=action.interaction_summary,
         )
@@ -249,9 +247,7 @@ class PostArbitrationActionSystem(ReactiveProcessor):
         compressed_message: Optional[str] = None
         if self._use_compressed_prompt:
             compressed_message = _generate_compressed_stage_post_arbitration_prompt(
-                game=self._game,
                 actor_entities=actor_entities,
-                current_turn_actor_name=action.current_turn_actor_name,
                 current_round_number=current_round_number,
                 interaction_summary=action.interaction_summary,
             )
@@ -352,11 +348,21 @@ class PostArbitrationActionSystem(ReactiveProcessor):
                     target_entity is not None
                 ), f"预验证阶段未发现目标角色: {directive.target}"
 
+                # 干预性：追加状态效果
                 if directive.add_effects:
-                    self._apply_status_effects(stage_entity, target_entity, directive)
+                    self._apply_status_effects(
+                        stage_entity,
+                        target_entity,
+                        add_effects=directive.add_effects,
+                    )
 
+                # 干预性：插牌
                 if directive.inject_cards:
-                    self._inject_cards(stage_entity, target_entity, directive)
+                    self._inject_cards(
+                        stage_entity,
+                        target_entity,
+                        inject_cards=directive.inject_cards,
+                    )
         else:
             logger.debug(f"[{stage_entity.name}] 仲裁后无干预指令")
 
@@ -365,24 +371,24 @@ class PostArbitrationActionSystem(ReactiveProcessor):
         self,
         stage_entity: Entity,
         target_entity: Entity,
-        directive: ActorPostArbitrationDirective,
+        add_effects: List[StatusEffect],
     ) -> None:
         """追加状态效果到目标实体，跳过已存在同名效果"""
 
-        for effect in directive.add_effects:
+        for effect in add_effects:
             effect.source = stage_entity.name
 
         assert target_entity.has(
             StatusEffectsComponent
-        ), f"目标角色 {directive.target} 缺少 StatusEffectsComponent"
+        ), f"目标角色 {target_entity.name} 缺少 StatusEffectsComponent"
 
         effects_comp = target_entity.get(StatusEffectsComponent)
         existing_effect_names = {e.name for e in effects_comp.status_effects}
         new_effects = []
-        for effect in directive.add_effects:
+        for effect in add_effects:
             if effect.name in existing_effect_names:
                 logger.debug(
-                    f"[{stage_entity.name}] → [{directive.target}] "
+                    f"[{stage_entity.name}] → [{target_entity.name}] "
                     f'状态效果 "{effect.name}" 已存在，放弃追加'
                 )
             else:
@@ -391,7 +397,7 @@ class PostArbitrationActionSystem(ReactiveProcessor):
         if new_effects:
             effects_comp.status_effects.extend(new_effects)
             logger.debug(
-                f"[{stage_entity.name}] → [{directive.target}] "
+                f"[{stage_entity.name}] → [{target_entity.name}] "
                 f"追加 {len(new_effects)} 个状态效果"
             )
 
@@ -400,24 +406,24 @@ class PostArbitrationActionSystem(ReactiveProcessor):
         self,
         stage_entity: Entity,
         target_entity: Entity,
-        directive: ActorPostArbitrationDirective,
+        inject_cards: List[Card],
     ) -> None:
         """向目标实体手牌注入卡牌，跳过已存在同名卡牌"""
 
         assert target_entity.has(
             HandComponent
-        ), f"目标角色 {directive.target} 缺少 HandComponent"
+        ), f"目标角色 {target_entity.name} 缺少 HandComponent"
 
         hand_comp = target_entity.get(HandComponent)
-        for card in directive.inject_cards:
+        for card in inject_cards:
             card.source = stage_entity.name
 
         existing_card_names = {c.name for c in hand_comp.cards}
         new_cards = []
-        for card in directive.inject_cards:
+        for card in inject_cards:
             if card.name in existing_card_names:
                 logger.debug(
-                    f"[{stage_entity.name}] → [{directive.target}] "
+                    f"[{stage_entity.name}] → [{target_entity.name}] "
                     f'卡牌 "{card.name}" 已在手牌中，放弃塞入'
                 )
             else:
@@ -429,7 +435,7 @@ class PostArbitrationActionSystem(ReactiveProcessor):
         # 将新的卡牌追加到手牌中
         hand_comp.cards = hand_comp.cards + new_cards
         logger.debug(
-            f"[{stage_entity.name}] → [{directive.target}] "
+            f"[{stage_entity.name}] → [{target_entity.name}] "
             f"塞入 {len(new_cards)} 张卡牌"
         )
 

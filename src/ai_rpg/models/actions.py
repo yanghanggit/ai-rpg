@@ -236,7 +236,6 @@ class PostArbitrationAction(Component):
     """仲裁结算后由 stage agent 决定是否追加状态效果或塞入卡牌。"""
 
     name: str
-    current_turn_actor_name: str  # 本次出牌者名称，用于 LLM 上下文
     interaction_summary: str  # 仲裁阶段提取的场景交互摘要，用于生成后续 prompt 上下文
 
 

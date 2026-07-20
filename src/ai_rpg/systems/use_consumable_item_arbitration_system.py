@@ -273,6 +273,5 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             stage_entity.replace(
                 PostArbitrationAction,
                 stage_entity.name,
-                actor_entity.name,
                 response.post_arbitration_interaction_summary,
             )

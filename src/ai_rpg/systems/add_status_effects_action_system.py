@@ -12,13 +12,22 @@ from ..models import (
     HumanMessage,
     StatusEffectsComponent,
     DeathComponent,
+    StatusEffect,
 )
 from ..utils import extract_json_from_code_block
 from .status_effect_prompt_builders import (
-    AddStatusEffectsResponse,
+    # AddStatusEffectsResponse,
     generate_add_status_effects_prompt,
     generate_compressed_add_status_effects_prompt,
 )
+from pydantic import BaseModel
+
+
+#######################################################################################################################################
+class AddStatusEffectsResponse(BaseModel):
+    """追加状态效果响应"""
+
+    add_effects: List[StatusEffect] = []  # 本次追加的新效果列表
 
 
 #######################################################################################################################################

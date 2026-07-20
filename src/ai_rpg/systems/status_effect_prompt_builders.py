@@ -5,16 +5,8 @@
 """
 
 from typing import List
-from pydantic import BaseModel
 from ..models import PhaseType, StatusEffect
 from .arbitration_prompt_builders import fmt_duration
-
-
-#######################################################################################################################################
-class AddStatusEffectsResponse(BaseModel):
-    """追加状态效果响应"""
-
-    add_effects: List[StatusEffect] = []  # 本次追加的新效果列表
 
 
 #######################################################################################################################################
@@ -31,9 +23,9 @@ def build_status_effect_field_description() -> str:
 
 不影响角色属性。`description` 须给出可执行、可量化的规则，明确说明对本回合手牌在费用、伤害、行动次数、命中段数、可出牌性、是否消耗等方面的影响（如"本回合手牌费用 +1"、"本回合手牌造成的伤害 -2"），该文本会在抽牌完成后被下游解析为具体的手牌数值调整，避免笼统模糊的表述。
 
-### `{PhaseType.ARBITRATION}`：每次出牌结算时
+### `{PhaseType.ARBITRATION}`：出牌 / 使用装备 / 使用消耗品结算时
 
-例如：「破甲」防御降低；「荆棘」反伤；「眩晕」伤害减少。仅此阶段效果可使用 `counter` 字段：整数初始值，用于条件计数型词条（如"前3次受击"设 3），由仲裁 LLM 按游戏事件更新（倒计型从初始值递减，累加型从 0 递增），默认 0；其余阶段效果保持 `counter` 为 0。
+`description` 须是仲裁 LLM 结算伤害时能直接套用的规则（如「荆棘」反伤给攻击者、「护盾」减免受到的伤害、特定伤害类型增伤/减伤等），不要重复描述防御/速度等通用字段已自动生效的内容（那类数值请直接写入 `defense`/`speed`）。仅此阶段效果可用 `counter`：初始整数值，用于条件计数型词条（如"前3次受击"设 3），由仲裁 LLM 按游戏事件更新（倒计型递减/累加型从 0 递增），默认 0；其余阶段效果保持 `counter` 为 0。
 
 ### `{PhaseType.ROUND_END}`：每回合末自动 tick
 
@@ -97,19 +89,7 @@ def generate_add_status_effects_prompt(
     current_round_number: int,
     task_hints: List[str],
 ) -> str:
-    """生成追加状态效果提示词
-
-    要求 agent 回顾上下文历史并结合当前已有状态，追加本回合应有的新状态效果。
-    每条 task_hint 对应一个待生成的状态效果（严格 1:1）。
-
-    Args:
-        current_status_effects: 当前已有的状态效果列表
-        current_round_number: 当前回合数
-        task_hints: 任务提示列表，每条对应一个待生成的状态效果
-
-    Returns:
-        格式化的提示词字符串
-    """
+    """生成追加状态效果提示词"""
 
     # 效果少时展示完整描述；过多时仅列名称以节省 token
     if len(current_status_effects) == 0:

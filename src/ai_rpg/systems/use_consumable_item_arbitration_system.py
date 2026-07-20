@@ -87,6 +87,8 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
 
         # 生成仲裁提示信息，包括当前行动、目标属性、回合数、目标状态效果和装备附加属性
         message = generate_consumable_arbitration_prompt(
+            actor_name=actor_entity.name,
+            actor_stats=compute_character_stats(actor_entity),
             item=action.item,
             target_stats=target_stats,
             current_round_number=current_round_number,
@@ -97,6 +99,8 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
         # 生成压缩后的仲裁提示信息，用于在需要时向 LLM 提供更简洁的上下文
         compressed_message = (
             generate_compressed_consumable_arbitration_prompt(
+                actor_name=actor_entity.name,
+                actor_stats=compute_character_stats(actor_entity),
                 item=action.item,
                 target_stats=target_stats,
                 current_round_number=current_round_number,

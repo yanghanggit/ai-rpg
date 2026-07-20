@@ -492,6 +492,8 @@ def generate_gear_arbitration_broadcast(
 
 
 def generate_consumable_arbitration_prompt(
+    actor_name: str,
+    actor_stats: CharacterStats,
     item: ConsumableItem,
     target_stats: Dict[str, CharacterStats],
     current_round_number: int,
@@ -511,12 +513,20 @@ def generate_consumable_arbitration_prompt(
         else ""
     )
 
+    # 攻击性消耗品（target_type 非 SELF_ONLY）时使用者不在 target_stats 中，需单独展示其身份与 HP，
+    # 否则仲裁 LLM 无法在 final_stats 中对使用者施加反伤（如目标带「荆棘」）等效果。
+    actor_section = (
+        f"\n\n## 使用者\n\n{actor_name}（HP {actor_stats.hp}/{actor_stats.max_hp} | 防御:{actor_stats.defense}）"
+        if actor_name not in target_stats
+        else ""
+    )
+
     return f"""# 第 {current_round_number} 回合：消耗品使用结算（以 JSON 格式返回）
 
 ## 消耗品
 
 - 名称：{item.name}
-- 描述：{item.description}{modifiers_line}
+- 描述：{item.description}{modifiers_line}{actor_section}
 
 ## 目标
 
@@ -552,6 +562,8 @@ def generate_consumable_arbitration_prompt(
 
 
 def generate_compressed_consumable_arbitration_prompt(
+    actor_name: str,
+    actor_stats: CharacterStats,
     item: ConsumableItem,
     target_stats: Dict[str, CharacterStats],
     current_round_number: int,
@@ -571,12 +583,18 @@ def generate_compressed_consumable_arbitration_prompt(
         else ""
     )
 
+    actor_section = (
+        f"\n\n## 使用者\n\n{actor_name}（HP {actor_stats.hp}/{actor_stats.max_hp} | 防御:{actor_stats.defense}）"
+        if actor_name not in target_stats
+        else ""
+    )
+
     return f"""# 第 {current_round_number} 回合：消耗品使用结算
 
 ## 消耗品
 
 - 名称：{item.name}
-- 描述：{item.description}{modifiers_line}
+- 描述：{item.description}{modifiers_line}{actor_section}
 
 ## 目标
 

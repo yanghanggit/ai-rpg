@@ -113,17 +113,7 @@ def _generate_stage_post_arbitration_prompt(
     current_round_number: int,
     interaction_summary: str,
 ) -> str:
-    """生成仲裁后场景效果提示词
-
-    Args:
-        actor_entities: 场内所有存活角色实体集合
-        current_turn_actor_name: 本回合出牌者名称（当前行动角色）
-        current_round_number: 当前回合数
-        interaction_summary: 仲裁阶段提取的场景交互摘要，作为本次干预的明确依据
-
-    Returns:
-        格式化的提示词字符串
-    """
+    """生成仲裁后场景效果提示词"""
 
     actors_summary = _build_actors_summary(game, actor_entities)
 
@@ -314,26 +304,23 @@ class PostArbitrationActionSystem(ReactiveProcessor):
                 extract_json_from_code_block(chat_client.response_content)
             )
 
+            # 预验证所有目标角色是否存在，避免部分指令生效导致的状态不一致
+            for directive in response.per_actor:
+                target_entity = self._game.get_entity_by_name(directive.target)
+                if target_entity is None:
+                    raise ValueError(f"预验证阶段未发现目标角色: {directive.target}")
+
+                assert target_entity.has(
+                    StatusEffectsComponent
+                ), f"目标角色 {directive.target} 缺少 StatusEffectsComponent"
+                assert target_entity.has(
+                    HandComponent
+                ), f"目标角色 {directive.target} 缺少 HandComponent"
+
         except Exception as e:
             logger.error(f"[{stage_entity.name}] 解析仲裁后干预响应失败: {e}")
             logger.error(f"原始响应: {chat_client.response_content}")
             return
-
-        # 预验证所有目标角色是否存在，避免部分指令生效导致的状态不一致
-        for directive in response.per_actor:
-            target_entity = self._game.get_entity_by_name(directive.target)
-            if target_entity is None:
-                logger.warning(
-                    f"[{stage_entity.name}] 找不到目标角色: {directive.target}，跳过"
-                )
-                return
-
-            assert target_entity.has(
-                StatusEffectsComponent
-            ), f"目标角色 {directive.target} 缺少 StatusEffectsComponent"
-            assert target_entity.has(
-                HandComponent
-            ), f"目标角色 {directive.target} 缺少 HandComponent"
 
         # 添加上下文消息到 stage entity 的对话历史，便于后续回顾与调试
         if self._use_compressed_prompt:
@@ -358,21 +345,20 @@ class PostArbitrationActionSystem(ReactiveProcessor):
         )
 
         # 解析每个角色的指令，应用状态效果与塞牌
-        if not response.per_actor:
+        if response.per_actor:
+            for directive in response.per_actor:
+                target_entity = self._game.get_entity_by_name(directive.target)
+                assert (
+                    target_entity is not None
+                ), f"预验证阶段未发现目标角色: {directive.target}"
+
+                if directive.add_effects:
+                    self._apply_status_effects(stage_entity, target_entity, directive)
+
+                if directive.inject_cards:
+                    self._inject_cards(stage_entity, target_entity, directive)
+        else:
             logger.debug(f"[{stage_entity.name}] 仲裁后无干预指令")
-            return
-
-        for directive in response.per_actor:
-            target_entity = self._game.get_entity_by_name(directive.target)
-            assert (
-                target_entity is not None
-            ), f"预验证阶段未发现目标角色: {directive.target}"
-
-            if directive.add_effects:
-                self._apply_status_effects(stage_entity, target_entity, directive)
-
-            if directive.inject_cards:
-                self._inject_cards(stage_entity, target_entity, directive)
 
     #######################################################################################################################################
     def _apply_status_effects(

@@ -9,6 +9,7 @@ from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import (
     get_alive_actors_in_stage,
     determine_camp_relationship,
+    get_cards_per_combat,
 )
 from ..game.dbg_combat_processor import (
     accumulate_status_effects_action,
@@ -17,8 +18,6 @@ from ..game.dbg_combat_processor import (
 from ..models import (
     GenerateDeckAction,
     StageDescriptionComponent,
-    PartyMemberComponent,
-    MonsterComponent,
     StatusEffectsComponent,
     DrawPileComponent,
     DiscardPileComponent,
@@ -40,14 +39,7 @@ class OtherActorInfo:
 
 ###################################################################################################################################################################
 def _format_other_actors_info(other_actors_info: List[OtherActorInfo]) -> str:
-    """格式化其他角色信息为 Markdown 列表
-
-    Args:
-        other_actors_info: 其他角色信息列表
-
-    Returns:
-        格式化后的 Markdown 字符串
-    """
+    """格式化其他角色信息为 Markdown 列表"""
     if not other_actors_info:
         return "无"
 
@@ -65,20 +57,7 @@ def _generate_combat_init_prompt(
     other_actors_info: List[OtherActorInfo],
     actor_stats: CharacterStats,
 ) -> str:
-    """生成战斗初始化上下文通知
-
-    为角色生成战斗触发时的战场情境通知，同步场景、敌我、自身属性信息。
-    不要求任何输出，仅作为上下文注入使用。
-
-    Args:
-        stage_name: 战斗场景名称
-        stage_description: 战斗场景的环境描述
-        other_actors_info: 其他参战角色的信息列表（包含名称、外观、阵营）
-        actor_stats: 当前角色的属性数据（包含 hp/max_hp/attack/defense）
-
-    Returns:
-        战场情境通知文本
-    """
+    """生成战斗初始化上下文通知"""
     attrs_prompt = f"HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense}"
 
     return f"""# 战斗触发通知
@@ -101,7 +80,7 @@ def _generate_init_status_effects_task_hint() -> List[str]:
     """生成战斗初始化阶段的 AddStatusEffectsAction task_hints 提示词列表"""
     return [
         "当前处于战斗初始化阶段，请根据战场环境、角色身份与当前处境，生成一个适用于抽牌或回合末阶段（draw / round_end）的初始状态效果。",
-        "当前处于战斗初始化阶段，请根据战场环境、角色身份与当前处境，生成一个适用于出牌结算阶段（arbitration）的初始状态效果，优先考虑条件触发或反伤类效果。",
+        "当前处于战斗初始化阶段，请根据战场环境、角色身份与当前处境，生成一个适用于出牌结算阶段（arbitration）的初始状态效果。",
     ]
 
 
@@ -168,8 +147,6 @@ class CombatInitializationSystem(ExecuteProcessor):
         # 为所有参战角色添加 AddStatusEffectsAction，触发初始状态效果生成
         self._initialize_status_effects(actor_entities)
 
-        # 第一回合由 CombatRoundTransitionSystem 在本 pipeline tick 末创建（同帧创建）
-
     ###################################################################################################################################################################
     def _initialize_piles(self, actor_entities: Set[Entity]) -> None:
         """为所有参战角色初始化战斗临时牌堆：DrawPile / DiscardPile / ExhaustPile。"""
@@ -188,14 +165,7 @@ class CombatInitializationSystem(ExecuteProcessor):
     def _trigger_deck_generation(self, actor_entities: Set[Entity]) -> None:
         """为所有参战角色挂载 GenerateDeckAction，触发 DeckGenerationSystem 生成初始牌库。"""
         for actor_entity in actor_entities:
-            if actor_entity.has(PartyMemberComponent):
-                cards_per_combat = 5
-            else:
-                # MonsterComponent 与 PartyMemberComponent 全局互斥，此处默认怪物
-                assert actor_entity.has(
-                    MonsterComponent
-                ), f"角色 {actor_entity.name} 既无 PartyMemberComponent 也无 MonsterComponent！"
-                cards_per_combat = 3
+            cards_per_combat = get_cards_per_combat(actor_entity)
             actor_entity.replace(
                 GenerateDeckAction, actor_entity.name, cards_per_combat
             )

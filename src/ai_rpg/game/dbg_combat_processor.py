@@ -379,3 +379,13 @@ def get_max_num_cards(actor: Entity) -> int:
     if actor.has(MonsterComponent):
         return 1
     return 1
+
+
+####################################################################################################################################
+def get_cards_per_combat(actor_entity: Entity) -> int:
+    """返回角色在本次战斗中的初始牌库数量（PartyMember=5，Monster=3）。"""
+    if actor_entity.has(PartyMemberComponent):
+        return 5
+    if actor_entity.has(MonsterComponent):
+        return 3
+    return 3

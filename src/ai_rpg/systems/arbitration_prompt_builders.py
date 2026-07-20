@@ -429,12 +429,9 @@ def generate_gear_arbitration_prompt(
 {{
   "combat_log": "字符串",
   "final_stats": {{}},
-  "narrative": "演出描述",
-  "trigger_post_arbitration": false
+    "narrative": "演出描述"
 }}
 ```
-
-{TRIGGER_POST_ARBITRATION_DESCRIPTION}
 
 ### combat_log（简名 = 全名最后一段）
 
@@ -484,15 +481,13 @@ def generate_gear_arbitration_broadcast(
     combat_log: str,
     narrative: str,
     current_round_number: int,
-    is_party_action: bool,
     item_name: str,
 ) -> str:
-    camp_label = "友方阵营" if is_party_action else "敌方"
     return generate_arbitration_broadcast(
         combat_log,
         narrative,
         current_round_number,
-        f"{camp_label}使用装备「{item_name}」",
+        f"穿装备「{item_name}」",
     )
 
 

@@ -1,7 +1,7 @@
 """UseGearItemActionSystem 单元测试：验证以 energy 消耗替代耐久约束的装备机制。"""
 
 from typing import List
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -9,6 +9,7 @@ from src.ai_rpg.entitas.context import Context
 from src.ai_rpg.entitas.entity import Entity
 from src.ai_rpg.game.dbg_game import DBGGame
 from src.ai_rpg.models import (
+    AgentEvent,
     EquippedGearComponent,
     InventoryComponent,
     PartyMemberComponent,
@@ -59,9 +60,6 @@ def _make_party_entity(context: Context, name: str, energy: int) -> Entity:
 def _setup_mock_dungeon(mock_game: MagicMock, *, round_count: int = 1) -> None:
     mock_game.current_combat_room.combat.is_ongoing = True
     mock_game.current_combat_room.combat.rounds = [MagicMock()] * round_count
-    mock_game.current_combat_room.combat.latest_round = MagicMock()
-    # 无任何角色已装备该物品
-    mock_game.get_group.return_value.entities = set()
 
 
 # ---------------------------------------------------------------------------
@@ -116,16 +114,55 @@ class TestReact:
         gear = _make_gear("装备.测试", cost=2)
         player = _make_player_entity(context, "player", [gear], gear, ["队友A"])
         target = _make_party_entity(context, "队友A", energy=3)
+        stage = context.create_entity()
+        stage._name = "测试场景"
         mock_game.get_entity_by_name.return_value = target
+        mock_game.resolve_stage_entity.return_value = stage
 
-        with patch(
-            "src.ai_rpg.systems.use_gear_item_action_system.get_alive_actors_in_stage",
-            return_value=set(),
-        ):
-            await system.react([player])
+        await system.react([player])
 
         assert target.get(RoundStatsComponent).energy == 1
         assert target.get(EquippedGearComponent).item.name == "装备.测试"
+        mock_game.broadcast_to_stage.assert_called_once()
+        _, kwargs = mock_game.broadcast_to_stage.call_args
+        assert kwargs["entity"] is player
+        assert kwargs["exclude_entities"] == {stage}
+        assert isinstance(kwargs["agent_event"], AgentEvent)
+        assert kwargs["agent_event"].message == (
+            "【第 1 回合 · 装备行动】\n「队友A」装备了「装备.测试」。"
+        )
+
+    @pytest.mark.asyncio
+    async def test_does_not_remove_equipped_gear_with_same_name(
+        self,
+        context: Context,
+        mock_game: MagicMock,
+        system: UseGearItemActionSystem,
+    ) -> None:
+        _setup_mock_dungeon(mock_game)
+        action_gear = _make_gear("装备.测试", cost=1)
+        already_equipped_gear = _make_gear("装备.测试", cost=1)
+        player = _make_player_entity(
+            context, "player", [action_gear], action_gear, ["队友A"]
+        )
+        target = _make_party_entity(context, "队友A", energy=2)
+        other_holder = _make_party_entity(context, "队友B", energy=2)
+        stage = context.create_entity()
+        stage._name = "测试场景"
+        other_holder.add(
+            EquippedGearComponent, other_holder.name, already_equipped_gear
+        )
+        mock_game.get_entity_by_name.return_value = target
+        mock_game.resolve_stage_entity.return_value = stage
+
+        await system.react([player])
+
+        assert other_holder.has(EquippedGearComponent)
+        assert (
+            other_holder.get(EquippedGearComponent).item.uuid
+            == already_equipped_gear.uuid
+        )
+        assert target.get(EquippedGearComponent).item.uuid == action_gear.uuid
 
     @pytest.mark.asyncio
     async def test_raises_when_target_energy_less_than_item_cost(
@@ -142,9 +179,5 @@ class TestReact:
         target = _make_party_entity(context, "队友A", energy=1)
         mock_game.get_entity_by_name.return_value = target
 
-        with patch(
-            "src.ai_rpg.systems.use_gear_item_action_system.get_alive_actors_in_stage",
-            return_value=set(),
-        ):
-            with pytest.raises(AssertionError):
-                await system.react([player])
+        with pytest.raises(AssertionError):
+            await system.react([player])

@@ -6,6 +6,7 @@ from typing import List, Tuple, Optional
 from loguru import logger
 from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import (
+    find_equipped_gear_holder,
     get_alive_party_members_in_stage,
     get_alive_monsters_in_stage,
     get_energy,
@@ -24,7 +25,6 @@ from ..models import (
     HandComponent,
     InventoryComponent,
     CombatLootComponent,
-    EquippedGearComponent,
     UseGearItemAction,
     UseConsumableItemAction,
     GearItem,
@@ -435,11 +435,11 @@ def activate_use_gear(
         return False, msg
 
     # 检查该装备是否已经被其他实体装备，如果已被装备则无法再次使用。
-    for holder in dbg_game.get_group(Matcher(EquippedGearComponent)).entities:
-        if holder.get(EquippedGearComponent).item.uuid == selected_item.uuid:
-            msg = f"装备 '{item_name}' 当前已被 {holder.name} 装备中，无法再次使用"
-            logger.error(msg)
-            return False, msg
+    holder = find_equipped_gear_holder(dbg_game, selected_item)
+    if holder is not None:
+        msg = f"装备 '{item_name}' 当前已被 {holder.name} 装备中，无法再次使用"
+        logger.error(msg)
+        return False, msg
 
     # 装备固定作用于单一友方目标，确保目标数量和阵营符合装备要求。
     resolved_targets, resolve_err = resolve_targets(
@@ -460,6 +460,8 @@ def activate_use_gear(
     assert (
         target_entity is not None
     ), f"activate_use_gear: 无法找到目标实体 {resolved_targets[0]}"
+
+    # 检查目标实体的当前能量是否足以支付装备的消耗，如果不足则返回错误。
     current_energy = get_energy(target_entity)
     if current_energy < selected_item.cost:
         msg = f"目标 '{target_entity.name}' 当前能量不足（需要{selected_item.cost}点，当前剩余{current_energy}点），无法为其装备"

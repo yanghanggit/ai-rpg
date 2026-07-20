@@ -9,8 +9,9 @@ from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import (
     accumulate_status_effects_action,
     apply_status_effect_patch,
+    collect_target_arbitration_effects,
+    collect_target_character_stats,
     compute_character_stats,
-    get_status_effects_by_phase,
     set_character_hp,
 )
 from ..game.dbg_combat_processor import process_zero_health_entities
@@ -18,12 +19,7 @@ from ..models import (
     UseGearItemAction,
     CharacterStatsComponent,
     CombatArbitrationEvent,
-    CharacterStats,
     HumanMessage,
-    PartyMemberComponent,
-    StatusEffect,
-    PhaseType,
-    PostArbitrationAction,
 )
 from ..utils import extract_json_from_code_block
 from .arbitration_prompt_builders import (
@@ -75,27 +71,14 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
         # 获取当前行动者的使用装备动作，用于生成仲裁提示和与 LLM 交互
         action = actor_entity.get(UseGearItemAction)
 
-        # 获取目标实体的状态效果，用于生成仲裁提示和与 LLM 交互
-        target_stats: Dict[str, CharacterStats] = {}
-        for target_name in dict.fromkeys(action.targets):
-            target_entity = self._game.get_entity_by_name(target_name)
-            assert target_entity is not None, f"无法找到目标实体: {target_name}"
-            target_stats[target_name] = compute_character_stats(target_entity)
+        # 获取目标实体的属性和仲裁阶段状态效果，用于生成仲裁提示和与 LLM 交互
+        target_stats = collect_target_character_stats(self._game, action.targets)
+        target_arbitration_effects = collect_target_arbitration_effects(
+            self._game, action.targets
+        )
 
         # 获取当前回合的回合数，用于生成仲裁提示和与 LLM 交互
         current_round_number = len(self._game.current_combat_room.combat.rounds or [])
-
-        # 获取目标实体在仲裁阶段的状态效果，用于生成仲裁提示和与 LLM 交互
-        target_arbitration_effects: Dict[str, List[StatusEffect]] = {
-            target_name: get_status_effects_by_phase(
-                self._game.get_entity_by_name(target_name),  # type: ignore[arg-type]
-                PhaseType.ARBITRATION,
-            )
-            for target_name in dict.fromkeys(action.targets)
-        }
-
-        # 判断当前行动者是否属于队伍成员，用于生成仲裁提示和与 LLM 交互
-        is_party_action = actor_entity.has(PartyMemberComponent)
 
         # 生成装备仲裁提示消息，包括使用装备动作、目标实体的状态效果、当前回合数等信息
         message = generate_gear_arbitration_prompt(
@@ -144,9 +127,7 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
             return
 
         # 解析 LLM 的响应内容，应用装备仲裁结果，更新游戏状态
-        self._apply_gear_arbitration_result(
-            chat_client, actor_entity, action, is_party_action
-        )
+        self._apply_gear_arbitration_result(chat_client, actor_entity, action)
 
         # 处理血量为零的实体，确保游戏状态的一致性
         process_zero_health_entities(self._game)
@@ -154,11 +135,9 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
     #######################################################################################################################################
     def _apply_gear_arbitration_result(
         self,
-        # stage_entity: Entity,
         chat_client: DeepSeekClient,
         actor_entity: Entity,
         action: UseGearItemAction,
-        is_party_action: bool,
     ) -> None:
 
         if chat_client.response_ai_message is None:
@@ -178,15 +157,17 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
                 extract_json_from_code_block(chat_client.response_content)
             )
 
+            # 验证 final_stats 中的实体是否都存在于游戏中，确保仲裁结果的有效性
+            for entity_name in response.final_stats:
+                if self._game.get_entity_by_name(entity_name) is None:
+                    raise ValueError(
+                        f"final_stats 中的实体不存在于游戏中: {entity_name}"
+                    )
+
         except Exception as e:
             error_msg = f"装备仲裁结果应用失败: {e}"
             logger.error(error_msg)
             return
-
-        # 验证 final_stats 中的实体是否都存在于游戏中，确保仲裁结果的有效性
-        for entity_name in response.final_stats:
-            if self._game.get_entity_by_name(entity_name) is None:
-                raise ValueError(f"final_stats 中的实体不存在于游戏中: {entity_name}")
 
         # 根据是否使用压缩提示，添加上下文。
         if self._use_compressed_prompt:
@@ -218,7 +199,6 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
                     response.combat_log,
                     response.narrative,
                     current_round_number,
-                    is_party_action,
                     action.item.name,
                 ),
                 stage=stage_entity.name,
@@ -260,35 +240,18 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
         latest_round.gear_narrative.append(response.narrative)
         latest_round.gear_use_count += 1
 
-        # 触发装备附加状态效果的逻辑，将根据装备的附加属性为目标实体添加相应的状态效果
-        self._trigger_add_status_effects(action)
+        # 如果装备有装备时触发的延迟词缀，则为每个目标实体生成任务提示，并将这些任务提示应用为状态效果
+        if action.item.equip_affixes:
+            for entity_name in action.targets:
+                entity = self._game.get_entity_by_name(entity_name)
+                assert entity is not None, f"无法找到实体: {entity_name}"
 
-        # 如果仲裁结果指示需要触发后续行动（trigger_post_arbitration=True），则为当前场景实体添加 PostArbitrationAction，以便在下一步逻辑中处理后续行动
-        if response.trigger_post_arbitration:
-            logger.debug(
-                "仲裁结果 trigger_post_arbitration=True，触发 PostArbitrationAction"
-            )
-            stage_entity.replace(
-                PostArbitrationAction, stage_entity.name, actor_entity.name
-            )
+                # 生成装备触发的任务提示，并将这些任务提示应用为状态效果
+                task_hints = generate_gear_equip_task_hints(
+                    action=action,
+                    entity=entity,
+                )
 
-    #######################################################################################################################################
-    def _trigger_add_status_effects(
-        self,
-        action: UseGearItemAction,
-    ) -> None:
-        """装备仲裁结算后为所有目标（action.targets）添加 AddStatusEffectsAction。"""
-        if not action.item.equip_affixes:
-            logger.debug("装备 equip_affixes 为空，跳过 AddStatusEffectsAction")
-            return
-
-        for entity_name in action.targets:
-            entity = self._game.get_entity_by_name(entity_name)
-            assert entity is not None, f"无法找到实体: {entity_name}"
-
-            task_hints = generate_gear_equip_task_hints(
-                action=action,
-                entity=entity,
-            )
-            accumulate_status_effects_action(entity, task_hints)
-            logger.debug(f"[{entity_name}] 装备仲裁后添加 AddStatusEffectsAction")
+                # 将任务提示应用为状态效果，确保这些效果在后续的游戏逻辑中能够被正确处理
+                accumulate_status_effects_action(entity, task_hints)
+                logger.debug(f"[{entity_name}] 装备仲裁后添加 AddStatusEffectsAction")

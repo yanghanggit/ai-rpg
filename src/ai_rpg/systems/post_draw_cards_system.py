@@ -1,5 +1,6 @@
 """
-卡牌调整系统模块：对存在 DRAW 阶段状态效果的实体，并发调用 LLM 调整已抽得手牌的数值。
+DRAW 阶段后置处理系统模块：对存在 DRAW 阶段状态效果的实体，并发调用 LLM 对已抽得手牌进行改动。
+当前实现为按状态效果调整已有卡牌的数值，未来可扩展为插入/删除手牌，统称为 DRAW 阶段的通用后置处理。
 """
 
 from typing import Final, List, final, override, Dict
@@ -76,8 +77,7 @@ def _generate_adjust_prompt(
         for i, c in enumerate(drawn_cards)
     )
 
-    return f"""\
-# 第 {current_round_number} 回合：根据状态效果调整手牌
+    return f"""# 第 {current_round_number} 回合：根据 DRAW 阶段状态效果调整手牌
 
 ## 角色属性
 
@@ -129,9 +129,10 @@ def _generate_adjust_prompt(
 
 #######################################################################################################################################
 @final
-class DrawCardsAdjustmentSystem(ReactiveProcessor):
+class PostDrawCardsSystem(ReactiveProcessor):
     """
-    响应 DrawCardsAction，对存在 DRAW 阶段状态效果的实体并发调用 LLM 调整已抽得手牌，
+    DRAW 阶段的通用后置处理钩子：响应 DrawCardsAction，对存在 DRAW 阶段状态效果的实体
+    并发调用 LLM 按效果内容改动已抽得手牌（当前实现为数值调整，未来可扩展为插入/删除卡牌），
     并负责标记本回合 DRAW 阶段已完成（draw_completed）。
     """
 
@@ -160,7 +161,7 @@ class DrawCardsAdjustmentSystem(ReactiveProcessor):
     async def react(self, entities: List[Entity]) -> None:
 
         if not self._game.current_combat_room.combat.is_ongoing:
-            logger.debug("当前战斗状态非 ONGOING，DrawCardsAdjustmentSystem 不执行")
+            logger.debug("当前战斗状态非 ONGOING，PostDrawCardsSystem 不执行")
             return
 
         current_rounds = self._game.current_combat_room.combat.rounds
@@ -248,7 +249,7 @@ class DrawCardsAdjustmentSystem(ReactiveProcessor):
             )
         except Exception as e:
             logger.error(
-                f"DrawCardsAdjustmentSystem 调整失败: {e}\n{chat_client.response_content}"
+                f"PostDrawCardsSystem 调整失败: {e}\n{chat_client.response_content}"
             )
             return
 

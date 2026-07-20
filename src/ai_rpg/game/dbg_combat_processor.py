@@ -21,6 +21,8 @@ from ..models import (
     StatusEffectsComponent,
     TargetType,
     GearItem,
+    ConsumableItem,
+    InventoryComponent,
     compute_effective_stats,
 )
 from .dbg_game import DBGGame
@@ -86,6 +88,23 @@ def collect_target_arbitration_effects(
             target_entity, PhaseType.ARBITRATION
         )
     return target_arbitration_effects
+
+
+#################################################################################################################################################
+def collect_target_gear_modifiers(
+    game: DBGGame, target_names: Sequence[str]
+) -> Dict[str, List[str]]:
+    """按目标名去重保序收集目标已装备道具的即时修正词缀。"""
+    target_gear_modifiers: Dict[str, List[str]] = {}
+    for target_name in dict.fromkeys(target_names):
+        target_entity = game.get_entity_by_name(target_name)
+        assert target_entity is not None, f"无法找到目标实体: {target_name}"
+        target_gear_modifiers[target_name] = (
+            target_entity.get(EquippedGearComponent).item.modifiers
+            if target_entity.has(EquippedGearComponent)
+            else []
+        )
+    return target_gear_modifiers
 
 
 #################################################################################################################################################
@@ -389,3 +408,30 @@ def get_cards_per_combat(actor_entity: Entity) -> int:
     if actor_entity.has(MonsterComponent):
         return 3
     return 3
+
+
+#######################################################################################################################################
+def deduct_item_from_inventory(entity: Entity, item: ConsumableItem) -> bool:
+    """从 InventoryComponent 扣减指定消耗品数量，耗尽则移除该条目。"""
+    inventory_comp = entity.get(InventoryComponent)
+    updated_items = []
+    consumed = False
+
+    # 遍历 InventoryComponent.items，找到匹配的 ConsumableItem 并扣减数量
+    for inv_item in inventory_comp.items:
+        if not consumed and inv_item.uuid == item.uuid:
+            consumed = True
+            if inv_item.count > 1:
+                # 直接修改 count（MutableComponent 允许就地修改）
+                inv_item.count -= 1
+                updated_items.append(inv_item)
+            # count == 1：不追加，即移除
+        else:
+            updated_items.append(inv_item)
+
+    # 如果成功扣减，则更新 InventoryComponent.items
+    if consumed:
+        inventory_comp.items = updated_items
+
+    # 返回是否成功扣减
+    return consumed

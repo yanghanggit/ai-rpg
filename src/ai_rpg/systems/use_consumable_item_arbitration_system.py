@@ -9,21 +9,18 @@ from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import (
     accumulate_status_effects_action,
     apply_status_effect_patch,
+    collect_target_arbitration_effects,
+    collect_target_character_stats,
+    collect_target_gear_modifiers,
     compute_character_stats,
-    get_status_effects_by_phase,
     set_character_hp,
 )
 from ..game.dbg_combat_processor import process_zero_health_entities
 from ..models import (
     UseConsumableItemAction,
-    CharacterStats,
     CharacterStatsComponent,
     CombatArbitrationEvent,
-    EquippedGearComponent,
     HumanMessage,
-    PartyMemberComponent,
-    StatusEffect,
-    PhaseType,
     PostArbitrationAction,
 )
 from ..utils import extract_json_from_code_block
@@ -76,38 +73,17 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
         # 获取当前实体的 UseConsumableItemAction，用于后续的仲裁逻辑
         action = actor_entity.get(UseConsumableItemAction)
 
-        # 获取所有目标实体的当前属性，用于生成仲裁提示信息
-        target_stats: Dict[str, CharacterStats] = {}
-        for target_name in dict.fromkeys(action.targets):
-            target_entity = self._game.get_entity_by_name(target_name)
-            assert target_entity is not None, f"无法找到目标实体: {target_name}"
-            target_stats[target_name] = compute_character_stats(target_entity)
+        # 获取所有目标实体的当前属性、仲裁阶段状态效果、装备附加属性，用于生成仲裁提示信息
+        target_stats = collect_target_character_stats(self._game, action.targets)
+        target_arbitration_effects = collect_target_arbitration_effects(
+            self._game, action.targets
+        )
+        target_gear_modifiers = collect_target_gear_modifiers(
+            self._game, action.targets
+        )
 
         # 获取当前回合数，用于生成仲裁提示信息
         current_round_number = len(self._game.current_combat_room.combat.rounds or [])
-
-        # 获取所有目标实体在仲裁阶段的状态效果，用于生成仲裁提示信息
-        target_arbitration_effects: Dict[str, List[StatusEffect]] = {
-            target_name: get_status_effects_by_phase(
-                self._game.get_entity_by_name(target_name),  # type: ignore[arg-type]
-                PhaseType.ARBITRATION,
-            )
-            for target_name in dict.fromkeys(action.targets)
-        }
-
-        # 获取所有目标实体的装备附加属性，用于生成仲裁提示信息
-        target_gear_modifiers: Dict[str, List[str]] = {}
-        for _tgt_name in dict.fromkeys(action.targets):
-            _tgt_entity = self._game.get_entity_by_name(_tgt_name)
-            assert _tgt_entity is not None, f"无法找到目标实体: {_tgt_name}"
-            target_gear_modifiers[_tgt_name] = (
-                _tgt_entity.get(EquippedGearComponent).item.modifiers
-                if _tgt_entity.has(EquippedGearComponent)
-                else []
-            )
-
-        # 判断是否为友方阵营行为（用于广播消息）
-        is_party_action = actor_entity.has(PartyMemberComponent)
 
         # 生成仲裁提示信息，包括当前行动、目标属性、回合数、目标状态效果和装备附加属性
         message = generate_consumable_arbitration_prompt(
@@ -157,9 +133,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             return
 
         # 将 LLM 的仲裁结果应用到游戏中，包括解析 JSON 响应并更新游戏状态
-        self._apply_item_arbitration_result(
-            chat_client, actor_entity, action, is_party_action
-        )
+        self._apply_item_arbitration_result(chat_client, actor_entity, action)
 
         # 处理血量为零的实体，确保游戏状态与仲裁结果一致
         process_zero_health_entities(self._game)
@@ -167,11 +141,9 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
     #######################################################################################################################################
     def _apply_item_arbitration_result(
         self,
-        # stage_entity: Entity,
         chat_client: DeepSeekClient,
         actor_entity: Entity,
         action: UseConsumableItemAction,
-        is_party_action: bool,
     ) -> None:
 
         if chat_client.response_ai_message is None:
@@ -191,15 +163,17 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                 extract_json_from_code_block(chat_client.response_content)
             )
 
+            # 验证 final_stats 中的实体是否都存在于游戏中
+            for entity_name in response.final_stats:
+                if self._game.get_entity_by_name(entity_name) is None:
+                    raise ValueError(
+                        f"final_stats 中的实体不存在于游戏中: {entity_name}"
+                    )
+
         except Exception as e:
             error_msg = f"消耗品仲裁结果应用失败: {e}"
             logger.error(error_msg)
             return
-
-        # 验证 final_stats 中的实体是否都存在于游戏中
-        for entity_name in response.final_stats:
-            if self._game.get_entity_by_name(entity_name) is None:
-                raise ValueError(f"final_stats 中的实体不存在于游戏中: {entity_name}")
 
         # 根据是否使用压缩提示，向游戏中添加人类消息，确保 LLM 的请求和响应能够在游戏中被记录和追踪
         if self._use_compressed_prompt:
@@ -215,7 +189,8 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                 entity=stage_entity,
                 human_message=HumanMessage(content=chat_client.prompt),
             )
-        assert chat_client.response_ai_message is not None
+
+        # assert chat_client.response_ai_message is not None
         self._game.add_ai_message(
             entity=stage_entity,
             ai_message=chat_client.response_ai_message,
@@ -229,7 +204,6 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                     response.combat_log,
                     response.narrative,
                     current_round_number,
-                    is_party_action,
                     action.item.name,
                 ),
                 stage=stage_entity.name,
@@ -272,8 +246,20 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
         latest_round.consumable_narrative.append(response.narrative)
         latest_round.consumable_use_count += 1
 
-        # 根据仲裁结果判断是否触发后续场景干预
-        self._trigger_add_status_effects(action)
+        # 消耗品仲裁结算后为所有目标（action.targets）添加 AddStatusEffectsAction
+        if action.item.affixes:
+            for entity_name in action.targets:
+                entity = self._game.get_entity_by_name(entity_name)
+                assert entity is not None, f"无法找到实体: {entity_name}"
+
+                task_hints = generate_consumable_task_hints(
+                    action=action,
+                    entity=entity,
+                )
+                accumulate_status_effects_action(entity, task_hints)
+                logger.debug(f"[{entity_name}] 消耗品仲裁后添加 AddStatusEffectsAction")
+        else:
+            logger.debug("消耗品 affixes 为空，跳过 AddStatusEffectsAction")
 
         # 根据 response.trigger_post_arbitration 决定是否触发 PostArbitrationAction
         if response.trigger_post_arbitration:
@@ -283,24 +269,3 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             stage_entity.replace(
                 PostArbitrationAction, stage_entity.name, actor_entity.name
             )
-
-    #######################################################################################################################################
-    def _trigger_add_status_effects(
-        self,
-        action: UseConsumableItemAction,
-    ) -> None:
-        """消耗品仲裁结算后为所有目标（action.targets）添加 AddStatusEffectsAction。"""
-        if not action.item.affixes:
-            logger.debug("消耗品 affixes 为空，跳过 AddStatusEffectsAction")
-            return
-
-        for entity_name in action.targets:
-            entity = self._game.get_entity_by_name(entity_name)
-            assert entity is not None, f"无法找到实体: {entity_name}"
-
-            task_hints = generate_consumable_task_hints(
-                action=action,
-                entity=entity,
-            )
-            accumulate_status_effects_action(entity, task_hints)
-            logger.debug(f"[{entity_name}] 消耗品仲裁后添加 AddStatusEffectsAction")

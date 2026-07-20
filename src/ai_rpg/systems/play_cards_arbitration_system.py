@@ -200,7 +200,6 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
     #######################################################################################################################################
     def _apply_arbitration_result(
         self,
-        # stage_entity: Entity,
         chat_client: DeepSeekClient,
         actor_entity: Entity,
         action: PlayCardsAction,
@@ -341,12 +340,6 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
         post_arbitration_hp: Dict[str, Tuple[int, int]],
     ) -> None:
         """仲裁结算后为出牌者与所有目标添加 AddStatusEffectsAction。card.affixes 与装备 on_hit_affixes 均为空时跳过。
-
-        Args:
-            actor_entity: 出牌者实体
-            play_cards_action: 本次出牌的 PlayCardsAction 组件
-            affected_entity_names: final_stats 中所有受影响实体的全名列表
-            post_arbitration_hp: 仲裁后各实体 (new_hp, max_hp) 映射，用于 task hint 上下文（D）
         """
         card_affixes = play_cards_action.card.affixes
         has_equipped = actor_entity.has(EquippedGearComponent)

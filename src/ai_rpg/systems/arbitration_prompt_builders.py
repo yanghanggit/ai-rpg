@@ -596,15 +596,13 @@ def generate_consumable_arbitration_broadcast(
     combat_log: str,
     narrative: str,
     current_round_number: int,
-    is_party_action: bool,
     item_name: str,
 ) -> str:
-    camp_label = "友方阵营" if is_party_action else "敌方"
     return generate_arbitration_broadcast(
         combat_log,
         narrative,
         current_round_number,
-        f"{camp_label}使用消耗品「{item_name}」",
+        f"使用消耗品「{item_name}」",
     )
 
 

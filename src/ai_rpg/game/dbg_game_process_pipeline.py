@@ -151,6 +151,10 @@ def create_combat_pipeline(
         StageDescriptionSystem,
     )
     from ..systems.combat_round_cleanup_system import CombatRoundCleanupSystem
+    from ..systems.combat_round_end_effect_settlement_system import (
+        CombatRoundEndEffectSettlementSystem,
+    )
+    from ..systems.combat_status_effect_tick_system import CombatStatusEffectTickSystem
     from ..systems.combat_round_transition_system import (
         CombatRoundTransitionSystem,
         ActionOrderStrategy,
@@ -202,8 +206,14 @@ def create_combat_pipeline(
     # 检查战斗结果系统
     processors.add(CombatOutcomeSystem(dbg_game))
 
-    # 战斗回合清理系统（清除旧回合手牌 + 递减状态效果）
+    # 战斗回合清理系统（清除旧回合手牌状态）
     processors.add(CombatRoundCleanupSystem(dbg_game))
+
+    # 战斗回合末状态效果结算系统（并发 LLM 推理 ROUND_END 效果 HP 变化 + 处理死亡）
+    processors.add(CombatRoundEndEffectSettlementSystem(dbg_game))
+
+    # 战斗状态效果 tick 系统（推进持续时间、移除到期效果）
+    processors.add(CombatStatusEffectTickSystem(dbg_game))
 
     # 战斗回合过渡系统（创建新回合 + 生成 action_order）
     processors.add(

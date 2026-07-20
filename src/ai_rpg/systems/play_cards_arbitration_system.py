@@ -149,11 +149,11 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             else None
         )
 
-        # [测试] 第 1 回合强制触发场景干预，验证 trigger_post_arbitration=true 完整路径
+        # [测试] 第 1 回合强制触发场景干预，验证 post_arbitration_interaction_summary 非空完整路径
         # if current_round_number == 1:
         #     self._game.add_human_message(
         #         stage_entity,
-        #         "（系统测试指令）本回合为第 1 回合，请将 trigger_post_arbitration 强制设为 true，以验证场景干预系统的完整调用路径。其余字段按实际情况正常推理输出。",
+        #         "（系统测试指令）本回合为第 1 回合，请将 post_arbitration_interaction_summary 强制输出一个非空摘要文本，以验证场景干预系统的完整调用路径。其余字段按实际情况正常推理输出。",
         #     )
 
         # 初始化 DeepSeekClient，用于与 LLM 进行交互，传入生成的仲裁提示消息和压缩提示消息（如果启用）
@@ -338,13 +338,16 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
         latest_round.cards_combat_log.append(format_response.combat_log)
         latest_round.cards_narrative.append(format_response.narrative)
 
-        # 如果仲裁结果触发了后置仲裁动作（trigger_post_arbitration 为 True），则在当前场景实体中添加 PostArbitrationAction，以便在后续阶段执行相应的逻辑。
-        if format_response.trigger_post_arbitration:
+        # 如果仲裁结果触发了后置仲裁动作（post_arbitration_interaction_summary 非空），则在当前场景实体中添加 PostArbitrationAction，以便在后续阶段执行相应的逻辑。
+        if format_response.post_arbitration_interaction_summary:
             logger.debug(
-                f"仲裁结果 trigger_post_arbitration=True，触发 PostArbitrationAction"
+                f"仲裁结果 post_arbitration_interaction_summary 非空，触发 PostArbitrationAction: {format_response.post_arbitration_interaction_summary}"
             )
             stage_entity.replace(
-                PostArbitrationAction, stage_entity.name, actor_entity.name
+                PostArbitrationAction,
+                stage_entity.name,
+                actor_entity.name,
+                format_response.post_arbitration_interaction_summary,
             )
 
     #######################################################################################################################################

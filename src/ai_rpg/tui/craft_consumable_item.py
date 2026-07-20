@@ -201,7 +201,7 @@ class CraftConsumableItemScreen(BaseGameScreen):
 
         user_name = app.session.user_name
         game_name = app.session.game_name
-        storage_entity = app.session.blueprint.storage_entity
+        storage_entity = app.session.storage_entity
 
         try:
             details_resp = await fetch_entities_details(
@@ -245,7 +245,7 @@ class CraftConsumableItemScreen(BaseGameScreen):
 
         user_name = app.session.user_name
         game_name = app.session.game_name
-        storage_entity = app.session.blueprint.storage_entity
+        storage_entity = app.session.storage_entity
         materials = list(self._selected)
 
         log = self.query_one(RichLog)

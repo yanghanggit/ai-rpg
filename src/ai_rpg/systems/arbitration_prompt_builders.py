@@ -34,7 +34,7 @@ class ArbitrationResponse(BaseModel):
     combat_log: str
     final_stats: Dict[str, ArbitrationEntityFinalStats]
     narrative: str
-    trigger_post_arbitration: bool = False
+    post_arbitration_interaction_summary: str = ""
 
 
 #######################################################################################################################################
@@ -67,7 +67,7 @@ def stats_update_notification(final_hp: int, max_hp: int) -> str:
 当前HP: {final_hp}/{max_hp}"""
 
 
-def _fmt_stat_bonuses_compact(stats: CharacterStats) -> str:
+def fmt_stat_bonuses_compact(stats: CharacterStats) -> str:
     """仅显示非零属性的精简格式，用于 task hint 单行上下文。"""
     parts: List[str] = []
     if stats.hp:
@@ -136,13 +136,13 @@ def build_combat_arbitration_effects_lines(
     return lines
 
 
-TRIGGER_POST_ARBITRATION_DESCRIPTION: Final[
+POST_ARBITRATION_INTERACTION_SUMMARY_DESCRIPTION: Final[
     str
-] = """### trigger_post_arbitration
+] = """### post_arbitration_interaction_summary
 
-布尔值，决定是否触发场景干预系统（stage agent 追加状态效果 / 塞牌）。
-判断规则：仅当本次行动的 **narrative 叙事中涉及与已存在场景要素的物理交互**（如搅起沙尘、触发机关、破坏地面物件、揭示可借用道具等），且该交互**合理推断可对场内角色产生后续物理影响**时，设为 `true`；
-否则（纯角色行动，无环境互动），输出 `false`。"""
+字符串，决定是否触发场景干预系统（stage agent 追加状态效果 / 塞牌），同时作为该系统推理的依据文本。
+判断规则：仅当本次行动的 **narrative 叙事中涉及与已存在场景要素的物理交互**（如搅起沙尘、触发机关、破坏地面物件、揭示可借用道具等），且该交互**合理推断可对场内角色产生后续物理影响**时，用一句话（20-40 字）概括**具体哪个场景要素发生了何种物理变化**（如"战斗踢起浓密沙尘，可致眼盲"、"立柱被击碎，碎石散落可拾取投掷"）；
+否则（纯角色行动，无环境互动），输出空字符串 `""`。"""
 
 
 FINAL_STATS_DESCRIPTION: Final[
@@ -281,11 +281,11 @@ def generate_combat_arbitration_prompt(
   "combat_log": "字符串",
   "final_stats": {{}},
   "narrative": "战斗演出",
-  "trigger_post_arbitration": false
+  "post_arbitration_interaction_summary": ""
 }}
 ```
 
-{TRIGGER_POST_ARBITRATION_DESCRIPTION}
+{POST_ARBITRATION_INTERACTION_SUMMARY_DESCRIPTION}
 
 ### combat_log（简名 = 全名最后一段）
 
@@ -535,11 +535,11 @@ def generate_consumable_arbitration_prompt(
   "combat_log": "字符串",
   "final_stats": {{}},
   "narrative": "演出描述",
-  "trigger_post_arbitration": false
+  "post_arbitration_interaction_summary": ""
 }}
 ```
 
-{TRIGGER_POST_ARBITRATION_DESCRIPTION}
+{POST_ARBITRATION_INTERACTION_SUMMARY_DESCRIPTION}
 
 ### combat_log（简名 = 全名最后一段）
 
@@ -652,7 +652,7 @@ def generate_gear_equip_task_hints(
     if not item.equip_affixes:
         return []
     targets_str = "、".join(targets) or "无"
-    stats_str = _fmt_stat_bonuses_compact(item.stat_bonuses)
+    stats_str = fmt_stat_bonuses_compact(item.stat_bonuses)
     base = f"[装备穿戴] 「{item.name}」→{targets_str}（{stats_str}）"
     return [f"{base}；词缀 → {affix}" for affix in item.equip_affixes]
 

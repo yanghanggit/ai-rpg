@@ -41,7 +41,7 @@ def _make_stage_entity(context: Context, name: str) -> Entity:
     entity._name = name
     entity.add(StageComponent, name, "test_stage_sheet")
     entity.add(DungeonComponent, name)
-    entity.add(PostArbitrationAction, name, "行动者")
+    entity.add(PostArbitrationAction, name, "行动者", "测试交互摘要")
     return entity
 
 

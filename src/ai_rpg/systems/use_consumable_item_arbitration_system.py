@@ -261,11 +261,14 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
         else:
             logger.debug("消耗品 affixes 为空，跳过 AddStatusEffectsAction")
 
-        # 根据 response.trigger_post_arbitration 决定是否触发 PostArbitrationAction
-        if response.trigger_post_arbitration:
+        # 根据 response.post_arbitration_interaction_summary 决定是否触发 PostArbitrationAction
+        if response.post_arbitration_interaction_summary:
             logger.debug(
-                f"仲裁结果 trigger_post_arbitration=True，触发 PostArbitrationAction"
+                f"仲裁结果 post_arbitration_interaction_summary 非空，触发 PostArbitrationAction: {response.post_arbitration_interaction_summary}"
             )
             stage_entity.replace(
-                PostArbitrationAction, stage_entity.name, actor_entity.name
+                PostArbitrationAction,
+                stage_entity.name,
+                actor_entity.name,
+                response.post_arbitration_interaction_summary,
             )

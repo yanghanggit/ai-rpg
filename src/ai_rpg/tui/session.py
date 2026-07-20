@@ -24,3 +24,8 @@ class GameSession:
     @property
     def actor_name(self) -> str:
         return self.player_session.actor
+
+    @property
+    def storage_entity(self) -> str:
+        """本次会话对应的存档实体 ID（用于定位磁盘上的存档文件）。"""
+        return self.blueprint.storage_entity

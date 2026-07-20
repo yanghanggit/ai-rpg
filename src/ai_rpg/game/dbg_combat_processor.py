@@ -253,11 +253,8 @@ def _format_zero_health_message() -> str:
 
 #################################################################################################################################################
 def process_zero_health_entities(game: DBGGame) -> None:
-    """为 HP 归零且尚未标记死亡的实体添加 DeathComponent。
+    """为 HP 归零且尚未标记死亡的实体添加 DeathComponent。"""
 
-    Args:
-        game: DBG 游戏实例
-    """
     defeated_entities = game.get_group(
         Matcher(all_of=[CharacterStatsComponent], none_of=[DeathComponent])
     ).entities.copy()

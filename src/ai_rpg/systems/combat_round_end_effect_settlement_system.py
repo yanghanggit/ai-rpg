@@ -17,15 +17,7 @@ from ..utils import extract_json_from_code_block
 
 
 def _make_round_end_hp_update_message(new_hp: int, max_hp: int) -> str:
-    """生成回合末生命值更新的 LLM 通知文本。
-
-    Args:
-        new_hp: 结算后的当前 HP
-        max_hp: 最大 HP
-
-    Returns:
-        写入 agent 上下文的 human message 文本
-    """
+    """生成回合末生命值更新的 LLM 通知文本。"""
     return f"# 回合末结算 — 生命值更新\n\n当前HP: {new_hp}/{max_hp}"
 
 
@@ -45,17 +37,7 @@ def _generate_round_end_effects_prompt(
     max_hp: int,
     round_end_effects: List[StatusEffect],
 ) -> str:
-    """生成回合末状态效果结算提示词。
-
-    Args:
-        entity_name: 角色名称
-        current_hp: 当前 HP
-        max_hp: 最大 HP
-        round_end_effects: 本回合末生效的 ROUND_END 状态效果列表
-
-    Returns:
-        格式化的提示词字符串，要求 LLM 输出 RoundEndEffectResponse JSON
-    """
+    """生成回合末状态效果结算提示词。"""
 
     def _fmt_duration(d: int) -> str:
         return "永久" if d == -1 else f"剩余{d}回合"
@@ -96,8 +78,7 @@ def _generate_round_end_effects_prompt(
 @final
 class CombatRoundEndEffectSettlementSystem(ExecuteProcessor):
     """
-    战斗回合末状态效果结算系统：并发调用 LLM 推理 ROUND_END 效果的 HP 变化，
-    并在结算后处理 HP 归零的实体（如标记死亡）。
+    战斗回合末状态效果结算系统：并发调用 LLM 推理 ROUND_END 效果的 HP 变化，并在结算后处理 HP 归零的实体（如标记死亡）。
     """
 
     ############################################################################################################
@@ -162,6 +143,8 @@ class CombatRoundEndEffectSettlementSystem(ExecuteProcessor):
             max_hp=current_stats.max_hp,
             round_end_effects=round_end_effects,
         )
+
+        # 返回 DeepSeekClient，用于并发调用 LLM 推理 ROUND_END 效果
         return DeepSeekClient(
             name=entity.name,
             prompt=prompt,

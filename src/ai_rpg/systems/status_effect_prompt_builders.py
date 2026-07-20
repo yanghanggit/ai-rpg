@@ -37,7 +37,7 @@ def build_status_effect_field_description() -> str:
 
 ### `{PhaseType.ROUND_END}`：每回合末自动 tick
 
-例如：「中毒」每回合末扣血；「燃烧」持续火焰伤害；「再生」每回合末回血（DOT/HOT）。
+仅影响 HP。例如：「中毒」每回合末扣血；「燃烧」持续火焰伤害；「再生」每回合末回血（DOT/HOT）。`description` 须是可被下游 LLM 解析的 HP 增减规则，不要在此描述防御、速度等其他数值变化——防御/速度请使用 `defense`/`speed` 字段。
 
 ### 通用字段（不区分 phase）
 

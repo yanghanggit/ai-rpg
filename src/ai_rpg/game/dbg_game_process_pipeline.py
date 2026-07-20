@@ -112,6 +112,9 @@ def create_combat_pipeline(
     from ..systems.draw_cards_action_system import (
         DrawCardsActionSystem,
     )
+    from ..systems.draw_cards_adjustment_system import (
+        DrawCardsAdjustmentSystem,
+    )
     from ..systems.play_cards_action_system import (
         PlayCardsActionSystem,
     )
@@ -183,6 +186,7 @@ def create_combat_pipeline(
 
     # 战斗核心动作处理相关的系统
     processors.add(DrawCardsActionSystem(dbg_game))
+    processors.add(DrawCardsAdjustmentSystem(dbg_game))
     processors.add(MonsterPrePlaySystem(dbg_game))
     processors.add(PartyPrePlaySystem(dbg_game))
     processors.add(PlayCardsActionSystem(dbg_game))

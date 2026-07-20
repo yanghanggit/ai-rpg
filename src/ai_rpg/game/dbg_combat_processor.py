@@ -369,3 +369,13 @@ def determine_camp_relationship(actor_entity: Entity, other_entity: Entity) -> s
         return "友方"
 
     return "敌方"
+
+
+####################################################################################################################################
+def get_max_num_cards(actor: Entity) -> int:
+    """返回角色本回合应持有的手牌上限（PartyMember=3，Monster=1）。"""
+    if actor.has(PartyMemberComponent):
+        return 3
+    if actor.has(MonsterComponent):
+        return 1
+    return 1

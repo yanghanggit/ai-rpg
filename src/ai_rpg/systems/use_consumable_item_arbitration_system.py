@@ -23,7 +23,6 @@ from ..models import (
     CharacterStatsComponent,
     CombatArbitrationEvent,
     HumanMessage,
-    PostArbitrationAction,
 )
 from ..utils import extract_json_from_code_block
 from .arbitration_prompt_builders import (
@@ -281,17 +280,6 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                 logger.debug(f"[{entity_name}] 消耗品仲裁后添加 AddStatusEffectsAction")
         else:
             logger.debug("消耗品 affixes 为空，跳过 AddStatusEffectsAction")
-
-        # 根据 response.post_arbitration_interaction_summary 决定是否触发 PostArbitrationAction
-        if response.post_arbitration_interaction_summary:
-            logger.debug(
-                f"仲裁结果 post_arbitration_interaction_summary 非空，触发 PostArbitrationAction: {response.post_arbitration_interaction_summary}"
-            )
-            stage_entity.replace(
-                PostArbitrationAction,
-                stage_entity.name,
-                response.post_arbitration_interaction_summary,
-            )
 
         # 根据 response.affixes 直接为受影响角色追加 AddStatusEffectsAction
         for affix_target_name, affix_texts in response.affixes.items():

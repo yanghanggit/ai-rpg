@@ -35,7 +35,6 @@ class ArbitrationResponse(BaseModel):
     combat_log: str
     final_stats: Dict[str, ArbitrationEntityFinalStats]
     narrative: str
-    post_arbitration_interaction_summary: str = ""
     affixes: Dict[str, List[str]] = {}
 
 
@@ -143,15 +142,6 @@ def build_other_alive_actors_lines(other_alive_actor_names: List[str]) -> str:
     if not other_alive_actor_names:
         return "- 无"
     return "\n".join(f"- {name}" for name in other_alive_actor_names)
-
-
-POST_ARBITRATION_INTERACTION_SUMMARY_DESCRIPTION: Final[
-    str
-] = """### post_arbitration_interaction_summary
-
-字符串，决定是否触发场景干预系统（stage agent 塞牌），同时作为该系统推理的依据文本。
-判断规则：仅当本次行动的 **narrative 叙事中涉及与已存在场景要素的物理交互**（如搅起沙尘、触发机关、破坏地面物件、揭示可借用道具等），且该交互**合理推断可让场内角色获得可拾取的场景物件牌**时，用一句话（20-40 字）概括**具体哪个场景要素发生了何种物理变化**（如"立柱被击碎，碎石散落可拾取投掷"）；
-否则（无可塞牌依据），输出空字符串 `""`。"""
 
 
 AFFIXES_DESCRIPTION: Final[
@@ -305,12 +295,9 @@ def generate_combat_arbitration_prompt(
   "combat_log": "字符串",
   "final_stats": {{}},
   "narrative": "战斗演出",
-  "post_arbitration_interaction_summary": "",
   "affixes": {{}}
 }}
 ```
-
-{POST_ARBITRATION_INTERACTION_SUMMARY_DESCRIPTION}
 
 {AFFIXES_DESCRIPTION}
 
@@ -459,12 +446,9 @@ def generate_gear_arbitration_prompt(
   "combat_log": "字符串",
   "final_stats": {{}},
   "narrative": "演出描述",
-  "post_arbitration_interaction_summary": "",
   "affixes": {{}}
 }}
 ```
-
-{POST_ARBITRATION_INTERACTION_SUMMARY_DESCRIPTION}
 
 {AFFIXES_DESCRIPTION}
 
@@ -590,12 +574,9 @@ def generate_consumable_arbitration_prompt(
   "combat_log": "字符串",
   "final_stats": {{}},
   "narrative": "演出描述",
-  "post_arbitration_interaction_summary": "",
   "affixes": {{}}
 }}
 ```
-
-{POST_ARBITRATION_INTERACTION_SUMMARY_DESCRIPTION}
 
 {AFFIXES_DESCRIPTION}
 

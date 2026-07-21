@@ -249,17 +249,6 @@ class IllustrateDungeonAction(Component):
 @final
 @register_action_component_type
 @register_component_type
-class PostArbitrationAction(Component):
-    """仲裁结算后由 stage agent 决定是否追加状态效果或塞入卡牌。"""
-
-    name: str
-    interaction_summary: str  # 仲裁阶段提取的场景交互摘要，用于生成后续 prompt 上下文
-
-
-############################################################################################################
-@final
-@register_action_component_type
-@register_component_type
 class CraftConsumableAction(Component):
     """触发玩家在工坊用储物箱内的材料合成消耗品，由 LLM（WorkshopComponent agent）推理生成结果。"""
 

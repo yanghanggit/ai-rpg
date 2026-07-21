@@ -128,8 +128,8 @@ def create_combat_pipeline(
     from ..systems.add_status_effects_action_system import (
         AddStatusEffectsActionSystem,
     )
-    from ..systems.post_arbitration_action_system import (
-        PostArbitrationActionSystem,
+    from ..systems.inject_cards_action_system import (
+        InjectCardsActionSystem,
     )
     from ..systems.combat_archive_system import CombatArchiveSystem
     from ..systems.combat_loot_system import CombatLootSystem
@@ -189,8 +189,8 @@ def create_combat_pipeline(
     processors.add(UseGearItemArbitrationSystem(dbg_game))
     processors.add(AddStatusEffectsActionSystem(dbg_game))
 
-    # 仲裁结算后，由 stage agent（地牢主视角）决定是否对场内角色追加状态效果或塞牌
-    processors.add(PostArbitrationActionSystem(dbg_game))
+    # 仂裁结算后，由 stage agent（地牢主视角）复用已更新的对话上下文，判断是否需要向场内角色塞入场景卡牌
+    processors.add(InjectCardsActionSystem(dbg_game))
 
     # 回合完成判定系统
     processors.add(CombatRoundCompletionSystem(dbg_game))

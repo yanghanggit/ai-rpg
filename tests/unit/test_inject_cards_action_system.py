@@ -1,4 +1,4 @@
-"""PostArbitrationActionSystem 单元测试。"""
+"""InjectCardsActionSystem 单元测试。"""
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -9,14 +9,14 @@ from src.ai_rpg.models import (
     ActorComponent,
     DungeonComponent,
     DiscardPileComponent,
-    PostArbitrationAction,
+    PlayCardsAction,
     StageComponent,
     StatusEffectsComponent,
 )
 from src.ai_rpg.models import Card, AIMessage
-from src.ai_rpg.systems.post_arbitration_action_system import (
+from src.ai_rpg.systems.inject_cards_action_system import (
     ActorPostArbitrationDirective,
-    PostArbitrationActionSystem,
+    InjectCardsActionSystem,
 )
 from src.ai_rpg.systems.arbitration_prompt_builders import fmt_duration
 from typing import Dict, List, Optional
@@ -41,7 +41,17 @@ def _make_stage_entity(context: Context, name: str) -> Entity:
     entity._name = name
     entity.add(StageComponent, name, "test_stage_sheet")
     entity.add(DungeonComponent, name)
-    entity.add(PostArbitrationAction, name, "测试交互摘要")
+    return entity
+
+
+def _make_actor_with_play_cards_action(context: Context, name: str) -> Entity:
+    entity = _make_actor_entity(context, name)
+    entity.add(
+        PlayCardsAction,
+        name,
+        _make_card("斩击"),
+        [name],
+    )
     return entity
 
 
@@ -112,8 +122,8 @@ def mock_game() -> MagicMock:
 
 
 @pytest.fixture()
-def system(mock_game: MagicMock) -> PostArbitrationActionSystem:
-    return PostArbitrationActionSystem(
+def system(mock_game: MagicMock) -> InjectCardsActionSystem:
+    return InjectCardsActionSystem(
         mock_game,
         use_compressed_prompt=True,
     )
@@ -144,13 +154,13 @@ class TestFmtDuration:
 
 
 class TestInjectCards:
-    """`PostArbitrationActionSystem._inject_cards` 的单元测试。"""
+    """`InjectCardsActionSystem._inject_cards` 的单元测试。"""
 
     def test_card_appended_to_discard_pile(
         self,
         context: Context,
         mock_game: MagicMock,
-        system: PostArbitrationActionSystem,
+        system: InjectCardsActionSystem,
     ) -> None:
         stage = _make_stage_entity(context, "地下城")
         target = _make_actor_entity(context, "英雄")
@@ -168,7 +178,7 @@ class TestInjectCards:
         self,
         context: Context,
         mock_game: MagicMock,
-        system: PostArbitrationActionSystem,
+        system: InjectCardsActionSystem,
     ) -> None:
         stage = _make_stage_entity(context, "地下城")
         target = _make_actor_entity(context, "英雄")
@@ -185,7 +195,7 @@ class TestInjectCards:
         self,
         context: Context,
         mock_game: MagicMock,
-        system: PostArbitrationActionSystem,
+        system: InjectCardsActionSystem,
     ) -> None:
         stage = _make_stage_entity(context, "熔岩洞穴")
         target = _make_actor_entity(context, "弓手")
@@ -202,7 +212,7 @@ class TestInjectCards:
         self,
         context: Context,
         mock_game: MagicMock,
-        system: PostArbitrationActionSystem,
+        system: InjectCardsActionSystem,
     ) -> None:
         stage = _make_stage_entity(context, "地下城")
         target = _make_actor_entity(context, "法师")
@@ -218,13 +228,13 @@ class TestInjectCards:
 
 
 class TestApplyResponse:
-    """`PostArbitrationActionSystem._apply_response` 的单元测试。"""
+    """`InjectCardsActionSystem._apply_response` 的单元测试。"""
 
     def test_valid_response_applies_effects_and_cards(
         self,
         context: Context,
         mock_game: MagicMock,
-        system: PostArbitrationActionSystem,
+        system: InjectCardsActionSystem,
     ) -> None:
         stage = _make_stage_entity(context, "地下城")
         target = _make_actor_entity(context, "英雄")
@@ -244,7 +254,7 @@ class TestApplyResponse:
         self,
         context: Context,
         mock_game: MagicMock,
-        system: PostArbitrationActionSystem,
+        system: InjectCardsActionSystem,
     ) -> None:
         stage = _make_stage_entity(context, "地下城")
         target = _make_actor_entity(context, "战士")
@@ -260,7 +270,7 @@ class TestApplyResponse:
         self,
         context: Context,
         mock_game: MagicMock,
-        system: PostArbitrationActionSystem,
+        system: InjectCardsActionSystem,
     ) -> None:
         """target 不存在时应 log error 并不抛出。"""
         stage = _make_stage_entity(context, "地下城")
@@ -278,7 +288,7 @@ class TestApplyResponse:
         self,
         context: Context,
         mock_game: MagicMock,
-        system: PostArbitrationActionSystem,
+        system: InjectCardsActionSystem,
     ) -> None:
         """human/ai 消息应各写入 stage entity 对话历史一次。"""
         stage = _make_stage_entity(context, "地下城")
@@ -295,7 +305,7 @@ class TestApplyResponse:
         self,
         context: Context,
         mock_game: MagicMock,
-        system: PostArbitrationActionSystem,
+        system: InjectCardsActionSystem,
     ) -> None:
         """use_compressed_prompt=True 时，compressed_prompt 应传入 add_human_message。"""
         stage = _make_stage_entity(context, "地下城")
@@ -319,39 +329,39 @@ class TestApplyResponse:
 # ---------------------------------------------------------------------------
 
 
-class TestPostArbitrationActionSystemReact:
-    """PostArbitrationActionSystem.react() 的异步测试。"""
+class TestInjectCardsActionSystemReact:
+    """InjectCardsActionSystem.react() 的异步测试。"""
 
     @pytest.mark.asyncio
     async def test_skips_when_not_ongoing(
         self,
         context: Context,
         mock_game: MagicMock,
-        system: PostArbitrationActionSystem,
+        system: InjectCardsActionSystem,
     ) -> None:
-        """战斗未进行中时，_process_stage 不应被调用。"""
+        """战斗未进行中时，_process_actor_action 不应被调用。"""
         mock_game.current_combat_room.combat.is_ongoing = False
-        stage = _make_stage_entity(context, "地下城")
+        actor = _make_actor_with_play_cards_action(context, "英雄")
 
         with patch.object(
-            system, "_process_stage", new_callable=AsyncMock
+            system, "_process_actor_action", new_callable=AsyncMock
         ) as mock_process:
-            await system.react([stage])
+            await system.react([actor])
             mock_process.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_process_stage_called_for_stage_entity(
+    async def test_process_actor_action_called_for_actor_entity(
         self,
         context: Context,
         mock_game: MagicMock,
-        system: PostArbitrationActionSystem,
+        system: InjectCardsActionSystem,
     ) -> None:
-        """stage entity → _process_stage 应被调用一次。"""
+        """actor entity（携带 PlayCardsAction）→ _process_actor_action 应被调用一次。"""
         mock_game.current_combat_room.combat.is_ongoing = True
-        stage = _make_stage_entity(context, "地下城")
+        actor = _make_actor_with_play_cards_action(context, "英雄")
 
         with patch.object(
-            system, "_process_stage", new_callable=AsyncMock
+            system, "_process_actor_action", new_callable=AsyncMock
         ) as mock_process:
-            await system.react([stage])
-            mock_process.assert_called_once_with(stage)
+            await system.react([actor])
+            mock_process.assert_called_once_with(actor)

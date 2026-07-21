@@ -1,4 +1,4 @@
-"""仲裁后效果系统模块"""
+"""场景塞牌系统模块"""
 
 from typing import Final, List, Optional, Set, final, Dict
 from loguru import logger
@@ -13,11 +13,11 @@ from ..models import (
     Card,
     TargetType,
     CharacterStatsComponent,
-    DungeonComponent,
     DiscardPileComponent,
     HumanMessage,
-    StageComponent,
-    PostArbitrationAction,
+    PlayCardsAction,
+    UseConsumableItemAction,
+    UseGearItemAction,
     StatusEffectsComponent,
 )
 from ..utils import extract_json_from_code_block
@@ -79,22 +79,17 @@ def _build_actors_summary(actor_entities: Set[Entity]) -> str:
 
 
 #######################################################################################################################################
-def _generate_compressed_stage_post_arbitration_prompt(
+def _generate_compressed_inject_cards_prompt(
     actor_entities: Set[Entity],
     current_round_number: int,
-    interaction_summary: str,
 ) -> str:
-    """生成压缩版仲裁后场景效果提示词（仅动态感知部分，省略静态规则/格式说明）"""
+    """生成压缩版塞牌评估提示词（仅动态感知部分，省略静态规则/格式说明）"""
 
     actors_summary = _build_actors_summary(actor_entities)
 
-    return f"""# 第 {current_round_number} 回合 — 仲裁后场景干预
+    return f"""# 第 {current_round_number} 回合 — 场景塞牌评估
 
-仲裁结算已在上下文中记录。
-
-## 本次触发依据（仲裁阶段提取的场景交互摘要）
-
-{interaction_summary}
+请回顾你在上文刚记录的本回合战斗演出（叙事与仲裁结果），判断是否需要触发场景塞牌。
 
 ## 场内存活角色当前状态
 
@@ -102,22 +97,17 @@ def _generate_compressed_stage_post_arbitration_prompt(
 
 
 #######################################################################################################################################
-def _generate_stage_post_arbitration_prompt(
+def _generate_inject_cards_prompt(
     actor_entities: Set[Entity],
     current_round_number: int,
-    interaction_summary: str,
 ) -> str:
-    """生成仲裁后场景效果提示词"""
+    """生成塞牌评估提示词"""
 
     actors_summary = _build_actors_summary(actor_entities)
 
-    return f"""# 第 {current_round_number} 回合 — 仲裁后场景干预
+    return f"""# 第 {current_round_number} 回合 — 场景塞牌评估
 
-仲裁结算已在上下文中记录。
-
-## 本次触发依据（仲裁阶段提取的场景交互摘要）
-
-{interaction_summary}
+请回顾你在上文刚记录的本回合战斗演出（叙事与仲裁结果），判断是否需要触发场景塞牌。
 
 ## 场内存活角色当前状态
 
@@ -169,8 +159,12 @@ def _generate_stage_post_arbitration_prompt(
 
 #######################################################################################################################################
 @final
-class PostArbitrationActionSystem(ReactiveProcessor):
-    """仲裁后效果系统"""
+class InjectCardsActionSystem(ReactiveProcessor):
+    """场景塞牌系统：响应 PlayCardsAction / UseConsumableItemAction / UseGearItemAction 事件，
+
+    在对应的仲裁系统结算完毕后（同一帧内，依赖流水线中的注册顺序），复用 stage 已被更新的对话
+    上下文（其中已包含本次行动的仲裁叙事），由 stage agent 判断是否需要向场内角色塞入场景卡牌。
+    """
 
     def __init__(
         self,
@@ -184,56 +178,58 @@ class PostArbitrationActionSystem(ReactiveProcessor):
     #######################################################################################################################################
     @override
     def get_trigger(self) -> Dict[Matcher, GroupEvent]:
-        return {Matcher(PostArbitrationAction): GroupEvent.ADDED}
+        return {
+            Matcher(PlayCardsAction): GroupEvent.ADDED,
+            Matcher(UseConsumableItemAction): GroupEvent.ADDED,
+            Matcher(UseGearItemAction): GroupEvent.ADDED,
+        }
 
     #######################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
         return (
-            entity.has(PostArbitrationAction)
-            and entity.has(StageComponent)
-            and entity.has(DungeonComponent)
+            entity.has(PlayCardsAction)
+            or entity.has(UseConsumableItemAction)
+            or entity.has(UseGearItemAction)
         )
 
     #######################################################################################################################################
     @override
     async def react(self, entities: List[Entity]) -> None:
         if not self._game.current_combat_room.combat.is_ongoing:
-            logger.debug("PostArbitrationActionSystem: 战斗未进行中，跳过")
+            logger.debug("InjectCardsActionSystem: 战斗未进行中，跳过")
             return
 
-        logger.debug("PostArbitrationActionSystem: 处理仲裁后效果动作")
-        for stage_entity in entities:
-            await self._process_stage(stage_entity)
+        logger.debug(f"InjectCardsActionSystem: 处理 {len(entities)} 个行动实体")
+        for actor_entity in entities:
+            await self._process_actor_action(actor_entity)
 
     #######################################################################################################################################
-    async def _process_stage(self, stage_entity: Entity) -> None:
-        """为单个 stage entity 执行仲裁后场景干预逻辑"""
+    async def _process_actor_action(self, actor_entity: Entity) -> None:
+        """为单次行动（出牌/使用消耗品/使用装备）执行场景塞牌评估"""
 
-        action = stage_entity.get(PostArbitrationAction)
+        stage_entity = self._game.resolve_stage_entity(actor_entity)
         assert (
-            action is not None
-        ), "PostArbitrationActionSystem: 无法获取 PostArbitrationAction 组件！"
+            stage_entity is not None
+        ), f"InjectCardsActionSystem: 无法获取 {actor_entity.name} 所在场景实体！"
 
         actor_entities = get_alive_actors_in_stage(self._game, stage_entity)
         if not actor_entities:
-            logger.debug("PostArbitrationActionSystem: 无存活角色，跳过")
+            logger.debug("InjectCardsActionSystem: 无存活角色，跳过")
             return
 
         current_round_number = len(self._game.current_combat_room.combat.rounds or [])
 
-        prompt = _generate_stage_post_arbitration_prompt(
+        prompt = _generate_inject_cards_prompt(
             actor_entities=actor_entities,
             current_round_number=current_round_number,
-            interaction_summary=action.interaction_summary,
         )
 
         compressed_message: Optional[str] = None
         if self._use_compressed_prompt:
-            compressed_message = _generate_compressed_stage_post_arbitration_prompt(
+            compressed_message = _generate_compressed_inject_cards_prompt(
                 actor_entities=actor_entities,
                 current_round_number=current_round_number,
-                interaction_summary=action.interaction_summary,
             )
 
         chat_client = DeepSeekClient(
@@ -243,22 +239,20 @@ class PostArbitrationActionSystem(ReactiveProcessor):
             context=self._game.get_agent_context(stage_entity).context,
         )
 
-        logger.debug(
-            f"PostArbitrationActionSystem: [{stage_entity.name}] 进行仲裁后干预评估"
-        )
+        logger.debug(f"InjectCardsActionSystem: [{stage_entity.name}] 进行场景塞牌评估")
 
         # 发起 LLM 请求，捕获异常以防止整个流程崩溃
         try:
             await chat_client.chat()
         except Exception as e:
             logger.error(
-                f"PostArbitrationActionSystem: [{stage_entity.name}] LLM 请求失败: {e}"
+                f"InjectCardsActionSystem: [{stage_entity.name}] LLM 请求失败: {e}"
             )
             return
 
         if chat_client.response_ai_message is None:
             logger.warning(
-                f"PostArbitrationActionSystem: [{stage_entity.name}] LLM 响应为空，跳过"
+                f"InjectCardsActionSystem: [{stage_entity.name}] LLM 响应为空，跳过"
             )
             return
 
@@ -266,14 +260,14 @@ class PostArbitrationActionSystem(ReactiveProcessor):
 
     #######################################################################################################################################
     def _apply_response(self, chat_client: DeepSeekClient) -> None:
-        """解析 LLM 响应并应用状态效果与塞牌"""
+        """解析 LLM 响应并应用塞牌"""
 
         stage_entity = self._game.get_entity_by_name(chat_client.name)
         assert stage_entity is not None, f"找不到舞台实体: {chat_client.name}"
 
         if chat_client.response_ai_message is None:
             logger.warning(
-                f"PostArbitrationActionSystem: [{chat_client.name}] LLM 响应为空，跳过"
+                f"InjectCardsActionSystem: [{chat_client.name}] LLM 响应为空，跳过"
             )
             return
 
@@ -295,7 +289,7 @@ class PostArbitrationActionSystem(ReactiveProcessor):
                 ), f"目标角色 {directive.target} 缺少 DiscardPileComponent"
 
         except Exception as e:
-            logger.error(f"[{stage_entity.name}] 解析仲裁后干预响应失败: {e}")
+            logger.error(f"[{stage_entity.name}] 解析场景塞牌响应失败: {e}")
             logger.error(f"原始响应: {chat_client.response_content}")
             return
 
@@ -305,7 +299,7 @@ class PostArbitrationActionSystem(ReactiveProcessor):
                 entity=stage_entity,
                 human_message=HumanMessage(
                     content=chat_client.compressed_prompt,
-                    stage_post_arbitration_full_prompt=chat_client.prompt,
+                    inject_cards_full_prompt=chat_client.prompt,
                 ),
             )
         else:
@@ -337,7 +331,7 @@ class PostArbitrationActionSystem(ReactiveProcessor):
                         inject_cards=directive.inject_cards,
                     )
         else:
-            logger.debug(f"[{stage_entity.name}] 仲裁后无干预指令")
+            logger.debug(f"[{stage_entity.name}] 本次评估无塞牌指令")
 
     #######################################################################################################################################
     def _inject_cards(

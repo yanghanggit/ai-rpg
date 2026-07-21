@@ -22,7 +22,6 @@ from ..models import (
     CharacterStatsComponent,
     CombatArbitrationEvent,
     HumanMessage,
-    PostArbitrationAction,
 )
 from ..utils import extract_json_from_code_block
 from .arbitration_prompt_builders import (
@@ -274,17 +273,6 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
                 # 将触发应用为状态效果，确保这些效果在后续的游戏逻辑中能够被正确处理
                 accumulate_status_effects_action(entity, affix_triggers)
                 logger.debug(f"[{entity_name}] 装备仲裁后添加 AddStatusEffectsAction")
-
-        # 根据 response.post_arbitration_interaction_summary 决定是否触发 PostArbitrationAction（与卡牌/消耗品仲裁行为对齐）
-        if response.post_arbitration_interaction_summary:
-            logger.debug(
-                f"仲裁结果 post_arbitration_interaction_summary 非空，触发 PostArbitrationAction: {response.post_arbitration_interaction_summary}"
-            )
-            stage_entity.replace(
-                PostArbitrationAction,
-                stage_entity.name,
-                response.post_arbitration_interaction_summary,
-            )
 
         # 根据 response.affixes 直接为受影响角色追加 AddStatusEffectsAction
         for affix_target_name, affix_texts in response.affixes.items():

@@ -144,7 +144,7 @@ class CombatInitActorSystem(ExecuteProcessor):
                 f"[{actor_entity.name}] 战斗临时牌堆初始化完成（DrawPile / DiscardPile / ExhaustPile）"
             )
 
-            # 如果没有状态效果组件则先添加一个空的，以保证后续系统（AddStatusEffectsActionSystem / PostArbitrationActionSystem）能正常工作
+            # 如果没有状态效果组件则先添加一个空的，以保证后续系统（AddStatusEffectsActionSystem / InjectCardsActionSystem）能正常工作
             assert (
                 not actor_entity.has(StatusEffectsComponent)
                 or len(actor_entity.get(StatusEffectsComponent).status_effects) == 0

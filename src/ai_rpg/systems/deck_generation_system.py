@@ -4,7 +4,7 @@
 
 import random
 from enum import IntEnum, unique
-from typing import Dict, Final, List, final, override, Tuple
+from typing import Dict, Final, List, final, override
 from loguru import logger
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
@@ -83,31 +83,21 @@ class DeckGenerationSystem(ReactiveProcessor):
         logger.debug(f"DeckGenerationSystem: 为 {len(entities)} 个角色生成初始牌库")
 
         # 构建并行 LLM 请求
-        chat_clients: List[DeepSeekClient] = []
-        num_cards_map: Dict[str, int] = {}  # entity.name -> num_cards
-        for entity in entities:
-            client, num_cards = self._build_deck_chat_client(entity)
-            num_cards_map[entity.name] = num_cards
-            chat_clients.append(client)
+        chat_clients: List[DeepSeekClient] = [
+            self._build_client(entity) for entity in entities
+        ]
 
         await DeepSeekClient.batch_chat(clients=chat_clients)
 
         # 解析结果，填入 DeckComponent 后洗牌移入 DrawPileComponent
         for chat_client in chat_clients:
-            self._process_generation_response(
-                chat_client, num_cards_map[chat_client.name]
-            )
+            self._process_generation_response(chat_client)
 
     #######################################################################################################################################
-    def _build_deck_chat_client(self, entity: Entity) -> Tuple[DeepSeekClient, int]:
-        """为单个实体构建牌库生成的 DeepSeekClient，同时返回本次目标卡牌数。"""
+    def _build_client(self, entity: Entity) -> DeepSeekClient:
+        """为单个实体构建牌库生成的 DeepSeekClient。"""
 
-        generate_deck_action = entity.get(GenerateDeckAction)
-        assert (
-            generate_deck_action is not None
-        ), f"{entity.name} 缺少 GenerateDeckAction"
-
-        num_cards = generate_deck_action.num_cards
+        num_cards = self._get_num_cards(entity)
 
         deck_comp_for_keywords = entity.get(DeckComponent)
         assert deck_comp_for_keywords is not None, f"{entity.name} 缺少 DeckComponent"
@@ -141,19 +131,27 @@ class DeckGenerationSystem(ReactiveProcessor):
         )
 
         # 构建 DeepSeekClient，传入完整提示词、压缩提示词和上下文
-        client = DeepSeekClient(
+        return DeepSeekClient(
             name=entity.name,
             prompt=prompt,
             compressed_prompt=compressed_prompt,
             context=self._game.get_agent_context(entity).context,
         )
-        return client, num_cards
+
+    #######################################################################################################################################
+    def _get_num_cards(self, entity: Entity) -> int:
+        """从实体的 GenerateDeckAction 中读取本次目标卡牌数。"""
+
+        generate_deck_action = entity.get(GenerateDeckAction)
+        assert (
+            generate_deck_action is not None
+        ), f"{entity.name} 缺少 GenerateDeckAction"
+        return generate_deck_action.num_cards
 
     #######################################################################################################################################
     def _process_generation_response(
         self,
         chat_client: DeepSeekClient,
-        num_cards: int,
     ) -> None:
         """解析 LLM 响应，将生成卡牌洗牌填入 DrawPileComponent。解析失败时跳过（DrawPile 保持空）。"""
 
@@ -166,6 +164,8 @@ class DeckGenerationSystem(ReactiveProcessor):
         assert (
             entity is not None
         ), f"DeckGenerationSystem: 无法找到实体 {chat_client.name} 以处理生成结果"
+
+        num_cards = self._get_num_cards(entity)
 
         try:
             # 解析 LLM 响应 JSON

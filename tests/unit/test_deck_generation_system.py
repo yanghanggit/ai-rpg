@@ -3,13 +3,11 @@
 import json
 from typing import Any, Dict, List
 from unittest.mock import MagicMock
-
 import pytest
-
 from src.ai_rpg.entitas.context import Context
 from src.ai_rpg.entitas.entity import Entity
 from src.ai_rpg.game.dbg_game import DBGGame
-from src.ai_rpg.models import DeckComponent, DrawPileComponent
+from src.ai_rpg.models import DeckComponent, DrawPileComponent, GenerateDeckAction
 from src.ai_rpg.models.messages import AIMessage
 from src.ai_rpg.models.target_type import TargetType
 from src.ai_rpg.systems.deck_generation_system import (
@@ -44,11 +42,12 @@ def _response_json(cards: List[Dict[str, Any]]) -> str:
     return json.dumps({"cards": cards}, ensure_ascii=False)
 
 
-def _make_entity(ctx: Context, name: str = "英雄") -> Entity:
+def _make_entity(ctx: Context, name: str = "英雄", num_cards: int = 2) -> Entity:
     entity = ctx.create_entity()
     entity._name = name
     entity.add(DeckComponent, name, [], [])
     entity.add(DrawPileComponent, name, [])
+    entity.add(GenerateDeckAction, name, num_cards)
     return entity
 
 
@@ -110,48 +109,26 @@ def test_valid_cards_fill_deck_and_draw_pile(
     ctx: Context, mock_game: MagicMock, system: DeckGenerationSystem
 ) -> None:
     """合法响应：牌追加到 DeckComponent 和 DrawPileComponent。"""
-    entity = _make_entity(ctx)
+    entity = _make_entity(ctx, num_cards=2)
     mock_game.get_entity_by_name.return_value = entity
 
     system._process_generation_response(
         _make_chat_client(
             "英雄", _response_json([_card_json("攻击"), _card_json("防御")])
-        ),
-        num_cards=2,
+        )
     )
 
     assert len(entity.get(DeckComponent).cards) == 2
     assert len(entity.get(DrawPileComponent).cards) == 2
 
 
-# def test_invalid_target_type_skips_card_and_warns(
-#     ctx: Context, mock_game: MagicMock, system: DeckGenerationSystem
-# ) -> None:
-#     """非法 target_type 的卡被跳过，并调用 add_human_message 发出警告。"""
-#     entity = _make_entity(ctx)
-#     mock_game.get_entity_by_name.return_value = entity
-
-#     system._process_generation_response(
-#         _make_chat_client(
-#             "英雄", _response_json([_card_json("坏牌", target_type="INVALID")])
-#         ),
-#         num_cards=1,
-#     )
-
-#     assert len(entity.get(DeckComponent).cards) == 0
-#     mock_game.add_human_message.assert_called()
-
-
 def test_invalid_json_no_raise_draw_pile_empty(
     ctx: Context, mock_game: MagicMock, system: DeckGenerationSystem
 ) -> None:
     """JSON 解析失败时不抛出，DrawPile 保持空。"""
-    entity = _make_entity(ctx)
+    entity = _make_entity(ctx, num_cards=2)
     mock_game.get_entity_by_name.return_value = entity
 
-    system._process_generation_response(
-        _make_chat_client("英雄", "not json"),
-        num_cards=2,
-    )
+    system._process_generation_response(_make_chat_client("英雄", "not json"))
 
     assert len(entity.get(DrawPileComponent).cards) == 0

@@ -18,14 +18,11 @@ from ..models import (
     HumanMessage,
     StageComponent,
     PostArbitrationAction,
-    StatusEffect,
-    PhaseType,
     StatusEffectsComponent,
 )
 from ..utils import extract_json_from_code_block
 from .arbitration_prompt_builders import fmt_duration
 from .card_prompt_builders import build_card_field_description
-from .status_effect_prompt_builders import build_status_effect_field_description
 
 
 #######################################################################################################################################
@@ -34,7 +31,6 @@ class ActorPostArbitrationDirective(BaseModel):
     """单个角色的仲裁后指令"""
 
     target: str  # 目标角色名称
-    add_effects: List[StatusEffect] = []  # 追加的状态效果
     inject_cards: List[Card] = []  # 注入到弃牌堆的卡牌
 
 
@@ -129,13 +125,11 @@ def _generate_stage_post_arbitration_prompt(
 
 **干预原则**：
 
-- ✅ 塞牌/加状态效果均须有据：仅可将上下文叙事中已明确描述的环境要素（沙尘入眼、热浪灼烧、松软地面失稳、碎石可用、断柱可借力等）转化为卡牌或状态效果，不得凭空引入场景中未出现的物件
+- ✅ 塞牌须有据：仅可将上下文叙事中已明确描述的环境要素（沙尘入眼、热浪灼烧、松软地面失稳、碎石可用、断柱可借力等）转化为卡牌，不得凭空引入场景中未出现的物件
 - ✅ 干预前先推断该物件当前状态（完好/部分损耗/已触发/已取走/仍可操作…），仅状态允许进一步交互时才可转化；若当前不可用，需在 `description` 中体现，并将对应卡牌的 `playable` 设为 `false`
-- ❌ 禁止：勇气、恐惧、神圣、复仇、祝福、诅咒等角色内在情绪或来源不明的魔法效果
-- 不滥用：若无明显可利用的环境要素，**必须输出空数组**；状态效果与卡牌可同时施加于同一目标
+- ❌ 禁止：无中生有的卡牌（即与环境交互无关、纯粹基于角色内在情绪/能力的卡牌）
+- 不滥用：若无明显可利用的环境要素，**必须输出空数组**
 - 塞牌字段（`inject_cards`）：`exhaust` 通常设为 `true`（一次性机遇，用后不再出现）；`cost` 由你自行判断，轻微动作（如随手投掷碎石）可设为 0，需专注/耗时的复杂互动可设为 1 或更高
-
-{build_status_effect_field_description()}
 
 {build_card_field_description()}
 
@@ -148,17 +142,6 @@ def _generate_stage_post_arbitration_prompt(
   "per_actor": [
     {{
       "target": "角色名称",
-      "add_effects": [
-        {{
-          "name": "沙尘入眼",
-          "description": "战斗搅起的沙尘钻入眼中，视线模糊，造成伤害减少",
-          "duration": 2,
-          "phase": "{PhaseType.ARBITRATION}",
-          "speed": 0,
-          "defense": 0,
-          "counter": 0
-        }}
-      ],
       "inject_cards": [
         {{
           "name": "碎柱投掷",
@@ -308,9 +291,6 @@ class PostArbitrationActionSystem(ReactiveProcessor):
                     raise ValueError(f"预验证阶段未发现目标角色: {directive.target}")
 
                 assert target_entity.has(
-                    StatusEffectsComponent
-                ), f"目标角色 {directive.target} 缺少 StatusEffectsComponent"
-                assert target_entity.has(
                     DiscardPileComponent
                 ), f"目标角色 {directive.target} 缺少 DiscardPileComponent"
 
@@ -341,21 +321,13 @@ class PostArbitrationActionSystem(ReactiveProcessor):
             ai_message=chat_client.response_ai_message,
         )
 
-        # 解析每个角色的指令，应用状态效果与塞牌
+        # 解析每个角色的指令，应用塞牌
         if response.per_actor:
             for directive in response.per_actor:
                 target_entity = self._game.get_entity_by_name(directive.target)
                 assert (
                     target_entity is not None
                 ), f"预验证阶段未发现目标角色: {directive.target}"
-
-                # 干预性：追加状态效果
-                if directive.add_effects:
-                    self._apply_status_effects(
-                        stage_entity,
-                        target_entity,
-                        add_effects=directive.add_effects,
-                    )
 
                 # 干预性：插牌
                 if directive.inject_cards:
@@ -366,41 +338,6 @@ class PostArbitrationActionSystem(ReactiveProcessor):
                     )
         else:
             logger.debug(f"[{stage_entity.name}] 仲裁后无干预指令")
-
-    #######################################################################################################################################
-    def _apply_status_effects(
-        self,
-        stage_entity: Entity,
-        target_entity: Entity,
-        add_effects: List[StatusEffect],
-    ) -> None:
-        """追加状态效果到目标实体，跳过已存在同名效果"""
-
-        for effect in add_effects:
-            effect.source = stage_entity.name
-
-        assert target_entity.has(
-            StatusEffectsComponent
-        ), f"目标角色 {target_entity.name} 缺少 StatusEffectsComponent"
-
-        effects_comp = target_entity.get(StatusEffectsComponent)
-        existing_effect_names = {e.name for e in effects_comp.status_effects}
-        new_effects = []
-        for effect in add_effects:
-            if effect.name in existing_effect_names:
-                logger.debug(
-                    f"[{stage_entity.name}] → [{target_entity.name}] "
-                    f'状态效果 "{effect.name}" 已存在，放弃追加'
-                )
-            else:
-                new_effects.append(effect)
-
-        if new_effects:
-            effects_comp.status_effects.extend(new_effects)
-            logger.debug(
-                f"[{stage_entity.name}] → [{target_entity.name}] "
-                f"追加 {len(new_effects)} 个状态效果"
-            )
 
     #######################################################################################################################################
     def _inject_cards(

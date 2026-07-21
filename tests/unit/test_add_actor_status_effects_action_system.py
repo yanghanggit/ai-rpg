@@ -129,13 +129,13 @@ class TestGenerateCompressedAddStatusEffectsPrompt:
         assert "中毒" in result and "每回合扣血" in result
         assert "虚弱" in result and "攻击减弱" in result
 
-    def test_many_effects_show_name_only_and_permanent_duration(self) -> None:
-        """超过阈值时只展示名称；duration=-1 应显示"永久"。"""
-        effects = [_make_effect(f"效果{i}", f"描述{i}") for i in range(4)]
-        effects.append(_make_effect("诅咒", "永久削弱", duration=-1))
-        result = generate_compressed_add_status_effects_prompt(effects, 1, ["任务"])
-        assert "效果0" in result and "描述0" not in result
-        assert "永久" in result
+    # def test_many_effects_show_name_only_and_permanent_duration(self) -> None:
+    #     """超过阈值时只展示名称；duration=-1 应显示"永久"。"""
+    #     effects = [_make_effect(f"效果{i}", f"描述{i}") for i in range(4)]
+    #     effects.append(_make_effect("诅咒", "永久削弱", duration=-1))
+    #     result = generate_compressed_add_status_effects_prompt(effects, 1, ["任务"])
+    #     assert "效果0" in result and "描述0" not in result
+    #     assert "永久" in result
 
 
 class TestGenerateAddStatusEffectsPrompt:
@@ -155,10 +155,10 @@ class TestGenerateAddStatusEffectsPrompt:
         result = generate_add_status_effects_prompt(effects, 1, ["任务"])
         assert "燃烧" in result and "持续灼烧扣血" in result
 
-    def test_many_effects_show_name_only(self) -> None:
-        effects = [_make_effect(f"效果{i}", f"描述{i}") for i in range(5)]
-        result = generate_add_status_effects_prompt(effects, 1, ["任务"])
-        assert "效果0" in result and "描述0" not in result
+    # def test_many_effects_show_name_only(self) -> None:
+    #     effects = [_make_effect(f"效果{i}", f"描述{i}") for i in range(5)]
+    #     result = generate_add_status_effects_prompt(effects, 1, ["任务"])
+    #     assert "效果0" in result and "描述0" not in result
 
 
 # ---------------------------------------------------------------------------

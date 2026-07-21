@@ -13,7 +13,7 @@ from src.ai_rpg.models import (
     StageComponent,
     StatusEffectsComponent,
 )
-from src.ai_rpg.models import Card, StatusEffect, PhaseType, AIMessage
+from src.ai_rpg.models import Card, AIMessage
 from src.ai_rpg.systems.post_arbitration_action_system import (
     ActorPostArbitrationDirective,
     PostArbitrationActionSystem,
@@ -45,24 +45,6 @@ def _make_stage_entity(context: Context, name: str) -> Entity:
     return entity
 
 
-def _make_effect(
-    name: str = "燃烧",
-    description: str = "持续灼烧",
-    duration: int = 2,
-    phase: PhaseType = PhaseType.ARBITRATION,
-    speed: int = 0,
-    defense: int = 0,
-) -> StatusEffect:
-    return StatusEffect(
-        name=name,
-        description=description,
-        duration=duration,
-        phase=phase,
-        speed=speed,
-        defense=defense,
-    )
-
-
 def _make_card(name: str = "斩击", damage_dealt: int = 3) -> Card:
     return Card(name=name, description="挥砍", damage_dealt=damage_dealt)
 
@@ -91,25 +73,14 @@ def _configure_lookup(mock_game: MagicMock, *entities: Entity) -> None:
 
 def _build_response_json(
     target: str,
-    effects: Optional[List[StatusEffect]] = None,
     cards: Optional[List[Card]] = None,
 ) -> str:
     """构建标准的 StagePostArbitrationResponse JSON 字符串。"""
     import json
 
     directives: List[Dict[str, object]] = []
-    if effects or cards:
+    if cards:
         d: Dict[str, object] = {"target": target}
-        d["add_effects"] = [
-            {
-                "name": e.name,
-                "description": e.description,
-                "duration": e.duration,
-                "phase": str(e.phase),
-                "speed": e.speed,
-            }
-            for e in (effects or [])
-        ]
         d["inject_cards"] = [
             {
                 "name": c.name,
@@ -118,7 +89,7 @@ def _build_response_json(
                 "hit_count": c.hit_count,
                 "target_type": str(c.target_type),
             }
-            for c in (cards or [])
+            for c in cards
         ]
         directives.append(d)
 
@@ -170,140 +141,6 @@ class TestFmtDuration:
 # ---------------------------------------------------------------------------
 # Phase 2 — 系统方法
 # ---------------------------------------------------------------------------
-
-
-class TestApplyStatusEffects:
-    """`PostArbitrationActionSystem._apply_status_effects` 的单元测试。"""
-
-    def test_new_effect_appended(
-        self,
-        context: Context,
-        mock_game: MagicMock,
-        system: PostArbitrationActionSystem,
-    ) -> None:
-        stage = _make_stage_entity(context, "暗黑地下城")
-        target = _make_actor_entity(context, "英雄")
-        directive = ActorPostArbitrationDirective(
-            target="英雄", add_effects=[_make_effect("燃烧")]
-        )
-
-        system._apply_status_effects(stage, target, directive.add_effects)
-
-        effects = target.get(StatusEffectsComponent).status_effects
-        assert len(effects) == 1
-        assert effects[0].name == "燃烧"
-
-    def test_duplicate_name_skipped(
-        self,
-        context: Context,
-        mock_game: MagicMock,
-        system: PostArbitrationActionSystem,
-    ) -> None:
-        stage = _make_stage_entity(context, "地下城")
-        target = _make_actor_entity(context, "英雄")
-        # 预先放一个同名效果
-        target.get(StatusEffectsComponent).status_effects.append(_make_effect("燃烧"))
-
-        directive = ActorPostArbitrationDirective(
-            target="英雄", add_effects=[_make_effect("燃烧")]
-        )
-        system._apply_status_effects(stage, target, directive.add_effects)
-
-        # 依然只有 1 个
-        assert len(target.get(StatusEffectsComponent).status_effects) == 1
-
-    def test_source_set_to_stage_entity_name(
-        self,
-        context: Context,
-        mock_game: MagicMock,
-        system: PostArbitrationActionSystem,
-    ) -> None:
-        stage = _make_stage_entity(context, "石牢")
-        target = _make_actor_entity(context, "战士")
-        directive = ActorPostArbitrationDirective(
-            target="战士", add_effects=[_make_effect("中毒")]
-        )
-
-        system._apply_status_effects(stage, target, directive.add_effects)
-
-        effects = target.get(StatusEffectsComponent).status_effects
-        assert effects[0].source == "石牢"
-
-    def test_multiple_effects_partial_dedup(
-        self,
-        context: Context,
-        mock_game: MagicMock,
-        system: PostArbitrationActionSystem,
-    ) -> None:
-        """2 个 effect，1 个同名已存在 → 只追加 1 个。"""
-        stage = _make_stage_entity(context, "地下城")
-        target = _make_actor_entity(context, "法师")
-        target.get(StatusEffectsComponent).status_effects.append(_make_effect("燃烧"))
-
-        directive = ActorPostArbitrationDirective(
-            target="法师",
-            add_effects=[_make_effect("燃烧"), _make_effect("冰冻")],
-        )
-        system._apply_status_effects(stage, target, directive.add_effects)
-
-        names = [e.name for e in target.get(StatusEffectsComponent).status_effects]
-        assert names.count("燃烧") == 1
-        assert "冰冻" in names
-
-    def test_speed_99_clamped_by_field_validator(
-        self,
-        context: Context,
-        mock_game: MagicMock,
-        system: PostArbitrationActionSystem,
-    ) -> None:
-        """speed=99 构造 StatusEffect 时 field_validator 应归一化为 1。"""
-        stage = _make_stage_entity(context, "地下城")
-        target = _make_actor_entity(context, "盗贼")
-        # field_validator 在 StatusEffect 构造时触发
-        directive = ActorPostArbitrationDirective(
-            target="盗贼",
-            add_effects=[_make_effect("疾风", speed=99)],
-        )
-        system._apply_status_effects(stage, target, directive.add_effects)
-
-        effects = target.get(StatusEffectsComponent).status_effects
-        assert effects[0].speed == 1
-
-    def test_defense_positive_stored(
-        self,
-        context: Context,
-        mock_game: MagicMock,
-        system: PostArbitrationActionSystem,
-    ) -> None:
-        """defense=3 构造 StatusEffect 时应原值保留（无 clamp）。"""
-        stage = _make_stage_entity(context, "地下城")
-        target = _make_actor_entity(context, "骑士")
-        directive = ActorPostArbitrationDirective(
-            target="骑士",
-            add_effects=[_make_effect("沙土护身", defense=3)],
-        )
-        system._apply_status_effects(stage, target, directive.add_effects)
-
-        effects = target.get(StatusEffectsComponent).status_effects
-        assert effects[0].defense == 3
-
-    def test_defense_negative_stored(
-        self,
-        context: Context,
-        mock_game: MagicMock,
-        system: PostArbitrationActionSystem,
-    ) -> None:
-        """defense=-2 构造 StatusEffect 时应原值保留（无 clamp）。"""
-        stage = _make_stage_entity(context, "地下城")
-        target = _make_actor_entity(context, "弓手")
-        directive = ActorPostArbitrationDirective(
-            target="弓手",
-            add_effects=[_make_effect("破甲", defense=-2)],
-        )
-        system._apply_status_effects(stage, target, directive.add_effects)
-
-        effects = target.get(StatusEffectsComponent).status_effects
-        assert effects[0].defense == -2
 
 
 class TestInjectCards:
@@ -395,14 +232,12 @@ class TestApplyResponse:
 
         response_json = _build_response_json(
             "英雄",
-            effects=[_make_effect("燃烧")],
             cards=[_make_card("碎石投掷")],
         )
         client = _make_mock_chat_client("地下城", response_json)
 
         system._apply_response(client)
 
-        assert len(target.get(StatusEffectsComponent).status_effects) == 1
         assert len(target.get(DiscardPileComponent).cards) == 1
 
     def test_empty_per_actor_no_change(
@@ -432,7 +267,7 @@ class TestApplyResponse:
         _configure_lookup(mock_game, stage)
 
         response_json = _build_response_json(
-            "不存在的角色", effects=[_make_effect("燃烧")]
+            "不存在的角色", cards=[_make_card("碎石投掷")]
         )
         client = _make_mock_chat_client("地下城", response_json)
 

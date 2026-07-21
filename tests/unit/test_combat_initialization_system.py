@@ -9,6 +9,7 @@ from src.ai_rpg.entitas.entity import Entity
 from src.ai_rpg.game.dbg_game import DBGGame
 from src.ai_rpg.models import (
     ActorComponent,
+    AddStatusEffectsAction,
     AIMessage,
     AppearanceComponent,
     CharacterStatsComponent,
@@ -18,7 +19,6 @@ from src.ai_rpg.models import (
     ExhaustPileComponent,
     MonsterComponent,
     PartyMemberComponent,
-    PostArbitrationAction,
     StageComponent,
     StatusEffectsComponent,
 )
@@ -72,6 +72,12 @@ def _make_mock_chat_client(response_json: str) -> MagicMock:
     client.response_ai_message = AIMessage(content=response_json)
     client.chat = AsyncMock()
     return client
+
+
+def _configure_lookup(mock_game: MagicMock, *entities: Entity) -> None:
+    """配置 mock_game.get_entity_by_name 按名称返回对应实体，未匹配时返回 None。"""
+    lookup = {e.name: e for e in entities}
+    mock_game.get_entity_by_name.side_effect = lambda name: lookup.get(name)
 
 
 # ---------------------------------------------------------------------------
@@ -159,61 +165,95 @@ def test_initialize_piles_and_status_effects_adds_empty_status_effects(
 
 
 # ---------------------------------------------------------------------------
-# _evaluate_stage_post_arbitration
+# _evaluate_combat_init_status_effects
 # ---------------------------------------------------------------------------
 
 
-class TestEvaluateStagePostArbitration:
-    """`CombatInitializationSystem._evaluate_stage_post_arbitration` 的单元测试。"""
+class TestEvaluateCombatInitStatusEffects:
+    """`CombatInitializationSystem._evaluate_combat_init_status_effects` 的单元测试。"""
 
     @pytest.mark.asyncio
-    async def test_non_empty_summary_attaches_post_arbitration_action(
+    async def test_non_empty_task_hints_accumulates_add_status_effects_action(
         self,
         context: Context,
         mock_game: MagicMock,
         system: CombatInitializationSystem,
     ) -> None:
         stage = _make_stage_entity(context, "地下城")
-        client = _make_mock_chat_client('{"interaction_summary": "浓烟弥漫，可致眼盲"}')
+        actor = _make_actor(context, "勇者", is_ally=True)
+        _configure_lookup(mock_game, stage, actor)
+        client = _make_mock_chat_client(
+            '{"task_hints": {"勇者": ["[场景] 浓烟弥漫，可致眼盲"]}}'
+        )
 
         with patch(
             "src.ai_rpg.systems.combat_initialization_system.DeepSeekClient",
             return_value=client,
         ):
-            await system._evaluate_stage_post_arbitration(
+            await system._evaluate_combat_init_status_effects(
                 stage_entity=stage,
-                actor_entities=set(),
+                actor_entities={actor},
                 stage_name="地下城",
                 stage_description="浓烟弥漫的地下城",
             )
 
-        assert stage.has(PostArbitrationAction)
-        assert (
-            stage.get(PostArbitrationAction).interaction_summary == "浓烟弥漫，可致眼盲"
-        )
+        assert actor.has(AddStatusEffectsAction)
+        assert actor.get(AddStatusEffectsAction).task_hints == [
+            "[场景] 浓烟弥漫，可致眼盲"
+        ]
 
     @pytest.mark.asyncio
-    async def test_empty_summary_no_action_attached(
+    async def test_empty_task_hints_no_action_attached(
         self,
         context: Context,
         mock_game: MagicMock,
         system: CombatInitializationSystem,
     ) -> None:
         stage = _make_stage_entity(context, "地下城")
-        client = _make_mock_chat_client('{"interaction_summary": ""}')
+        actor = _make_actor(context, "勇者", is_ally=True)
+        _configure_lookup(mock_game, stage, actor)
+        client = _make_mock_chat_client('{"task_hints": {}}')
 
         with patch(
             "src.ai_rpg.systems.combat_initialization_system.DeepSeekClient",
             return_value=client,
         ):
-            await system._evaluate_stage_post_arbitration(
+            await system._evaluate_combat_init_status_effects(
                 stage_entity=stage,
-                actor_entities=set(),
+                actor_entities={actor},
                 stage_name="地下城",
                 stage_description="平静的地下城",
             )
 
-        assert not stage.has(PostArbitrationAction)
+        assert not actor.has(AddStatusEffectsAction)
+
+    @pytest.mark.asyncio
+    async def test_unknown_actor_name_handled_gracefully(
+        self,
+        context: Context,
+        mock_game: MagicMock,
+        system: CombatInitializationSystem,
+    ) -> None:
+        stage = _make_stage_entity(context, "地下城")
+        actor = _make_actor(context, "勇者", is_ally=True)
+        _configure_lookup(mock_game, stage)  # 注意：不注册 actor，模拟未知角色
+        client = _make_mock_chat_client(
+            '{"task_hints": {"勇者": ["[场景] 浓烟弥漫，可致眼盲"]}}'
+        )
+
+        with patch(
+            "src.ai_rpg.systems.combat_initialization_system.DeepSeekClient",
+            return_value=client,
+        ):
+            # 不应抛出异常
+            await system._evaluate_combat_init_status_effects(
+                stage_entity=stage,
+                actor_entities={actor},
+                stage_name="地下城",
+                stage_description="浓烟弥漫的地下城",
+            )
+
+        assert not actor.has(AddStatusEffectsAction)
 
     @pytest.mark.asyncio
     async def test_malformed_response_handled_gracefully(
@@ -223,20 +263,22 @@ class TestEvaluateStagePostArbitration:
         system: CombatInitializationSystem,
     ) -> None:
         stage = _make_stage_entity(context, "地下城")
+        actor = _make_actor(context, "勇者", is_ally=True)
+        _configure_lookup(mock_game, stage, actor)
         client = _make_mock_chat_client("not a json")
 
         with patch(
             "src.ai_rpg.systems.combat_initialization_system.DeepSeekClient",
             return_value=client,
         ):
-            await system._evaluate_stage_post_arbitration(
+            await system._evaluate_combat_init_status_effects(
                 stage_entity=stage,
-                actor_entities=set(),
+                actor_entities={actor},
                 stage_name="地下城",
                 stage_description="平静的地下城",
             )
 
-        assert not stage.has(PostArbitrationAction)
+        assert not actor.has(AddStatusEffectsAction)
 
     @pytest.mark.asyncio
     async def test_none_response_ai_message_handled_gracefully(
@@ -246,6 +288,8 @@ class TestEvaluateStagePostArbitration:
         system: CombatInitializationSystem,
     ) -> None:
         stage = _make_stage_entity(context, "地下城")
+        actor = _make_actor(context, "勇者", is_ally=True)
+        _configure_lookup(mock_game, stage, actor)
         client = _make_mock_chat_client("")
         client.response_ai_message = None
 
@@ -253,14 +297,14 @@ class TestEvaluateStagePostArbitration:
             "src.ai_rpg.systems.combat_initialization_system.DeepSeekClient",
             return_value=client,
         ):
-            await system._evaluate_stage_post_arbitration(
+            await system._evaluate_combat_init_status_effects(
                 stage_entity=stage,
-                actor_entities=set(),
+                actor_entities={actor},
                 stage_name="地下城",
                 stage_description="平静的地下城",
             )
 
-        assert not stage.has(PostArbitrationAction)
+        assert not actor.has(AddStatusEffectsAction)
 
     @pytest.mark.asyncio
     async def test_chat_exception_handled_gracefully(
@@ -270,6 +314,8 @@ class TestEvaluateStagePostArbitration:
         system: CombatInitializationSystem,
     ) -> None:
         stage = _make_stage_entity(context, "地下城")
+        actor = _make_actor(context, "勇者", is_ally=True)
+        _configure_lookup(mock_game, stage, actor)
         client = _make_mock_chat_client("")
         client.chat = AsyncMock(side_effect=RuntimeError("boom"))
 
@@ -277,11 +323,11 @@ class TestEvaluateStagePostArbitration:
             "src.ai_rpg.systems.combat_initialization_system.DeepSeekClient",
             return_value=client,
         ):
-            await system._evaluate_stage_post_arbitration(
+            await system._evaluate_combat_init_status_effects(
                 stage_entity=stage,
-                actor_entities=set(),
+                actor_entities={actor},
                 stage_name="地下城",
                 stage_description="平静的地下城",
             )
 
-        assert not stage.has(PostArbitrationAction)
+        assert not actor.has(AddStatusEffectsAction)

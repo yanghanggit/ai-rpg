@@ -13,6 +13,7 @@ from ..game.dbg_combat_processor import (
     collect_target_character_stats,
     collect_target_gear_modifiers,
     compute_character_stats,
+    get_alive_actors_in_stage,
     get_gear_modifiers,
     get_gear_on_hit_affixes,
     get_status_effects_by_phase,
@@ -114,6 +115,14 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
         # 获取出牌实体的装备附加属性，用于生成仲裁提示
         actor_gear_modifiers: List[str] = get_gear_modifiers(actor_entity)
 
+        # 获取场内其余存活角色名单（排除出牌者与本次目标），供场景状态效果 task_hints 分配
+        alive_actor_names = {
+            entity.name
+            for entity in get_alive_actors_in_stage(self._game, actor_entity)
+        }
+        excluded_actor_names = set(target_stats.keys()) | {actor_entity.name}
+        other_alive_actor_names = sorted(alive_actor_names - excluded_actor_names)
+
         # 获取当前回合数，用于仲裁提示生成
         current_round_number = len(self._game.current_combat_room.combat.rounds or [])
 
@@ -129,6 +138,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             target_arbitration_effects,
             actor_gear_modifiers,
             target_gear_modifiers,
+            other_alive_actor_names,
         )
 
         # 生成压缩后的仲裁提示消息，用于在需要时向 LLM 提供更简洁的上下文信息
@@ -214,6 +224,15 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                 if self._game.get_entity_by_name(entity_name) is None:
                     raise ValueError(
                         f"final_stats 中的实体不存在于游戏中: {entity_name}"
+                    )
+
+            for (
+                hint_target_name,
+                hints,
+            ) in format_response.post_arbitration_task_hints.items():
+                if self._game.get_entity_by_name(hint_target_name) is None:
+                    raise ValueError(
+                        f"post_arbitration_task_hints 中的实体不存在于游戏中: {hint_target_name}"
                     )
 
         except Exception as e:
@@ -347,6 +366,23 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                 PostArbitrationAction,
                 stage_entity.name,
                 format_response.post_arbitration_interaction_summary,
+            )
+
+        # 如果仲裁结果输出了场景状态效果 task_hints（post_arbitration_task_hints 非空），则直接为受影响角色追加 AddStatusEffectsAction，
+        # 与 card_affixes/gear_on_hit_affixes 同一 tick 内合并，统一交由 AddStatusEffectsActionSystem 处理。
+        for (
+            hint_target_name,
+            hints,
+        ) in format_response.post_arbitration_task_hints.items():
+            if not hints:
+                continue
+            hint_target_entity = self._game.get_entity_by_name(hint_target_name)
+            assert (
+                hint_target_entity is not None
+            ), f"无法找到 post_arbitration_task_hints 中的实体: {hint_target_name}"
+            accumulate_status_effects_action(hint_target_entity, hints)
+            logger.debug(
+                f"[{hint_target_name}] 场景交互后追加 {len(hints)} 条 AddStatusEffectsAction task_hints"
             )
 
     #######################################################################################################################################

@@ -12,6 +12,7 @@ from ..game.dbg_combat_processor import (
     collect_target_arbitration_effects,
     collect_target_character_stats,
     compute_character_stats,
+    get_alive_actors_in_stage,
     set_character_hp,
 )
 from ..game.dbg_combat_processor import process_zero_health_entities
@@ -20,6 +21,7 @@ from ..models import (
     CharacterStatsComponent,
     CombatArbitrationEvent,
     HumanMessage,
+    PostArbitrationAction,
 )
 from ..utils import extract_json_from_code_block
 from .arbitration_prompt_builders import (
@@ -80,12 +82,21 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
         # 获取当前回合的回合数，用于生成仲裁提示和与 LLM 交互
         current_round_number = len(self._game.current_combat_room.combat.rounds or [])
 
+        # 获取场内其余存活角色名单（排除使用者与本次目标），供场景状态效果 task_hints 分配
+        alive_actor_names = {
+            entity.name
+            for entity in get_alive_actors_in_stage(self._game, actor_entity)
+        }
+        excluded_actor_names = set(target_stats.keys()) | {actor_entity.name}
+        other_alive_actor_names = sorted(alive_actor_names - excluded_actor_names)
+
         # 生成装备仲裁提示消息，包括使用装备动作、目标实体的状态效果、当前回合数等信息
         message = generate_gear_arbitration_prompt(
             item=action.item,
             target_stats=target_stats,
             current_round_number=current_round_number,
             target_arbitration_effects=target_arbitration_effects,
+            other_alive_actor_names=other_alive_actor_names,
         )
 
         # 生成压缩后的装备仲裁提示消息，用于在需要时向 LLM 提供更简洁的上下文信息
@@ -162,6 +173,13 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
                 if self._game.get_entity_by_name(entity_name) is None:
                     raise ValueError(
                         f"final_stats 中的实体不存在于游戏中: {entity_name}"
+                    )
+
+            # 验证 post_arbitration_task_hints 中的实体是否都存在于游戏中，确保仲裁结果的有效性
+            for hint_target_name, _ in response.post_arbitration_task_hints.items():
+                if self._game.get_entity_by_name(hint_target_name) is None:
+                    raise ValueError(
+                        f"post_arbitration_task_hints 中的实体不存在于游戏中: {hint_target_name}"
                     )
 
         except Exception as e:
@@ -255,3 +273,27 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
                 # 将任务提示应用为状态效果，确保这些效果在后续的游戏逻辑中能够被正确处理
                 accumulate_status_effects_action(entity, task_hints)
                 logger.debug(f"[{entity_name}] 装备仲裁后添加 AddStatusEffectsAction")
+
+        # 根据 response.post_arbitration_interaction_summary 决定是否触发 PostArbitrationAction（与卡牌/消耗品仲裁行为对齐）
+        if response.post_arbitration_interaction_summary:
+            logger.debug(
+                f"仲裁结果 post_arbitration_interaction_summary 非空，触发 PostArbitrationAction: {response.post_arbitration_interaction_summary}"
+            )
+            stage_entity.replace(
+                PostArbitrationAction,
+                stage_entity.name,
+                response.post_arbitration_interaction_summary,
+            )
+
+        # 根据 response.post_arbitration_task_hints 直接为受影响角色追加 AddStatusEffectsAction
+        for hint_target_name, hints in response.post_arbitration_task_hints.items():
+            if not hints:
+                continue
+            hint_target_entity = self._game.get_entity_by_name(hint_target_name)
+            assert (
+                hint_target_entity is not None
+            ), f"无法找到 post_arbitration_task_hints 中的实体: {hint_target_name}"
+            accumulate_status_effects_action(hint_target_entity, hints)
+            logger.debug(
+                f"[{hint_target_name}] 场景交互后追加 {len(hints)} 条 AddStatusEffectsAction task_hints"
+            )

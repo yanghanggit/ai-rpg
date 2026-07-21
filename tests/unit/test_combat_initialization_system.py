@@ -1,6 +1,6 @@
 """CombatInitializationSystem 单元测试。"""
 
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -9,13 +9,17 @@ from src.ai_rpg.entitas.entity import Entity
 from src.ai_rpg.game.dbg_game import DBGGame
 from src.ai_rpg.models import (
     ActorComponent,
+    AIMessage,
     AppearanceComponent,
     CharacterStatsComponent,
     DiscardPileComponent,
     DrawPileComponent,
+    DungeonComponent,
     ExhaustPileComponent,
     MonsterComponent,
     PartyMemberComponent,
+    PostArbitrationAction,
+    StageComponent,
     StatusEffectsComponent,
 )
 from src.ai_rpg.models.stats import CharacterStats
@@ -50,6 +54,24 @@ def _make_actor(
     if is_monster:
         entity.add(MonsterComponent, name)
     return entity
+
+
+def _make_stage_entity(context: Context, name: str) -> Entity:
+    entity = context.create_entity()
+    entity._name = name
+    entity.add(StageComponent, name, "test_stage_sheet")
+    entity.add(DungeonComponent, name)
+    return entity
+
+
+def _make_mock_chat_client(response_json: str) -> MagicMock:
+    client = MagicMock()
+    client.prompt = "full prompt"
+    client.compressed_prompt = "compressed prompt"
+    client.response_content = response_json
+    client.response_ai_message = AIMessage(content=response_json)
+    client.chat = AsyncMock()
+    return client
 
 
 # ---------------------------------------------------------------------------
@@ -110,15 +132,15 @@ def test_generate_combat_init_prompt_contains_key_fields() -> None:
 
 
 # ---------------------------------------------------------------------------
-# _initialize_piles
+# _initialize_piles_and_status_effects
 # ---------------------------------------------------------------------------
 
 
-def test_initialize_piles_adds_all_three_piles(
+def test_initialize_piles_and_status_effects_adds_all_piles(
     context: Context, system: CombatInitializationSystem
 ) -> None:
     actor = _make_actor(context, "勇者", is_ally=True)
-    system._initialize_piles({actor})
+    system._initialize_piles_and_status_effects({actor})
 
     assert actor.has(DrawPileComponent)
     assert actor.has(DiscardPileComponent)
@@ -126,16 +148,140 @@ def test_initialize_piles_adds_all_three_piles(
     assert actor.get(DrawPileComponent).cards == []
 
 
-# ---------------------------------------------------------------------------
-# _initialize_status_effects
-# ---------------------------------------------------------------------------
-
-
-def test_initialize_status_effects_adds_empty_component(
+def test_initialize_piles_and_status_effects_adds_empty_status_effects(
     context: Context, system: CombatInitializationSystem
 ) -> None:
     actor = _make_actor(context, "勇者", is_ally=True)
-    system._initialize_status_effects({actor})
+    system._initialize_piles_and_status_effects({actor})
 
     assert actor.has(StatusEffectsComponent)
     assert actor.get(StatusEffectsComponent).status_effects == []
+
+
+# ---------------------------------------------------------------------------
+# _evaluate_stage_post_arbitration
+# ---------------------------------------------------------------------------
+
+
+class TestEvaluateStagePostArbitration:
+    """`CombatInitializationSystem._evaluate_stage_post_arbitration` 的单元测试。"""
+
+    @pytest.mark.asyncio
+    async def test_non_empty_summary_attaches_post_arbitration_action(
+        self,
+        context: Context,
+        mock_game: MagicMock,
+        system: CombatInitializationSystem,
+    ) -> None:
+        stage = _make_stage_entity(context, "地下城")
+        client = _make_mock_chat_client('{"interaction_summary": "浓烟弥漫，可致眼盲"}')
+
+        with patch(
+            "src.ai_rpg.systems.combat_initialization_system.DeepSeekClient",
+            return_value=client,
+        ):
+            await system._evaluate_stage_post_arbitration(
+                stage_entity=stage,
+                actor_entities=set(),
+                stage_name="地下城",
+                stage_description="浓烟弥漫的地下城",
+            )
+
+        assert stage.has(PostArbitrationAction)
+        assert (
+            stage.get(PostArbitrationAction).interaction_summary == "浓烟弥漫，可致眼盲"
+        )
+
+    @pytest.mark.asyncio
+    async def test_empty_summary_no_action_attached(
+        self,
+        context: Context,
+        mock_game: MagicMock,
+        system: CombatInitializationSystem,
+    ) -> None:
+        stage = _make_stage_entity(context, "地下城")
+        client = _make_mock_chat_client('{"interaction_summary": ""}')
+
+        with patch(
+            "src.ai_rpg.systems.combat_initialization_system.DeepSeekClient",
+            return_value=client,
+        ):
+            await system._evaluate_stage_post_arbitration(
+                stage_entity=stage,
+                actor_entities=set(),
+                stage_name="地下城",
+                stage_description="平静的地下城",
+            )
+
+        assert not stage.has(PostArbitrationAction)
+
+    @pytest.mark.asyncio
+    async def test_malformed_response_handled_gracefully(
+        self,
+        context: Context,
+        mock_game: MagicMock,
+        system: CombatInitializationSystem,
+    ) -> None:
+        stage = _make_stage_entity(context, "地下城")
+        client = _make_mock_chat_client("not a json")
+
+        with patch(
+            "src.ai_rpg.systems.combat_initialization_system.DeepSeekClient",
+            return_value=client,
+        ):
+            await system._evaluate_stage_post_arbitration(
+                stage_entity=stage,
+                actor_entities=set(),
+                stage_name="地下城",
+                stage_description="平静的地下城",
+            )
+
+        assert not stage.has(PostArbitrationAction)
+
+    @pytest.mark.asyncio
+    async def test_none_response_ai_message_handled_gracefully(
+        self,
+        context: Context,
+        mock_game: MagicMock,
+        system: CombatInitializationSystem,
+    ) -> None:
+        stage = _make_stage_entity(context, "地下城")
+        client = _make_mock_chat_client("")
+        client.response_ai_message = None
+
+        with patch(
+            "src.ai_rpg.systems.combat_initialization_system.DeepSeekClient",
+            return_value=client,
+        ):
+            await system._evaluate_stage_post_arbitration(
+                stage_entity=stage,
+                actor_entities=set(),
+                stage_name="地下城",
+                stage_description="平静的地下城",
+            )
+
+        assert not stage.has(PostArbitrationAction)
+
+    @pytest.mark.asyncio
+    async def test_chat_exception_handled_gracefully(
+        self,
+        context: Context,
+        mock_game: MagicMock,
+        system: CombatInitializationSystem,
+    ) -> None:
+        stage = _make_stage_entity(context, "地下城")
+        client = _make_mock_chat_client("")
+        client.chat = AsyncMock(side_effect=RuntimeError("boom"))
+
+        with patch(
+            "src.ai_rpg.systems.combat_initialization_system.DeepSeekClient",
+            return_value=client,
+        ):
+            await system._evaluate_stage_post_arbitration(
+                stage_entity=stage,
+                actor_entities=set(),
+                stage_name="地下城",
+                stage_description="平静的地下城",
+            )
+
+        assert not stage.has(PostArbitrationAction)

@@ -14,7 +14,7 @@ from ..models import (
     TargetType,
     CharacterStatsComponent,
     DungeonComponent,
-    HandComponent,
+    DiscardPileComponent,
     HumanMessage,
     StageComponent,
     PostArbitrationAction,
@@ -35,7 +35,7 @@ class ActorPostArbitrationDirective(BaseModel):
 
     target: str  # 目标角色名称
     add_effects: List[StatusEffect] = []  # 追加的状态效果
-    inject_cards: List[Card] = []  # 注入到手牌的卡牌
+    inject_cards: List[Card] = []  # 注入到弃牌堆的卡牌
 
 
 #######################################################################################################################################
@@ -59,7 +59,6 @@ def _build_actors_summary(actor_entities: Set[Entity]) -> str:
         assert entity.has(
             StatusEffectsComponent
         ), f"角色 {entity.name} 缺少 StatusEffectsComponent"
-        assert entity.has(HandComponent), f"角色 {entity.name} 缺少 HandComponent"
 
         final_stats = compute_character_stats(entity)
 
@@ -312,8 +311,8 @@ class PostArbitrationActionSystem(ReactiveProcessor):
                     StatusEffectsComponent
                 ), f"目标角色 {directive.target} 缺少 StatusEffectsComponent"
                 assert target_entity.has(
-                    HandComponent
-                ), f"目标角色 {directive.target} 缺少 HandComponent"
+                    DiscardPileComponent
+                ), f"目标角色 {directive.target} 缺少 DiscardPileComponent"
 
         except Exception as e:
             logger.error(f"[{stage_entity.name}] 解析仲裁后干预响应失败: {e}")
@@ -410,23 +409,23 @@ class PostArbitrationActionSystem(ReactiveProcessor):
         target_entity: Entity,
         inject_cards: List[Card],
     ) -> None:
-        """向目标实体手牌注入卡牌，跳过已存在同名卡牌"""
+        """向目标实体弃牌堆注入卡牌，跳过已存在同名卡牌"""
 
         assert target_entity.has(
-            HandComponent
-        ), f"目标角色 {target_entity.name} 缺少 HandComponent"
+            DiscardPileComponent
+        ), f"目标角色 {target_entity.name} 缺少 DiscardPileComponent"
 
-        hand_comp = target_entity.get(HandComponent)
+        discard_pile_comp = target_entity.get(DiscardPileComponent)
         for card in inject_cards:
             card.source = stage_entity.name
 
-        existing_card_names = {c.name for c in hand_comp.cards}
+        existing_card_names = {c.name for c in discard_pile_comp.cards}
         new_cards = []
         for card in inject_cards:
             if card.name in existing_card_names:
                 logger.debug(
                     f"[{stage_entity.name}] → [{target_entity.name}] "
-                    f'卡牌 "{card.name}" 已在手牌中，放弃塞入'
+                    f'卡牌 "{card.name}" 已在弃牌堆中，放弃塞入'
                 )
             else:
                 new_cards.append(card)
@@ -434,11 +433,11 @@ class PostArbitrationActionSystem(ReactiveProcessor):
         if not new_cards:
             return
 
-        # 将新的卡牌追加到手牌中
-        hand_comp.cards = hand_comp.cards + new_cards
+        # 将新的卡牌追加到弃牌堆中
+        discard_pile_comp.cards = discard_pile_comp.cards + new_cards
         logger.debug(
             f"[{stage_entity.name}] → [{target_entity.name}] "
-            f"塞入 {len(new_cards)} 张卡牌"
+            f"塞入 {len(new_cards)} 张卡牌至弃牌堆"
         )
 
 

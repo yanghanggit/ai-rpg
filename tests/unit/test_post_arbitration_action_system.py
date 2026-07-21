@@ -8,7 +8,7 @@ from src.ai_rpg.game.dbg_game import DBGGame
 from src.ai_rpg.models import (
     ActorComponent,
     DungeonComponent,
-    HandComponent,
+    DiscardPileComponent,
     PostArbitrationAction,
     StageComponent,
     StatusEffectsComponent,
@@ -32,7 +32,7 @@ def _make_actor_entity(context: Context, name: str) -> Entity:
     entity._name = name
     entity.add(ActorComponent, name, "test_sheet", "test_stage")
     entity.add(StatusEffectsComponent, name, [])
-    entity.add(HandComponent, name, [])
+    entity.add(DiscardPileComponent, name, [])
     return entity
 
 
@@ -309,7 +309,7 @@ class TestApplyStatusEffects:
 class TestInjectCards:
     """`PostArbitrationActionSystem._inject_cards` 的单元测试。"""
 
-    def test_card_appended_to_hand(
+    def test_card_appended_to_discard_pile(
         self,
         context: Context,
         mock_game: MagicMock,
@@ -323,7 +323,7 @@ class TestInjectCards:
 
         system._inject_cards(stage, target, directive.inject_cards)
 
-        cards = target.get(HandComponent).cards
+        cards = target.get(DiscardPileComponent).cards
         assert len(cards) == 1
         assert cards[0].name == "斩击"
 
@@ -335,14 +335,14 @@ class TestInjectCards:
     ) -> None:
         stage = _make_stage_entity(context, "地下城")
         target = _make_actor_entity(context, "英雄")
-        target.get(HandComponent).cards = [_make_card("斩击")]
+        target.get(DiscardPileComponent).cards = [_make_card("斩击")]
 
         directive = ActorPostArbitrationDirective(
             target="英雄", inject_cards=[_make_card("斩击")]
         )
         system._inject_cards(stage, target, directive.inject_cards)
 
-        assert len(target.get(HandComponent).cards) == 1
+        assert len(target.get(DiscardPileComponent).cards) == 1
 
     def test_source_set_to_stage_name(
         self,
@@ -358,10 +358,10 @@ class TestInjectCards:
 
         system._inject_cards(stage, target, directive.inject_cards)
 
-        cards = target.get(HandComponent).cards
+        cards = target.get(DiscardPileComponent).cards
         assert cards[0].source == "熔岩洞穴"
 
-    def test_no_new_cards_hand_unchanged(
+    def test_no_new_cards_discard_pile_unchanged(
         self,
         context: Context,
         mock_game: MagicMock,
@@ -370,14 +370,14 @@ class TestInjectCards:
         stage = _make_stage_entity(context, "地下城")
         target = _make_actor_entity(context, "法师")
         existing = _make_card("火球")
-        target.get(HandComponent).cards = [existing]
+        target.get(DiscardPileComponent).cards = [existing]
 
         directive = ActorPostArbitrationDirective(
             target="法师", inject_cards=[_make_card("火球")]
         )
         system._inject_cards(stage, target, directive.inject_cards)
 
-        assert len(target.get(HandComponent).cards) == 1
+        assert len(target.get(DiscardPileComponent).cards) == 1
 
 
 class TestApplyResponse:
@@ -403,7 +403,7 @@ class TestApplyResponse:
         system._apply_response(client)
 
         assert len(target.get(StatusEffectsComponent).status_effects) == 1
-        assert len(target.get(HandComponent).cards) == 1
+        assert len(target.get(DiscardPileComponent).cards) == 1
 
     def test_empty_per_actor_no_change(
         self,
@@ -419,7 +419,7 @@ class TestApplyResponse:
         system._apply_response(client)
 
         assert target.get(StatusEffectsComponent).status_effects == []
-        assert target.get(HandComponent).cards == []
+        assert target.get(DiscardPileComponent).cards == []
 
     def test_unknown_target_logs_error_no_crash(
         self,

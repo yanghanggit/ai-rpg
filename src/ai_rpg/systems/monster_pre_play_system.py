@@ -18,8 +18,11 @@ from ..models import (
     PartyMemberComponent,
     Card,
     TargetType,
+    StatusEffect,
+    StatusEffectsComponent,
 )
 from ..utils import extract_json_from_code_block
+from .arbitration_prompt_builders import fmt_effects
 
 
 #######################################################################################################################################
@@ -36,6 +39,7 @@ class MonsterDecisionResponse(BaseModel):
 def _generate_monster_decision_prompt(
     monster_name: str,
     monster_stats: CharacterStats,
+    monster_status_effects: List[StatusEffect],
     hand_cards: List[Card],
     opponent_names: List[str],
     action_order: List[str],
@@ -47,6 +51,7 @@ def _generate_monster_decision_prompt(
     self_info = (
         f"HP:{stats.hp}/{stats.max_hp} | 攻击:{stats.attack} | 防御:{stats.defense}"
     )
+    status_effects_text = fmt_effects(monster_status_effects)
 
     cards_lines = "\n".join(
         f"- 【{c.name}】描述：{c.description}"
@@ -81,6 +86,10 @@ def _generate_monster_decision_prompt(
 ## 你的当前状态
 
 {self_info}
+
+## 你的当前状态效果
+
+{status_effects_text}
 
 ## 本回合行动序列
 
@@ -118,6 +127,7 @@ pass_turn 为 true 时表示跳过出牌，其他字段可省略"""
 def _generate_compressed_monster_decision_prompt(
     monster_name: str,
     monster_stats: CharacterStats,
+    monster_status_effects: List[StatusEffect],
     hand_cards: List[Card],
     opponent_names: List[str],
     action_order: List[str],
@@ -129,6 +139,7 @@ def _generate_compressed_monster_decision_prompt(
     self_info = (
         f"HP:{stats.hp}/{stats.max_hp} | 攻击:{stats.attack} | 防御:{stats.defense}"
     )
+    status_effects_text = fmt_effects(monster_status_effects)
 
     cards_lines = "\n".join(
         f"- 【{c.name}】描述：{c.description}"
@@ -160,6 +171,10 @@ def _generate_compressed_monster_decision_prompt(
 ## 你的当前状态
 
 {self_info}
+
+## 你的当前状态效果
+
+{status_effects_text}
 
 ## 本回合行动序列
 
@@ -218,10 +233,6 @@ class MonsterPrePlaySystem(ReactiveProcessor):
 
         logger.debug(f"MonsterPrePlaySystem: 为 {len(entities)} 个怪物进行出牌决策推理")
 
-        # 注入 context 引导（仅第一回合，强制过牌）
-        # current_round_number = len(self._game.current_dungeon.current_rounds or [])
-        # self._mock_inject_pass_turn_context(entities, current_round_number)
-
         # 为每个怪物创建推理 DeepSeekClient
         chat_clients: List[DeepSeekClient] = []
         for entity in entities:
@@ -249,7 +260,16 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         hand_comp = entity.get(HandComponent)
         assert hand_comp is not None, f"MonsterPrePlaySystem: HandComponent 不能为空"
 
+        # 计算怪物的当前战斗属性
         monster_stats = compute_character_stats(entity)
+
+        # 获取怪物自身当前状态效果，供决策 LLM 参考
+        assert entity.has(
+            StatusEffectsComponent
+        ), f"MonsterPrePlaySystem: 怪物 {entity.name} 缺少 StatusEffectsComponent"
+        monster_status_effects: List[StatusEffect] = entity.get(
+            StatusEffectsComponent
+        ).status_effects
 
         # 获取场上存活的远征队成员名称（对手，不传入血量）
         alive_actors = get_alive_actors_in_stage(self._game, entity)
@@ -269,6 +289,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         prompt = _generate_monster_decision_prompt(
             monster_name=entity.name,
             monster_stats=monster_stats,
+            monster_status_effects=monster_status_effects,
             hand_cards=hand_comp.cards,
             opponent_names=opponent_names,
             action_order=action_order,
@@ -279,6 +300,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         compressed_prompt = _generate_compressed_monster_decision_prompt(
             monster_name=entity.name,
             monster_stats=monster_stats,
+            monster_status_effects=monster_status_effects,
             hand_cards=hand_comp.cards,
             opponent_names=opponent_names,
             action_order=action_order,
@@ -292,21 +314,6 @@ class MonsterPrePlaySystem(ReactiveProcessor):
             context=self._game.get_agent_context(entity).context,
             compressed_prompt=compressed_prompt,
         )
-
-    ####################################################################################################################################
-    # def _mock_inject_pass_turn_context(
-    #     self, entities: List[Entity], current_round_number: int
-    # ) -> None:
-    #     """[mock] 第一回合向怪物注入 context，强制引导 LLM 选择 pass_turn。"""
-    #     if current_round_number != 1:
-    #         return
-    #     msg = (
-    #         "[系统提示] 本回合你必须选择跳过出牌。"
-    #         "请在 JSON 响应中将 pass_turn 设为 true，其余字段可省略。"
-    #     )
-    #     for entity in entities:
-    #         self._game.add_human_message(entity, msg)
-    #         logger.debug(f"[mock context] [{entity.name}] 注入 pass_turn 引导 context")
 
     ####################################################################################################################################
     def _process_monster_decision(self, client: DeepSeekClient) -> None:

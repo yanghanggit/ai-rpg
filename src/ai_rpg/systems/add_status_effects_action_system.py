@@ -15,6 +15,7 @@ from ..models import (
     StatusEffect,
 )
 from ..utils import extract_json_from_code_block
+from .arbitration_prompt_builders import fmt_duration
 from .status_effect_prompt_builders import (
     generate_add_status_effects_prompt,
     generate_compressed_add_status_effects_prompt,
@@ -27,6 +28,28 @@ class AddStatusEffectsResponse(BaseModel):
     """追加状态效果响应"""
 
     add_effects: List[StatusEffect] = []  # 本次追加的新效果列表
+
+
+#######################################################################################################################################
+def _generate_status_effects_notification_prompt(
+    entity_name: str, status_effects: List[StatusEffect]
+) -> str:
+    """将角色当前状态效果列表构建为 Markdown 格式提示词（含全部字段），用于通知类 HumanMessage 内容。"""
+
+    if not status_effects:
+        effects_block = "- 无"
+    else:
+        effects_block = "\n".join(
+            f"- 【{e.name}】{fmt_duration(e.duration)} | phase={e.phase} | "
+            f"counter={e.counter} | speed={e.speed:+d} | defense={e.defense:+d} | "
+            f"source={e.source or '未知'}\n"
+            f"  描述：{e.description}"
+            for e in status_effects
+        )
+
+    return f"""# 状态效果通知：{entity_name} 当前状态效果（共 {len(status_effects)} 个）
+
+{effects_block}"""
 
 
 #######################################################################################################################################
@@ -128,38 +151,6 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
         )
 
     #######################################################################################################################################
-    # def _mock_inject_counter_effect(self, entity: Entity) -> None:
-    #     """[测试用] 若实体为怪物，强制注入一个计数型状态效果，用于验证 counter 机制。
-
-    #     规则：前3次受击伤害锁定为1；counter 初始为 3，仲裁 LLM 每次受击后将其递减 1，
-    #     counter 归零后效果不再触发。已注入则跳过（避免重复）。
-    #     """
-    #     if not entity.has(MonsterComponent):
-    #         return
-
-    #     combat_status_effects = entity.get(StatusEffectsComponent)
-    #     assert combat_status_effects is not None
-
-    #     mock_effect_name = "伤害锁定"
-    #     if any(
-    #         e.name == mock_effect_name for e in combat_status_effects.status_effects
-    #     ):
-    #         return
-
-    #     mock_effect = StatusEffect(
-    #         name=mock_effect_name,
-    #         description="前3次受击伤害锁定为1；每次受击后 counter 递减1，counter 归零后效果失效",
-    #         duration=-1,
-    #         phase=PhaseType.ARBITRATION,
-    #         counter=3,
-    #         source="[mock]",
-    #     )
-    #     combat_status_effects.status_effects.append(mock_effect)
-    #     logger.debug(
-    #         f"[{entity.name}] [mock] 注入测试效果: 「{mock_effect.name}」counter={mock_effect.counter}"
-    #     )
-
-    #######################################################################################################################################
     def _process_status_effects_response(self, chat_client: DeepSeekClient) -> None:
         """解析 LLM 响应并追加新状态效果；将本轮对话写入实体上下文。"""
 
@@ -222,6 +213,31 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
                 logger.debug(
                     f"[{entity.name}] 新增效果: 「{effect.name}」 phase={effect.phase} duration={effect.duration}"
                 )
+
+            # 追加提示消息：告知当前完整状态效果列表（Markdown 格式，全字段），便于后续 LLM 交互感知最新状态
+            notification_messages = self._game.filter_messages_by_attributes(
+                entity=entity,
+                attributes={"status_effects_notification": entity.name},
+            )
+            if notification_messages:
+                # 如果已有通知类消息，就全部删除旧的然后添加新的
+                logger.debug(
+                    f"[{entity.name}] 删除 {len(notification_messages)} 条旧的状态效果通知消息"
+                )
+                self._game.remove_messages(
+                    entity=entity, messages=notification_messages
+                )
+
+            self._game.add_human_message(
+                entity=entity,
+                human_message=HumanMessage(
+                    content=_generate_status_effects_notification_prompt(
+                        entity_name=entity.name,
+                        status_effects=combat_status_effects.status_effects,
+                    ),
+                    status_effects_notification=entity.name,  # 标记：本消息为状态效果通知类消息
+                ),
+            )
 
         else:
             logger.debug(f"[{entity.name}] 本回合无新增状态效果")

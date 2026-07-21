@@ -185,8 +185,14 @@ class TestProcessStatusEffectsResponse:
         assert len(effects) == 1
         assert effects[0].name == "燃烧"
         assert effects[0].source == "英雄"
-        mock_game.add_human_message.assert_called_once()
+        # 出牌 prompt 写入一次 + 新增效果后的状态效果通知消息写入一次，共两次
+        assert mock_game.add_human_message.call_count == 2
         mock_game.add_ai_message.assert_called_once()
+
+        notification_call = mock_game.add_human_message.call_args_list[1]
+        notification_message = notification_call.kwargs["human_message"]
+        assert notification_message.status_effects_notification == "英雄"
+        assert "燃烧" in notification_message.content
 
     def test_empty_effects_no_change(
         self,

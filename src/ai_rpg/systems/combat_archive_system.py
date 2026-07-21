@@ -18,12 +18,7 @@ from ..models import (
 
 #######################################################################################################################################
 def _generate_combat_summary_prompt(stage_name: str, total_rounds: int) -> str:
-    """返回用于生成第一人称战斗摘要的 LLM prompt。
-
-    Args:
-        stage_name: 战斗场景名称
-        total_rounds: 本场战斗总回合数
-    """
+    """返回用于生成第一人称战斗摘要的 LLM prompt。"""
     return f"""# 战斗结束，归档这段记忆。
 
 你在 {stage_name} 完成了 {total_rounds} 回合的战斗。
@@ -60,14 +55,7 @@ class CombatArchiveSystem(ExecuteProcessor):
 
     #######################################################################################################################################
     def _create_combat_summary_client(self, combat_actor: Entity) -> DeepSeekClient:
-        """为单个盟友创建配置好的 DeepSeekClient，用于生成战斗摘要。
-
-        Args:
-            combat_actor: 参与战斗的盟友实体
-
-        Returns:
-            配置好的 DeepSeekClient
-        """
+        """为单个盟友创建配置好的 DeepSeekClient，用于生成战斗摘要。"""
         total_rounds = len(self._game.current_combat_room.combat.rounds or [])
 
         combat_stage_entity = self._game.resolve_stage_entity(combat_actor)
@@ -85,14 +73,7 @@ class CombatArchiveSystem(ExecuteProcessor):
 
     #######################################################################################################################################
     def _archive_actor_combat_record(self, chat_client: DeepSeekClient) -> None:
-        """对单个角色完成上下文压缩并派发 CombatArchiveEvent。
-
-        从角色上下文移除战斗详细消息，将 LLM 生成的摘要写回上下文，
-        并将被移除的原始消息序列化为字符串附在事件上。
-
-        Args:
-            chat_client: 已完成 LLM 调用的客户端，name 对应角色实体名
-        """
+        """对单个角色完成上下文压缩并派发 CombatArchiveEvent。"""
 
         if chat_client.response_ai_message is None:
             logger.error(f"LLM 响应缺失，无法归档战斗记录！chat_client: {chat_client}")
@@ -102,11 +83,6 @@ class CombatArchiveSystem(ExecuteProcessor):
         assert (
             processed_actor_entity is not None
         ), f"无法找到角色实体：{chat_client.name}"
-
-        # combat_stage_entity = self._game.resolve_stage_entity(processed_actor_entity)
-        # assert (
-        #     combat_stage_entity is not None
-        # ), f"无法获取角色 {processed_actor_entity.name} 所在的场景实体！"
 
         # 在这里做压缩！！先测试，可以不做。TODO。
         deleted_messages = self._extract_combat_message_range(processed_actor_entity)
@@ -169,16 +145,7 @@ class CombatArchiveSystem(ExecuteProcessor):
     def _extract_combat_message_range(
         self, entity: Entity
     ) -> List[SystemMessage | HumanMessage | AIMessage | ToolMessage]:
-        """从角色上下文中移除本场战斗的所有消息并返回被移除的列表。
-
-        以 combat_initialization 和 combat_outcome 属性标记的消息作为边界定位范围。
-
-        Args:
-            entity: 要压缩上下文的角色实体
-
-        Returns:
-            被移除的消息列表；标记消息缺失时 assert 失败
-        """
+        """从角色上下文中移除本场战斗的所有消息并返回被移除的列表。"""
         # 获取当前的战斗实体。
         stage_entity = self._game.resolve_stage_entity(entity)
         assert stage_entity is not None, f"无法获取角色 {entity.name} 所在的场景实体！"

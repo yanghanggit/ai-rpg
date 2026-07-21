@@ -133,8 +133,10 @@ def dump_agent_contexts(
         if should_write_buffer_string:
             buffer_str = get_buffer_string(
                 agent_context.context,
+                system_prefix="\n" + "-" * 86 + "\nSystem",
                 human_prefix="\n" + "-" * 86 + "\nHuman",
                 ai_prefix="\n" + "-" * 86 + f"\nAI({agent_name})",
+                tool_prefix="\n" + "-" * 86 + f"\nTool({agent_name})",
             )
             (context_dir / f"{agent_name}_buffer.txt").write_text(
                 buffer_str, encoding="utf-8"

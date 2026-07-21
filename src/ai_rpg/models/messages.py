@@ -77,8 +77,10 @@ ContextMessage = Annotated[
 
 def get_buffer_string(
     messages: Sequence[BaseMessage],
+    system_prefix: str = "System",
     human_prefix: str = "Human",
     ai_prefix: str = "AI",
+    tool_prefix: str = "Tool",
 ) -> str:
     """将消息序列转换为单一字符串（用于调试、日志或 prompt 拼接）
 
@@ -107,9 +109,9 @@ def get_buffer_string(
         elif isinstance(msg, AIMessage):
             role = ai_prefix
         elif isinstance(msg, SystemMessage):
-            role = "System"
+            role = system_prefix
         elif isinstance(msg, ToolMessage):
-            role = "Tool"
+            role = tool_prefix
         else:
             raise ValueError(f"不支持的消息类型: {type(msg)}")
         lines.append(f"{role}: {msg.content}")

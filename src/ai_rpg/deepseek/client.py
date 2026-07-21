@@ -540,8 +540,10 @@ class DeepSeekClient:
             lines.append(
                 get_buffer_string(
                     list(self._context),
+                    system_prefix="\n" + _SEP + "\nSystem",
                     human_prefix="\n" + _SEP + "\nHuman",
                     ai_prefix="\n" + _SEP + "\nAI",
+                    tool_prefix="\n" + _SEP + "\nTool",
                 )
             )
         else:

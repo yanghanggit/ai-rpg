@@ -11,6 +11,7 @@ from src.ai_rpg.game.dbg_game import DBGGame
 from src.ai_rpg.models import (
     ActorComponent,
     AddStatusEffectsAction,
+    AffixTrigger,
     DeathComponent,
     StatusEffectsComponent,
 )
@@ -45,7 +46,11 @@ def _make_actor_entity(
     if with_status_effects:
         entity.add(StatusEffectsComponent, name, [])
     if with_action:
-        entity.add(AddStatusEffectsAction, name, ["测试任务提示"])
+        entity.add(
+            AddStatusEffectsAction,
+            name,
+            [AffixTrigger(source="测试", affix="测试词缀")],
+        )
     if dead:
         entity.add(DeathComponent, name)
     return entity

@@ -3,6 +3,7 @@
 from typing import Dict, Final, List, Optional, final
 from pydantic import BaseModel
 from ..models import (
+    AffixTrigger,
     Card,
     CharacterStats,
     ConsumableItem,
@@ -675,63 +676,66 @@ def generate_play_cards_affix_task_hints(
     actor_name: str,
     card: Card,
     targets: List[str],
-) -> List[str]:
-    """生成卡牌词缀的 AddStatusEffectsAction task_hints（card.affixes）。
+) -> List[AffixTrigger]:
+    """生成卡牌词缀（card.affixes）对应的 AffixTrigger 列表。
 
-    格式：[卡牌] {actor}的「{card}」→{targets}；词缀 → {affix}
+    仅携带原始词缀文本与触发上下文，具体提示词措辞由 AddStatusEffectsActionSystem 统一拼装。
     伤害/HP 变化已经通过仲裁广播（combat_log）与个人 HP 更新通知同步给相关实体，此处无需重复。
     """
     if not card.affixes:
         return []
     targets_str = "、".join(targets) or "无"
-    base = f"[卡牌] {actor_name}的「{card.name}」→{targets_str}"
-    return [f"{base}；词缀 → {affix}" for affix in card.affixes]
+    context = f"{actor_name}的「{card.name}」→{targets_str}"
+    return [
+        AffixTrigger(source="卡牌", context=context, affix=affix)
+        for affix in card.affixes
+    ]
 
 
 def generate_gear_on_hit_task_hints(
     actor_name: str,
     card_name: str,
     gear_item: GearItem,
-) -> List[str]:
-    """生成装备 on_hit_affixes 的 AddStatusEffectsAction task_hints（仅目标视角）。
+) -> List[AffixTrigger]:
+    """生成装备 on_hit_affixes 对应的 AffixTrigger 列表（仅目标视角）。
 
-    格式：[装备命中·受击者] {actor}持「{gear}」命中（「{card}」）；装备词缀 → {affix}
     HP 变化已经通过仲裁广播与个人 HP 更新通知同步给该实体，此处无需重复。
     """
     if not gear_item.on_hit_affixes:
         return []
-    base = (
-        f"[装备命中·受击者] {actor_name}持「{gear_item.name}」命中（「{card_name}」）"
-    )
-    return [f"{base}；装备词缀 → {affix}" for affix in gear_item.on_hit_affixes]
+    context = f"{actor_name}持「{gear_item.name}」命中（「{card_name}」）"
+    return [
+        AffixTrigger(source="装备命中·受击者", context=context, affix=affix)
+        for affix in gear_item.on_hit_affixes
+    ]
 
 
 def generate_gear_equip_task_hints(
     item: GearItem,
     targets: List[str],
-) -> List[str]:
-    """生成装备穿戴 equip_affixes 的 AddStatusEffectsAction task_hints。
-
-    格式：[装备穿戴] 「{item}」→{targets}（{stats}）；词缀 → {affix}
-    """
+) -> List[AffixTrigger]:
+    """生成装备穿戴 equip_affixes 对应的 AffixTrigger 列表。"""
     if not item.equip_affixes:
         return []
     targets_str = "、".join(targets) or "无"
     stats_str = fmt_stat_bonuses_compact(item.stat_bonuses)
-    base = f"[装备穿戴] 「{item.name}」→{targets_str}（{stats_str}）"
-    return [f"{base}；词缀 → {affix}" for affix in item.equip_affixes]
+    context = f"「{item.name}」→{targets_str}（{stats_str}）"
+    return [
+        AffixTrigger(source="装备穿戴", context=context, affix=affix)
+        for affix in item.equip_affixes
+    ]
 
 
 def generate_consumable_task_hints(
     item: ConsumableItem,
     targets: List[str],
-) -> List[str]:
-    """生成消耗品 affixes 的 AddStatusEffectsAction task_hints。
-
-    格式：[消耗品] 「{item}」→{targets}；词缀 → {affix}
-    """
+) -> List[AffixTrigger]:
+    """生成消耗品 affixes 对应的 AffixTrigger 列表。"""
     if not item.affixes:
         return []
     targets_str = "、".join(targets) or "无"
-    base = f"[消耗品] 「{item.name}」→{targets_str}"
-    return [f"{base}；词缀 → {affix}" for affix in item.affixes]
+    context = f"「{item.name}」→{targets_str}"
+    return [
+        AffixTrigger(source="消耗品", context=context, affix=affix)
+        for affix in item.affixes
+    ]

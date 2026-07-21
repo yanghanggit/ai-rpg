@@ -10,6 +10,7 @@ from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import (
     accumulate_status_effects_action,
     get_alive_actors_in_stage,
+    wrap_scene_hints_as_affixes,
 )
 from ..models import StageDescriptionComponent
 from ..utils import extract_json_from_code_block
@@ -224,9 +225,11 @@ class CombatInitStageSystem(ExecuteProcessor):
             assert (
                 actor_entity is not None
             ), f"无法找到 task_hints 中的实体: {actor_name}"
-            accumulate_status_effects_action(actor_entity, hints)
+            accumulate_status_effects_action(
+                actor_entity, wrap_scene_hints_as_affixes("战斗初始化场景", hints)
+            )
             logger.debug(
-                f"[{actor_name}] 战斗初始化后追加 {len(hints)} 条 AddStatusEffectsAction task_hints"
+                f"[{actor_name}] 战斗初始化后追加 {len(hints)} 条 AddStatusEffectsAction affixes"
             )
 
 

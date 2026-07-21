@@ -9,6 +9,7 @@ from ..game.dbg_game import DBGGame
 from ..models import (
     ActorComponent,
     AddStatusEffectsAction,
+    AffixTrigger,
     HumanMessage,
     StatusEffectsComponent,
     DeathComponent,
@@ -28,10 +29,22 @@ class _AddStatusEffectsResponse(BaseModel):
 
 
 #######################################################################################################################################
+def _format_affix_trigger(trigger: AffixTrigger, index: int) -> str:
+    """将一条 AffixTrigger 转化为一行任务提示文本；这是 affixes → 生成状态效果任务 唯一的转化点。
+
+    有 context（卡牌/装备/消耗品等结构化来源）时拼装为「[来源] 上下文；词缀 → 词缀文本」；
+    无 context（场景类自由文本触发，本身已自带描述格式）时直接输出原始 affix 文本。
+    """
+    if trigger.context:
+        return f"{index}. [{trigger.source}] {trigger.context}；词缀 → {trigger.affix}"
+    return f"{index}. {trigger.affix}"
+
+
+#######################################################################################################################################
 def _generate_compressed_add_status_effects_prompt(
     current_status_effects: List[StatusEffect],
     current_round_number: int,
-    task_hints: List[str],
+    affixes: List[AffixTrigger],
 ) -> str:
     """生成压缩版追加状态效果提示词（仅动态感知部分，省略静态字段说明与 JSON 示例）"""
 
@@ -45,8 +58,10 @@ def _generate_compressed_add_status_effects_prompt(
             ]
         )
 
-    hints_block = "\n".join(f"{i + 1}. {h}" for i, h in enumerate(task_hints))
-    max_effects = len(task_hints)
+    hints_block = "\n".join(
+        _format_affix_trigger(t, i + 1) for i, t in enumerate(affixes)
+    )
+    max_effects = len(affixes)
 
     return f"""# 第 {current_round_number} 回合 — 追加状态效果
 
@@ -67,7 +82,7 @@ def _generate_compressed_add_status_effects_prompt(
 def _generate_add_status_effects_prompt(
     current_status_effects: List[StatusEffect],
     current_round_number: int,
-    task_hints: List[str],
+    affixes: List[AffixTrigger],
 ) -> str:
     """生成追加状态效果提示词"""
 
@@ -81,8 +96,10 @@ def _generate_add_status_effects_prompt(
             ]
         )
 
-    hints_block = "\n".join(f"{i + 1}. {h}" for i, h in enumerate(task_hints))
-    max_effects = len(task_hints)
+    hints_block = "\n".join(
+        _format_affix_trigger(t, i + 1) for i, t in enumerate(affixes)
+    )
+    max_effects = len(affixes)
 
     return f"""# 第 {current_round_number} 回合 — 追加状态效果
 
@@ -239,7 +256,7 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
         prompt = _generate_add_status_effects_prompt(
             current_status_effects=combat_status_effects.status_effects,
             current_round_number=current_round_number,
-            task_hints=add_status_effects_action.task_hints,
+            affixes=add_status_effects_action.affixes,
         )
 
         # 如果启用了压缩提示词，则生成压缩后的提示词，用于在与 LLM 交互时减少上下文长度，提高效率
@@ -248,7 +265,7 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
             compressed_message = _generate_compressed_add_status_effects_prompt(
                 current_status_effects=combat_status_effects.status_effects,
                 current_round_number=current_round_number,
-                task_hints=add_status_effects_action.task_hints,
+                affixes=add_status_effects_action.affixes,
             )
 
         # 构建 DeepSeekClient 实例，用于与 LLM 交互，传入实体名称、提示词、压缩提示词以及实体上下文信息

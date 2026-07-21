@@ -14,6 +14,7 @@ from ..game.dbg_combat_processor import (
     compute_character_stats,
     get_alive_actors_in_stage,
     set_character_hp,
+    wrap_scene_hints_as_affixes,
 )
 from ..game.dbg_combat_processor import process_zero_health_entities
 from ..models import (
@@ -264,14 +265,14 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
                 entity = self._game.get_entity_by_name(entity_name)
                 assert entity is not None, f"无法找到实体: {entity_name}"
 
-                # 生成装备触发的任务提示，并将这些任务提示应用为状态效果
-                task_hints = generate_gear_equip_task_hints(
+                # 生成装备触发的 AffixTrigger 列表，并将这些触发应用为状态效果
+                affix_triggers = generate_gear_equip_task_hints(
                     item=action.item,
                     targets=action.targets,
                 )
 
-                # 将任务提示应用为状态效果，确保这些效果在后续的游戏逻辑中能够被正确处理
-                accumulate_status_effects_action(entity, task_hints)
+                # 将触发应用为状态效果，确保这些效果在后续的游戏逻辑中能够被正确处理
+                accumulate_status_effects_action(entity, affix_triggers)
                 logger.debug(f"[{entity_name}] 装备仲裁后添加 AddStatusEffectsAction")
 
         # 根据 response.post_arbitration_interaction_summary 决定是否触发 PostArbitrationAction（与卡牌/消耗品仲裁行为对齐）
@@ -293,7 +294,9 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
             assert (
                 hint_target_entity is not None
             ), f"无法找到 post_arbitration_task_hints 中的实体: {hint_target_name}"
-            accumulate_status_effects_action(hint_target_entity, hints)
+            accumulate_status_effects_action(
+                hint_target_entity, wrap_scene_hints_as_affixes("场景交互", hints)
+            )
             logger.debug(
-                f"[{hint_target_name}] 场景交互后追加 {len(hints)} 条 AddStatusEffectsAction task_hints"
+                f"[{hint_target_name}] 场景交互后追加 {len(hints)} 条 AddStatusEffectsAction affixes"
             )

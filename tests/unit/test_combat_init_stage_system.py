@@ -10,6 +10,7 @@ from src.ai_rpg.game.dbg_game import DBGGame
 from src.ai_rpg.models import (
     ActorComponent,
     AddStatusEffectsAction,
+    AffixTrigger,
     AIMessage,
     AppearanceComponent,
     CharacterStatsComponent,
@@ -142,8 +143,8 @@ class TestExecuteCombatInitStatusEffects:
             await system.execute()
 
         assert actor.has(AddStatusEffectsAction)
-        assert actor.get(AddStatusEffectsAction).task_hints == [
-            "[场景] 浓烟弥漫，可致眼盲"
+        assert actor.get(AddStatusEffectsAction).affixes == [
+            AffixTrigger(source="战斗初始化场景", affix="[场景] 浓烟弥漫，可致眼盲")
         ]
 
     @pytest.mark.asyncio

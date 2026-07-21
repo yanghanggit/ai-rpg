@@ -15,6 +15,7 @@ from ..game.dbg_combat_processor import (
     compute_character_stats,
     get_alive_actors_in_stage,
     set_character_hp,
+    wrap_scene_hints_as_affixes,
 )
 from ..game.dbg_combat_processor import process_zero_health_entities
 from ..models import (
@@ -272,11 +273,11 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                 entity = self._game.get_entity_by_name(entity_name)
                 assert entity is not None, f"无法找到实体: {entity_name}"
 
-                task_hints = generate_consumable_task_hints(
+                affix_triggers = generate_consumable_task_hints(
                     item=action.item,
                     targets=action.targets,
                 )
-                accumulate_status_effects_action(entity, task_hints)
+                accumulate_status_effects_action(entity, affix_triggers)
                 logger.debug(f"[{entity_name}] 消耗品仲裁后添加 AddStatusEffectsAction")
         else:
             logger.debug("消耗品 affixes 为空，跳过 AddStatusEffectsAction")
@@ -300,7 +301,9 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             assert (
                 hint_target_entity is not None
             ), f"无法找到 post_arbitration_task_hints 中的实体: {hint_target_name}"
-            accumulate_status_effects_action(hint_target_entity, hints)
+            accumulate_status_effects_action(
+                hint_target_entity, wrap_scene_hints_as_affixes("场景交互", hints)
+            )
             logger.debug(
-                f"[{hint_target_name}] 场景交互后追加 {len(hints)} 条 AddStatusEffectsAction task_hints"
+                f"[{hint_target_name}] 场景交互后追加 {len(hints)} 条 AddStatusEffectsAction affixes"
             )

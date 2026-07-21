@@ -7,6 +7,7 @@ from ..entitas import Entity, Matcher
 from ..models import (
     ActorComponent,
     AddStatusEffectsAction,
+    AffixTrigger,
     CharacterStats,
     CharacterStatsComponent,
     DeathComponent,
@@ -234,15 +235,28 @@ def give_energy(entity: Entity, amount: int = 1) -> None:
 
 
 #################################################################################################################################################
-def accumulate_status_effects_action(entity: Entity, task_hints: List[str]) -> None:
-    """为实体追加 AddStatusEffectsAction，自动合并已有的 task_hints。"""
+def accumulate_status_effects_action(
+    entity: Entity, affixes: List[AffixTrigger]
+) -> None:
+    """为实体追加 AddStatusEffectsAction，自动合并已有的 affixes。"""
     existing = (
         entity.get(AddStatusEffectsAction)
         if entity.has(AddStatusEffectsAction)
         else None
     )
-    merged = (existing.task_hints if existing is not None else []) + task_hints
+    merged = (existing.affixes if existing is not None else []) + affixes
     entity.replace(AddStatusEffectsAction, entity.name, merged)
+
+
+#################################################################################################################################################
+def wrap_scene_hints_as_affixes(source: str, hints: List[str]) -> List[AffixTrigger]:
+    """将场景/仒裁 LLM 自行判定生成的自由文本提示（已自带描述格式，如"[场景] ..."）
+    包装为 AffixTrigger，以接入与卡牌/装备/消耗品词缀相同的唯一通道。
+
+    这类提示本质上也是"延迟触发信号"，只是来源不是预先写在 Card/GearItem/ConsumableItem 上的
+    静态词缀，而是 LLM 对当前叙事/交互的临时判断，因此 context 留空，affix 直接携带完整文本。
+    """
+    return [AffixTrigger(source=source, affix=hint) for hint in hints]
 
 
 #################################################################################################################################################

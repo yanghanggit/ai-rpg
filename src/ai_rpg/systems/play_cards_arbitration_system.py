@@ -19,9 +19,11 @@ from ..game.dbg_combat_processor import (
     get_status_effects_by_phase,
     give_energy,
     set_character_hp,
+    wrap_scene_hints_as_affixes,
 )
 from ..game.dbg_combat_processor import process_zero_health_entities
 from ..models import (
+    AffixTrigger,
     PlayCardsAction,
     RoundStatsComponent,
     CharacterStatsComponent,
@@ -321,9 +323,9 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                 assert entity is not None, f"无法找到实体: {entity_name}"
 
                 # 生成任务提示列表，用于在仲裁后为出牌者和目标添加状态效果动作，确保状态效果在游戏中正确生效。
-                task_hints: List[str] = []
+                affix_triggers: List[AffixTrigger] = []
                 if card_affixes:
-                    task_hints += generate_play_cards_affix_task_hints(
+                    affix_triggers += generate_play_cards_affix_task_hints(
                         actor_name=actor_entity.name,
                         card=action.card,
                         targets=action.targets,
@@ -331,14 +333,14 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
 
                 # on_hit_affixes 仅作用于命中目标（非出牌者自身）
                 if gear_on_hit_affixes and entity_name != actor_entity.name:
-                    task_hints += generate_gear_on_hit_task_hints(
+                    affix_triggers += generate_gear_on_hit_task_hints(
                         actor_name=actor_entity.name,
                         card_name=action.card.name,
                         gear_item=actor_entity.get(EquippedGearComponent).item,
                     )
 
-                if task_hints:
-                    accumulate_status_effects_action(entity, task_hints)
+                if affix_triggers:
+                    accumulate_status_effects_action(entity, affix_triggers)
                     logger.debug(f"[{entity_name}] 仲裁后添加 AddStatusEffectsAction")
 
         # 确定性结算 energy_delta：直接改变每个目标行动次数（正值增加/负值剥夺），不经 LLM 仲裁
@@ -380,9 +382,11 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             assert (
                 hint_target_entity is not None
             ), f"无法找到 post_arbitration_task_hints 中的实体: {hint_target_name}"
-            accumulate_status_effects_action(hint_target_entity, hints)
+            accumulate_status_effects_action(
+                hint_target_entity, wrap_scene_hints_as_affixes("场景交互", hints)
+            )
             logger.debug(
-                f"[{hint_target_name}] 场景交互后追加 {len(hints)} 条 AddStatusEffectsAction task_hints"
+                f"[{hint_target_name}] 场景交互后追加 {len(hints)} 条 AddStatusEffectsAction affixes"
             )
 
     #######################################################################################################################################

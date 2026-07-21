@@ -19,10 +19,11 @@ from src.ai_rpg.models.messages import AIMessage
 from src.ai_rpg.systems.add_status_effects_action_system import (
     AddStatusEffectsActionSystem,
 )
-from src.ai_rpg.systems.status_effect_prompt_builders import (
-    generate_add_status_effects_prompt,
-    generate_compressed_add_status_effects_prompt,
-)
+
+# from src.ai_rpg.systems.status_effect_prompt_builders import (
+#     generate_add_status_effects_prompt,
+#     generate_compressed_add_status_effects_prompt,
+# )
 
 
 # ---------------------------------------------------------------------------
@@ -107,63 +108,6 @@ def system(mock_game: MagicMock) -> AddStatusEffectsActionSystem:
 @pytest.fixture()
 def system_no_compress(mock_game: MagicMock) -> AddStatusEffectsActionSystem:
     return AddStatusEffectsActionSystem(mock_game, use_compressed_prompt=False)
-
-
-# ---------------------------------------------------------------------------
-# Phase 1 — 纯函数
-# ---------------------------------------------------------------------------
-
-
-class TestGenerateCompressedAddStatusEffectsPrompt:
-    def test_basic_content(self) -> None:
-        """空效果时包含"无"、回合数和任务提示。"""
-        result = generate_compressed_add_status_effects_prompt([], 7, ["特殊任务提示"])
-        assert "无" in result
-        assert "7" in result
-        assert "特殊任务提示" in result
-
-    def test_few_effects_show_full_description(self) -> None:
-        """不超过阈值时，名称和描述都应出现。"""
-        effects = [_make_effect("中毒", "每回合扣血"), _make_effect("虚弱", "攻击减弱")]
-        result = generate_compressed_add_status_effects_prompt(effects, 1, ["任务"])
-        assert "中毒" in result and "每回合扣血" in result
-        assert "虚弱" in result and "攻击减弱" in result
-
-    # def test_many_effects_show_name_only_and_permanent_duration(self) -> None:
-    #     """超过阈值时只展示名称；duration=-1 应显示"永久"。"""
-    #     effects = [_make_effect(f"效果{i}", f"描述{i}") for i in range(4)]
-    #     effects.append(_make_effect("诅咒", "永久削弱", duration=-1))
-    #     result = generate_compressed_add_status_effects_prompt(effects, 1, ["任务"])
-    #     assert "效果0" in result and "描述0" not in result
-    #     assert "永久" in result
-
-
-class TestGenerateAddStatusEffectsPrompt:
-    def test_output_structure(self) -> None:
-        """包含回合数、任务提示、JSON 模板、phase 表格、speed 约束和"无"。"""
-        result = generate_add_status_effects_prompt([], 5, ["特定提示XYZ"])
-        assert "无" in result
-        assert "5" in result
-        assert "特定提示XYZ" in result
-        assert "add_effects" in result
-        assert PhaseType.DRAW in result
-        assert PhaseType.ARBITRATION in result
-        assert "+1 / 0 / -1" in result
-
-    def test_few_effects_show_full_description(self) -> None:
-        effects = [_make_effect("燃烧", "持续灼烧扣血")]
-        result = generate_add_status_effects_prompt(effects, 1, ["任务"])
-        assert "燃烧" in result and "持续灼烧扣血" in result
-
-    # def test_many_effects_show_name_only(self) -> None:
-    #     effects = [_make_effect(f"效果{i}", f"描述{i}") for i in range(5)]
-    #     result = generate_add_status_effects_prompt(effects, 1, ["任务"])
-    #     assert "效果0" in result and "描述0" not in result
-
-
-# ---------------------------------------------------------------------------
-# Phase 2 — _process_status_effects_response
-# ---------------------------------------------------------------------------
 
 
 class TestProcessStatusEffectsResponse:

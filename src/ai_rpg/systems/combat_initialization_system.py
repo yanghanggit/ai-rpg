@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from typing import Dict, Final, List, Optional, final, override, Set
 from pydantic import BaseModel
-from ..models.messages import AIMessage, HumanMessage
+from ..models.messages import AIMessage, HumanMessage, SystemMessage
 from loguru import logger
 from ..deepseek import DeepSeekClient
 from ..entitas import ExecuteProcessor, Entity
@@ -51,6 +51,19 @@ def _format_other_actors_info(other_actors_info: List[OtherActorInfo]) -> str:
         lines.append(f"- **{info.other_name}**（{info.camp}）: {info.appearance}")
 
     return "\n\n".join(lines)
+
+
+###################################################################################################################################################################
+def _generate_combat_rules_system_message_content() -> str:
+    """生成战斗专用规则 system message 内容。
+
+    该消息在战斗初始化阶段插入到上下文 [1]（核心 system prompt 之后），
+    仅在本场战斗内有效；战斗归档时（CombatArchiveSystem）会被整体移除。
+    """
+    return """# 战斗专用规则
+
+禁止扩展**根属性**；火焰抗性、中毒叠层等特殊效果须通过**状态效果**（StatusEffect）或**卡牌词缀**（affixes / modifiers）表达。
+本游戏战斗为[回合制]，禁止出现 "空间-位置/移动"、"命中/闪避" 等属性或机制。"""
 
 
 ###################################################################################################################################################################
@@ -405,6 +418,19 @@ class CombatInitializationSystem(ExecuteProcessor):
                 stage_description=stage_description,
                 other_actors_info=other_actors_info,
                 actor_stats=actor_stats,
+            )
+
+            # 在核心 system prompt（[0]）之后插入战斗专用规则 system message（[1]），
+            # 打上 combat_system_rules 标记，供 CombatArchiveSystem 在战斗归档时精确查找并移除
+            self._game.insert_messages(
+                entity=actor_entity,
+                index=1,
+                messages=[
+                    SystemMessage(
+                        content=_generate_combat_rules_system_message_content(),
+                        combat_system_rules=actor_entity.name,
+                    )
+                ],
             )
 
             # 注入战场上下文

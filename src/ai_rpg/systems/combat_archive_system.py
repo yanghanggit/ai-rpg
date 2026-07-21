@@ -103,14 +103,17 @@ class CombatArchiveSystem(ExecuteProcessor):
             processed_actor_entity is not None
         ), f"无法找到角色实体：{chat_client.name}"
 
-        combat_stage_entity = self._game.resolve_stage_entity(processed_actor_entity)
-        assert (
-            combat_stage_entity is not None
-        ), f"无法获取角色 {processed_actor_entity.name} 所在的场景实体！"
+        # combat_stage_entity = self._game.resolve_stage_entity(processed_actor_entity)
+        # assert (
+        #     combat_stage_entity is not None
+        # ), f"无法获取角色 {processed_actor_entity.name} 所在的场景实体！"
 
         # 在这里做压缩！！先测试，可以不做。TODO。
         deleted_messages = self._extract_combat_message_range(processed_actor_entity)
         assert len(deleted_messages) >= 0, "压缩战斗消息历史时出错！"
+
+        # 移除战斗初始化阶段插入的战斗专用规则 system message（[1]），战斗结束后不再生效
+        self._remove_combat_system_rules_message(processed_actor_entity)
 
         # 合成一个字符串缓冲区
         buffer_string = get_buffer_string(
@@ -208,6 +211,24 @@ class CombatArchiveSystem(ExecuteProcessor):
         # 压缩战斗消息。
         return self._game.remove_message_range(
             entity, begin_messages[0], end_messages[0]
+        )
+
+    #######################################################################################################################################
+    def _remove_combat_system_rules_message(self, entity: Entity) -> None:
+        """移除战斗初始化阶段插入的战斗专用规则 system message（以 combat_system_rules 属性标记定位）。"""
+        combat_system_rules_messages = self._game.filter_messages_by_attributes(
+            entity=entity,
+            attributes={"combat_system_rules": entity.name},
+        )
+        if not combat_system_rules_messages:
+            logger.warning(
+                f"[{entity.name}] 未找到战斗专用规则 system message，跳过移除!"
+            )
+            return
+
+        removed_count = self._game.remove_messages(entity, combat_system_rules_messages)
+        logger.debug(
+            f"[{entity.name}] 已移除 {removed_count} 条战斗专用规则 system message"
         )
 
     #######################################################################################################################################

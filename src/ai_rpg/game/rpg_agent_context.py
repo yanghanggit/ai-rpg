@@ -69,16 +69,7 @@ class RPGAgentContext:
         attributes: Dict[str, Any],
         reverse_order: bool = True,
     ) -> List[SystemMessage | HumanMessage | AIMessage | ToolMessage]:
-        """根据属性字典过滤实体上下文中的消息
-
-        Args:
-            entity: 要查询的实体
-            attributes: 要匹配的属性字典，所有键值对必须完全匹配（空字典匹配所有消息）
-            reverse_order: 是否逆序遍历，默认True
-
-        Returns:
-            匹配的消息列表
-        """
+        """根据属性字典过滤实体上下文中的消息"""
         found_messages: List[SystemMessage | HumanMessage | AIMessage | ToolMessage] = (
             []
         )
@@ -118,15 +109,7 @@ class RPGAgentContext:
         entity: Entity,
         messages: Sequence[BaseMessage],
     ) -> int:
-        """从实体上下文中删除指定的消息对象
-
-        Args:
-            entity: 要操作的实体
-            messages: 要删除的消息对象列表
-
-        Returns:
-            实际删除的消息数量
-        """
+        """从实体上下文中删除指定的消息对象"""
         if len(messages) == 0:
             return 0
 
@@ -150,16 +133,7 @@ class RPGAgentContext:
         begin_message: SystemMessage | HumanMessage | AIMessage | ToolMessage,
         end_message: SystemMessage | HumanMessage | AIMessage | ToolMessage,
     ) -> List[SystemMessage | HumanMessage | AIMessage | ToolMessage]:
-        """从实体上下文中删除指定范围的消息（包含两端）
-
-        Args:
-            entity: 要操作的实体
-            begin_message: 范围起始消息
-            end_message: 范围结束消息
-
-        Returns:
-            被删除的消息列表
-        """
+        """从实体上下文中删除指定范围的消息（包含两端）"""
         assert (
             begin_message != end_message
         ), "begin_message and end_message should not be the same"
@@ -178,5 +152,22 @@ class RPGAgentContext:
         logger.debug(f"end_message: \n{end_message.model_dump_json(indent=2)}")
 
         return deleted_messages
+
+    #######################################################################################################################################
+    def insert_messages(
+        self,
+        entity: Entity,
+        index: int,
+        messages: Sequence[SystemMessage | HumanMessage | AIMessage | ToolMessage],
+    ) -> None:
+        """在实体上下文的指定位置插入一段连续的消息序列"""
+        if len(messages) == 0:
+            return
+
+        agent_context = self.get_agent_context(entity)
+        agent_context.context[index:index] = messages
+        logger.debug(
+            f"insert_messages: inserted {len(messages)} message(s) at index {index} for {entity.name}"
+        )
 
     #######################################################################################################################################

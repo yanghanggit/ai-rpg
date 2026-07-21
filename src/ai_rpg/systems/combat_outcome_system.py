@@ -43,15 +43,21 @@ class CombatOutcomeSystem(ExecuteProcessor):
         logger.debug("判定战斗胜负：检查双方阵营存活情况")
 
         if self._is_player_side_eliminated():
+
+            # 如果玩家阵营全灭，则判定为战斗失败
             logger.info("ally side eliminated!!!")
             self._game.current_combat_room.combat.complete_combat(CombatResult.LOSE)
             self._game.clear_round_state()
             self._broadcast_result_to_party_members(CombatResult.LOSE)
+
         elif self._is_enemy_side_eliminated():
+
+            # 如果敌方阵营全灭，则判定为战斗胜利
             logger.info("enemy side eliminated!!!")
             self._game.current_combat_room.combat.complete_combat(CombatResult.WIN)
             self._game.clear_round_state()
             self._broadcast_result_to_party_members(CombatResult.WIN)
+
         else:
             logger.debug("双方均未全灭，战斗继续进行")
 
@@ -59,7 +65,7 @@ class CombatOutcomeSystem(ExecuteProcessor):
     def _is_enemy_side_eliminated(self) -> bool:
         """返回敌方阵营（MonsterComponent）是否已全员带有 DeathComponent。"""
         player_entity = self._game.get_player_entity()
-        assert player_entity is not None
+        assert player_entity is not None, "Player entity should not be None."
 
         actors_in_stage = self._game.get_actors_in_stage(player_entity)
         assert len(actors_in_stage) > 0, f"entities with actions: {actors_in_stage}"

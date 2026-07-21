@@ -18,12 +18,12 @@ from ..utils import extract_json_from_code_block
 
 ###################################################################################################################################################################
 @final
-class CombatInitStatusEffectHintsResponse(BaseModel):
-    """战斗初始化阶段场景状态效果判定响应"""
+class CombatInitAffixesResponse(BaseModel):
+    """战斗初始化阶段场景词缀判定响应"""
 
-    task_hints: Dict[str, List[str]] = (
+    affixes: Dict[str, List[str]] = (
         {}
-    )  # 角色全名 → 该角色应生成的状态效果 task_hint 列表；无依据则为空对象
+    )  # 角色全名 → 该角色对应的场景词缀字符串列表；无依据则为空对象
 
 
 ###################################################################################################################################################################
@@ -52,17 +52,17 @@ def _generate_combat_init_interaction_prompt(
 
 判断规则：
 
-- 仅当叙事中**明确描述**了此类场景要素时，才为受影响角色各生成一条 task_hint（格式：`[场景] 具体描述`，20-40 字，描述场景要素及可能产生的效果倾向，供下游状态效果生成系统参考）；
+- 仅当叙事中**明确描述**了此类场景要素时，才为受影响角色各生成一条词缀文本（格式：`[场景] 具体描述`，20-40 字，描述场景要素及可能产生的效果倾向，作为触发信号交由下游状态效果生成系统转化为具体 StatusEffect）；
 - 可同时影响多个角色，也可以只影响其中部分角色；
 - 若叙事平淡、无明显可利用的环境要素，**必须输出空对象 `{{}}`**，不得凭空引入场景中未出现的要素；
 - 禁止：勇气、恐惧、神圣、复仇、祝福、诅咒等角色内在情绪或来源不明的魔法效果；
-- **本阶段仅产生状态效果提示，不涉及任何形式的塞牌**。
+- **本阶段仅产生场景词缀，不涉及任何形式的塞牌**。
 
 ## 输出格式
 
 ```json
 {{
-  "task_hints": {{"角色名": ["[场景] ..."]}}
+  "affixes": {{"角色名": ["[场景] ..."]}}
 }}
 ```
 
@@ -175,13 +175,13 @@ class CombatInitStageSystem(ExecuteProcessor):
             return
 
         try:
-            response = CombatInitStatusEffectHintsResponse.model_validate_json(
+            response = CombatInitAffixesResponse.model_validate_json(
                 extract_json_from_code_block(chat_client.response_content)
             )
 
-            for actor_name, hints in response.task_hints.items():
+            for actor_name, hints in response.affixes.items():
                 if self._game.get_entity_by_name(actor_name) is None:
-                    raise ValueError(f"task_hints 中的实体不存在于游戏中: {actor_name}")
+                    raise ValueError(f"affixes 中的实体不存在于游戏中: {actor_name}")
 
         except Exception as e:
             logger.error(
@@ -211,20 +211,16 @@ class CombatInitStageSystem(ExecuteProcessor):
             ai_message=chat_client.response_ai_message,
         )
 
-        # 若 LLM 判定存在场景状态效果依据，则直接为受影响角色追加 AddStatusEffectsAction
-        if not response.task_hints:
-            logger.debug(
-                f"[{current_stage_entity.name}] 战斗初始化判定无场景状态效果依据"
-            )
+        # 若 LLM 判定存在场景词缀依据，则直接为受影响角色追加 AddStatusEffectsAction
+        if not response.affixes:
+            logger.debug(f"[{current_stage_entity.name}] 战斗初始化判定无场景词缀依据")
             return
 
-        for actor_name, hints in response.task_hints.items():
+        for actor_name, hints in response.affixes.items():
             if not hints:
                 continue
             actor_entity = self._game.get_entity_by_name(actor_name)
-            assert (
-                actor_entity is not None
-            ), f"无法找到 task_hints 中的实体: {actor_name}"
+            assert actor_entity is not None, f"无法找到 affixes 中的实体: {actor_name}"
             accumulate_status_effects_action(
                 actor_entity, wrap_scene_hints_as_affixes("战斗初始化场景", hints)
             )

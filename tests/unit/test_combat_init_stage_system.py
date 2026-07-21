@@ -116,7 +116,7 @@ class TestExecuteCombatInitStatusEffects:
     """`CombatInitStageSystem.execute()` 中场景状态效果判定部分的单元测试。"""
 
     @pytest.mark.asyncio
-    async def test_non_empty_task_hints_accumulates_add_status_effects_action(
+    async def test_non_empty_affixes_accumulates_add_status_effects_action(
         self,
         context: Context,
         mock_game: MagicMock,
@@ -127,7 +127,7 @@ class TestExecuteCombatInitStatusEffects:
         _configure_execute_prerequisites(mock_game, stage, actor)
         _configure_lookup(mock_game, stage, actor)
         client = _make_mock_chat_client(
-            '{"task_hints": {"勇者": ["[场景] 浓烟弥漫，可致眼盲"]}}'
+            '{"affixes": {"勇者": ["[场景] 浓烟弥漫，可致眼盲"]}}'
         )
 
         with (
@@ -148,7 +148,7 @@ class TestExecuteCombatInitStatusEffects:
         ]
 
     @pytest.mark.asyncio
-    async def test_empty_task_hints_no_action_attached(
+    async def test_empty_affixes_no_action_attached(
         self,
         context: Context,
         mock_game: MagicMock,
@@ -158,7 +158,7 @@ class TestExecuteCombatInitStatusEffects:
         actor = _make_actor(context, "勇者", is_ally=True)
         _configure_execute_prerequisites(mock_game, stage, actor)
         _configure_lookup(mock_game, stage, actor)
-        client = _make_mock_chat_client('{"task_hints": {}}')
+        client = _make_mock_chat_client('{"affixes": {}}')
 
         with (
             patch(
@@ -186,7 +186,7 @@ class TestExecuteCombatInitStatusEffects:
         _configure_execute_prerequisites(mock_game, stage, actor)
         _configure_lookup(mock_game, stage)  # 注意：不注册 actor，模拟未知角色
         client = _make_mock_chat_client(
-            '{"task_hints": {"勇者": ["[场景] 浓烟弥漫，可致眼盲"]}}'
+            '{"affixes": {"勇者": ["[场景] 浓烟弥漫，可致眼盲"]}}'
         )
 
         with (

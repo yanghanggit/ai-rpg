@@ -36,7 +36,7 @@ class ArbitrationResponse(BaseModel):
     final_stats: Dict[str, ArbitrationEntityFinalStats]
     narrative: str
     post_arbitration_interaction_summary: str = ""
-    post_arbitration_task_hints: Dict[str, List[str]] = {}
+    affixes: Dict[str, List[str]] = {}
 
 
 #######################################################################################################################################
@@ -70,7 +70,7 @@ def stats_update_notification(final_hp: int, max_hp: int) -> str:
 
 
 def fmt_stat_bonuses_compact(stats: CharacterStats) -> str:
-    """仅显示非零属性的精简格式，用于 task hint 单行上下文。"""
+    """仅显示非零属性的精简格式，用于 AffixTrigger 单行上下文。"""
     parts: List[str] = []
     if stats.hp:
         parts.append(f"HP{stats.hp:+d}")
@@ -139,7 +139,7 @@ def build_combat_arbitration_effects_lines(
 
 
 def build_other_alive_actors_lines(other_alive_actor_names: List[str]) -> str:
-    """构建"场内其余存活角色"段落，供仲裁 LLM 在 post_arbitration_task_hints 中选择场景状态效果的分配目标。"""
+    """构建"场内其余存活角色"段落，供仲裁 LLM 在 affixes 中选择场景词缀的分配目标。"""
     if not other_alive_actor_names:
         return "- 无"
     return "\n".join(f"- {name}" for name in other_alive_actor_names)
@@ -154,13 +154,13 @@ POST_ARBITRATION_INTERACTION_SUMMARY_DESCRIPTION: Final[
 否则（无可塞牌依据），输出空字符串 `""`。"""
 
 
-POST_ARBITRATION_TASK_HINTS_DESCRIPTION: Final[
+AFFIXES_DESCRIPTION: Final[
     str
-] = """### post_arbitration_task_hints
+] = """### affixes
 
-字典，键为受场景交互影响的角色全名（须取自"场内其余存活角色"或本次行动的出牌者/目标），值为该角色对应的场景状态效果 task_hint 字符串列表。
-判断规则：仅当本次行动的 **narrative 叙事中涉及与已存在场景要素的物理交互**（如搅起沙尘、触发机关、破坏地面物件等），且该交互**合理推断可对某些角色产生状态效果**时，为每个受影响角色各生成一条 task_hint（格式：`[场景] 具体描述`，20-40 字，描述场景要素及可能产生的效果倾向，供下游状态效果生成系统参考）；
-可同时影响多个角色，也可以不影响出牌者/使用者自身；无场景状态效果依据时输出空对象 `{}`。"""
+字典，键为受场景交互影响的角色全名（须取自"场内其余存活角色"或本次行动的出牌者/目标），值为该角色对应的场景词缀（affix）字符串列表。
+判断规则：仅当本次行动的 **narrative 叙事中涉及与已存在场景要素的物理交互**（如搅起沙尘、触发机关、破坏地面物件等），且该交互**合理推断可对某些角色产生状态效果**时，为每个受影响角色各生成一条词缀文本（格式：`[场景] 具体描述`，20-40 字，描述场景要素及可能产生的效果倾向，作为触发信号交由下游状态效果生成系统转化为具体 StatusEffect）；
+可同时影响多个角色，也可以不影响出牌者/使用者自身；无场景词缀依据时输出空对象 `{}`。"""
 
 
 FINAL_STATS_DESCRIPTION: Final[
@@ -306,13 +306,13 @@ def generate_combat_arbitration_prompt(
   "final_stats": {{}},
   "narrative": "战斗演出",
   "post_arbitration_interaction_summary": "",
-  "post_arbitration_task_hints": {{}}
+  "affixes": {{}}
 }}
 ```
 
 {POST_ARBITRATION_INTERACTION_SUMMARY_DESCRIPTION}
 
-{POST_ARBITRATION_TASK_HINTS_DESCRIPTION}
+{AFFIXES_DESCRIPTION}
 
 ### combat_log（简名 = 全名最后一段）
 
@@ -460,13 +460,13 @@ def generate_gear_arbitration_prompt(
   "final_stats": {{}},
   "narrative": "演出描述",
   "post_arbitration_interaction_summary": "",
-  "post_arbitration_task_hints": {{}}
+  "affixes": {{}}
 }}
 ```
 
 {POST_ARBITRATION_INTERACTION_SUMMARY_DESCRIPTION}
 
-{POST_ARBITRATION_TASK_HINTS_DESCRIPTION}
+{AFFIXES_DESCRIPTION}
 
 ### combat_log（简名 = 全名最后一段）
 
@@ -591,13 +591,13 @@ def generate_consumable_arbitration_prompt(
   "final_stats": {{}},
   "narrative": "演出描述",
   "post_arbitration_interaction_summary": "",
-  "post_arbitration_task_hints": {{}}
+  "affixes": {{}}
 }}
 ```
 
 {POST_ARBITRATION_INTERACTION_SUMMARY_DESCRIPTION}
 
-{POST_ARBITRATION_TASK_HINTS_DESCRIPTION}
+{AFFIXES_DESCRIPTION}
 
 ### combat_log（简名 = 全名最后一段）
 
@@ -668,11 +668,11 @@ def generate_consumable_arbitration_broadcast(
 
 
 #######################################################################################################################################
-# Task hint 生成器（统一 compact one-liner 格式，B+C+D）
+# AffixTrigger 生成器（统一 compact one-liner 格式，B+C+D）
 #######################################################################################################################################
 
 
-def generate_play_cards_affix_task_hints(
+def generate_play_cards_affix_triggers(
     actor_name: str,
     card: Card,
     targets: List[str],
@@ -692,7 +692,7 @@ def generate_play_cards_affix_task_hints(
     ]
 
 
-def generate_gear_on_hit_task_hints(
+def generate_gear_on_hit_affix_triggers(
     actor_name: str,
     card_name: str,
     gear_item: GearItem,
@@ -710,7 +710,7 @@ def generate_gear_on_hit_task_hints(
     ]
 
 
-def generate_gear_equip_task_hints(
+def generate_gear_equip_affix_triggers(
     item: GearItem,
     targets: List[str],
 ) -> List[AffixTrigger]:
@@ -726,7 +726,7 @@ def generate_gear_equip_task_hints(
     ]
 
 
-def generate_consumable_task_hints(
+def generate_consumable_affix_triggers(
     item: ConsumableItem,
     targets: List[str],
 ) -> List[AffixTrigger]:

@@ -41,8 +41,8 @@ from .arbitration_prompt_builders import (
     generate_compressed_combat_arbitration_prompt,
     generate_combat_arbitration_broadcast,
     stats_update_notification,
-    generate_play_cards_affix_task_hints,
-    generate_gear_on_hit_task_hints,
+    generate_play_cards_affix_triggers,
+    generate_gear_on_hit_affix_triggers,
 )
 
 
@@ -117,7 +117,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
         # 获取出牌实体的装备附加属性，用于生成仲裁提示
         actor_gear_modifiers: List[str] = get_gear_modifiers(actor_entity)
 
-        # 获取场内其余存活角色名单（排除出牌者与本次目标），供场景状态效果 task_hints 分配
+        # 获取场内其余存活角色名单（排除出牌者与本次目标），供场景词缀 affixes 分配
         alive_actor_names = {
             entity.name
             for entity in get_alive_actors_in_stage(self._game, actor_entity)
@@ -229,12 +229,12 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                     )
 
             for (
-                hint_target_name,
-                hints,
-            ) in format_response.post_arbitration_task_hints.items():
-                if self._game.get_entity_by_name(hint_target_name) is None:
+                affix_target_name,
+                affix_texts,
+            ) in format_response.affixes.items():
+                if self._game.get_entity_by_name(affix_target_name) is None:
                     raise ValueError(
-                        f"post_arbitration_task_hints 中的实体不存在于游戏中: {hint_target_name}"
+                        f"affixes 中的实体不存在于游戏中: {affix_target_name}"
                     )
 
         except Exception as e:
@@ -322,10 +322,10 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                 entity = self._game.get_entity_by_name(entity_name)
                 assert entity is not None, f"无法找到实体: {entity_name}"
 
-                # 生成任务提示列表，用于在仲裁后为出牌者和目标添加状态效果动作，确保状态效果在游戏中正确生效。
+                # 生成 AffixTrigger 列表，用于在仂裁后为出牌者和目标添加状态效果动作，确保状态效果在游戏中正确生效。
                 affix_triggers: List[AffixTrigger] = []
                 if card_affixes:
-                    affix_triggers += generate_play_cards_affix_task_hints(
+                    affix_triggers += generate_play_cards_affix_triggers(
                         actor_name=actor_entity.name,
                         card=action.card,
                         targets=action.targets,
@@ -333,7 +333,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
 
                 # on_hit_affixes 仅作用于命中目标（非出牌者自身）
                 if gear_on_hit_affixes and entity_name != actor_entity.name:
-                    affix_triggers += generate_gear_on_hit_task_hints(
+                    affix_triggers += generate_gear_on_hit_affix_triggers(
                         actor_name=actor_entity.name,
                         card_name=action.card.name,
                         gear_item=actor_entity.get(EquippedGearComponent).item,
@@ -370,23 +370,24 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                 format_response.post_arbitration_interaction_summary,
             )
 
-        # 如果仲裁结果输出了场景状态效果 task_hints（post_arbitration_task_hints 非空），则直接为受影响角色追加 AddStatusEffectsAction，
+        # 如果仲裁结果输出了场景词缀（affixes 非空），则直接为受影响角色追加 AddStatusEffectsAction，
         # 与 card_affixes/gear_on_hit_affixes 同一 tick 内合并，统一交由 AddStatusEffectsActionSystem 处理。
         for (
-            hint_target_name,
-            hints,
-        ) in format_response.post_arbitration_task_hints.items():
-            if not hints:
+            affix_target_name,
+            affix_texts,
+        ) in format_response.affixes.items():
+            if not affix_texts:
                 continue
-            hint_target_entity = self._game.get_entity_by_name(hint_target_name)
+            affix_target_entity = self._game.get_entity_by_name(affix_target_name)
             assert (
-                hint_target_entity is not None
-            ), f"无法找到 post_arbitration_task_hints 中的实体: {hint_target_name}"
+                affix_target_entity is not None
+            ), f"无法找到 affixes 中的实体: {affix_target_name}"
             accumulate_status_effects_action(
-                hint_target_entity, wrap_scene_hints_as_affixes("场景交互", hints)
+                affix_target_entity,
+                wrap_scene_hints_as_affixes("场景交互", affix_texts),
             )
             logger.debug(
-                f"[{hint_target_name}] 场景交互后追加 {len(hints)} 条 AddStatusEffectsAction affixes"
+                f"[{affix_target_name}] 场景交互后追加 {len(affix_texts)} 条 AddStatusEffectsAction affixes"
             )
 
     #######################################################################################################################################

@@ -32,7 +32,7 @@ from .arbitration_prompt_builders import (
     generate_compressed_consumable_arbitration_prompt,
     generate_consumable_arbitration_broadcast,
     stats_update_notification,
-    generate_consumable_task_hints,
+    generate_consumable_affix_triggers,
 )
 
 
@@ -87,7 +87,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
         # 获取当前回合数，用于生成仲裁提示信息
         current_round_number = len(self._game.current_combat_room.combat.rounds or [])
 
-        # 获取场内其余存活角色名单（排除使用者与本次目标），供场景状态效果 task_hints 分配
+        # 获取场内其余存活角色名单（排除使用者与本次目标），供场景词缀 affixes 分配
         alive_actor_names = {
             entity.name
             for entity in get_alive_actors_in_stage(self._game, actor_entity)
@@ -185,10 +185,10 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                         f"final_stats 中的实体不存在于游戏中: {entity_name}"
                     )
 
-            for hint_target_name, _ in response.post_arbitration_task_hints.items():
-                if self._game.get_entity_by_name(hint_target_name) is None:
+            for affix_target_name, _ in response.affixes.items():
+                if self._game.get_entity_by_name(affix_target_name) is None:
                     raise ValueError(
-                        f"post_arbitration_task_hints 中的实体不存在于游戏中: {hint_target_name}"
+                        f"affixes 中的实体不存在于游戏中: {affix_target_name}"
                     )
 
         except Exception as e:
@@ -273,7 +273,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                 entity = self._game.get_entity_by_name(entity_name)
                 assert entity is not None, f"无法找到实体: {entity_name}"
 
-                affix_triggers = generate_consumable_task_hints(
+                affix_triggers = generate_consumable_affix_triggers(
                     item=action.item,
                     targets=action.targets,
                 )
@@ -293,17 +293,18 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                 response.post_arbitration_interaction_summary,
             )
 
-        # 根据 response.post_arbitration_task_hints 直接为受影响角色追加 AddStatusEffectsAction
-        for hint_target_name, hints in response.post_arbitration_task_hints.items():
-            if not hints:
+        # 根据 response.affixes 直接为受影响角色追加 AddStatusEffectsAction
+        for affix_target_name, affix_texts in response.affixes.items():
+            if not affix_texts:
                 continue
-            hint_target_entity = self._game.get_entity_by_name(hint_target_name)
+            affix_target_entity = self._game.get_entity_by_name(affix_target_name)
             assert (
-                hint_target_entity is not None
-            ), f"无法找到 post_arbitration_task_hints 中的实体: {hint_target_name}"
+                affix_target_entity is not None
+            ), f"无法找到 affixes 中的实体: {affix_target_name}"
             accumulate_status_effects_action(
-                hint_target_entity, wrap_scene_hints_as_affixes("场景交互", hints)
+                affix_target_entity,
+                wrap_scene_hints_as_affixes("场景交互", affix_texts),
             )
             logger.debug(
-                f"[{hint_target_name}] 场景交互后追加 {len(hints)} 条 AddStatusEffectsAction affixes"
+                f"[{affix_target_name}] 场景交互后追加 {len(affix_texts)} 条 AddStatusEffectsAction affixes"
             )

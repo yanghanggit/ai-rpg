@@ -50,17 +50,10 @@ def generate_compressed_add_status_effects_prompt(
 
     if len(current_status_effects) == 0:
         effects_list = "无"
-    elif len(current_status_effects) <= 3:
+    else:
         effects_list = "\n".join(
             [
                 f"- {effect.name}（{fmt_duration(effect.duration)}）: {effect.description}"
-                for effect in current_status_effects
-            ]
-        )
-    else:
-        effects_list = "、".join(
-            [
-                f"{effect.name}（{fmt_duration(effect.duration)}）"
                 for effect in current_status_effects
             ]
         )
@@ -91,20 +84,12 @@ def generate_add_status_effects_prompt(
 ) -> str:
     """生成追加状态效果提示词"""
 
-    # 效果少时展示完整描述；过多时仅列名称以节省 token
     if len(current_status_effects) == 0:
         effects_list = "无"
-    elif len(current_status_effects) <= 3:
+    else:
         effects_list = "\n".join(
             [
                 f"- {effect.name}（{fmt_duration(effect.duration)}）: {effect.description}"
-                for effect in current_status_effects
-            ]
-        )
-    else:
-        effects_list = "、".join(
-            [
-                f"{effect.name}（{fmt_duration(effect.duration)}）"
                 for effect in current_status_effects
             ]
         )

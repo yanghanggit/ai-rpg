@@ -19,6 +19,7 @@ from ..models import (
     CharacterStatsComponent,
     Card,
     TargetType,
+    HumanMessage,
 )
 from ..utils import extract_json_from_code_block
 from .card_prompt_builders import (
@@ -185,17 +186,17 @@ class DeckGenerationSystem(ReactiveProcessor):
 
             # 验证 target_type 字段值是否合法，非法则跳过该卡并发出警告
             if entry.target_type not in valid_target_types:
-                # warn_msg = (
-                #     f"[系统警告] 你刚才生成的牌库卡牌「{entry.name}」的 target_type 字段值为"
-                #     f"「{entry.target_type}」，不属于有效值（{sorted(valid_target_types)}），"
-                #     f"该卡已被系统废弃。"
-                # )
-                # logger.warning(
-                #     f"[{entity.name}] 牌库卡牌「{entry.name}」target_type 无效，已废弃：{entry.target_type!r}"
-                # )
-                # self._game.add_human_message(
-                #     entity=entity, human_message=HumanMessage(content=warn_msg)
-                # )
+                warn_msg = (
+                    f"[系统警告] 你刚才生成的牌库卡牌「{entry.name}」的 target_type 字段值为"
+                    f"「{entry.target_type}」，不属于有效值（{sorted(valid_target_types)}），"
+                    f"该卡已被系统废弃。"
+                )
+                logger.warning(
+                    f"[{entity.name}] 牌库卡牌「{entry.name}」target_type 无效，已废弃：{entry.target_type!r}"
+                )
+                self._game.add_human_message(
+                    entity=entity, human_message=HumanMessage(content=warn_msg)
+                )
                 continue
 
             cards.append(
@@ -232,18 +233,18 @@ class DeckGenerationSystem(ReactiveProcessor):
         draw_pile.cards.extend([c.model_copy() for c in cards])
 
         # 将本轮任务提示词与 LLM 回复写入 agent 对话历史
-        # self._game.add_human_message(
-        #     entity=entity,
-        #     human_message=HumanMessage(
-        #         content=chat_client.compressed_prompt,
-        #         deck_generation_full_prompt=chat_client.prompt,
-        #     ),
-        # )
+        self._game.add_human_message(
+            entity=entity,
+            human_message=HumanMessage(
+                content=chat_client.compressed_prompt,
+                deck_generation_full_prompt=chat_client.prompt,
+            ),
+        )
 
-        # # 将 LLM 回复写入 agent 对话历史
-        # self._game.add_ai_message(
-        #     entity=entity, ai_message=chat_client.response_ai_message
-        # )
+        # 将 LLM 回复写入 agent 对话历史
+        self._game.add_ai_message(
+            entity=entity, ai_message=chat_client.response_ai_message
+        )
 
         logger.debug(
             f"[{entity.name}] 牌库生成完成：本次 {len(cards)} 张副本已洗牌填入 DrawPile"

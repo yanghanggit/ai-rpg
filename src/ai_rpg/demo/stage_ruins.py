@@ -6,14 +6,11 @@
 2. 石台广场 - 遗迹中央由石板与残柱构成的开阔地带
 """
 
-from ..models import Stage, StageProfile, StageType
+from ..models import Stage, StageProfile, StageType, RPG_SYSTEM_RULES
 from .global_settings import (
     RPG_CAMPAIGN_SETTING,
 )
-from .rpg_system_rules import (
-    RPG_SYSTEM_RULES,
-)
-from .entity_factory import (
+from ..models.entity_factory import (
     create_stage,
 )
 

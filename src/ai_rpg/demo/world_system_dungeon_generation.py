@@ -2,14 +2,12 @@ from ..models import (
     WorldSystem,
     DungeonGenerationComponent,
     ComponentSerialization,
+    RPG_SYSTEM_RULES,
 )
 from .global_settings import (
     RPG_CAMPAIGN_SETTING,
 )
-from .rpg_system_rules import (
-    RPG_SYSTEM_RULES,
-)
-from .entity_factory import (
+from ..models.entity_factory import (
     create_world_system,
 )
 from typing import Final

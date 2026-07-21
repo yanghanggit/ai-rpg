@@ -17,10 +17,9 @@ from ..models import (
     IllustrateDungeonAction,
     StageProfile,
     StageType,
+    RPG_SYSTEM_RULES,
 )
-from ..demo.entity_factory import create_actor, create_stage
-from ..demo.global_settings import RPG_CAMPAIGN_SETTING
-from ..demo.rpg_system_rules import RPG_SYSTEM_RULES
+from ..models.entity_factory import create_actor, create_stage
 from .dungeon_generation import DungeonBlueprint
 
 
@@ -140,7 +139,7 @@ class AssembleDungeonSystem(ReactiveProcessor):
                     type=StageType.DUNGEON,
                     profile=stage_bp.profile,
                 ),
-                campaign_setting=RPG_CAMPAIGN_SETTING,
+                campaign_setting=self._game._world.blueprint.campaign_setting,
                 system_rules=RPG_SYSTEM_RULES,
             )
 
@@ -154,7 +153,7 @@ class AssembleDungeonSystem(ReactiveProcessor):
                         base_body=actor_bp.base_body,
                     ),
                     character_stats=CharacterStats(),
-                    campaign_setting=RPG_CAMPAIGN_SETTING,
+                    campaign_setting=self._game._world.blueprint.campaign_setting,
                     system_rules=RPG_SYSTEM_RULES,
                     keywords=[
                         "纯攻击型：每张卡牌专注于对单个敌人造成直接伤害，不携带任何附加效果或持续状态。骰值 0-30 为失败，攻击乏力、伤害偏低；骰值 31-70 为正常，伤害稳定适中；骰值 71-100 为优质，体现爆发感，伤害显著高于角色基础攻击力。"

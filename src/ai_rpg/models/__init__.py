@@ -19,4 +19,6 @@ from .stats import *
 from .task import *
 from .world import *
 from .player_session import *
+from .rules import *
+from .entity_factory import *
 from .utils import *

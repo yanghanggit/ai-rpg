@@ -12,7 +12,7 @@
 
 from typing import List, Optional
 
-from ..models import (
+from . import (
     Actor,
     CharacterSheet,
     CharacterStats,

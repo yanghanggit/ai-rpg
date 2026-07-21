@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from typing import Final, List, final, override, Set
-from ..models.messages import AIMessage, HumanMessage, SystemMessage
+from ..models.messages import AIMessage, HumanMessage
 from loguru import logger
 from ..entitas import ExecuteProcessor, Entity
 from ..game.dbg_game import DBGGame
@@ -47,16 +47,6 @@ def _format_other_actors_info(other_actors_info: List[OtherActorInfo]) -> str:
         lines.append(f"- **{info.other_name}**（{info.camp}）: {info.appearance}")
 
     return "\n\n".join(lines)
-
-
-###################################################################################################################################################################
-def _generate_combat_rules_system_message_content() -> str:
-    """生成战斗专用规则 system message 内容。"""
-    return """# 战斗专用规则
-
-1. **根属性不可扩展**：角色数值体系仅由 hp/max_hp、attack、defense、energy、speed 五项根属性构成，禁止新增或替换根属性、禁止引入"火焰抗性""命中率"等新的常驻数值轴。
-2. **通过状态效果与卡牌词缀泛化**：中毒、灼烧、破甲、护盾、致盲、束缚等特殊效果，一律通过**状态效果**（StatusEffect）或**卡牌词缀**（affixes / modifiers）表达——效果名称与描述可自由创造，但最终必须落地为 duration / speed / defense / counter 等已有字段的具体数值调整。
-3. **回合制无位置与命中判定**：本游戏战斗为[回合制]，不存在"空间位置""移动"，也不存在基于概率的"命中率""闪避"判定——攻击与效果默认必定生效，`hit_count` 仅表示单次出牌的重复结算次数，与"是否命中"无关；因此严禁出现"命中率下降""闪避""位置""移动"等相关表述或机制。"""
 
 
 ###################################################################################################################################################################
@@ -218,19 +208,6 @@ class CombatInitActorSystem(ExecuteProcessor):
                 stage_description=stage_description,
                 other_actors_info=other_actors_info,
                 actor_stats=actor_stats,
-            )
-
-            # 在核心 system prompt（[0]）之后插入战斗专用规则 system message（[1]），
-            # 打上 combat_system_rules 标记，供 CombatArchiveSystem 在战斗归档时精确查找并移除
-            self._game.insert_messages(
-                entity=actor_entity,
-                index=1,
-                messages=[
-                    SystemMessage(
-                        content=_generate_combat_rules_system_message_content(),
-                        combat_system_rules=actor_entity.name,
-                    )
-                ],
             )
 
             # 注入战场上下文

@@ -282,7 +282,7 @@ def _status_effects_component_serialization(
 ) -> ComponentSerialization:
     """构造 StatusEffectsComponent 序列化数据。
 
-    与真实 ECS 行为一致：StatusEffectsComponent 在 CombatInitializationSystem 中于
+    与真实 ECS 行为一致：StatusEffectsComponent 在 CombatInitActorSystem 中于
     INITIALIZATION 阶段即注入（初始为空列表，随后由 LLM 评估填充），故本函数不像
     `_ongoing_battle_pile_components` 那样按 `_mock_combat_state` 分支返回空列表，
     而是始终返回该组件（允许 status_effects 为空列表）。"""

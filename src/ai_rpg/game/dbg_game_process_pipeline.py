@@ -6,14 +6,7 @@ from .rpg_game_pipeline_manager import RPGGameProcessPipeline
 
 
 def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
-    """创建家园场景的流程管道（NPC 与玩家共用）
-
-    Args:
-        game: 游戏会话实例
-
-    Returns:
-        配置好的RPG游戏流程管道实例
-    """
+    """创建家园场景的流程管道（NPC 与玩家共用）"""
 
     ### 不这样就循环引用
     from .dbg_game import DBGGame
@@ -89,21 +82,13 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
 def create_combat_pipeline(
     game: GameSession,
 ) -> "RPGGameProcessPipeline":
-    """创建地牢战斗场景的流程管道
-
-    Args:
-        game: 游戏会话实例
-
-    Returns:
-        配置好的RPG游戏流程管道实例
-    """
+    """创建地牢战斗场景的流程管道"""
 
     ### 不这样就循环引用
     from .dbg_game import DBGGame
     from ..systems.combat_outcome_system import CombatOutcomeSystem
-    from ..systems.combat_initialization_system import (
-        CombatInitializationSystem,
-    )
+    from ..systems.combat_init_actor_system import CombatInitActorSystem
+    from ..systems.combat_init_stage_system import CombatInitStageSystem
 
     from ..systems.appearance_initialization_system import (
         AppearanceInitializationSystem,
@@ -178,8 +163,11 @@ def create_combat_pipeline(
     # 战斗场景描述系统
     processors.add(StageDescriptionSystem(dbg_game))
 
-    # 战斗初始化系统（注入战场上下文、转换战斗状态为进行中、触发初始状态效果
-    processors.add(CombatInitializationSystem(dbg_game))
+    # 战斗初始化系统（角色侧）：初始化战斗临时牌堆/状态效果组件，为参战角色注入战场上下文，触发初始牌库生成
+    processors.add(CombatInitActorSystem(dbg_game))
+
+    # 战斗初始化系统（场景侧）：注入战斗专用规则、转换战斗状态为进行中、推理场景状态效果依据
+    processors.add(CombatInitStageSystem(dbg_game))
 
     # 牌库生成系统（战斗开始时为每个角色生成初始牌库
     processors.add(DeckGenerationSystem(dbg_game))
@@ -248,18 +236,7 @@ def create_combat_pipeline(
 def create_dungeon_generate_pipeline(
     game: GameSession,
 ) -> "RPGGameProcessPipeline":
-    """创建地下城生成流程管道（LLM 文本生成 + 图片生成）
-
-    由 GenerateDungeonAction / IllustrateDungeonAction 驱动，负责调用 LLM 生成
-    地下城文本数据（Steps 1-4）并生成对应图片（Step 5），输出结果为 JSON/图片文件。
-    不涉及运行时 Entity 实例化（那是 setup_dungeon 的职责）。
-
-    Args:
-        game: 游戏会话实例
-
-    Returns:
-        配置好的RPG游戏流程管道实例
-    """
+    """创建地下城生成流程管道（LLM 文本生成 + 图片生成）"""
 
     ### 不这样就循环引用
     from .dbg_game import DBGGame

@@ -34,11 +34,11 @@ RPG_SYSTEM_RULES: Final[
 **战斗专用规则**
 
 - **根属性不可扩展**：角色数值体系仅由 hp/max_hp、attack、defense、energy、speed 五项根属性构成，禁止新增或替换根属性、禁止引入"火焰抗性""命中率"等新的常驻数值轴。
-- **数值效果三层机制**：中毒、灼烧、破甲、护盾、致盲、束缚等特殊效果，效果名称与描述可自由创造，但均需归入以下三层机制之一：
+- **词缀二分（modifiers 与 affixes 平级）**：中毒、灼烧、破甲、护盾、致盲、束缚等特殊效果，效果名称与描述可自由创造，但落笔前须先判定其时效性：
   - **即时修正（modifiers）**：一次性数值修正，仅对本次结算生效，不产生持续状态；
-  - **延迟词缀（affixes）**：出牌/命中时附带的触发倾向描述，用于在结算后引出新的状态效果，本身不直接包含数值；
-  - **状态效果（StatusEffect）**：唯一的持续性载体，一切需要跨回合生效的效果最终都必须落地为其 duration / speed / defense / counter 等已有字段的具体数值调整。
-- **卡牌（Card）/ 战斗道具（GearItem、ConsumableItem）是三层机制的载体，自身不产生持续状态**：出牌或使用道具只产生 description 描述的即时确定性效果，可选择性搭载 modifiers 或 affixes，三者语义、层级关系完全一致；GearItem 的常驻属性加成是独立于 StatusEffect 之外的第三种数值来源，随穿戴/卸下即时生效或失效，不设 duration，不可混淆。
+  - **延迟词缀（affixes）**：出牌/命中时附带的触发倾向描述，本身不含数值，仅作为触发信号。
+- **载体二分（Card 与 StatusEffect 平级）**：Card 是一次性动作载体，出牌只产生 description 描述的即时确定性效果，可挂载 modifiers 或 affixes；StatusEffect 是唯一的持续性载体，一切需要跨回合生效的效果最终都必须落地为其 duration / speed / defense / counter 等已有字段的具体数值调整。
+- **affixes 与 StatusEffect 的因果关系**：affixes 不直接等同于 StatusEffect，而是结算后触发独立生成一个新的 StatusEffect 的信号——affixes 是因，StatusEffect 是落地的果。
 - **回合制无位置与命中判定**：本游戏战斗为[回合制]，不存在"空间位置""移动"，也不存在基于概率的"命中率""闪避"判定——攻击与效果默认必定生效，`hit_count` 仅表示单次出牌的重复结算次数，与"是否命中"无关；因此严禁出现"命中率下降""闪避""位置""移动"等相关表述或机制。
 
 **场景移动**

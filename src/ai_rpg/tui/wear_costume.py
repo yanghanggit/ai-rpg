@@ -4,7 +4,11 @@
 当前仅接入以下指令，后续会逐步补充穿戴 / 移除时装等写操作指令：
   1 - 获取当前外观：列出全部场景下全部角色的 AppearanceComponent
       （base_body / appearance）与 EquippedCostumeComponent（如果持有）信息。
+  2 - 获取储物箱时装：列出全局储物箱内全部 CostumeItem，若已被某角色穿戴则标注穿戴者。
   0 - 清屏。
+
+每条指令均为一次性临时 GET：不缓存任何跨指令状态，每次执行都重新从
+（mock 或真实）服务端拉取最新数据。
 
 兼容 mock 与正式服务器数据：复用 `combat_data_access` 中已封装的
 「session is None → mock 固定数据 / 否则 → 真实 fetch_* 调用」判断逻辑，
@@ -12,7 +16,7 @@
 直接调试（mock 数据见 `mock_data.py`）。
 """
 
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from loguru import logger
 from textual import on, work
@@ -21,12 +25,18 @@ from textual.containers import Horizontal
 from textual.widgets import Input, RichLog, Static
 
 from .base import BaseGameScreen
-from .combat_data_access import get_entities_details, get_stages_state
+from .combat_data_access import (
+    get_entities_details,
+    get_stages_state,
+    get_storage_entity_name,
+)
 from .utils import display_name
 from ..models import (
     AppearanceComponent,
     ComponentSerialization,
+    CostumeItem,
     EquippedCostumeComponent,
+    StorageComponent,
 )
 
 WEAR_COSTUME_HEADER = """\
@@ -39,6 +49,7 @@ COMMANDS_MENU = """\
 [bold yellow]── 可用指令 ─────────[/]
   [bold green]0[/]  清屏
   [bold green]1[/]  获取当前外观（全部场景 · 全部角色）
+  [bold green]2[/]  获取储物箱时装（标注穿戴者）
 """
 
 
@@ -112,7 +123,11 @@ class WearCostumeScreen(BaseGameScreen):
             self._cmd_show_appearances()
             return
 
-        log.write(f"[red]未知指令：{raw}，请输入 0 或 1。[/]")
+        if raw == "2":
+            self._cmd_show_storage_costumes()
+            return
+
+        log.write(f"[red]未知指令：{raw}，请输入 0 ~ 2。[/]")
 
     ########################################################################################################################
     def _render_actor_appearance(
@@ -144,7 +159,7 @@ class WearCostumeScreen(BaseGameScreen):
     ########################################################################################################################
     @work
     async def _cmd_show_appearances(self) -> None:
-        """指令 1：获取全部场景 · 全部角色的当前外观（AppearanceComponent + CostumeComponent）。"""
+        """指令 1：获取全部场景 · 全部角色的当前外观（AppearanceComponent + EquippedCostumeComponent）。"""
         log = self.query_one(RichLog)
         log.write(
             "[bold yellow]── 当前外观（全部场景） ──────────────────────────────────────[/]"
@@ -191,3 +206,118 @@ class WearCostumeScreen(BaseGameScreen):
                     log, actor_name, components_by_actor.get(actor_name, [])
                 )
             log.write("")
+
+    ########################################################################################################################
+    async def _fetch_storage_costume_items(
+        self, log: RichLog, storage_entity_name: str
+    ) -> Optional[List[CostumeItem]]:
+        """一次性临时 GET：拉取储物箱实体的 StorageComponent，提取其中全部 CostumeItem。
+
+        失败或找不到 StorageComponent 时返回 None（错误信息已写入 log）；
+        储物箱中没有时装时返回空列表。"""
+        try:
+            storage_details_resp = await get_entities_details(
+                self.game_client, [storage_entity_name]
+            )
+        except Exception as e:
+            logger.error(
+                f"WearCostumeScreen._fetch_storage_costume_items: 获取储物箱失败 error={e}"
+            )
+            log.write(f"[bold red]❌ 获取储物箱失败: {e}[/]")
+            return None
+
+        storage_data: Optional[Dict[str, Any]] = None
+        for entity in storage_details_resp.entities_serialization:
+            if entity.name != storage_entity_name:
+                continue
+            for comp in entity.components:
+                if comp.name == StorageComponent.__name__:
+                    storage_data = comp.data
+
+        if storage_data is None:
+            log.write(
+                f"[yellow]未找到储物箱实体或其 StorageComponent: {storage_entity_name}[/]"
+            )
+            return None
+
+        storage_comp = StorageComponent(**storage_data)
+        return [item for item in storage_comp.items if isinstance(item, CostumeItem)]
+
+    ########################################################################################################################
+    async def _fetch_costume_wearer_map(self, log: RichLog) -> Optional[Dict[str, str]]:
+        """一次性临时 GET：重新拉取全部场景 · 全部角色的 EquippedCostumeComponent，
+        构建 {时装名称: 穿戴者实体名} 映射，不复用任何其他指令已拉取的数据。
+
+        失败时返回 None（错误信息已写入 log）。"""
+        try:
+            stages_resp = await get_stages_state(self.game_client)
+        except Exception as e:
+            logger.error(
+                f"WearCostumeScreen._fetch_costume_wearer_map: 获取场景列表失败 error={e}"
+            )
+            log.write(f"[bold red]❌ 获取场景列表失败: {e}[/]")
+            return None
+
+        all_actor_names = [
+            name for actors in stages_resp.mapping.values() for name in actors
+        ]
+
+        wearer_by_item_name: Dict[str, str] = {}
+        if not all_actor_names:
+            return wearer_by_item_name
+
+        try:
+            actors_details_resp = await get_entities_details(
+                self.game_client, all_actor_names
+            )
+        except Exception as e:
+            logger.error(
+                f"WearCostumeScreen._fetch_costume_wearer_map: 获取角色详情失败 error={e}"
+            )
+            log.write(f"[bold red]❌ 获取角色详情失败: {e}[/]")
+            return None
+
+        for entity in actors_details_resp.entities_serialization:
+            for comp in entity.components:
+                if comp.name == EquippedCostumeComponent.__name__:
+                    equipped = EquippedCostumeComponent(**comp.data)
+                    wearer_by_item_name[equipped.item.name] = entity.name
+
+        return wearer_by_item_name
+
+    ########################################################################################################################
+    @work
+    async def _cmd_show_storage_costumes(self) -> None:
+        """指令 2：获取全局储物箱内全部 CostumeItem，并标注其中已被某角色穿戴的项。
+
+        一次性临时 GET：本方法不读写任何 self._xxx 缓存字段，每次执行都重新从
+        （mock 或真实）服务端拉取储物箱与全部角色的最新数据。"""
+        log = self.query_one(RichLog)
+        log.write(
+            "[bold yellow]── 储物箱时装 ───────────────────────────────────────────────[/]"
+        )
+
+        storage_entity_name = get_storage_entity_name(self.game_client)
+
+        costume_items = await self._fetch_storage_costume_items(
+            log, storage_entity_name
+        )
+        if costume_items is None:
+            return
+        if not costume_items:
+            log.write("[dim]（储物箱中暂无时装）[/]")
+            return
+
+        wearer_by_item_name = await self._fetch_costume_wearer_map(log)
+        if wearer_by_item_name is None:
+            return
+
+        log.write(f"[bold yellow]储物箱：{display_name(storage_entity_name)}[/]")
+        for item in costume_items:
+            wearer = wearer_by_item_name.get(item.name)
+            log.write(f"  [magenta]{item.name}[/] — {item.description}")
+            if wearer is not None:
+                log.write(f"    [bold green]已穿戴者:[/] {display_name(wearer)}")
+            else:
+                log.write("    [dim]（未被任何角色穿戴）[/]")
+        log.write("")

@@ -18,6 +18,7 @@ from .app import GameClient
 from .mock_data import (
     MOCK_ACTOR_NAME,
     MOCK_GAME_NAME,
+    MOCK_STORAGE_NAME,
     MOCK_USER_NAME,
     build_mock_dungeon_room_response,
     build_mock_dungeon_state_response,
@@ -84,3 +85,13 @@ async def get_entities_details(
         return build_mock_entities_details_response(entity_names)
     user_name, game_name, _ = resolve_identity(game_client)
     return await fetch_entities_details(user_name, game_name, entity_names)
+
+
+###############################################################################################################################################
+def get_storage_entity_name(game_client: GameClient) -> str:
+    """获取当前会话对应的全局储物箱实体名；mock 模式下使用固定值。"""
+    if is_mock_mode(game_client):
+        return MOCK_STORAGE_NAME
+    session = game_client.session
+    assert session is not None
+    return session.storage_entity

@@ -53,6 +53,7 @@ from ..models import (
     StagesStateResponse,
     StatusEffect,
     StatusEffectsComponent,
+    StorageComponent,
     Actor as DungeonActor,
 )
 
@@ -65,6 +66,10 @@ MOCK_STAGE_NAME: Final[str] = "回廊-地下城"
 MOCK_TEAMMATE_NAME: Final[str] = "赛琳"
 MOCK_MONSTER_1_NAME: Final[str] = "哥布林-甲"
 MOCK_MONSTER_2_NAME: Final[str] = "哥布林-乙"
+
+MOCK_STORAGE_NAME: Final[str] = (
+    "全局储物箱"  # 对应 session.storage_entity（mock 模式下的固定替代）
+)
 
 MOCK_COMBAT_NAME: Final[str] = f"{MOCK_STAGE_NAME}-combat"
 
@@ -677,12 +682,43 @@ def build_mock_entities_details_response(
         ],
     )
 
+    # 全局储物箱：注意与「已穿戴」的时装（如玩家的「旅者披风」）互斥——真实游戏中穿装时
+    # 会将时装从 StorageComponent 移出（见 update_appearance_action_system.py），脱下时才归还，
+    # 因此这里仅放置当前未被任何角色穿戴的时装，与真实不变式保持一致。
+    storage_serialization = EntitySerialization(
+        name=MOCK_STORAGE_NAME,
+        components=[
+            *_identity_components(MOCK_STORAGE_NAME, 5),
+            ComponentSerialization(
+                name=StorageComponent.__name__,
+                data=StorageComponent(
+                    name=MOCK_STORAGE_NAME,
+                    items=[
+                        CostumeItem(
+                            name="学者长袍",
+                            description="一件朴素的深色长袍，袖口绣有简单的符文纹样。",
+                        ),
+                        CostumeItem(
+                            name="沙丘游侠斗篷",
+                            description="沙黄色的轻便斗篷，兜帽边缘镶有防风布条。",
+                        ),
+                        MaterialItem(
+                            name="哥布林牙",
+                            description="哥布林掉落的牙齿，可用于合成。",
+                        ),
+                    ],
+                ).model_dump(),
+            ),
+        ],
+    )
+
     all_entities = [
         stage_serialization,
         player_serialization,
         teammate_serialization,
         monster_1_serialization,
         monster_2_serialization,
+        storage_serialization,
     ]
 
     # 与真实接口行为对齐：仅返回请求中点名的实体（若请求为空则返回全部，便于调试）。

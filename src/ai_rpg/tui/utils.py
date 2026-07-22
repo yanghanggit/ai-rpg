@@ -9,7 +9,19 @@ from ..models import (
     MaterialItem,
     Card,
     StatusEffect,
+    AnyAgentEvent,
+    SpeakEvent,
+    WhisperEvent,
+    AnnounceEvent,
+    MindEvent,
+    QueryEvent,
+    TransStageEvent,
+    CombatInitiationEvent,
+    CombatArbitrationEvent,
+    CombatArchiveEvent,
+    AppearanceUpdateEvent,
 )
+
 
 TARGET_MAP: Final[Dict[str, str]] = {
     "self_only": "己方",
@@ -150,3 +162,38 @@ def render_status_effect(effect: StatusEffect, entity_name: str = "") -> str:
         f"    • [bold]{effect.name}[/]  [dim]{meta}[/]\n"
         f"      [dim]{effect.description}[/]"
     )
+
+
+def format_agent_event(event: AnyAgentEvent) -> str:
+    """将 AnyAgentEvent 渲染为 Rich markup 字符串。"""
+    match event:
+        case SpeakEvent():
+            return (
+                f"[bold yellow]{event.actor}[/] 对 [yellow]{event.target}[/] 说：\n"
+                f"  「{event.content}」"
+            )
+        case WhisperEvent():
+            return (
+                f"[dim]{event.actor} 悄悄向 {event.target} 耳语：「{event.content}」[/]"
+            )
+        case AnnounceEvent():
+            return f"[bold magenta]【{event.actor}】[/] 在 {event.stage} 宣告：{event.content}"
+        case MindEvent():
+            return f"[dim italic]（{event.actor} 心想：{event.content}）[/]"
+        case QueryEvent():
+            return f"[dim]{event.actor} 询问：{event.question}[/]"
+        case TransStageEvent():
+            return f"[cyan]▶ {event.actor}  {event.stage} → {event.target}[/]"
+        case CombatInitiationEvent():
+            return f"[bold red]⚔ {event.actor} 发起战斗！[/]"
+        case CombatArbitrationEvent():
+            return f"[bold]{event.narrative}[/]"
+        case CombatArchiveEvent():
+            return f"[dim]{event.actor} 战斗归档：{event.summary}[/]"
+        case AppearanceUpdateEvent():
+            return (
+                f"[bold green]✨ {event.actor} 外观已更新：[/]\n"
+                f"  [dim]{event.appearance}[/]"
+            )
+        case _:
+            return f"[dim cyan]{event.message}[/]"

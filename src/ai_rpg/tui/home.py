@@ -16,20 +16,7 @@ from .server_client import (
     home_advance as server_home_advance,
     logout as server_logout,
 )
-from ..models.agent_event import (
-    AnyAgentEvent,
-    SpeakEvent,
-    WhisperEvent,
-    AnnounceEvent,
-    MindEvent,
-    QueryEvent,
-    TransStageEvent,
-    CombatInitiationEvent,
-    CombatArbitrationEvent,
-    CombatArchiveEvent,
-    AppearanceUpdateEvent,
-)
-from .utils import display_name
+from .utils import display_name, format_agent_event
 
 MENU_TEXT = """\
 [bold yellow]可用操作（输入编号执行）：[/]
@@ -53,41 +40,6 @@ MENU_TEXT = """\
   [bold dim]Escape[/]  登出并返回主菜单
 
 """
-
-
-def _format_agent_event(event: AnyAgentEvent) -> str:
-    """将 AnyAgentEvent 渲染为 Rich markup 字符串。"""
-    match event:
-        case SpeakEvent():
-            return (
-                f"[bold yellow]{event.actor}[/] 对 [yellow]{event.target}[/] 说：\n"
-                f"  「{event.content}」"
-            )
-        case WhisperEvent():
-            return (
-                f"[dim]{event.actor} 悄悄向 {event.target} 耳语：「{event.content}」[/]"
-            )
-        case AnnounceEvent():
-            return f"[bold magenta]【{event.actor}】[/] 在 {event.stage} 宣告：{event.content}"
-        case MindEvent():
-            return f"[dim italic]（{event.actor} 心想：{event.content}）[/]"
-        case QueryEvent():
-            return f"[dim]{event.actor} 询问：{event.question}[/]"
-        case TransStageEvent():
-            return f"[cyan]▶ {event.actor}  {event.stage} → {event.target}[/]"
-        case CombatInitiationEvent():
-            return f"[bold red]⚔ {event.actor} 发起战斗！[/]"
-        case CombatArbitrationEvent():
-            return f"[bold]{event.narrative}[/]"
-        case CombatArchiveEvent():
-            return f"[dim]{event.actor} 战斗归档：{event.summary}[/]"
-        case AppearanceUpdateEvent():
-            return (
-                f"[bold green]✨ {event.actor} 外观已更新：[/]\n"
-                f"  [dim]{event.appearance}[/]"
-            )
-        case _:
-            return f"[dim cyan]{event.message}[/]"
 
 
 class HomeScreen(BaseGameScreen):
@@ -136,9 +88,7 @@ class HomeScreen(BaseGameScreen):
 
     def on_mount(self) -> None:
         _app = self.game_client
-        log = self.query_one(RichLog)
-        self._write_header(log)
-        log.write(MENU_TEXT)
+        self._reset_log()
         if _app.session:
             logger.info(
                 f"HomeScreen: 进入主场景 user_name={_app.session.user_name}"
@@ -168,18 +118,25 @@ class HomeScreen(BaseGameScreen):
         """写入顶部基础信息（玩家/游戏/角色），合入主 log，会话期间不会变化，只需写入一次。"""
         session = self.game_client.session
         if session is None:
-            #log.write("[bold cyan]AI RPG DBG  游戏主场景[/]")
+            # log.write("[bold cyan]AI RPG DBG  游戏主场景[/]")
             return
         actor_text = (
             display_name(session.actor_name) if session.actor_name else "（未知）"
         )
         log.write(
-            #"[bold cyan]AI RPG DBG  游戏主场景[/]\n"
+            # "[bold cyan]AI RPG DBG  游戏主场景[/]\n"
             f"[bold green]▶ 玩家：[/][bold]{session.user_name}[/]  "
             f"[bold green]游戏：[/][bold]{session.game_name}[/]  "
             f"[bold green]角色：[/][bold cyan]{actor_text}[/]"
             f"\n\n"
         )
+
+    def _reset_log(self) -> None:
+        """清空主 log 并重新写入基础信息 + 命令菜单，用于清空累积的事件记录。"""
+        log = self.query_one(RichLog)
+        log.clear()
+        self._write_header(log)
+        log.write(MENU_TEXT)
 
     @on(Input.Submitted, "#home-input")
     def handle_command(self, event: Input.Submitted) -> None:
@@ -190,15 +147,17 @@ class HomeScreen(BaseGameScreen):
         if not cmd:
             return
 
+        if cmd == "0":
+            self._reset_log()
+            return
+
         log.write(f"[dim]> {cmd}[/]")
         logger.debug(f"HomeScreen: 收到命令 cmd={cmd}")
 
-        if cmd == "0":
-            log.write(MENU_TEXT)
-        elif cmd == "1":
-            from .entity_browser import EntityBrowserScreen
+        if cmd == "1":
+            from .home_entity_browser import HomeEntityBrowserScreen
 
-            self.app.push_screen(EntityBrowserScreen())
+            self.app.push_screen(HomeEntityBrowserScreen())
         elif cmd == "2":
             from .dungeon_overview import DungeonOverviewScreen
 
@@ -340,7 +299,7 @@ class HomeScreen(BaseGameScreen):
                 if msg.agent_event is None:
                     continue
                 log = self.query_one(RichLog)
-                log.write(_format_agent_event(msg.agent_event))
+                log.write(format_agent_event(msg.agent_event))
                 log.write("--------------------------------------")
                 logger.debug(f"_poll_messages: 收到消息 seq={msg.sequence_id}")
         except Exception as e:

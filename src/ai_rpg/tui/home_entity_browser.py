@@ -21,7 +21,7 @@ BROWSER_HEADER = """\
 """
 
 
-class EntityBrowserScreen(BaseGameScreen):
+class HomeEntityBrowserScreen(BaseGameScreen):
     """实体浏览器 Screen：列出全部 Stage / Actor，按编号查看组件详情。"""
 
     CSS = """
@@ -58,7 +58,6 @@ class EntityBrowserScreen(BaseGameScreen):
 
     def __init__(self) -> None:
         super().__init__()
-        # (entity_name, entity_type) — type is "场景" or "角色"
         self._entity_list: List[Tuple[str, str]] = []
         self._stage_mapping: Dict[str, List[str]] = {}
 
@@ -134,9 +133,19 @@ class EntityBrowserScreen(BaseGameScreen):
         log.write(
             "[bold yellow]── 角色 ─────────────────────────────────────────────[/]"
         )
+
         for i, (name, etype) in enumerate(self._entity_list, start=1):
+
             if etype == "角色":
-                log.write(f"  [bold]{i}.[/] [green]{display_name(name)}[/]")
+                session = self.game_client.session
+                assert session is not None, "会话状态未初始化"
+                if name == session.actor_name:
+                    log.write(
+                        f"  [bold]{i}.[/] [bold green]{display_name(name)}[/]  [dim](玩家)[/]"
+                    )
+                else:
+                    log.write(f"  [bold]{i}.[/] [green]{display_name(name)}[/]")
+
         log.write("")
 
     @work
@@ -147,6 +156,7 @@ class EntityBrowserScreen(BaseGameScreen):
             app = self.game_client
             if app.session is None:
                 return
+
             user_name = app.session.user_name
             game_name = app.session.game_name
             resp = await fetch_stages_state(user_name, game_name)
@@ -157,6 +167,7 @@ class EntityBrowserScreen(BaseGameScreen):
             # collect unique actors in order of appearance
             seen: Set[str] = set()
             actors: List[str] = []
+
             for actor_list in resp.mapping.values():
                 for actor in actor_list:
                     if actor not in seen:
@@ -165,6 +176,7 @@ class EntityBrowserScreen(BaseGameScreen):
 
             for stage in stages:
                 self._entity_list.append((stage, "场景"))
+
             for actor in actors:
                 self._entity_list.append((actor, "角色"))
 
@@ -174,35 +186,47 @@ class EntityBrowserScreen(BaseGameScreen):
 
             self._render_list(log)
             logger.info(f"_load_entities: 加载成功，共 {len(self._entity_list)} 个实体")
+
         except Exception as e:
             logger.error(f"_load_entities: 加载失败 error={e}")
             log.write(f"[bold red]❌ 实体列表加载失败: {e}[/]")
 
     @work
     async def _show_entity(self, entity_name: str) -> None:
+
         log = self.query_one(RichLog)
         log.write(f"[dim]正在查询实体：{entity_name} ...[/]")
         logger.info(f"_show_entity: 查询 entity_name={entity_name}")
+
         try:
             app = self.game_client
             if app.session is None:
                 return
+
             resp = await fetch_entities_details(
                 app.session.user_name, app.session.game_name, [entity_name]
             )
+
             if not resp.entities_serialization:
                 log.write(f"[yellow]未找到实体：{entity_name}[/]")
                 return
+
             for entity in resp.entities_serialization:
+
                 log.write(
                     f"[bold yellow]── 实体：{display_name(entity.name)} ──────────────────────────────────────[/]"
                 )
+
                 for comp in entity.components:
                     data_str = json.dumps(comp.data, ensure_ascii=False, indent=2)
                     log.write(f"  [bold cyan][组件][/] [green]{comp.name}[/]")
                     log.write(f"[dim]{data_str}[/]")
+
                 log.write("")
+
             logger.info(f"_show_entity: 查询成功 entity_name={entity_name}")
+
         except Exception as e:
+
             logger.error(f"_show_entity: 查询失败 entity_name={entity_name} error={e}")
             log.write(f"[bold red]❌ 查询失败: {e}[/]")

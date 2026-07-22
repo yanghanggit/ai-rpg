@@ -17,7 +17,7 @@
 
     python scripts/run_tui_client.py --dev-screen combat-room
     python scripts/run_tui_client.py --dev-screen combat-post-combat
-
+    python scripts/run_tui_client.py --dev-screen wear-costume
 """
 
 import sys
@@ -33,13 +33,14 @@ from ai_rpg.tui.config import server_config
 from ai_rpg.tui.launch import LaunchScreen
 from ai_rpg.tui.combat_room import CombatRoomScreen
 from ai_rpg.tui.combat_post_combat import CombatPostCombatScreen
+from ai_rpg.tui.wear_costume import WearCostumeScreen
 from textual.screen import Screen
 
 # PyInstaller frozen bundle 检测：打包后 sys.frozen = True
 _IS_FROZEN: bool = getattr(sys, "frozen", False)
 
 # 默认服务器连接配置（可通过命令行参数覆盖）──
-_DEFAULT_SERVER_HOST: Final[str] = "192.168.192.111"
+_DEFAULT_SERVER_HOST: Final[str] = "192.168.2.190"
 _DEFAULT_SERVER_PORT: Final[int] = 8000
 
 # ── loguru 配置：移除默认 stderr sink，改为文件输出（TUI 渲染期间不能写终端）──
@@ -86,7 +87,7 @@ logger.add(
 )
 @click.option(
     "--dev-screen",
-    type=click.Choice(["combat-room", "combat-post-combat"]),
+    type=click.Choice(["combat-room", "combat-post-combat", "wear-costume"]),
     default=None,
     help="[开发用] 跳过登录流程，启动后直接进入指定页面（combat-room / combat-post-combat）",
 )
@@ -129,6 +130,8 @@ def main(
             launch_screen = CombatPostCombatScreen
         elif dev_screen == "combat-room":
             launch_screen = CombatRoomScreen
+        elif dev_screen == "wear-costume":
+            launch_screen = WearCostumeScreen
         else:
             launch_screen = LaunchScreen
 

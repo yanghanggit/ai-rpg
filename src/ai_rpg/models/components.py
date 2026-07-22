@@ -299,7 +299,7 @@ class CombatLootComponent(MutableComponent):
 
 @final
 @register_component_type
-class CostumeComponent(MutableComponent):
+class EquippedCostumeComponent(MutableComponent):
     """时装组件，记录当前穿戴的时装（CostumeItem）"""
 
     name: str

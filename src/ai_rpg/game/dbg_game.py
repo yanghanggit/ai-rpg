@@ -41,7 +41,7 @@ from ..models import (
     World,
     WorldComponent,
     WorldSystem,
-    CostumeComponent,
+    EquippedCostumeComponent,
     SystemMessage,
     AnyItem,
     PlayerSession,
@@ -347,7 +347,7 @@ class DBGGame(RPGGame):
             # DBG 组件：初始时装（CostumeComponent），如果 actor_model.custom_item 不为 None，则挂载 CostumeComponent，初始时装来源于 actor_model.custom_item
             if actor_model.custom_item is not None:
                 actor_entity.replace(
-                    CostumeComponent,
+                    EquippedCostumeComponent,
                     actor_entity.name,
                     copy.deepcopy(actor_model.custom_item),
                 )

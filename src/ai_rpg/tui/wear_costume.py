@@ -1,6 +1,18 @@
-"""穿戴时装 Screen：为目标角色安装或移除时装。"""
+"""穿戴时装 Screen：指令驱动。
 
-from typing import List, Literal
+重写说明（进行中）：本页正从「两步选择式交互」迁移为「指令驱动展示」。
+当前仅接入以下指令，后续会逐步补充穿戴 / 移除时装等写操作指令：
+  1 - 获取当前外观：列出全部场景下全部角色的 AppearanceComponent
+      （base_body / appearance）与 EquippedCostumeComponent（如果持有）信息。
+  0 - 清屏。
+
+兼容 mock 与正式服务器数据：复用 `combat_data_access` 中已封装的
+「session is None → mock 固定数据 / 否则 → 真实 fetch_* 调用」判断逻辑，
+使本页可通过 `scripts/run_tui_client.py --dev-screen wear-costume` 在无服务器时
+直接调试（mock 数据见 `mock_data.py`）。
+"""
+
+from typing import List, Optional
 
 from loguru import logger
 from textual import on, work
@@ -9,25 +21,29 @@ from textual.containers import Horizontal
 from textual.widgets import Input, RichLog, Static
 
 from .base import BaseGameScreen
-from .server_client import (
-    fetch_entities_details,
-    fetch_stages_state,
-    home_wear_costume,
-    watch_task_until_done,
-    TaskFailedError,
-)
+from .combat_data_access import get_entities_details, get_stages_state
 from .utils import display_name
-from ..models import StorageComponent
+from ..models import (
+    AppearanceComponent,
+    ComponentSerialization,
+    EquippedCostumeComponent,
+)
 
 WEAR_COSTUME_HEADER = """\
 [bold cyan]── 穿戴时装 ──────────────────────────────────────[/]
 
-选择时装后再选择目标角色，[bold]Escape[/] 返回。
+指令驱动页面（开发中，逐步补充），[bold]Escape[/] 返回。
+"""
+
+COMMANDS_MENU = """\
+[bold yellow]── 可用指令 ─────────[/]
+  [bold green]0[/]  清屏
+  [bold green]1[/]  获取当前外观（全部场景 · 全部角色）
 """
 
 
 class WearCostumeScreen(BaseGameScreen):
-    """穿戴时装 Screen：两步操作，先选时装再选目标角色。"""
+    """穿戴时装 Screen：指令驱动，输入编号执行对应指令。"""
 
     CSS = """
     WearCostumeScreen {
@@ -61,29 +77,22 @@ class WearCostumeScreen(BaseGameScreen):
         ("escape", "go_back", "Back"),
     ]
 
-    def __init__(self) -> None:
-        super().__init__()
-        self._costume_list: List[str] = []  # names of CostumeItem in storage
-        self._target_list: List[str] = []  # NPC names in current stage
-        self._player_actor: str = ""  # player actor name
-        self._step: Literal["select_costume", "select_target"] = "select_costume"
-        self._selected_item: str = ""  # chosen costume name (empty = remove)
-
     def compose(self) -> ComposeResult:
         yield RichLog(id="costume-log", highlight=True, markup=True, wrap=True)
         with Horizontal(id="costume-input-row"):
             yield Static("> ", id="costume-prompt")
-            yield Input(placeholder="输入编号...", id="costume-input")
+            yield Input(placeholder="输入指令编号...", id="costume-input")
 
     def on_mount(self) -> None:
         log = self.query_one(RichLog)
         log.write(WEAR_COSTUME_HEADER)
-        self._load_data()
+        log.write(COMMANDS_MENU)
         self.query_one(Input).focus()
 
     def action_go_back(self) -> None:
         self.app.pop_screen()
 
+    ########################################################################################################################
     @on(Input.Submitted, "#costume-input")
     def handle_input(self, event: Input.Submitted) -> None:
         raw = event.value.strip()
@@ -93,198 +102,92 @@ class WearCostumeScreen(BaseGameScreen):
         if not raw:
             return
 
-        if not raw.isdigit():
-            log.write("[red]请输入有效的编号。[/]")
+        if raw == "0":
+            log.clear()
+            log.write(WEAR_COSTUME_HEADER)
+            log.write(COMMANDS_MENU)
             return
 
-        idx = int(raw)
-
-        if self._step == "select_costume":
-            self._handle_costume_selection(idx)
-        else:
-            self._handle_target_selection(idx)
-
-    def _handle_costume_selection(self, idx: int) -> None:
-        log = self.query_one(RichLog)
-
-        if not self._costume_list and idx != 0:
-            log.write("[yellow]时装列表尚未加载，请稍候...[/]")
+        if raw == "1":
+            self._cmd_show_appearances()
             return
 
-        # 0 = 移除时装，1..N = costume
-        max_idx = len(self._costume_list)
-        if idx < 0 or idx > max_idx:
-            log.write(f"[red]编号超出范围，请输入 0 ~ {max_idx}。[/]")
-            return
+        log.write(f"[red]未知指令：{raw}，请输入 0 或 1。[/]")
 
-        if idx == 0:
-            self._selected_item = ""
-            log.write("[dim]✓ 选择：移除当前时装[/]")
+    ########################################################################################################################
+    def _render_actor_appearance(
+        self, log: RichLog, actor_name: str, components: List[ComponentSerialization]
+    ) -> None:
+        """从实体组件列表中提取并渲染 AppearanceComponent + EquippedCostumeComponent（如有）"""
+        appearance_comp: Optional[AppearanceComponent] = None
+        costume_comp: Optional[EquippedCostumeComponent] = None
+        for comp in components:
+            if comp.name == AppearanceComponent.__name__:
+                appearance_comp = AppearanceComponent(**comp.data)
+            elif comp.name == EquippedCostumeComponent.__name__:
+                costume_comp = EquippedCostumeComponent(**comp.data)
+
+        log.write(f"  [bold cyan]{display_name(actor_name)}[/]")
+
+        if appearance_comp is not None:
+            log.write(f"    [dim]基础体型:[/] {appearance_comp.base_body}")
+            log.write(f"    [dim]当前外观:[/] {appearance_comp.appearance}")
         else:
-            self._selected_item = self._costume_list[idx - 1]
-            log.write(
-                f"[dim]✓ 选择时装：[bold magenta]{display_name(self._selected_item)}[/][/]"
-            )
+            log.write("    [dim]（未持有 AppearanceComponent）[/]")
 
-        self._step = "select_target"
-        self._show_target_list()
-
-    def _handle_target_selection(self, idx: int) -> None:
-        log = self.query_one(RichLog)
-
-        # 1 = player self (target_name=""), 2..M = NPCs
-        max_idx = 1 + len(self._target_list)
-        if idx < 1 or idx > max_idx:
-            log.write(f"[red]编号超出范围，请输入 1 ~ {max_idx}。[/]")
-            return
-
-        if idx == 1:
-            target_name = ""
-            player_label = (
-                f"{display_name(self._player_actor)}（玩家自身）"
-                if self._player_actor
-                else "玩家自身"
-            )
-            log.write(f"[dim]✓ 目标：[bold cyan]{player_label}[/][/]")
+        if costume_comp is not None:
+            item = costume_comp.item
+            log.write(f"    [magenta]时装:[/] {item.name} — {item.description}")
         else:
-            target_name = self._target_list[idx - 2]
-            log.write(f"[dim]✓ 目标：[bold cyan]{display_name(target_name)}[/][/]")
+            log.write("    [dim]（未持有 EquippedCostumeComponent，即未穿戴时装）[/]")
 
-        self._do_wear_costume(self._selected_item, target_name)
-
-    def _show_costume_list(self) -> None:
-        log = self.query_one(RichLog)
-        log.write("[bold yellow]── 可用时装 ──────────────────────────────────────[/]")
-        log.write("  [bold green]0.[/] [dim]移除当前时装（恢复基础外观）[/]")
-        if self._costume_list:
-            for i, name in enumerate(self._costume_list, 1):
-                log.write(f"  [bold green]{i}.[/] [magenta]{display_name(name)}[/]")
-        else:
-            log.write("  [dim]（储物箱中暂无时装）[/]")
-        log.write("")
-        log.write("[dim]输入编号选择时装（0 = 移除时装）：[/]")
-
-    def _show_target_list(self) -> None:
-        log = self.query_one(RichLog)
-        log.write("[bold yellow]── 选择目标角色 ──────────────────────────────────[/]")
-        player_label = (
-            f"{display_name(self._player_actor)}（玩家自身）"
-            if self._player_actor
-            else "玩家自身"
-        )
-        log.write(f"  [bold green]1.[/] [cyan]{player_label}[/]")
-        for i, name in enumerate(self._target_list, 2):
-            log.write(f"  [bold green]{i}.[/] [cyan]{display_name(name)}[/]")
-        log.write("")
-        log.write("[dim]输入编号选择目标角色：[/]")
-
+    ########################################################################################################################
     @work
-    async def _load_data(self) -> None:
-        """加载储物箱时装列表与当前场景角色列表。"""
+    async def _cmd_show_appearances(self) -> None:
+        """指令 1：获取全部场景 · 全部角色的当前外观（AppearanceComponent + CostumeComponent）。"""
         log = self.query_one(RichLog)
-        log.write("[dim]正在加载时装与角色信息...[/]")
-
-        app = self.game_client
-        if app.session is None:
-            log.write("[red]⚠ 无法取得会话信息。[/]")
-            return
-
-        user_name = app.session.user_name
-        game_name = app.session.game_name
-        player_actor = app.session.actor_name
-        storage_entity = app.session.storage_entity
-        self._player_actor = player_actor
-
-        # --- 加载时装（from StorageComponent）---
-        try:
-            details_resp = await fetch_entities_details(
-                user_name, game_name, [player_actor, storage_entity]
-            )
-            for entity in details_resp.entities_serialization:
-                for comp in entity.components:
-                    if comp.name == StorageComponent.__name__:
-                        self._costume_list = [
-                            item["name"]
-                            for item in comp.data.get("items", [])
-                            if item.get("type") == "CostumeItem"
-                        ]
-        except Exception as e:
-            logger.warning(f"WearCostumeScreen._load_data: 加载时装失败 error={e}")
-            log.write(f"[yellow]⚠ 加载时装列表失败: {e}[/]")
-
-        # --- 加载当前场景 NPC ---
-        try:
-            stages_resp = await fetch_stages_state(user_name, game_name)
-            for stage, actors in stages_resp.mapping.items():
-                if player_actor and player_actor in actors:
-                    self._target_list = [a for a in actors if a != player_actor]
-                    break
-        except Exception as e:
-            logger.warning(f"WearCostumeScreen._load_data: 加载场景角色失败 error={e}")
-            log.write(f"[yellow]⚠ 加载场景角色失败: {e}[/]")
-
-        logger.info(
-            f"WearCostumeScreen._load_data: costumes={self._costume_list} targets={self._target_list}"
-        )
-        self._show_costume_list()
-
-    @work
-    async def _do_wear_costume(self, item_name: str, target_name: str) -> None:
-        """发送穿戴时装请求并等待任务完成。"""
-        app = self.game_client
-        if app.session is None:
-            return
-        user_name = app.session.user_name
-        game_name = app.session.game_name
-
-        log = self.query_one(RichLog)
-        inp = self.query_one(Input)
-        inp.disabled = True
-
-        action_label = (
-            f"移除时装 → {display_name(target_name) if target_name else '玩家自身'}"
-            if not item_name
-            else f"穿戴「{display_name(item_name)}」→ {display_name(target_name) if target_name else '玩家自身'}"
-        )
-        log.write(f"[bold yellow]── 外观更新 ──────────────────────────────────────[/]")
-        log.write(f"[dim]▶ {action_label}...[/]")
-        logger.info(
-            f"WearCostumeScreen._do_wear_costume: user={user_name} item={item_name!r} target={target_name!r}"
+        log.write(
+            "[bold yellow]── 当前外观（全部场景） ──────────────────────────────────────[/]"
         )
 
         try:
-            resp = await home_wear_costume(user_name, game_name, item_name, target_name)
-            task_id = resp.task_id
-            log.write(f"[dim]任务已创建：{task_id}[/]")
+            stages_resp = await get_stages_state(self.game_client)
         except Exception as e:
-            logger.error(f"WearCostumeScreen._do_wear_costume: 请求失败 error={e}")
-            log.write(f"[bold red]❌ 请求失败: {e}[/]")
-            inp.disabled = False
-            inp.focus()
-            return
-
-        try:
-            await watch_task_until_done(task_id)
-            log.write("[bold green]✅ 外观更新完成[/]")
-            logger.info(
-                f"WearCostumeScreen._do_wear_costume: 任务完成 task_id={task_id}"
-            )
-        except TaskFailedError as e:
-            log.write(f"[bold red]❌ 外观更新失败: {e}[/]")
             logger.error(
-                f"WearCostumeScreen._do_wear_costume: 任务失败 task_id={task_id} error={e}"
+                f"WearCostumeScreen._cmd_show_appearances: 获取场景列表失败 error={e}"
             )
-        except TimeoutError:
-            log.write("[bold yellow]⚠️ 外观更新超时，请检查服务器状态[/]")
-            logger.warning(
-                f"WearCostumeScreen._do_wear_costume: 任务轮询超时 task_id={task_id}"
-            )
-        except Exception as e:
-            log.write(f"[bold red]❌ 等待任务失败: {e}[/]")
-            logger.warning(
-                f"WearCostumeScreen._do_wear_costume: 等待任务失败 error={e}"
-            )
+            log.write(f"[bold red]❌ 获取场景列表失败: {e}[/]")
+            return
 
-        inp.disabled = False
-        inp.focus()
-        self.app.pop_screen()
+        if not stages_resp.mapping:
+            log.write("[yellow]当前没有可查询的场景。[/]")
+            return
+
+        all_actor_names = [
+            name for actors in stages_resp.mapping.values() for name in actors
+        ]
+
+        try:
+            details_resp = await get_entities_details(self.game_client, all_actor_names)
+        except Exception as e:
+            logger.error(
+                f"WearCostumeScreen._cmd_show_appearances: 获取角色详情失败 error={e}"
+            )
+            log.write(f"[bold red]❌ 获取角色详情失败: {e}[/]")
+            return
+
+        components_by_actor = {
+            entity.name: entity.components
+            for entity in details_resp.entities_serialization
+        }
+
+        for stage_name, actor_names in stages_resp.mapping.items():
+            log.write(f"[bold yellow]场景：{display_name(stage_name)}[/]")
+            if not actor_names:
+                log.write("  [dim]（场景内暂无角色）[/]")
+                continue
+            for actor_name in actor_names:
+                self._render_actor_appearance(
+                    log, actor_name, components_by_actor.get(actor_name, [])
+                )
+            log.write("")

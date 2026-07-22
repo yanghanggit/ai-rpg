@@ -9,7 +9,7 @@ from ..models import (
     UpdateAppearanceAction,
     AppearanceComponent,
     AppearanceUpdateEvent,
-    CostumeComponent,
+    EquippedCostumeComponent,
     StorageComponent,
 )
 from ..models.items import CostumeItem
@@ -65,11 +65,11 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
     ) -> None:
         """脱装：取出 CostumeComponent.item，移除组件，归还全局 StorageComponent，重置外观。无时装时静默跳过。"""
 
-        if not entity.has(CostumeComponent):
+        if not entity.has(EquippedCostumeComponent):
             return
 
-        costume_item: CostumeItem = entity.get(CostumeComponent).item
-        entity.remove(CostumeComponent)
+        costume_item: CostumeItem = entity.get(EquippedCostumeComponent).item
+        entity.remove(EquippedCostumeComponent)
 
         # 归还全局储物箱
         storage_entity = self._game.get_storage_entity()
@@ -133,7 +133,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
         ]
 
         # 挂载 CostumeComponent
-        entity.replace(CostumeComponent, entity.name, costume)
+        entity.replace(EquippedCostumeComponent, entity.name, costume)
 
         # 使用 LLM 合成外观描述
         appearance_comp = entity.get(AppearanceComponent)

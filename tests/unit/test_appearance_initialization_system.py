@@ -7,7 +7,11 @@ from src.ai_rpg.deepseek import DeepSeekClient
 from src.ai_rpg.entitas.context import Context
 from src.ai_rpg.entitas.entity import Entity
 from src.ai_rpg.game.dbg_game import DBGGame
-from src.ai_rpg.models import ActorComponent, AppearanceComponent, CostumeComponent
+from src.ai_rpg.models import (
+    ActorComponent,
+    AppearanceComponent,
+    EquippedCostumeComponent,
+)
 from src.ai_rpg.models.items import CostumeItem
 from src.ai_rpg.models.messages import AIMessage
 from src.ai_rpg.systems.appearance_initialization_system import (
@@ -33,7 +37,7 @@ def _make_actor_entity(
     entity._name = name
     entity.add(ActorComponent, name, "test_sheet", "test_stage")
     entity.add(AppearanceComponent, name, _BASE_BODY, appearance)
-    entity.add(CostumeComponent, name, costume)
+    entity.add(EquippedCostumeComponent, name, costume)
     return entity
 
 

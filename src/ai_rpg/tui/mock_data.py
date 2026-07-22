@@ -11,6 +11,7 @@ from typing import Final, List
 from ..models import (
     ActorComponent,
     AnyItem,
+    AppearanceComponent,
     Card,
     Combat,
     CombatLootComponent,
@@ -22,6 +23,8 @@ from ..models import (
     CharacterStatsComponent,
     ComponentSerialization,
     ConsumableItem,
+    EquippedCostumeComponent,
+    CostumeItem,
     DeckComponent,
     DiscardPileComponent,
     DrawPileComponent,
@@ -277,6 +280,30 @@ def _combat_loot_component_serialization(
 
 
 ###############################################################################################################################################
+def _appearance_component_serialization(
+    name: str, base_body: str, appearance: str
+) -> ComponentSerialization:
+    """构造 AppearanceComponent 序列化数据，用于「获取当前外观」命令。"""
+    return ComponentSerialization(
+        name=AppearanceComponent.__name__,
+        data=AppearanceComponent(
+            name=name, base_body=base_body, appearance=appearance
+        ).model_dump(),
+    )
+
+
+###############################################################################################################################################
+def _costume_component_serialization(
+    name: str, item: CostumeItem
+) -> ComponentSerialization:
+    """构造 CostumeComponent 序列化数据（角色已穿戴时装时才存在）。"""
+    return ComponentSerialization(
+        name=EquippedCostumeComponent.__name__,
+        data=EquippedCostumeComponent(name=name, item=item).model_dump(),
+    )
+
+
+###############################################################################################################################################
 def _status_effects_component_serialization(
     name: str, status_effects: List[StatusEffect]
 ) -> ComponentSerialization:
@@ -387,6 +414,18 @@ def build_mock_entities_details_response(
                 name=PlayerComponent.__name__,
                 data=PlayerComponent(player_name=MOCK_USER_NAME).model_dump(),
             ),
+            _appearance_component_serialization(
+                MOCK_ACTOR_NAME,
+                base_body="体型精瘦的青年男性，动作敏捷。",
+                appearance="体型精瘦的青年男性，动作敏捷，身披一件泛着微光的旅者披风。",
+            ),
+            _costume_component_serialization(
+                MOCK_ACTOR_NAME,
+                CostumeItem(
+                    name="旅者披风",
+                    description="一件轻便的深绿色披风，边缘绣有简单的藤蔓纹样。",
+                ),
+            ),
             _deck_component_serialization(
                 MOCK_ACTOR_NAME,
                 [
@@ -495,6 +534,11 @@ def build_mock_entities_details_response(
             ComponentSerialization(
                 name=PartyMemberComponent.__name__,
                 data=PartyMemberComponent(name=MOCK_TEAMMATE_NAME).model_dump(),
+            ),
+            _appearance_component_serialization(
+                MOCK_TEAMMATE_NAME,
+                base_body="身形高挑的女性法师，气质沉静。",
+                appearance="身形高挑的女性法师，气质沉静。",  # 未穿戴时装，appearance 与 base_body 一致
             ),
             _deck_component_serialization(
                 MOCK_TEAMMATE_NAME,

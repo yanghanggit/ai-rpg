@@ -8,7 +8,7 @@ from src.ai_rpg.game.rpg_entity_manager import RPGEntityManager
 from src.ai_rpg.game.dbg_game import DBGGame
 from src.ai_rpg.models import (
     AppearanceComponent,
-    CostumeComponent,
+    EquippedCostumeComponent,
     StorageComponent,
     UpdateAppearanceAction,
 )
@@ -112,12 +112,12 @@ class TestProcessRemoveCostume:
     ) -> None:
         """有 CostumeComponent 时，执行后组件应被移除。"""
         entity = _make_actor_entity(entity_manager, "hero")
-        entity.add(CostumeComponent, "hero", _COSTUME)
+        entity.add(EquippedCostumeComponent, "hero", _COSTUME)
         mock_game.get_storage_entity.return_value = _make_storage_entity(entity_manager)
 
         system._process_remove_costume(entity)
 
-        assert not entity.has(CostumeComponent)
+        assert not entity.has(EquippedCostumeComponent)
 
     def test_returns_item_to_storage(
         self,
@@ -127,7 +127,7 @@ class TestProcessRemoveCostume:
     ) -> None:
         """脱下的时装道具应归还到储物箱。"""
         entity = _make_actor_entity(entity_manager, "hero")
-        entity.add(CostumeComponent, "hero", _COSTUME)
+        entity.add(EquippedCostumeComponent, "hero", _COSTUME)
         storage = _make_storage_entity(entity_manager)
         mock_game.get_storage_entity.return_value = storage
 
@@ -145,7 +145,7 @@ class TestProcessRemoveCostume:
     ) -> None:
         """脱装后外观应重置为 base_body。"""
         entity = _make_actor_entity(entity_manager, "hero", appearance="穿着铁甲的战士")
-        entity.add(CostumeComponent, "hero", _COSTUME)
+        entity.add(EquippedCostumeComponent, "hero", _COSTUME)
         mock_game.get_storage_entity.return_value = _make_storage_entity(entity_manager)
 
         system._process_remove_costume(entity)
@@ -160,7 +160,7 @@ class TestProcessRemoveCostume:
     ) -> None:
         """脱装后应调用一次 broadcast_to_stage。"""
         entity = _make_actor_entity(entity_manager, "hero")
-        entity.add(CostumeComponent, "hero", _COSTUME)
+        entity.add(EquippedCostumeComponent, "hero", _COSTUME)
         mock_game.get_storage_entity.return_value = _make_storage_entity(entity_manager)
 
         system._process_remove_costume(entity)
@@ -192,7 +192,7 @@ class TestProcessWearCostume:
 
         await system._process_wear_costume(entity)
 
-        assert not entity.has(CostumeComponent)
+        assert not entity.has(EquippedCostumeComponent)
         mock_game.broadcast_to_stage.assert_not_called()
 
     @pytest.mark.asyncio
@@ -238,8 +238,8 @@ class TestProcessWearCostume:
             MockClient.return_value = mock_client
             await system._process_wear_costume(entity)
 
-        assert entity.has(CostumeComponent)
-        assert entity.get(CostumeComponent).item.name == _COSTUME.name
+        assert entity.has(EquippedCostumeComponent)
+        assert entity.get(EquippedCostumeComponent).item.name == _COSTUME.name
 
     @pytest.mark.asyncio
     async def test_updates_appearance_from_llm(
@@ -333,12 +333,12 @@ class TestReact:
         """action.costume_item_name 为空时，应脱装但不穿新装。"""
         entity = _make_actor_entity(entity_manager, "hero")
         entity.add(UpdateAppearanceAction, "hero", "", None)
-        entity.add(CostumeComponent, "hero", _COSTUME)
+        entity.add(EquippedCostumeComponent, "hero", _COSTUME)
         mock_game.get_storage_entity.return_value = _make_storage_entity(entity_manager)
 
         await system.react([entity])
 
-        assert not entity.has(CostumeComponent)
+        assert not entity.has(EquippedCostumeComponent)
 
     @pytest.mark.asyncio
     async def test_react_wears_new_costume_end_to_end(
@@ -360,5 +360,5 @@ class TestReact:
             MockClient.return_value = mock_client
             await system.react([entity])
 
-        assert entity.has(CostumeComponent)
+        assert entity.has(EquippedCostumeComponent)
         assert entity.get(AppearanceComponent).appearance == "LLM合成外观"

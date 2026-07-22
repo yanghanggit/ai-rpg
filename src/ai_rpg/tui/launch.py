@@ -1,6 +1,9 @@
 """启动 Screen：合并原 ConnectingScreen 与 MainMenuScreen，显示基础信息与命令列表。"""
 
+import json
+
 from loguru import logger
+from rich.syntax import Syntax
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
@@ -105,7 +108,9 @@ class LaunchScreen(Screen[None]):
         try:
             info = await fetch_server_info()
             logger.info(f"fetch_server_info: 成功 url={server_config.base_url}")
-            log.write(f"[bold green]✅ 服务器信息: {info}[/]")
+            log.write("[bold green]✅ 服务器信息：[/]")
+            info_json = json.dumps(info, indent=2, ensure_ascii=False)
+            log.write(Syntax(info_json, "json", theme="ansi_dark", word_wrap=True))
         except Exception as e:
             logger.error(
                 f"fetch_server_info: 失败 url={server_config.base_url} error={e}"

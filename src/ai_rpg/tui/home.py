@@ -35,21 +35,19 @@ MENU_TEXT = """\
 [bold yellow]可用操作（输入编号执行）：[/]
 
 [bold cyan]── 查看 ──────────────────────────────────────[/]
-  [bold green]1[/]  当前状态      玩家/世界设定/角色详情
-  [bold green]2[/]  场景总览      场景分布与当前场景描述
-  [bold green]3[/]  实体浏览器    列出全部场景与角色
-  [bold green]4[/]  地下城总览    列出全部副本预览
+  [bold green]1[/]  实体浏览器    列出全部场景与角色
+  [bold green]2[/]  地下城总览    列出全部副本预览
 
 [bold cyan]── 行动 ──────────────────────────────────────[/]
-  [bold green]5[/]  推进家园      执行一轮 home pipeline
-  [bold green]6[/]  与NPC对话     与当前场景 NPC 对话
-  [bold green]7[/]  切换场景      移动到其他场景
-  [bold green]8[/]  道具管理      背包与储物箱道具移动
-  [bold green]9[/]  管理远征队    加入/移除远征队成员
-  [bold green]10[/] 穿戴时装      为目标安装/移除时装
-  [bold green]11[/] 制造工坊      合成消耗品
-  [bold green]12[/] 工坊锻造      用材料锻造装备
-  [bold green]13[/] 工坊制衣      用材料制作时装
+  [bold green]3[/]  推进家园      执行一轮 home pipeline
+  [bold green]4[/]  与NPC对话     与当前场景 NPC 对话
+  [bold green]5[/]  切换场景      移动到其他场景
+  [bold green]6[/]  道具管理      背包与储物箱道具移动
+  [bold green]7[/]  管理远征队    加入/移除远征队成员
+  [bold green]8[/]  穿戴时装      为目标安装/移除时装
+  [bold green]9[/]  制造工坊      合成消耗品
+  [bold green]10[/] 工坊锻造      用材料锻造装备
+  [bold green]11[/] 工坊制衣      用材料制作时装
 [bold cyan]── 系统 ──────────────────────────────────────[/]
   [bold green]0[/]  显示此菜单
   [bold dim]Escape[/]  登出并返回主菜单
@@ -106,15 +104,6 @@ class HomeScreen(BaseGameScreen):
         height: 1fr;
     }
 
-    #home-status {
-        height: 4;
-        padding: 0 1;
-        background: $panel;
-        border: solid $primary;
-        color: $text;
-        content-align: center middle;
-    }
-
     #home-input-row {
         height: 3;
     }
@@ -140,7 +129,6 @@ class HomeScreen(BaseGameScreen):
         super().__init__()
 
     def compose(self) -> ComposeResult:
-        yield Static("", id="home-status", markup=True)
         yield RichLog(id="home-log", highlight=True, markup=True, wrap=True)
         with Horizontal(id="home-input-row"):
             yield Static("> ", id="home-prompt")
@@ -149,6 +137,7 @@ class HomeScreen(BaseGameScreen):
     def on_mount(self) -> None:
         _app = self.game_client
         log = self.query_one(RichLog)
+        self._write_header(log)
         log.write(MENU_TEXT)
         if _app.session:
             logger.info(
@@ -157,7 +146,6 @@ class HomeScreen(BaseGameScreen):
             )
         self.query_one(Input).focus()
         self._poll_messages()
-        self._refresh_status_bar()
 
     def on_unmount(self) -> None:
         logger.info("HomeScreen: on_unmount，停止轮询")
@@ -167,67 +155,30 @@ class HomeScreen(BaseGameScreen):
         logger.info("HomeScreen: on_screen_suspend，暂停轮询")
 
     def on_screen_resume(self) -> None:
-        """从子 Screen 返回时恢复轮询并刷新玩家状态。"""
+        """从子 Screen 返回时恢复轮询。"""
         logger.info("HomeScreen: on_screen_resume，恢复轮询")
         self._poll_messages()
-        self._refresh_status_bar()
         self.query_one(Input).focus()
 
     def action_logout(self) -> None:
         """ESC 触发登出。"""
         self._do_logout()
 
-    def _refresh_status_bar(self) -> None:
-        """重置状态栏为“查询中”并启动异步刷新。"""
-        self.query_one("#home-status", Static).update(
-            "[bold cyan]AI RPG DBG  游戏主场景[/]\n" "[dim]查询玩家状态中...[/]"
+    def _write_header(self, log: RichLog) -> None:
+        """写入顶部基础信息（玩家/游戏/角色），合入主 log，会话期间不会变化，只需写入一次。"""
+        session = self.game_client.session
+        if session is None:
+            #log.write("[bold cyan]AI RPG DBG  游戏主场景[/]")
+            return
+        actor_text = (
+            display_name(session.actor_name) if session.actor_name else "（未知）"
         )
-        self._show_player_status()
-
-    @work
-    async def _show_player_status(self) -> None:
-        """异步查询并更新状态栏。"""
-        app = self.game_client
-        if app.session is None:
-            return
-        player_actor = app.session.actor_name
-
-        if not player_actor:
-            self.query_one("#home-status", Static).update(
-                "[bold cyan]AI RPG DBG  游戏主场景[/]\n"
-                "[dim]玩家角色信息暂不可用。[/]"
-            )
-            return
-
-        current_stage = ""
-        try:
-            resp = await fetch_stages_state(
-                app.session.user_name, app.session.game_name
-            )
-            for stage, actors in resp.mapping.items():
-                if player_actor in actors:
-                    current_stage = stage
-                    break
-        except Exception as e:
-            logger.warning(f"_show_player_status: 查询场景失败 error={e}")
-            self.query_one("#home-status", Static).update(
-                "[bold cyan]AI RPG DBG  游戏主场景[/]\n"
-                f"[bold green]▶ 玩家角色：[bold cyan]{display_name(player_actor)}[/][bold green][/]  "
-                f"[dim]当前场景：（查询失败）[/]"
-            )
-            return
-
-        if current_stage:
-            stage_text = f"[bold yellow]{display_name(current_stage)}[/]"
-        else:
-            stage_text = "[dim]（未知）[/]"
-        self.query_one("#home-status", Static).update(
-            "[bold cyan]AI RPG DBG  游戏主场景[/]\n"
-            f"[bold green]▶ 玩家角色：[bold cyan]{display_name(player_actor)}[/][bold green][/]  "
-            f"当前场景：{stage_text}"
-        )
-        logger.info(
-            f"_show_player_status: 更新状态栏 player_actor={player_actor} current_stage={current_stage}"
+        log.write(
+            #"[bold cyan]AI RPG DBG  游戏主场景[/]\n"
+            f"[bold green]▶ 玩家：[/][bold]{session.user_name}[/]  "
+            f"[bold green]游戏：[/][bold]{session.game_name}[/]  "
+            f"[bold green]角色：[/][bold cyan]{actor_text}[/]"
+            f"\n\n"
         )
 
     @on(Input.Submitted, "#home-input")
@@ -245,52 +196,44 @@ class HomeScreen(BaseGameScreen):
         if cmd == "0":
             log.write(MENU_TEXT)
         elif cmd == "1":
-            from .player_status import PlayerStatusScreen
-
-            self.app.push_screen(PlayerStatusScreen())
-        elif cmd == "2":
-            from .stages import StagesScreen
-
-            self.app.push_screen(StagesScreen())
-        elif cmd == "3":
             from .entity_browser import EntityBrowserScreen
 
             self.app.push_screen(EntityBrowserScreen())
-        elif cmd == "4":
+        elif cmd == "2":
             from .dungeon_overview import DungeonOverviewScreen
 
             self.app.push_screen(DungeonOverviewScreen())
-        elif cmd == "5":
+        elif cmd == "3":
             self._do_advance()
-        elif cmd == "6":
+        elif cmd == "4":
             from .speak import SpeakScreen
 
             self.app.push_screen(SpeakScreen())
-        elif cmd == "7":
+        elif cmd == "5":
             from .switch_stage import SwitchStageScreen
 
             self.app.push_screen(SwitchStageScreen())
-        elif cmd == "8":
+        elif cmd == "6":
             from .item_management import ItemManagementScreen
 
             self.app.push_screen(ItemManagementScreen())
-        elif cmd == "9":
+        elif cmd == "7":
             from .roster import RosterScreen
 
             self.app.push_screen(RosterScreen())
-        elif cmd == "10":
+        elif cmd == "8":
             from .wear_costume import WearCostumeScreen
 
             self.app.push_screen(WearCostumeScreen())
-        elif cmd == "11":
+        elif cmd == "9":
             from .craft_consumable_item import CraftConsumableItemScreen
 
             self.app.push_screen(CraftConsumableItemScreen())
-        elif cmd == "12":
+        elif cmd == "10":
             from .craft_gear_item import CraftGearItemScreen
 
             self.app.push_screen(CraftGearItemScreen())
-        elif cmd == "13":
+        elif cmd == "11":
             from .craft_costume_item import CraftCostumeItemScreen
 
             self.app.push_screen(CraftCostumeItemScreen())
@@ -321,7 +264,6 @@ class HomeScreen(BaseGameScreen):
         )
 
         task_id: str = ""
-        success = False
         try:
             stages_resp = await fetch_stages_state(user_name, game_name)
 
@@ -363,7 +305,6 @@ class HomeScreen(BaseGameScreen):
             await watch_task_until_done(task_id)
             log.write("[bold green]✅ 推进完成[/]")
             logger.info(f"_do_advance: 任务完成 task_id={task_id}")
-            success = True
         except TaskFailedError as e:
             log.write(f"[bold red]❌ 推进失败: {e}[/]")
             logger.error(f"_do_advance: 任务失败 task_id={task_id} error={e}")
@@ -375,8 +316,6 @@ class HomeScreen(BaseGameScreen):
 
         inp.disabled = False
         inp.focus()
-        if success:
-            self._show_player_status()
 
     @work(exclusive=True)
     async def _poll_messages(self) -> None:

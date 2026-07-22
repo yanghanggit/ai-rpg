@@ -18,6 +18,7 @@ from .registry import *
 from .serialization import *
 from .stats import *
 from .task import *
+from .blue_print import *
 from .world import *
 from .player_session import *
 from .rules import *

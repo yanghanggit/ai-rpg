@@ -28,14 +28,6 @@ from .world_system_workshop import create_workshop
 def create_ruins_blueprint(game_name: str) -> Blueprint:
     """
     创建演示游戏世界Blueprint实例 - 旅行者与学者双角色版本。
-
-    包含断壁石室和石台广场两个场景，两名失忆者在沙漠残垣遗迹中醒来。
-
-    Args:
-        game_name: 游戏世界的名称
-
-    Returns:
-        Blueprint: 初始化完成的游戏世界实例
     """
 
     # 创建英雄营地场景和角色

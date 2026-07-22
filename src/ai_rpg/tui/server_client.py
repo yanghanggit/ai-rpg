@@ -1,7 +1,7 @@
 """游戏服务器 HTTP 客户端（TUI 客户端专用）"""
 
 import json
-from typing import Any, AsyncGenerator, Dict, List, cast
+from typing import Any, Dict, List, cast, AsyncGenerator
 import httpx
 from ..models import (
     BlueprintListResponse,
@@ -56,12 +56,12 @@ from ..models import (
     LogoutResponse,
     NewGameRequest,
     NewGameResponse,
-    SessionMessage,
     SessionMessageResponse,
     StagesStateResponse,
     TaskRecord,
     TasksStatusResponse,
     TaskStatus,
+    SessionMessage,
 )
 from .config import server_config
 

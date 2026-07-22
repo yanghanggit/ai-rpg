@@ -9,7 +9,7 @@ import asyncio
 from loguru import logger
 
 from .server_client import (
-    stream_session_messages,
+    fetch_session_messages,
     fetch_stages_state,
     watch_task_until_done,
     TaskFailedError,
@@ -95,19 +95,19 @@ class HomeScreen(BaseGameScreen):
                 f" game_name={_app.session.game_name}"
             )
         self.query_one(Input).focus()
-        self._poll_messages()
+        self._refresh_messages()
 
     def on_unmount(self) -> None:
-        logger.info("HomeScreen: on_unmount，停止轮询")
+        logger.info("HomeScreen: on_unmount")
 
     def on_screen_suspend(self) -> None:
-        """推入子 Screen 时暂停轮询。"""
-        logger.info("HomeScreen: on_screen_suspend，暂停轮询")
+        """推入子 Screen 时触发，仅用于日志记录。"""
+        logger.info("HomeScreen: on_screen_suspend")
 
     def on_screen_resume(self) -> None:
-        """从子 Screen 返回时恢复轮询。"""
-        logger.info("HomeScreen: on_screen_resume，恢复轮询")
-        self._poll_messages()
+        """从子 Screen 返回时，单次拉取自 child screen 执行期间产生的新消息。"""
+        logger.info("HomeScreen: on_screen_resume，拉取新消息")
+        self._refresh_messages()
         self.query_one(Input).focus()
 
     def action_logout(self) -> None:
@@ -262,8 +262,11 @@ class HomeScreen(BaseGameScreen):
 
         try:
             await watch_task_until_done(task_id)
-            log.write("[bold green]✅ 推进完成[/]")
             logger.info(f"_do_advance: 任务完成 task_id={task_id}")
+            log.write(f"[bold green]✅ 任务完成 task_id={task_id}[/]")
+
+            await self._pull_new_messages()
+
         except TaskFailedError as e:
             log.write(f"[bold red]❌ 推进失败: {e}[/]")
             logger.error(f"_do_advance: 任务失败 task_id={task_id} error={e}")
@@ -276,35 +279,41 @@ class HomeScreen(BaseGameScreen):
         inp.disabled = False
         inp.focus()
 
-    @work(exclusive=True)
-    async def _poll_messages(self) -> None:
+    async def _pull_new_messages(self) -> None:
+        """单次拉取自 上次 last_sequence_id 以来的新会话消息，写入日志并推进 last_sequence_id。
+
+        相比之前基于 SSE 的常驻轮询，改为“任务完成 / 返回主场景时单次拉取”，
+        既避免了背景连接的重复建立，也让事件文本与“任务完成”提示的先后顺序确定。
+        """
         app = self.game_client
         if app.session is None:
             return
-        user_name = app.session.user_name
-        game_name = app.session.game_name
-        logger.info(
-            f"_poll_messages: 启动 SSE 流 user_name={user_name} game_name={game_name}"
-        )
         try:
-            async for msg in stream_session_messages(
-                user_name,
-                game_name,
+            resp = await fetch_session_messages(
+                app.session.user_name,
+                app.session.game_name,
                 app.session.last_sequence_id,
-            ):
-                if app.session is None:
-                    break
-                if msg.sequence_id > app.session.last_sequence_id:
-                    app.session.last_sequence_id = msg.sequence_id
-                if msg.agent_event is None:
-                    continue
-                log = self.query_one(RichLog)
-                log.write(format_agent_event(msg.agent_event))
-                log.write("--------------------------------------")
-                logger.debug(f"_poll_messages: 收到消息 seq={msg.sequence_id}")
+            )
         except Exception as e:
-            logger.warning(f"_poll_messages: SSE 流中断 error={e}")
-        logger.info(f"_poll_messages: SSE 流已停止 user_name={user_name}")
+            logger.warning(f"_pull_new_messages: 拉取失败 error={e}")
+            return
+
+        log = self.query_one(RichLog)
+        for msg in resp.session_messages:
+            if app.session is None:
+                break
+            if msg.sequence_id > app.session.last_sequence_id:
+                app.session.last_sequence_id = msg.sequence_id
+            if msg.agent_event is None:
+                continue
+            log.write(format_agent_event(msg.agent_event))
+            log.write("--------------------------------------")
+            logger.debug(f"_pull_new_messages: 写入消息 seq={msg.sequence_id}")
+
+    @work
+    async def _refresh_messages(self) -> None:
+        """在同步上下文（on_mount / on_screen_resume）中触发一次消息拉取。"""
+        await self._pull_new_messages()
 
     @work
     async def _do_logout(self) -> None:

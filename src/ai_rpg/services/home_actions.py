@@ -63,7 +63,7 @@ def activate_speak_action(
     player_entity.replace(SpeakAction, player_entity.name, {target: content})
 
     # 为玩家自身激活行动计划（写入影子 plan，记录本轮上下文），是否让 NPC 也在本轮真正规划由调用方另行决定。
-    activate_stage_plan(dbg_game, [player_entity.name])
+    activate_plan_action(dbg_game, [player_entity.name])
 
     # 返回成功消息，表示说话动作已成功激活。
     return True, ""
@@ -118,22 +118,16 @@ def activate_switch_stage(dbg_game: DBGGame, stage_name: str) -> Tuple[bool, str
     player_entity.replace(TransStageAction, player_entity.name, stage_name)
 
     # 为玩家自身激活行动计划（写入影子 plan，记录本轮上下文），是否让 NPC 也在本轮真正规划由调用方另行决定。
-    activate_stage_plan(dbg_game, [player_entity.name])
+    activate_plan_action(dbg_game, [player_entity.name])
 
     # 返回成功消息，表示场景转换动作已成功激活。
     return True, ""
 
 
 ###################################################################################################################################################################
-def activate_stage_plan(dbg_game: DBGGame, actor_names: List[str]) -> Tuple[bool, str]:
+def activate_plan_action(dbg_game: DBGGame, actor_names: List[str]) -> Tuple[bool, str]:
     """
     为调用方（客户端）显式指定的角色列表激活行动计划（PlanAction）。
-
-    是否让玩家自身、哪些 NPC 在本轮真正触发 LLM 规划，完全由调用方决定；
-    本函数只负责校验并挂载 PlanAction，不再遍历场景内的全部角色。
-
-    校验规则：角色须存在、持有 NPCComponent（玩家角色也持有该组件，因此无需特殊区分）、
-    且当前处于某个家园场景（不要求与玩家在同一场景）。
     """
 
     # 检查玩家是否在家园场景中，如果不在则无法激活行动计划。

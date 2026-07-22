@@ -89,7 +89,16 @@ class TestFilter:
     def test_accepts_player_entity(
         self, context: Context, system: HomePlayerPlanSystem
     ) -> None:
-        assert system.filter(_make_player(context)) is True
+        """玩家实体必须同时挂载至少一种主动行动组件（如 SpeakAction）才会被接受。"""
+        entity = _make_player(context)
+        entity.replace(SpeakAction, entity.name, {"学者.寒蝉": "你好"})
+        assert system.filter(entity) is True
+
+    def test_rejects_player_entity_without_active_action(
+        self, context: Context, system: HomePlayerPlanSystem
+    ) -> None:
+        """玩家实体虽持有 PlanAction，但未挂载任何主动行动组件时应被排除。"""
+        assert system.filter(_make_player(context)) is False
 
     def test_rejects_plain_npc(
         self, context: Context, system: HomePlayerPlanSystem

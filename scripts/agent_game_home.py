@@ -20,7 +20,7 @@ from ai_rpg.game.dbg_game import DBGGame
 from ai_rpg.models import CombatState, World
 from ai_rpg.game import archive_world
 from ai_rpg.services.home_actions import (
-    activate_stage_plan,
+    activate_plan_action,
     activate_speak_action,
     activate_switch_stage,
     activate_generate_dungeon,
@@ -60,7 +60,7 @@ async def advance_game(
     """
     terminal_game = await restore_game(world, player_session)
 
-    success, error_detail = activate_stage_plan(terminal_game, actor_names)
+    success, error_detail = activate_plan_action(terminal_game, actor_names)
     if not success:
         logger.debug(f"激活行动计划失败: {error_detail}")
 

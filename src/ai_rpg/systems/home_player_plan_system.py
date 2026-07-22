@@ -29,7 +29,7 @@ from .home_planning_prompt_builders import (
 #######################################################################################################################################
 @final
 class HomePlayerPlanSystem(ReactiveProcessor):
-    """家园玩家上下文注入系统。"""
+    """家园玩家上下文注入系统。让Player Agent以为自己做了规划然后产生行动，这样就和NPC的上下文格式一致了。"""
 
     def __init__(self, game: DBGGame, use_compressed_prompt: bool = True) -> None:
         super().__init__(game)
@@ -49,6 +49,12 @@ class HomePlayerPlanSystem(ReactiveProcessor):
             and entity.has(PlayerComponent)
             and entity.has(ActorComponent)
             and entity.has(NPCComponent)
+            and (
+                entity.has(SpeakAction)
+                or entity.has(WhisperAction)
+                or entity.has(AnnounceAction)
+                or entity.has(TransStageAction)
+            )
         )
 
     #######################################################################################################################################

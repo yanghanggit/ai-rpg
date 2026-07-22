@@ -18,7 +18,7 @@ from .home_tasks import (
 from .home_actions import (
     activate_speak_action,
     activate_switch_stage,
-    activate_stage_plan,
+    activate_plan_action,
     activate_generate_dungeon,
     activate_update_appearance,
     activate_craft_consumable,
@@ -172,19 +172,6 @@ async def home_advance(
 ) -> HomeAdvanceResponse:
     """
     家园推进接口
-
-    推进游戏流程，可选地激活指定角色的行动计划。
-
-    Args:
-        payload: 家园推进请求对象
-        game_server: 游戏服务器实例
-
-    Returns:
-        HomeAdvanceResponse: 包含会话消息列表的响应对象
-
-    Raises:
-        HTTPException(404): 玩家未登录或游戏实例不存在
-        HTTPException(400): 玩家不在家园状态或角色激活失败
     """
 
     logger.info(f"/api/home/advance/v1/: {payload.model_dump_json()}")
@@ -198,6 +185,7 @@ async def home_advance(
         )
 
     async with current_room._lock:
+
         # 验证前置条件并获取游戏实例
         rpg_game = await _validate_player_at_home(
             payload.user_name,
@@ -205,7 +193,7 @@ async def home_advance(
         )
 
         # 根据请求参数（payload.actors）为客户端显式指定的角色激活行动计划
-        success, error_detail = activate_stage_plan(rpg_game, payload.actors)
+        success, error_detail = activate_plan_action(rpg_game, payload.actors)
         if not success:
             # 行动计划激活失败，抛出包含具体错误信息的异常
             raise HTTPException(

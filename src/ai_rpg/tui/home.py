@@ -1,5 +1,6 @@
 """游戏主场景 Screen（Home 状态）"""
 
+from typing import List, Optional
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
@@ -8,8 +9,10 @@ from .base import BaseGameScreen
 import asyncio
 from loguru import logger
 
+from ..models import StagesStateResponse
 from .server_client import (
     fetch_session_messages,
+    stream_session_messages,
     fetch_stages_state,
     watch_task_until_done,
     TaskFailedError,
@@ -35,11 +38,42 @@ MENU_TEXT = """\
   [bold green]9[/]  制造工坊      合成消耗品
   [bold green]10[/] 工坊锻造      用材料锻造装备
   [bold green]11[/] 工坊制衣      用材料制作时装
+
+[bold cyan]── 消息 ──────────────────────────────────────[/]
+  [bold green]/session[/] [sequence_id]  查看指定序号之后的消息（留空则查看最新未读消息，简写：/s）
+
 [bold cyan]── 系统 ──────────────────────────────────────[/]
   [bold green]0[/]  显示此菜单
   [bold dim]Escape[/]  登出并返回主菜单
 
 """
+
+
+def _get_player_stage_actors(
+    stages_resp: StagesStateResponse, player_actor: Optional[str]
+) -> List[str]:
+    """从场景状态中找到 player_actor 所在的场景，返回该场景内的全部角色（含玩家自身）。
+
+    若无法确定玩家所在场景，返回空列表。
+    """
+    if not player_actor:
+        return []
+    for actors in stages_resp.mapping.values():
+        if player_actor in actors:
+            return actors
+    return []
+
+
+def _get_all_actors(stages_resp: StagesStateResponse) -> List[str]:
+    """返回全部场景中出现过的全部角色（跨场景去重，保持首次出现顺序）。"""
+    all_actors: List[str] = []
+    seen: set[str] = set()
+    for actors in stages_resp.mapping.values():
+        for actor in actors:
+            if actor not in seen:
+                seen.add(actor)
+                all_actors.append(actor)
+    return all_actors
 
 
 class HomeScreen(BaseGameScreen):
@@ -54,6 +88,12 @@ class HomeScreen(BaseGameScreen):
         border: solid $primary;
         padding: 0 1;
         height: 1fr;
+    }
+
+    #home-notify {
+        height: 1;
+        content-align: left middle;
+        padding: 0 1;
     }
 
     #home-input-row {
@@ -82,6 +122,7 @@ class HomeScreen(BaseGameScreen):
 
     def compose(self) -> ComposeResult:
         yield RichLog(id="home-log", highlight=True, markup=True, wrap=True)
+        yield Static("", id="home-notify")
         with Horizontal(id="home-input-row"):
             yield Static("> ", id="home-prompt")
             yield Input(placeholder="输入编号执行操作...", id="home-input")
@@ -95,7 +136,7 @@ class HomeScreen(BaseGameScreen):
                 f" game_name={_app.session.game_name}"
             )
         self.query_one(Input).focus()
-        self._refresh_messages()
+        self._watch_notifications()
 
     def on_unmount(self) -> None:
         logger.info("HomeScreen: on_unmount")
@@ -105,9 +146,9 @@ class HomeScreen(BaseGameScreen):
         logger.info("HomeScreen: on_screen_suspend")
 
     def on_screen_resume(self) -> None:
-        """从子 Screen 返回时，单次拉取自 child screen 执行期间产生的新消息。"""
-        logger.info("HomeScreen: on_screen_resume，拉取新消息")
-        self._refresh_messages()
+        """从子 Screen 返回时，重新挂载通知监听（未读数量），消息内容仅通过命令 12 手动获取。"""
+        logger.info("HomeScreen: on_screen_resume，重新挂载通知监听")
+        self._watch_notifications()
         self.query_one(Input).focus()
 
     def action_logout(self) -> None:
@@ -144,11 +185,17 @@ class HomeScreen(BaseGameScreen):
         event.input.clear()
         log = self.query_one(RichLog)
 
+        if cmd == "0":
+            self._reset_log()
+            return
+
         if not cmd:
             return
 
-        if cmd == "0":
-            self._reset_log()
+        parts = cmd.split(maxsplit=1)
+        if parts[0].lower() in ("/session", "/s"):
+            arg = parts[1].strip() if len(parts) > 1 else ""
+            self._do_view_messages(arg)
             return
 
         log.write(f"[dim]> {cmd}[/]")
@@ -203,15 +250,13 @@ class HomeScreen(BaseGameScreen):
     async def _do_advance(self) -> None:
         """执行一轮家园推进（home pipeline），推进期间禁用输入框并轮询任务状态。
 
-        推进前先查询场景状态，确定玩家当前所在场景内的全部角色（含玩家自身），
-        将其作为 actors 传给服务端，让这些角色本轮真正触发行动规划。
+        对全部场景中的全部角色（含玩家自身）发起集体推进，让所有角色本轮都触发行动规划。
         """
         app = self.game_client
         if app.session is None:
             return
         user_name = app.session.user_name
         game_name = app.session.game_name
-        player_actor = app.session.actor_name
 
         log = self.query_one(RichLog)
         inp = self.query_one(Input)
@@ -225,26 +270,11 @@ class HomeScreen(BaseGameScreen):
         task_id: str = ""
         try:
             stages_resp = await fetch_stages_state(user_name, game_name)
+            actor_names = _get_all_actors(stages_resp)
 
-            # 找到 player_actor 所在 stage，取出该场景内的全部角色（含玩家自身）
-            current_stage: str = ""
-            if player_actor:
-                for stage, actors in stages_resp.mapping.items():
-                    if player_actor in actors:
-                        current_stage = stage
-                        break
-
-            if not current_stage:
-                log.write("[bold red]❌ 无法确定玩家当前所在场景，推进已取消[/]")
-                logger.error("_do_advance: 无法确定玩家当前所在场景")
-                inp.disabled = False
-                inp.focus()
-                return
-
-            actor_names = stages_resp.mapping.get(current_stage, [])
             if not actor_names:
-                log.write("[bold red]❌ 当前场景没有可推进的角色[/]")
-                logger.error(f"_do_advance: 场景 {current_stage} 没有角色")
+                log.write("[bold red]❌ 当前没有可推进的角色[/]")
+                logger.error("_do_advance: 没有可推进的角色")
                 inp.disabled = False
                 inp.focus()
                 return
@@ -253,6 +283,7 @@ class HomeScreen(BaseGameScreen):
             task_id = resp.task_id
             log.write(f"[dim]任务已创建：{task_id}[/]")
             logger.info(f"_do_advance: 任务已创建 task_id={task_id}")
+
         except Exception as e:
             logger.error(f"_do_advance: 触发推进失败 error={e}")
             log.write(f"[bold red]❌ 推进请求失败: {e}[/]")
@@ -264,9 +295,6 @@ class HomeScreen(BaseGameScreen):
             await watch_task_until_done(task_id)
             logger.info(f"_do_advance: 任务完成 task_id={task_id}")
             log.write(f"[bold green]✅ 任务完成 task_id={task_id}[/]")
-
-            await self._pull_new_messages()
-
         except TaskFailedError as e:
             log.write(f"[bold red]❌ 推进失败: {e}[/]")
             logger.error(f"_do_advance: 任务失败 task_id={task_id} error={e}")
@@ -279,26 +307,35 @@ class HomeScreen(BaseGameScreen):
         inp.disabled = False
         inp.focus()
 
-    async def _pull_new_messages(self) -> None:
-        """单次拉取自 上次 last_sequence_id 以来的新会话消息，写入日志并推进 last_sequence_id。
+    async def _pull_messages(self, start_sequence_id: Optional[int] = None) -> int:
+        """单次拉取指定起点（默认为当前 last_sequence_id）之后的会话消息，写入日志并推进 last_sequence_id。
 
         相比之前基于 SSE 的常驻轮询，改为“任务完成 / 返回主场景时单次拉取”，
         既避免了背景连接的重复建立，也让事件文本与“任务完成”提示的先后顺序确定。
+
+        Returns:
+            本次实际写入日志的消息条数。
         """
         app = self.game_client
         if app.session is None:
-            return
+            return 0
+        since = (
+            start_sequence_id
+            if start_sequence_id is not None
+            else app.session.last_sequence_id
+        )
         try:
             resp = await fetch_session_messages(
                 app.session.user_name,
                 app.session.game_name,
-                app.session.last_sequence_id,
+                since,
             )
         except Exception as e:
             logger.warning(f"_pull_new_messages: 拉取失败 error={e}")
-            return
+            return 0
 
         log = self.query_one(RichLog)
+        count = 0
         for msg in resp.session_messages:
             if app.session is None:
                 break
@@ -308,12 +345,80 @@ class HomeScreen(BaseGameScreen):
                 continue
             log.write(format_agent_event(msg.agent_event))
             log.write("--------------------------------------")
+            count += 1
             logger.debug(f"_pull_new_messages: 写入消息 seq={msg.sequence_id}")
+        self._update_notify_badge()
+        return count
 
     @work
-    async def _refresh_messages(self) -> None:
-        """在同步上下文（on_mount / on_screen_resume）中触发一次消息拉取。"""
-        await self._pull_new_messages()
+    async def _do_view_messages(self, raw: str) -> None:
+        """响应 /session 命令：获取最新未读消息，或指定 sequence_id 查看该点之后的消息。"""
+        log = self.query_one(RichLog)
+        raw = raw.strip()
+        start_seq: Optional[int] = None
+        if raw:
+            try:
+                start_seq = int(raw)
+            except ValueError:
+                log.write(f"[bold red]❌ 无效的 sequence_id：{raw}，已取消[/]")
+                return
+            log.write(f"[dim]▶ 拉取 sequence_id > {start_seq} 的消息...[/]")
+        else:
+            log.write("[dim]▶ 拉取最新未读消息...[/]")
+
+        count = await self._pull_messages(start_seq)
+        if count == 0:
+            log.write("[dim](没有更多消息)[/]")
+
+    def _update_notify_badge(self) -> None:
+        """根据通知流探测到的最高 sequence_id 与当前已读 last_sequence_id 的差值，更新未读提示。
+
+        同时始终显示本地已读游标（last_sequence_id）与服务器当前最高 sequence_id
+        （notify_last_sequence_id），便于对照。
+        """
+        app = self.game_client
+        badge = self.query_one("#home-notify", Static)
+        if app.session is None:
+            badge.update("")
+            return
+        last_seq = app.session.last_sequence_id
+        notify_seq = app.session.notify_last_sequence_id
+        unread = max(0, notify_seq - last_seq)
+        seq_info = f"[dim]（本地:{last_seq} / 服务器:{notify_seq}）[/]"
+        if unread > 0:
+            badge.update(
+                f"[bold yellow]🔔 有 {unread} 条新消息[/] {seq_info}"
+                f" —— 输入 [bold green]/session[/bold green] 查看"
+            )
+        else:
+            badge.update(seq_info)
+
+    @work(exclusive=True)
+    async def _watch_notifications(self) -> None:
+        """常驻监听会话消息 SSE 流，仅用于统计未读数量（高水位线，存于 GameSession），不写入日志、不推进 last_sequence_id。
+
+        真正的内容展示由 `_pull_new_messages` / `_do_view_messages` 主动拉取完成，
+        这里只负责让用户知道“服务器有新消息”，实现先有限披露（通知）再主动获取的模式。
+        """
+        app = self.game_client
+        if app.session is None:
+            return
+        user_name = app.session.user_name
+        game_name = app.session.game_name
+        app.session.notify_last_sequence_id = app.session.last_sequence_id
+        logger.info(f"_watch_notifications: 启动通知监听 user_name={user_name}")
+        try:
+            async for msg in stream_session_messages(
+                user_name, game_name, app.session.notify_last_sequence_id
+            ):
+                if app.session is None:
+                    break
+                if msg.sequence_id > app.session.notify_last_sequence_id:
+                    app.session.notify_last_sequence_id = msg.sequence_id
+                self._update_notify_badge()
+        except Exception as e:
+            logger.warning(f"_watch_notifications: 通知流中断 error={e}")
+        logger.info(f"_watch_notifications: 通知流已停止 user_name={user_name}")
 
     @work
     async def _do_logout(self) -> None:

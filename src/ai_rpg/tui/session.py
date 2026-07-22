@@ -12,6 +12,9 @@ class GameSession:
     player_session: PlayerSession
     blueprint: Blueprint
     last_sequence_id: int = field(default=0)
+    notify_last_sequence_id: int = field(default=0)
+    """通知监听（_watch_notifications）探测到的服务端最高 sequence_id（高水位线），
+    仅用于计算未读数量，不代表消息已被读取/展示。"""
 
     @property
     def user_name(self) -> str:

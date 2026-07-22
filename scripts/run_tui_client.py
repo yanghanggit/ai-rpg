@@ -30,7 +30,7 @@ from loguru import logger
 from config import LOGS_DIR
 from ai_rpg.tui import GameClient
 from ai_rpg.tui.config import server_config
-from ai_rpg.tui.connecting import ConnectingScreen
+from ai_rpg.tui.launch import LaunchScreen
 from ai_rpg.tui.combat_room import CombatRoomScreen
 from ai_rpg.tui.combat_post_combat import CombatPostCombatScreen
 from textual.screen import Screen
@@ -39,7 +39,7 @@ from textual.screen import Screen
 _IS_FROZEN: bool = getattr(sys, "frozen", False)
 
 # 默认服务器连接配置（可通过命令行参数覆盖）──
-_DEFAULT_SERVER_HOST: Final[str] = "192.168.192.113"
+_DEFAULT_SERVER_HOST: Final[str] = "192.168.192.111"
 _DEFAULT_SERVER_PORT: Final[int] = 8000
 
 # ── loguru 配置：移除默认 stderr sink，改为文件输出（TUI 渲染期间不能写终端）──
@@ -130,7 +130,7 @@ def main(
         elif dev_screen == "combat-room":
             launch_screen = CombatRoomScreen
         else:
-            launch_screen = ConnectingScreen
+            launch_screen = LaunchScreen
 
         # 启动 TUI 应用，传入选择的初始页面（launch_screen）
         app = GameClient(launch_screen=launch_screen)

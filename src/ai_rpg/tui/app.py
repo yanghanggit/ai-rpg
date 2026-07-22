@@ -4,7 +4,7 @@ from typing import Callable, Optional
 from textual.app import App, ComposeResult
 from textual.screen import Screen
 from .session import GameSession
-from .connecting import ConnectingScreen
+from .launch import LaunchScreen
 
 
 class GameClient(App[None]):
@@ -18,9 +18,9 @@ class GameClient(App[None]):
     session: Optional[GameSession] = None
 
     def __init__(
-        self, *, launch_screen: Callable[[], "Screen[None]"] = ConnectingScreen
+        self, *, launch_screen: Callable[[], "Screen[None]"] = LaunchScreen
     ) -> None:
-        """launch_screen：启动时 push 的初始 Screen 工厂函数，默认 ConnectingScreen
+        """launch_screen：启动时 push 的初始 Screen 工厂函数，默认 LaunchScreen
         （正常登录流程）。由调用方（如 scripts/run_tui_client.py）根据命令行参数决定
         传入哪个 Screen，方便开发时跳过登录流程直接进入指定页面调试。"""
         super().__init__()

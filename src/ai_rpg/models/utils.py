@@ -4,7 +4,7 @@
 """
 
 from typing import List, Optional
-from .cards import StatusEffect
+from .status_effect import StatusEffect
 from .items import GearItem
 from .stats import CharacterStats
 

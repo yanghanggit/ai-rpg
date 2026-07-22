@@ -3,25 +3,9 @@
 from typing import Dict, List, Optional, final
 from pydantic import BaseModel
 from ..entitas.components import Component
-from .cards import Card
+from .card import Card
 from .items import ConsumableItem, CostumeItem, GearItem, MaterialItem
 from .registry import register_action_component_type, register_component_type
-
-
-############################################################################################################
-@final
-class AffixTrigger(BaseModel):
-    """affixes 触发信号载体：AddStatusEffectsAction 的唯一数据单元。
-
-    携带原始词缀/触发文本与来源上下文，由 AddStatusEffectsActionSystem 统一解读并转化为
-    生成 StatusEffect 的任务提示，是 affixes → StatusEffect 这条唯一路径上的数据载体。
-    """
-
-    source: str  # 触发来源标签，如"卡牌"/"装备命中·受击者"/"装备穿戴"/"消耗品"/"场景交互"/"战斗初始化场景"
-    affix: str  # 原始词缀文本；场景类触发（无具体词缀实体）则为已自带描述格式的完整触发文本
-    context: str = (
-        ""  # 触发上下文（actor/card/targets 等信息拼成的一句话）；场景类触发可为空
-    )
 
 
 ############################################################################################################
@@ -136,6 +120,21 @@ class PassTurnAction(Component):
 
 
 ############################################################################################################
+
+
+@final
+class AffixTrigger(BaseModel):
+    """affixes 触发信号载体：AddStatusEffectsAction 的唯一数据单元。
+
+    携带原始词缀/触发文本与来源上下文，由 AddStatusEffectsActionSystem 统一解读并转化为
+    生成 StatusEffect 的任务提示，是 affixes → StatusEffect 这条唯一路径上的数据载体。
+    """
+
+    source: str  # 触发来源标签，如"卡牌"/"装备命中·受击者"/"装备穿戴"/"消耗品"/"场景交互"/"战斗初始化场景"
+    affix: str  # 原始词缀文本；场景类触发（无具体词缀实体）则为已自带描述格式的完整触发文本
+    context: str = (
+        ""  # 触发上下文（actor/card/targets 等信息拼成的一句话）；场景类触发可为空
+    )
 
 
 @final

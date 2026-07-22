@@ -2,7 +2,8 @@
 
 from typing import List, final
 from ..entitas.components import Component, MutableComponent
-from .cards import Card, StatusEffect
+from .card import Card
+from .status_effect import StatusEffect
 from .items import AnyItem, CostumeItem, GearItem
 from .stats import CharacterStats
 from .registry import register_component_type

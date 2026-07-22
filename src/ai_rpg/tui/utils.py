@@ -165,34 +165,51 @@ def render_status_effect(effect: StatusEffect, entity_name: str = "") -> str:
 
 
 def format_agent_event(event: AnyAgentEvent) -> str:
-    """将 AnyAgentEvent 渲染为 Rich markup 字符串。"""
+    """将 AnyAgentEvent 渲染为 Rich markup 字符串，尽量完整展示各字段（含 stage/combat_log 等）。"""
     match event:
         case SpeakEvent():
             return (
-                f"[bold yellow]{event.actor}[/] 对 [yellow]{event.target}[/] 说：\n"
+                f"[bold yellow]{event.actor}[/] [dim]@{event.stage}[/] "
+                f"对 [yellow]{event.target}[/] 说：\n"
                 f"  「{event.content}」"
             )
         case WhisperEvent():
             return (
-                f"[dim]{event.actor} 悄悄向 {event.target} 耳语：「{event.content}」[/]"
+                f"[dim]{event.actor} @{event.stage} 悄悄向 {event.target} 耳语：\n"
+                f"  「{event.content}」[/]"
             )
         case AnnounceEvent():
-            return f"[bold magenta]【{event.actor}】[/] 在 {event.stage} 宣告：{event.content}"
+            return (
+                f"[bold magenta]【{event.actor}】[/] [dim]@{event.stage}[/] 宣告：\n"
+                f"  {event.content}"
+            )
         case MindEvent():
-            return f"[dim italic]（{event.actor} 心想：{event.content}）[/]"
+            return (
+                f"[dim italic]{event.actor} @{event.stage} 心想：\n"
+                f"  （{event.content}）[/]"
+            )
         case QueryEvent():
-            return f"[dim]{event.actor} 询问：{event.question}[/]"
+            return (
+                f"[dim]{event.actor} @{event.stage} 询问：\n" f"  {event.question}[/]"
+            )
         case TransStageEvent():
             return f"[cyan]▶ {event.actor}  {event.stage} → {event.target}[/]"
         case CombatInitiationEvent():
-            return f"[bold red]⚔ {event.actor} 发起战斗！[/]"
+            return f"[bold red]⚔ {event.actor}[/] [dim]@{event.stage}[/] 发起战斗！"
         case CombatArbitrationEvent():
-            return f"[bold]{event.narrative}[/]"
+            return (
+                f"[bold yellow]── 战斗裁决 @{event.stage} ──[/]\n"
+                f"[dim]{event.combat_log}[/]\n"
+                f"[bold]{event.narrative}[/]"
+            )
         case CombatArchiveEvent():
-            return f"[dim]{event.actor} 战斗归档：{event.summary}[/]"
+            return (
+                f"[dim]{event.actor} @{event.stage} 战斗归档：\n"
+                f"  {event.summary}[/]"
+            )
         case AppearanceUpdateEvent():
             return (
-                f"[bold green]✨ {event.actor} 外观已更新：[/]\n"
+                f"[bold green]✨ {event.actor}[/] [dim]@{event.stage}[/] 外观已更新：\n"
                 f"  [dim]{event.appearance}[/]"
             )
         case _:

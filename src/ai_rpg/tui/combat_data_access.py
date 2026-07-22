@@ -24,12 +24,15 @@ from .mock_data import (
     build_mock_dungeon_state_response,
     build_mock_entities_details_response,
     build_mock_stages_state_response,
+    simulate_mock_wear_costume,
 )
 from .server_client import (
     fetch_dungeon_room,
     fetch_dungeon_state,
     fetch_entities_details,
     fetch_stages_state,
+    home_wear_costume,
+    watch_task_until_done,
 )
 
 
@@ -95,3 +98,19 @@ def get_storage_entity_name(game_client: GameClient) -> str:
     session = game_client.session
     assert session is not None
     return session.storage_entity
+
+
+###############################################################################################################################################
+async def submit_wear_costume(
+    game_client: GameClient, item_name: str, target_name: str
+) -> None:
+    """提交穿戴/移除时装：mock 模式下直接同步模拟储物箱 ⇄ 已穿戴状态转移（不发起
+    任何真实网络请求）；真实模式下调用服务端接口并等待后台任务完成。
+
+    item_name 为空字符串时表示脱时装；target_name 为目标角色实体名。"""
+    if is_mock_mode(game_client):
+        simulate_mock_wear_costume(target_name, item_name)
+        return
+    user_name, game_name, _ = resolve_identity(game_client)
+    resp = await home_wear_costume(user_name, game_name, item_name, target_name)
+    await watch_task_until_done(resp.task_id)

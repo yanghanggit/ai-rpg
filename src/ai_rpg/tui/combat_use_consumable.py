@@ -399,9 +399,6 @@ class CombatUseConsumableScreen(BaseGameScreen):
         if not self._snapshot.current_actor_is_party:
             log.write("[yellow]当前不是我方回合，暂时无法使用消耗品。[/]")
             return
-        if self._snapshot.consumable_use_count > 0:
-            log.write("[yellow]本回合已使用过消耗品，每回合限用一次。[/]")
-            return
         if not self._snapshot.consumable_items:
             log.write("[yellow]背包中没有可用的消耗品。[/]")
             return

@@ -22,8 +22,7 @@
 | 文档 | 简介 |
 | ------ | ------ |
 | [消耗品系统（ConsumableItem）](wiki/consumable-item.md) | 消耗品的数据模型、战斗使用管道、词缀机制设计 |
-| [装备系统（GearItem）](wiki/gear-item.md) | 装备的数据模型、战斗装备管道、EquippedGearComponent 生命周期 |
-| [材料系统（MaterialItem）](wiki/material-item.md) | 材料的数据模型、工坊合成管道、与其他物品类型的关系 |
+| [装备系统（GearItem）](wiki/gear-item.md) | 装备的数据模型、移动语义装备管道、EquippedGearComponent 生命周期 |
+| [材料系统（MaterialItem）](wiki/material-item.md) | 材料的数据模型、工坊合成管道（消耗品/装备/时装三类产物）、与其他物品类型的关系 |
 | [AI 操作 CLI（run_agent_game.py）](wiki/run-agent-game.md) | 快照驱动设计的意图、AI 代理操作工具与 TUI 客户端的分工 |
-| [地下城生成流程（Dungeon Generation Pipeline）](wiki/dungeon-generation.md) | 四步流水线的设计意图、LLM 决策分工、并发策略与中间文件约定 |
-| [场景塞牌系统（InjectCardsActionSystem）](wiki/post-arbitration.md) | 场景实体作为 LLM 推理主体的设计意图、外来牌生命周期、直接监听出牌/消耗品/装备行动的多 Matcher 触发设计 |
+| [地下城生成流程（Dungeon Generation Pipeline）](wiki/dungeon-generation.md) | 四步流水线的设计意图、LLM 决策分工、并发策略、中间文件约定，以及插画步骤（Step 5）当前未接入主流程的现状 |

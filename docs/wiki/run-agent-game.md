@@ -4,9 +4,9 @@
 
 ## 设计定位
 
-`run_agent_game.py` 是专门面向 **AI 代理**（而非人类玩家）的游戏操作入口。人类玩家通过 `run_tui_client.py` 进行交互式会话；AI 通过本脚本进行**无状态、快照驱动**的推进。
+`run_agent_game.py` 是专门面向 **AI 代理**（而非人类玩家）的游戏操作入口。人类玩家通过 `run_tui_client.py` 作为 HTTP 客户端连接常驻的游戏服务端（`run_game_server.py`，由服务端持有游戏实例并跨请求维持状态）；AI 代理不经过该服务端，直接通过本脚本进行**无状态、快照驱动**的推进。
 
-两者的根本区别：TUI 客户端在进程内持有游戏实例并持续读取用户输入；本脚本每次调用均为独立进程，读取存档 → 执行单次动作 → 写出新存档，进程退出后无任何残留状态。
+两者的根本区别：游戏服务端是长期运行的有状态进程，靠网络请求驱动；本脚本每次调用都是独立的一次性进程，直接读取本地存档 → 执行单次动作 → 写出新存档，进程退出后无任何残留状态，也不依赖服务端是否在运行。
 
 ---
 
@@ -24,9 +24,9 @@
 
 ## CLI 与动作逻辑的分层
 
-本脚本**只负责 CLI 层**：参数解析、日志初始化、世界恢复与存档路径构造。所有业务逻辑集中在 `agent_game_actions.py`，脚本中不包含任何游戏逻辑。
+`run_agent_game.py` 只负责 Click 层：参数解析、日志初始化、世界恢复与存档路径构造。"存档复位 → 触发动作 → pipeline 推进 → 归档新存档"这套流程按游戏模式拆分到四个动作模块：`agent_game_core.py`（游戏实例创建/复位等共享基础设施）、`agent_game_home.py`（家园模式动作）、`agent_game_combat.py`（地下城战斗动作）、`agent_game_inventory.py`（背包/合成/队伍管理动作）。
 
-这一分层使 `agent_game_actions.py` 可以被其他调用方（如 HTTP 服务、测试套件）直接复用，不依赖 Click 框架。
+这四个模块本身只是薄封装，真正的游戏规则校验与 ECS 动作触发集中在 `ai_rpg.services.*`（如 `home_actions.py`、`dungeon_actions.py`、`dungeon_lifecycle.py`）。这一层与 CLI 完全解耦，同时被面向 TUI 客户端的游戏服务端（`home_gameplay.py`、`dungeon_tasks.py`）及测试套件直接复用——真正的复用边界在 `services` 层，而非 CLI 脚本本身。
 
 ---
 
@@ -37,7 +37,7 @@
 - **家园模式**：`advance` / `speak` / `switch-stage` / `enter-dungeon` 等
 - **地下城模式**：`draw-cards` / `play-cards-specified` / `use-consumable` / `use-gear` / `exit-dungeon` 等
 
-AI 代理无需感知内部游戏对象，只需根据当前存档的模式选择合法命令，错误调用会在 `agent_game_actions.py` 层返回可识别的错误而非写出损坏存档。
+AI 代理无需感知内部游戏对象，只需根据当前存档的模式选择合法命令；`services` 层的前置条件校验失败时直接返回错误，动作模块据此提前 return，不会调用归档、不产出损坏存档。
 
 ---
 

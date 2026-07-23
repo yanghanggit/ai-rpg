@@ -10,7 +10,7 @@ from src.ai_rpg.game.dbg_game import DBGGame
 from src.ai_rpg.models import (
     ActorComponent,
     AppearanceComponent,
-    EquippedCostumeComponent,
+    WornCostumeComponent,
 )
 from src.ai_rpg.models.items import CostumeItem
 from src.ai_rpg.models.messages import AIMessage
@@ -37,7 +37,7 @@ def _make_actor_entity(
     entity._name = name
     entity.add(ActorComponent, name, "test_sheet", "test_stage")
     entity.add(AppearanceComponent, name, _BASE_BODY, appearance)
-    entity.add(EquippedCostumeComponent, name, costume)
+    entity.add(WornCostumeComponent, name, costume)
     return entity
 
 

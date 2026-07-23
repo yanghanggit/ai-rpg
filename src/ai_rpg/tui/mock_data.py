@@ -23,7 +23,7 @@ from ..models import (
     CharacterStatsComponent,
     ComponentSerialization,
     ConsumableItem,
-    EquippedCostumeComponent,
+    WornCostumeComponent,
     CostumeItem,
     DeckComponent,
     DiscardPileComponent,
@@ -111,19 +111,17 @@ def get_mock_storage_costume_items() -> List[CostumeItem]:
 
 
 def simulate_mock_wear_costume(actor_name: str, item_name: str) -> None:
-    """开发调试用：模拟 activate_update_appearance → UpdateAppearanceActionSystem
-    的核心状态转移（脱装归还储物箱 → 按需从储物箱取出并穿装），不做真实 LLM 外观合成，
-    直接同步生效，供 `--dev-screen wear-costume` 下完整走通穿戴/移除时装流程。
+    """开发调试用：模拟 activate_wear_costume → WearCostumeActionSystem
+    的核心状态转移（若已穿戴则先自动脱装归还储物箱 → 从储物箱取出指定时装并穿装），
+    不做真实 LLM 外观合成，直接同步生效，供 `--dev-screen wear-costume` 下完整走通
+    穿戴/换装流程。
 
     Raises:
-        ValueError: item_name 非空但储物箱中不存在同名时装。
+        ValueError: 储物箱中不存在同名时装。
     """
     current = _mock_worn_costume_by_actor.pop(actor_name, None)
     if current is not None:
         _mock_storage_costume_items.append(current)
-
-    if not item_name:
-        return
 
     match = next(
         (item for item in _mock_storage_costume_items if item.name == item_name), None
@@ -133,6 +131,15 @@ def simulate_mock_wear_costume(actor_name: str, item_name: str) -> None:
 
     _mock_storage_costume_items.remove(match)
     _mock_worn_costume_by_actor[actor_name] = match
+
+
+def simulate_mock_remove_costume(actor_name: str) -> None:
+    """开发调试用：模拟 activate_remove_costume → RemoveCostumeActionSystem
+    的核心状态转移（脱装归还储物箱），无穿戴时装则静默跳过。
+    """
+    current = _mock_worn_costume_by_actor.pop(actor_name, None)
+    if current is not None:
+        _mock_storage_costume_items.append(current)
 
 
 def set_mock_combat_state(state: CombatState) -> None:
@@ -355,8 +362,8 @@ def _costume_component_serialization(
 ) -> ComponentSerialization:
     """构造 CostumeComponent 序列化数据（角色已穿戴时装时才存在）。"""
     return ComponentSerialization(
-        name=EquippedCostumeComponent.__name__,
-        data=EquippedCostumeComponent(name=name, item=item).model_dump(),
+        name=WornCostumeComponent.__name__,
+        data=WornCostumeComponent(name=name, item=item).model_dump(),
     )
 
 
@@ -365,7 +372,7 @@ def _appearance_and_costume_components(
     name: str, base_body: str
 ) -> List[ComponentSerialization]:
     """依据当前 mock 穿戴状态（`_mock_worn_costume_by_actor`）构造 AppearanceComponent，
-    若该角色当前已穿戴时装则一并构造 EquippedCostumeComponent；供「获取当前外观」
+    若该角色当前已穿戴时装则一并构造 WornCostumeComponent；供「获取当前外观」
     「穿戴/移除时装」等指令联调，appearance 会随 `simulate_mock_wear_costume` 的
     调用结果动态变化（而非固定字面量）。"""
     worn = get_mock_worn_costume(name)

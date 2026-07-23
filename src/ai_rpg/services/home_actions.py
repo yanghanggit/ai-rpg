@@ -7,7 +7,8 @@ from ..game.dbg_game import DBGGame
 from ..models import (
     SpeakAction,
     TransStageAction,
-    UpdateAppearanceAction,
+    WearCostumeAction,
+    RemoveCostumeAction,
     AppearanceComponent,
     HomeComponent,
     InventoryComponent,
@@ -425,54 +426,50 @@ def move_item_to_storage(
 
 
 ###################################################################################################################################################################
-def activate_update_appearance(
+def activate_wear_costume(
     dbg_game: DBGGame, item_name: str, target_name: str
 ) -> Tuple[bool, str]:
     """
-    为指定角色激活外观更新动作，时装来源为玩家的背包或储物箱（全局）。
+    为指定角色激活穿上时装动作，时装来源为全局储物箱。
     """
 
     # 检查玩家是否在家园场景中，如果不在则无法更新外观。
     if not dbg_game.is_player_in_home_stage:
         error_detail = "玩家不在家园场景中，无法更新外观"
-        logger.error(f"激活外观更新失败: {error_detail}")
+        logger.error(f"激活穿装失败: {error_detail}")
         return False, error_detail
-
-    # 获取玩家实体和全局储物箱实体，并确保它们存在且具有相应的组件。
-    player_entity = dbg_game.get_player_entity()
-    assert player_entity is not None, "玩家实体不存在！"
 
     # 获取全局储物箱实体，并确保它存在且具有 StorageComponent。
     storage_entity = dbg_game.get_storage_entity()
     assert storage_entity is not None, "全局储物箱实体不存在！"
     assert storage_entity.has(StorageComponent), "全局储物箱实体缺少 StorageComponent"
 
-    # 确定目标实体：为空则默认玩家自身
+    # 确定目标实体：为空则报错
     if not target_name:
         error_detail = "目标角色名称不能为空"
-        logger.error(f"激活外观更新失败: {error_detail}")
+        logger.error(f"激活穿装失败: {error_detail}")
         return False, error_detail
 
     # 获取目标角色实体，并确保它存在且具有 AppearanceComponent。
     target_entity = dbg_game.get_actor_entity(target_name)
     if target_entity is None:
         error_detail = f"目标角色 {target_name!r} 不存在"
-        logger.error(f"激活外观更新失败: {error_detail}")
+        logger.error(f"激活穿装失败: {error_detail}")
         return False, error_detail
 
     # 检查目标角色是否具有 AppearanceComponent，如果没有则无法更新外观。
     if not target_entity.has(AppearanceComponent):
         error_detail = f"目标角色 {target_name!r} 缺少 AppearanceComponent"
-        logger.error(f"激活外观更新失败: {error_detail}")
+        logger.error(f"激活穿装失败: {error_detail}")
         return False, error_detail
 
-    # 空字符串：脱装，直接触发动作
+    # 穿装要求 item_name 必须非空；脱装请使用 activate_remove_costume。
     if not item_name:
-        logger.debug(f"激活外观更新（脱装）: {target_entity.name}")
-        target_entity.replace(UpdateAppearanceAction, target_entity.name, "", None)
-        return True, ""
+        error_detail = "时装名称不能为空，如需脱下时装请调用 activate_remove_costume"
+        logger.error(f"激活穿装失败: {error_detail}")
+        return False, error_detail
 
-    # 时装来源始终是玩家的 StorageComponent
+    # 时装来源始终是全局 StorageComponent
     storage = storage_entity.get(StorageComponent)
     costume = next(
         (
@@ -486,16 +483,51 @@ def activate_update_appearance(
     # 如果在储物箱中未找到指定的时装，则返回错误。
     if costume is None:
         error_detail = f"储物箱中不存在名为 {item_name!r} 的时装"
-        logger.error(f"激活外观更新失败: {error_detail}")
+        logger.error(f"激活穿装失败: {error_detail}")
         return False, error_detail
 
-    # 在储物箱中找到指定的时装后，触发更新外观动作，将目标实体的外观更新为该时装。
-    logger.debug(f"激活外观更新: {target_entity.name} <- {item_name}")
-    target_entity.replace(
-        UpdateAppearanceAction, target_entity.name, item_name, costume
-    )
+    # 在储物箱中找到指定的时装后，触发穿装动作，将目标实体的外观更新为该时装。
+    logger.debug(f"激活穿装: {target_entity.name} <- {item_name}")
+    target_entity.replace(WearCostumeAction, target_entity.name, item_name, costume)
 
-    # 外观更新动作激活成功，返回 True 表示激活成功。
+    # 穿装动作激活成功，返回 True 表示激活成功。
+    return True, ""
+
+
+###################################################################################################################################################################
+def activate_remove_costume(dbg_game: DBGGame, target_name: str) -> Tuple[bool, str]:
+    """
+    为指定角色激活脱下当前时装动作，时装将归还全局储物箱。
+    """
+
+    # 检查玩家是否在家园场景中，如果不在则无法更新外观。
+    if not dbg_game.is_player_in_home_stage:
+        error_detail = "玩家不在家园场景中，无法更新外观"
+        logger.error(f"激活脱装失败: {error_detail}")
+        return False, error_detail
+
+    # 确定目标实体：为空则报错
+    if not target_name:
+        error_detail = "目标角色名称不能为空"
+        logger.error(f"激活脱装失败: {error_detail}")
+        return False, error_detail
+
+    # 获取目标角色实体，并确保它存在且具有 AppearanceComponent。
+    target_entity = dbg_game.get_actor_entity(target_name)
+    if target_entity is None:
+        error_detail = f"目标角色 {target_name!r} 不存在"
+        logger.error(f"激活脱装失败: {error_detail}")
+        return False, error_detail
+
+    # 检查目标角色是否具有 AppearanceComponent，如果没有则无法更新外观。
+    if not target_entity.has(AppearanceComponent):
+        error_detail = f"目标角色 {target_name!r} 缺少 AppearanceComponent"
+        logger.error(f"激活脱装失败: {error_detail}")
+        return False, error_detail
+
+    logger.debug(f"激活脱装: {target_entity.name}")
+    target_entity.replace(RemoveCostumeAction, target_entity.name)
+
     return True, ""
 
 

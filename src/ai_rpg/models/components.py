@@ -152,7 +152,6 @@ class HandComponent(MutableComponent):
 
     name: str
     cards: List[Card]
-    # round: int  # 当前回合数
 
 
 ############################################################################################################
@@ -299,7 +298,7 @@ class CombatLootComponent(MutableComponent):
 
 @final
 @register_component_type
-class EquippedCostumeComponent(MutableComponent):
+class WornCostumeComponent(MutableComponent):
     """时装组件，记录当前穿戴的时装（CostumeItem）"""
 
     name: str

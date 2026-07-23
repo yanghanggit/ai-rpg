@@ -27,7 +27,8 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     from ..systems.trans_stage_action_system import (
         TransStageActionSystem,
     )
-    from ..systems.update_appearance_action_system import UpdateAppearanceActionSystem
+    from ..systems.wear_costume_action_system import WearCostumeActionSystem
+    from ..systems.remove_costume_action_system import RemoveCostumeActionSystem
     from ..systems.player_action_audit_system import PlayerActionAuditSystem
     from ..systems.stage_description_system import (
         StageDescriptionSystem,
@@ -60,7 +61,8 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     processors.add(WhisperActionSystem(dbg_game))
     processors.add(AnnounceActionSystem(dbg_game))
     processors.add(TransStageActionSystem(dbg_game))
-    processors.add(UpdateAppearanceActionSystem(dbg_game))
+    processors.add(RemoveCostumeActionSystem(dbg_game))
+    processors.add(WearCostumeActionSystem(dbg_game))
 
     # 制作相关的系统
     processors.add(CraftConsumableActionSystem(dbg_game))

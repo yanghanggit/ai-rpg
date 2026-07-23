@@ -48,6 +48,8 @@ from ..models import (
     HomeItemMoveToStorageResponse,
     HomeWearCostumeRequest,
     HomeWearCostumeResponse,
+    HomeRemoveCostumeRequest,
+    HomeRemoveCostumeResponse,
     HomeCraftItemRequest,
     HomeCraftItemResponse,
     LoginRequest,
@@ -609,6 +611,23 @@ async def home_wear_costume(
         )
         response.raise_for_status()
         return HomeWearCostumeResponse.model_validate(response.json())
+
+
+async def home_remove_costume(
+    user_name: str, game_name: str, target_name: str = ""
+) -> HomeRemoveCostumeResponse:
+    """为指定角色脱下当前穿戴的时装，返回后台任务ID。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.post(
+            server_config.base_url + "/api/home/costume/remove/v1/",
+            json=HomeRemoveCostumeRequest(
+                user_name=user_name,
+                game_name=game_name,
+                target_name=target_name,
+            ).model_dump(),
+        )
+        response.raise_for_status()
+        return HomeRemoveCostumeResponse.model_validate(response.json())
 
 
 async def home_craft_item(

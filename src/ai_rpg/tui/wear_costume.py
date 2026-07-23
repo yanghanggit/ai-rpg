@@ -3,7 +3,7 @@
 重写说明（进行中）：本页正从「两步选择式交互」迁移为「指令驱动展示」。
 当前接入以下指令：
   1 - 获取当前外观：列出全部场景下全部角色的 AppearanceComponent
-      （base_body / appearance）与 EquippedCostumeComponent（如果持有）信息。
+      （base_body / appearance）与 WornCostumeComponent（如果持有）信息。
   2 - 获取储物箱时装：列出全局储物箱内全部 CostumeItem，若已被某角色穿戴则标注穿戴者。
   3 - 穿戴 / 移除时装：选择角色 → 选择「脱时装」或某件储物箱时装 → 确认后提交。
   0 - 清屏。
@@ -18,8 +18,9 @@
 使本页可通过 `scripts/run_tui_client.py --dev-screen wear-costume` 在无服务器时
 直接调试（mock 数据见 `mock_data.py`）。指令 3 的最终提交同样区分 mock / 真实：
 mock 模式下直接在本地同步模拟储物箱 ⇄ 已穿戴状态转移（不发起真实网络请求），
-真实模式下调用 `home_wear_costume` 并通过 `watch_task_until_done` 等待后台任务完成
-（详见 `combat_data_access.submit_wear_costume`）。
+正式模式下调用 `home_wear_costume` 并通过 `watch_task_until_done` 等待后台任务完成
+（或脱时装分支调用 `home_remove_costume`），详见 `combat_data_access.submit_wear_costume`
+与 `combat_data_access.submit_remove_costume`。
 """
 
 from dataclasses import dataclass, field
@@ -37,13 +38,14 @@ from .combat_data_access import (
     get_stages_state,
     get_storage_entity_name,
     submit_wear_costume,
+    submit_remove_costume,
 )
 from .utils import display_name
 from ..models import (
     AppearanceComponent,
     ComponentSerialization,
     CostumeItem,
-    EquippedCostumeComponent,
+    WornCostumeComponent,
     StorageComponent,
 )
 
@@ -174,14 +176,14 @@ class WearCostumeScreen(BaseGameScreen):
     def _render_actor_appearance(
         self, log: RichLog, actor_name: str, components: List[ComponentSerialization]
     ) -> None:
-        """从实体组件列表中提取并渲染 AppearanceComponent + EquippedCostumeComponent（如有）"""
+        """从实体组件列表中提取并渲染 AppearanceComponent + WornCostumeComponent（如有）"""
         appearance_comp: Optional[AppearanceComponent] = None
-        costume_comp: Optional[EquippedCostumeComponent] = None
+        costume_comp: Optional[WornCostumeComponent] = None
         for comp in components:
             if comp.name == AppearanceComponent.__name__:
                 appearance_comp = AppearanceComponent(**comp.data)
-            elif comp.name == EquippedCostumeComponent.__name__:
-                costume_comp = EquippedCostumeComponent(**comp.data)
+            elif comp.name == WornCostumeComponent.__name__:
+                costume_comp = WornCostumeComponent(**comp.data)
 
         log.write(f"  [bold cyan]{display_name(actor_name)}[/]")
 
@@ -195,7 +197,7 @@ class WearCostumeScreen(BaseGameScreen):
             item = costume_comp.item
             log.write(f"    [magenta]时装:[/] {item.name} — {item.description}")
         else:
-            log.write("    [dim]（未持有 EquippedCostumeComponent，即未穿戴时装）[/]")
+            log.write("    [dim]（未持有 WornCostumeComponent，即未穿戴时装）[/]")
 
     ########################################################################################################################
     async def _fetch_and_render_all_appearances(
@@ -255,7 +257,7 @@ class WearCostumeScreen(BaseGameScreen):
     ########################################################################################################################
     @work
     async def _cmd_show_appearances(self) -> None:
-        """指令 1：获取全部场景 · 全部角色的当前外观（AppearanceComponent + EquippedCostumeComponent）。"""
+        """指令 1：获取全部场景 · 全部角色的当前外观（AppearanceComponent + WornCostumeComponent）。"""
         log = self.query_one(RichLog)
         await self._fetch_and_render_all_appearances(log)
 
@@ -297,7 +299,7 @@ class WearCostumeScreen(BaseGameScreen):
 
     ########################################################################################################################
     async def _fetch_costume_wearer_map(self, log: RichLog) -> Optional[Dict[str, str]]:
-        """一次性临时 GET：重新拉取全部场景 · 全部角色的 EquippedCostumeComponent，
+        """一次性临时 GET：重新拉取全部场景 · 全部角色的 WornCostumeComponent，
         构建 {时装名称: 穿戴者实体名} 映射，不复用任何其他指令已拉取的数据。
 
         失败时返回 None（错误信息已写入 log）。"""
@@ -331,8 +333,8 @@ class WearCostumeScreen(BaseGameScreen):
 
         for entity in actors_details_resp.entities_serialization:
             for comp in entity.components:
-                if comp.name == EquippedCostumeComponent.__name__:
-                    equipped = EquippedCostumeComponent(**comp.data)
+                if comp.name == WornCostumeComponent.__name__:
+                    equipped = WornCostumeComponent(**comp.data)
                     wearer_by_item_name[equipped.item.name] = entity.name
 
         return wearer_by_item_name
@@ -469,8 +471,8 @@ class WearCostumeScreen(BaseGameScreen):
             if entity.name != actor_name:
                 continue
             for comp in entity.components:
-                if comp.name == EquippedCostumeComponent.__name__:
-                    current_item_name = EquippedCostumeComponent(**comp.data).item.name
+                if comp.name == WornCostumeComponent.__name__:
+                    current_item_name = WornCostumeComponent(**comp.data).item.name
 
         self._flow.costume_items = costume_items
         self._flow.step = "select_choice"
@@ -540,8 +542,9 @@ class WearCostumeScreen(BaseGameScreen):
     ########################################################################################################################
     @work
     async def _do_wear_costume(self) -> None:
-        """提交穿戴 / 移除时装：mock 模式下本地同步模拟状态转移，真实模式下调用
-        `home_wear_costume` 并等待后台任务完成。"""
+        """提交穿戴 / 移除时装：mock 模式下本地同步模拟状态转移，真实模式下根据
+        是穿装还是脱装分别调用 `home_wear_costume` 或 `home_remove_costume` 并等待
+        后台任务完成。"""
         log = self.query_one(RichLog)
         input_widget = self.query_one(Input)
 
@@ -552,7 +555,10 @@ class WearCostumeScreen(BaseGameScreen):
 
         input_widget.disabled = True
         try:
-            await submit_wear_costume(self.game_client, item_name, actor_name)
+            if item_name:
+                await submit_wear_costume(self.game_client, item_name, actor_name)
+            else:
+                await submit_remove_costume(self.game_client, actor_name)
         except Exception as e:
             logger.error(f"WearCostumeScreen._do_wear_costume: 提交失败 error={e}")
             log.write(f"[bold red]❌ 操作失败: {e}[/]")

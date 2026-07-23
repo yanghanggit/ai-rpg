@@ -20,7 +20,8 @@ from .home_actions import (
     activate_switch_stage,
     activate_plan_action,
     activate_generate_dungeon,
-    activate_update_appearance,
+    activate_wear_costume,
+    activate_remove_costume,
     activate_craft_consumable,
     activate_craft_gear_item,
     activate_craft_costume_item,
@@ -53,6 +54,8 @@ from ..models import (
     HomeItemMoveToStorageResponse,
     HomeWearCostumeRequest,
     HomeWearCostumeResponse,
+    HomeRemoveCostumeRequest,
+    HomeRemoveCostumeResponse,
     HomeCraftItemRequest,
     HomeCraftItemResponse,
     TaskStatus,
@@ -494,7 +497,7 @@ async def home_wear_costume_endpoint(
     payload: HomeWearCostumeRequest,
     game_server: CurrentGameServer,
 ) -> HomeWearCostumeResponse:
-    """为指定角色穿戴或移除时装，触发外观更新 home pipeline 任务。"""
+    """为指定角色穿上指定时装，触发外观更新 home pipeline 任务。"""
     logger.info(
         f"/api/home/costume/wear/v1/: user={payload.user_name} item={payload.item_name!r} target={payload.target_name!r}"
     )
@@ -507,7 +510,7 @@ async def home_wear_costume_endpoint(
         )
     async with current_room._lock:
         dbg_game = await _validate_player_at_home(payload.user_name, game_server)
-        success, error_detail = activate_update_appearance(
+        success, error_detail = activate_wear_costume(
             dbg_game, payload.item_name, payload.target_name
         )
         if not success:
@@ -525,12 +528,59 @@ async def home_wear_costume_endpoint(
         )
     )
     logger.info(
-        f"📝 创建外观更新任务: task_id={wear_costume_task.task_id}, user={payload.user_name}"
+        f"📝 创建穿装任务: task_id={wear_costume_task.task_id}, user={payload.user_name}"
     )
     return HomeWearCostumeResponse(
         task_id=wear_costume_task.task_id,
         status=TaskStatus.RUNNING.value,
-        message="外观更新任务已启动，请通过会话消息查询结果",
+        message="穿装任务已启动，请通过会话消息查询结果",
+    )
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+@home_gameplay_api_router.post(
+    path="/api/home/costume/remove/v1/", response_model=HomeRemoveCostumeResponse
+)
+async def home_remove_costume_endpoint(
+    payload: HomeRemoveCostumeRequest,
+    game_server: CurrentGameServer,
+) -> HomeRemoveCostumeResponse:
+    """为指定角色脱下当前穿戴的时装，触发外观更新 home pipeline 任务。"""
+    logger.info(
+        f"/api/home/costume/remove/v1/: user={payload.user_name} target={payload.target_name!r}"
+    )
+
+    current_room = game_server.get_room(payload.user_name)
+    if current_room is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"找不到游戏房间: user={payload.user_name}",
+        )
+    async with current_room._lock:
+        dbg_game = await _validate_player_at_home(payload.user_name, game_server)
+        success, error_detail = activate_remove_costume(dbg_game, payload.target_name)
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=error_detail,
+            )
+
+    remove_costume_task = game_server.create_task()
+    asyncio.create_task(
+        _execute_home_pipeline_task(
+            remove_costume_task.task_id,
+            payload.user_name,
+            game_server,
+        )
+    )
+    logger.info(
+        f"📝 创建脱装任务: task_id={remove_costume_task.task_id}, user={payload.user_name}"
+    )
+    return HomeRemoveCostumeResponse(
+        task_id=remove_costume_task.task_id,
+        status=TaskStatus.RUNNING.value,
+        message="脱装任务已启动，请通过会话消息查询结果",
     )
 
 

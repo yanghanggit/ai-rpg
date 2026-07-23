@@ -7,7 +7,7 @@ from ..game.dbg_game import DBGGame
 from ..models import (
     ActorComponent,
     AppearanceComponent,
-    EquippedCostumeComponent,
+    WornCostumeComponent,
     HumanMessage,
 )
 from ..models.items import CostumeItem
@@ -32,9 +32,7 @@ class AppearanceInitializationSystem(ExecuteProcessor):
 
         # 获取所有包含 ActorComponent、AppearanceComponent 和 CostumeComponent 的实体
         entities = self._game.get_group(
-            Matcher(
-                all_of=[ActorComponent, AppearanceComponent, EquippedCostumeComponent]
-            )
+            Matcher(all_of=[ActorComponent, AppearanceComponent, WornCostumeComponent])
         ).entities
 
         # 筛选出外观未初始化（appearance == base_body）的实体
@@ -63,7 +61,7 @@ class AppearanceInitializationSystem(ExecuteProcessor):
         """为单个目标实体构建外观合成所需的 DeepSeekClient 实例。"""
 
         appearance_comp = entity.get(AppearanceComponent)
-        costume: CostumeItem = entity.get(EquippedCostumeComponent).item
+        costume: CostumeItem = entity.get(WornCostumeComponent).item
 
         prompt = build_appearance_synthesis_prompt(
             base_body=appearance_comp.base_body,
@@ -91,7 +89,7 @@ class AppearanceInitializationSystem(ExecuteProcessor):
         ), f"ActorAppearanceInitSystem: 找不到实体 {client.name}"
 
         appearance_comp = entity.get(AppearanceComponent)
-        costume: CostumeItem = entity.get(EquippedCostumeComponent).item
+        costume: CostumeItem = entity.get(WornCostumeComponent).item
         new_appearance = client.response_content.strip()
 
         # 更新外观。

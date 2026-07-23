@@ -25,17 +25,23 @@ from .utils import display_name, format_agent_event
 MENU_TEXT = """\
 [bold yellow]可用操作（输入编号执行）：[/]
 
-[bold cyan]── 查看 ──────────────────────────────────────[/]
+[bold cyan]── 查看（系统级 / 幂等） ──────────────────────[/]
   [bold green]1[/]  实体浏览器    列出全部场景与角色
-  [bold green]2[/]  地下城总览    列出全部副本预览
 
-[bold cyan]── 行动 ──────────────────────────────────────[/]
-  [bold green]3[/]  推进家园      执行一轮 home pipeline
+[bold cyan]── 地下城远征 ──────────────────────────────────[/]
+  [bold green]2[/]  地下城        查看副本预览并可进入地下城
+  [bold green]3[/]  管理远征队    加入/移除远征队成员
+
+[bold cyan]── 角色行动（仅当前角色可执行） ────────────────[/]
   [bold green]4[/]  与NPC对话     与当前场景 NPC 对话
   [bold green]5[/]  切换场景      移动到其他场景
-  [bold green]6[/]  道具管理      背包与储物箱道具移动
-  [bold green]7[/]  管理远征队    加入/移除远征队成员
-  [bold green]8[/]  穿戴时装      为目标安装/移除时装
+
+[bold cyan]── 核心行动 ────────────────────────────────────[/]
+  [bold green]6[/]  推进家园      home内所有 NPC角色 触发*规划*与*行动*，并生成消息
+  [bold green]7[/]  穿戴时装      为目标安装/移除时装
+
+[bold cyan]── 道具与工坊 ──────────────────────────────────[/]
+  [bold green]8[/]  道具管理      背包与储物箱道具移动
   [bold green]9[/]  制造工坊      合成消耗品
   [bold green]10[/] 工坊锻造      用材料锻造装备
   [bold green]11[/] 工坊制衣      用材料制作时装
@@ -216,7 +222,9 @@ class HomeScreen(BaseGameScreen):
 
             self.app.push_screen(DungeonOverviewScreen())
         elif cmd == "3":
-            self._do_advance()
+            from .home_party_roster_management import HomePartyRosterManagementScreen
+
+            self.app.push_screen(HomePartyRosterManagementScreen())
         elif cmd == "4":
             from .speak import SpeakScreen
 
@@ -226,17 +234,15 @@ class HomeScreen(BaseGameScreen):
 
             self.app.push_screen(SwitchStageScreen())
         elif cmd == "6":
-            from .home_item_management import HomeItemManagementScreen
-
-            self.app.push_screen(HomeItemManagementScreen())
+            self._do_advance()
         elif cmd == "7":
-            from .home_party_roster_management import HomePartyRosterManagementScreen
-
-            self.app.push_screen(HomePartyRosterManagementScreen())
-        elif cmd == "8":
             from .home_wear_costume import HomeWearCostumeScreen
 
             self.app.push_screen(HomeWearCostumeScreen())
+        elif cmd == "8":
+            from .home_item_management import HomeItemManagementScreen
+
+            self.app.push_screen(HomeItemManagementScreen())
         elif cmd == "9":
             from .craft_consumable_item import CraftConsumableItemScreen
 

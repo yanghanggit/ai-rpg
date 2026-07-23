@@ -6,7 +6,6 @@ from typing import List, Tuple, Optional
 from loguru import logger
 from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import (
-    find_equipped_gear_holder,
     get_alive_party_members_in_stage,
     get_alive_monsters_in_stage,
     get_energy,
@@ -431,13 +430,6 @@ def activate_use_gear(
     # 检查选中的物品是否为装备，如果不是则无法使用。
     if not isinstance(selected_item, GearItem):
         msg = f"物品 '{item_name}' 不是装备（类型: {type(selected_item).__name__}）"
-        logger.error(msg)
-        return False, msg
-
-    # 检查该装备是否已经被其他实体装备，如果已被装备则无法再次使用。
-    holder = find_equipped_gear_holder(dbg_game, selected_item)
-    if holder is not None:
-        msg = f"装备 '{item_name}' 当前已被 {holder.name} 装备中，无法再次使用"
         logger.error(msg)
         return False, msg
 

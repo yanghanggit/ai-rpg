@@ -5,10 +5,11 @@ from loguru import logger
 from overrides import override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
-from ..game.dbg_combat_processor import consume_energy, get_energy, remove_equipped_gear
+from ..game.dbg_combat_processor import consume_energy, get_energy
 from ..models import (
     AgentEvent,
     EquippedGearComponent,
+    InventoryComponent,
     UseGearItemAction,
     GearItem,
 )
@@ -35,6 +36,26 @@ class UseGearItemActionSystem(ReactiveProcessor):
     def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
         self._game: Final[DBGGame] = game
+
+    ####################################################################################################################################
+    def _return_previously_equipped_gear(
+        self, owner_entity: Entity, target_entity: Entity
+    ) -> None:
+        """换装专用的状态转移：若目标已装备其它装备，将其归还背包持有者（owner_entity）
+        的 InventoryComponent，再移除目标的 EquippedGearComponent；未装备则跳过。"""
+
+        if not target_entity.has(EquippedGearComponent):
+            return
+
+        previous_item = target_entity.get(EquippedGearComponent).item
+        target_entity.remove(EquippedGearComponent)
+
+        owner_inventory = owner_entity.get(InventoryComponent)
+        owner_inventory.items.append(previous_item)
+        logger.debug(
+            f"UseGearItemActionSystem: {target_entity.name} 换装，已将旧装备 "
+            f"{previous_item.name!r} 归还 {owner_entity.name} 的 InventoryComponent"
+        )
 
     ####################################################################################################################################
     @override
@@ -90,14 +111,30 @@ class UseGearItemActionSystem(ReactiveProcessor):
             get_energy(target_entity) >= item.cost
         ), f"{target_entity.name} 能量不足！需要 energy={item.cost}，当前 energy={get_energy(target_entity)}"
 
-        # 兜底，按理讲不应该发生
-        remove_equipped_gear(self._game, item)
+        # 移动语义：装备背包持有者（entity）必须持有 InventoryComponent，装备将从其
+        # InventoryComponent.items 中移出，而非拷贝。
+        assert entity.has(
+            InventoryComponent
+        ), f"UseGearItemActionSystem: {entity.name} 缺少 InventoryComponent"
 
-        # 装备动作落地
+        # 若目标已装备其它装备（换装场景），先将旧装备归还给背包持有者（entity）。
+        self._return_previously_equipped_gear(
+            owner_entity=entity, target_entity=target_entity
+        )
+
+        # 将本次装备的道具从背包持有者的 InventoryComponent 中移出（对象引用移动，非拷贝）。
+        inventory = entity.get(InventoryComponent)
+        inventory.items[:] = [
+            inventory_item
+            for inventory_item in inventory.items
+            if inventory_item is not item
+        ]
+
+        # 装备动作落地：直接挂载对象引用，而非 model_copy 出的副本。
         target_entity.replace(
             EquippedGearComponent,
             target_entity.name,
-            item.model_copy(deep=True),
+            item,
         )
         logger.debug(
             f"UseGearItemActionSystem: [{entity.name}] 已为 [{target_name}] 装备 '{item.name}'"

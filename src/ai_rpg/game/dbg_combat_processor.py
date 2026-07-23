@@ -21,7 +21,6 @@ from ..models import (
     StatusEffect,
     StatusEffectsComponent,
     TargetType,
-    GearItem,
     ConsumableItem,
     InventoryComponent,
     compute_effective_stats,
@@ -122,43 +121,6 @@ def collect_target_gear_modifiers(
         assert target_entity is not None, f"无法找到目标实体: {target_name}"
         target_gear_modifiers[target_name] = get_gear_modifiers(target_entity)
     return target_gear_modifiers
-
-
-#################################################################################################################################################
-def find_equipped_gear_holder(
-    game: DBGGame, selected_item: GearItem
-) -> Optional[Entity]:
-    """返回当前装备了指定 GearItem 的实体；未装备则返回 None。"""
-    for holder in game.get_group(Matcher(EquippedGearComponent)).entities:
-        if holder.get(EquippedGearComponent).item.uuid == selected_item.uuid:
-            return holder
-    return None
-
-
-#################################################################################################################################################
-def remove_equipped_gear(game: DBGGame, selected_item: GearItem) -> None:
-    """扫描全局：移除所有持有同名装备的 EquippedGearComponent（保证全局唯一）。"""
-    # 扫描全局，移除所有持有同名装备的 EquippedGearComponent
-    remove_count = 0
-
-    # 使用 copy() 避免在迭代过程中修改集合导致 RuntimeError
-    for holder in game.get_group(Matcher(EquippedGearComponent)).entities.copy():
-
-        equipped_gear_comp = holder.get(EquippedGearComponent)
-        if equipped_gear_comp.item.uuid != selected_item.uuid:
-            continue
-
-        logger.info(
-            f"移除 {holder.name} 的 EquippedGearComponent（装备: {equipped_gear_comp.item.name}）"
-        )
-        holder.remove(EquippedGearComponent)
-        remove_count += 1
-
-    # 全局应仅有一个实体装备了 selected_item，若移除数量 > 0，则必须为 1
-    if remove_count > 0:
-        assert (
-            remove_count == 1
-        ), f"全局应仅有一个实体装备了 {selected_item.name}，实际移除数量: {remove_count}"
 
 
 #################################################################################################################################################

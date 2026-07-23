@@ -9,11 +9,12 @@ from .base import BaseGameScreen
 import asyncio
 from loguru import logger
 
-from ..models import StagesStateResponse
+from ..models import StagesStateResponse, StageDescriptionComponent, AppearanceComponent
 from .server_client import (
     fetch_session_messages,
     stream_session_messages,
     fetch_stages_state,
+    fetch_entities_details,
     watch_task_until_done,
     TaskFailedError,
     home_advance as server_home_advance,
@@ -40,7 +41,8 @@ MENU_TEXT = """\
   [bold green]11[/] 工坊制衣      用材料制作时装
 
 [bold cyan]── 消息 ──────────────────────────────────────[/]
-  [bold green]/session[/] [sequence_id]  查看指定序号之后的消息（留空则查看最新未读消息，简写：/s）
+  [bold green]/session[/] [sequence_id]  查看指定序号之后的消息（留空则查看最新未读消息，简写：/ss）
+  [bold green]/stage[/]  查看玩家当前所在场景描述与场景内全部角色外观（简写：/st）
 
 [bold cyan]── 系统 ──────────────────────────────────────[/]
   [bold green]0[/]  显示此菜单
@@ -193,9 +195,13 @@ class HomeScreen(BaseGameScreen):
             return
 
         parts = cmd.split(maxsplit=1)
-        if parts[0].lower() in ("/session", "/s"):
+        if parts[0].lower() in ("/session", "/ss"):
             arg = parts[1].strip() if len(parts) > 1 else ""
             self._do_view_messages(arg)
+            return
+
+        if parts[0].lower() in ("/stage", "/st"):
+            self._do_view_stage()
             return
 
         log.write(f"[dim]> {cmd}[/]")
@@ -369,6 +375,84 @@ class HomeScreen(BaseGameScreen):
         count = await self._pull_messages(start_seq)
         if count == 0:
             log.write("[dim](没有更多消息)[/]")
+
+    @work
+    async def _do_view_stage(self) -> None:
+        """响应 /stage 命令：查看玩家当前所在场景的描述（StageDescriptionComponent.narrative）
+        与场景内全部角色的外观（AppearanceComponent.appearance）。"""
+        log = self.query_one(RichLog)
+        app = self.game_client
+        if app.session is None:
+            return
+        actor_name = app.session.actor_name
+
+        try:
+            stages_resp = await fetch_stages_state(
+                app.session.user_name, app.session.game_name
+            )
+        except Exception as e:
+            logger.error(f"_do_view_stage: 获取场景列表失败 error={e}")
+            log.write(f"[bold red]❌ 获取场景列表失败: {e}[/]")
+            return
+
+        stage_name: Optional[str] = None
+        actor_names: List[str] = []
+        for name, actors in stages_resp.mapping.items():
+            if actor_name in actors:
+                stage_name = name
+                actor_names = actors
+                break
+
+        if stage_name is None:
+            log.write("[yellow]无法确定玩家当前所在场景。[/]")
+            return
+
+        try:
+            details_resp = await fetch_entities_details(
+                app.session.user_name,
+                app.session.game_name,
+                [stage_name] + actor_names,
+            )
+        except Exception as e:
+            logger.error(f"_do_view_stage: 获取实体详情失败 error={e}")
+            log.write(f"[bold red]❌ 获取实体详情失败: {e}[/]")
+            return
+
+        components_by_entity = {
+            entity.name: entity.components
+            for entity in details_resp.entities_serialization
+        }
+
+        log.write(
+            f"[bold yellow]── 当前场景：{display_name(stage_name)} ──────────────────────────────────────[/]"
+        )
+        narrative: Optional[str] = None
+        for comp in components_by_entity.get(stage_name, []):
+            if comp.name == StageDescriptionComponent.__name__:
+                narrative = StageDescriptionComponent(**comp.data).narrative
+                break
+        log.write(f"  {narrative}" if narrative else "  [dim]（该场景暂无描述）[/]")
+
+        log.write("")
+        log.write(
+            "[bold yellow]── 场景内角色 ──────────────────────────────────────[/]"
+        )
+        if not actor_names:
+            log.write("  [dim]（场景内暂无角色）[/]")
+        for name in actor_names:
+            appearance: Optional[str] = None
+            for comp in components_by_entity.get(name, []):
+                if comp.name == AppearanceComponent.__name__:
+                    appearance = AppearanceComponent(**comp.data).appearance
+                    break
+            suffix = "  [dim](玩家)[/]" if name == actor_name else ""
+            log.write(f"  [bold cyan]{display_name(name)}[/]{suffix}")
+            log.write(
+                f"    {appearance}"
+                if appearance
+                else "    [dim]（未持有 AppearanceComponent）[/]"
+            )
+        log.write("")
 
     def _update_notify_badge(self) -> None:
         """根据通知流探测到的最高 sequence_id 与当前已读 last_sequence_id 的差值，更新未读提示。

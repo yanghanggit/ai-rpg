@@ -27,7 +27,7 @@ class HomePartyRosterManagementScreen(BaseGameScreen):
     """远征队管理 Screen：列出可加入的盟友，用编号 toggle 加入/移除远征队。"""
 
     CSS = """
-    RosterScreen {
+    HomePartyRosterManagementScreen {
         align: center middle;
     }
 
@@ -161,7 +161,9 @@ class HomePartyRosterManagementScreen(BaseGameScreen):
         try:
             npc_list = await self._fetch_npc_list(user_name, game_name)
         except Exception as e:
-            logger.error(f"RosterScreen._refresh: 查询 NPC 列表失败 error={e}")
+            logger.error(
+                f"HomePartyRosterManagementScreen._refresh: 查询 NPC 列表失败 error={e}"
+            )
             log.write(f"[bold red]❌ 读取盟友列表失败: {e}[/]")
             return
 
@@ -174,12 +176,14 @@ class HomePartyRosterManagementScreen(BaseGameScreen):
                 user_name, game_name, player_actor_name
             )
         except Exception as e:
-            logger.error(f"RosterScreen._refresh: 查询当前远征队失败 error={e}")
+            logger.error(
+                f"HomePartyRosterManagementScreen._refresh: 查询当前远征队失败 error={e}"
+            )
             log.write(f"[bold red]❌ 读取当前远征队失败: {e}[/]")
             return
 
         logger.info(
-            f"RosterScreen._refresh: 加载完成 npc_list={npc_list} roster={current_roster}"
+            f"HomePartyRosterManagementScreen._refresh: 加载完成 npc_list={npc_list} roster={current_roster}"
         )
         self._render_list(npc_list, current_roster)
 

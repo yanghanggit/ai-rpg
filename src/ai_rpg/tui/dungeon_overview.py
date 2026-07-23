@@ -63,7 +63,6 @@ class DungeonOverviewScreen(BaseGameScreen):
 
     def __init__(self) -> None:
         super().__init__()
-        self._dungeons: List[Dungeon] = []
         self._selected_dungeon: Optional[str] = None
 
     def compose(self) -> ComposeResult:
@@ -109,33 +108,53 @@ class DungeonOverviewScreen(BaseGameScreen):
             log.write("[red]请输入有效编号或 0 刷新页面[/]")
             return
 
-        idx = int(raw) - 1
-        generate_idx = len(self._dungeons)  # 0-based index of the generate command
+        self._select_dungeon(int(raw) - 1)
+
+    async def _fetch_dungeons(self) -> List[Dungeon]:
+        """通过实时 GET 获取地下城列表，不做任何本地缓存。"""
+        resp = await fetch_dungeon_list()
+        return resp.dungeons
+
+    @work
+    async def _select_dungeon(self, idx: int) -> None:
+        """根据编号查看副本详情或触发生成；副本列表与编号范围均通过实时 GET 判定，不使用本地缓存。"""
+        log = self.query_one(RichLog)
+
+        try:
+            dungeons = await self._fetch_dungeons()
+        except Exception as e:
+            logger.error(
+                f"DungeonOverviewScreen._select_dungeon: 获取地下城列表失败 error={e}"
+            )
+            log.write(f"[bold red]❌ 地下城列表加载失败: {e}[/]")
+            return
+
+        generate_idx = len(dungeons)  # 0-based index of the generate command
 
         if idx == generate_idx:
             self._do_generate_dungeon()
-        elif 0 <= idx < len(self._dungeons):
-            dungeon = self._dungeons[idx]
+        elif 0 <= idx < len(dungeons):
+            dungeon = dungeons[idx]
             self._selected_dungeon = dungeon.name
             self._show_dungeon(dungeon, log)
             log.write(
                 f"[dim]输入 /enter 进入此副本：[bold cyan]{display_name(dungeon.name)}[/][/]"
             )
         else:
-            n = len(self._dungeons)
+            n = len(dungeons)
             hint = f"1–{n} 查看副本，{n + 1} 生成新地下城" if n else "1 生成新地下城"
             log.write(f"[red]编号超出范围，可用：{hint}，0 刷新页面[/]")
 
-    def _render_list(self, log: RichLog) -> None:
-        """将已缓存的地下城列表渲染到 log，并追加动态操作提示。"""
-        generate_no = len(self._dungeons) + 1
-        if not self._dungeons:
+    def _render_list(self, log: RichLog, dungeons: List[Dungeon]) -> None:
+        """将地下城列表渲染到 log，并追加动态操作提示。"""
+        generate_no = len(dungeons) + 1
+        if not dungeons:
             log.write("[yellow]暂无可用副本。[/]")
         else:
             log.write(
                 "[bold yellow]── 可用副本 ──────────────────────────────────────[/]"
             )
-            for i, dungeon in enumerate(self._dungeons, start=1):
+            for i, dungeon in enumerate(dungeons, start=1):
                 preview = dungeon.ecology[:40].replace("\n", " ")
                 room_count = len(dungeon.rooms)
                 log.write(
@@ -144,8 +163,8 @@ class DungeonOverviewScreen(BaseGameScreen):
                 )
             log.write("")
         log.write(f"[bold cyan]── 操作 ──────────────────────────────────────────[/]")
-        if self._dungeons:
-            log.write(f"  [bold green]1–{len(self._dungeons)}[/]  查看副本详情")
+        if dungeons:
+            log.write(f"  [bold green]1–{len(dungeons)}[/]  查看副本详情")
         log.write(f"  [bold green]{generate_no}[/]  生成新地下城")
         log.write(f"  [bold green]0[/]  刷新此页面")
         log.write(f"  [bold dim]Escape[/]  返回")
@@ -313,10 +332,9 @@ class DungeonOverviewScreen(BaseGameScreen):
                 logger.warning(f"_load_dungeons: 读取远征队失败 error={e}")
 
         try:
-            resp2 = await fetch_dungeon_list()
-            self._dungeons = resp2.dungeons
-            self._render_list(log)
-            logger.info(f"_load_dungeons: 获取成功，共 {len(self._dungeons)} 个地下城")
+            dungeons = await self._fetch_dungeons()
+            self._render_list(log, dungeons)
+            logger.info(f"_load_dungeons: 获取成功，共 {len(dungeons)} 个地下城")
         except Exception as e:
             logger.error(f"_load_dungeons: 获取失败 error={e}")
             log.write(f"[bold red]❌ 地下城列表加载失败: {e}[/]")

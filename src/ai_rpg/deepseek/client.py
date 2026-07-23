@@ -24,7 +24,13 @@ from dotenv import load_dotenv
 from loguru import logger
 from pydantic import BaseModel
 
-from ..models.messages import AIMessage, BaseMessage, ToolMessage, get_buffer_string
+from ..models.messages import (
+    HumanMessage,
+    AIMessage,
+    BaseMessage,
+    ToolMessage,
+    get_buffer_string,
+)
 from . import config
 from .config import CHAT_DUMP_DIR, MODEL_FLASH
 
@@ -532,38 +538,35 @@ class DeepSeekClient:
     ################################################################################################################################################################################
     def _build_dump_content(self) -> str:
         """将本次对话渲染为纯文本，以分割线分隔各段。"""
-        _SEP = "-" * 86
-        lines: list[str] = []
-
-        # Context（对话历史）
-        if self._context:
-            lines.append(
-                get_buffer_string(
-                    list(self._context),
-                    system_prefix="\n" + _SEP + "\nSystem",
-                    human_prefix="\n" + _SEP + "\nHuman",
-                    ai_prefix="\n" + _SEP + "\nAI",
-                    tool_prefix="\n" + _SEP + "\nTool",
+        # 拷贝 context，再把本轮 prompt / response 分别补齐为 HumanMessage / AIMessage，
+        # 使全部消息（含本轮）统一交给 get_buffer_string 一次性渲染，
+        # 避免手工拼接 lines 导致的分隔符/格式不一致问题。
+        messages: List[BaseMessage] = list(self._context)
+        messages.append(
+            HumanMessage(
+                content=(
+                    self._prompt
+                    if self._prompt
+                    else "（continuation 模式，无独立 prompt）"
                 )
             )
-        else:
-            lines.append("（空）")
+        )
+        messages.append(AIMessage(content=self.response_content))
 
-        # Prompt（本轮人类输入）
-        lines += [
-            "",
-            _SEP,
-            self._prompt if self._prompt else "（continuation 模式，无独立 prompt）",
-        ]
-
-        # Response（本轮 AI 回复）
-        lines += ["", _SEP, self.response_content]
+        _SEP = "-" * 86
+        content = get_buffer_string(
+            messages,
+            system_prefix="\n" + _SEP + "\nSystem",
+            human_prefix="\n" + _SEP + "\nHuman",
+            ai_prefix="\n" + _SEP + "\nAI",
+            tool_prefix="\n" + _SEP + "\nTool",
+        )
 
         # Reasoning（可选）
         if self.response_reasoning_content:
-            lines += ["", _SEP, self.response_reasoning_content]
+            content += "\n" + _SEP + "\n" + self.response_reasoning_content
 
-        return "\n".join(lines) + "\n"
+        return content + "\n"
 
     ################################################################################################################################################################################
     def _dump_chat(self) -> None:

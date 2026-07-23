@@ -226,9 +226,9 @@ class HomeScreen(BaseGameScreen):
 
             self.app.push_screen(HomePartyRosterManagementScreen())
         elif cmd == "4":
-            from .speak import SpeakScreen
+            from .home_speak import HomeSpeakScreen
 
-            self.app.push_screen(SpeakScreen())
+            self.app.push_screen(HomeSpeakScreen())
         elif cmd == "5":
             from .switch_stage import SwitchStageScreen
 

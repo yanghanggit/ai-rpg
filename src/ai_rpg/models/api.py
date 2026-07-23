@@ -173,7 +173,7 @@ class HomeWearCostumeRequest(BaseModel):
     user_name: str
     game_name: str
     item_name: str
-    target_name: str = ""
+    target_name: str
 
 
 @final
@@ -190,7 +190,7 @@ class HomeWearCostumeResponse(BaseModel):
 class HomeRemoveCostumeRequest(BaseModel):
     user_name: str
     game_name: str
-    target_name: str = ""
+    target_name: str
 
 
 @final

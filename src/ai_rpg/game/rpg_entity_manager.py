@@ -6,7 +6,6 @@ from ..models import (
     ComponentSerialization,
     EntitySerialization,
     PlayerComponent,
-    StorageComponent,
     IdentityComponent,
     StageComponent,
     WorldComponent,
@@ -171,18 +170,6 @@ class RPGEntityManager(Context):
         assert len(player_entities) == 1, "There should be exactly one player entity."
         # 如果没有指定 player_name，返回唯一的玩家实体
         return next(iter(player_entities), None)
-
-    ###############################################################################################################################################
-    def get_storage_entity(self) -> Optional[Entity]:
-        """获取全局储物箱实体。"""
-        storage_entities = self.get_group(
-            Matcher(
-                all_of=[WorldComponent, StorageComponent],
-            )
-        ).entities
-
-        assert len(storage_entities) == 1, "There should be exactly one storage entity."
-        return next(iter(storage_entities), None)
 
     ###############################################################################################################################################
     def get_actors_in_stage(self, entity: Entity) -> Set[Entity]:

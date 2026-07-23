@@ -1,12 +1,10 @@
 """
 DBG 游戏核心实现
-
-融合交易卡牌战斗机制的 RPG 游戏，包含地下城探险、战斗系统和流程管道管理。
 """
 
 import copy
 import uuid
-from typing import Final, List
+from typing import Final, List, Optional
 from loguru import logger
 from .rpg_game_pipeline_manager import RPGGameProcessPipeline
 from .rpg_game import RPGGame
@@ -53,9 +51,7 @@ from ..entitas import Matcher, Entity
 #################################################################################################################################################
 class DBGGame(RPGGame):
     """
-    DBG，Deck Building Game，也就是我们常说的牌库构筑游戏，其核心机制现在无论是在桌游中，还是电子游戏里都已经逐渐成为了熟面孔。
-    今天想聊一下在桌游中，DBG的机制是如何呈现的。
-    为方便叙述，本文提到的DBG默认包含牌库构筑机制与牌库构筑游戏两种含义
+    DBG，Deck Building Game
     """
 
     def __init__(
@@ -119,12 +115,20 @@ class DBGGame(RPGGame):
         return self._world.dungeon.current_room
 
     ###############################################################################################################################################
-    def build_from_blueprint(self) -> "DBGGame":
-        """创建并初始化新游戏世界，包括世界系统、角色和场景
+    def get_storage_entity(self) -> Optional[Entity]:
+        """获取全局储物箱实体。"""
+        storage_entities = self.get_group(
+            Matcher(
+                all_of=[WorldComponent, StorageComponent],
+            )
+        ).entities
 
-        Returns:
-            返回自身实例，支持链式调用
-        """
+        assert len(storage_entities) == 1, "There should be exactly one storage entity."
+        return next(iter(storage_entities), None)
+
+    ###############################################################################################################################################
+    def build_from_blueprint(self) -> "DBGGame":
+        """创建并初始化新游戏世界，包括世界系统、角色和场景"""
         assert (
             len(self._world.entities_serialization) == 0
         ), "游戏中有实体，不能创建新的游戏"
@@ -208,14 +212,7 @@ class DBGGame(RPGGame):
         self,
         world_system_models: List[WorldSystem],
     ) -> List[Entity]:
-        """创建世界系统实体（全局规则管理器、叙事者）
-
-        Args:
-            world_system_models: 世界系统模型列表
-
-        Returns:
-            创建完成的世界系统实体列表
-        """
+        """创建世界系统实体（全局规则管理器、叙事者）"""
         world_entities: List[Entity] = []
 
         for world_system_model in world_system_models:
@@ -266,14 +263,7 @@ class DBGGame(RPGGame):
 
     ###############################################################################################################################################
     def create_actor_entities(self, actor_models: List[Actor]) -> List[Entity]:
-        """创建角色实体（玩家、NPC、敌人），初始化所有组件，并挂载 DBG 所需的牌组与关键词组件
-
-        Args:
-            actor_models: 角色模型列表
-
-        Returns:
-            创建完成的角色实体列表
-        """
+        """创建角色实体（玩家、NPC、敌人），初始化所有组件，并挂载 DBG 所需的牌组与关键词组件"""
         actor_entities: List[Entity] = []
 
         for actor_model in actor_models:
@@ -362,14 +352,7 @@ class DBGGame(RPGGame):
 
     ###############################################################################################################################################
     def create_stage_entities(self, stage_models: List[Stage]) -> List[Entity]:
-        """创建场景实体，并建立角色与场景的关联关系
-
-        Args:
-            stage_models: 场景模型列表
-
-        Returns:
-            创建完成的场景实体列表
-        """
+        """创建场景实体，并建立角色与场景的关联关系"""
         stage_entities: List[Entity] = []
 
         for stage_model in stage_models:

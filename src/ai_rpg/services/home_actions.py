@@ -444,7 +444,7 @@ def activate_wear_costume(
     assert storage_entity is not None, "全局储物箱实体不存在！"
     assert storage_entity.has(StorageComponent), "全局储物箱实体缺少 StorageComponent"
 
-    # 确定目标实体：为空则报错
+    # 确定目标实体：目标角色名称必须由调用方明确传入（即使是玩家自身也需显式传入其真实名称），本函数不做任何兼底默认。
     if not target_name:
         error_detail = "目标角色名称不能为空"
         logger.error(f"激活穿装失败: {error_detail}")
@@ -458,10 +458,9 @@ def activate_wear_costume(
         return False, error_detail
 
     # 检查目标角色是否具有 AppearanceComponent，如果没有则无法更新外观。
-    if not target_entity.has(AppearanceComponent):
-        error_detail = f"目标角色 {target_name!r} 缺少 AppearanceComponent"
-        logger.error(f"激活穿装失败: {error_detail}")
-        return False, error_detail
+    assert target_entity.has(
+        AppearanceComponent
+    ), f"目标角色 {target_name!r} 缺少 AppearanceComponent"
 
     # 穿装要求 item_name 必须非空；脱装请使用 activate_remove_costume。
     if not item_name:
@@ -506,7 +505,7 @@ def activate_remove_costume(dbg_game: DBGGame, target_name: str) -> Tuple[bool, 
         logger.error(f"激活脱装失败: {error_detail}")
         return False, error_detail
 
-    # 确定目标实体：为空则报错
+    # 确定目标实体：目标角色名称必须由调用方明确传入（即使是玩家自身也需显式传入其真实名称），本函数不做任何兼底默认。
     if not target_name:
         error_detail = "目标角色名称不能为空"
         logger.error(f"激活脱装失败: {error_detail}")
@@ -520,10 +519,9 @@ def activate_remove_costume(dbg_game: DBGGame, target_name: str) -> Tuple[bool, 
         return False, error_detail
 
     # 检查目标角色是否具有 AppearanceComponent，如果没有则无法更新外观。
-    if not target_entity.has(AppearanceComponent):
-        error_detail = f"目标角色 {target_name!r} 缺少 AppearanceComponent"
-        logger.error(f"激活脱装失败: {error_detail}")
-        return False, error_detail
+    assert target_entity.has(
+        AppearanceComponent
+    ), f"目标角色 {target_name!r} 缺少 AppearanceComponent"
 
     logger.debug(f"激活脱装: {target_entity.name}")
     target_entity.replace(RemoveCostumeAction, target_entity.name)

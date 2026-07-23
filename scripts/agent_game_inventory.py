@@ -203,7 +203,7 @@ async def wear_costume_game(
     player_session: PlayerSession,
     item_name: str,
     save_dir: Path,
-    target_name: str = "",
+    target_name: str,
 ) -> DBGGame:
     """从存档复位，触发穿装动作并通过 home pipeline 执行 LLM 合成，归档新状态。
 
@@ -212,7 +212,7 @@ async def wear_costume_game(
         player_session: 由 restore_world() 反序列化的玩家会话。
         item_name: CostumeItem 的精确名称。
         save_dir: 新存档写入目录。
-        target_name: 目标角色全名；为空时默认玩家自身。
+        target_name: 目标角色全名，调用方必须显式传入（即使目标是玩家自身，也需传入其真实全名）。
 
     Returns:
         执行完毕后的 DBGGame 实例；操作失败时提前返回未归档实例。
@@ -231,8 +231,7 @@ async def wear_costume_game(
         terminal_game._player_session,
         save_dir=save_dir,
     )
-    target_desc = target_name if target_name else "玩家"
-    logger.info(f"穿装完成（{target_desc} 穿上时装 {item_name!r}），存档: {save_dir}")
+    logger.info(f"穿装完成（{target_name} 穿上时装 {item_name!r}），存档: {save_dir}")
     return terminal_game
 
 
@@ -241,7 +240,7 @@ async def remove_costume_game(
     world: World,
     player_session: PlayerSession,
     save_dir: Path,
-    target_name: str = "",
+    target_name: str,
 ) -> DBGGame:
     """从存档复位，触发脱装动作并通过 home pipeline 执行，归档新状态。
 
@@ -249,7 +248,7 @@ async def remove_costume_game(
         world: 由 restore_world() 反序列化的世界数据。
         player_session: 由 restore_world() 反序列化的玩家会话。
         save_dir: 新存档写入目录。
-        target_name: 目标角色全名；为空时默认玩家自身。
+        target_name: 目标角色全名，调用方必须显式传入（即使目标是玩家自身，也需传入其真实全名）。
 
     Returns:
         执行完毕后的 DBGGame 实例；操作失败时提前返回未归档实例。
@@ -268,8 +267,7 @@ async def remove_costume_game(
         terminal_game._player_session,
         save_dir=save_dir,
     )
-    target_desc = target_name if target_name else "玩家"
-    logger.info(f"脱装完成（{target_desc} 移除时装），存档: {save_dir}")
+    logger.info(f"脱装完成（{target_name} 移除时装），存档: {save_dir}")
     return terminal_game
 
 

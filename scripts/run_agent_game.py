@@ -1047,16 +1047,15 @@ def inventory_to_storage(snapshot: str, item: str) -> None:
 )
 @click.option(
     "--target",
-    default="",
-    show_default=True,
-    help="目标角色全名（如 学者.寒蝉）；不传表示玩家自身",
+    required=True,
+    help="目标角色全名（如 学者.寒蝉；若作用于自己则传入玩家全名，如 旅行者.无名氏）",
 )
 def wear_costume(snapshot: str, item: str, target: str) -> None:
     """从存档复位，为玩家或指定 NPC 穿上时装，LLM 语义合成外观后广播，并写入新存档。
 
     --item 须精确匹配全局储物箱中某个 CostumeItem 的名称。若目标已穿戴其他时装，
     会自动先脱下归还储物箱（换装）。
-    --target 指定换装对象（任意持有 AppearanceComponent 的角色）；不传则默认作用于玩家自身。
+    --target 指定换装对象（任意持有 AppearanceComponent 的角色），必须显式传入其真实全名，即使目标是玩家自身。
     适用于【家园模式】。执行后外观变更广播至整个场景，仍处于家园模式。
     """
     snapshot_path = Path(snapshot)
@@ -1090,14 +1089,13 @@ def wear_costume(snapshot: str, item: str, target: str) -> None:
 )
 @click.option(
     "--target",
-    default="",
-    show_default=True,
-    help="目标角色全名（如 学者.寒蝉）；不传表示玩家自身",
+    required=True,
+    help="目标角色全名（如 学者.寒蝉；若作用于自己则传入玩家全名，如 旅行者.无名氏）",
 )
 def remove_costume(snapshot: str, target: str) -> None:
     """从存档复位，为玩家或指定 NPC 移除当前时装，外观重置为基础体型，并写入新存档。
 
-    --target 指定操作对象（任意持有 AppearanceComponent 的角色）；不传则默认作用于玩家自身。
+    --target 指定操作对象（任意持有 AppearanceComponent 的角色），必须显式传入其真实全名，即使目标是玩家自身。
     适用于【家园模式】。执行后外观变更广播至整个场景，仍处于家园模式。
     """
     snapshot_path = Path(snapshot)

@@ -596,7 +596,7 @@ async def home_item_move_to_storage(
 
 
 async def home_wear_costume(
-    user_name: str, game_name: str, item_name: str, target_name: str = ""
+    user_name: str, game_name: str, item_name: str, target_name: str
 ) -> HomeWearCostumeResponse:
     """为指定角色穿戴或移除时装，返回后台任务ID。"""
     async with httpx.AsyncClient(timeout=10) as client:
@@ -614,7 +614,7 @@ async def home_wear_costume(
 
 
 async def home_remove_costume(
-    user_name: str, game_name: str, target_name: str = ""
+    user_name: str, game_name: str, target_name: str
 ) -> HomeRemoveCostumeResponse:
     """为指定角色脱下当前穿戴的时装，返回后台任务ID。"""
     async with httpx.AsyncClient(timeout=10) as client:

@@ -224,9 +224,9 @@ class HomeScreen(BaseGameScreen):
 
             self.app.push_screen(ItemManagementScreen())
         elif cmd == "7":
-            from .roster import RosterScreen
+            from .home_party_roster_management import HomePartyRosterManagementScreen
 
-            self.app.push_screen(RosterScreen())
+            self.app.push_screen(HomePartyRosterManagementScreen())
         elif cmd == "8":
             from .home_wear_costume import HomeWearCostumeScreen
 

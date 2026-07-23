@@ -386,12 +386,17 @@ class HomeWearCostumeScreen(BaseGameScreen):
         self._flow = _WearFlowState(
             step="select_actor", actor_names=wearable_actor_names
         )
+        self._render_select_actor_menu()
 
+    ########################################################################################################################
+    def _render_select_actor_menu(self) -> None:
+        """渲染「选择角色」步骤的菜单（0 始终表示返回上一级，此处即返回顶级菜单）。"""
+        log = self.query_one(RichLog)
         log.write(
             "[bold yellow]── 请选择角色 ──────────────────────────────────────────[/]"
         )
-        log.write("  [bold green]0[/]  取消，返回菜单")
-        for idx, name in enumerate(wearable_actor_names, start=1):
+        log.write("  [bold green]0[/]  返回上一级")
+        for idx, name in enumerate(self._flow.actor_names, start=1):
             log.write(f"  [bold green]{idx}[/]  {display_name(name)}")
 
     ########################################################################################################################
@@ -461,29 +466,39 @@ class HomeWearCostumeScreen(BaseGameScreen):
             log.write(f"  [dim]当前穿戴:[/] {current_item_name}")
         else:
             log.write("  [dim]当前穿戴:（未穿戴）[/]")
-        log.write("  [bold green]0[/]  脱时装")
-        for idx, item in enumerate(costume_items, start=1):
+        log.write("  [bold green]0[/]  返回上一级")
+        log.write("  [bold green]1[/]  脱时装")
+        for idx, item in enumerate(costume_items, start=2):
             log.write(f"  [bold green]{idx}[/]  {item.name} — {item.description}")
 
     ########################################################################################################################
     def _handle_select_choice_command(self, raw: str) -> None:
         log = self.query_one(RichLog)
+        max_idx = len(self._flow.costume_items) + 1
 
         if raw == "0":
+            self._flow.step = "select_actor"
+            self._flow.selected_actor = None
+            self._flow.costume_items = []
+            self._flow.selected_item_name = None
+            self._render_select_actor_menu()
+            return
+
+        if not raw.isdigit():
+            log.write(f"[red]请输入编号（0 ~ {max_idx}）。[/]")
+            return
+
+        idx = int(raw)
+        if idx < 1 or idx > max_idx:
+            log.write(f"[red]编号超出范围（0 ~ {max_idx}）。[/]")
+            return
+
+        if idx == 1:
             self._flow.selected_item_name = ""
             self._enter_confirm("脱时装")
             return
 
-        if not raw.isdigit():
-            log.write(f"[red]请输入编号（0 ~ {len(self._flow.costume_items)}）。[/]")
-            return
-
-        idx = int(raw)
-        if idx < 1 or idx > len(self._flow.costume_items):
-            log.write(f"[red]编号超出范围（0 ~ {len(self._flow.costume_items)}）。[/]")
-            return
-
-        item = self._flow.costume_items[idx - 1]
+        item = self._flow.costume_items[idx - 2]
         self._flow.selected_item_name = item.name
         self._enter_confirm(f"穿上「{item.name}」")
 

@@ -220,9 +220,9 @@ class HomeScreen(BaseGameScreen):
 
             self.app.push_screen(SwitchStageScreen())
         elif cmd == "6":
-            from .item_management import ItemManagementScreen
+            from .home_item_management import HomeItemManagementScreen
 
-            self.app.push_screen(ItemManagementScreen())
+            self.app.push_screen(HomeItemManagementScreen())
         elif cmd == "7":
             from .home_party_roster_management import HomePartyRosterManagementScreen
 

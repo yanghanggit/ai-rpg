@@ -1,27 +1,4 @@
-"""穿戴时装 Screen：指令驱动。
-
-重写说明（进行中）：本页正从「两步选择式交互」迁移为「指令驱动展示」。
-当前接入以下指令：
-  1 - 获取当前外观：列出全部场景下全部角色的 AppearanceComponent
-      （base_body / appearance）与 WornCostumeComponent（如果持有）信息。
-  2 - 获取储物箱时装：列出全局储物箱内全部 CostumeItem，若已被某角色穿戴则标注穿戴者。
-  3 - 穿戴 / 移除时装：选择角色 → 选择「脱时装」或某件储物箱时装 → 确认后提交。
-  0 - 清屏。
-
-指令 0/1/2 均为一次性临时 GET：不缓存任何跨指令状态，每次执行都重新从
-（mock 或真实）服务端拉取最新数据。指令 3 是本页首个需要跨步骤保留状态
-（当前所处步骤 / 已选角色 / 已选时装）的写操作指令，通过 `self._flow`
-（`_WearFlowState`）记录，风格上参考 `combat_use_gear.py` 的 `_GearFlowState`。
-
-兼容 mock 与正式服务器数据：复用 `combat_data_access` 中已封装的
-「session is None → mock 固定数据 / 否则 → 真实 fetch_* 调用」判断逻辑，
-使本页可通过 `scripts/run_tui_client.py --dev-screen wear-costume` 在无服务器时
-直接调试（mock 数据见 `mock_data.py`）。指令 3 的最终提交同样区分 mock / 真实：
-mock 模式下直接在本地同步模拟储物箱 ⇄ 已穿戴状态转移（不发起真实网络请求），
-正式模式下调用 `home_wear_costume` 并通过 `watch_task_until_done` 等待后台任务完成
-（或脱时装分支调用 `home_remove_costume`），详见 `combat_data_access.submit_wear_costume`
-与 `combat_data_access.submit_remove_costume`。
-"""
+"""穿戴时装 Screen：指令驱动。"""
 
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Literal, Optional, Tuple
@@ -76,7 +53,7 @@ class _WearFlowState:
     selected_item_name: Optional[str] = None  # "" 表示脱时装，否则为时装名称
 
 
-class WearCostumeScreen(BaseGameScreen):
+class HomeWearCostumeScreen(BaseGameScreen):
     """穿戴时装 Screen：指令驱动，输入编号执行对应指令。"""
 
     CSS = """

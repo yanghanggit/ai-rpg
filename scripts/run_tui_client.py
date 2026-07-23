@@ -33,14 +33,14 @@ from ai_rpg.tui.config import server_config
 from ai_rpg.tui.launch import LaunchScreen
 from ai_rpg.tui.combat_room import CombatRoomScreen
 from ai_rpg.tui.combat_post_combat import CombatPostCombatScreen
-from ai_rpg.tui.wear_costume import WearCostumeScreen
+from ai_rpg.tui.home_wear_costume import HomeWearCostumeScreen
 from textual.screen import Screen
 
 # PyInstaller frozen bundle 检测：打包后 sys.frozen = True
 _IS_FROZEN: bool = getattr(sys, "frozen", False)
 
 # 默认服务器连接配置（可通过命令行参数覆盖）──
-_DEFAULT_SERVER_HOST: Final[str] = "192.168.2.190"
+_DEFAULT_SERVER_HOST: Final[str] = "192.168.192.105"
 _DEFAULT_SERVER_PORT: Final[int] = 8000
 
 # ── loguru 配置：移除默认 stderr sink，改为文件输出（TUI 渲染期间不能写终端）──
@@ -131,7 +131,7 @@ def main(
         elif dev_screen == "combat-room":
             launch_screen = CombatRoomScreen
         elif dev_screen == "wear-costume":
-            launch_screen = WearCostumeScreen
+            launch_screen = HomeWearCostumeScreen
         else:
             launch_screen = LaunchScreen
 

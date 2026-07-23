@@ -228,9 +228,9 @@ class HomeScreen(BaseGameScreen):
 
             self.app.push_screen(RosterScreen())
         elif cmd == "8":
-            from .wear_costume import WearCostumeScreen
+            from .home_wear_costume import HomeWearCostumeScreen
 
-            self.app.push_screen(WearCostumeScreen())
+            self.app.push_screen(HomeWearCostumeScreen())
         elif cmd == "9":
             from .craft_consumable_item import CraftConsumableItemScreen
 

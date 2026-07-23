@@ -84,11 +84,11 @@ def _get_all_actors(stages_resp: StagesStateResponse) -> List[str]:
     return all_actors
 
 
-class HomeScreen(BaseGameScreen):
+class HomeMainScreen(BaseGameScreen):
     """游戏主场景 Screen（Screen 3）。新游戏创建成功后进入此界面。"""
 
     CSS = """
-    HomeScreen {
+    HomeMainScreen {
         align: center middle;
     }
 
@@ -140,22 +140,22 @@ class HomeScreen(BaseGameScreen):
         self._reset_log()
         if _app.session:
             logger.info(
-                f"HomeScreen: 进入主场景 user_name={_app.session.user_name}"
+                f"HomeMainScreen: 进入主场景 user_name={_app.session.user_name}"
                 f" game_name={_app.session.game_name}"
             )
         self.query_one(Input).focus()
         self._watch_notifications()
 
     def on_unmount(self) -> None:
-        logger.info("HomeScreen: on_unmount")
+        logger.info("HomeMainScreen: on_unmount")
 
     def on_screen_suspend(self) -> None:
         """推入子 Screen 时触发，仅用于日志记录。"""
-        logger.info("HomeScreen: on_screen_suspend")
+        logger.info("HomeMainScreen: on_screen_suspend")
 
     def on_screen_resume(self) -> None:
         """从子 Screen 返回时，重新挂载通知监听（未读数量），消息内容仅通过命令 12 手动获取。"""
-        logger.info("HomeScreen: on_screen_resume，重新挂载通知监听")
+        logger.info("HomeMainScreen: on_screen_resume，重新挂载通知监听")
         self._watch_notifications()
         self.query_one(Input).focus()
 
@@ -211,7 +211,7 @@ class HomeScreen(BaseGameScreen):
             return
 
         log.write(f"[dim]> {cmd}[/]")
-        logger.debug(f"HomeScreen: 收到命令 cmd={cmd}")
+        logger.debug(f"HomeMainScreen: 收到命令 cmd={cmd}")
 
         if cmd == "1":
             from .home_entity_browser import HomeEntityBrowserScreen
@@ -230,9 +230,9 @@ class HomeScreen(BaseGameScreen):
 
             self.app.push_screen(HomeSpeakScreen())
         elif cmd == "5":
-            from .switch_stage import SwitchStageScreen
+            from .home_switch_stage import HomeSwitchStageScreen
 
-            self.app.push_screen(SwitchStageScreen())
+            self.app.push_screen(HomeSwitchStageScreen())
         elif cmd == "6":
             self._do_advance()
         elif cmd == "7":

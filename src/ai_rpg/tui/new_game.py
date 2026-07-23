@@ -151,7 +151,7 @@ class NewGameScreen(BaseGameScreen):
             logger.info(
                 f"_start_new_game: 游戏创建成功 user_name={user_name} game_name={game_name} → 进入 HomeScreen"
             )
-            from .home import HomeScreen
+            from .home_main import HomeMainScreen
             from .session import GameSession
 
             app = self.game_client
@@ -159,7 +159,7 @@ class NewGameScreen(BaseGameScreen):
                 player_session=resp.player_session,
                 blueprint=resp.blueprint,
             )
-            app.switch_screen(HomeScreen())
+            app.switch_screen(HomeMainScreen())
         except Exception as e:
             logger.error(
                 f"_start_new_game: 创建游戏失败 game_name={game_name} error={e}"

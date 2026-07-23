@@ -30,7 +30,7 @@ from .combat_loot_view import CombatLootViewScreen
 from .combat_round_history import CombatRoundHistoryScreen
 from .mock_data import set_mock_combat_state, set_mock_current_room_index
 from .server_client import dungeon_advance_stage, dungeon_exit
-from .home import HomeScreen
+from .home_main import HomeMainScreen
 
 BASE_INFO_HEADER = """\
 [bold cyan]── 结束战斗 ──────────────────────────────────────[/]
@@ -264,7 +264,7 @@ class CombatPostCombatScreen(BaseGameScreen):
             f"game_name={game_name} message={resp.message}"
         )
 
-        self.app.switch_screen(HomeScreen())
+        self.app.switch_screen(HomeMainScreen())
 
     ########################################################################################################################
     @work

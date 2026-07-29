@@ -1,7 +1,7 @@
-from .dungeon_desert_ruins import (
+from .dungeons import (
     create_sand_jackal_ruins_dungeon,
 )
-from .blueprint_ruins import (
+from .blueprints import (
     create_ruins_blueprint,
 )
 

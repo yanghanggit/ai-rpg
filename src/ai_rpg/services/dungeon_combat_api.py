@@ -25,7 +25,7 @@ from ..models import (
     DungeonCombatCollectLootResponse,
     TaskStatus,
 )
-from .dungeon_gameplay import _validate_dungeon_prerequisites
+from .dungeon_lifecycle_api import _validate_dungeon_prerequisites
 from .dungeon_combat_actions import (
     activate_all_card_draws,
     activate_retreat,

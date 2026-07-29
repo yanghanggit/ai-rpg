@@ -1,8 +1,4 @@
-"""副本状态查询服务模块
-
-提供副本状态查询的 API 接口，返回副本状态、当前战斗及当前房间等详细数据。
-专门为 DBG 游戏类型设计。
-"""
+"""副本状态查询服务模块"""
 
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
@@ -33,21 +29,7 @@ async def get_dungeon_state(
     user_name: str,
     game_name: str,
 ) -> DungeonStateResponse:
-    """查询副本状态接口
-
-    查询 DBG 游戏中当前副本的状态信息，包括场景与角色的分布映射和副本数据。
-
-    Args:
-        game_server: 游戏服务器实例
-        user_name: 用户名
-        game_name: 游戏名称
-
-    Returns:
-        DungeonStateResponse: 包含副本对象的响应
-
-    Raises:
-        HTTPException(404): 用户房间或游戏实例不存在
-    """
+    """查询副本状态接口"""
 
     logger.info(f"/dungeons/v1/{user_name}/{game_name}/state: {user_name}, {game_name}")
 
@@ -87,21 +69,7 @@ async def get_dungeon_room(
     user_name: str,
     game_name: str,
 ) -> DungeonRoomResponse:
-    """查询当前地下城房间接口
-
-    查询 DBG 游戏中当前地下城所在的房间信息，包括关卡场景与战斗数据。
-
-    Args:
-        game_server: 游戏服务器实例
-        user_name: 用户名
-        game_name: 游戏名称
-
-    Returns:
-        DungeonRoomResponse: 包含当前房间对象（stage + combat）的响应
-
-    Raises:
-        HTTPException(404): 用户房间或游戏实例不存在，或地下城尚未进入任何房间
-    """
+    """查询当前地下城房间接口"""
 
     logger.info(f"/dungeons/v1/{user_name}/{game_name}/room: {user_name}, {game_name}")
 
@@ -151,13 +119,7 @@ async def get_dungeon_room(
     path="/api/home/dungeon-list/v1/", response_model=DungeonListResponse
 )
 async def list_dungeons() -> DungeonListResponse:
-    """获取可用地下城列表接口
-
-    遍历 DUNGEONS_DIR 目录下的所有 JSON 文件，读取并返回其内容，供客户端预览选择。
-
-    Returns:
-        DungeonListResponse: 包含所有地下城配置的列表响应
-    """
+    """获取可用地下城列表接口"""
     dungeons = sorted(
         (
             Dungeon.model_validate_json(p.read_text(encoding="utf-8"))

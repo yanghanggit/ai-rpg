@@ -1,7 +1,4 @@
-"""实体详情查询服务模块
-
-提供实体详情查询的 API 接口，支持批量查询指定实体的序列化数据。
-"""
+"""实体详情查询服务模块"""
 
 from typing import List, Set
 from fastapi import APIRouter, HTTPException, Query, status
@@ -30,21 +27,7 @@ async def get_entities_details(
     entity_names: List[str] = Query(..., alias="entities"),
 ) -> EntitiesDetailsResponse:
     """批量查询实体详情接口
-
     根据实体名称列表批量查询实体的序列化数据。
-
-    Args:
-        game_server: 游戏服务器实例
-        user_name: 用户名
-        game_name: 游戏名称
-        entity_names: 要查询的实体名称列表
-
-    Returns:
-        EntitiesDetailsResponse: 包含实体序列化数据的响应
-
-    Raises:
-        HTTPException(400): 实体名称列表为空或游戏名称不匹配
-        HTTPException(404): 用户房间不存在
     """
 
     logger.info(

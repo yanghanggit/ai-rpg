@@ -13,11 +13,7 @@ _game_server_instance: Optional[GameServer] = None
 
 ###############################################################################################################################################
 def get_game_server() -> GameServer:
-    """获取游戏服务器单例实例
-
-    Returns:
-        GameServer: 游戏服务器实例
-    """
+    """获取游戏服务器单例实例"""
     global _game_server_instance
     if _game_server_instance is None:
         _game_server_instance = GameServer()

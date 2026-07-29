@@ -1,8 +1,5 @@
 """
 用户认证依赖模块
-
-提供 FastAPI 依赖注入函数，用于从 JWT 令牌中验证和提取当前认证用户。
-支持 OAuth2 Bearer Token 认证方式。
 """
 
 from typing import Annotated, Final, Optional
@@ -64,16 +61,6 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> str:
 
 
 ###################################################################################################################################################################
-# 类型注解别名，简化依赖注入的使用
-#
-# 使用方式:
-#   @app.get("/api/user/info")
-#   async def user_info(username: CurrentUser):
-#       return {"username": username}
-#
-# 等价于:
-#   async def user_info(username: str = Depends(get_current_user)):
-#
 CurrentUser = Annotated[str, Depends(get_current_user)]
 
 

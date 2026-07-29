@@ -15,13 +15,13 @@ from loguru import logger
 from config import GAME_SERVER_PORT
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from ai_rpg.services.dungeon_gameplay import (
-    dungeon_gameplay_api_router,
+from ai_rpg.services.dungeon_lifecycle_api import (
+    dungeon_lifecycle_api_router,
 )
 from ai_rpg.services.dungeon_combat_api import (
     dungeon_combat_api_router,
 )
-from ai_rpg.services.home_gameplay import home_gameplay_api_router
+from ai_rpg.services.home_api import home_api_router
 from ai_rpg.services.login import login_api_router
 from ai_rpg.services.new_game import new_game_api_router
 from datetime import datetime
@@ -157,8 +157,8 @@ app.include_router(router=background_tasks_api_router)
 # DBG特有的
 app.include_router(router=login_api_router)
 app.include_router(router=new_game_api_router)
-app.include_router(router=home_gameplay_api_router)
-app.include_router(router=dungeon_gameplay_api_router)
+app.include_router(router=home_api_router)
+app.include_router(router=dungeon_lifecycle_api_router)
 app.include_router(router=dungeon_combat_api_router)
 
 

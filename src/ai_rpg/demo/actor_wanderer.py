@@ -6,7 +6,7 @@ from ..models import (
     RPG_SYSTEM_RULES,
 )
 from .global_settings import (
-    RPG_CAMPAIGN_SETTING,
+    CAMPAIGN_SETTING,
 )
 from ..models.entity_factory import (
     create_actor,
@@ -29,7 +29,7 @@ def create_wanderer() -> Actor:
             base_body="年近三十的男性，仅着简单内衣。身形清瘦但不单薄，肩頸窄甄，胸领小，腰鈃紧进，没有明显的肌肉块感却也不浮肿，是长期行路的人才有的体型。肤色偏浅，颈臂交界处露出初晒的淡红痕迹，胸海和小腹胤色较浅。双腿细长而有力，小腿肌肉线条明显。手指细长，承接对点有轻茧。面容轮廓分明，眼神深沉，沉默时像在看某个他人看不见的地方。",
         ),
         character_stats=CharacterStats(),
-        campaign_setting=RPG_CAMPAIGN_SETTING,
+        campaign_setting=CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
         keywords=[
             "即时破甲型：每张卡牌必须携带至少一个在出牌时立即生效的特殊效果，优先体现破甲、穿透、无视防御等特性；攻击必须造成直接伤害，特殊效果在本次结算中即时生效。骰值 0-30 为失败，破甲效果微弱、伤害偏低；骰值 31-70 为正常，效果稳定清晰；骰值 71-100 为优质，穿透效果犀利且伤害偏高。",

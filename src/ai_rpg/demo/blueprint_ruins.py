@@ -14,7 +14,7 @@ from ..models import (
 )
 from .actor_wanderer import create_wanderer
 from .actor_scholar import create_scholar
-from .global_settings import RPG_CAMPAIGN_SETTING
+from .global_settings import CAMPAIGN_SETTING, KNOWLEDGE_BASE
 from .stage_ruins import (
     create_broken_wall_enclosure,
     create_stone_platform,
@@ -61,7 +61,8 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
     return Blueprint(
         name=game_name,
         player_actor=actor_wanderer.name,  # 玩家角色为战士
-        campaign_setting=RPG_CAMPAIGN_SETTING,
+        campaign_setting=CAMPAIGN_SETTING,
+        knowledge_base=KNOWLEDGE_BASE,
         stages=[
             stage_broken_wall_enclosure,
             stage_stone_platform,

@@ -17,7 +17,7 @@ Date: 2025-07-30
 
 import os
 import sys
-from typing import final, List, Dict
+from typing import Final, final, List, Dict
 from pydantic import BaseModel
 
 # 将 src 目录添加到模块搜索路径
@@ -25,15 +25,11 @@ sys.path.insert(
     0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
 )
 from loguru import logger
-
-from ai_rpg.game.config import BLUEPRINTS_DIR, DUNGEONS_DIR, GAME_1
+from ai_rpg.game.config import BLUEPRINTS_DIR, DUNGEONS_DIR
+from ai_rpg.models import Blueprint
 from ai_rpg.demo import (
     create_ruins_blueprint,
-    # create_single_hunter_blueprint,
-    # create_mountain_beasts_dungeon,
-    # create_tiger_lair_dungeon,
     create_sand_jackal_ruins_dungeon,
-    # create_training_dungeon,
 )
 from ai_rpg.pgsql import (
     pgsql_create_database,
@@ -42,7 +38,6 @@ from ai_rpg.pgsql import (
     postgresql_config,
 )
 from ai_rpg.pgsql.user_operations import has_user, save_user
-from ai_rpg.demo import RPG_KNOWLEDGE_BASE
 from ai_rpg.chroma import reset_client, get_custom_collection, add_documents
 from ai_rpg.embedding_model.sentence_transformer import multilingual_model
 
@@ -62,6 +57,12 @@ FAKE_USER = UserAccount(
     username="yanghangethan@gmail.com",
     hashed_password="$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",  # 明文是 secret
     display_name="yh",
+)
+
+###########################################################################################################################################
+# 默认游戏名称
+GAME_1: Final[str] = (
+    "Game1"  # unity 客户端目前是一定会链接到这个游戏的，所以这个名字暂时不能改。
 )
 
 
@@ -97,11 +98,6 @@ def _save_demo_blueprints() -> None:
     path_game1.write_text(blueprint_game1.model_dump_json(indent=4), encoding="utf-8")
     logger.success(f"✅ {GAME_1}.json 已保存至 {path_game1.absolute()}")
 
-    # blueprint_game2 = create_single_hunter_blueprint(GAME_2)
-    # path_game2 = BLUEPRINTS_DIR / f"{GAME_2}.json"
-    # path_game2.write_text(blueprint_game2.model_dump_json(indent=4), encoding="utf-8")
-    # logger.success(f"✅ {GAME_2}.json 已保存至 {path_game2.absolute()}")
-
 
 ########################################################################################################
 ########################################################################################################
@@ -128,7 +124,7 @@ def _setup_chromadb_rag_environment() -> None:
     初始化 RAG 系统
 
     清空 ChromaDB 数据库，遍历 BLUEPRINTS_DIR 下所有蓝图文件，
-    为每个文件名对应的集合加载全局知识库 RPG_KNOWLEDGE_BASE。
+    读取每个蓝图实例，使用其 knowledge_base 字段为对应的集合加载知识库。
     """
     logger.info("🚀 初始化RAG系统...")
 
@@ -136,50 +132,49 @@ def _setup_chromadb_rag_environment() -> None:
     logger.info("🧹 清空ChromaDB数据库...")
     reset_client()
 
-    # 列出 BLUEPRINTS_DIR 下所有文件
-    blueprint_files = list(BLUEPRINTS_DIR.iterdir())
-    game_names = [
-        f.stem for f in blueprint_files if f.is_file() and f.suffix == ".json"
+    # 读取 BLUEPRINTS_DIR 下所有蓝图文件为 Blueprint 实例
+    blueprints = [
+        Blueprint.model_validate_json(path.read_text(encoding="utf-8"))
+        for path in sorted(BLUEPRINTS_DIR.glob("*.json"))
     ]
-    logger.info(f"📂 发现蓝图文件: {game_names}")
+    logger.info(f"📂 发现蓝图文件: {[blueprint.name for blueprint in blueprints]}")
 
-    if not game_names:
+    if not blueprints:
         logger.warning("⚠️ BLUEPRINTS_DIR 下没有蓝图文件，跳过RAG加载")
         logger.success("✅ RAG系统初始化完成!")
         return
 
-    # 准备文档数据：将 Dict[str, List[str]] 展开为 flat lists（各游戏共用同一份）
-    if not RPG_KNOWLEDGE_BASE or len(RPG_KNOWLEDGE_BASE) == 0:
-        logger.warning("⚠️ 全局知识库 RPG_KNOWLEDGE_BASE 为空，跳过加载")
-        logger.success("✅ RAG系统初始化完成!")
-        return
+    # 为每个蓝图分别加载其自带的知识库
+    for blueprint in blueprints:
+        if not blueprint.knowledge_base:
+            logger.warning(f"⚠️ 蓝图 {blueprint.name} 的知识库为空，跳过加载")
+            continue
 
-    documents_list: List[str] = []
-    metadatas_list: List[Dict[str, str]] = []
-    ids_list: List[str] = []
+        # 准备文档数据：将 Dict[str, List[str]] 展开为 flat lists
+        documents_list: List[str] = []
+        metadatas_list: List[Dict[str, str]] = []
+        ids_list: List[str] = []
 
-    doc_index = 0
-    for category, docs in RPG_KNOWLEDGE_BASE.items():
-        for doc in docs:
-            documents_list.append(doc)
-            metadatas_list.append({"category": category})
-            ids_list.append(f"{category}_{doc_index}")
-            doc_index += 1
+        doc_index = 0
+        for category, docs in blueprint.knowledge_base.items():
+            for doc in docs:
+                documents_list.append(doc)
+                metadatas_list.append({"category": category})
+                ids_list.append(f"{category}_{doc_index}")
+                doc_index += 1
 
-    # 为每个蓝图文件名对应的集合分别加载知识库
-    for game_name in game_names:
-        logger.info(f"📚 为 {game_name} 加载公共知识库...")
+        logger.info(f"📚 为 {blueprint.name} 加载知识库...")
         success = add_documents(
-            collection=get_custom_collection(game_name),
+            collection=get_custom_collection(blueprint.name),
             embedding_model=multilingual_model,
             documents=documents_list,
             metadatas=metadatas_list,
             ids=ids_list,
         )
         if not success:
-            logger.error(f"❌ {game_name} 公共知识库加载失败!")
-            raise Exception(f"{game_name} 公共知识库加载失败")
-        logger.success(f"✅ {game_name} 公共知识库加载成功!")
+            logger.error(f"❌ {blueprint.name} 知识库加载失败!")
+            raise Exception(f"{blueprint.name} 知识库加载失败")
+        logger.success(f"✅ {blueprint.name} 知识库加载成功!")
 
     logger.success("✅ RAG系统初始化完成!")
 

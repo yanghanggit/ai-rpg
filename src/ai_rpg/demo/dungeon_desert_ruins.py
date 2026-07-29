@@ -1,16 +1,11 @@
 """
 沙漠遗迹地下城副本工厂模块
-
-本模块用于创建沙漠残垣世界观下的遗迹相关地下城副本。
-
-核心内容：
-- create_sand_jackal_ruins_dungeon: 单场景副本，挑战遗迹外缘的沙豺，适合初期狩猎练习。
 """
 
 from ..models import Dungeon, CombatRoom, StageProfile, StageType, RPG_SYSTEM_RULES
 from .actor_sand_jackal import create_actor_sand_jackal
 from .global_settings import (
-    RPG_CAMPAIGN_SETTING,
+    CAMPAIGN_SETTING,
 )
 from ..models.entity_factory import (
     create_stage,
@@ -30,7 +25,7 @@ def create_sand_jackal_ruins_dungeon() -> Dungeon:
 地面是松软的沙土与裸露的岩板交替分布，风在断柱之间卷起低矮的沙尘旋涡。柱身背风侧积着细沙，风向一侧则磨蚀痕迹明显。
 日落前后，气温迅速下降，沙面在余光中反射出橙红色调。断柱投下长而倾斜的阴影，阴影边缘处沙土颜色明显更暗。""",
         ),
-        campaign_setting=RPG_CAMPAIGN_SETTING,
+        campaign_setting=CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
     )
 

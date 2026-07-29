@@ -6,7 +6,7 @@ from ..models import (
     RPG_SYSTEM_RULES,
 )
 from .global_settings import (
-    RPG_CAMPAIGN_SETTING,
+    CAMPAIGN_SETTING,
 )
 from ..models.entity_factory import (
     create_actor,
@@ -26,7 +26,7 @@ def create_actor_sand_jackal() -> Actor:
             base_body="体型中等的犬科动物，四肢细长而有力，肩高约七十厘米。全身覆盖沙黄色短毛，背部有一道不规则的深色条纹。耳廓宽大直立，眼睛琥珀色，瞳孔在强光下收缩为细缝。口鼻部细长，牙齿洁白锋利。爪子宽而厚，趾间有蹼状连膜。尾巴粗且蓬松，尾尖颜色较深。身上没有多余的脂肪，肋骨轮廓在皮毛下隐约可见。",
         ),
         character_stats=CharacterStats(),
-        campaign_setting=RPG_CAMPAIGN_SETTING,
+        campaign_setting=CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
         keywords=[
             "纯攻击型：每张卡牌专注于对单个敌人造成直接伤害，不携带任何附加效果或持续状态。骰值 0-30 为失败，攻击乏力、伤害偏低；骰值 31-70 为正常，伤害稳定适中；骰值 71-100 为优质，体现爆发感，伤害显著高于角色基础攻击力。"

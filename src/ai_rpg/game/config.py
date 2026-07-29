@@ -1,15 +1,6 @@
-"""游戏配置模块
-
-定义游戏运行所需的全局配置常量和目录路径。
-
-主要配置：
-- BLUEPRINTS_DIR: 游戏蓝图配置目录
-- WORLDS_DIR: 游戏世界运行时数据目录
-- GAME_1: 默认游戏名称
-"""
+"""游戏配置模块"""
 
 from pathlib import Path
-from typing import Final
 
 ###########################################################################################################################################
 # 游戏蓝图配置目录
@@ -43,10 +34,3 @@ assert DEBUG_CACHE_DIR.exists(), f"找不到目录: {DEBUG_CACHE_DIR}"
 DUNGEON_PROCESS_DIR: Path = DEBUG_CACHE_DIR / "_process"
 DUNGEON_PROCESS_DIR.mkdir(parents=True, exist_ok=True)
 assert DUNGEON_PROCESS_DIR.exists(), f"找不到目录: {DUNGEON_PROCESS_DIR}"
-
-
-###########################################################################################################################################
-# 默认游戏名称
-GAME_1: Final[str] = (
-    "Game1"  # unity 客户端目前是一定会链接到这个游戏的，所以这个名字暂时不能改。
-)

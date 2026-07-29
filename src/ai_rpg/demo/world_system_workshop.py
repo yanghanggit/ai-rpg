@@ -2,16 +2,19 @@ from ..models import (
     WorkshopComponent,
     ComponentSerialization,
     RPG_SYSTEM_RULES,
+    WorldSystem,
+    create_world_system,
 )
-from .global_settings import RPG_CAMPAIGN_SETTING
-from ..models.entity_factory import create_world_system
-from ..models import WorldSystem
-from typing import Final
+from .global_settings import CAMPAIGN_SETTING
 
 
-_WORKSHOP_ROLE_RULES: Final[
-    str
-] = """## 制造工坊职责
+def create_workshop() -> WorldSystem:
+    """创建制造工坊世界系统。"""
+    world_system = create_world_system(
+        name="世界系统.制造工坊",
+        campaign_setting=CAMPAIGN_SETTING,
+        system_rules=RPG_SYSTEM_RULES,
+        role_rules="""## 制造工坊职责
 
 你是游戏世界的制造工坊系统，负责根据玩家提交的材料，创意合成消耗品、装备或时装。
 所有生成物品须植根于游戏世界设定，其感官描述、命名风格与材料来源须相互呼应。
@@ -41,16 +44,7 @@ XXXX 部分简洁有辨识度，避免使用数字后缀（如"消耗品.01"）�
 - **地下暗河**：幽暗水系、磷光、钟乳石
 - **冰川**：极寒、冰晶光泽、封存物
 - **火山**：硫磺、岩浆矿物、高温烧灼感
-- **绿洲**：清水、矿泉、沙漠边缘植物"""
-
-
-def create_workshop() -> WorldSystem:
-    """创建制造工坊世界系统。"""
-    world_system = create_world_system(
-        name="世界系统.制造工坊",
-        campaign_setting=RPG_CAMPAIGN_SETTING,
-        system_rules=RPG_SYSTEM_RULES,
-        role_rules=_WORKSHOP_ROLE_RULES,
+- **绿洲**：清水、矿泉、沙漠边缘植物""",
     )
 
     world_system.components = [

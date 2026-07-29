@@ -1,21 +1,25 @@
-from typing import Final
 from ..models import (
     WorldSystem,
     PlayerActionAuditComponent,
     ComponentSerialization,
     RPG_SYSTEM_RULES,
-)
-from .global_settings import (
-    RPG_CAMPAIGN_SETTING,
-)
-from ..models.entity_factory import (
     create_world_system,
 )
+from .global_settings import (
+    CAMPAIGN_SETTING,
+)
 
 
-_AUDIT_ROLE_RULES: Final[
-    str
-] = """## 玩家行动审计系统职责
+def create_player_action_audit() -> WorldSystem:
+    """
+    创建玩家行动审计系统。
+    """
+
+    world_system = create_world_system(
+        name="世界系统.玩家行动审计系统",
+        campaign_setting=CAMPAIGN_SETTING,
+        system_rules=RPG_SYSTEM_RULES,
+        role_rules="""## 玩家行动审计系统职责
 
 你是游戏世界的内容合规审核系统，负责对玩家输入的语言类指令（说话、私聊、公告等）进行合规审查。
 每条指令须同时通过以下两条边界约束，方可放行。
@@ -39,19 +43,7 @@ _AUDIT_ROLE_RULES: Final[
 
 - 边界模糊时从宽处理，优先保障玩家游戏体验
 - 仅审核语言内容合规性，不干预角色扮演方向、战斗决策或剧情选择
-- 拒绝时给出简短明确的理由"""
-
-
-def create_player_action_audit() -> WorldSystem:
-    """
-    创建玩家行动审计系统。
-    """
-
-    world_system = create_world_system(
-        name="世界系统.玩家行动审计系统",
-        campaign_setting=RPG_CAMPAIGN_SETTING,
-        system_rules=RPG_SYSTEM_RULES,
-        role_rules=_AUDIT_ROLE_RULES,
+- 拒绝时给出简短明确的理由""",
     )
 
     # 配置组件

@@ -3,19 +3,23 @@ from ..models import (
     DungeonGenerationComponent,
     ComponentSerialization,
     RPG_SYSTEM_RULES,
-)
-from .global_settings import (
-    RPG_CAMPAIGN_SETTING,
-)
-from ..models.entity_factory import (
     create_world_system,
 )
-from typing import Final
+from .global_settings import (
+    CAMPAIGN_SETTING,
+)
 
 
-_DUNGEON_GENERATION_ROLE_RULES: Final[
-    str
-] = """## 生态底色规范
+def create_dungeon_generation() -> WorldSystem:
+    """
+    创建地下城生成系统。
+    """
+
+    world_system = create_world_system(
+        name="世界系统.地下城生成系统",
+        campaign_setting=CAMPAIGN_SETTING,
+        system_rules=RPG_SYSTEM_RULES,
+        role_rules="""## 生态底色规范
 
 「地下城」是独立副本战役，非地理概念，其形态不限，可呈任意形态。
 
@@ -53,19 +57,7 @@ _DUNGEON_GENERATION_ROLE_RULES: Final[
   - 禁忌：不出现战斗数值、技能名称、等级等游戏机制词汇
 - **base_body**：第三人称外观描述，30-60字，描述形态、材质、动态特征
   - 禁忌：不出现战斗数值、技能名称、等级等游戏机制词汇
-- 同场景有多个生物时，须在形态类型、活动层高、觅食策略上有所区别，避免重复"""
-
-
-def create_dungeon_generation() -> WorldSystem:
-    """
-    创建地下城生成系统。
-    """
-
-    world_system = create_world_system(
-        name="世界系统.地下城生成系统",
-        campaign_setting=RPG_CAMPAIGN_SETTING,
-        system_rules=RPG_SYSTEM_RULES,
-        role_rules=_DUNGEON_GENERATION_ROLE_RULES,
+- 同场景有多个生物时，须在形态类型、活动层高、觅食策略上有所区别，避免重复""",
     )
 
     # 配置组件

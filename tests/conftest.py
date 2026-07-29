@@ -39,6 +39,7 @@ def sample_game() -> Any:
         player_actor="test_player_actor",
         # player_only_stage="test_player_only_stage",
         campaign_setting="test_setting",
+        knowledge_base={},
         stages=[],
         world_systems=[],
         storage_entity="世界储物箱",

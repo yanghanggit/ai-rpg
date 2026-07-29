@@ -6,7 +6,7 @@ from ..models import (
     RPG_SYSTEM_RULES,
 )
 from .global_settings import (
-    RPG_CAMPAIGN_SETTING,
+    CAMPAIGN_SETTING,
 )
 
 from ..models.entity_factory import (
@@ -31,7 +31,7 @@ def create_scholar() -> Actor:
             base_body="二十五岁上下的女性，仅着简单内衣。骨架纤细，体态偏瘦，肩强笺小，锁骨稍显。胸领平坦，腰鈃细体但缺乏曲线感，双腿细长。肤色较浅，眼下有淡淡的暗沉，手腕内侧几条细血管隐隐可见。右手中指有长期握笔留下的淡色压痕。关节细小而明显，整体属于从事脑力劳动而非体力劳动的少年女性体型。",
         ),
         character_stats=CharacterStats(),
-        campaign_setting=RPG_CAMPAIGN_SETTING,
+        campaign_setting=CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
         keywords=[
             "状态控制型：每张卡牌必须携带至少一个持续生效的负面状态（如虚弱、减速、灼烧），以给敌人施加长期控制效果为核心目标，直接伤害可以较低乃至为零。骰值 0-30 为失败，状态持续时间短或效果微弱；骰值 31-70 为正常，状态稳定可靠；骰值 71-100 为优质，状态效果显著增强或同时附带多个负面状态。"

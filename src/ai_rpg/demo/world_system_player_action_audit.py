@@ -45,13 +45,6 @@ _AUDIT_ROLE_RULES: Final[
 def create_player_action_audit() -> WorldSystem:
     """
     创建玩家行动审计系统。
-
-    该系统负责审阅玩家输入的语言类指令，确保指令内容合规：
-    1. 不包含法律与道德禁止的内容
-    2. 不包含跳出游戏世界观的内容
-
-    Returns:
-        WorldSystem: 配置完成的玩家行动审计系统实例
     """
 
     world_system = create_world_system(

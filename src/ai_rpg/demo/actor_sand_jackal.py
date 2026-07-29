@@ -16,12 +16,6 @@ from ..models.entity_factory import (
 def create_actor_sand_jackal() -> Actor:
     """
     创建沙豺角色实例。
-
-    沙豺是活动于沙漠残垣外缘的级掠食者，
-    昼伏夜出，以遗迹周边的小型生物为食。
-
-    Returns:
-        Actor: 沙豺角色实例
     """
     sand_jackal = create_actor(
         name="怪物.沙豺",

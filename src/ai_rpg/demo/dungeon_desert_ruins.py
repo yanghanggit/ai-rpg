@@ -20,12 +20,6 @@ from ..models.entity_factory import (
 def create_sand_jackal_ruins_dungeon() -> Dungeon:
     """
     创建沙豺遗迹副本。
-
-    包含单个场景：
-    - 残柱外沿：遗迹外缘的开阔沙地，沙豺的活动领域
-
-    Returns:
-        Dungeon: 沙豺遗迹副本实例
     """
     stage_ruins_outskirts = create_stage(
         name="场景.残柱外沿",

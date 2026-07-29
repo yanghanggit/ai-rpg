@@ -16,11 +16,6 @@ from ..models.entity_factory import (
 def create_wanderer() -> Actor:
     """
     创建失忆旅行者角色实例（无名氏）。
-
-    醒来时已身处沙漠遗迹，对自身来历毫无记忆，连名字也不存在。
-
-    Returns:
-        Actor: 无名氏角色实例
     """
     actor = create_actor(
         name="旅行者.无名氏",

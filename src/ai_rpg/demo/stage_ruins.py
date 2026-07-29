@@ -1,9 +1,5 @@
 """
 沙漠残垣场景模块。
-
-本模块定义了沙漠残垣遗迹地表的两个核心场景：
-1. 断壁石室 - 两面石墙交汇、石楣覆顶的封闭内室（玩家专属）
-2. 石台广场 - 遗迹中央由石板与残柱构成的开阔地带
 """
 
 from ..models import Stage, StageProfile, StageType, RPG_SYSTEM_RULES
@@ -17,16 +13,7 @@ from ..models.entity_factory import (
 
 def create_broken_wall_enclosure() -> Stage:
     """
-    创建断壁石室场景实例（玩家专属）。
-
-    遗迹内两面石墙仍完整交汇于墙角的内室残骸，
-    顶部横跨一块错位下沉的巨型石楣，形成近乎完全封闭的低矮空间。
-
-    Note:
-        玩家专属场景，其他角色无法进入。
-
-    Returns:
-        Stage: 断壁石室场景实例
+    创建断壁石室场景实例
     """
 
     return create_stage(
@@ -46,12 +33,6 @@ def create_broken_wall_enclosure() -> Stage:
 def create_stone_platform() -> Stage:
     """
     创建石台广场场景实例。
-
-    遗迹中央相对开阔的地带，地面由大块石板铺就，
-    散落着数根断柱与风蚀石墩。
-
-    Returns:
-        Stage: 石台广场场景实例
     """
 
     return create_stage(

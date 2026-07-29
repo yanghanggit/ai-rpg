@@ -45,11 +45,7 @@ XXXX 部分简洁有辨识度，避免使用数字后缀（如"消耗品.01"）�
 
 
 def create_workshop() -> WorldSystem:
-    """创建制造工坊世界系统，为 CraftItemActionSystem 提供 LLM context。
-
-    Returns:
-        WorldSystem: 配置完成的制造工坊世界系统实例
-    """
+    """创建制造工坊世界系统。"""
     world_system = create_world_system(
         name="世界系统.制造工坊",
         campaign_setting=RPG_CAMPAIGN_SETTING,

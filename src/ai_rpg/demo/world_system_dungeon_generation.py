@@ -58,12 +58,7 @@ _DUNGEON_GENERATION_ROLE_RULES: Final[
 
 def create_dungeon_generation() -> WorldSystem:
     """
-    创建地下城图片生成系统。
-
-    该系统负责在进入地下城时，通过文生图 AI 为地下城及其房间生成场景图片。
-
-    Returns:
-        WorldSystem: 配置完成的地下城图片生成系统实例
+    创建地下城生成系统。
     """
 
     world_system = create_world_system(

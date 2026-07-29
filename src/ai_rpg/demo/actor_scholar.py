@@ -17,14 +17,6 @@ from ..models.entity_factory import (
 def create_scholar() -> Actor:
     """
     创建失忆学者角色实例（代号：寒蝉）。
-
-    醒来时已身处沙漠遗迹，身旁有一本残破笔记，
-    字迹是自己的，内容全为无法辨读的密文。
-    唯一的明文是最后一行：「寒蝉，如果你看到这里，说明计划出了问题。」
-    这是她所能知道的关于自己身份的全部。
-
-    Returns:
-        Actor: 寒蝉角色实例
     """
 
     actor = create_actor(

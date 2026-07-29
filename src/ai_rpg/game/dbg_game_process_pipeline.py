@@ -135,7 +135,7 @@ def create_combat_pipeline(
     )
     from ..systems.combat_archive_system import CombatArchiveSystem
     from ..systems.combat_loot_system import CombatLootSystem
-    from ..systems.deck_generation_system import DeckGenerationSystem
+    from ..systems.generate_deck_action_system import GenerateDeckActionSystem
     from ..systems.combat_pile_teardown_system import CombatPileTeardownSystem
     from ..systems.stage_description_system import (
         StageDescriptionSystem,
@@ -172,7 +172,7 @@ def create_combat_pipeline(
     processors.add(CombatInitStageSystem(dbg_game))
 
     # 牌库生成系统（战斗开始时为每个角色生成初始牌库
-    processors.add(DeckGenerationSystem(dbg_game))
+    processors.add(GenerateDeckActionSystem(dbg_game))
 
     # 战斗核心动作处理相关的系统
     processors.add(DrawCardsActionSystem(dbg_game))

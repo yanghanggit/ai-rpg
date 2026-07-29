@@ -51,8 +51,8 @@ def _sample_keywords(keywords: List[str], k: int) -> List[str]:
 
 #######################################################################################################################################
 @final
-class DeckGenerationSystem(ReactiveProcessor):
-    """
+class GenerateDeckActionSystem(ReactiveProcessor):
+    """#generate_deck_action_system
     响应 GenerateDeckAction，为每个触发角色并行调用 LLM 生成初始牌库卡牌，
     """
 

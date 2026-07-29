@@ -10,8 +10,8 @@ from src.ai_rpg.game.dbg_game import DBGGame
 from src.ai_rpg.models import DeckComponent, DrawPileComponent, GenerateDeckAction
 from src.ai_rpg.models.messages import AIMessage
 from src.ai_rpg.models.target_type import TargetType
-from src.ai_rpg.systems.deck_generation_system import (
-    DeckGenerationSystem,
+from src.ai_rpg.systems.generate_deck_action_system import (
+    GenerateDeckActionSystem,
     _sample_keywords,
 )
 
@@ -77,8 +77,8 @@ def mock_game() -> MagicMock:
 
 
 @pytest.fixture()
-def system(mock_game: MagicMock) -> DeckGenerationSystem:
-    return DeckGenerationSystem(mock_game)
+def system(mock_game: MagicMock) -> GenerateDeckActionSystem:
+    return GenerateDeckActionSystem(mock_game)
 
 
 # ---------------------------------------------------------------------------
@@ -106,7 +106,7 @@ def test_sample_exceeds_pool_allows_replacement() -> None:
 
 
 def test_valid_cards_fill_deck_and_draw_pile(
-    ctx: Context, mock_game: MagicMock, system: DeckGenerationSystem
+    ctx: Context, mock_game: MagicMock, system: GenerateDeckActionSystem
 ) -> None:
     """合法响应：牌追加到 DeckComponent 和 DrawPileComponent。"""
     entity = _make_entity(ctx, num_cards=2)
@@ -123,7 +123,7 @@ def test_valid_cards_fill_deck_and_draw_pile(
 
 
 def test_invalid_json_no_raise_draw_pile_empty(
-    ctx: Context, mock_game: MagicMock, system: DeckGenerationSystem
+    ctx: Context, mock_game: MagicMock, system: GenerateDeckActionSystem
 ) -> None:
     """JSON 解析失败时不抛出，DrawPile 保持空。"""
     entity = _make_entity(ctx, num_cards=2)

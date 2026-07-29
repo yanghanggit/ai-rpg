@@ -1,7 +1,5 @@
 """
 家园后台任务模块
-
-从 home_gameplay.py 抽取的后台 task 函数及验证工具函数，供端点文件 import 使用。
 """
 
 from datetime import datetime
@@ -22,17 +20,6 @@ async def _validate_player_at_home(
 ) -> DBGGame:
     """
     验证玩家是否在家园状态
-
-    Args:
-        user_name: 用户名
-        game_server: 游戏服务器实例
-
-    Returns:
-        DBGGame: 验证通过的 DBG 游戏实例
-
-    Raises:
-        HTTPException(404): 房间或游戏实例不存在
-        HTTPException(400): 玩家不在家园状态
     """
 
     # 检查房间是否存在
@@ -65,21 +52,12 @@ async def _validate_player_at_home(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
-async def _execute_dungeon_generate_pipeline_task(
+async def execute_dungeon_generate_pipeline_task(
     task_id: str,
     user_name: str,
     game_server: GameServer,
 ) -> None:
-    """后台执行 dungeon generate pipeline 任务
-
-    在后台异步执行 dungeon_generate_pipeline 并更新任务状态。
-    使用房间锁保证同一玩家不会并发执行。
-
-    Args:
-        task_id: 任务唯一标识符
-        user_name: 用户名
-        game_server: 游戏服务器实例
-    """
+    """后台执行 dungeon generate pipeline 任务"""
     try:
         logger.info(
             f"🚀 dungeon generate pipeline 任务开始: task_id={task_id}, user={user_name}"
@@ -122,21 +100,12 @@ async def _execute_dungeon_generate_pipeline_task(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
-async def _execute_home_pipeline_task(
+async def execute_home_pipeline_task(
     task_id: str,
     user_name: str,
     game_server: GameServer,
 ) -> None:
-    """后台执行 home pipeline 任务
-
-    在后台异步执行 home pipeline 并更新任务状态。
-    使用房间锁保证同一玩家不会并发执行。
-
-    Args:
-        task_id: 任务唯一标识符
-        user_name: 用户名
-        game_server: 游戏服务器实例
-    """
+    """后台执行 home pipeline 任务"""
     try:
         logger.info(f"🚀 home pipeline 任务开始: task_id={task_id}, user={user_name}")
 

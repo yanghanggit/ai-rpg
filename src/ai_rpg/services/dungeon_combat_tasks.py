@@ -1,5 +1,5 @@
 """
-地下城后台任务模块
+地下城战斗后台任务模块
 """
 
 from datetime import datetime
@@ -9,7 +9,7 @@ from ..game.dbg_game import DBGGame
 from ..game.world_store import archive_world
 from ..game.game_server import GameServer
 from ..models import MonsterComponent, TaskStatus
-from .dungeon_actions import (
+from .dungeon_combat_actions import (
     activate_monster_play_trigger,
     activate_play_cards_specified,
     activate_pass_turn,

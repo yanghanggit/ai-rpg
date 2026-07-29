@@ -6,7 +6,7 @@ from src.ai_rpg.models import (
     PartyMemberComponent,
 )
 from src.ai_rpg.models.items import GearItem
-from src.ai_rpg.services.dungeon_actions import activate_use_gear
+from src.ai_rpg.services.dungeon_combat_actions import activate_use_gear
 
 
 def _make_game(*, current_actor: str, player_name: str = "player") -> MagicMock:
@@ -48,10 +48,10 @@ def test_activate_use_gear_rejects_when_target_energy_less_than_cost() -> None:
 
     with (
         patch(
-            "src.ai_rpg.services.dungeon_actions.resolve_targets",
+            "src.ai_rpg.services.dungeon_combat_actions.resolve_targets",
             return_value=(["队友A"], ""),
         ),
-        patch("src.ai_rpg.services.dungeon_actions.get_energy", return_value=1),
+        patch("src.ai_rpg.services.dungeon_combat_actions.get_energy", return_value=1),
     ):
         ok, msg = activate_use_gear(game, "装备.测试", ["队友A"])
 
@@ -71,10 +71,10 @@ def test_activate_use_gear_activates_action_when_target_energy_covers_cost() -> 
 
     with (
         patch(
-            "src.ai_rpg.services.dungeon_actions.resolve_targets",
+            "src.ai_rpg.services.dungeon_combat_actions.resolve_targets",
             return_value=(["队友A"], ""),
         ),
-        patch("src.ai_rpg.services.dungeon_actions.get_energy", return_value=2),
+        patch("src.ai_rpg.services.dungeon_combat_actions.get_energy", return_value=2),
     ):
         ok, msg = activate_use_gear(game, "装备.测试", ["队友A"])
 

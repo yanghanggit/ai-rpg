@@ -12,8 +12,8 @@ from loguru import logger
 from .game_server_dependencies import CurrentGameServer
 from .home_tasks import (
     _validate_player_at_home,
-    _execute_home_pipeline_task,
-    _execute_dungeon_generate_pipeline_task,
+    execute_home_pipeline_task,
+    execute_dungeon_generate_pipeline_task,
 )
 from .home_actions import (
     activate_speak_action,
@@ -145,7 +145,7 @@ async def home_player_action(
     home_action_task = game_server.create_task()
 
     asyncio.create_task(
-        _execute_home_pipeline_task(
+        execute_home_pipeline_task(
             home_action_task.task_id,
             payload.user_name,
             game_server,
@@ -208,7 +208,7 @@ async def home_advance(
     home_advance_task = game_server.create_task()
 
     asyncio.create_task(
-        _execute_home_pipeline_task(
+        execute_home_pipeline_task(
             home_advance_task.task_id,
             payload.user_name,
             game_server,
@@ -348,7 +348,7 @@ async def home_generate_dungeon(
     generate_dungeon_task = game_server.create_task()
 
     asyncio.create_task(
-        _execute_dungeon_generate_pipeline_task(
+        execute_dungeon_generate_pipeline_task(
             generate_dungeon_task.task_id,
             payload.user_name,
             game_server,
@@ -521,7 +521,7 @@ async def home_wear_costume_endpoint(
 
     wear_costume_task = game_server.create_task()
     asyncio.create_task(
-        _execute_home_pipeline_task(
+        execute_home_pipeline_task(
             wear_costume_task.task_id,
             payload.user_name,
             game_server,
@@ -568,7 +568,7 @@ async def home_remove_costume_endpoint(
 
     remove_costume_task = game_server.create_task()
     asyncio.create_task(
-        _execute_home_pipeline_task(
+        execute_home_pipeline_task(
             remove_costume_task.task_id,
             payload.user_name,
             game_server,
@@ -622,7 +622,7 @@ async def home_craft_item_endpoint(
 
     craft_task = game_server.create_task()
     asyncio.create_task(
-        _execute_home_pipeline_task(
+        execute_home_pipeline_task(
             craft_task.task_id,
             payload.user_name,
             game_server,
@@ -672,7 +672,7 @@ async def home_craft_gear_item_endpoint(
 
     craft_task = game_server.create_task()
     asyncio.create_task(
-        _execute_home_pipeline_task(
+        execute_home_pipeline_task(
             craft_task.task_id,
             payload.user_name,
             game_server,
@@ -722,7 +722,7 @@ async def home_craft_costume_item_endpoint(
 
     craft_task = game_server.create_task()
     asyncio.create_task(
-        _execute_home_pipeline_task(
+        execute_home_pipeline_task(
             craft_task.task_id,
             payload.user_name,
             game_server,

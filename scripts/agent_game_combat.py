@@ -18,7 +18,7 @@ from ai_rpg.models import PlayerSession, CombatState
 from ai_rpg.game.dbg_game import DBGGame
 from ai_rpg.models import World, MonsterComponent
 from ai_rpg.game import archive_world
-from ai_rpg.services.dungeon_actions import (
+from ai_rpg.services.dungeon_combat_actions import (
     activate_all_card_draws,
     activate_play_cards_specified,
     activate_pass_turn,

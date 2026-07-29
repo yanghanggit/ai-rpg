@@ -1,7 +1,4 @@
-"""新游戏启动服务模块
-
-提供新游戏启动 API 接口，负责创建玩家会话和初始化游戏实例。
-"""
+"""新游戏启动服务模块"""
 
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
@@ -30,13 +27,7 @@ new_game_api_router = APIRouter()
     path="/api/game/blueprint-list/v1/", response_model=BlueprintListResponse
 )
 async def list_blueprints() -> BlueprintListResponse:
-    """获取可用蓝图列表接口
-
-    遍历 BLUEPRINTS_DIR 目录下的所有 JSON 文件，读取并返回其内容，供客户端预览选择。
-
-    Returns:
-        BlueprintListResponse: 包含所有蓝图配置的列表响应
-    """
+    """获取可用蓝图列表接口"""
     blueprints = [
         Blueprint.model_validate_json(p.read_text(encoding="utf-8"))
         for p in sorted(BLUEPRINTS_DIR.glob("*.json"))
@@ -52,20 +43,7 @@ async def new_game(
     payload: NewGameRequest,
     game_server: CurrentGameServer,
 ) -> NewGameResponse:
-    """新游戏启动接口
-
-    创建并初始化游戏会话。
-
-    Args:
-        payload: 新游戏请求对象
-        game_server: 游戏服务器实例
-
-    Returns:
-        NewGameResponse: 包含游戏蓝图配置的启动响应
-
-    Raises:
-        HTTPException(404): 用户房间不存在，或请求的游戏蓝图文件不存在
-    """
+    """新游戏启动接口"""
 
     logger.info(f"/api/game/new/v1/: {payload.model_dump_json()}")
 

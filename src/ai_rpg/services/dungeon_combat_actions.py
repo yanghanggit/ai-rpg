@@ -1,5 +1,5 @@
 """
-地下城战斗动作模块
+地下城战斗动作模块（仅战斗房间/CombatRoom 相关）
 """
 
 from typing import List, Tuple, Optional
@@ -31,6 +31,51 @@ from ..models import (
     TargetType,
 )
 from ..entitas import Entity, Matcher
+
+
+###################################################################################################################################################################
+def _validate_play_turn(
+    dbg_game: DBGGame,
+    actor_name: str,
+) -> Tuple[Optional[Entity], str]:
+    """校验当前是否轮到指定角色出牌，并返回其实体。"""
+
+    # 获取当前回合信息，检查是否存在进行中的回合，以及当前角色是否在行动快照中。
+    latest_round = dbg_game.current_combat_room.combat.latest_round
+    if latest_round is None:
+        return None, "当前没有进行中的回合"
+
+    # 获取当前回合的行动顺序，确保该角色在其中，以验证其是否有资格出牌。
+    action_order = latest_round.action_order
+
+    # 检查该角色是否在当前回合的行动顺序中，如果不在，则说明该角色没有资格出牌。
+    if actor_name not in action_order:
+        return (
+            None,
+            f"角色 {actor_name} 不在本回合行动顺序中: {action_order}",
+        )
+
+    # 检查当前回合的行动顺序，确保该角色是当前应出牌的角色。
+    next_actor = latest_round.current_actor
+    if next_actor != actor_name:
+        return None, f"现在不是 {actor_name} 的回合，当前应由 {next_actor} 出牌"
+
+    # 获取该角色的实体，确保其存在，并且是战斗角色（PartyMember 或 Monster），且未死亡且拥有手牌组件。
+    entity = dbg_game.get_actor_entity(actor_name)
+    assert entity is not None, f"找不到角色 {actor_name}"
+    assert entity.has(PartyMemberComponent) or entity.has(
+        MonsterComponent
+    ), f"角色 {actor_name} 不是战斗角色（非 PartyMember 或 Monster）"
+
+    # 检查该角色是否已死亡，如果已死亡则无法出牌。
+    if entity.has(DeathComponent):
+        return None, f"角色 {actor_name} 已死亡，无法出牌"
+
+    # 检查该角色是否拥有手牌组件，如果没有则无法出牌。
+    if not entity.has(HandComponent):
+        return None, f"角色 {actor_name} 没有 HandComponent"
+
+    return entity, ""
 
 
 ###################################################################################################################################################################
@@ -78,51 +123,6 @@ def activate_all_card_draws(
         entity.replace(DrawCardsAction, entity.name)
 
     return True, f"成功为 {len(all_entities)} 个战斗角色激活抽牌动作"
-
-
-###################################################################################################################################################################
-def _validate_play_turn(
-    dbg_game: DBGGame,
-    actor_name: str,
-) -> Tuple[Optional[Entity], str]:
-    """校验当前是否轮到指定角色出牌，并返回其实体。"""
-
-    # 获取当前回合信息，检查是否存在进行中的回合，以及当前角色是否在行动快照中。
-    latest_round = dbg_game.current_combat_room.combat.latest_round
-    if latest_round is None:
-        return None, "当前没有进行中的回合"
-
-    # 获取当前回合的行动顺序，确保该角色在其中，以验证其是否有资格出牌。
-    action_order = latest_round.action_order
-
-    # 检查该角色是否在当前回合的行动顺序中，如果不在，则说明该角色没有资格出牌。
-    if actor_name not in action_order:
-        return (
-            None,
-            f"角色 {actor_name} 不在本回合行动顺序中: {action_order}",
-        )
-
-    # 检查当前回合的行动顺序，确保该角色是当前应出牌的角色。
-    next_actor = latest_round.current_actor
-    if next_actor != actor_name:
-        return None, f"现在不是 {actor_name} 的回合，当前应由 {next_actor} 出牌"
-
-    # 获取该角色的实体，确保其存在，并且是战斗角色（PartyMember 或 Monster），且未死亡且拥有手牌组件。
-    entity = dbg_game.get_actor_entity(actor_name)
-    assert entity is not None, f"找不到角色 {actor_name}"
-    assert entity.has(PartyMemberComponent) or entity.has(
-        MonsterComponent
-    ), f"角色 {actor_name} 不是战斗角色（非 PartyMember 或 Monster）"
-
-    # 检查该角色是否已死亡，如果已死亡则无法出牌。
-    if entity.has(DeathComponent):
-        return None, f"角色 {actor_name} 已死亡，无法出牌"
-
-    # 检查该角色是否拥有手牌组件，如果没有则无法出牌。
-    if not entity.has(HandComponent):
-        return None, f"角色 {actor_name} 没有 HandComponent"
-
-    return entity, ""
 
 
 ###################################################################################################################################################################

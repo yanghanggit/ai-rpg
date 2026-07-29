@@ -1,13 +1,7 @@
-"""用户登录登出服务模块
-
-提供用户登录和登出的 API 接口。
-登录时创建用户房间，登出时保存游戏数据并清理房间。
-"""
+"""用户登录登出服务模块"""
 
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
-
-# from ..game.world_persistence import delete_user_world_data
 from .game_server_dependencies import CurrentGameServer
 from ..models import (
     LoginRequest,
@@ -28,17 +22,7 @@ async def login(
     payload: LoginRequest,
     game_server: CurrentGameServer,
 ) -> LoginResponse:
-    """用户登录接口
-
-    处理用户登录请求，创建用户专属的游戏房间实例。
-
-    Args:
-        payload: 登录请求数据
-        game_server: 游戏服务器实例
-
-    Returns:
-        LoginResponse: 登录响应，包含登录成功的消息
-    """
+    """用户登录接口"""
 
     logger.info(f"/api/login/v1/: {payload.model_dump_json()}")
 
@@ -54,12 +38,6 @@ async def login(
         logger.info(
             f"login: {payload.user_name} has room, remove it = {pre_room._username}"
         )
-
-        # 直接删除运行中的游戏数据存档！
-        # delete_user_world_data(WORLDS_DIR, payload.user_name, payload.game_name)
-        # logger.info(
-        #     f"这是测试，强制删除旧的游戏数据 = {payload.user_name}, {payload.game_name}"
-        # )
 
     # 登录成功就开个空的房间!
     if not game_server.has_room(payload.user_name):
@@ -88,20 +66,7 @@ async def logout(
     payload: LogoutRequest,
     game_server: CurrentGameServer,
 ) -> LogoutResponse:
-    """用户登出接口
-
-    处理用户登出请求，保存游戏数据并清理用户房间实例。
-
-    Args:
-        payload: 登出请求数据
-        game_server: 游戏服务器实例
-
-    Returns:
-        LogoutResponse: 登出响应，包含登出成功的消息
-
-    Raises:
-        HTTPException(404): 用户房间不存在
-    """
+    """用户登出接口"""
 
     logger.info(f"/api/logout/v1/: {payload.model_dump_json()}")
 

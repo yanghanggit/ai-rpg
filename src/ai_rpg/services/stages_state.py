@@ -1,7 +1,4 @@
-"""场景状态查询服务模块
-
-提供场景状态查询的 API 接口，返回游戏中所有场景及其角色分布情况。
-"""
+"""场景状态查询服务模块"""
 
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
@@ -26,22 +23,7 @@ async def get_stages_state(
     user_name: str,
     game_name: str,
 ) -> StagesStateResponse:
-    """查询场景状态接口
-
-    查询游戏中所有场景的状态信息，包括场景与角色的分布映射关系。
-
-    Args:
-        game_server: 游戏服务器实例
-        user_name: 用户名
-        game_name: 游戏名称
-
-    Returns:
-        StagesStateResponse: 包含场景与角色映射关系的响应
-
-    Raises:
-        HTTPException(404): 用户房间不存在
-        HTTPException(400): 游戏名称不匹配
-    """
+    """查询场景状态接口"""
 
     logger.info(f"get_stages_state: {user_name}, {game_name}")
 

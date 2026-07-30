@@ -189,13 +189,13 @@ CALC_RULES_SECTION: Final[
 
 
 #######################################################################################################################################
-# ENEMY_SPREAD 专属 prompt 片段（卡牌仲裁用）
+# SPREAD 专属 prompt 片段（卡牌仲裁用）
 #######################################################################################################################################
 
 
 @dataclass
 class SpreadSections:
-    """ENEMY_SPREAD 专属 prompt 片段"""
+    """SPREAD 专属 prompt 片段"""
 
     hit_assignment: str
     log_example: str
@@ -205,11 +205,11 @@ def build_spread_sections(
     card: Card,
     targets: List[str],
 ) -> SpreadSections:
-    """为 ENEMY_SPREAD 卡牌构建仲裁 prompt 中的专属片段。
+    """为 SPREAD 卡牌构建仲裁 prompt 中的专属片段。
 
-    当 target_type 不是 ENEMY_SPREAD 时，所有字段均为空字符串。
+    当 target_type 不是 SPREAD 时，所有字段均为空字符串。
     """
-    if card.target_type != TargetType.ENEMY_SPREAD:
+    if card.target_type != TargetType.SPREAD:
         return SpreadSections("", "")
 
     hit_lines = "\n".join(f"  第{i + 1}击 → {t}" for i, t in enumerate(targets))
@@ -538,7 +538,7 @@ def generate_consumable_arbitration_prompt(
         else ""
     )
 
-    # 攻击性消耗品（target_type 非 SELF_ONLY）时使用者不在 target_stats 中，需单独展示其身份与 HP，
+    # 攻击性消耗品（target_type 非 SELF）时使用者不在 target_stats 中，需单独展示其身份与 HP，
     # 否则仲裁 LLM 无法在 final_stats 中对使用者施加反伤（如目标带「荆棘」）等效果。
     actor_section = (
         f"\n\n## 使用者\n\n{actor_name}（HP {actor_stats.hp}/{actor_stats.max_hp} | 防御:{actor_stats.defense}）"

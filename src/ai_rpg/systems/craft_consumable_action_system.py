@@ -23,7 +23,7 @@ class _CraftConsumableResponse(BaseModel):
 
     name: str = ""
     description: str = ""
-    target_type: TargetType = TargetType.SELF_ONLY
+    target_type: TargetType = TargetType.SELF
     affixes: List[str] = []
     modifiers: List[str] = []
 
@@ -54,11 +54,10 @@ def _build_craft_prompt(materials: List[MaterialItem]) -> str:
 - **name**：消耗品全名，采用「消耗品.XXXX」命名格式，体现材料特性与用途，简洁有辨识度
 - **description**：物品描述，30-60字，说明外观、气味或使用感受，体现材料的来源与效果想象
 - **target_type**：目标类型，从以下选项中选择一个：{target_type_options}
-  - self_only：仅作用于自身（恢复、强化自身）
+  - self：仅作用于自身（恢复、强化自身）
   - single：作用于单个角色（可为友方治疗/辅助，也可为敌方造成伤害/削弱，依材料创意与效果自行判断）
-  - ally_all：作用于全体友方
-  - enemy_all：作用于全体敌方
-  - enemy_spread：对全体敌方散射攻击（命中次数>敌人数时保底每人至少一次，其余随机）
+  - all：选定一个目标作为阵营锚点，作用于其所在阵营全体存活角色（选己方=全体友方增益，选敌方=全体敌方伤害）
+  - spread：选定一个目标作为阵营锚点，对其所在阵营全体存活角色散射攻击（命中次数>阵营人数时保底每人至少一次，其余随机）
 - **affixes**：延迟词缀列表，格式 `[名称]:触发倾向描述`，使用后独立推理生成持续状态效果（如 `[燃烧]:可能引发持续扣血`）；凡涉及"下回合/持续N回合"等跨回合影响的效果必须放在这里；无持续效果时输出 []
 - **modifiers**：即时修正词缀列表，格式 `[名称]:即时修正描述`，仅描述本次仲裁计算内立即生效的一次性数值修正（如 `[穿甲]:无视目标防御`）；严禁出现"下回合/持续N回合"等跨回合表述；无即时修正时输出 []
 
@@ -68,7 +67,7 @@ def _build_craft_prompt(materials: List[MaterialItem]) -> str:
 {{
   "name": "消耗品.XXX",
   "description": "...",
-  "target_type": "self_only",
+  "target_type": "self",
   "affixes": ["[燃烧]:可能引发持续扣血"],
   "modifiers": ["[穿甲]:无视目标防御"]
 }}

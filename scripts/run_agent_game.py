@@ -553,7 +553,7 @@ def pass_turn(snapshot: str, actor: str) -> None:
     "--targets",
     multiple=True,
     default=(),
-    help="目标角色名，可重复使用（如 --targets 怪物.野猪）；SELF_ONLY/ENEMY_ALL 时可省略",
+    help="目标角色名，可重复使用（如 --targets 怪物.野猪）；SELF 时可省略，ALL/SPREAD 时需提供恰好 1 个目标作为阵营锚点",
 )
 def use_consumable(
     snapshot: str, actor: str, item: str, targets: tuple[str, ...]

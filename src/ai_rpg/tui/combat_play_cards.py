@@ -19,7 +19,6 @@ from ..models import (
 )
 from .base import BaseGameScreen
 from .combat_common import (
-    classify_faction,
     compute_effective_stats_for,
     find_component_data,
     find_stage_of_actor,
@@ -371,30 +370,9 @@ class CombatPlayCardsScreen(BaseGameScreen):
         assert card is not None
 
         current_actor = self._snapshot.current_actor
-        actor_entity = (
-            self._snapshot.entities_map.get(current_actor) if current_actor else None
-        )
-        actor_faction = classify_faction(actor_entity)
 
-        if card.target_type == TargetType.SELF_ONLY:
+        if card.target_type == TargetType.SELF:
             self._flow.pending_targets = [current_actor] if current_actor else []
-            self._enter_confirm(log)
-            return
-
-        if card.target_type in (TargetType.ENEMY_ALL, TargetType.ENEMY_SPREAD):
-            # 由服务端按 target_type 自动解析目标，客户端传空列表即可。
-            self._flow.pending_targets = []
-            self._enter_confirm(log)
-            return
-
-        if card.target_type == TargetType.ALLY_ALL:
-            self._flow.pending_targets = [
-                name
-                for name, entity in self._snapshot.entities_map.items()
-                if name != current_actor
-                and classify_faction(entity) == actor_faction
-                and is_alive(entity)
-            ]
             self._enter_confirm(log)
             return
 
@@ -403,6 +381,13 @@ class CombatPlayCardsScreen(BaseGameScreen):
                 (name, entity)
                 for name, entity in self._snapshot.entities_map.items()
                 if name != current_actor and is_alive(entity)
+            ]
+        elif card.target_type in (TargetType.ALL, TargetType.SPREAD):
+            # 选择一个目标作为阵营锚点（含自己），服务端会展开为该目标所在阵营的全部/散射存活角色。
+            candidates = [
+                (name, entity)
+                for name, entity in self._snapshot.entities_map.items()
+                if is_alive(entity)
             ]
         else:
             # TargetType.CARD 等暂不在本页支持选择目标，直接以空目标出牌，交由服务端处理。
@@ -421,6 +406,10 @@ class CombatPlayCardsScreen(BaseGameScreen):
         self._flow.target_candidates = candidates
         log.write("[bold yellow]── 选择目标 ─────────────────────────────────[/]")
         log.write(render_card(card))
+        if card.target_type in (TargetType.ALL, TargetType.SPREAD):
+            log.write(
+                "[dim]提示：所选目标将作为阵营锚点，实际会作用于其所在阵营的全部/散射存活角色。[/]"
+            )
         log.write("")
         for i, (_, entity) in enumerate(candidates, start=1):
             log.write("[dim]────────────────────────────[/]")

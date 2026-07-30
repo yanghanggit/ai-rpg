@@ -168,7 +168,7 @@ async def use_consumable_game(
         player_session: 由 restore_world() 反序列化的玩家会话。
         actor: 使用消耗品的角色全名（如 旅行者.无名氏）。
         item: 要使用的消耗品名称（须存在于该角色 InventoryComponent 中）。
-        targets: 目标名称列表，可为空；SELF_ONLY/ENEMY_ALL 时系统自动覆盖。
+        targets: 目标名称列表；SELF 时可省略，ALL/SPREAD 时需提供恰好 1 个目标作为阵营锚点（服务端会自动展开为该目标所在阵营全部/散射角色）。
         save_dir: 新存档写入目录。
 
     Returns:

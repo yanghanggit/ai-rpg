@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
-from ..game.dbg_combat_processor import get_alive_actors_in_stage, pick_spread_targets
+from ..game.dbg_combat_processor import get_alive_actors_in_stage, resolve_targets
 from ..game.dbg_combat_processor import compute_character_stats
 from ..models import (
     PlayCardsAction,
@@ -17,7 +17,6 @@ from ..models import (
     CharacterStats,
     PartyMemberComponent,
     Card,
-    TargetType,
     StatusEffect,
     StatusEffectsComponent,
 )
@@ -108,7 +107,7 @@ def _generate_monster_decision_prompt(
 ## 决策建议
 
 - 行动序列严格顺序执行，排在你前面的角色已出手，其目标可能已死亡
-- targets 从"场上存活对手"中选全名，可多选，可为空列表
+- targets 从"场上存活对手"中选全名；SELF 时可省略；其余类型（SINGLE/ALL/SPREAD）须提供恰好 1 个目标全名：SINGLE 时即为该目标本身，ALL/SPREAD 时该目标作为阵营锚点，系统会自动展开为其所在阵营的全部/散射角色
 - 若所有手牌均无法执行（如全部封印），可选择跳过出牌（pass_turn: true），此时 card_name/targets 可省略
 
 ## 输出 JSON
@@ -117,7 +116,7 @@ def _generate_monster_decision_prompt(
 {{
   "pass_turn": false,
   "card_name": "从手牌中选择一张卡牌的名称（必须是以下之一：{card_names_json}）",
-  "targets": ["目标全名列表，可为 []"]
+  "targets": ["目标全名列表，SELF 时可为 []，其余类型须恰好 1 个元素"]
 }}
 ```
 pass_turn 为 true 时表示跳过出牌，其他字段可省略"""
@@ -380,35 +379,20 @@ class MonsterPrePlaySystem(ReactiveProcessor):
             entity.replace(PassTurnAction, entity.name)
             return
 
-        # 根据 target_type 解析出牌目标
-        alive_actors = get_alive_actors_in_stage(self._game, entity)
-        alive_names = {a.name for a in alive_actors}
-
-        # 根据卡牌的 target_type 解析出牌目标
-        match selected_card.target_type:
-            case TargetType.ENEMY_ALL:
-                # 自动填充所有存活的远征队成员（对怪物来说"敌方"= PartyMember）
-                valid_targets = [
-                    a.name for a in alive_actors if a.has(PartyMemberComponent)
-                ]
-            case TargetType.ENEMY_SPREAD:
-                # 对全体存活远征队成员进行散射攻击（对怪物来说"敌方"= PartyMember）
-                party_members = [a for a in alive_actors if a.has(PartyMemberComponent)]
-                valid_targets = [
-                    e.name
-                    for e in pick_spread_targets(party_members, selected_card.hit_count)
-                ]
-            case TargetType.SELF_ONLY:
-                # 仅作用于施法者自身
-                valid_targets = [entity.name]
-            case _:
-                # SINGLE / ALLY_ALL — 过滤掉不存在的目标名
-                valid_targets = [t for t in decision.targets if t in alive_names]
-                if len(valid_targets) != len(decision.targets):
-                    logger.warning(
-                        f"MonsterPrePlaySystem: [{entity.name}] 过滤无效目标 "
-                        f"{set(decision.targets) - alive_names}"
-                    )
+        # 根据 target_type 解析出牌目标（与玩家出牌走同一套 resolve_targets 逻辑，避免重复实现）
+        valid_targets, resolve_err = resolve_targets(
+            selected_card.target_type,
+            selected_card.hit_count,
+            entity,
+            decision.targets,
+            self._game,
+        )
+        if resolve_err:
+            logger.warning(
+                f"MonsterPrePlaySystem: [{entity.name}] 目标解析失败：{resolve_err}，执行过牌"
+            )
+            entity.replace(PassTurnAction, entity.name)
+            return
 
         # 替换 PlayCardsAction，填入真实卡牌和目标
         entity.replace(

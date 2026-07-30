@@ -24,11 +24,10 @@ from ..models import (
 
 
 TARGET_MAP: Final[Dict[str, str]] = {
-    "self_only": "己方",
+    "self": "仅自身",
     "single": "单体",
-    "enemy_all": "全体敌方",
-    "enemy_spread": "散射敌方",
-    "ally_all": "全体友方",
+    "all": "阵营全体",
+    "spread": "阵营散射",
 }
 
 # 状态效果阶段标签；键为 PhaseType 的字符串值。

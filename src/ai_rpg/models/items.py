@@ -74,7 +74,7 @@ class ConsumableItem(Item):
     type: Literal[ItemType.CONSUMABLE_ITEM] = Field(
         default=ItemType.CONSUMABLE_ITEM, frozen=True
     )
-    target_type: TargetType = TargetType.SELF_ONLY  # 使用目标类型，默认仅作用于自身
+    target_type: TargetType = TargetType.SELF  # 使用目标类型，默认仅作用于自身
     affixes: List[str] = (
         []
     )  # 延迟词缀列表；格式"[名称]:触发倾向描述"（如"[燃烧]:可能引发持续扣血"）；使用后独立推理生成 StatusEffect；无持续效果时输出 []

@@ -299,17 +299,19 @@ def get_alive_monsters_in_stage(
 
 
 #################################################################################################################################################
-def pick_spread_targets(enemies: List[Entity], hit_count: int) -> List[Entity]:
-    """按 hit_count 与候选敌人数量的关系，选取"散射"命中列表（ENEMY_SPREAD 专用）。"""
-    if not enemies:
+def pick_spread_targets(camp_members: List[Entity], hit_count: int) -> List[Entity]:
+    """按 hit_count 与候选阵营成员数量的关系，选取"散射"命中列表（SPREAD 专用）。"""
+    if not camp_members:
         return []
 
-    if hit_count > len(enemies):
-        assigned = list(enemies) + random.choices(enemies, k=hit_count - len(enemies))
+    if hit_count > len(camp_members):
+        assigned = list(camp_members) + random.choices(
+            camp_members, k=hit_count - len(camp_members)
+        )
         random.shuffle(assigned)
         return assigned
 
-    return random.choices(enemies, k=hit_count)
+    return random.choices(camp_members, k=hit_count)
 
 
 #################################################################################################################################################
@@ -322,14 +324,28 @@ def resolve_targets(
 ) -> tuple[List[str], str]:
     """根据 target_type 解析并验证目标。"""
 
-    is_actor_ally = actor_entity.has(PartyMemberComponent)
-
-    def _get_enemies() -> List[Entity]:
-        return (
-            get_alive_monsters_in_stage(actor_entity, dbg_game)
-            if is_actor_ally
-            else get_alive_party_members_in_stage(actor_entity, dbg_game)
-        )
+    def _resolve_camp_from_anchor(label: str) -> tuple[List[Entity], str]:
+        """校验 passed_targets 恰好 1 个锚点目标，并展开为该锚点所在阵营的全体存活角色。"""
+        if len(passed_targets) != 1:
+            return (
+                [],
+                f"{label} 目标数量必须为 1（作为阵营锚点），实际收到 {len(passed_targets)} 个",
+            )
+        alive_map = {
+            e.name: e for e in get_alive_actors_in_stage(dbg_game, actor_entity)
+        }
+        anchor_name = passed_targets[0]
+        anchor_entity = alive_map.get(anchor_name)
+        if anchor_entity is None:
+            return (
+                [],
+                f"目标 '{anchor_name}' 不在当前场景存活角色列表中: {sorted(alive_map)}",
+            )
+        if anchor_entity.has(PartyMemberComponent):
+            return get_alive_party_members_in_stage(anchor_entity, dbg_game), ""
+        if anchor_entity.has(MonsterComponent):
+            return get_alive_monsters_in_stage(anchor_entity, dbg_game), ""
+        return [], f"目标 '{anchor_name}' 不属于任何可识别阵营"
 
     match target_type:
         case TargetType.SINGLE:
@@ -348,20 +364,24 @@ def resolve_targets(
                 )
             return list(passed_targets), ""
 
-        case TargetType.ENEMY_ALL:
-            return [e.name for e in _get_enemies()], ""
+        case TargetType.ALL:
+            camp_members, err = _resolve_camp_from_anchor("ALL")
+            if err:
+                return [], err
+            if not camp_members:
+                return [], "ALL：锚点所在阵营当前无存活角色"
+            return [e.name for e in camp_members], ""
 
-        case TargetType.ENEMY_SPREAD:
-            enemies = _get_enemies()
-            if not enemies:
-                return [], "ENEMY_SPREAD：场上无存活敌方"
-            return [e.name for e in pick_spread_targets(enemies, hit_count)], ""
+        case TargetType.SPREAD:
+            camp_members, err = _resolve_camp_from_anchor("SPREAD")
+            if err:
+                return [], err
+            if not camp_members:
+                return [], "SPREAD：锚点所在阵营当前无存活角色"
+            return [e.name for e in pick_spread_targets(camp_members, hit_count)], ""
 
-        case TargetType.SELF_ONLY:
+        case TargetType.SELF:
             return [actor_entity.name], ""
-
-        case TargetType.ALLY_ALL:
-            return list(passed_targets), ""
 
 
 #################################################################################################################################################

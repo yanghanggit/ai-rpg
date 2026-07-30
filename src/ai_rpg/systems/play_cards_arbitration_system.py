@@ -96,7 +96,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             RoundStatsComponent
         ), f"出牌实体 {actor_entity.name} 缺少 RoundStatsComponent！"
 
-        # dict.fromkeys 去重并保序（ENEMY_SPREAD 的 targets 长度=hit_count，可能含重复名）
+        # dict.fromkeys 去重并保序（SPREAD 的 targets 长度=hit_count，可能含重复名）
         # 获取目标实体的当前属性、仲裁阶段状态效果、装备附加属性，用于生成仲裁提示
         target_stats = collect_target_character_stats(
             self._game, play_cards_action.targets

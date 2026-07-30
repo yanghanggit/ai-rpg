@@ -23,7 +23,7 @@ class DeckCardEntry(BaseModel):
     damage_dealt: int
     energy_delta: int = 0
     hit_count: int = 1
-    target_type: str = TargetType.ENEMY_SINGLE
+    target_type: str = TargetType.SINGLE
 
 
 #######################################################################################################################################
@@ -57,10 +57,9 @@ def build_card_field_description() -> str:
 
 | target_type | 含义 |
 |---|---|
-| `{TargetType.ENEMY_SINGLE}` | 攻击单体敌方（默认） |
+| `{TargetType.SINGLE}` | 作用于单个存活角色（可为敌方造成伤害，也可为友方治疗/增益，依卡牌效果自行选择合理目标，默认） |
 | `{TargetType.ENEMY_ALL}` | 攻击全体敌方 |
 | `{TargetType.ENEMY_SPREAD}` | 对全体存活敌方散射攻击：hit_count 大于敌方数量时保证每个敌人至少命中一次，多余次数随机；否则纯随机（可能重复或遗漏） |
-| `{TargetType.ALLY_SINGLE}` | 治疗/增益单体友方 |
 | `{TargetType.ALLY_ALL}` | 治疗/增益全体友方 |
 | `{TargetType.SELF_ONLY}` | 仅作用于自身（防御、自损诅咒等） |"""
 
@@ -137,7 +136,7 @@ def generate_deck_prompt(
       "damage_dealt": 0,
       "energy_delta": 0,
       "hit_count": 1,
-      "target_type": "enemy_single"
+      "target_type": "single"
     }}
   ]
 }}

@@ -3,7 +3,7 @@ from .messages import ContextMessage
 from pydantic import BaseModel
 from .dungeon import Dungeon
 from .serialization import EntitySerialization
-from .blue_print import Blueprint
+from .blueprint import Blueprint
 
 
 ###############################################################################################################################################

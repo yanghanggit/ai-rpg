@@ -144,7 +144,7 @@ def _generate_inject_cards_prompt(
           "damage_dealt": 2,
           "energy_delta": 0,
           "hit_count": 1,
-          "target_type": "{TargetType.ENEMY_SINGLE}"
+          "target_type": "{TargetType.SINGLE}"
         }}
       ]
     }}

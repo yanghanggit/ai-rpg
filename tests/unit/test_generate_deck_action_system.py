@@ -22,7 +22,7 @@ from src.ai_rpg.systems.generate_deck_action_system import (
 
 
 def _card_json(
-    name: str = "攻击", target_type: str = TargetType.ENEMY_SINGLE
+    name: str = "攻击", target_type: str = TargetType.SINGLE
 ) -> Dict[str, Any]:
     return {
         "name": name,

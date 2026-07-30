@@ -60,6 +60,27 @@ def test_activate_use_gear_rejects_when_target_energy_less_than_cost() -> None:
     player.replace.assert_not_called()
 
 
+def test_activate_use_gear_rejects_non_ally_target() -> None:
+    game = _make_game(current_actor="player", player_name="player")
+    gear = GearItem(name="装备.测试", description="测试装备", cost=1)
+    player = game.get_player_entity.return_value
+    player.get.return_value = SimpleNamespace(items=[gear])
+    target = MagicMock()
+    target.name = "怪物.测试"
+    target.has.return_value = False
+    game.get_entity_by_name.return_value = target
+
+    with patch(
+        "src.ai_rpg.services.dungeon_combat_actions.resolve_targets",
+        return_value=(["怪物.测试"], ""),
+    ):
+        ok, msg = activate_use_gear(game, "装备.测试", ["怪物.测试"])
+
+    assert ok is False
+    assert "只能用于友方目标" in msg
+    player.replace.assert_not_called()
+
+
 def test_activate_use_gear_activates_action_when_target_energy_covers_cost() -> None:
     game = _make_game(current_actor="player", player_name="player")
     gear = GearItem(name="装备.测试", description="测试装备", cost=2)

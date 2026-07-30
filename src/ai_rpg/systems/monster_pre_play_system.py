@@ -402,7 +402,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
                 # 仅作用于施法者自身
                 valid_targets = [entity.name]
             case _:
-                # ENEMY_SINGLE / ALLY_* — 过滤掉不存在的目标名
+                # SINGLE / ALLY_ALL — 过滤掉不存在的目标名
                 valid_targets = [t for t in decision.targets if t in alive_names]
                 if len(valid_targets) != len(decision.targets):
                     logger.warning(

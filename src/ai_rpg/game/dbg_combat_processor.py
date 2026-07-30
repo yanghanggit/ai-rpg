@@ -332,17 +332,19 @@ def resolve_targets(
         )
 
     match target_type:
-        case TargetType.ENEMY_SINGLE:
-            enemy_names = {e.name for e in _get_enemies()}
+        case TargetType.SINGLE:
+            alive_names = {
+                e.name for e in get_alive_actors_in_stage(dbg_game, actor_entity)
+            }
             if len(passed_targets) != 1:
                 return (
                     [],
-                    f"ENEMY_SINGLE 目标数量必须为 1，实际收到 {len(passed_targets)} 个",
+                    f"SINGLE 目标数量必须为 1，实际收到 {len(passed_targets)} 个",
                 )
-            if passed_targets[0] not in enemy_names:
+            if passed_targets[0] not in alive_names:
                 return (
                     [],
-                    f"目标 '{passed_targets[0]}' 不在存活敌方列表中: {sorted(enemy_names)}",
+                    f"目标 '{passed_targets[0]}' 不在当前场景存活角色列表中: {sorted(alive_names)}",
                 )
             return list(passed_targets), ""
 
@@ -358,7 +360,7 @@ def resolve_targets(
         case TargetType.SELF_ONLY:
             return [actor_entity.name], ""
 
-        case _:  # ALLY_SINGLE / ALLY_ALL — 不限制目标
+        case TargetType.ALLY_ALL:
             return list(passed_targets), ""
 
 

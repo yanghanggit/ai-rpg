@@ -6,7 +6,7 @@ from .dungeon import Dungeon, AnyDungeonRoom
 from .player_session import PlayerSession
 from .serialization import EntitySerialization
 from .task import TaskRecord
-from .blue_print import Blueprint
+from .blueprint import Blueprint
 
 
 @final

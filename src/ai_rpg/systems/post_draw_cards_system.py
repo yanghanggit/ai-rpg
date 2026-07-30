@@ -44,7 +44,7 @@ class AdjustedCardEntry(BaseModel):
     damage_dealt: int
     energy_delta: int = 0
     hit_count: int = 1
-    target_type: str = TargetType.ENEMY_SINGLE
+    target_type: str = TargetType.SINGLE
 
 
 #######################################################################################################################################
@@ -119,7 +119,7 @@ def _generate_adjust_prompt(
       "damage_dealt": 0,
       "energy_delta": 0,
       "hit_count": 1,
-      "target_type": "enemy_single"
+      "target_type": "single"
     }}
   ]
 }}

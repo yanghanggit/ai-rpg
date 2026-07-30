@@ -185,7 +185,7 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
                 name="消耗品.沙蝎毒液瓶",
                 description="一个封口严密的小玻璃瓶，瓶内液体呈深黄色，偶尔能看到细小气泡浮起。标签已模糊，隐约能辨认出一个骷髅图案。向单个敌人投掷可造成毒性伤害。",
                 count=2,
-                target_type=TargetType.ENEMY_SINGLE,
+                target_type=TargetType.SINGLE,
             ),
             MaterialItem(
                 name="材料.沙漠草叶",

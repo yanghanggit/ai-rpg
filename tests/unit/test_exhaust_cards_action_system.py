@@ -31,7 +31,7 @@ def _make_card(name: str, source: str, *, exhaust: bool = False) -> Card:
         exhaust=exhaust,
         damage_dealt=1,
         hit_count=1,
-        target_type=TargetType.ENEMY_SINGLE,
+        target_type=TargetType.SINGLE,
         source=source,
     )
 

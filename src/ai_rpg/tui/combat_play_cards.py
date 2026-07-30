@@ -398,20 +398,11 @@ class CombatPlayCardsScreen(BaseGameScreen):
             self._enter_confirm(log)
             return
 
-        if card.target_type == TargetType.ENEMY_SINGLE:
+        if card.target_type == TargetType.SINGLE:
             candidates = [
                 (name, entity)
                 for name, entity in self._snapshot.entities_map.items()
-                if classify_faction(entity) not in ("unknown", actor_faction)
-                and is_alive(entity)
-            ]
-        elif card.target_type == TargetType.ALLY_SINGLE:
-            candidates = [
-                (name, entity)
-                for name, entity in self._snapshot.entities_map.items()
-                if name != current_actor
-                and classify_faction(entity) == actor_faction
-                and is_alive(entity)
+                if name != current_actor and is_alive(entity)
             ]
         else:
             # TargetType.CARD 等暂不在本页支持选择目标，直接以空目标出牌，交由服务端处理。

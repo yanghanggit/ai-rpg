@@ -55,9 +55,8 @@ def _build_craft_prompt(materials: List[MaterialItem]) -> str:
 - **description**：物品描述，30-60字，说明外观、气味或使用感受，体现材料的来源与效果想象
 - **target_type**：目标类型，从以下选项中选择一个：{target_type_options}
   - self_only：仅作用于自身（恢复、强化自身）
-  - ally_single：作用于单个友方（治疗、辅助）
+  - single：作用于单个角色（可为友方治疗/辅助，也可为敌方造成伤害/削弱，依材料创意与效果自行判断）
   - ally_all：作用于全体友方
-  - enemy_single：作用于单个敌方（伤害、削弱）
   - enemy_all：作用于全体敌方
   - enemy_spread：对全体敌方散射攻击（命中次数>敌人数时保底每人至少一次，其余随机）
 - **affixes**：延迟词缀列表，格式 `[名称]:触发倾向描述`，使用后独立推理生成持续状态效果（如 `[燃烧]:可能引发持续扣血`）；凡涉及"下回合/持续N回合"等跨回合影响的效果必须放在这里；无持续效果时输出 []

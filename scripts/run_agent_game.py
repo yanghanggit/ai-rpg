@@ -612,7 +612,7 @@ def use_consumable(
     "--targets",
     multiple=True,
     default=(),
-    help="目标角色名，可重复使用（如 --targets 盟友.云音）；ALLY_SINGLE 时指定一个盟友目标",
+    help="目标角色名，可重复使用（如 --targets 盟友.云音）；SINGLE 时指定一个目标，敌我皆可",
 )
 def use_gear(snapshot: str, actor: str, item: str, targets: tuple[str, ...]) -> None:
     """从存档复位，让指定角色在战斗中装备背包内的 GearItem，并写入新存档。

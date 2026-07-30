@@ -433,9 +433,9 @@ def activate_use_gear(
         logger.error(msg)
         return False, msg
 
-    # 装备固定作用于单一友方目标，确保目标数量和阵营符合装备要求。
+    # 装备固定作用于单一目标，先按 SINGLE 规则解析（不限阵营）。
     resolved_targets, resolve_err = resolve_targets(
-        TargetType.ALLY_SINGLE, 1, player_entity, targets, dbg_game
+        TargetType.SINGLE, 1, player_entity, targets, dbg_game
     )
     if resolve_err:
         logger.error(f"activate_use_gear: {resolve_err}")
@@ -452,6 +452,12 @@ def activate_use_gear(
     assert (
         target_entity is not None
     ), f"activate_use_gear: 无法找到目标实体 {resolved_targets[0]}"
+
+    # 装备只能作用于友方目标，resolve_targets 不再限制阵营，此处显式校验。
+    if not target_entity.has(PartyMemberComponent):
+        msg = f"装备使用失败：目标 '{target_entity.name}' 不是友方角色，装备只能用于友方目标"
+        logger.error(msg)
+        return False, msg
 
     # 检查目标实体的当前能量是否足以支付装备的消耗，如果不足则返回错误。
     current_energy = get_energy(target_entity)

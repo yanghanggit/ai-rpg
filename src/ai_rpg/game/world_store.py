@@ -23,16 +23,12 @@
 
 import datetime
 import shutil
-from typing import Optional
+from typing import Optional, Tuple
 import zipfile
 from pathlib import Path
-
-from ..models.messages import get_buffer_string
+from ..models import get_buffer_string, PlayerSession, Dungeon, World
 from loguru import logger
-
 from .config import WORLDS_DIR
-from ..models import PlayerSession
-from ..models import Dungeon, World
 
 
 ###############################################################################################################################################
@@ -66,14 +62,20 @@ def archive_world(
     Returns:
         保存成功返回 True，失败返回 False
     """
+
+    # 如果未指定 save_dir，则根据玩家名、游戏名和时间戳生成目录
     if save_dir is None:
         username = player_session.name
         game = str(world.blueprint.name)
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         save_dir = worlds_dir / username / game / timestamp
+
+    # 创建存档目录
     save_dir.mkdir(parents=True, exist_ok=True)
 
     try:
+
+        # 将 world 和 player_session 序列化为 JSON
         world_json = world.model_dump_json()
         player_session_json = player_session.model_dump_json()
 
@@ -113,8 +115,14 @@ def archive_world(
 
 ###############################################################################################################################################
 def dump_world_snapshot(debug_dir: Path, world: World) -> None:
+
+    # 写entities/目录
     dump_entities(debug_dir, world)
+
+    # 写contexts/目录
     dump_agent_contexts(debug_dir, world)
+
+    # 写dungeon/目录
     dump_dungeon(debug_dir, world.dungeon)
 
 
@@ -122,14 +130,20 @@ def dump_world_snapshot(debug_dir: Path, world: World) -> None:
 def dump_agent_contexts(
     debug_dir: Path, world: World, should_write_buffer_string: bool = True
 ) -> None:
+
+    # 写contexts/目录
     context_dir = debug_dir / "contexts"
     context_dir.mkdir(parents=True, exist_ok=True)
 
+    # 写每个 agent 的上下文 JSON 和 buffer.txt
     for agent_name, agent_context in world.agents_context.items():
+
+        # 写 agent_name.json
         (context_dir / f"{agent_name}.json").write_text(
             agent_context.model_dump_json(), encoding="utf-8"
         )
 
+        # 写 agent_name_buffer.txt
         if should_write_buffer_string:
             buffer_str = get_buffer_string(
                 agent_context.context,
@@ -145,11 +159,16 @@ def dump_agent_contexts(
 
 ###############################################################################################################################################
 def dump_entities(debug_dir: Path, world: World) -> None:
+
+    # 写entities/目录
     entities_dir = debug_dir / "entities"
     if entities_dir.exists():
         shutil.rmtree(entities_dir)
+
+    # 创建 entities/ 目录
     entities_dir.mkdir(parents=True, exist_ok=True)
 
+    # 写每个实体的 JSON 文件
     for entity_serialization in world.entities_serialization:
         path = entities_dir / f"{entity_serialization.name}.json"
         path.write_text(entity_serialization.model_dump_json(), encoding="utf-8")
@@ -157,6 +176,8 @@ def dump_entities(debug_dir: Path, world: World) -> None:
 
 ###############################################################################################################################################
 def dump_dungeon(debug_dir: Path, dungeon: Dungeon) -> None:
+
+    # 写dungeon/目录
     dungeon_dir = debug_dir / "dungeon"
     dungeon_dir.mkdir(parents=True, exist_ok=True)
     (dungeon_dir / f"{dungeon.name}.json").write_text(
@@ -165,7 +186,7 @@ def dump_dungeon(debug_dir: Path, dungeon: Dungeon) -> None:
 
 
 ###############################################################################################################################################
-def restore_world(snapshot_dir: Path) -> tuple[World, PlayerSession]:
+def restore_world(snapshot_dir: Path) -> Tuple[World, PlayerSession]:
     """从存档目录中读取并还原 World 与 PlayerSession。
 
     Args:
@@ -178,18 +199,28 @@ def restore_world(snapshot_dir: Path) -> tuple[World, PlayerSession]:
     Raises:
         FileNotFoundError: 若 world.json 或 player_session.json 不存在
     """
+
+    # 检查 snapshot_dir 是否存在
     world_path = snapshot_dir / "world.json"
     session_path = snapshot_dir / "player_session.json"
 
+    # 检查文件是否存在
     if not world_path.exists():
         raise FileNotFoundError(f"找不到 world.json: {world_path}")
+
+    # 检查 player_session.json 是否存在
     if not session_path.exists():
         raise FileNotFoundError(f"找不到 player_session.json: {session_path}")
 
+    # 读取并反序列化 World 与 PlayerSession
     world = World.model_validate_json(world_path.read_text(encoding="utf-8"))
+
+    # 读取并反序列化 PlayerSession
     player_session = PlayerSession.model_validate_json(
         session_path.read_text(encoding="utf-8")
     )
+
+    # 返回
     logger.debug(f"世界已还原: {snapshot_dir}")
     return world, player_session
 

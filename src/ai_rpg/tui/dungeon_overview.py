@@ -155,7 +155,7 @@ class DungeonOverviewScreen(BaseGameScreen):
                 "[bold yellow]── 可用副本 ──────────────────────────────────────[/]"
             )
             for i, dungeon in enumerate(dungeons, start=1):
-                preview = dungeon.ecology[:40].replace("\n", " ")
+                preview = dungeon.premise[:40].replace("\n", " ")
                 room_count = len(dungeon.rooms)
                 log.write(
                     f"  [bold]{i}.[/] [bold cyan]{display_name(dungeon.name)}[/]"
@@ -175,7 +175,7 @@ class DungeonOverviewScreen(BaseGameScreen):
         log.write(
             f"[bold yellow]── 副本：{display_name(dungeon.name)} ──────────────────────────────────────[/]"
         )
-        log.write(f"  [bold]生态环境：[/] {dungeon.ecology}")
+        log.write(f"  [bold]整体前提：[/] {dungeon.premise}")
         log.write(f"  [bold]房间数：[/]   {len(dungeon.rooms)}")
         log.write("")
 

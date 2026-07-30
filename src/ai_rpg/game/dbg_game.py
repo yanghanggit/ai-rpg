@@ -8,7 +8,7 @@ from typing import Final, List, Optional
 from loguru import logger
 from .rpg_game_pipeline_manager import RPGGameProcessPipeline
 from .rpg_game import RPGGame
-from .dbg_game_process_pipeline import (
+from .dbg_game_pipelines import (
     create_home_pipeline,
     create_combat_pipeline,
     create_dungeon_generate_pipeline,

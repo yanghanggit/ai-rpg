@@ -172,7 +172,7 @@ class AssembleDungeonSystem(ReactiveProcessor):
 
         dungeon = Dungeon(
             name=blueprint.dungeon_name,
-            ecology=blueprint.ecology,
+            premise=blueprint.premise,
             rooms=rooms,
         )
         logger.info(

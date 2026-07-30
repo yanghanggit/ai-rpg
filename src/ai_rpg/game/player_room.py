@@ -7,14 +7,6 @@ from ..models import PlayerSession
 class PlayerRoom:
     """
     游戏房间类
-
-    为单个玩家提供独立的游戏空间，管理玩家的游戏实例和会话状态。
-
-    Attributes:
-        _username: 房间所属玩家的用户名（只读）
-        _dbg_game: DBG 游戏实例（可选）
-        _player_session: 玩家会话实例（可选）
-        _lock: 每玩家异步互斥锁，防止同一玩家的并发请求产生状态竞争
     """
 
     def __init__(self, username: str) -> None:

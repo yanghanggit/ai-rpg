@@ -34,7 +34,7 @@ def _make_game(player_name: str = "player", actor_name: str = "hero") -> DBGGame
         entity_counter=0,
         entities_serialization=[],
         agents_context={},
-        dungeon=Dungeon(name="dungeon_alpha", rooms=[], ecology=""),
+        dungeon=Dungeon(name="dungeon_alpha", rooms=[], premise=""),
         blueprint=blueprint,
     )
     session = PlayerSession(name=player_name, actor=actor_name, game="test")

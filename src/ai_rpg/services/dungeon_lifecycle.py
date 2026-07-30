@@ -442,7 +442,7 @@ def exit_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> None:
             dbg_game.destroy_entity(destroy_stage_entity)
 
     # 5 重置地下城数据
-    dbg_game._world.dungeon = Dungeon(name="", rooms=[], ecology="")
+    dbg_game._world.dungeon = Dungeon(name="", rooms=[], premise="")
     logger.debug("[return_home] 地下城实体清理完成，dungeon 已重置")
 
     # 6. 恢复所有远征队成员的战斗状态

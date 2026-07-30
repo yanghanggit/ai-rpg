@@ -181,7 +181,7 @@ class MonsterTurnAction(Component):
 # ── 地下城生成流程（Step 1-4）内部衔接 Action ──────────────────────────────────────────────────────────
 # 触发链（全部在同一次 dungeon_generate_pipeline.process() 内顺序完成）：
 #   GenerateDungeonAction
-#     → GenerateDungeonEcologySystem  (Step 1) → GenerateDungeonStagesAction
+#     → GenerateDungeonPremiseSystem  (Step 1) → GenerateDungeonStagesAction
 #     → GenerateDungeonStagesSystem   (Step 2) → GenerateDungeonActorsAction
 #     → GenerateDungeonActorsSystem   (Step 3) → AssembleDungeonAction
 #     → AssembleDungeonSystem         (Step 4) → IllustrateDungeonAction
@@ -191,7 +191,7 @@ class MonsterTurnAction(Component):
 @register_action_component_type
 @register_component_type
 class GenerateDungeonAction(Component):
-    """Step 0 → 触发地下城生成流程入口（GenerateDungeonEcologySystem）。
+    """Step 0 → 触发地下城生成流程入口（GenerateDungeonPremiseSystem）。
 
     由 home_actions.activate_generate_dungeon() 在家园状态下添加到玩家实体。
     """
@@ -204,9 +204,9 @@ class GenerateDungeonAction(Component):
 @register_action_component_type
 @register_component_type
 class GenerateDungeonStagesAction(Component):
-    """Step 1→2 衔接：由 GenerateDungeonEcologySystem 添加，触发 GenerateDungeonStagesSystem。
+    """Step 1→2 衔接：由 GenerateDungeonPremiseSystem 添加，触发 GenerateDungeonStagesSystem。
 
-    携带 dungeon_name 供 Step 2 定位 .dungeons/_process/{dungeon_name}_step1_ecology.json。
+    携带 dungeon_name 供 Step 2 定位 .dungeons/_process/{dungeon_name}_step1_premise.json。
     """
 
     name: str

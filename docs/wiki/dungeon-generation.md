@@ -6,15 +6,15 @@
 
 ## 流水线现状
 
-`create_dungeon_generate_pipeline` 目前只注册 Step 1–4（生态 → 场景 → 角色 → 组装）。`IllustrateDungeonActionSystem`（Step 5，插画）代码已实现，但其 import 与 `processors.add` 在该工厂函数中均被注释掉，未接入这条 pipeline——地下城生成完成后不会自动产出插画，`Dungeon`/场景数据中的图片 URL 字段会持续为空。
+`create_dungeon_generate_pipeline` 目前只注册 Step 1–4（前提 → 场景 → 角色 → 组装）。`IllustrateDungeonActionSystem`（Step 5，插画）代码已实现，但其 import 与 `processors.add` 在该工厂函数中均被注释掉，未接入这条 pipeline——地下城生成完成后不会自动产出插画，`Dungeon`/场景数据中的图片 URL 字段会持续为空。
 
 中间文件写入 `DUNGEON_PROCESS_DIR`，命名 `{地下城名}_step{N}_*.json`；成品写入 `DUNGEONS_DIR`。
 
 ---
 
-## Step 1 — 生态基底（GenerateDungeonEcologySystem）
+## Step 1 — 前提设定（GenerateDungeonPremiseSystem）
 
-一次 LLM 调用确定地下城名称、生态描述与场景数量（枚举 2/3，依地形规模判断），场景数量在此"锁定"，后续步骤严格遵循。生态描述刻意回避生物名称与威胁语气，只呈现感官环境。
+一次 LLM 调用确定地下城名称、整体前提描述与场景数量（枚举 2/3，依规模判断），场景数量在此锁定，后续步骤严格遵循。前提描述刻意回避具体角色身份/阵营名称与威胁评价性词汇，只呈现感官与情境层面的直观细节。
 
 ## Step 2 — 场景设计（GenerateDungeonStagesSystem）
 

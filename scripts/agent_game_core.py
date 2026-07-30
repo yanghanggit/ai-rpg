@@ -59,7 +59,7 @@ async def create_and_initialize_game(
         logger.warning(
             f"地下城文件未找到（dungeon_name={dungeon_name!r}），使用空地下城占位"
         )
-        dungeon = Dungeon(name="", rooms=[], ecology="")
+        dungeon = Dungeon(name="", rooms=[], premise="")
 
     world_data = World(
         entity_counter=1000,

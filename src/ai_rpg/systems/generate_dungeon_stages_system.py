@@ -12,7 +12,7 @@ from ..models import (
     GenerateDungeonStagesAction,
 )
 from .dungeon_generation import (
-    DungeonEcologyData,
+    DungeonPremiseData,
     DungeonStageData,
     DungeonStagesData,
     READ_STAGES_FILE_TOOL,
@@ -22,14 +22,14 @@ from .dungeon_generation import (
 
 ####################################################################################################################################
 def _build_dungeon_stages_prompt(
-    dungeon_name: str, ecology: str, total_stages: int
+    dungeon_name: str, premise: str, total_stages: int
 ) -> str:
     return f"""# 任务：为地下城创作 {total_stages} 个战斗场景
 
 ## 地下城信息
 
 - **地下城名称**：{dungeon_name}
-- **整体生态**：{ecology}
+- **整体前提**：{premise}
 
 共需生成 {total_stages} 个战斗场景（含入口区域与最深处）。
 
@@ -73,17 +73,17 @@ class GenerateDungeonStagesSystem(ReactiveProcessor):
         )
 
         # 读取 Step 1 中间文件
-        ecology_file_path: Path = (
-            DUNGEON_PROCESS_DIR / f"{dungeon_name}_step1_ecology.json"
+        premise_file_path: Path = (
+            DUNGEON_PROCESS_DIR / f"{dungeon_name}_step1_premise.json"
         )
         try:
-            ecology_file = DungeonEcologyData.model_validate_json(
-                ecology_file_path.read_text(encoding="utf-8")
+            premise_file = DungeonPremiseData.model_validate_json(
+                premise_file_path.read_text(encoding="utf-8")
             )
         except Exception as e:
             logger.error(
                 f"[GenerateDungeonStagesSystem] 读取 Step 1 文件失败: {e}\n"
-                f"  path: {ecology_file_path}"
+                f"  path: {premise_file_path}"
             )
             return
 
@@ -94,7 +94,7 @@ class GenerateDungeonStagesSystem(ReactiveProcessor):
             stage_items = [DungeonStageData(**s) for s in stages]
             stages_file = DungeonStagesData(
                 dungeon_name=dungeon_name,
-                ecology=ecology_file.ecology,
+                premise=premise_file.premise,
                 stages=stage_items,
             )
             file_path: Path = DUNGEON_PROCESS_DIR / f"{dungeon_name}_step2_stages.json"
@@ -128,13 +128,13 @@ class GenerateDungeonStagesSystem(ReactiveProcessor):
         success = await agent_loop(
             name=entity.name,
             prompt=_build_dungeon_stages_prompt(
-                dungeon_name=ecology_file.dungeon_name,
-                ecology=ecology_file.ecology,
-                total_stages=ecology_file.stage_count,
+                dungeon_name=premise_file.dungeon_name,
+                premise=premise_file.premise,
+                total_stages=premise_file.stage_count,
             ),
             context=self._game.get_agent_context(entity).context,
             tools=[
-                build_stages_tool(ecology_file.stage_count),
+                build_stages_tool(premise_file.stage_count),
                 READ_STAGES_FILE_TOOL,
             ],
             handlers={

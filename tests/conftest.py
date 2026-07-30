@@ -44,7 +44,7 @@ def sample_game() -> Any:
         world_systems=[],
         storage_entity="世界储物箱",
     )
-    dungeon = Dungeon(name="", rooms=[], ecology="")
+    dungeon = Dungeon(name="", rooms=[], premise="")
     world = World(
         entity_counter=1000,
         entities_serialization=[],

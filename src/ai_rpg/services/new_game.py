@@ -82,7 +82,7 @@ async def new_game(
         entity_counter=1000,
         entities_serialization=[],
         agents_context={},
-        dungeon=Dungeon(name="", rooms=[], ecology=""),
+        dungeon=Dungeon(name="", rooms=[], premise=""),
         blueprint=blueprint_data,
     )
 

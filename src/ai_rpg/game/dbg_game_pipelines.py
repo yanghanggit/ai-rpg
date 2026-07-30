@@ -242,7 +242,7 @@ def create_dungeon_generate_pipeline(
 
     ### 不这样就循环引用
     from .dbg_game import DBGGame
-    from ..systems.generate_dungeon_ecology_system import GenerateDungeonEcologySystem
+    from ..systems.generate_dungeon_premise_system import GenerateDungeonPremiseSystem
     from ..systems.generate_dungeon_stages_system import GenerateDungeonStagesSystem
     from ..systems.generate_dungeon_actors_system import GenerateDungeonActorsSystem
     from ..systems.assemble_dungeon_system import AssembleDungeonSystem
@@ -260,7 +260,7 @@ def create_dungeon_generate_pipeline(
     processors.add(PrologueSystem(dbg_game))
 
     # 地下城生成流程（Steps 1-4，在同一次 pipeline.process() 内顺序触发）
-    processors.add(GenerateDungeonEcologySystem(dbg_game))  # Step 1: 生态环境生成
+    processors.add(GenerateDungeonPremiseSystem(dbg_game))  # Step 1: 前提设定生成
     processors.add(GenerateDungeonStagesSystem(dbg_game))  # Step 2: 场景批量生成
     processors.add(GenerateDungeonActorsSystem(dbg_game))  # Step 3: 怪物并发生成
     processors.add(AssembleDungeonSystem(dbg_game))  # Step 4: 实体树组装

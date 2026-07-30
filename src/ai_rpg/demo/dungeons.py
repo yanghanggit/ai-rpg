@@ -67,7 +67,7 @@ def create_sand_jackal_ruins_dungeon() -> Dungeon:
 
     return Dungeon(
         name="地下城.沙漠残垣",
-        ecology="遗迹外缘散落的断柱与沙地交界处。松软沙土上留有大量宽爪印迹，深浅不一，部分印迹已被风沙半掩。断柱根部背风侧有浅凹，沙面压实，是沙豺白天蜷伏的痕迹。偶尔可见被咬断的小型骨骼碎片半埋在沙中。",
+        premise="遗迹外缘散落的断柱与沙地交界处。松软沙土上留有大量宽爪印迹，深浅不一，部分印迹已被风沙半掩。断柱根部背风侧有浅凹，沙面压实，是沙豺白天蜷伏的痕迹。偶尔可见被咬断的小型骨骼碎片半埋在沙中。",
         rooms=[
             CombatRoom(stage=stage_ruins_outskirts),
         ],

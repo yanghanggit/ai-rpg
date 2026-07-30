@@ -26,23 +26,23 @@ from .dungeon_generation import (
 ####################################################################################################################################
 def _build_dungeon_actor_prompt(
     dungeon_name: str,
-    ecology: str,
+    premise: str,
     stage_name: str,
     stage_profile: str,
     actor_index: int = 1,
     total_actors: int = 1,
 ) -> str:
     multi_actor_note = (
-        f"\n该场景共有 {total_actors} 种标居生物，当前为第 {actor_index} 个。\n"
+        f"\n该场景共有 {total_actors} 个怪物，当前为第 {actor_index} 个。\n"
         if total_actors > 1
         else ""
     )
-    return f"""# 任务：为场景创作一个标居怪物的设定{multi_actor_note}
+    return f"""# 任务：为场景创作一个怪物的设定{multi_actor_note}
 
 ## 所在地下城
 
 - **地下城名称**：{dungeon_name}
-- **整体生态**：{ecology}
+- **整体前提**：{premise}
 
 ## 当前场景
 
@@ -151,7 +151,7 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
                 name=f"{stage.stage_name}[{actor_idx + 1}]",
                 prompt=_build_dungeon_actor_prompt(
                     dungeon_name=stages_file.dungeon_name,
-                    ecology=stages_file.ecology,
+                    premise=stages_file.premise,
                     stage_name=stage.stage_name,
                     stage_profile=stage.profile,
                     actor_index=actor_idx + 1,
@@ -187,7 +187,7 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
 
         blueprint = DungeonBlueprint(
             dungeon_name=stages_file.dungeon_name,
-            ecology=stages_file.ecology,
+            premise=stages_file.premise,
         )
 
         for i, stage in enumerate(stages_file.stages, start=1):

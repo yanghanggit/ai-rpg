@@ -18,10 +18,6 @@ from ..models import PlayerSession
 class RPGGame(GameSession, RPGAgentContext, RPGEntityManager, RPGGamePipelineManager):
     """
     RPG游戏核心类，基于ECS架构整合游戏会话管理、实体管理和LLM处理管道
-
-    Attributes:
-        player_session: 玩家会话对象
-        world: 游戏世界对象，包含蓝图配置和运行时状态
     """
 
     def __init__(
@@ -47,11 +43,7 @@ class RPGGame(GameSession, RPGAgentContext, RPGEntityManager, RPGGamePipelineMan
     ###############################################################################################################################################
     @override
     def destroy_entity(self, entity: Entity) -> None:
-        """销毁实体并清理其LLM上下文
-
-        Args:
-            entity: 要销毁的实体对象
-        """
+        """销毁实体并清理其LLM上下文"""
         logger.debug(f"destroy_entity: {entity.name}")
         self.remove_agent_context(entity)
         return super().destroy_entity(entity)
@@ -72,11 +64,7 @@ class RPGGame(GameSession, RPGAgentContext, RPGEntityManager, RPGGamePipelineMan
 
     ###############################################################################################################################################
     def restore_from_snapshot(self) -> "RPGGame":
-        """从序列化数据中恢复游戏世界状态
-
-        Returns:
-            返回自身实例，支持链式调用
-        """
+        """从序列化数据中恢复游戏世界状态"""
         assert (
             len(self._world.entities_serialization) > 0
         ), "游戏中没有实体，不能恢复游戏"
@@ -93,11 +81,7 @@ class RPGGame(GameSession, RPGAgentContext, RPGEntityManager, RPGGamePipelineMan
 
     ###############################################################################################################################################
     def flush_entities(self) -> "RPGGame":
-        """保存当前游戏世界状态到持久化存储，并生成调试快照
-
-        Returns:
-            返回自身实例，支持链式调用
-        """
+        """保存当前游戏世界状态到持久化存储，并生成调试快照"""
         # 生成快照
         self._world.entities_serialization = self.serialize_entities(self._entities)
         return self
@@ -109,13 +93,7 @@ class RPGGame(GameSession, RPGAgentContext, RPGEntityManager, RPGGamePipelineMan
         agent_event: AnyAgentEvent,
         exclude_entities: Set[Entity] = set(),
     ) -> None:
-        """向场景中的所有存活角色和场景实体广播事件
-
-        Args:
-            entity: 参考实体，用于确定目标场景
-            agent_event: 要广播的事件消息
-            exclude_entities: 要排除的实体集合
-        """
+        """向场景中的所有存活角色和场景实体广播事件"""
         stage_entity = self.resolve_stage_entity(entity)
         assert stage_entity is not None, "stage is None, actor无所在场景是有问题的"
         if stage_entity is None:
@@ -135,12 +113,7 @@ class RPGGame(GameSession, RPGAgentContext, RPGEntityManager, RPGGamePipelineMan
         entities: Set[Entity],
         agent_event: AnyAgentEvent,
     ) -> None:
-        """向指定实体集合发送通知，并同步到玩家客户端
-
-        Args:
-            entities: 要接收通知的实体集合
-            agent_event: 要发送的事件消息
-        """
+        """向指定实体集合发送通知，并同步到玩家客户端"""
         # 正常的添加记忆。
         for entity in entities:
             self.add_human_message(entity, HumanMessage(content=agent_event.message))

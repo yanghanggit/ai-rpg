@@ -49,12 +49,12 @@ def _detect_scene_type(profile: str) -> str:
 
 
 ####################################################################################################################################
-def _build_dungeon_cover_image_prompt(dungeon_name: str, ecology: str) -> str:
+def _build_dungeon_cover_image_prompt(dungeon_name: str, premise: str) -> str:
     """构建地下城封面图片生成提示词（7+1段式，无怪物）。
 
     Args:
         dungeon_name: 地下城全名
-        ecology: 地下城整体生态描述
+        premise: 地下城整体前提描述
 
     Returns:
         适合像素艺术风格洞穴场景的封面提示词
@@ -62,7 +62,7 @@ def _build_dungeon_cover_image_prompt(dungeon_name: str, ecology: str) -> str:
     return (
         "pixel art style，side view，2D game scene illustration，"
         "dark cave dungeon entrance，"
-        f"{ecology}，"
+        f"{premise}，"
         "atmospheric depth，layered rock formations，"
         "bioluminescent minerals glowing faintly，"
         "damp stone floor with scattered debris，"
@@ -74,12 +74,12 @@ def _build_dungeon_cover_image_prompt(dungeon_name: str, ecology: str) -> str:
 
 
 ####################################################################################################################################
-def _build_room_image_prompt(dungeon_name: str, ecology: str, room: DungeonRoom) -> str:
+def _build_room_image_prompt(dungeon_name: str, premise: str, room: DungeonRoom) -> str:
     """构建地下城房间战斗插图生成提示词（7+1段式，第5段插入怪物外观）。
 
     Args:
         dungeon_name: 地下城全名
-        ecology: 地下城整体生态描述
+        premise: 地下城整体前提描述
         room: 已填充 stage/actor 数据的地下城房间
 
     Returns:
@@ -96,7 +96,7 @@ def _build_room_image_prompt(dungeon_name: str, ecology: str, room: DungeonRoom)
         "pixel art style，side view，2D game battle scene illustration，"
         f"{cave_tag}，"
         f"{profile}，"
-        f"{ecology}，"
+        f"{premise}，"
         "dramatic shadow and dim light contrast，"
         "atmospheric depth，layered rock formations，"
         f"{base_body}，"
@@ -189,7 +189,7 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
         # 封面客户端（index 0）
         cover_prompt = _build_dungeon_cover_image_prompt(
             dungeon_name=dungeon.name,
-            ecology=dungeon.ecology,
+            premise=dungeon.premise,
         )
         cover_client = ReplicateImageClient(
             name=f"{dungeon.name}.cover",
@@ -204,7 +204,7 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
         room_prompts: List[str] = [
             _build_room_image_prompt(
                 dungeon_name=dungeon.name,
-                ecology=dungeon.ecology,
+                premise=dungeon.premise,
                 room=room,
             )
             for room in dungeon.rooms

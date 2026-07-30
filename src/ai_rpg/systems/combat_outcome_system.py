@@ -11,6 +11,7 @@ from ..models import (
     MonsterComponent,
 )
 from loguru import logger
+from ..game.dbg_combat_processor import clear_round_state
 
 
 ########################################################################################################################################################################
@@ -47,7 +48,7 @@ class CombatOutcomeSystem(ExecuteProcessor):
             # 如果玩家阵营全灭，则判定为战斗失败
             logger.info("ally side eliminated!!!")
             self._game.current_combat_room.combat.complete_combat(CombatResult.LOSE)
-            self._game.clear_round_state()
+            clear_round_state(self._game)
             self._broadcast_result_to_party_members(CombatResult.LOSE)
 
         elif self._is_enemy_side_eliminated():
@@ -55,7 +56,7 @@ class CombatOutcomeSystem(ExecuteProcessor):
             # 如果敌方阵营全灭，则判定为战斗胜利
             logger.info("enemy side eliminated!!!")
             self._game.current_combat_room.combat.complete_combat(CombatResult.WIN)
-            self._game.clear_round_state()
+            clear_round_state(self._game)
             self._broadcast_result_to_party_members(CombatResult.WIN)
 
         else:

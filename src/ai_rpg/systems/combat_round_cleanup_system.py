@@ -4,6 +4,7 @@ from typing import Final, final, override
 from loguru import logger
 from ..entitas import ExecuteProcessor
 from ..game.dbg_game import DBGGame
+from ..game.dbg_combat_processor import clear_round_state
 
 
 ###############################################################################################################################################
@@ -35,4 +36,4 @@ class CombatRoundCleanupSystem(ExecuteProcessor):
             return
 
         logger.debug("清除旧回合手牌状态")
-        self._game.clear_round_state()
+        clear_round_state(self._game)

@@ -6,7 +6,11 @@ from typing import Set
 from loguru import logger
 from ..game.config import DUNGEONS_DIR
 from ..game.dbg_game import DBGGame
-from ..game.dbg_combat_processor import compute_character_stats, set_character_hp
+from ..game.dbg_combat_processor import (
+    compute_character_stats,
+    set_character_hp,
+    clear_round_state,
+)
 from ..game.rpg_stage_transition import stage_transition
 from ..models import (
     ActorType,
@@ -175,7 +179,7 @@ def _clear_combat_state(dbg_game: DBGGame) -> None:
     """清除一次战斗（Combat）结束后的临时状态。"""
 
     # 清除战斗回合状态
-    dbg_game.clear_round_state()
+    clear_round_state(dbg_game)
 
     # 清除所有角色的状态效果
     for entity in dbg_game.get_group(Matcher(StatusEffectsComponent)).entities.copy():

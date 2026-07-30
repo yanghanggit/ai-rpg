@@ -24,6 +24,8 @@ from ..models import (
     ConsumableItem,
     InventoryComponent,
     compute_effective_stats,
+    HandComponent,
+    DiscardPileComponent,
 )
 from .dbg_game import DBGGame
 
@@ -446,3 +448,38 @@ def deduct_item_from_inventory(entity: Entity, item: ConsumableItem) -> bool:
 
     # 返回是否成功扣减
     return consumed
+
+
+#######################################################################################################################################
+def clear_round_state(game: DBGGame) -> None:
+    """清除所有角色实体的每回合可变状态（手牌归入弃牌堆 + 回合动态属性）"""
+
+    # 清除所有角色实体的手牌组件，将剩余手牌归入 DiscardPile（STS 标准：回合末未出牌进弃牌堆）
+    for entity in game.get_group(
+        Matcher(all_of=[HandComponent, DiscardPileComponent])
+    ).entities.copy():
+        hand_comp = entity.get(HandComponent)
+        discard_pile_comp = entity.get(DiscardPileComponent)
+
+        if hand_comp.cards:
+            # 仅归入来源为本角色的卡牌；外来塞入牌（source != actor_name）直接丢弃
+            own_cards = [c for c in hand_comp.cards if c.source == entity.name]
+            foreign_cards = [c for c in hand_comp.cards if c.source != entity.name]
+            discard_pile_comp.cards.extend(own_cards)
+            logger.debug(
+                f"clear hands: {entity.name} 将 {len(own_cards)} 张剩余手牌归入 DiscardPile，DiscardPile 累计 {len(discard_pile_comp.cards)} 张"
+            )
+            for fc in foreign_cards:
+                logger.debug(
+                    f"clear hands: [{entity.name}] 外来牌 [{fc.name}](source={fc.source!r}) 回合结束，source 不匹配，丢弃"
+                )
+        else:
+            logger.debug(f"clear hands: {entity.name}")
+
+        # 移除 HandComponent
+        entity.remove(HandComponent)
+
+    # 清除所有角色实体的回合动态属性组件
+    for entity in game.get_group(Matcher(RoundStatsComponent)).entities.copy():
+        logger.debug(f"clear round stats: {entity.name}")
+        entity.remove(RoundStatsComponent)

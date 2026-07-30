@@ -13,7 +13,7 @@
         player_session.json # 玩家会话
         entities/           # 实体调试输出
         contexts/           # Agent 上下文调试输出
-        dungeon/            # 地下城调试输出
+        dungeon/            # 副本调试输出
         snapshot/snapshot.zip  # gzip 快照（可选）
 
 查看可用存档：
@@ -22,7 +22,7 @@
 游戏状态机（两种模式）：
     【家园模式 Home】玩家在某个 HomeComponent 场景中
         可用命令：new / stages / advance / speak / switch-stage / enter-dungeon
-    【地下城模式 Dungeon】玩家在某个地下城场景中
+    【副本模式 Dungeon】玩家在某个副本场景中
         可用命令：draw-cards / play-cards / exit-dungeon / next-dungeon / retreat
 
 典型家园流程：
@@ -30,9 +30,9 @@
          →  advance --actors <NPC1> [--actors <NPC2> ...]（仅让指定角色本轮真正规划，循环推进）
          →  speak --target <角色> --content <内容>
          →  switch-stage --stage <场景名>
-         →  enter-dungeon  →【进入地下城模式】
+         →  enter-dungeon  →【进入副本模式】
 
-典型地下城流程（每关）：
+典型副本流程（每关）：
     enter-dungeon  →  draw-cards（抽牌）→  play-cards（打牌/结算）
     若战斗未结束（is_ongoing）：继续 draw-cards → play-cards
     战斗结束后（is_post_combat）：
@@ -161,12 +161,12 @@ def main() -> None:
 @click.option(
     "--dungeon",
     required=True,
-    help="地下城名称（对应 DUNGEONS_DIR 下的文件名，如 Dungeon1）。",
+    help="副本名称（对应 DUNGEONS_DIR 下的文件名，如 Dungeon1）。",
 )
 def new_game(user: str, game: str, dungeon: str) -> None:
     """创建并初始化一个新的游戏实例，写出初始存档。
 
-    从 BLUEPRINTS_DIR/{game}.json 加载世界蓝图，从 DUNGEONS_DIR/{dungeon}.json 加载地下城，
+    从 BLUEPRINTS_DIR/{game}.json 加载世界蓝图，从 DUNGEONS_DIR/{dungeon}.json 加载副本，
     完成 build_from_blueprint / initialize，并将初始状态归档。
     归档路径：.worlds/{user}/{game}/{timestamp}/
 
@@ -363,13 +363,13 @@ def switch_stage(snapshot: str, stage: str) -> None:
 @click.option(
     "--dungeon",
     required=True,
-    help="地下城名称（对应 DUNGEONS_DIR 下的 JSON 文件名，如 Dungeon1）",
+    help="副本名称（对应 DUNGEONS_DIR 下的 JSON 文件名，如 Dungeon1）",
 )
 def enter_dungeon(snapshot: str, dungeon: str) -> None:
-    """从存档复位，启动地下城第一关，并写入新存档。
+    """从存档复位，启动副本第一关，并写入新存档。
 
     等同于人类在终端输入 /ed。适用于【家园模式】。
-    执行后进入【地下城模式】，战斗第一回合已创建。
+    执行后进入【副本模式】，战斗第一回合已创建。
     下一步应使用 draw-cards。
     """
 
@@ -405,7 +405,7 @@ def enter_dungeon(snapshot: str, dungeon: str) -> None:
 def draw_cards(snapshot: str) -> None:
     """从存档复位，为所有角色随机抽牌，并写入新存档。
 
-    等同于人类在终端输入 /dc。适用于【地下城模式】战斗进行中（is_ongoing）。
+    等同于人类在终端输入 /dc。适用于【副本模式】战斗进行中（is_ongoing）。
     己方和敌方均随机选定本回合使用的技能牌。
     下一步应使用 play-cards。
     """
@@ -460,7 +460,7 @@ def play_cards_specified(
 ) -> None:
     """从存档复位，让指定角色打出指定手牌，并写入新存档。
 
-    适用于【地下城模式】战斗进行中（is_ongoing），draw-cards 之后调用。
+    适用于【副本模式】战斗进行中（is_ongoing），draw-cards 之后调用。
     只有指定角色触发出牌结算，其他角色本次 pipeline 不出牌。
     --card 须与手牌中卡牌名称完全一致，否则报错不归档。
     """
@@ -506,7 +506,7 @@ def play_cards_specified(
 def pass_turn(snapshot: str, actor: str) -> None:
     """从存档复位，让指定角色跳过本次出牌机会，并写入新存档。
 
-    适用于【地下城模式】战斗进行中（is_ongoing），draw-cards 之后调用。
+    适用于【副本模式】战斗进行中（is_ongoing），draw-cards 之后调用。
     指定角色消耗 1 点 energy，不打出任何卡牌，行动顺序推进至下一角色。
     """
 
@@ -560,7 +560,7 @@ def use_consumable(
 ) -> None:
     """从存档复位，让指定角色使用背包内的消耗品，并写入新存档。
 
-    适用于【地下城模式】战斗进行中（is_ongoing）。
+    适用于【副本模式】战斗进行中（is_ongoing）。
     使用消耗品不消耗 energy，可在玩家行动阶段内任意次数使用。
     --item 须与背包中消耗品名称完全一致，否则报错不归档。
     """
@@ -617,7 +617,7 @@ def use_consumable(
 def use_gear(snapshot: str, actor: str, item: str, targets: tuple[str, ...]) -> None:
     """从存档复位，让指定角色在战斗中装备背包内的 GearItem，并写入新存档。
 
-    适用于【地下城模式】战斗进行中（is_ongoing）。
+    适用于【副本模式】战斗进行中（is_ongoing）。
     装备后属性加成立即生效，装备者原装备会被替换。
     --item 须与背包中 GearItem 名称完全一致，否则报错不归档。
     """
@@ -654,9 +654,9 @@ def use_gear(snapshot: str, actor: str, item: str, targets: tuple[str, ...]) -> 
     help="存档目录路径",
 )
 def exit_dungeon(snapshot: str) -> None:
-    """从存档复位，结束地下城并返回家园，并写入新存档。
+    """从存档复位，结束副本并返回家园，并写入新存档。
 
-    等同于人类在终端输入 /th。适用于【地下城模式】战斗结束后（is_post_combat）。
+    等同于人类在终端输入 /th。适用于【副本模式】战斗结束后（is_post_combat）。
     无论胜负，完成恢复满血、清空状态效果、移出远征队后回到家园场景。
     执行后回到【家园模式】。
     """
@@ -691,10 +691,10 @@ def exit_dungeon(snapshot: str) -> None:
     help="存档目录路径",
 )
 def next_dungeon(snapshot: str) -> None:
-    """从存档复位，进入地下城下一关，并写入新存档。
+    """从存档复位，进入副本下一关，并写入新存档。
 
-    等同于人类在终端输入 /and。适用于【地下城模式】胜利结算后（is_post_combat + is_won）。
-    且地下城存在下一关（peek_next_stage() 不为 None）。
+    等同于人类在终端输入 /and。适用于【副本模式】胜利结算后（is_post_combat + is_won）。
+    且副本存在下一关（peek_next_stage() 不为 None）。
     执行后新关卡战斗初始化完成，下一步继续 draw-cards。
     若已是最后一关（peek_next_stage() 为 None），应使用 exit-dungeon。
     """
@@ -735,7 +735,7 @@ def collect_loot(snapshot: str) -> None:
     CombatLootComponent。调用本命令后，战利品转入随身背包（InventoryComponent），
     临时组件移除。
 
-    适用于【地下城模式】战斗胜利结算后（is_post_combat + is_won）。
+    适用于【副本模式】战斗胜利结算后（is_post_combat + is_won）。
     若当前无战利品可收（本场无掉落或已收取），记录警告并不写新存档。
     收取后可继续使用 next-dungeon 进入下一关，或使用 exit-dungeon 返回家园。
     """
@@ -770,7 +770,7 @@ def collect_loot(snapshot: str) -> None:
     help="存档目录路径",
 )
 def generate_dungeon_cmd(snapshot: str) -> None:
-    """从存档复位，调用 LLM 生成地下城文件并写入新存档。
+    """从存档复位，调用 LLM 生成副本文件并写入新存档。
 
     在家园模式下为玩家实体添加 GenerateDungeonAction，驱动 dungeon_generate_pipeline
     执行 GenerateDungeonActionSystem（Steps 1-4 文本数据）成功后自动触发 IllustrateDungeonActionSystem。
@@ -815,7 +815,7 @@ def roster_add(snapshot: str, member: str) -> None:
     """从存档复位，将指定盟友加入远征队名单，并写入新存档。
 
     适用于【家园模式】。--member 必须为已存在的 NPC（NPCComponent）角色名称且不能为玩家自身。
-    添加后可继续使用 enter-dungeon 进入地下城。
+    添加后可继续使用 enter-dungeon 进入副本。
     """
 
     snapshot_path = Path(snapshot)
@@ -928,7 +928,7 @@ def roster(snapshot: str) -> None:
 def retreat(snapshot: str) -> None:
     """从存档复位，主动撤退并返回家园，并写入新存档。
 
-    等同于人类在终端输入 /rtt。适用于【地下城模式】战斗进行中（is_ongoing）。
+    等同于人类在终端输入 /rtt。适用于【副本模式】战斗进行中（is_ongoing）。
     标记远征队撤退 → 战斗以失败结算 → 恢复满血并返回家园。
     执行后回到【家园模式】，视为失败。
     """

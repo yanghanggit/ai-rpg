@@ -119,7 +119,7 @@ class CombatUseGearScreen(BaseGameScreen):
     - 消耗的是**目标**（而非玩家）本回合剩余 energy（`RoundStatsComponent`），
             目标 energy 不足以支付装备 cost 时无法为其装备；
     - 无「每回合限用一次」的限制，但同一件装备若已被任意实体装备中则不可再次
-      使用，直到下一关 / 退出地下城清空。
+      使用，直到下一关 / 退出副本清空。
     """
 
     CSS = """

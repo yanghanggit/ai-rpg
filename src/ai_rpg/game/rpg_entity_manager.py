@@ -211,7 +211,7 @@ class RPGEntityManager(Context):
 
     ###############################################################################################################################################
     def is_actor_in_dungeon_stage(self, actor_entity: Entity) -> bool:
-        """判断 Actor 是否在地下城场景中。
+        """判断 Actor 是否在副本场景中。
 
         检查 Actor 所在的 Stage 是否具有 DungeonComponent。
 
@@ -219,7 +219,7 @@ class RPGEntityManager(Context):
             actor_entity: Actor 实体
 
         Returns:
-            bool: 在地下城场景中返回 True，否则返回 False
+            bool: 在副本场景中返回 True，否则返回 False
         """
         assert actor_entity.has(ActorComponent), "actor_entity must have ActorComponent"
         stage_entity = self.resolve_stage_entity(actor_entity)

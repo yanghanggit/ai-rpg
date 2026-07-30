@@ -71,7 +71,7 @@ async def execute_dungeon_generate_pipeline_task(
 
             rpg_game = await _validate_player_at_home(user_name, game_server)
 
-            # 执行地下城生成流程（包含文本生成和图片生成），该流程可能比较耗时
+            # 执行副本生成流程（包含文本生成和图片生成），该流程可能比较耗时
             await rpg_game._dungeon_generate_pipeline.process()
 
             # 存档当前世界状态，便于调试和回放

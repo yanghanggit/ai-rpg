@@ -1,4 +1,4 @@
-"""地下城场景生成系统"""
+"""副本场景生成系统"""
 
 from pathlib import Path
 from typing import Any, Dict, Final, List, Optional, final, override
@@ -24,11 +24,11 @@ from .dungeon_generation import (
 def _build_dungeon_stages_prompt(
     dungeon_name: str, premise: str, total_stages: int
 ) -> str:
-    return f"""# 任务：为地下城创作 {total_stages} 个战斗场景
+    return f"""# 任务：为副本创作 {total_stages} 个战斗场景
 
-## 地下城信息
+## 副本信息
 
-- **地下城名称**：{dungeon_name}
+- **副本名称**：{dungeon_name}
 - **整体前提**：{premise}
 
 共需生成 {total_stages} 个战斗场景（含入口区域与最深处）。
@@ -40,7 +40,7 @@ def _build_dungeon_stages_prompt(
 ####################################################################################################################################
 @final
 class GenerateDungeonStagesSystem(ReactiveProcessor):
-    """地下城场景生成系统"""
+    """副本场景生成系统"""
 
     def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
@@ -73,9 +73,7 @@ class GenerateDungeonStagesSystem(ReactiveProcessor):
         )
 
         # 读取 Step 1 中间文件
-        premise_file_path: Path = (
-            DUNGEON_PROCESS_DIR / f"{dungeon_name}_step1_premise.json"
-        )
+        premise_file_path: Path = DUNGEON_PROCESS_DIR / f"{dungeon_name}_premise.json"
         try:
             premise_file = DungeonPremiseData.model_validate_json(
                 premise_file_path.read_text(encoding="utf-8")
@@ -97,7 +95,7 @@ class GenerateDungeonStagesSystem(ReactiveProcessor):
                 premise=premise_file.premise,
                 stages=stage_items,
             )
-            file_path: Path = DUNGEON_PROCESS_DIR / f"{dungeon_name}_step2_stages.json"
+            file_path: Path = DUNGEON_PROCESS_DIR / f"{dungeon_name}_stages.json"
             file_path.write_text(
                 stages_file.model_dump_json(indent=4), encoding="utf-8"
             )
@@ -115,12 +113,12 @@ class GenerateDungeonStagesSystem(ReactiveProcessor):
                 f"  → {file_path}"
             )
             return (
-                f"已记录地下城「{dungeon_name}」的 {len(stage_items)} 个场景。"
+                f"已记录副本「{dungeon_name}」的 {len(stage_items)} 个场景。"
                 f"中间文件已写入: {file_path}"
             )
 
         def _handle_read_stages_file(dungeon_name: str) -> str:
-            file_path: Path = DUNGEON_PROCESS_DIR / f"{dungeon_name}_step2_stages.json"
+            file_path: Path = DUNGEON_PROCESS_DIR / f"{dungeon_name}_stages.json"
             if not file_path.exists():
                 return f"错误：文件不存在 {file_path}"
             return file_path.read_text(encoding="utf-8")
@@ -159,7 +157,7 @@ class GenerateDungeonStagesSystem(ReactiveProcessor):
             f"[GenerateDungeonStagesSystem] Step 2 完成:\n"
             f"  stages ({len(stages_file.stages)}): "
             + ", ".join(s.stage_name for s in stages_file.stages)
-            + f"\n  → {DUNGEON_PROCESS_DIR / f'{dungeon_name}_step2_stages.json'}"
+            + f"\n  → {DUNGEON_PROCESS_DIR / f'{dungeon_name}_stages.json'}"
         )
 
         entity.replace(GenerateDungeonActorsAction, entity.name, dungeon_name)

@@ -69,7 +69,7 @@ class TransStageActionSystem(ReactiveProcessor):
 
         Note:
             - 场景转换目前仅支持家园场景之间的移动
-            - 地下城场景不能作为转换目标
+            - 副本场景不能作为转换目标
             - 转换失败时会通过 append_human_message 添加错误提示
             - 转换成功时会调用 stage_transition 执行实际的场景切换
         """
@@ -100,7 +100,7 @@ class TransStageActionSystem(ReactiveProcessor):
         # 目前的场景移动只能在home内
         assert target_stage_entity.has(
             HomeComponent
-        ), "目标场景必须是家园场景，否则就是错误，地下城场景不应该被转换到"
+        ), "目标场景必须是家园场景，否则就是错误，副本场景不应该被转换到"
 
         # 当前场景不必再移动
         if target_stage_entity == current_stage_entity:

@@ -69,7 +69,7 @@ async def get_dungeon_room(
     user_name: str,
     game_name: str,
 ) -> DungeonRoomResponse:
-    """查询当前地下城房间接口"""
+    """查询当前副本房间接口"""
 
     logger.info(f"/dungeons/v1/{user_name}/{game_name}/room: {user_name}, {game_name}")
 
@@ -91,13 +91,13 @@ async def get_dungeon_room(
             detail="没有游戏",
         )
 
-    # 获取当前地下城房间，current_room_index == -1 或超出范围时返回 None
+    # 获取当前副本房间，current_room_index == -1 或超出范围时返回 None
     current_dungeon_room = current_room._dbg_game.current_dungeon.current_room
     if current_dungeon_room is None:
         logger.error(f"get_dungeon_room: {user_name} has no current dungeon room")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="当前地下城没有进行中的房间",
+            detail="当前副本没有进行中的房间",
         )
 
     # 返回当前房间
@@ -108,7 +108,7 @@ async def get_dungeon_room(
             detail="当前房间不是战斗房间",
         )
 
-    # 返回当前地下城房间的响应对象，包含房间的关卡场景和战斗数据
+    # 返回当前副本房间的响应对象，包含房间的关卡场景和战斗数据
     return DungeonRoomResponse(room=current_dungeon_room)
 
 
@@ -119,7 +119,7 @@ async def get_dungeon_room(
     path="/api/home/dungeon-list/v1/", response_model=DungeonListResponse
 )
 async def list_dungeons() -> DungeonListResponse:
-    """获取可用地下城列表接口"""
+    """获取可用副本列表接口"""
     dungeons = sorted(
         (
             Dungeon.model_validate_json(p.read_text(encoding="utf-8"))

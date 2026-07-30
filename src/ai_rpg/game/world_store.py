@@ -8,7 +8,7 @@
         ├── player_session.json     # 完整 PlayerSession 序列化
         ├── entities/               # 各 ECS 实体单独一个 json
         ├── contexts/               # Agent LLM 对话上下文
-        ├── dungeon/                # 地下城数据
+        ├── dungeon/                # 副本数据
         └── snapshot/               # (仅 enable_gzip=True)
             └── snapshot.zip        # 仅含 world.json + player_session.json
 
@@ -17,7 +17,7 @@
     - 完整快照输出（dump_world_snapshot）
     - Agent 对话上下文输出（dump_agent_contexts）
     - ECS 实体序列化输出（dump_entities）
-    - 地下城数据输出（dump_dungeon）
+    - 副本数据输出（dump_dungeon）
     - 创建调试目录（ensure_debug_dir）
 """
 

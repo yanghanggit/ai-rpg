@@ -8,7 +8,7 @@ from .image import GeneratedImage
 
 ###############################################################################################################################################
 class DungeonRoom(BaseModel):
-    """地下城房间基类（关卡包装）"""
+    """副本房间基类（关卡包装）"""
 
     type: Literal["base"] = "base"  # 判别字段，子类收窄为对应 Literal 值
     stage: Stage  # 必须，对应关卡场景
@@ -35,7 +35,7 @@ AnyDungeonRoom = Annotated[
 ###############################################################################################################################################
 @final
 class Dungeon(BaseModel):
-    """地下城模型"""
+    """副本模型"""
 
     name: str
     rooms: List[AnyDungeonRoom]
@@ -47,7 +47,7 @@ class Dungeon(BaseModel):
     setup_entities: bool = (
         False  # 是否已经根据模型创建了实体（敌人和场景），默认 False，创建后置 True
     )
-    image: GeneratedImage = GeneratedImage()  # 地下城封面文生图数据，默认为空
+    image: GeneratedImage = GeneratedImage()  # 副本封面文生图数据，默认为空
 
     ########################################################################################################################
     @property

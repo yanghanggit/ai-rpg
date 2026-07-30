@@ -70,8 +70,8 @@ GAME_1: Final[str] = (
 ########################################################################################################
 ########################################################################################################
 def _save_demo_dungeons() -> None:
-    """将演示地下城序列化为 JSON 文件，存入 DUNGEONS_DIR"""
-    logger.info("🚀 保存演示地下城...")
+    """将演示副本序列化为 JSON 文件，存入 DUNGEONS_DIR"""
+    logger.info("🚀 保存演示副本...")
 
     dungeons = [
         # create_mountain_beasts_dungeon(),  # 山林妖兽狩猎副本
@@ -206,11 +206,11 @@ def main() -> None:
     except Exception as e:
         logger.error(f"❌ 保存演示游戏蓝图失败: {e}")
 
-    # 保存演示地下城
+    # 保存演示副本
     try:
         _save_demo_dungeons()
     except Exception as e:
-        logger.error(f"❌ 保存演示地下城失败: {e}")
+        logger.error(f"❌ 保存演示副本失败: {e}")
 
     # PostgreSQL 相关操作
     try:

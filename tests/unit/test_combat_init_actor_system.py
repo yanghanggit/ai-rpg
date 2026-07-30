@@ -96,12 +96,12 @@ def test_format_other_actors_info_contains_name_camp_appearance() -> None:
 def test_generate_combat_init_prompt_contains_key_fields() -> None:
     stats = CharacterStats(hp=8, max_hp=20, attack=6, defense=4)
     result = _generate_combat_init_prompt(
-        stage_name="地下城一层",
+        stage_name="副本一层",
         stage_description="阴暗潮湿的石室",
         other_actors_info=[],
         actor_stats=stats,
     )
-    assert "地下城一层" in result
+    assert "副本一层" in result
     assert "阴暗潮湿的石室" in result
     assert "8/20" in result
     assert "6" in result  # attack

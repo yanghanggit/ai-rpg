@@ -86,11 +86,11 @@ class TestGetCombatResultNotification:
     """_get_combat_result_notification 的单元测试。"""
 
     def test_victory_contains_victory_text(self) -> None:
-        result = _get_combat_result_notification("黑暗地下城", True)
+        result = _get_combat_result_notification("黑暗副本", True)
         assert "胜利" in result
 
     def test_defeat_contains_defeat_text(self) -> None:
-        result = _get_combat_result_notification("黑暗地下城", False)
+        result = _get_combat_result_notification("黑暗副本", False)
         assert "失败" in result
 
     def test_stage_name_in_output(self) -> None:

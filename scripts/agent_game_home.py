@@ -191,20 +191,20 @@ async def enter_dungeon_game(
     dungeon_name: str,
     save_dir: Path,
 ) -> DBGGame:
-    """从存档复位，启动地下城第一关（等同于终端命令 /ed），并归档新状态。
+    """从存档复位，启动副本第一关（等同于终端命令 /ed），并归档新状态。
 
-    调用 setup_dungeon 从文件加载地下城、赋值并创建地下城实体，再调用 enter_dungeon_first_stage 将玩家和队友传送至第一关场景，
+    调用 setup_dungeon 从文件加载副本、赋值并创建副本实体，再调用 enter_dungeon_first_stage 将玩家和队友传送至第一关场景，
     创建首个 CombatSequence，然后驱动 combat_pipeline.process() 完成战斗初始化
     （场景描述生成、各角色初始状态效果生成、创建第一回合及行动顺序）。
 
-    执行后游戏进入【地下城模式】，后续应使用 draw-cards → play-cards 流程。
+    执行后游戏进入【副本模式】，后续应使用 draw-cards → play-cards 流程。
 
     前置条件：玩家必须处于家园模式。
 
     Args:
         world: 由 restore_world() 反序列化的世界数据。
         player_session: 由 restore_world() 反序列化的玩家会话。
-        dungeon_name: 地下城名称（对应 DUNGEONS_DIR 下的 JSON 文件名）。
+        dungeon_name: 副本名称（对应 DUNGEONS_DIR 下的 JSON 文件名）。
         save_dir: 新存档写入目录。
 
     Returns:
@@ -214,12 +214,12 @@ async def enter_dungeon_game(
 
     success, error_detail = setup_dungeon(terminal_game, dungeon_name)
     if not success:
-        logger.error(f"地下城实体创建失败: {error_detail}")
+        logger.error(f"副本实体创建失败: {error_detail}")
         return terminal_game
 
     success, error_detail = enter_dungeon(terminal_game, terminal_game.current_dungeon)
     if not success:
-        logger.error(f"进入地下城第一关失败: {error_detail}")
+        logger.error(f"进入副本第一关失败: {error_detail}")
         return terminal_game
 
     # assert (
@@ -229,7 +229,7 @@ async def enter_dungeon_game(
         terminal_game.current_combat_room.combat.state != CombatState.NONE
     ), "没有战斗可以进行"
 
-    # 进入地下城后直接执行一次 combat_pipeline，完成战斗的初始推理与叙事生成（场景描述、角色状态效果、第一回合及行动顺序）
+    # 进入副本后直接执行一次 combat_pipeline，完成战斗的初始推理与叙事生成（场景描述、角色状态效果、第一回合及行动顺序）
     await terminal_game._combat_pipeline.process()
 
     archive_world(
@@ -246,11 +246,11 @@ async def generate_dungeon_game(
     player_session: PlayerSession,
     save_dir: Path,
 ) -> DBGGame:
-    """从存档复位，激活地下城生成动作并执行 dungeon_generate_pipeline，并归档新状态。
+    """从存档复位，激活副本生成动作并执行 dungeon_generate_pipeline，并归档新状态。
 
     调用 activate_generate_dungeon 为玩家实体添加 GenerateDungeonAction，
     然后驱动 _dungeon_generate_pipeline.process() 触发 GenerateDungeonActionSystem
-    执行地下城文本数据生成流程（Steps 1-4），成功后自动触发 IllustrateDungeonActionSystem。
+    执行副本文本数据生成流程（Steps 1-4），成功后自动触发 IllustrateDungeonActionSystem。
     动作组件由 ActionCleanupSystem 在 pipeline 末端自动清除。
 
     前置条件：玩家必须处于家园模式（is_player_in_home_stage）。
@@ -267,7 +267,7 @@ async def generate_dungeon_game(
 
     success, error_detail = activate_generate_dungeon(terminal_game)
     if not success:
-        logger.error(f"激活地下城创建失败: {error_detail}")
+        logger.error(f"激活副本创建失败: {error_detail}")
         return terminal_game
 
     await terminal_game._dungeon_generate_pipeline.process()

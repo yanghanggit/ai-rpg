@@ -251,7 +251,7 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
             for patch in entity_stats.status_effect_patches:
                 apply_status_effect_patch(entity, patch.name, patch.counter)
 
-        # 将本回合的装备使用战斗日志和叙事内容记录到当前地下城的最新回合中，并增加装备使用计数
+        # 将本回合的装备使用战斗日志和叙事内容记录到当前副本的最新回合中，并增加装备使用计数
         latest_round = self._game.current_combat_room.combat.latest_round
         assert latest_round is not None, "latest_round 不应为 None"
         latest_round.gear_combat_log.append(response.combat_log)

@@ -56,7 +56,7 @@ def resolve_identity(game_client: GameClient) -> Tuple[str, str, str]:
 
 ###############################################################################################################################################
 async def get_dungeon_room(game_client: GameClient) -> DungeonRoomResponse:
-    """获取当前地下城房间（战斗房间）。"""
+    """获取当前副本房间（战斗房间）。"""
     if is_mock_mode(game_client):
         return build_mock_dungeon_room_response()
     user_name, game_name, _ = resolve_identity(game_client)
@@ -65,7 +65,7 @@ async def get_dungeon_room(game_client: GameClient) -> DungeonRoomResponse:
 
 ###############################################################################################################################################
 async def get_dungeon_state(game_client: GameClient) -> DungeonStateResponse:
-    """获取当前地下城完整状态（含 rooms 列表与 current_room_index，用于判断是否存在下一关）。"""
+    """获取当前副本完整状态（含 rooms 列表与 current_room_index，用于判断是否存在下一关）。"""
     if is_mock_mode(game_client):
         return build_mock_dungeon_state_response()
     user_name, game_name, _ = resolve_identity(game_client)

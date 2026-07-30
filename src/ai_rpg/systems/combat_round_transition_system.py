@@ -80,7 +80,7 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
                 IdentityComponent
             ), f"actor {actor.name} 缺少 IdentityComponent"
 
-        # 当前舞台（必须是地下城）
+        # 当前舞台（必须是副本）
         stage_entity = self._game.resolve_stage_entity(player_entity)
         assert stage_entity is not None, "stage_entity is None"
         assert stage_entity.has(DungeonComponent), "stage_entity 没有 DungeonComponent"

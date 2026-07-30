@@ -1,5 +1,5 @@
 """
-地下城战斗动作模块（仅战斗房间/CombatRoom 相关）
+副本战斗动作模块（仅战斗房间/CombatRoom 相关）
 """
 
 from typing import List, Tuple, Optional
@@ -86,13 +86,13 @@ def activate_all_card_draws(
     为当前场景中所有存活的战斗角色（远征队成员 + 敌方）激活抽牌动作。
     """
 
-    # 检查当前是否在玩家所在的地下城场景中
+    # 检查当前是否在玩家所在的副本场景中
     if not dbg_game.is_player_in_dungeon_stage:
-        error_msg = "只能在玩家所在的地下城场景中使用该操作"
+        error_msg = "只能在玩家所在的副本场景中使用该操作"
         logger.error(error_msg)
         return False, error_msg
 
-    # 检查当前地下城是否处于进行中的战斗状态
+    # 检查当前副本是否处于进行中的战斗状态
     if not dbg_game.current_combat_room.combat.is_ongoing:
         error_msg = "只能在战斗中使用is_ongoing"
         logger.error(error_msg)
@@ -203,9 +203,9 @@ def activate_monster_play_trigger(
     触发指定怪物的出牌决策流程。
     """
 
-    # 检查当前是否处于玩家的地下城阶段，如果不是则无法触发怪物的出牌决策。
+    # 检查当前是否处于玩家的副本阶段，如果不是则无法触发怪物的出牌决策。
     if not dbg_game.is_player_in_dungeon_stage:
-        error_msg = "激活怪物出牌触发失败: 当前不在玩家的地下城阶段"
+        error_msg = "激活怪物出牌触发失败: 当前不在玩家的副本阶段"
         logger.error(error_msg)
         return False, error_msg
 
@@ -231,19 +231,19 @@ def activate_retreat(
     为所有远征队成员激活撤退动作。
     """
 
-    # 检查当前是否处于玩家的地下城阶段，如果不是则无法激活撤退动作。
+    # 检查当前是否处于玩家的副本阶段，如果不是则无法激活撤退动作。
     if not dbg_game.is_player_in_dungeon_stage:
-        error_msg = "激活撤退动作失败: 当前不在玩家的地下城阶段"
+        error_msg = "激活撤退动作失败: 当前不在玩家的副本阶段"
         logger.error(error_msg)
         return False, error_msg
 
-    # 检查当前地下城是否处于进行中状态，如果不是则无法激活撤退动作。
+    # 检查当前副本是否处于进行中状态，如果不是则无法激活撤退动作。
     if not dbg_game.current_combat_room.combat.is_ongoing:
         error_msg = "激活撤退动作失败: 只能在战斗进行中使用"
         logger.error(error_msg)
         return False, error_msg
 
-    # 获取当前地下城中所有远征队成员实体，用于为他们添加撤退动作组件。
+    # 获取当前副本中所有远征队成员实体，用于为他们添加撤退动作组件。
     party_member_entities = dbg_game.get_group(
         Matcher(all_of=[PartyMemberComponent])
     ).entities
@@ -278,19 +278,19 @@ def activate_use_consumable(
 ) -> Tuple[bool, str]:
     """使用队伍背包内的指定消耗品。"""
 
-    # 检查玩家是否在地下城阶段，如果不是则无法使用消耗品。
+    # 检查玩家是否在副本阶段，如果不是则无法使用消耗品。
     if not dbg_game.is_player_in_dungeon_stage:
-        msg = "使用消耗品失败：玩家不在地下城场景中"
+        msg = "使用消耗品失败：玩家不在副本场景中"
         logger.error(msg)
         return False, msg
 
-    # 检查当前地下城是否处于进行中状态，如果不是则无法使用消耗品。
+    # 检查当前副本是否处于进行中状态，如果不是则无法使用消耗品。
     if not dbg_game.current_combat_room.combat.is_ongoing:
         msg = "使用消耗品失败：战斗未在进行中"
         logger.error(msg)
         return False, msg
 
-    # 获取当前地下城的最新回合，如果没有进行中的回合，则无法使用消耗品。
+    # 获取当前副本的最新回合，如果没有进行中的回合，则无法使用消耗品。
     latest_round = dbg_game.current_combat_room.combat.latest_round
     if latest_round is None:
         msg = "使用消耗品失败：当前没有进行中的回合"
@@ -372,19 +372,19 @@ def activate_use_gear(
 ) -> Tuple[bool, str]:
     """使用队伍背包内的指定装备。装备是队伍级别的行为."""
 
-    # 检查玩家是否在地下城场景中，如果不在则无法使用装备。
+    # 检查玩家是否在副本场景中，如果不在则无法使用装备。
     if not dbg_game.is_player_in_dungeon_stage:
-        msg = "使用装备失败：玩家不在地下城场景中"
+        msg = "使用装备失败：玩家不在副本场景中"
         logger.error(msg)
         return False, msg
 
-    # 检查当前地下城是否处于进行中状态，如果不是则无法使用装备。
+    # 检查当前副本是否处于进行中状态，如果不是则无法使用装备。
     if not dbg_game.current_combat_room.combat.is_ongoing:
         msg = "使用装备失败：战斗未在进行中"
         logger.error(msg)
         return False, msg
 
-    # 获取当前地下城的最新回合，如果没有进行中的回合，则无法使用装备。
+    # 获取当前副本的最新回合，如果没有进行中的回合，则无法使用装备。
     latest_round = dbg_game.current_combat_room.combat.latest_round
     if latest_round is None:
         msg = "使用装备失败：当前没有进行中的回合"
@@ -489,9 +489,9 @@ def activate_pass_turn(
 ) -> Tuple[bool, str]:
     """让指定战斗角色跳过本次出牌机会（过牌），消耗 1 点 energy。"""
 
-    # 检查玩家是否在地下城场景中，如果不在则无法执行过牌动作。
+    # 检查玩家是否在副本场景中，如果不在则无法执行过牌动作。
     if not dbg_game.is_player_in_dungeon_stage:
-        msg = "过牌失败：玩家不在地下城场景中"
+        msg = "过牌失败：玩家不在副本场景中"
         logger.error(msg)
         return False, msg
 
@@ -513,9 +513,9 @@ def collect_combat_loot(
 ) -> Tuple[bool, str]:
     """将战斗战利品背包（CombatLootComponent）中的道具全部转入玩家随身背包（InventoryComponent）。"""
 
-    # 检查玩家是否在地下城场景中，如果不在则无法收取战利品。
+    # 检查玩家是否在副本场景中，如果不在则无法收取战利品。
     if not dbg_game.is_player_in_dungeon_stage:
-        msg = "收取战利品失败：玩家不在地下城场景中"
+        msg = "收取战利品失败：玩家不在副本场景中"
         logger.error(msg)
         return False, msg
 

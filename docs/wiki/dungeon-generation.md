@@ -1,20 +1,20 @@
-# 地下城生成流程（Dungeon Generation Pipeline）
+# 副本生成流程（Dungeon Generation Pipeline）
 
-地下城生成由 `ReactiveProcessor` 接力驱动，每步通过添加 Action 组件触发下一步，中间产物落盘为 JSON 便于调试与回溯。设计原则：**前三步 LLM 创作文本，第四步纯数据组装，第五步（插画）当前未接入主流程**。
+副本生成由 `ReactiveProcessor` 接力驱动，每步通过添加 Action 组件触发下一步，中间产物落盘为 JSON 便于调试与回溯。设计原则：**前三步 LLM 创作文本，第四步纯数据组装，第五步（插画）当前未接入主流程**。
 
 ---
 
 ## 流水线现状
 
-`create_dungeon_generate_pipeline` 目前只注册 Step 1–4（前提 → 场景 → 角色 → 组装）。`IllustrateDungeonActionSystem`（Step 5，插画）代码已实现，但其 import 与 `processors.add` 在该工厂函数中均被注释掉，未接入这条 pipeline——地下城生成完成后不会自动产出插画，`Dungeon`/场景数据中的图片 URL 字段会持续为空。
+`create_dungeon_generate_pipeline` 目前只注册 Step 1–4（前提 → 场景 → 角色 → 组装）。`IllustrateDungeonActionSystem`（Step 5，插画）代码已实现，但其 import 与 `processors.add` 在该工厂函数中均被注释掉，未接入这条 pipeline——副本生成完成后不会自动产出插画，`Dungeon`/场景数据中的图片 URL 字段会持续为空。
 
-中间文件写入 `DUNGEON_PROCESS_DIR`，命名 `{地下城名}_step{N}_*.json`；成品写入 `DUNGEONS_DIR`。
+中间文件写入 `DUNGEON_PROCESS_DIR`，命名 `{副本名}_step{N}_*.json`；成品写入 `DUNGEONS_DIR`。
 
 ---
 
 ## Step 1 — 前提设定（GenerateDungeonPremiseSystem）
 
-一次 LLM 调用确定地下城名称、整体前提描述与场景数量（枚举 2/3，依规模判断），场景数量在此锁定，后续步骤严格遵循。前提描述刻意回避具体角色身份/阵营名称与威胁评价性词汇，只呈现感官与情境层面的直观细节。
+一次 LLM 调用确定副本名称、整体前提描述与场景数量（枚举 2/3，依规模判断），场景数量在此锁定，后续步骤严格遵循。前提描述刻意回避具体角色身份/阵营名称与威胁评价性词汇，只呈现感官与情境层面的直观细节。
 
 ## Step 2 — 场景设计（GenerateDungeonStagesSystem）
 
@@ -30,7 +30,7 @@
 
 ## Step 5 — 场景插画（IllustrateDungeonActionSystem，未接入主流程）
 
-调用图像模型为每个战斗场景生成环境插画，并为地下城生成一张封面图。设计上独立于 ECS 结构、单张失败不阻断可用性；但当前未被 `create_dungeon_generate_pipeline` 注册，若需启用需由外部脚本单独驱动。
+调用图像模型为每个战斗场景生成环境插画，并为副本生成一张封面图。设计上独立于 ECS 结构、单张失败不阻断可用性；但当前未被 `create_dungeon_generate_pipeline` 注册，若需启用需由外部脚本单独驱动。
 
 ---
 
@@ -43,4 +43,4 @@
 | Step 3 并发批量调用 | 角色间无依赖，并发可将总耗时压缩至最长单次调用的时间 |
 | 中间文件落盘 | 任一步骤失败可从上一步的 JSON 文件恢复，无需重跑全链路 |
 | Step 4 零 LLM 调用 | 组装是纯结构映射，不需要创意决策，避免引入不必要的随机性 |
-| Step 5 与主 pipeline 解耦 | 图片仅需文字描述输入，与 ECS 实体结构无关；未接入意味着可独立按需触发，不阻塞地下城基础可用性 |
+| Step 5 与主 pipeline 解耦 | 图片仅需文字描述输入，与 ECS 实体结构无关；未接入意味着可独立按需触发，不阻塞副本基础可用性 |

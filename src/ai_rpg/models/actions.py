@@ -178,7 +178,7 @@ class MonsterTurnAction(Component):
 
 
 ############################################################################################################
-# ── 地下城生成流程（Step 1-4）内部衔接 Action ──────────────────────────────────────────────────────────
+# ── 副本生成流程（Step 1-4）内部衔接 Action ──────────────────────────────────────────────────────────
 # 触发链（全部在同一次 dungeon_generate_pipeline.process() 内顺序完成）：
 #   GenerateDungeonAction
 #     → GenerateDungeonPremiseSystem  (Step 1) → GenerateDungeonStagesAction
@@ -191,7 +191,7 @@ class MonsterTurnAction(Component):
 @register_action_component_type
 @register_component_type
 class GenerateDungeonAction(Component):
-    """Step 0 → 触发地下城生成流程入口（GenerateDungeonPremiseSystem）。
+    """Step 0 → 触发副本生成流程入口（GenerateDungeonPremiseSystem）。
 
     由 home_actions.activate_generate_dungeon() 在家园状态下添加到玩家实体。
     """
@@ -204,10 +204,7 @@ class GenerateDungeonAction(Component):
 @register_action_component_type
 @register_component_type
 class GenerateDungeonStagesAction(Component):
-    """Step 1→2 衔接：由 GenerateDungeonPremiseSystem 添加，触发 GenerateDungeonStagesSystem。
-
-    携带 dungeon_name 供 Step 2 定位 .dungeons/_process/{dungeon_name}_step1_premise.json。
-    """
+    """ """
 
     name: str
     dungeon_name: str
@@ -218,10 +215,7 @@ class GenerateDungeonStagesAction(Component):
 @register_action_component_type
 @register_component_type
 class GenerateDungeonActorsAction(Component):
-    """Step 2→3 衔接：由 GenerateDungeonStagesSystem 添加，触发 GenerateDungeonActorsSystem。
-
-    携带 dungeon_name 供 Step 3 定位 .dungeons/_process/{dungeon_name}_step2_stages.json。
-    """
+    """ """
 
     name: str
     dungeon_name: str
@@ -232,10 +226,7 @@ class GenerateDungeonActorsAction(Component):
 @register_action_component_type
 @register_component_type
 class AssembleDungeonAction(Component):
-    """Step 3→4 衔接：由 GenerateDungeonActorsSystem 添加，触发 AssembleDungeonSystem。
-
-    携带 dungeon_name 供 Step 4 定位 .dungeons/_process/{dungeon_name}_step3_blueprint.json。
-    """
+    """ """
 
     name: str
     dungeon_name: str
@@ -246,10 +237,10 @@ class AssembleDungeonAction(Component):
 @register_action_component_type
 @register_component_type
 class IllustrateDungeonAction(Component):
-    """Step 4→5 衔接：由 AssembleDungeonSystem 添加，触发地下城封面与 Stage 插图的并发生成。"""
+    """Step 4→5 衔接：由 AssembleDungeonSystem 添加，触发副本封面与 Stage 插图的并发生成。"""
 
     name: str
-    dungeon_name: str  # 地下城全名，用于定位磁盘上的 .dungeons/{dungeon_name}.json
+    dungeon_name: str  # 副本全名，用于定位磁盘上的 .dungeons/{dungeon_name}.json
 
 
 ############################################################################################################

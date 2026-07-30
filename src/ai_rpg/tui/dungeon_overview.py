@@ -1,4 +1,4 @@
-"""地下城总览 Screen"""
+"""副本总览 Screen"""
 
 from typing import List, Optional
 
@@ -21,13 +21,13 @@ from .utils import display_name
 from .dungeon_room_router_room import DungeonRoomRouterRoom
 
 MENU_TEXT = """\
-[bold cyan]── 地下城总览 ──────────────────────────────────────[/]
+[bold cyan]── 副本总览 ──────────────────────────────────────[/]
 
 """
 
 
 class DungeonOverviewScreen(BaseGameScreen):
-    """地下城总览 Screen：列出全部地下城副本，按编号查看详情。"""
+    """副本总览 Screen：列出全部副本，按编号查看详情。"""
 
     CSS = """
     DungeonOverviewScreen {
@@ -111,7 +111,7 @@ class DungeonOverviewScreen(BaseGameScreen):
         self._select_dungeon(int(raw) - 1)
 
     async def _fetch_dungeons(self) -> List[Dungeon]:
-        """通过实时 GET 获取地下城列表，不做任何本地缓存。"""
+        """通过实时 GET 获取副本列表，不做任何本地缓存。"""
         resp = await fetch_dungeon_list()
         return resp.dungeons
 
@@ -124,9 +124,9 @@ class DungeonOverviewScreen(BaseGameScreen):
             dungeons = await self._fetch_dungeons()
         except Exception as e:
             logger.error(
-                f"DungeonOverviewScreen._select_dungeon: 获取地下城列表失败 error={e}"
+                f"DungeonOverviewScreen._select_dungeon: 获取副本列表失败 error={e}"
             )
-            log.write(f"[bold red]❌ 地下城列表加载失败: {e}[/]")
+            log.write(f"[bold red]❌ 副本列表加载失败: {e}[/]")
             return
 
         generate_idx = len(dungeons)  # 0-based index of the generate command
@@ -142,11 +142,11 @@ class DungeonOverviewScreen(BaseGameScreen):
             )
         else:
             n = len(dungeons)
-            hint = f"1–{n} 查看副本，{n + 1} 生成新地下城" if n else "1 生成新地下城"
+            hint = f"1–{n} 查看副本，{n + 1} 生成新副本" if n else "1 生成新副本"
             log.write(f"[red]编号超出范围，可用：{hint}，0 刷新页面[/]")
 
     def _render_list(self, log: RichLog, dungeons: List[Dungeon]) -> None:
-        """将地下城列表渲染到 log，并追加动态操作提示。"""
+        """将副本列表渲染到 log，并追加动态操作提示。"""
         generate_no = len(dungeons) + 1
         if not dungeons:
             log.write("[yellow]暂无可用副本。[/]")
@@ -165,13 +165,13 @@ class DungeonOverviewScreen(BaseGameScreen):
         log.write(f"[bold cyan]── 操作 ──────────────────────────────────────────[/]")
         if dungeons:
             log.write(f"  [bold green]1–{len(dungeons)}[/]  查看副本详情")
-        log.write(f"  [bold green]{generate_no}[/]  生成新地下城")
+        log.write(f"  [bold green]{generate_no}[/]  生成新副本")
         log.write(f"  [bold green]0[/]  刷新此页面")
         log.write(f"  [bold dim]Escape[/]  返回")
         log.write("")
 
     def _show_dungeon(self, dungeon: Dungeon, log: RichLog) -> None:
-        """内联渲染地下城详情（纯同步，数据已在内存中）。"""
+        """内联渲染副本详情（纯同步，数据已在内存中）。"""
         log.write(
             f"[bold yellow]── 副本：{display_name(dungeon.name)} ──────────────────────────────────────[/]"
         )
@@ -210,7 +210,7 @@ class DungeonOverviewScreen(BaseGameScreen):
         inp = self.query_one(Input)
         inp.disabled = True
 
-        log.write(f"[dim]▶ 正在进入地下城：{dungeon_name}...[/]")
+        log.write(f"[dim]▶ 正在进入副本：{dungeon_name}...[/]")
         logger.info(f"DungeonOverviewScreen._do_enter_dungeon: dungeon={dungeon_name}")
 
         app = self.game_client
@@ -221,7 +221,7 @@ class DungeonOverviewScreen(BaseGameScreen):
 
         try:
             await home_enter_dungeon(user_name, game_name, dungeon_name)
-            log.write(f"[bold green]✅ 已进入地下城：{dungeon_name}[/]")
+            log.write(f"[bold green]✅ 已进入副本：{dungeon_name}[/]")
             logger.info(
                 f"DungeonOverviewScreen._do_enter_dungeon: 进入成功 dungeon={dungeon_name}"
             )
@@ -229,18 +229,18 @@ class DungeonOverviewScreen(BaseGameScreen):
             self.app.push_screen(DungeonRoomRouterRoom())
         except Exception as e:
             logger.error(f"DungeonOverviewScreen._do_enter_dungeon: 进入失败 error={e}")
-            log.write(f"[bold red]❌ 进入地下城失败: {e}[/]")
+            log.write(f"[bold red]❌ 进入副本失败: {e}[/]")
             inp.disabled = False
             inp.focus()
 
     @work
     async def _do_generate_dungeon(self) -> None:
-        """触发地下城生成 pipeline，等待完成后刷新列表。"""
+        """触发副本生成 pipeline，等待完成后刷新列表。"""
         log = self.query_one(RichLog)
         inp = self.query_one(Input)
         inp.disabled = True
 
-        log.write("[dim]▶ 正在触发地下城生成流程...[/]")
+        log.write("[dim]▶ 正在触发副本生成流程...[/]")
         logger.info(f"DungeonOverviewScreen._do_generate_dungeon")
 
         app = self.game_client
@@ -264,20 +264,20 @@ class DungeonOverviewScreen(BaseGameScreen):
             logger.error(
                 f"DungeonOverviewScreen._do_generate_dungeon: 请求失败 error={e}"
             )
-            log.write(f"[bold red]❌ 地下城生成请求失败: {e}[/]")
+            log.write(f"[bold red]❌ 副本生成请求失败: {e}[/]")
             inp.disabled = False
             inp.focus()
             return
 
         try:
             await watch_task_until_done(task_id)
-            log.write("[bold green]✅ 地下城生成完成，正在刷新列表...[/]")
+            log.write("[bold green]✅ 副本生成完成，正在刷新列表...[/]")
             logger.info(
                 f"DungeonOverviewScreen._do_generate_dungeon: 任务完成 task_id={task_id}"
             )
             success = True
         except TaskFailedError as e:
-            log.write(f"[bold red]❌ 地下城生成失败: {e}[/]")
+            log.write(f"[bold red]❌ 副本生成失败: {e}[/]")
             logger.error(
                 f"DungeonOverviewScreen._do_generate_dungeon: 任务失败 task_id={task_id} error={e}"
             )
@@ -299,7 +299,7 @@ class DungeonOverviewScreen(BaseGameScreen):
     @work
     async def _load_dungeons(self) -> None:
         log = self.query_one(RichLog)
-        logger.info("_load_dungeons: 正在获取地下城列表...")
+        logger.info("_load_dungeons: 正在获取副本列表...")
 
         # 显示远征队名单
         app = self.game_client
@@ -334,7 +334,7 @@ class DungeonOverviewScreen(BaseGameScreen):
         try:
             dungeons = await self._fetch_dungeons()
             self._render_list(log, dungeons)
-            logger.info(f"_load_dungeons: 获取成功，共 {len(dungeons)} 个地下城")
+            logger.info(f"_load_dungeons: 获取成功，共 {len(dungeons)} 个副本")
         except Exception as e:
             logger.error(f"_load_dungeons: 获取失败 error={e}")
-            log.write(f"[bold red]❌ 地下城列表加载失败: {e}[/]")
+            log.write(f"[bold red]❌ 副本列表加载失败: {e}[/]")

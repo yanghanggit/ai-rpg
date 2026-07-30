@@ -10,7 +10,7 @@ from ..game.dbg_game import DBGGame
 ###################################################################################################################################################################
 def _generate_retreat_message(dungeon_name: str, stage_name: str) -> str:
     """生成撤退提示消息"""
-    return f"""# 提示！战斗撤退：从地下城 {dungeon_name} 的关卡 {stage_name} 撤退
+    return f"""# 提示！战斗撤退：从副本 {dungeon_name} 的关卡 {stage_name} 撤退
 
 你选择了战斗中撤退。所有同伴视为战斗失败。战斗结束后将返回家园。"""
 
@@ -45,7 +45,7 @@ class RetreatActionSystem(ReactiveProcessor):
             logger.debug("RetreatActionSystem: 战斗未进行中，跳过撤退处理")
             return
 
-        # 获取当前地下城信息，生成撤退消息需要使用地下城和关卡名称
+        # 获取当前副本信息，生成撤退消息需要使用副本和关卡名称
         assert (
             self._game.current_dungeon is not None
         ), "RetreatActionSystem: current_dungeon is None"
@@ -83,7 +83,7 @@ class RetreatActionSystem(ReactiveProcessor):
             ),
         )
         logger.info(
-            f"战斗撤退处理完成: 角色={entity.name}, 地下城={dungeon_name}, 关卡={stage_entity.name}"
+            f"战斗撤退处理完成: 角色={entity.name}, 副本={dungeon_name}, 关卡={stage_entity.name}"
         )
 
     ####################################################################################################################################

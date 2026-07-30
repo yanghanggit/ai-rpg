@@ -304,37 +304,37 @@ def get_party_roster(dbg_game: DBGGame) -> List[str]:
 ###################################################################################################################################################################
 def activate_generate_dungeon(dbg_game: DBGGame) -> Tuple[bool, str]:
     """
-    在家园状态下激活地下城创建动作。
+    在家园状态下激活副本创建动作。
     """
 
-    # 检查玩家是否在家园场景中，如果不在则无法创建地下城。
+    # 检查玩家是否在家园场景中，如果不在则无法创建副本。
     if not dbg_game.is_player_in_home_stage:
-        error_detail = "玩家不在家园场景中，无法创建地下城"
-        logger.error(f"激活地下城创建失败: {error_detail}")
+        error_detail = "玩家不在家园场景中，无法创建副本"
+        logger.error(f"激活副本创建失败: {error_detail}")
         return False, error_detail
 
-    # 获取地下城生成系统实体，确保存在且唯一，以便后续激活地下城创建动作。
+    # 获取副本生成系统实体，确保存在且唯一，以便后续激活副本创建动作。
     world_system_entities = dbg_game.get_group(
         Matcher(all_of=[WorldComponent, DungeonGenerationComponent])
     ).entities.copy()
 
-    # 检查是否找到了地下城生成系统实体，如果没有找到则无法激活地下城创建动作。
+    # 检查是否找到了副本生成系统实体，如果没有找到则无法激活副本创建动作。
     if not world_system_entities:
-        error_detail = "未找到地下城生成系统实体，无法激活地下城创建"
-        logger.error(f"激活地下城创建失败: {error_detail}")
+        error_detail = "未找到副本生成系统实体，无法激活副本创建"
+        logger.error(f"激活副本创建失败: {error_detail}")
         return False, error_detail
 
-    assert len(world_system_entities) == 1, "存在多个地下城生成系统实体，数据异常"
+    assert len(world_system_entities) == 1, "存在多个副本生成系统实体，数据异常"
     world_system_entity = next(iter(world_system_entities))
 
-    # 检查地下城生成系统实体是否已经有 GenerateDungeonAction，如果有则说明动作已激活，避免重复激活。
+    # 检查副本生成系统实体是否已经有 GenerateDungeonAction，如果有则说明动作已激活，避免重复激活。
     if world_system_entity.has(GenerateDungeonAction):
-        error_detail = "地下城创建动作已存在，请勿重复激活"
-        logger.warning(f"激活地下城创建失败: {error_detail}")
+        error_detail = "副本创建动作已存在，请勿重复激活"
+        logger.warning(f"激活副本创建失败: {error_detail}")
         return False, error_detail
 
-    # 激活地下城创建动作，将 GenerateDungeonAction 添加到地下城生成系统实体中。
-    logger.debug(f"激活地下城创建: {world_system_entity.name}")
+    # 激活副本创建动作，将 GenerateDungeonAction 添加到副本生成系统实体中。
+    logger.debug(f"激活副本创建: {world_system_entity.name}")
     world_system_entity.replace(GenerateDungeonAction, world_system_entity.name)
     return True, ""
 

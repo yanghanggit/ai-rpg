@@ -35,7 +35,7 @@ from .home_main import HomeMainScreen
 BASE_INFO_HEADER = """\
 [bold cyan]── 结束战斗 ──────────────────────────────────────[/]
 
-[dim]战斗结算（胜负结果 / 战利品收取 / 退出地下城等）开发中；当前显示基础信息。[/]
+[dim]战斗结算（胜负结果 / 战利品收取 / 退出副本等）开发中；当前显示基础信息。[/]
 """
 
 POST_COMBAT_COMMANDS_MENU = """\
@@ -44,7 +44,7 @@ POST_COMBAT_COMMANDS_MENU = """\
   [bold green]2[/]  查阅我方背包
   [bold green]3[/]  查阅指定实体信息（场景 / 角色）
   [bold green]4[/]  查阅历史回合详情
-  [bold green]5[/]  退出地下城，返回家园
+  [bold green]5[/]  退出副本，返回家园
   [bold green]6[/]  查阅战利品
   [bold green]7[/]  进入下一关（房间）
 """
@@ -168,7 +168,7 @@ class CombatPostCombatScreen(BaseGameScreen):
     @work
     async def _dispatch_command(self, raw: str) -> None:
         """指令分发：1-4、6 为查阅型（GET）指令，每次都重新 GET 场景花名册，避免使用过期数据；
-        指令 5（退出地下城）/ 7（进入下一关）会改变状态，单独处理。"""
+        指令 5（退出副本）/ 7（进入下一关）会改变状态，单独处理。"""
         log = self.query_one(RichLog)
 
         if raw not in ("1", "2", "3", "4", "5", "6", "7"):
@@ -233,27 +233,27 @@ class CombatPostCombatScreen(BaseGameScreen):
     ########################################################################################################################
     @work
     async def _do_exit_dungeon(self) -> None:
-        """退出地下城，返回家园。"""
+        """退出副本，返回家园。"""
         log = self.query_one(RichLog)
 
         if is_mock_mode(self.game_client):
             logger.info(
                 "CombatPostCombatScreen._do_exit_dungeon: mock 模式，直接退出应用"
             )
-            log.write("[dim]mock 模式：无真实会话可退出地下城，直接退出应用[/]")
+            log.write("[dim]mock 模式：无真实会话可退出副本，直接退出应用[/]")
             self.app.exit()
             return
 
         inp = self.query_one(Input)
         inp.disabled = True
-        log.write("[dim]▶ 正在退出地下城...[/]")
+        log.write("[dim]▶ 正在退出副本...[/]")
 
         try:
             user_name, game_name, _ = resolve_identity(self.game_client)
             resp = await dungeon_exit(user_name, game_name)
         except Exception as e:
             logger.error(f"CombatPostCombatScreen._do_exit_dungeon: 退出失败 error={e}")
-            log.write(f"[bold red]❌ 退出地下城失败：{e}[/]")
+            log.write(f"[bold red]❌ 退出副本失败：{e}[/]")
             inp.disabled = False
             inp.focus()
             return
@@ -278,13 +278,13 @@ class CombatPostCombatScreen(BaseGameScreen):
             dungeon = state_resp.dungeon
         except Exception as e:
             logger.error(
-                f"CombatPostCombatScreen._do_advance_stage: 查询地下城状态失败 error={e}"
+                f"CombatPostCombatScreen._do_advance_stage: 查询副本状态失败 error={e}"
             )
-            log.write(f"[bold red]❌ 查询地下城状态失败：{e}[/]")
+            log.write(f"[bold red]❌ 查询副本状态失败：{e}[/]")
             return
 
         if dungeon.current_room_index + 1 >= len(dungeon.rooms):
-            log.write("[yellow]当前已是地下城最后一关，没有下一关可进入。[/]")
+            log.write("[yellow]当前已是副本最后一关，没有下一关可进入。[/]")
             return
 
         if is_mock_mode(self.game_client):
@@ -323,7 +323,7 @@ class CombatPostCombatScreen(BaseGameScreen):
             f"game_name={game_name} message={resp.message}"
         )
 
-        # 切换到地下城房间路由屏幕，进入下一关
+        # 切换到副本房间路由屏幕，进入下一关
         # 注：此处必须在方法内部延迟导入 DungeonRoomRouterRoom，不能提到模块顶层：
         # dungeon_room_router_room.py 会 import combat_room.py，combat_room.py 又
         # import combat_ongoing.py，combat_ongoing.py 又 import 本模块

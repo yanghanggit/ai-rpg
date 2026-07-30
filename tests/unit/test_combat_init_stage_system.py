@@ -50,7 +50,7 @@ def _make_actor(
 
 
 def _make_stage_entity(
-    context: Context, name: str, *, narrative: str = "平静的地下城"
+    context: Context, name: str, *, narrative: str = "平静的副本"
 ) -> Entity:
     entity = context.create_entity()
     entity._name = name
@@ -122,7 +122,7 @@ class TestExecuteCombatInitStatusEffects:
         mock_game: MagicMock,
         system: CombatInitStageSystem,
     ) -> None:
-        stage = _make_stage_entity(context, "地下城", narrative="浓烟弥漫的地下城")
+        stage = _make_stage_entity(context, "副本", narrative="浓烟弥漫的副本")
         actor = _make_actor(context, "勇者", is_ally=True)
         _configure_execute_prerequisites(mock_game, stage, actor)
         _configure_lookup(mock_game, stage, actor)
@@ -154,7 +154,7 @@ class TestExecuteCombatInitStatusEffects:
         mock_game: MagicMock,
         system: CombatInitStageSystem,
     ) -> None:
-        stage = _make_stage_entity(context, "地下城")
+        stage = _make_stage_entity(context, "副本")
         actor = _make_actor(context, "勇者", is_ally=True)
         _configure_execute_prerequisites(mock_game, stage, actor)
         _configure_lookup(mock_game, stage, actor)
@@ -181,7 +181,7 @@ class TestExecuteCombatInitStatusEffects:
         mock_game: MagicMock,
         system: CombatInitStageSystem,
     ) -> None:
-        stage = _make_stage_entity(context, "地下城", narrative="浓烟弥漫的地下城")
+        stage = _make_stage_entity(context, "副本", narrative="浓烟弥漫的副本")
         actor = _make_actor(context, "勇者", is_ally=True)
         _configure_execute_prerequisites(mock_game, stage, actor)
         _configure_lookup(mock_game, stage)  # 注意：不注册 actor，模拟未知角色
@@ -211,7 +211,7 @@ class TestExecuteCombatInitStatusEffects:
         mock_game: MagicMock,
         system: CombatInitStageSystem,
     ) -> None:
-        stage = _make_stage_entity(context, "地下城")
+        stage = _make_stage_entity(context, "副本")
         actor = _make_actor(context, "勇者", is_ally=True)
         _configure_execute_prerequisites(mock_game, stage, actor)
         _configure_lookup(mock_game, stage, actor)
@@ -238,7 +238,7 @@ class TestExecuteCombatInitStatusEffects:
         mock_game: MagicMock,
         system: CombatInitStageSystem,
     ) -> None:
-        stage = _make_stage_entity(context, "地下城")
+        stage = _make_stage_entity(context, "副本")
         actor = _make_actor(context, "勇者", is_ally=True)
         _configure_execute_prerequisites(mock_game, stage, actor)
         _configure_lookup(mock_game, stage, actor)
@@ -266,7 +266,7 @@ class TestExecuteCombatInitStatusEffects:
         mock_game: MagicMock,
         system: CombatInitStageSystem,
     ) -> None:
-        stage = _make_stage_entity(context, "地下城")
+        stage = _make_stage_entity(context, "副本")
         actor = _make_actor(context, "勇者", is_ally=True)
         _configure_execute_prerequisites(mock_game, stage, actor)
         _configure_lookup(mock_game, stage, actor)

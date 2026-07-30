@@ -1,4 +1,4 @@
-"""地下城组装系统"""
+"""副本组装系统"""
 
 from pathlib import Path
 from typing import Dict, Final, List, final, override, Optional
@@ -26,7 +26,7 @@ from .dungeon_generation import DungeonBlueprint
 ####################################################################################################################################
 @final
 class AssembleDungeonSystem(ReactiveProcessor):
-    """地下城组装系统"""
+    """副本组装系统"""
 
     def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
@@ -58,7 +58,7 @@ class AssembleDungeonSystem(ReactiveProcessor):
 
         # 读取 Step 3 中间文件
         blueprint_file_path: Path = (
-            DUNGEON_PROCESS_DIR / f"{dungeon_name}_step3_blueprint.json"
+            DUNGEON_PROCESS_DIR / f"{dungeon_name}_blueprint.json"
         )
         try:
             blueprint = DungeonBlueprint.model_validate_json(

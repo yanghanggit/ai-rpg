@@ -238,7 +238,7 @@ def create_combat_pipeline(
 def create_dungeon_generate_pipeline(
     game: GameSession,
 ) -> "RPGGameProcessPipeline":
-    """创建地下城生成流程管道（LLM 文本生成 + 图片生成）"""
+    """创建副本生成流程管道（LLM 文本生成 + 图片生成）"""
 
     ### 不这样就循环引用
     from .dbg_game import DBGGame
@@ -259,13 +259,13 @@ def create_dungeon_generate_pipeline(
     # 起始系统
     processors.add(PrologueSystem(dbg_game))
 
-    # 地下城生成流程（Steps 1-4，在同一次 pipeline.process() 内顺序触发）
+    # 副本生成流程（Steps 1-4，在同一次 pipeline.process() 内顺序触发）
     processors.add(GenerateDungeonPremiseSystem(dbg_game))  # Step 1: 前提设定生成
     processors.add(GenerateDungeonStagesSystem(dbg_game))  # Step 2: 场景批量生成
     processors.add(GenerateDungeonActorsSystem(dbg_game))  # Step 3: 怪物并发生成
     processors.add(AssembleDungeonSystem(dbg_game))  # Step 4: 实体树组装
 
-    # 地下城图片生成系统（Step 5）
+    # 副本图片生成系统（Step 5）
     # processors.add(IllustrateDungeonActionSystem(dbg_game))
 
     # 清除动作相关的临时状态、标记等，准备下一轮输入

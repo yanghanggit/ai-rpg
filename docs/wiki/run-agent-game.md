@@ -24,7 +24,7 @@
 
 ## CLI 与动作逻辑的分层
 
-`run_agent_game.py` 只负责 Click 层：参数解析、日志初始化、世界恢复与存档路径构造。"存档复位 → 触发动作 → pipeline 推进 → 归档新存档"这套流程按游戏模式拆分到四个动作模块：`agent_game_core.py`（游戏实例创建/复位等共享基础设施）、`agent_game_home.py`（家园模式动作）、`agent_game_combat.py`（地下城战斗动作）、`agent_game_inventory.py`（背包/合成/队伍管理动作）。
+`run_agent_game.py` 只负责 Click 层：参数解析、日志初始化、世界恢复与存档路径构造。"存档复位 → 触发动作 → pipeline 推进 → 归档新存档"这套流程按游戏模式拆分到四个动作模块：`agent_game_core.py`（游戏实例创建/复位等共享基础设施）、`agent_game_home.py`（家园模式动作）、`agent_game_combat.py`（副本战斗动作）、`agent_game_inventory.py`（背包/合成/队伍管理动作）。
 
 这四个模块本身只是薄封装，真正的游戏规则校验与 ECS 动作触发集中在 `ai_rpg.services.*`（如 `home_actions.py`、`dungeon_combat_actions.py`、`dungeon_lifecycle.py`）。这一层与 CLI 完全解耦，同时被面向 TUI 客户端的游戏服务端（`home_api.py`、`dungeon_lifecycle_api.py`、`dungeon_combat_api.py`、`dungeon_combat_tasks.py`）及测试套件直接复用——真正的复用边界在 `services` 层，而非 CLI 脚本本身。
 
@@ -35,7 +35,7 @@
 脚本的命令集对应游戏的**两种模式**，命令本身即是状态机的边界声明：
 
 - **家园模式**：`advance` / `speak` / `switch-stage` / `enter-dungeon` 等
-- **地下城模式**：`draw-cards` / `play-cards-specified` / `use-consumable` / `use-gear` / `exit-dungeon` 等
+- **副本模式**：`draw-cards` / `play-cards-specified` / `use-consumable` / `use-gear` / `exit-dungeon` 等
 
 AI 代理无需感知内部游戏对象，只需根据当前存档的模式选择合法命令；`services` 层的前置条件校验失败时直接返回错误，动作模块据此提前 return，不会调用归档、不产出损坏存档。
 

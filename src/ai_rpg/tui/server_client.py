@@ -198,7 +198,7 @@ async def fetch_entities_details(
 
 
 async def fetch_dungeon_list() -> DungeonListResponse:
-    """获取可用地下城列表。"""
+    """获取可用副本列表。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.get(
             server_config.base_url + "/api/home/dungeon-list/v1/",
@@ -278,7 +278,7 @@ async def home_advance(
 async def home_enter_dungeon(
     user_name: str, game_name: str, dungeon_name: str
 ) -> HomeEnterDungeonResponse:
-    """传送玩家进入指定地下城（同步，无后台任务）。"""
+    """传送玩家进入指定副本（同步，无后台任务）。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
             server_config.base_url + "/api/home/enter_dungeon/v1/",
@@ -293,7 +293,7 @@ async def home_enter_dungeon(
 
 
 async def fetch_dungeon_state(user_name: str, game_name: str) -> DungeonStateResponse:
-    """查询当前地下城完整状态。"""
+    """查询当前副本完整状态。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.get(
             server_config.base_url + f"/api/dungeons/v1/{user_name}/{game_name}/state",
@@ -303,7 +303,7 @@ async def fetch_dungeon_state(user_name: str, game_name: str) -> DungeonStateRes
 
 
 async def fetch_dungeon_room(user_name: str, game_name: str) -> DungeonRoomResponse:
-    """查询当前地下城房间（含 stage + combat）。"""
+    """查询当前副本房间（含 stage + combat）。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.get(
             server_config.base_url + f"/api/dungeons/v1/{user_name}/{game_name}/room",
@@ -313,7 +313,7 @@ async def fetch_dungeon_room(user_name: str, game_name: str) -> DungeonRoomRespo
 
 
 async def dungeon_exit(user_name: str, game_name: str) -> DungeonExitResponse:
-    """退出地下城，返回家园。"""
+    """退出副本，返回家园。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
             server_config.base_url + "/api/dungeon/exit/v1/",
@@ -329,7 +329,7 @@ async def dungeon_exit(user_name: str, game_name: str) -> DungeonExitResponse:
 async def dungeon_advance_stage(
     user_name: str, game_name: str
 ) -> DungeonAdvanceStageResponse:
-    """推进地下城到下一关卡（关卡内战斗结束进入 post_combat 后调用）。"""
+    """推进副本到下一关卡（关卡内战斗结束进入 post_combat 后调用）。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
             server_config.base_url + "/api/dungeon/progress/advance_stage/v1/",
@@ -493,7 +493,7 @@ async def dungeon_combat_use_gear(
 async def home_generate_dungeon(
     user_name: str, game_name: str
 ) -> HomeGenerateDungeonResponse:
-    """触发地下城生成流程，返回后台任务ID."""
+    """触发副本生成流程，返回后台任务ID."""
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.post(
             server_config.base_url + "/api/home/generate_dungeon/v1/",

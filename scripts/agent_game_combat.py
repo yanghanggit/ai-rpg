@@ -1,6 +1,6 @@
-"""地下城战斗动作与生命周期。
+"""副本战斗动作与生命周期。
 
-包含所有在地下城模式（战斗中或战斗后）执行的游戏动作函数。
+包含所有在副本模式（战斗中或战斗后）执行的游戏动作函数。
 """
 
 import os
@@ -312,10 +312,10 @@ async def exit_dungeon_and_return_home_game(
     player_session: PlayerSession,
     save_dir: Path,
 ) -> DBGGame:
-    """从存档复位，结束地下城并返回家园（等同于终端命令 /th），并归档新状态。
+    """从存档复位，结束副本并返回家园（等同于终端命令 /th），并归档新状态。
 
     调用 exit_dungeon_and_return_home：恢复远征成员满血、清空状态效果、
-    将角色从远征队移除、将玩家传送回起始家园场景，完成本次地下城流程。
+    将角色从远征队移除、将玩家传送回起始家园场景，完成本次副本流程。
     执行后游戏回到【家园模式】。
 
     前置条件：current_combat_room.combat.is_post_combat 必须为 True（战斗已结束，无论胜负）。
@@ -335,7 +335,7 @@ async def exit_dungeon_and_return_home_game(
         logger.error("exit-dungeon 只能在战斗结束后使用")
         return terminal_game
 
-    # 执行退出地下城流程，返回家园
+    # 执行退出副本流程，返回家园
     exit_dungeon(terminal_game, terminal_game._world.dungeon)
 
     # 最后归档
@@ -353,9 +353,9 @@ async def next_dungeon_game(
     player_session: PlayerSession,
     save_dir: Path,
 ) -> DBGGame:
-    """从存档复位，进入地下城下一关（等同于终端命令 /and），并归档新状态。
+    """从存档复位，进入副本下一关（等同于终端命令 /and），并归档新状态。
 
-    调用 advance_to_next_stage 将地下城推进至下一关场景，
+    调用 advance_to_next_stage 将副本推进至下一关场景，
     然后驱动 combat_pipeline.process() 完成新关卡的战斗初始化
     （场景描述、初始状态效果、创建新回合）。
 
@@ -385,14 +385,14 @@ async def next_dungeon_game(
     if not terminal_game.current_combat_room.combat.is_won:
         assert False, "不可能出现的情况！"
 
-    # 获取下一房间索引和房间实例，确保存在下一房间，否则无法推进地下城
+    # 获取下一房间索引和房间实例，确保存在下一房间，否则无法推进副本
     next_room_index = terminal_game.current_dungeon.current_room_index + 1
     next_room = terminal_game.current_dungeon.get_room(next_room_index)
     if next_room is None:
-        logger.error("地下城前进失败，没有更多房间")
+        logger.error("副本前进失败，没有更多房间")
         return terminal_game
 
-    # 推进地下城到下一房间，更新当前房间索引和状态
+    # 推进副本到下一房间，更新当前房间索引和状态
     advance_dungeon(terminal_game, terminal_game.current_dungeon)
 
     # 进入下一关卡后，驱动战斗流水线处理新关卡的初始化，包括场景描述、初始状态效果、创建新回合等

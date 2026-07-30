@@ -1,4 +1,4 @@
-"""地下城怪物生成系统"""
+"""副本怪物生成系统"""
 
 import asyncio
 from collections import defaultdict
@@ -39,9 +39,9 @@ def _build_dungeon_actor_prompt(
     )
     return f"""# 任务：为场景创作一个怪物的设定{multi_actor_note}
 
-## 所在地下城
+## 所在副本
 
-- **地下城名称**：{dungeon_name}
+- **副本名称**：{dungeon_name}
 - **整体前提**：{premise}
 
 ## 当前场景
@@ -55,7 +55,7 @@ def _build_dungeon_actor_prompt(
 ####################################################################################################################################
 @final
 class GenerateDungeonActorsSystem(ReactiveProcessor):
-    """地下城怪物生成系统"""
+    """副本怪物生成系统"""
 
     def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
@@ -88,9 +88,7 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
         )
 
         # 读取 Step 2 中间文件
-        stages_file_path: Path = (
-            DUNGEON_PROCESS_DIR / f"{dungeon_name}_step2_stages.json"
-        )
+        stages_file_path: Path = DUNGEON_PROCESS_DIR / f"{dungeon_name}_stages.json"
         try:
             stages_file = DungeonStagesData.model_validate_json(
                 stages_file_path.read_text(encoding="utf-8")
@@ -218,7 +216,7 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
             return
 
         # 写入 Step 3 中间文件
-        file_path: Path = DUNGEON_PROCESS_DIR / f"{dungeon_name}_step3_blueprint.json"
+        file_path: Path = DUNGEON_PROCESS_DIR / f"{dungeon_name}_blueprint.json"
         file_path.write_text(blueprint.model_dump_json(indent=4), encoding="utf-8")
 
         logger.info(

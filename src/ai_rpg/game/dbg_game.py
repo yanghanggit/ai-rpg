@@ -64,12 +64,12 @@ class DBGGame(RPGGame):
         # 家园流程（NPC 与玩家共用）
         self._home_pipeline: Final[RPGGameProcessPipeline] = create_home_pipeline(self)
 
-        # 地下城战斗流程
+        # 副本战斗流程
         self._combat_pipeline: Final[RPGGameProcessPipeline] = create_combat_pipeline(
             self
         )
 
-        # 地下城生成流程（LLM 文本生成 + 图片生成）
+        # 副本生成流程（LLM 文本生成 + 图片生成）
         self._dungeon_generate_pipeline: Final[RPGGameProcessPipeline] = (
             create_dungeon_generate_pipeline(self)
         )
@@ -95,7 +95,7 @@ class DBGGame(RPGGame):
     ###############################################################################################################################################
     @property
     def is_player_in_dungeon_stage(self) -> bool:
-        """检查玩家是否在地下城场景中"""
+        """检查玩家是否在副本场景中"""
         player_entity = self.get_player_entity()
         assert player_entity is not None, "player_entity is None"
         return self.is_actor_in_dungeon_stage(player_entity)
@@ -104,11 +104,11 @@ class DBGGame(RPGGame):
     @property
     def current_combat_room(self) -> CombatRoom:
         """断言当前处于战斗房间中，返回战斗房间"""
-        assert self._world.dungeon is not None, "当前地下城不存在"
-        assert self._world.dungeon.current_room is not None, "当前地下城房间不存在"
+        assert self._world.dungeon is not None, "当前副本不存在"
+        assert self._world.dungeon.current_room is not None, "当前副本房间不存在"
         assert isinstance(
             self._world.dungeon.current_room, CombatRoom
-        ), "当前地下城房间不是战斗房间"
+        ), "当前副本房间不是战斗房间"
         return self._world.dungeon.current_room
 
     ###############################################################################################################################################

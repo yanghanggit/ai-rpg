@@ -32,12 +32,12 @@ async def create_and_initialize_game(
 ) -> DBGGame:
     """创建并初始化一个新游戏实例。
 
-    从 BLUEPRINTS_DIR/{game}.json 加载蓝图，从 DUNGEONS_DIR/{dungeon_name}.json 加载地下城。
+    从 BLUEPRINTS_DIR/{game}.json 加载蓝图，从 DUNGEONS_DIR/{dungeon_name}.json 加载副本。
 
     Args:
         user: 玩家用户名
         game: 游戏名称（对应 BLUEPRINTS_DIR 下的文件名）
-        dungeon_name: 地下城名称（对应 DUNGEONS_DIR 下的文件名）
+        dungeon_name: 副本名称（对应 DUNGEONS_DIR 下的文件名）
         save_dir: 存档目录
 
     Returns:
@@ -51,13 +51,13 @@ async def create_and_initialize_game(
     )
     assert world_blueprint is not None, "world blueprint 反序列化失败"
 
-    # 从 JSON 文件加载地下城；名称为空或文件不存在时使用空地下城占位
+    # 从 JSON 文件加载副本；名称为空或文件不存在时使用空副本占位
     dungeon_path = DUNGEONS_DIR / f"{dungeon_name}.json"
     if dungeon_name and dungeon_path.exists():
         dungeon = Dungeon.model_validate_json(dungeon_path.read_text(encoding="utf-8"))
     else:
         logger.warning(
-            f"地下城文件未找到（dungeon_name={dungeon_name!r}），使用空地下城占位"
+            f"副本文件未找到（dungeon_name={dungeon_name!r}），使用空副本占位"
         )
         dungeon = Dungeon(name="", rooms=[], premise="")
 

@@ -1,5 +1,5 @@
 """
-地下城关卡转换和推进模块
+副本关卡转换和推进模块
 """
 
 from typing import Set
@@ -38,12 +38,12 @@ def _generate_dungeon_entry_message(
     dungeon_stage_name: str,
     is_first_stage: bool,
 ) -> str:
-    """生成地下城进入提示消息"""
+    """生成副本进入提示消息"""
     if is_first_stage:
-        return f"""# 进入地下城：{dungeon_name}，开始关卡场景：{dungeon_stage_name}"""
+        return f"""# 进入副本：{dungeon_name}，开始关卡场景：{dungeon_stage_name}"""
 
     # 关卡推进消息包含当前关卡名称，帮助玩家感知进度和环境变化
-    return f"""# 地下城：{dungeon_name}，进入下一关卡场景：{dungeon_stage_name}"""
+    return f"""# 副本：{dungeon_name}，进入下一关卡场景：{dungeon_stage_name}"""
 
 
 ###################################################################################################################################################################
@@ -51,12 +51,14 @@ def _generate_return_home_message(
     dungeon_name: str, destination_stage_name: str
 ) -> str:
     """生成返回家园的提示消息"""
-    return f"""# 提示！地下城：{dungeon_name} 结束，返回家园场景：{destination_stage_name}"""
+    return (
+        f"""# 提示！副本：{dungeon_name} 结束，返回家园场景：{destination_stage_name}"""
+    )
 
 
 ###################################################################################################################################################################
 def _select_party_members(dbg_game: DBGGame, dungeon: Dungeon) -> Set[Entity]:
-    """选择参与地下城远征的队伍成员"""
+    """选择参与副本远征的队伍成员"""
 
     # 1. 获取玩家实体
     player_entity = dbg_game.get_player_entity()
@@ -85,7 +87,7 @@ def _select_party_members(dbg_game: DBGGame, dungeon: Dungeon) -> Set[Entity]:
             PartyMemberComponent,
             party_member.name,
         )
-        logger.debug(f"将 {party_member.name} 加入远征队，目标地下城：{dungeon.name}")
+        logger.debug(f"将 {party_member.name} 加入远征队，目标副本：{dungeon.name}")
 
     return party_members
 
@@ -95,22 +97,22 @@ def _enter_dungeon_stage(
     dbg_game: DBGGame, dungeon: Dungeon, party_member_entities: Set[Entity]
 ) -> bool:
     """
-    进入地下城关卡并初始化战斗环境
+    进入副本关卡并初始化战斗环境
     """
     # 验证远征队非空
     if len(party_member_entities) == 0:
-        logger.error("没有远征队成员不能进入地下城!")
+        logger.error("没有远征队成员不能进入副本!")
         return False
 
     # 1. 验证前置条件 - 获取当前关卡数据
     current_room = dungeon.current_room
     if current_room is None:
-        logger.error("当前地下城房间不存在，无法进入关卡")
+        logger.error("当前副本房间不存在，无法进入关卡")
         return False
 
-    assert isinstance(current_room, CombatRoom), "当前地下城房间必须是战斗房间"
+    assert isinstance(current_room, CombatRoom), "当前副本房间必须是战斗房间"
     stage_model = current_room.stage
-    assert stage_model is not None, f"{dungeon.name} 地下城关卡数据异常！"
+    assert stage_model is not None, f"{dungeon.name} 副本关卡数据异常！"
 
     # 2. 获取关卡实体
     stage_entity = dbg_game.get_stage_entity(stage_model.name)
@@ -131,7 +133,7 @@ def _enter_dungeon_stage(
         # 添加上下文！
         # 根据是否为首次进入，设置不同的生命周期标记
         if dungeon.current_room_index == 0:
-            # 首次进入：仅地下城名称
+            # 首次进入：仅副本名称
             dbg_game.add_human_message(
                 party_member,
                 HumanMessage(
@@ -141,7 +143,7 @@ def _enter_dungeon_stage(
 
         else:
 
-            # 关卡推进：地下城名称:关卡名称
+            # 关卡推进：副本名称:关卡名称
             dbg_game.add_human_message(
                 party_member,
                 HumanMessage(
@@ -206,7 +208,7 @@ def _clear_combat_state(dbg_game: DBGGame) -> None:
 
 ###################################################################################################################################################################
 def setup_dungeon(dbg_game: DBGGame, dungeon_name: str) -> tuple[bool, str]:
-    """从文件加载地下城数据、赋值到游戏世界，并创建全部游戏实体（敌人和场景）。（幂等）"""
+    """从文件加载副本数据、赋值到游戏世界，并创建全部游戏实体（敌人和场景）。（幂等）"""
     # 1. 校验名称并加载文件
     if not dungeon_name:
         error_msg = "setup_dungeon 失败: dungeon_name 为空"
@@ -215,7 +217,7 @@ def setup_dungeon(dbg_game: DBGGame, dungeon_name: str) -> tuple[bool, str]:
 
     dungeon_path = DUNGEONS_DIR / f"{dungeon_name}.json"
     if not dungeon_path.exists():
-        error_msg = f"setup_dungeon 失败: 地下城文件不存在 {dungeon_path}"
+        error_msg = f"setup_dungeon 失败: 副本文件不存在 {dungeon_path}"
         logger.error(error_msg)
         return False, error_msg
 
@@ -226,10 +228,10 @@ def setup_dungeon(dbg_game: DBGGame, dungeon_name: str) -> tuple[bool, str]:
         logger.error(error_msg)
         return False, error_msg
 
-    # 守护：当前游戏世界中已有地下城正在进行，不允许重新 setup
+    # 守护：当前游戏世界中已有副本正在进行，不允许重新 setup
     if dbg_game._world.dungeon.current_room_index >= 0:
         error_msg = (
-            f"setup_dungeon 失败: 当前地下城 {dbg_game._world.dungeon.name!r} 正在进行中 "
+            f"setup_dungeon 失败: 当前副本 {dbg_game._world.dungeon.name!r} 正在进行中 "
             f"(current_room_index={dbg_game._world.dungeon.current_room_index})，请先退出"
         )
         logger.error(error_msg)
@@ -237,7 +239,7 @@ def setup_dungeon(dbg_game: DBGGame, dungeon_name: str) -> tuple[bool, str]:
 
     assert (
         not dbg_game.is_player_in_dungeon_stage
-    ), "setup_dungeon 失败: 玩家已在地下城场景中！"
+    ), "setup_dungeon 失败: 玩家已在副本场景中！"
 
     # 2. 赋值到游戏世界（此后 dbg_game.current_dungeon 指向新加载的实例）
     dbg_game._world.dungeon = dungeon
@@ -246,9 +248,9 @@ def setup_dungeon(dbg_game: DBGGame, dungeon_name: str) -> tuple[bool, str]:
     # 3. 幂等：实体已创建则跳过
     if dungeon.setup_entities:
         logger.debug(f"setup_dungeon: {dungeon.name} 实体已创建，跳过")
-        return True, f"地下城实体已存在，跳过创建: {dungeon.name}"
+        return True, f"副本实体已存在，跳过创建: {dungeon.name}"
 
-    # 4. 创建地下城实体（内部将 setup_entities 置 True），索引保持 -1
+    # 4. 创建副本实体（内部将 setup_entities 置 True），索引保持 -1
     for room in dungeon.rooms:
         for actor in room.stage.actors:
             actor_entity = dbg_game.get_actor_entity(actor.name)
@@ -265,8 +267,8 @@ def setup_dungeon(dbg_game: DBGGame, dungeon_name: str) -> tuple[bool, str]:
             room.stage.stage_profile.type == StageType.DUNGEON
         ), "stage_entity is not dungeon type"
 
-    # 6. 创建地下城实体（敌人和关卡场景）
-    logger.debug(f"正在根据地下城模型创建实体: {dungeon.name}")
+    # 6. 创建副本实体（敌人和关卡场景）
+    logger.debug(f"正在根据副本模型创建实体: {dungeon.name}")
     dbg_game.create_actor_entities(
         [actor for room in dungeon.rooms for actor in room.stage.actors]
     )
@@ -276,12 +278,12 @@ def setup_dungeon(dbg_game: DBGGame, dungeon_name: str) -> tuple[bool, str]:
     dungeon.setup_entities = True
 
     logger.info(f"setup_dungeon 完成: {dungeon.name}")
-    return True, f"地下城实体创建完成: {dungeon.name}"
+    return True, f"副本实体创建完成: {dungeon.name}"
 
 
 ###################################################################################################################################################################
 def enter_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> tuple[bool, str]:
-    """组建远征队并传送至地下城第一关，启动首个战斗序列。"""
+    """组建远征队并传送至副本第一关，启动首个战斗序列。"""
     if not dungeon.setup_entities:
         error_msg = f"enter_dungeon_first_stage 失败: {dungeon.name} 实体尚未创建，请先调用 setup_dungeon"
         logger.error(error_msg)
@@ -318,17 +320,17 @@ def enter_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> tuple[bool, str]:
     _clear_combat_state(dbg_game)
 
     logger.info(f"enter_dungeon_first_stage 完成: {dungeon.name}")
-    return True, f"成功进入地下城: {dungeon.name}"
+    return True, f"成功进入副本: {dungeon.name}"
 
 
 ###################################################################################################################################################################
 def advance_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> None:
     """
-    推进到地下城的下一个关卡
+    推进到副本的下一个关卡
     """
 
     if not dbg_game.current_combat_room.combat.is_post_combat:
-        logger.error("当前不处于战斗后状态，无法推进地下城关卡")
+        logger.error("当前不处于战斗后状态，无法推进副本关卡")
         return
 
     if dbg_game.current_combat_room.combat.is_lost:
@@ -338,11 +340,11 @@ def advance_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> None:
     if not dbg_game.current_combat_room.combat.is_won:
         assert False, "不可能出现的情况！"
 
-    # 1. 推进地下城索引到下一关
+    # 1. 推进副本索引到下一关
     next_room_index = dungeon.current_room_index + 1
     next_room = dungeon.get_room(next_room_index)
     if next_room is None:
-        logger.error("地下城前进失败，没有更多房间")
+        logger.error("副本前进失败，没有更多房间")
         return
 
     assert isinstance(next_room, CombatRoom), "下一房间必须是战斗房间"
@@ -365,7 +367,7 @@ def advance_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> None:
 ###################################################################################################################################################################
 def exit_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> None:
     """
-    退出地下城并将角色传送回家园
+    退出副本并将角色传送回家园
     """
 
     cs = dbg_game.current_combat_room.combat
@@ -379,7 +381,7 @@ def exit_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> None:
     # 严格要求：只能在战斗后状态退出（无论胜负）
     if not dbg_game.current_combat_room.combat.is_post_combat:
         logger.error(
-            f"当前不处于战斗后状态，无法退出地下城！"
+            f"当前不处于战斗后状态，无法退出副本！"
             f"必须先完成战斗进入 post_combat 状态。"
         )
         return
@@ -432,8 +434,8 @@ def exit_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> None:
             f"[return_home] 传送后 {party_member_entity.name} 当前场景={after_stage_name!r}"
         )
 
-    # 4. 清理地下城数据
-    logger.debug(f"[return_home] 开始清理地下城实体: dungeon={dungeon.name!r}")
+    # 4. 清理副本数据
+    logger.debug(f"[return_home] 开始清理副本实体: dungeon={dungeon.name!r}")
     for room in dungeon.rooms:
         for actor in room.stage.actors:
             destroy_actor_entity = dbg_game.get_actor_entity(actor.name)
@@ -445,9 +447,9 @@ def exit_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> None:
         if destroy_stage_entity is not None:
             dbg_game.destroy_entity(destroy_stage_entity)
 
-    # 5 重置地下城数据
+    # 5 重置副本数据
     dbg_game._world.dungeon = Dungeon(name="", rooms=[], premise="")
-    logger.debug("[return_home] 地下城实体清理完成，dungeon 已重置")
+    logger.debug("[return_home] 副本实体清理完成，dungeon 已重置")
 
     # 6. 恢复所有远征队成员的战斗状态
     for party_member_entity in party_member_entities:

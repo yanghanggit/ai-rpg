@@ -31,15 +31,16 @@ _IMAGE_NEGATIVE_STAGE: Final[str] = (
 
 ####################################################################################################################################
 def _detect_scene_type(profile: str) -> str:
-    """根据场景描述推断场景类型（室内/室外）。
+    """根据场景描述推断场景类型（封闭空间/开阔空间）。
 
-    通过关键词匹配判断是否为封闭洞穴类场景。
+    通过关键词匹配判断是否为封闭类场景，不预设具体生态主题（沙漠遗迹、冰川、
+    火山等均可能出现封闭空间）。
 
     Args:
         profile: 场景感官环境描写文本
 
     Returns:
-        'indoor' 表示封闭洞穴场景，'outdoor' 表示开阔场景
+        'indoor' 表示封闭空间场景，'outdoor' 表示开阔空间场景
     """
     indoor_keywords = ["顶", "穴", "洞", "廊", "坑", "岩", "壁", "石", "缝", "隙", "巢"]
     for keyword in indoor_keywords:
@@ -50,22 +51,19 @@ def _detect_scene_type(profile: str) -> str:
 
 ####################################################################################################################################
 def _build_dungeon_cover_image_prompt(dungeon_name: str, premise: str) -> str:
-    """构建地下城封面图片生成提示词（7+1段式，无怪物）。
+    """构建副本封面图片生成提示词（7+1段式，无怪物）。
 
     Args:
-        dungeon_name: 地下城全名
-        premise: 地下城整体前提描述
+        dungeon_name: 副本全名
+        premise: 副本整体前提描述
 
     Returns:
-        适合像素艺术风格洞穴场景的封面提示词
+        由 premise 决定具体生态主题的像素艺术风格封面提示词
     """
     return (
         "pixel art style，side view，2D game scene illustration，"
-        "dark cave dungeon entrance，"
         f"{premise}，"
-        "atmospheric depth，layered rock formations，"
-        "bioluminescent minerals glowing faintly，"
-        "damp stone floor with scattered debris，"
+        "atmospheric depth，intricate environmental details，"
         "dramatic shadow and dim light contrast，"
         "mysterious and foreboding atmosphere，"
         "no characters，no figures，environment only，"
@@ -75,12 +73,12 @@ def _build_dungeon_cover_image_prompt(dungeon_name: str, premise: str) -> str:
 
 ####################################################################################################################################
 def _build_room_image_prompt(dungeon_name: str, premise: str, room: DungeonRoom) -> str:
-    """构建地下城房间战斗插图生成提示词（7+1段式，第5段插入怪物外观）。
+    """构建副本房间战斗插图生成提示词（7+1段式，第5段插入怪物外观）。
 
     Args:
-        dungeon_name: 地下城全名
-        premise: 地下城整体前提描述
-        room: 已填充 stage/actor 数据的地下城房间
+        dungeon_name: 副本全名
+        premise: 副本整体前提描述
+        room: 已填充 stage/actor 数据的副本房间
 
     Returns:
         包含场景环境与怪物形象的战斗插图提示词
@@ -90,15 +88,17 @@ def _build_room_image_prompt(dungeon_name: str, premise: str, room: DungeonRoom)
         room.stage.actors[0].character_sheet.base_body if room.stage.actors else ""
     )
     scene_type = _detect_scene_type(profile)
-    cave_tag = "enclosed cave tunnel" if scene_type == "indoor" else "open cave chamber"
+    scene_tag = (
+        "enclosed interior space" if scene_type == "indoor" else "open exterior area"
+    )
 
     return (
         "pixel art style，side view，2D game battle scene illustration，"
-        f"{cave_tag}，"
+        f"{scene_tag}，"
         f"{profile}，"
         f"{premise}，"
         "dramatic shadow and dim light contrast，"
-        "atmospheric depth，layered rock formations，"
+        "atmospheric depth，intricate environmental details，"
         f"{base_body}，"
         "single creature in mid-ground，facing left，combat ready pose，"
         "mysterious and dangerous atmosphere，"
@@ -109,7 +109,7 @@ def _build_room_image_prompt(dungeon_name: str, premise: str, room: DungeonRoom)
 ####################################################################################################################################
 @final
 class IllustrateDungeonActionSystem(ReactiveProcessor):
-    """地下城图片生成系统（Step 5）。
+    """副本图片生成系统（Step 5）。
 
     反应式处理器，监听 IllustrateDungeonAction 的添加事件，从磁盘读取
     Dungeon JSON，并发生成封面与各房间插图，将结果写入 GeneratedImage
@@ -158,7 +158,7 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     async def _generate_images(self, entity: Entity) -> None:
-        """为实体触发的地下城执行图片并发生成。
+        """为实体触发的副本执行图片并发生成。
 
         从磁盘加载 Dungeon，生成封面 + 各房间插图，
         写入 GeneratedImage 字段后重新保存 dungeon 文件。

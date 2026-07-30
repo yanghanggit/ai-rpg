@@ -70,9 +70,9 @@ class TestFormatFunctions:
         assert msg == "# 你从 场景: 起点 离开，然后进入了 场景: 终点"
 
     def test_departure_message_special_chars(self) -> None:
-        msg = _format_stage_departure_message("勇者·甲", "地下城-1F")
+        msg = _format_stage_departure_message("勇者·甲", "副本-1F")
         assert "勇者·甲" in msg
-        assert "地下城-1F" in msg
+        assert "副本-1F" in msg
 
     def test_transition_message_includes_both_stages(self) -> None:
         msg = _format_stage_transition_message("A", "B")

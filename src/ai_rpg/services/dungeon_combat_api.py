@@ -1,5 +1,5 @@
 """
-地下城战斗玩法服务模块（战斗房间内的专属接口）
+副本战斗玩法服务模块（战斗房间内的专属接口）
 """
 
 import asyncio
@@ -56,7 +56,7 @@ async def dungeon_combat_retreat(
     game_server: CurrentGameServer,
 ) -> DungeonCombatRetreatResponse:
     """
-    地下城战斗撤退接口
+    副本战斗撤退接口
     """
 
     logger.info(f"/api/dungeon/combat/retreat/v1/: user={payload.user_name}")
@@ -70,7 +70,7 @@ async def dungeon_combat_retreat(
 
     async with current_room._lock:
 
-        # 验证地下城操作的前置条件
+        # 验证副本操作的前置条件
         rpg_game = _validate_dungeon_prerequisites(
             user_name=payload.user_name,
             game_server=game_server,
@@ -128,7 +128,7 @@ async def dungeon_combat_init(
     game_server: CurrentGameServer,
 ) -> DungeonCombatInitResponse:
     """
-    地下城战斗初始化接口
+    副本战斗初始化接口
     """
 
     logger.info(f"/api/dungeon/combat/init/v1/: user={payload.user_name}")
@@ -143,7 +143,7 @@ async def dungeon_combat_init(
 
     async with current_room._lock:
 
-        # 验证地下城操作的前置条件
+        # 验证副本操作的前置条件
         rpg_game = _validate_dungeon_prerequisites(
             user_name=payload.user_name,
             game_server=game_server,
@@ -205,7 +205,7 @@ async def dungeon_combat_collect_loot(
 
     async with current_room._lock:
 
-        # 验证地下城操作的前置条件
+        # 验证副本操作的前置条件
         dbg_game = _validate_dungeon_prerequisites(
             user_name=payload.user_name,
             game_server=game_server,
@@ -237,7 +237,7 @@ async def dungeon_combat_draw_cards(
     game_server: CurrentGameServer,
 ) -> DungeonCombatDrawCardsResponse:
     """
-    地下城战斗全员抽卡接口
+    副本战斗全员抽卡接口
     """
 
     logger.info(f"/api/dungeon/combat/draw_cards/v1/: user={payload.user_name}")
@@ -252,7 +252,7 @@ async def dungeon_combat_draw_cards(
 
     async with current_room._lock:
 
-        # 验证地下城操作的前置条件
+        # 验证副本操作的前置条件
         rpg_game = _validate_dungeon_prerequisites(
             user_name=payload.user_name,
             game_server=game_server,
@@ -308,7 +308,7 @@ async def dungeon_combat_play_cards(
     game_server: CurrentGameServer,
 ) -> DungeonCombatPlayCardsResponse:
     """
-    地下城战斗出牌接口
+    副本战斗出牌接口
     """
 
     logger.info(f"/api/dungeon/combat/play_cards/v1/: user={payload.user_name}")
@@ -323,7 +323,7 @@ async def dungeon_combat_play_cards(
 
     async with current_room._lock:
 
-        # 验证地下城操作的前置条件
+        # 验证副本操作的前置条件
         rpg_game = _validate_dungeon_prerequisites(
             user_name=payload.user_name,
             game_server=game_server,
@@ -382,7 +382,7 @@ async def dungeon_combat_pass_turn(
     payload: DungeonCombatPassTurnRequest,
     game_server: CurrentGameServer,
 ) -> DungeonCombatPassTurnResponse:
-    """地下城战斗过牌接口"""
+    """副本战斗过牌接口"""
 
     logger.info(f"/api/dungeon/combat/pass_turn/v1/: user={payload.user_name}")
 
@@ -396,7 +396,7 @@ async def dungeon_combat_pass_turn(
 
     async with current_room._lock:
 
-        # 验证地下城操作的前置条件
+        # 验证副本操作的前置条件
         rpg_game = _validate_dungeon_prerequisites(
             user_name=payload.user_name,
             game_server=game_server,
@@ -453,7 +453,7 @@ async def dungeon_combat_use_consumable(
     payload: DungeonCombatUseConsumableItemRequest,
     game_server: CurrentGameServer,
 ) -> DungeonCombatUseConsumableItemResponse:
-    """地下城战斗使用消耗品接口"""
+    """副本战斗使用消耗品接口"""
 
     logger.info(
         f"/api/dungeon/combat/use_consumable/v1/: user={payload.user_name} "
@@ -470,7 +470,7 @@ async def dungeon_combat_use_consumable(
 
     async with current_room._lock:
 
-        # 验证地下城操作的前置条件
+        # 验证副本操作的前置条件
         rpg_game = _validate_dungeon_prerequisites(
             user_name=payload.user_name,
             game_server=game_server,
@@ -528,7 +528,7 @@ async def dungeon_combat_use_gear(
     payload: DungeonCombatUseGearItemRequest,
     game_server: CurrentGameServer,
 ) -> DungeonCombatUseGearItemResponse:
-    """地下城战斗使用装备接口。
+    """副本战斗使用装备接口。
     触发玩家在战斗中使用背包内装备的后台任务，立即返回任务ID。
     """
 
@@ -547,7 +547,7 @@ async def dungeon_combat_use_gear(
 
     async with current_room._lock:
 
-        # 验证地下城操作的前置条件
+        # 验证副本操作的前置条件
         rpg_game = _validate_dungeon_prerequisites(
             user_name=payload.user_name,
             game_server=game_server,

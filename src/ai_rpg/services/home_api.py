@@ -2,7 +2,7 @@
 家园 API 路由模块
 
 提供家园系统的核心API接口，处理玩家在家园状态下的各种游戏操作，
-包括对话、场景切换、游戏推进和地下城传送等功能。
+包括对话、场景切换、游戏推进和副本传送等功能。
 """
 
 import asyncio
@@ -218,7 +218,7 @@ async def home_enter_dungeon(
     game_server: CurrentGameServer,
 ) -> HomeEnterDungeonResponse:
     """
-    家园传送地下城接口
+    家园传送副本接口
     """
 
     logger.info(f"/api/home/enter_dungeon/v1/: user={payload.user_name}")
@@ -238,22 +238,22 @@ async def home_enter_dungeon(
             game_server,
         )
 
-        # 第一步：从文件加载地下城并创建实体（幂等）
+        # 第一步：从文件加载副本并创建实体（幂等）
         success, error_detail = setup_dungeon(rpg_game, payload.dungeon_name)
         if not success:
-            logger.error(f"玩家 {payload.user_name} 地下城实体创建失败: {error_detail}")
+            logger.error(f"玩家 {payload.user_name} 副本实体创建失败: {error_detail}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="地下城实体创建失败",
+                detail="副本实体创建失败",
             )
 
         # 第二步：组建远征队并进入第一关
         success, error_detail = enter_dungeon(rpg_game, rpg_game.current_dungeon)
         if not success:
-            logger.error(f"玩家 {payload.user_name} 进入地下城失败: {error_detail}")
+            logger.error(f"玩家 {payload.user_name} 进入副本失败: {error_detail}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="进入地下城失败",
+                detail="进入副本失败",
             )
 
         # 返回传送成功响应
@@ -273,7 +273,7 @@ async def home_generate_dungeon(
     game_server: CurrentGameServer,
 ) -> HomeGenerateDungeonResponse:
     """
-    家园生成地下城接口
+    家园生成副本接口
     """
 
     logger.info(f"/api/home/generate_dungeon/v1/: user={payload.user_name}")
@@ -293,7 +293,7 @@ async def home_generate_dungeon(
             game_server,
         )
 
-        # 激活地下城生成动作
+        # 激活副本生成动作
         success, error_detail = activate_generate_dungeon(rpg_game)
         if not success:
             raise HTTPException(

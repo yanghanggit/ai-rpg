@@ -1,4 +1,4 @@
-"""地下城生成流水线共用定义：数据模型与 LLM 工具配置"""
+"""副本生成流水线共用定义：数据模型与 LLM 工具配置"""
 
 from typing import Final, List, final
 from pydantic import BaseModel
@@ -8,7 +8,7 @@ from ..deepseek import ToolDefinition, ToolFunction
 ####################################################################################################################################
 @final
 class DungeonPremiseData(BaseModel):
-    """Step 1 中间数据：地下城名称、整体前提描写与场景数量。"""
+    """Step 1 中间数据：副本名称、整体前提描写与场景数量。"""
 
     dungeon_name: str = ""
     premise: str = ""
@@ -29,7 +29,7 @@ class DungeonStageData(BaseModel):
 ####################################################################################################################################
 @final
 class DungeonStagesData(BaseModel):
-    """Step 2 中间数据集合：地下城的全部场景列表。"""
+    """Step 2 中间数据集合：副本的全部场景列表。"""
 
     dungeon_name: str = ""
     premise: str = ""
@@ -39,7 +39,7 @@ class DungeonStagesData(BaseModel):
 ####################################################################################################################################
 @final
 class DungeonActorBlueprint(BaseModel):
-    """地下城怪物实体创建所需的原始字段。供 assemble_dungeon_system 使用。"""
+    """副本怪物实体创建所需的原始字段。供 assemble_dungeon_system 使用。"""
 
     actor_name: str = ""
     character_sheet_name: str = ""
@@ -50,7 +50,7 @@ class DungeonActorBlueprint(BaseModel):
 ####################################################################################################################################
 @final
 class DungeonStageBlueprint(BaseModel):
-    """地下城单个场景实体创建所需的原始字段（包含配对的怪物蓝图）。供 assemble_dungeon_system 使用。"""
+    """副本单个场景实体创建所需的原始字段（包含配对的怪物蓝图）。供 assemble_dungeon_system 使用。"""
 
     stage_name: str = ""
     profile_name: str = ""
@@ -62,11 +62,11 @@ class DungeonStageBlueprint(BaseModel):
 ####################################################################################################################################
 @final
 class DungeonBlueprint(BaseModel):
-    """地下城完整蓝图，承载 Steps 1-3 的全部产出。供 assemble_dungeon_system 使用。
+    """副本完整蓝图，承载 Steps 1-3 的全部产出。供 assemble_dungeon_system 使用。
 
     Attributes:
-        dungeon_name: 地下城全名，格式为「地下城.XXXX」
-        premise: 地下城整体前提描述
+        dungeon_name: 副本全名，格式为「副本.XXXX」
+        premise: 副本整体前提描述
         stages: 已完整配对（场景+怪物）的场景蓝图列表
         image_url: 封面图片 URL，Step 3 写入时为空，由 IllustrateDungeonActionSystem 填充
     """
@@ -83,22 +83,22 @@ class DungeonBlueprint(BaseModel):
 PREMISE_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="record_dungeon_premise",
-        description="记录地下城的名称、整体前提写照与场景数量。",
+        description="记录副本的名称、整体前提写照与场景数量。",
         parameters={
             "type": "object",
             "properties": {
                 "name": {
                     "type": "string",
-                    "description": "地下城全名，采用「地下城.XXXX」命名格式，体现其核心特征",
+                    "description": "副本全名，采用「副本.XXXX」命名格式，体现其核心特征",
                 },
                 "premise": {
                     "type": "string",
-                    "description": "该地下城的整体前提写照，100-200字，聚焦感官与情境层面的直观细节，避免直接点出具体角色身份/阵营名称与威胁评价性词汇",
+                    "description": "该副本的整体前提写照，100-200字，聚焦感官与情境层面的直观细节，避免直接点出具体角色身份/阵营名称与威胁评价性词汇",
                 },
                 "stage_count": {
                     "type": "integer",
                     "enum": [2, 3],
-                    "description": "该地下城应包含的战斗场景数量，依规模与层次丰富程度选择",
+                    "description": "该副本应包含的战斗场景数量，依规模与层次丰富程度选择",
                 },
             },
             "required": ["name", "premise", "stage_count"],
@@ -109,13 +109,13 @@ PREMISE_TOOL: Final[ToolDefinition] = ToolDefinition(
 READ_PREMISE_FILE_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="read_premise_file",
-        description="读取已写入磁盘的地下城前提中间文件，返回其 JSON 内容。",
+        description="读取已写入磁盘的副本前提中间文件，返回其 JSON 内容。",
         parameters={
             "type": "object",
             "properties": {
                 "dungeon_name": {
                     "type": "string",
-                    "description": "地下城全名，与 record_dungeon_premise 中填写的 name 字段一致",
+                    "description": "副本全名，与 record_dungeon_premise 中填写的 name 字段一致",
                 },
             },
             "required": ["dungeon_name"],
@@ -130,13 +130,13 @@ READ_PREMISE_FILE_TOOL: Final[ToolDefinition] = ToolDefinition(
 READ_STAGES_FILE_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="read_stages_file",
-        description="读取已写入磁盘的地下城场景中间文件，返回其 JSON 内容。",
+        description="读取已写入磁盘的副本场景中间文件，返回其 JSON 内容。",
         parameters={
             "type": "object",
             "properties": {
                 "dungeon_name": {
                     "type": "string",
-                    "description": "地下城全名，与 record_dungeon_stages 中填写的 dungeon_name 字段一致",
+                    "description": "副本全名，与 record_dungeon_stages 中填写的 dungeon_name 字段一致",
                 },
             },
             "required": ["dungeon_name"],
@@ -150,13 +150,13 @@ def build_stages_tool(stage_count: int) -> ToolDefinition:
     return ToolDefinition(
         function=ToolFunction(
             name="record_dungeon_stages",
-            description=f"记录地下城全部 {stage_count} 个战斗场景的名称、英文标识、环境描写与角色种类数量。",
+            description=f"记录副本全部 {stage_count} 个战斗场景的名称、英文标识、环境描写与角色种类数量。",
             parameters={
                 "type": "object",
                 "properties": {
                     "dungeon_name": {
                         "type": "string",
-                        "description": "地下城全名，与 Step 1 premise 文件中的 dungeon_name 一致",
+                        "description": "副本全名，与 Step 1 premise 文件中的 dungeon_name 一致",
                     },
                     "stages": {
                         "type": "array",

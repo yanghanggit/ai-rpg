@@ -9,7 +9,7 @@ BLUEPRINTS_DIR.mkdir(parents=True, exist_ok=True)
 assert BLUEPRINTS_DIR.exists(), f"找不到目录: {BLUEPRINTS_DIR}"
 
 ###########################################################################################################################################
-# 地下城配置目录
+# 副本配置目录
 DUNGEONS_DIR: Path = Path(".dungeons")
 DUNGEONS_DIR.mkdir(parents=True, exist_ok=True)
 assert DUNGEONS_DIR.exists(), f"找不到目录: {DUNGEONS_DIR}"
@@ -30,7 +30,7 @@ assert DEBUG_CACHE_DIR.exists(), f"找不到目录: {DEBUG_CACHE_DIR}"
 
 
 ###########################################################################################################################################
-# 地下城生成过程文件目录（Steps 1-3 中间产物，供各步骤系统读写，便于调试观察）
+# 副本生成过程文件目录（Steps 1-3 中间产物，供各步骤系统读写，便于调试观察）
 DUNGEON_PROCESS_DIR: Path = DEBUG_CACHE_DIR / "_process"
 DUNGEON_PROCESS_DIR.mkdir(parents=True, exist_ok=True)
 assert DUNGEON_PROCESS_DIR.exists(), f"找不到目录: {DUNGEON_PROCESS_DIR}"

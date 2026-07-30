@@ -102,7 +102,7 @@ class HomeComponent(Component):
 @final
 @register_component_type
 class DungeonComponent(Component):
-    """标记场景为地下城类型。"""
+    """标记场景为副本类型。"""
 
     name: str
 
@@ -120,7 +120,7 @@ class NPCComponent(Component):
 @final
 @register_component_type
 class PartyMemberComponent(Component):
-    """标记角色为当前地下城远征队活跃成员（NPCComponent 的子集，留守盟友不持有此组件）。"""
+    """标记角色为当前副本远征队活跃成员（NPCComponent 的子集，留守盟友不持有此组件）。"""
 
     name: str
 
@@ -208,7 +208,7 @@ class PlayerActionAuditComponent(Component):
 @final
 @register_component_type
 class DungeonGenerationComponent(Component):
-    """标记世界系统实体具有地下城图片生成职责。"""
+    """标记世界系统实体具有副本图片生成职责。"""
 
     name: str
 

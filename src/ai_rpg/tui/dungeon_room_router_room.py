@@ -1,4 +1,4 @@
-"""地下城房间路由 Screen（DungeonRoomRouterRoom）"""
+"""副本房间路由 Screen（DungeonRoomRouterRoom）"""
 
 from typing import final
 
@@ -14,7 +14,7 @@ from ..models import CombatRoom
 
 @final
 class DungeonRoomRouterRoom(BaseGameScreen):
-    """地下城房间路由 Screen：查询当前房间类型后 switch 到对应的具体房间 Screen。"""
+    """副本房间路由 Screen：查询当前房间类型后 switch 到对应的具体房间 Screen。"""
 
     def compose(self) -> ComposeResult:
         yield Static(
@@ -26,7 +26,7 @@ class DungeonRoomRouterRoom(BaseGameScreen):
 
     @work
     async def _route(self) -> None:
-        """查询当前地下城状态，取 current_room_index 对应的房间，根据其
+        """查询当前副本状态，取 current_room_index 对应的房间，根据其
         type 判别字段分发到具体房间 Screen。"""
         assert self.game_client.session is not None
         user_name = self.game_client.session.user_name
@@ -38,8 +38,8 @@ class DungeonRoomRouterRoom(BaseGameScreen):
             resp = await fetch_dungeon_state(user_name, game_name)
             room = resp.dungeon.current_room
         except Exception as e:
-            logger.error(f"DungeonRoomRouterRoom._route: 查询地下城状态失败 error={e}")
-            self.query_one(Static).update(f"[bold red]❌ 查询地下城状态失败：{e}[/]")
+            logger.error(f"DungeonRoomRouterRoom._route: 查询副本状态失败 error={e}")
+            self.query_one(Static).update(f"[bold red]❌ 查询副本状态失败：{e}[/]")
             return
 
         if room is None:

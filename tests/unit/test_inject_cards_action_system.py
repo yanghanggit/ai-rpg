@@ -162,7 +162,7 @@ class TestInjectCards:
         mock_game: MagicMock,
         system: InjectCardsActionSystem,
     ) -> None:
-        stage = _make_stage_entity(context, "地下城")
+        stage = _make_stage_entity(context, "副本")
         target = _make_actor_entity(context, "英雄")
         directive = ActorPostArbitrationDirective(
             target="英雄", inject_cards=[_make_card("斩击")]
@@ -180,7 +180,7 @@ class TestInjectCards:
         mock_game: MagicMock,
         system: InjectCardsActionSystem,
     ) -> None:
-        stage = _make_stage_entity(context, "地下城")
+        stage = _make_stage_entity(context, "副本")
         target = _make_actor_entity(context, "英雄")
         target.get(DiscardPileComponent).cards = [_make_card("斩击")]
 
@@ -214,7 +214,7 @@ class TestInjectCards:
         mock_game: MagicMock,
         system: InjectCardsActionSystem,
     ) -> None:
-        stage = _make_stage_entity(context, "地下城")
+        stage = _make_stage_entity(context, "副本")
         target = _make_actor_entity(context, "法师")
         existing = _make_card("火球")
         target.get(DiscardPileComponent).cards = [existing]
@@ -236,7 +236,7 @@ class TestApplyResponse:
         mock_game: MagicMock,
         system: InjectCardsActionSystem,
     ) -> None:
-        stage = _make_stage_entity(context, "地下城")
+        stage = _make_stage_entity(context, "副本")
         target = _make_actor_entity(context, "英雄")
         _configure_lookup(mock_game, stage, target)
 
@@ -244,7 +244,7 @@ class TestApplyResponse:
             "英雄",
             cards=[_make_card("碎石投掷")],
         )
-        client = _make_mock_chat_client("地下城", response_json)
+        client = _make_mock_chat_client("副本", response_json)
 
         system._apply_response(client)
 
@@ -256,11 +256,11 @@ class TestApplyResponse:
         mock_game: MagicMock,
         system: InjectCardsActionSystem,
     ) -> None:
-        stage = _make_stage_entity(context, "地下城")
+        stage = _make_stage_entity(context, "副本")
         target = _make_actor_entity(context, "战士")
         _configure_lookup(mock_game, stage, target)
 
-        client = _make_mock_chat_client("地下城", '{"per_actor": []}')
+        client = _make_mock_chat_client("副本", '{"per_actor": []}')
         system._apply_response(client)
 
         assert target.get(StatusEffectsComponent).status_effects == []
@@ -273,13 +273,13 @@ class TestApplyResponse:
         system: InjectCardsActionSystem,
     ) -> None:
         """target 不存在时应 log error 并不抛出。"""
-        stage = _make_stage_entity(context, "地下城")
+        stage = _make_stage_entity(context, "副本")
         _configure_lookup(mock_game, stage)
 
         response_json = _build_response_json(
             "不存在的角色", cards=[_make_card("碎石投掷")]
         )
-        client = _make_mock_chat_client("地下城", response_json)
+        client = _make_mock_chat_client("副本", response_json)
 
         # 不应抛出异常
         system._apply_response(client)
@@ -291,11 +291,11 @@ class TestApplyResponse:
         system: InjectCardsActionSystem,
     ) -> None:
         """human/ai 消息应各写入 stage entity 对话历史一次。"""
-        stage = _make_stage_entity(context, "地下城")
+        stage = _make_stage_entity(context, "副本")
         target = _make_actor_entity(context, "法师")
         _configure_lookup(mock_game, stage, target)
 
-        client = _make_mock_chat_client("地下城", '{"per_actor": []}')
+        client = _make_mock_chat_client("副本", '{"per_actor": []}')
         system._apply_response(client)
 
         mock_game.add_human_message.assert_called_once()
@@ -308,12 +308,12 @@ class TestApplyResponse:
         system: InjectCardsActionSystem,
     ) -> None:
         """use_compressed_prompt=True 时，compressed_prompt 应传入 add_human_message。"""
-        stage = _make_stage_entity(context, "地下城")
+        stage = _make_stage_entity(context, "副本")
         target = _make_actor_entity(context, "牧师")
         _configure_lookup(mock_game, stage, target)
 
         client = _make_mock_chat_client(
-            "地下城",
+            "副本",
             '{"per_actor": []}',
             prompt="full prompt",
             compressed_prompt="compressed",

@@ -1,4 +1,4 @@
-"""地下城前提设定生成系统"""
+"""副本前提设定生成系统"""
 
 from pathlib import Path
 from typing import Dict, Final, List, Optional, final, override
@@ -20,14 +20,14 @@ from .dungeon_generation import (
 
 ####################################################################################################################################
 def _build_dungeon_premise_prompt() -> str:
-    """构建地下城前提设定生成提示词。
+    """构建副本前提设定生成提示词。
 
     无需任何种子数据，完全由世界观框架驱动创作。
     世界观已通过调用方的 SystemMessage 提供给 LLM。
     """
-    return """# 任务：创作一个地下城的整体前提
+    return """# 任务：创作一个副本的整体前提
 
-请在当前世界观框架内，为本次地下城生成名称与整体前提写照。
+请在当前世界观框架内，为本次副本生成名称与整体前提写照。
 
 
 工作流程：调用 record_dungeon_premise 写入前提数据，确认无误后结束本次对话。
@@ -37,7 +37,7 @@ def _build_dungeon_premise_prompt() -> str:
 ####################################################################################################################################
 @final
 class GenerateDungeonPremiseSystem(ReactiveProcessor):
-    """地下城前提设定生成系统
+    """副本前提设定生成系统
 
     Note:
         - GenerateDungeonAction 由 home_actions.activate_generate_dungeon() 在家园状态下添加
@@ -79,7 +79,7 @@ class GenerateDungeonPremiseSystem(ReactiveProcessor):
                 premise=premise,
                 stage_count=stage_count,
             )
-            file_path: Path = DUNGEON_PROCESS_DIR / f"{name}_step1_premise.json"
+            file_path: Path = DUNGEON_PROCESS_DIR / f"{name}_premise.json"
             file_path.write_text(
                 premise_file.model_dump_json(indent=4), encoding="utf-8"
             )
@@ -90,12 +90,12 @@ class GenerateDungeonPremiseSystem(ReactiveProcessor):
                 f"  → {file_path}"
             )
             return (
-                f"已记录地下城「{name}」，共 {stage_count} 个战斗场景。"
+                f"已记录副本「{name}」，共 {stage_count} 个战斗场景。"
                 f"中间文件已写入: {file_path}"
             )
 
         def _handle_read_premise_file(dungeon_name: str) -> str:
-            file_path: Path = DUNGEON_PROCESS_DIR / f"{dungeon_name}_step1_premise.json"
+            file_path: Path = DUNGEON_PROCESS_DIR / f"{dungeon_name}_premise.json"
             if not file_path.exists():
                 return f"错误：文件不存在 {file_path}"
             return file_path.read_text(encoding="utf-8")

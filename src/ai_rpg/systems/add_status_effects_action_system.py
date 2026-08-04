@@ -292,6 +292,11 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
             StatusEffectsComponent
         ), f"Entity {entity.name} must have StatusEffectsComponent"
 
+        add_status_effects_action = entity.get(AddStatusEffectsAction)
+        assert (
+            add_status_effects_action is not None
+        ), f"角色 {entity.name} 缺少 AddStatusEffectsAction 组件！"
+
         # 解析 LLM 响应，追加状态效果
         try:
             json_content = extract_json_from_code_block(chat_client.response_content)
@@ -327,9 +332,20 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
         # 添加新效果到现有列表
         if format_response.add_effects:
 
-            # 将新增效果的 source 字段设置为角色名称，便于后续追踪来源
-            for effect in format_response.add_effects:
+            # LLM 必须严格按 prompt 要求的 1:1 顺序返回，否则无法追溯 affix 来源
+            assert len(format_response.add_effects) == len(
+                add_status_effects_action.affixes
+            ), (
+                f"[{entity.name}] LLM 返回效果数({len(format_response.add_effects)}) "
+                f"与触发提示数({len(add_status_effects_action.affixes)}) 不一致"
+            )
+
+            # 将新增效果的 source/affix 字段回填，便于后续追踪来源
+            for trigger, effect in zip(
+                add_status_effects_action.affixes, format_response.add_effects
+            ):
                 effect.source = entity.name
+                effect.affix = trigger.affix
 
             # 追加新效果到 CombatStatusEffectsComponent
             combat_status_effects = entity.get(StatusEffectsComponent)

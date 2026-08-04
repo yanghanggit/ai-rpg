@@ -21,12 +21,6 @@ from src.ai_rpg.systems.add_status_effects_action_system import (
     AddStatusEffectsActionSystem,
 )
 
-# from src.ai_rpg.systems.status_effect_prompt_builders import (
-#     generate_add_status_effects_prompt,
-#     generate_compressed_add_status_effects_prompt,
-# )
-
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -122,8 +116,8 @@ class TestProcessStatusEffectsResponse:
         mock_game: MagicMock,
         system: AddStatusEffectsActionSystem,
     ) -> None:
-        """有效响应：效果追加、source 设为实体名、human/ai message 各写入一次。"""
-        entity = _make_actor_entity(context, "英雄")
+        """有效响应：效果追加、source 设为实体名、affix 回填自触发词缀、human/ai message 各写入一次。"""
+        entity = _make_actor_entity(context, "英雄", with_action=True)
         mock_game.get_entity_by_name.return_value = entity
         response_json = '{"add_effects": [{"name": "燃烧", "description": "持续灼烧", "duration": 2, "phase": "arbitration"}]}'
         client = _make_mock_chat_client("英雄", response_json)
@@ -134,6 +128,7 @@ class TestProcessStatusEffectsResponse:
         assert len(effects) == 1
         assert effects[0].name == "燃烧"
         assert effects[0].source == "英雄"
+        assert effects[0].affix == "测试词缀"
         # 出牌 prompt 写入一次 + 新增效果后的状态效果通知消息写入一次，共两次
         assert mock_game.add_human_message.call_count == 2
         mock_game.add_ai_message.assert_called_once()
@@ -149,7 +144,7 @@ class TestProcessStatusEffectsResponse:
         mock_game: MagicMock,
         system: AddStatusEffectsActionSystem,
     ) -> None:
-        entity = _make_actor_entity(context, "战士")
+        entity = _make_actor_entity(context, "战士", with_action=True)
         mock_game.get_entity_by_name.return_value = entity
         system._process_status_effects_response(
             _make_mock_chat_client("战士", '{"add_effects": []}')
@@ -163,7 +158,7 @@ class TestProcessStatusEffectsResponse:
         system: AddStatusEffectsActionSystem,
     ) -> None:
         """speed 超范围归一化；defense 正负值保留原值，缺省为 0。"""
-        entity = _make_actor_entity(context, "刺客")
+        entity = _make_actor_entity(context, "刺客", with_action=True)
         mock_game.get_entity_by_name.return_value = entity
         cases = [
             (
@@ -206,7 +201,7 @@ class TestProcessStatusEffectsResponse:
         mock_game: MagicMock,
         system: AddStatusEffectsActionSystem,
     ) -> None:
-        entity = _make_actor_entity(context, "骑士")
+        entity = _make_actor_entity(context, "骑士", with_action=True)
         mock_game.get_entity_by_name.return_value = entity
         system._process_status_effects_response(
             _make_mock_chat_client("骑士", "不是JSON")
@@ -220,7 +215,7 @@ class TestProcessStatusEffectsResponse:
         system: AddStatusEffectsActionSystem,
     ) -> None:
         """use_compressed_prompt=True 时 message_content 应为 compressed_prompt。"""
-        entity = _make_actor_entity(context, "猎人")
+        entity = _make_actor_entity(context, "猎人", with_action=True)
         mock_game.get_entity_by_name.return_value = entity
         client = _make_mock_chat_client(
             "猎人", '{"add_effects": []}', prompt="full", compressed_prompt="compressed"
@@ -238,7 +233,7 @@ class TestProcessStatusEffectsResponse:
         system_no_compress: AddStatusEffectsActionSystem,
     ) -> None:
         """use_compressed_prompt=False 时 message_content 应为 full prompt。"""
-        entity = _make_actor_entity(context, "游侠")
+        entity = _make_actor_entity(context, "游侠", with_action=True)
         mock_game.get_entity_by_name.return_value = entity
         client = _make_mock_chat_client(
             "游侠",

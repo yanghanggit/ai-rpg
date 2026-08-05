@@ -249,7 +249,7 @@ class DeepSeekClient:
     ################################################################################################################################################################################
     @property
     def response_reasoning_content(self) -> str:
-        """获取推理思考过程内容（仅 deepseek-reasoner 有效）"""
+        """获取推理思考过程内容（thinking mode 开启时有效）"""
         if self._response_ai_message is None:
             return ""
         val = self._response_ai_message.additional_kwargs.get("reasoning_content")
@@ -311,19 +311,16 @@ class DeepSeekClient:
             "messages": messages,
             "model": self._model,
             "thinking": {"type": "enabled" if self._thinking else "disabled"},
-            "reasoning_effort": self._reasoning_effort,
-            "max_tokens": 4096,
+            "max_tokens": 16384,
             "response_format": {"type": "text"},
-            "stop": None,
-            "stream": False,  # 目前写死，因为本项目暂时用不到流式输出，简化调用。
-            "stream_options": None,
+            "stream": False,
             "temperature": self._temperature,
-            "top_p": 1,
             "tools": [t.model_dump() for t in self._tools] if self._tools else None,
             "tool_choice": self._tool_choice,
-            "logprobs": False,
-            "top_logprobs": None,
         }
+        # reasoning_effort 仅当显式指定时传入
+        if self._reasoning_effort is not None:
+            payload["reasoning_effort"] = self._reasoning_effort
         return payload
 
     ################################################################################################################################################################################

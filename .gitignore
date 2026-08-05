@@ -77,3 +77,6 @@ htmlcov/
 
 # Local AI Agent Configurations (e.g., Claude, Gemini, etc.)
 .claude.json
+
+# pi-coding-agent specific files
+.pi

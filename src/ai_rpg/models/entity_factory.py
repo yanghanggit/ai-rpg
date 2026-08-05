@@ -1,13 +1,5 @@
 """
 游戏实体工厂模块。
-
-本模块提供工厂函数用于创建和初始化游戏实体，包括角色、场景和世界系统。
-工厂函数负责实体的完整构建，包括系统消息生成、状态初始化和配置组装。
-
-主要功能:
-- 创建游戏角色(Actor)实例，自动生成 system_message 和初始化属性
-- 创建游戏场景(Stage)实例，根据场景类型配置战斗机制
-- 创建世界系统(WorldSystem)实例，设置全局叙事和规则管理
 """
 
 from typing import List, Optional
@@ -33,23 +25,6 @@ def create_actor(
 ) -> Actor:
     """
     创建一个游戏角色(Actor)实例。
-
-    该函数初始化一个Actor对象，设置其角色表单、属性、系统消息等。
-    角色的生命値会被自动设置为最大生命値。
-
-    Args:
-        name: 角色名称
-        character_sheet: 角色表单(CharacterSheet对象)
-        character_stats: 角色属性统计(CharacterStats对象)
-        campaign_setting: 战役设定描述
-        system_rules: 全局游戏机制规则
-        keywords: 卡牌关键词约束列表，限制 LLM 生成卡牌的风格与功能边界，默认无约束
-
-    Returns:
-        Actor: 初始化完成的Actor实例，生命值已满
-
-    Raises:
-        AssertionError: 当max_hp不大于0或初始hp不为0时抛出
     """
 
     actor = Actor(
@@ -90,19 +65,6 @@ def build_actor_system_message(
 ) -> str:
     """
     组装角色 system_message。
-
-    与 create_actor 内部模板保持一致，供需要在运行时动态拼接 system_message
-    的外部模块复用。
-
-    Args:
-        actor_name: 角色名称
-        campaign_setting: 战役设定描述
-        system_rules: 全局游戏机制规则
-        character_profile: 角色背景和特征描述
-        base_body: 角色基础体型外观描述
-
-    Returns:
-        拼接完成的 system_message 字符串
     """
     return f"""# {actor_name}
     
@@ -134,19 +96,6 @@ def create_stage(
 ) -> Stage:
     """
     创建一个游戏场景(Stage)实例。
-
-    该函数初始化一个Stage对象，设置场景表单、系统消息等。
-    场景用于承载游戏中的各种互动和事件。仅副本类型场景会自动添加战斗机制说明。
-
-    Args:
-        name: 场景名称
-        stage_profile: 场景表单(StageProfile对象)
-        campaign_setting: 战役设定描述
-        system_rules: 全局游戏机制规则
-        combat_mechanics: 战斗机制规则（仅在场景类型为 DUNGEON 时使用）
-
-    Returns:
-        Stage: 初始化完成的Stage实例
     """
 
     stage = Stage(
@@ -176,18 +125,6 @@ def build_stage_system_message(
 ) -> str:
     """
     组装场景 system_message。
-
-    与 create_stage 内部模板保持一致，供需要在运行时动态拼接 system_message
-    的外部模块（如 DungeonGenerationSystem）复用。
-
-    Args:
-        stage_name: 场景全名
-        campaign_setting: 战役设定描述
-        system_rules: 全局游戏机制规则
-        profile: 场景感官环境描写
-
-    Returns:
-        拼接完成的 system_message 字符串
     """
     return f"""# {stage_name}
     
@@ -217,18 +154,6 @@ def create_world_system(
 ) -> WorldSystem:
     """
     创建一个世界系统(WorldSystem)实例。
-
-    该函数初始化一个WorldSystem对象，设置系统消息等。
-    世界系统作为全局叙事者和规则管理器，跨场景协调事件，维护规则一致性。
-
-    Args:
-        name: 世界系统名称
-        campaign_setting: 战役设定描述
-        system_rules: 全局游戏机制规则
-        role_rules: 该世界系统的职责专属规范；传入 None 时不附加额外章节
-
-    Returns:
-        WorldSystem: 初始化完成的WorldSystem实例
     """
 
     world_system = WorldSystem(

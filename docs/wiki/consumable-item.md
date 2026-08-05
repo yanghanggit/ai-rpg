@@ -29,7 +29,9 @@
 - **即时修正词缀**：直接注入本次仲裁 prompt，LLM 在计算 HP 变化时将其纳入。
 - **延迟词缀**：仲裁结束后触发独立状态效果推理，由 LLM 决定是否生成持续 `StatusEffect`。
 
-两类词缀分字段存储，设计与 `GearItem` 一致。
+两类词缀分字段存储。`GearItem` 的延迟词缀按触发时机进一步拆分为装备时（`equip_affixes`）与命中时（`on_hit_affixes`）两组字段。
+
+→ 参见：[装备系统（GearItem）](gear-item.md)（三类词缀的触发时机区分）
 
 ---
 

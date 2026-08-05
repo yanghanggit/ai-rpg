@@ -33,6 +33,6 @@
 
 ## 合成来源
 
-装备也可由工坊系统从材料合成，命名遵循「装备.XXXX」约定；LLM 推理同时生成 `stat_bonuses` 与两类延迟词缀，合成品与非合成装备的加成计算方式完全一致。
+装备也可由工坊系统从材料合成，命名遵循「装备.XXXX」约定；LLM 推理同时生成 `stat_bonuses`、`cost`、两类延迟词缀（`equip_affixes` 与 `on_hit_affixes`）以及即时修正词缀（`modifiers`），合成品与非合成装备的加成计算方式完全一致。
 
 → 参见：[材料系统（MaterialItem）](material-item.md)（合成管道与材料消耗规则）

@@ -34,7 +34,7 @@ def _build_craft_prompt(materials: List[MaterialItem]) -> str:
     material_lines = "\n".join(
         f"- **{m.name}**（数量 {m.count}）：{m.description}" for m in materials
     )
-    target_type_options = "、".join(t.value for t in TargetType)
+    target_type_options = "、".join(t.value for t in TargetType if t != TargetType.SELF)
 
     return f"""# 任务：根据材料创意合成一件消耗品
 
@@ -47,7 +47,6 @@ def _build_craft_prompt(materials: List[MaterialItem]) -> str:
 - **name**：消耗品全名，采用「消耗品.XXXX」命名格式，体现材料特性与用途，简洁有辨识度
 - **description**：物品描述，30-60字，说明外观、气味或使用感受，体现材料的来源与效果想象
 - **target_type**：目标类型，从以下选项中选择一个：{target_type_options}
-  - self：仅作用于自身（恢复、强化自身）
   - single：作用于单个角色（可为友方治疗/辅助，也可为敌方造成伤害/削弱，依材料创意与效果自行判断）
   - all：选定一个目标作为阵营锚点，作用于其所在阵营全体存活角色（选己方=全体友方增益，选敌方=全体敌方伤害）
   - spread：选定一个目标作为阵营锚点，对其所在阵营全体存活角色散射攻击（命中次数>阵营人数时保底每人至少一次，其余随机）
@@ -60,7 +59,7 @@ def _build_craft_prompt(materials: List[MaterialItem]) -> str:
 {{
   "name": "消耗品.XXX",
   "description": "...",
-  "target_type": "self",
+  "target_type": "single",
   "affixes": ["[燃烧]:可能引发持续扣血"],
   "modifiers": ["[穿甲]:无视目标防御"]
 }}

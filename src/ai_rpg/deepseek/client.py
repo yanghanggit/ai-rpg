@@ -11,6 +11,7 @@ temperature 参数默认为 1.0。
 通用对话	1.3
 翻译	1.3
 创意类写作/诗歌创作	1.5
+
 """
 
 import asyncio
@@ -94,7 +95,7 @@ class DeepSeekClient:
 
     ################################################################################################################################################################################
     @classmethod
-    def _get_api_key(cls) -> str:
+    def get_api_key(cls) -> str:
         """每次从环境变量读取 API Key"""
         api_key = os.getenv("DEEPSEEK_API_KEY")
         if not api_key:
@@ -114,7 +115,7 @@ class DeepSeekClient:
         try:
             headers = {
                 "Accept": "application/json",
-                "Authorization": f"Bearer {cls._get_api_key()}",
+                "Authorization": f"Bearer {cls.get_api_key()}",
             }
             response = requests.get(
                 url=_DEEPSEEK_MODELS_URL,
@@ -146,7 +147,7 @@ class DeepSeekClient:
         try:
             headers = {
                 "Accept": "application/json",
-                "Authorization": f"Bearer {cls._get_api_key()}",
+                "Authorization": f"Bearer {cls.get_api_key()}",
             }
             response = requests.get(
                 url=_DEEPSEEK_BALANCE_URL,
@@ -202,7 +203,7 @@ class DeepSeekClient:
         self._compressed_prompt: Final[str] = (
             compressed_prompt if compressed_prompt is not None else prompt
         )
-        self._context: Sequence[BaseMessage] = context
+        self._context: Final[Sequence[BaseMessage]] = context
         self._model: Final[str] = model
         self._thinking: Final[bool] = thinking
         self._timeout: Final[int] = timeout if timeout is not None else 30
@@ -218,15 +219,17 @@ class DeepSeekClient:
         if not self._context:
             logger.warning(f"{self._name}: context is empty")
 
-        self._response_ai_message: Optional[AIMessage] = None
-        self._finish_reason: str = ""
-        self._tool_calls: List[ToolCall] = []
         self._temperature: Final[float] = (
             temperature if temperature is not None else 1.0
         )
         self._reasoning_effort: Final[Optional[Literal["low", "high", "max"]]] = (
             reasoning_effort
         )
+
+        # 输出
+        self._response_ai_message: Optional[AIMessage] = None
+        self._finish_reason: str = ""
+        self._tool_calls: List[ToolCall] = []
 
     ################################################################################################################################################################################
     @property
@@ -327,7 +330,7 @@ class DeepSeekClient:
             "max_tokens": 4096,
             "response_format": {"type": "text"},
             "stop": None,
-            "stream": False,
+            "stream": False,  # 目前写死，因为本项目暂时用不到流式输出，简化调用。
             "stream_options": None,
             "temperature": self._temperature,
             "top_p": 1,
@@ -347,20 +350,29 @@ class DeepSeekClient:
             return
 
         choice = choices[0]
+
+        # 解析 finish_reason
         self._finish_reason = choice.get("finish_reason") or ""
 
         message = choice.get("message", {})
         content: str = message.get("content") or ""
+
+        # 解析 reasoning_content 和 tool_calls，存入 additional_kwargs
         additional_kwargs: Dict[str, Any] = {}
 
         reasoning = message.get("reasoning_content")
         if reasoning:
+            # deepseek-reasoner 模型的思考过程内容通常较长，我们单独记录在 additional_kwargs 中，方便用户查看但不干扰主要输出
             additional_kwargs["reasoning_content"] = reasoning
 
         # 解析 LLM 发起的工具调用指令
         raw_tool_calls = message.get("tool_calls")
         if raw_tool_calls:
+
+            # 将原始 tool_calls 转换为 ToolCall 对象列表
             additional_kwargs["tool_calls"] = raw_tool_calls
+
+            # 将原始 tool_calls 转换为 ToolCall 对象列表
             self._tool_calls = [
                 ToolCall(
                     id=tc["id"],
@@ -418,16 +430,22 @@ class DeepSeekClient:
         start_time = time.time()
 
         try:
+
+            # 构建请求头和请求体
+            headers = {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "Authorization": f"Bearer {DeepSeekClient.get_api_key()}",
+            }
+
+            # 发送 POST 请求到 DeepSeek API
             response = await DeepSeekClient.get_async_client().post(
                 url=_DEEPSEEK_API_URL,
-                headers={
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    "Authorization": f"Bearer {DeepSeekClient._get_api_key()}",
-                },
+                headers=headers,
                 json=self._build_payload(),
                 timeout=self._timeout,
             )
+
         except httpx.TimeoutException as e:
             logger.error(f"{self._name}: async timeout: {type(e).__name__}: {e}")
             raise
@@ -469,6 +487,8 @@ class DeepSeekClient:
 
             # 记录错误响应信息
             self._handle_error_response(response.status_code, response.text)
+
+            # 向上抛出异常，方便调用方捕获处理
             raise httpx.HTTPStatusError(
                 f"HTTP {response.status_code}",
                 request=response.request,
@@ -477,27 +497,21 @@ class DeepSeekClient:
 
     ################################################################################################################################################################################
     def _dump_chat(self) -> None:
-        """将本次 chat() 完整对话写入 .chat_dumps/ 下的 Markdown 文件。
-        文件名格式：{YYYYMMDD_HHMMSS_ffffff}_{name}.md（含微秒防并发冲突）
-        写入失败只记录 warning，不向上抛异常。
-        """
+        """将本次 chat() 完整对话写入 .chat_dumps/ 下的 Markdown 文件。"""
 
         try:
+
             # 拷贝 context，再把本轮 prompt / response 分别补齐为 HumanMessage / AIMessage，
-            # 使全部消息（含本轮）统一交给 get_buffer_string 一次性渲染，
-            # 避免手工拼接 lines 导致的分隔符/格式不一致问题。
+            # 使全部消息（含本轮）统一交给 get_buffer_string.
             messages: List[BaseMessage] = list(self._context)
-            messages.append(
-                HumanMessage(
-                    content=(
-                        self._prompt
-                        if self._prompt
-                        else "（continuation 模式，无独立 prompt）"
-                    )
-                )
-            )
+
+            # 添加本轮 prompt / response
+            messages.append(HumanMessage(content=(self._prompt)))
+
+            # 添加本轮 response，注意 response_content 可能为空字符串，但仍然需要记录
             messages.append(AIMessage(content=self.response_content))
 
+            # 提取对话内容为字符串，带有分隔符和角色标记
             _SEP = "-" * 86
             content = get_buffer_string(
                 messages,
@@ -511,8 +525,10 @@ class DeepSeekClient:
             if self.response_reasoning_content:
                 content += "\n" + _SEP + "\n" + self.response_reasoning_content
 
+            # 内容结束。
             content += "\n"
 
+            # 写入文件，文件名格式为：YYYYMMDD_HHMMSS_microseconds_name.txt
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
             dump_file = CHAT_DUMP_DIR / f"{timestamp}_{self._name}.txt"
             CHAT_DUMP_DIR.mkdir(parents=True, exist_ok=True)
@@ -528,11 +544,7 @@ class DeepSeekClient:
     ################################################################################################################################################################################
     @staticmethod
     async def batch_chat(clients: List["DeepSeekClient"]) -> None:
-        """批量并发发送聊天请求
-
-        Args:
-            clients: 客户端列表
-        """
+        """批量并发发送聊天请求"""
         if not clients:
             return
 

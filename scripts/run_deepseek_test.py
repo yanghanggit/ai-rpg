@@ -279,17 +279,22 @@ async def test_tool_call_full_round() -> None:
     print("✅ 完整两转工具调用验证通过")
 
 
+async def _run_async_tests() -> None:
+    # 所有异步测试共用同一个 event loop，避免跨 loop 复用 httpx.AsyncClient 报错
+    await test_chat()
+    await test_cache_tokens()
+    await test_batch_chat()
+    await test_model_matrix()
+    await test_tool_call_single()
+    await test_tool_call_full_round()
+
+
 def main() -> None:
     # DeepSeekClient.setup()
     test_get_buffer_string()
     test_list_models()
     test_get_balance()
-    asyncio.run(test_chat())
-    asyncio.run(test_cache_tokens())
-    asyncio.run(test_batch_chat())
-    asyncio.run(test_model_matrix())
-    asyncio.run(test_tool_call_single())
-    asyncio.run(test_tool_call_full_round())
+    asyncio.run(_run_async_tests())
 
 
 if __name__ == "__main__":

@@ -66,8 +66,6 @@ async def test_batch_chat() -> None:
         print(f"\n❓ {client.prompt}")
         print(f"💬 {client.response_content}")
 
-    await DeepSeekClient.close_async_client()
-
 
 def test_get_buffer_string() -> None:
     """测试 get_buffer_string 函数"""
@@ -158,8 +156,6 @@ async def test_model_matrix() -> None:
         if client.response_reasoning_content:
             preview = client.response_reasoning_content[:120].replace("\n", " ")
             print(f"  思考: {preview}...")
-
-    await DeepSeekClient.close_async_client()
 
 
 # 工具定义：模拟一个天气查询工具

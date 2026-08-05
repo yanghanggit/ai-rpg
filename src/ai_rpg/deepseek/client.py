@@ -91,8 +91,6 @@ class DeepSeekClient:
     公共接口与 ChatClient 保持一致。
     """
 
-    _async_client: httpx.AsyncClient = httpx.AsyncClient()
-
     ################################################################################################################################################################################
     @classmethod
     def get_api_key(cls) -> str:
@@ -101,12 +99,6 @@ class DeepSeekClient:
         if not api_key:
             raise ValueError("DEEPSEEK_API_KEY environment variable is not set")
         return api_key
-
-    ################################################################################################################################################################################
-    @classmethod
-    def get_async_client(cls) -> httpx.AsyncClient:
-        """获取共享的异步 HTTP 客户端"""
-        return cls._async_client
 
     ################################################################################################################################################################################
     @classmethod
@@ -168,13 +160,6 @@ class DeepSeekClient:
                 f"DeepSeekClient.get_balance request error: {type(e).__name__}: {e}"
             )
             return {}
-
-    ################################################################################################################################################################################
-    @classmethod
-    async def close_async_client(cls) -> None:
-        """关闭并重置异步 HTTP 客户端"""
-        await cls._async_client.aclose()
-        cls._async_client = httpx.AsyncClient()
 
     ################################################################################################################################################################################
     def __init__(
@@ -424,27 +409,34 @@ class DeepSeekClient:
                 logger.error(f"{self._name}: 请求失败 ({status_code}): {response_text}")
 
     ################################################################################################################################################################################
-    async def chat(self) -> None:
-        """异步发送聊天请求（直连 DeepSeek 平台）"""
+    async def chat(self, client: Optional[httpx.AsyncClient] = None) -> None:
+        """异步发送聊天请求（直连 DeepSeek 平台）。
+
+        单独调用时不传 client，内部临时创建；
+        batch_chat 时传入共享 client 以复用连接池。
+        """
         logger.debug(f"{self._name} a_request prompt:\n{self._prompt}")
         start_time = time.time()
 
-        try:
-
-            # 构建请求头和请求体
+        async def _do_post(http_client: httpx.AsyncClient) -> httpx.Response:
             headers = {
                 "Content-Type": "application/json",
                 "Accept": "application/json",
                 "Authorization": f"Bearer {DeepSeekClient.get_api_key()}",
             }
-
-            # 发送 POST 请求到 DeepSeek API
-            response = await DeepSeekClient.get_async_client().post(
+            return await http_client.post(
                 url=_DEEPSEEK_API_URL,
                 headers=headers,
                 json=self._build_payload(),
                 timeout=self._timeout,
             )
+
+        try:
+            if client is not None:
+                response = await _do_post(client)
+            else:
+                async with httpx.AsyncClient() as tmp_client:
+                    response = await _do_post(tmp_client)
 
         except httpx.TimeoutException as e:
             logger.error(f"{self._name}: async timeout: {type(e).__name__}: {e}")
@@ -544,14 +536,20 @@ class DeepSeekClient:
     ################################################################################################################################################################################
     @staticmethod
     async def batch_chat(clients: List["DeepSeekClient"]) -> None:
-        """批量并发发送聊天请求"""
+        """批量并发发送聊天请求。
+
+        创建一个共享 httpx.AsyncClient，所有 chat() 复用同一连接池，
+        batch 结束后自动关闭。
+        """
         if not clients:
             return
 
         start_time = time.time()
-        results = await asyncio.gather(
-            *[c.chat() for c in clients], return_exceptions=True
-        )
+        async with httpx.AsyncClient() as shared_client:
+            results = await asyncio.gather(
+                *[c.chat(client=shared_client) for c in clients],
+                return_exceptions=True,
+            )
         elapsed = time.time() - start_time
         logger.debug(
             f"DeepSeekClient.batch_chat: {len(clients)} clients, {elapsed:.2f}s"

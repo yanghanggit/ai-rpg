@@ -47,14 +47,7 @@ class _MonsterLootResponse(BaseModel):
 def _build_loot_prompt(
     monster_name: str, appearance: str, stage_name: str, total_rounds: int
 ) -> str:
-    """构建怪物掉落推理 prompt。
-
-    Args:
-        monster_name: 怪物名称
-        appearance: 怪物外观描述
-        stage_name: 战斗场景名称
-        total_rounds: 本场战斗总回合数
-    """
+    """构建怪物掉落推理 prompt。"""
     return f"""# 战斗结束，推断战利品掉落
 
 你刚刚在 {stage_name} 经历了 {total_rounds} 回合战斗并被击败。
@@ -66,17 +59,17 @@ def _build_loot_prompt(
 ---
 
 ## 任务一：基础掉落
-根据你的生物特征，推断击败后**必然掉落**的材料（1-2件，无论战斗过程如何）。
-- 通常是该生物最具代表性的身体材料，如皮、骨、鳞片、甲壳、体液等
-- 即便战斗过程平淡，也应有基础产出
+根据你的外观，推断击败后**必然掉落**的材料（1-2件）。
+- 从外观中识别最具代表性的构成要素——可能是生物组织、构造材料、残留物或蕴含物
+- 材料的感官描述应呼应外观中的具体细节
 
-## 任务二：部位破坏额外掉落
-根据你的外观，识别 1-3 个**可破坏的身体部位**（如尾巴、翅膀、角、眼睛等），然后：
+## 任务二：构成破坏额外掉落
+根据你的外观，识别 1-3 个**可破坏的构成部分**（可能是身体部位、组成构件、附着物或结构弱点）。
 
-**回顾上方的战斗历史**，对每个部位判断：
-- 该部位在战斗中是否被集中攻击、切断或严重破坏？
+**回顾上方的战斗历史**，对每个构成部分判断：
+- 该部分在战斗中是否被集中攻击、切断或严重破坏？
 - 判断依据：攻击描述、伤害叙事、状态效果，而非简单累加伤害数字
-- 若**部位破坏成立**（`broken: true`），生成 1 件该部位对应的特殊材料
+- 若**破坏成立**（`broken: true`），生成 1 件该部分对应的特殊材料
 - 若破坏**未成立**（`broken: false`），`materials` 输出 `[]`
 
 ---
@@ -94,26 +87,21 @@ def _build_loot_prompt(
   ],
   "part_breaks": [
     {{
-      "part_name": "尾巴",
+      "part_name": "XXX",
       "broken": true,
       "materials": [
         {{
-          "name": "材料.XXX断尾",
-          "description": "20-40字，体现战斗破坏痕迹",
+          "name": "材料.XXX",
+          "description": "20-40字，体现破坏痕迹",
           "count": 1
         }}
       ]
-    }},
-    {{
-      "part_name": "左翼",
-      "broken": false,
-      "materials": []
     }}
   ]
 }}
 ```
 
-**命名规范**：所有 `name` 采用「材料.怪物简称+部位/特征」格式（如「材料.石缝蜥鳞片」「材料.石缝蜥断尾」）。
+**命名规范**：所有 `name` 采用「材料.XXX」格式，XXX 为 2-4 字材料简称，体现来源与特征。
 严格按 JSON 格式输出，不要添加其他内容。"""
 
 
@@ -137,10 +125,6 @@ class CombatLootSystem(ExecuteProcessor):
 
         player_entity = self._game.get_player_entity()
         assert player_entity is not None, "无法获取玩家实体，掉落流程异常！"
-        # if player_entity is None:
-        #     logger.error("[CombatLootSystem] 无法获取玩家实体，跳过掉落流程")
-        #     return
-
         assert player_entity.has(
             PartyMemberComponent
         ), "玩家实体缺少 PartyMemberComponent"
@@ -168,14 +152,7 @@ class CombatLootSystem(ExecuteProcessor):
 
     #######################################################################################################################################
     def _create_loot_client(self, monster: Entity) -> DeepSeekClient:
-        """为单头怪物创建配置好的 DeepSeekClient，传入其战斗上下文。
-
-        Args:
-            monster: 怪物实体
-
-        Returns:
-            配置好的 DeepSeekClient
-        """
+        """为单头怪物创建配置好的 DeepSeekClient，传入其战斗上下文。"""
         total_rounds = len(self._game.current_combat_room.combat.rounds or [])
 
         player_entity = self._game.get_player_entity()
@@ -199,16 +176,7 @@ class CombatLootSystem(ExecuteProcessor):
 
     #######################################################################################################################################
     def _parse_loot_item(self, client: DeepSeekClient) -> List[AnyItem]:
-        """解析单头怪物的 LLM 响应，返回基础掉落与部位破坏额外掉落。
-
-        解析失败时记录 error 日志并返回空列表。
-
-        Args:
-            client: 已完成 LLM 调用的客户端
-
-        Returns:
-            该怪物的全部掉落物列表
-        """
+        """解析单头怪物的 LLM 响应，返回基础掉落与部位破坏额外掉落。"""
         items: List[AnyItem] = []
 
         if not client.response_content:

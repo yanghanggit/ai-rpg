@@ -29,7 +29,7 @@ from ai_rpg.game.config import BLUEPRINTS_DIR, DUNGEONS_DIR
 from ai_rpg.models import Blueprint
 from ai_rpg.demo import (
     create_ruins_blueprint,
-    create_sand_jackal_ruins_dungeon,
+    create_shrine_ruins_dungeon,
 )
 from ai_rpg.pgsql import (
     pgsql_create_database,
@@ -76,7 +76,7 @@ def _save_demo_dungeons() -> None:
     dungeons = [
         # create_mountain_beasts_dungeon(),  # 山林妖兽狩猎副本
         # create_tiger_lair_dungeon(),  # 山中虎巢穴副本
-        create_sand_jackal_ruins_dungeon(),  # 沙豺遗迹副本
+        create_shrine_ruins_dungeon(),  # 坍塌庙祠副本
         # create_training_dungeon(),  # 猎人训练场副本
     ]
 

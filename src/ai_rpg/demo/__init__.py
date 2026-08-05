@@ -1,5 +1,5 @@
 from .dungeons import (
-    create_sand_jackal_ruins_dungeon,
+    create_shrine_ruins_dungeon,
 )
 from .blueprints import (
     create_ruins_blueprint,
@@ -7,5 +7,5 @@ from .blueprints import (
 
 __all__ = [
     "create_ruins_blueprint",
-    "create_sand_jackal_ruins_dungeon",
+    "create_shrine_ruins_dungeon",
 ]

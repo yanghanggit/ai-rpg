@@ -8,7 +8,7 @@ from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..models import (
-    CraftConsumableAction,
+    CraftConsumableItemAction,
     StorageComponent,
 )
 from ..models.items import AnyItem, ConsumableItem, ItemType, MaterialItem
@@ -30,14 +30,7 @@ class _CraftConsumableResponse(BaseModel):
 
 #######################################################################################################################################
 def _build_craft_prompt(materials: List[MaterialItem]) -> str:
-    """构建合成消耗品的 LLM 提示词。
-
-    Args:
-        materials: 参与合成的材料列表（已去重计数）
-
-    Returns:
-        完整提示词字符串
-    """
+    """构建合成消耗品的 LLM 提示词。"""
     material_lines = "\n".join(
         f"- **{m.name}**（数量 {m.count}）：{m.description}" for m in materials
     )
@@ -78,7 +71,7 @@ def _build_craft_prompt(materials: List[MaterialItem]) -> str:
 
 #######################################################################################################################################
 @final
-class CraftConsumableActionSystem(ReactiveProcessor):
+class CraftConsumableItemActionSystem(ReactiveProcessor):
     """工坊合成消耗品系统。"""
 
     def __init__(self, game: DBGGame) -> None:
@@ -88,12 +81,12 @@ class CraftConsumableActionSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def get_trigger(self) -> Dict[Matcher, GroupEvent]:
-        return {Matcher(CraftConsumableAction): GroupEvent.ADDED}
+        return {Matcher(CraftConsumableItemAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(CraftConsumableAction)
+        return entity.has(CraftConsumableItemAction)
 
     ####################################################################################################################################
     @override
@@ -104,12 +97,8 @@ class CraftConsumableActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     async def _craft(self, entity: Entity) -> None:
-        """执行完整合成流程。
-
-        Args:
-            entity: 携带 CraftConsumableAction 的工坊世界系统实体
-        """
-        action = entity.get(CraftConsumableAction)
+        """执行完整合成流程。"""
+        action = entity.get(CraftConsumableItemAction)
 
         storage_entity = self._game.get_storage_entity()
         assert storage_entity is not None, "storage_entity is None"
@@ -145,15 +134,7 @@ class CraftConsumableActionSystem(ReactiveProcessor):
         entity: Entity,
         materials: List[MaterialItem],
     ) -> Optional[_CraftConsumableResponse]:
-        """调用工坊 agent 推理生成消耗品属性。
-
-        Args:
-            entity: 携带 CraftConsumableAction 的工坊世界系统实体
-            materials: 合并后的材料列表（count = 本次使用量）
-
-        Returns:
-            解析成功的响应对象；解析失败返回 None
-        """
+        """调用工坊 agent 推理生成消耗品属性。"""
         prompt = _build_craft_prompt(materials)
         chat_client = DeepSeekClient(
             name=entity.name,
@@ -199,13 +180,7 @@ class CraftConsumableActionSystem(ReactiveProcessor):
         material_names: List[str],
         new_item: ConsumableItem,
     ) -> None:
-        """扣减已用材料（count 递减，归零则移除），追加合成品到 StorageComponent。
-
-        Args:
-            storage_entity: 全局储物箱实体
-            material_names: action 中记录的材料名称列表（允许重复）
-            new_item: 合成成功的 ConsumableItem 实例
-        """
+        """扣减已用材料（count 递减，归零则移除），追加合成品到 StorageComponent。"""
         storage = storage_entity.get(StorageComponent)
 
         # 统计需要扣减的数量

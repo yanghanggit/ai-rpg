@@ -21,7 +21,7 @@ from ..models import (
     DungeonGenerationComponent,
     WorldComponent,
     WorkshopComponent,
-    CraftConsumableAction,
+    CraftConsumableItemAction,
     CraftGearItemAction,
     CraftCostumeItemAction,
     ItemType,
@@ -606,7 +606,7 @@ def activate_craft_consumable(
     workshop_entity = next(iter(workshop_entities))
 
     # 检查工坊世界系统实体是否已经存在合成动作，如果存在则返回错误。
-    if workshop_entity.has(CraftConsumableAction):
+    if workshop_entity.has(CraftConsumableItemAction):
         error_detail = "合成动作已存在，请勿重复激活"
         logger.warning(f"激活合成消耗品失败: {error_detail}")
         return False, error_detail
@@ -614,7 +614,7 @@ def activate_craft_consumable(
     # 激活合成消耗品动作，将材料信息填入工坊世界系统实体的 CraftConsumableAction 中。
     logger.debug(f"激活合成消耗品: {workshop_entity.name}, 材料={material_names}")
     workshop_entity.replace(
-        CraftConsumableAction,
+        CraftConsumableItemAction,
         workshop_entity.name,
         list(material_names),
         material_items,

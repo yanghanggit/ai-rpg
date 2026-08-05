@@ -73,7 +73,7 @@ def _build_craft_gear_prompt(materials: List[MaterialItem]) -> str:
   "name": "装备.XXX",
   "description": "...",
   "stat_bonuses": {{"hp": 0, "max_hp": 0, "attack": 3, "defense": 0, "energy": 0, "speed": 0}},
-    "cost": 1,
+  "cost": 1,
   "equip_affixes": [],
   "on_hit_affixes": ["[撕裂伤]:命中后可能引发持续流血"],
   "modifiers": ["[穿甲]:无视目标防御的一部分"]
@@ -207,13 +207,7 @@ class CraftGearItemActionSystem(ReactiveProcessor):
         material_names: List[str],
         new_item: GearItem,
     ) -> None:
-        """扣减已用材料（count 递减，归零则移除），追加合成品到 StorageComponent。
-
-        Args:
-            storage_entity: 全局储物箱实体
-            material_names: action 中记录的材料名称列表（允许重复）
-            new_item: 合成成功的 GearItem 实例
-        """
+        """扣减已用材料（count 递减，归零则移除），追加合成品到 StorageComponent。"""
         storage = storage_entity.get(StorageComponent)
 
         # 统计需要扣减的数量

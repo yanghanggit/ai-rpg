@@ -35,7 +35,9 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     )
     from ..systems.home_npc_plan_system import HomeNpcPlanSystem
     from ..systems.home_player_plan_system import HomePlayerPlanSystem
-    from ..systems.craft_consumable_action_system import CraftConsumableActionSystem
+    from ..systems.craft_consumable_item_action_system import (
+        CraftConsumableItemActionSystem,
+    )
     from ..systems.craft_gear_item_action_system import CraftGearItemActionSystem
     from ..systems.craft_costume_item_action_system import CraftCostumeItemActionSystem
 
@@ -65,7 +67,7 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
     processors.add(WearCostumeActionSystem(dbg_game))
 
     # 制作相关的系统
-    processors.add(CraftConsumableActionSystem(dbg_game))
+    processors.add(CraftConsumableItemActionSystem(dbg_game))
     processors.add(CraftGearItemActionSystem(dbg_game))
     processors.add(CraftCostumeItemActionSystem(dbg_game))
 

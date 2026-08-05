@@ -232,7 +232,7 @@ class IllustrateDungeonAction(Component):
 @final
 @register_action_component_type
 @register_component_type
-class CraftConsumableAction(Component):
+class CraftConsumableItemAction(Component):
     """触发玩家在工坊用储物箱内的材料合成消耗品，由 LLM（WorkshopComponent agent）推理生成结果。"""
 
     name: str

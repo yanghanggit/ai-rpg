@@ -123,8 +123,8 @@ async def test_cache_tokens() -> None:
         context=[_SYSTEM],
     )
     await client.chat()
-    print(f"缓存命中 tokens : {client.prompt_cache_hit_tokens}")
-    print(f"缓存未命中 tokens: {client.prompt_cache_miss_tokens}")
+    # print(f"缓存命中 tokens : {client.prompt_cache_hit_tokens}")
+    # print(f"缓存未命中 tokens: {client.prompt_cache_miss_tokens}")
     print(f"回复: {client.response_content}")
 
 
@@ -280,7 +280,7 @@ async def test_tool_call_full_round() -> None:
 
 
 def main() -> None:
-    DeepSeekClient.setup()
+    # DeepSeekClient.setup()
     test_get_buffer_string()
     test_list_models()
     test_get_balance()

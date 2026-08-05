@@ -14,7 +14,6 @@ sys.path.insert(
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from loguru import logger
-from ai_rpg.deepseek import DeepSeekClient
 from ai_rpg.game.config import (
     BLUEPRINTS_DIR,
     DUNGEONS_DIR,
@@ -80,7 +79,7 @@ async def create_and_initialize_game(
         world=world_data,
     )
 
-    DeepSeekClient.setup()
+    # DeepSeekClient.setup()
     # ImageClient.setup(server_configuration.replicate_image_generation_server_port)
 
     assert (
@@ -130,7 +129,7 @@ async def restore_game(
         player_session=player_session,
         world=world,
     )
-    DeepSeekClient.setup()
+    # DeepSeekClient.setup()
     # ImageClient.setup(server_configuration.replicate_image_generation_server_port)
     terminal_game.restore_from_snapshot()
     await terminal_game.initialize()

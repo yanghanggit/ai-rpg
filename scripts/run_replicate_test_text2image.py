@@ -1,17 +1,12 @@
 #!/usr/bin/env python3
-"""
-Replicate 文生图工具
-一个简单易用的文生图脚本，包含完整功能和使用示例
+"""Replicate 文生图测试。
 
+python scripts/run_replicate_test_text2image.py "prompt"   单张生成
+python scripts/run_replicate_test_text2image.py --demo     并发生成多张
+python scripts/run_replicate_test_text2image.py --test     测试连接
 
-# 基础使用
-python scripts/run_replicate_text2image.py "prompt text"
-
-# 演示功能
-python scripts/run_replicate_text2image.py --demo           # 运行演示（并发生成多张图片）
-
-# 实用功能
-python scripts/run_replicate_text2image.py --test           # 测试连接
+选项：--model / --negative / --size small|medium|large|wide|tall / --width / --height / --steps / --guidance
+输出到 .generated_images/。
 """
 
 import asyncio

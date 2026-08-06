@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
+"""生成 ecosystem.config.js，启动游戏服务器（uvicorn）。
+
+端口来自 config.py 的 GAME_SERVER_PORT，输出到当前目录。
+PM2 启动：pm2 start ecosystem.config.js
 """
-生成 PM2 进程管理配置文件 (ecosystem.config.js)
-"""
+
 
 import os
 import sys

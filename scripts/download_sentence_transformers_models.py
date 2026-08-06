@@ -1,19 +1,15 @@
 #!/usr/bin/env python3
-"""
-SentenceTransformer 模型下载和本地缓存管理脚本
+"""预下载 SentenceTransformer 模型到 .cache/sentence_transformers/，支持离线使用。
 
-该脚本用于：
-1. 预下载项目所需的 SentenceTransformer 模型到本地
-2. 管理模型的本地缓存
-3. 提供模型加载的统一接口
-4. 支持离线使用
-
-使用方法：
-    python scripts/download_sentence_transformers_models.py --download-all
-    python scripts/download_sentence_transformers_models.py --model paraphrase-multilingual-MiniLM-L12-v2
-    python scripts/download_sentence_transformers_models.py --list-models
-    python scripts/download_sentence_transformers_models.py --check-cache
+--download-all           下载全部 3 个模型（主力：paraphrase-multilingual-MiniLM-L12-v2, 135MB）
+--model NAME             下载指定模型
+--list-models            列出所有模型及缓存状态
+--check-cache            缓存统计
+--clear-cache            清理缓存
+--force                  强制重新下载
+--cache-dir PATH         自定义缓存目录
 """
+
 
 import argparse
 import json

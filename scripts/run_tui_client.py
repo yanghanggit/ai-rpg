@@ -1,23 +1,11 @@
-"""AI RPG 游戏客户端启动脚本（Textual TUI）
+"""AI RPG Textual TUI 客户端启动脚本。
 
-终端本地启动：
-    uv run python scripts/run_tui_client.py
+    uv run python scripts/run_tui_client.py                                   终端模式
+    uv run python scripts/run_tui_client.py --web                             浏览器模式（localhost:8080）
+    uv run python scripts/run_tui_client.py --web --host 0.0.0.0 --port 8080 --public-url http://IP:8080  局域网模式
 
-浏览器访问模式（供局域网/公网访问）：
-    uv run python scripts/run_tui_client.py --web
-    uv run python scripts/run_tui_client.py --web --port 8080
-    然后在浏览器打开 http://localhost:8080
-
-局域网模式（同事可通过你的 IP 访问）：
-    # 先查询本机局域网 IP：
-    ipconfig getifaddr en0           # 例如得到 192.168.1.100
-    # 然后用实际 IP 启动（--public-url 告诉客户端用哪个地址连 WebSocket）：
-    uv run python scripts/run_tui_client.py --web --host 0.0.0.0 --port 8080 --public-url http://192.168.1.100:8080
-    # 同事浏览器打开 http://192.168.1.100:8080
-
-    python scripts/run_tui_client.py --dev-screen combat-room
-    python scripts/run_tui_client.py --dev-screen combat-post-combat
-    python scripts/run_tui_client.py --dev-screen wear-costume
+开发用（跳过登录直接进入指定页面）：
+    --dev-screen combat-room | combat-post-combat | wear-costume
 """
 
 import sys

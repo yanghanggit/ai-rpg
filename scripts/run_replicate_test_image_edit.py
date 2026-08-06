@@ -1,29 +1,14 @@
 #!/usr/bin/env python3
-"""
-Replicate 图像编辑测试工具
-专门测试 nano-banana 系列模型的图像编辑能力
+"""Replicate 图像编辑测试（nano-banana 系列）。
 
-功能：
-- 单图编辑（背景模糊、风格转换、场景替换等）
-- 多图融合（nano-banana 特色功能）
-- 预设测试场景
-- 完全复用 ai_rpg.replicate 的 API
+    --demo blur|watercolor|oil|garden|night|hat|fusion  预设场景
+    --input PATH [-i PATH ...]                          输入图片（可多个）
+    --prompt TEXT                                       编辑指令
+    --model nano-banana|nano-banana-pro                 模型选择
+    --list-demos                                        列出预设场景
+    --test                                              测试 API 连接
 
-使用示例：
-# 运行预设场景
-python scripts/run_replicate_image_edit_test.py --demo blur
-
-# 自定义编辑
-python scripts/run_replicate_image_edit_test.py \
-  --input .generated_images/cat.png \
-  --prompt "Make the background blurry" \
-  --model nano-banana
-
-# 多图融合
-python scripts/run_replicate_image_edit_test.py \
-  --input img1.png img2.png img3.png \
-  --prompt "Combine these images into a cohesive scene" \
-  --model nano-banana-pro
+生成图片输出到 .generated_images/。
 """
 
 import asyncio

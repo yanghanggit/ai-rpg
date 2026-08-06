@@ -1,5 +1,5 @@
 """
-直接调用 DeepSeek API 测试脚本（使用 DeepSeekClient，不依赖 langchain/langgraph）
+直接调用 DeepSeek API 测试脚本（使用 DeepSeekClient）
 """
 
 import asyncio

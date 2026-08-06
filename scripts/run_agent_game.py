@@ -1,64 +1,46 @@
-"""AI 操作工具 - 基于快照的游戏推进 CLI。
+"""AI 操作工具 —— 基于快照的无状态游戏推进 CLI。
 
-本脚本是供 AI（GitHub Copilot）主动调用的游戏操作工具。
-人类玩家使用 run_tui_client.py（交互式终端），AI 使用本脚本（无状态快照驱动）。
+每条命令 = 读快照 → 执行动作 → 写新快照。命令间无持久内存，状态全在 .worlds/ 中。
+存档位置：.worlds/{user}/{game}/{timestamp}/（含 world.json / player_session.json）
+查存档：find .worlds -mindepth 3 -maxdepth 3 -type d | sort
+日志：logs/run_agent_game_{timestamp}.log
 
-核心设计：
-    每条命令 = 读取一个存档快照 → 执行一次游戏动作 → 写出新的存档快照。
-    命令之间没有持久内存；所有状态都保存在 .worlds/ 目录的快照文件中。
+==== 家园模式命令 ====
+  new             --game GAME --dungeon DUNGEON [--user NAME]   创建新游戏
+  stages          --snapshot PATH                                列出场景-角色映射（只读）
+  advance         --snapshot PATH --actors A [--actors B ...]   推进一轮剧情
+  speak           --snapshot PATH --target NPC --content TEXT    与 NPC 对话
+  switch-stage    --snapshot PATH --stage STAGE                  切换场景
+  generate-dungeon --snapshot PATH                               LLM 动态生成副本
+  roster          --snapshot PATH                                查看远征队名单（只读）
+  roster-add      --snapshot PATH --member NPC                  添加远征队成员
+  roster-remove   --snapshot PATH --member NPC                  移除远征队成员
+  storage-to-inventory  --snapshot PATH --item ITEM             储物箱→随身背包
+  inventory-to-storage  --snapshot PATH --item ITEM             随身背包→储物箱
+  wear-costume    --snapshot PATH --item ITEM --target ACTOR    穿时装
+  remove-costume  --snapshot PATH --target ACTOR                脱时装
+  craft-item      --snapshot PATH --materials M1 [--materials M2 ...]  合成消耗品
+  craft-gear      --snapshot PATH --materials M1 [--materials M2 ...]  锻造装备
+  craft-costume   --snapshot PATH --materials M1 [--materials M2 ...]  制作时装
+  enter-dungeon   --snapshot PATH --dungeon NAME                进入副本第一关 → 副本模式
 
-存档目录结构：
-    .worlds/{username}/{game}/{timestamp}/
-        world.json          # 世界实体序列化
-        player_session.json # 玩家会话
-        entities/           # 实体调试输出
-        contexts/           # Agent 上下文调试输出
-        dungeon/            # 副本调试输出
-        snapshot/snapshot.zip  # gzip 快照（可选）
+==== 副本模式命令 ====
+  draw-cards      --snapshot PATH                               全员抽牌
+  play-cards-specified --snapshot PATH --actor A --card C [--targets T...]  指定角色出牌（怪物 AI 自动出牌）
+  pass-turn       --snapshot PATH --actor A                     跳过出牌
+  use-consumable  --snapshot PATH --actor A --item I [--targets T...]  使用消耗品
+  use-gear        --snapshot PATH --actor A --item I [--targets T...]  装备 GearItem
+  retreat         --snapshot PATH                               主动撤退（失败） → 家园模式
+  collect-loot    --snapshot PATH                               收战利品（胜利后）
+  next-dungeon    --snapshot PATH                               下一关（胜利后，需存在下一关）
+  exit-dungeon    --snapshot PATH                               退出副本 → 家园模式（无论胜负）
 
-查看可用存档：
-    find .worlds -mindepth 3 -maxdepth 3 -type d | sort
-
-游戏状态机（两种模式）：
-    【家园模式 Home】玩家在某个 HomeComponent 场景中
-        可用命令：new / stages / advance / speak / switch-stage / enter-dungeon
-    【副本模式 Dungeon】玩家在某个副本场景中
-        可用命令：draw-cards / play-cards / exit-dungeon / next-dungeon / retreat
-
-典型家园流程：
-    new  →  stages（查询当前场景角色名单）
-         →  advance --actors <NPC1> [--actors <NPC2> ...]（仅让指定角色本轮真正规划，循环推进）
-         →  speak --target <角色> --content <内容>
-         →  switch-stage --stage <场景名>
-         →  enter-dungeon  →【进入副本模式】
-
-典型副本流程（每关）：
-    enter-dungeon  →  draw-cards（抽牌）→  play-cards（打牌/结算）
-    若战斗未结束（is_ongoing）：继续 draw-cards → play-cards
-    战斗结束后（is_post_combat）：
-        is_won → collect-loot（收取战利品）→ next-dungeon 或 exit-dungeon
-        is_lost           → exit-dungeon
-        主动撤退（战斗中）→ retreat
-
-命令速查表：
-    python scripts/run_agent_game.py new [--user NAME] [--game GAME] [--dungeon DUNGEON]
-    python scripts/run_agent_game.py stages             --snapshot PATH
-    python scripts/run_agent_game.py advance            --snapshot PATH --actors ACTOR [--actors ACTOR2 ...]
-    python scripts/run_agent_game.py speak             --snapshot PATH --target ACTOR --content TEXT
-    python scripts/run_agent_game.py switch-stage      --snapshot PATH --stage STAGE_NAME
-    python scripts/run_agent_game.py equip-item        --snapshot PATH [--weapon ITEM] [--armor ITEM] [--accessory ITEM]
-    python scripts/run_agent_game.py craft-item        --snapshot PATH --materials 材料1 [--materials 材料2 ...]
-    python scripts/run_agent_game.py enter-dungeon     --snapshot PATH --dungeon DUNGEON_NAME
-    python scripts/run_agent_game.py draw-cards        --snapshot PATH
-    python scripts/run_agent_game.py play-cards-specified --snapshot PATH --actor ACTOR --card CARD [--targets TARGET...]
-    python scripts/run_agent_game.py use-consumable    --snapshot PATH --actor ACTOR --item ITEM [--targets TARGET...]
-    python scripts/run_agent_game.py use-gear          --snapshot PATH --actor ACTOR --item ITEM [--targets TARGET...]
-    python scripts/run_agent_game.py exit-dungeon      --snapshot PATH
-    python scripts/run_agent_game.py next-dungeon      --snapshot PATH
-    python scripts/run_agent_game.py collect-loot      --snapshot PATH
-    python scripts/run_agent_game.py retreat           --snapshot PATH
-
-日志文件：logs/run_agent_game_{timestamp}.log（与新存档时间戳相同）"""
+==== 典型流程 ====
+  家园：new → stages → advance(循环) / speak / switch-stage → enter-dungeon
+  副本：enter-dungeon → draw-cards → play-cards-specified(循环至战斗结束)
+        胜利 → collect-loot → next-dungeon 或 exit-dungeon
+        失败 → exit-dungeon
+        战斗中途撤退 → retreat"""
 
 import os
 import sys
@@ -164,14 +146,7 @@ def main() -> None:
     help="副本名称（对应 DUNGEONS_DIR 下的文件名，如 Dungeon1）。",
 )
 def new_game(user: str, game: str, dungeon: str) -> None:
-    """创建并初始化一个新的游戏实例，写出初始存档。
-
-    从 BLUEPRINTS_DIR/{game}.json 加载世界蓝图，从 DUNGEONS_DIR/{dungeon}.json 加载副本，
-    完成 build_from_blueprint / initialize，并将初始状态归档。
-    归档路径：.worlds/{user}/{game}/{timestamp}/
-
-    执行后游戏处于【家园模式】，可继续使用 advance / speak / switch-stage / enter-dungeon。
-    """
+    """创建新游戏实例并写入初始存档。执行后处于家园模式。"""
 
     _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
@@ -195,12 +170,7 @@ def new_game(user: str, game: str, dungeon: str) -> None:
     help="存档目录路径",
 )
 def stages(snapshot: str) -> None:
-    """从存档复位，打印所有场景与角色的分布映射（只读，不写新存档）。
-
-    与服务端 /api/stages/v1 功能对等。用于在调用 advance --actors 之前，
-    先确认当前场景（及其他家园场景）内存在哪些角色，以便精确构造 --actors 参数。
-    输出格式：每行一个场景，后跟该场景内的角色名单（逗号分隔）。
-    """
+    """打印各场景内角色名单（只读，不写新存档）。advance 前用于确认 --actors 参数。"""
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
         raise click.BadParameter(
@@ -236,12 +206,7 @@ def stages(snapshot: str) -> None:
     "调用前建议先用 stages --snapshot PATH 查询当前场景内的角色名单。",
 )
 def advance(snapshot: str, actors: tuple[str, ...]) -> None:
-    """从存档复位游戏，为指定角色激活行动规划并推进一轮，并写入新存档。
-
-    等同于人类在终端输入 /ad。适用于【家园模式】。
-    LLM 仅为 --actors 指定的角色生成行动，其他未列入的角色本轮不会规划。
-    --actors 必须是当前家园场景内的 NPC 或玩家自身（可先用 stages 命令查询）。
-    """
+    """推进一轮家园剧情，仅为 --actors 指定角色激活行动规划并归档。"""
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
@@ -283,12 +248,7 @@ def advance(snapshot: str, actors: tuple[str, ...]) -> None:
     help="对话内容",
 )
 def speak(snapshot: str, target: str, content: str) -> None:
-    """从存档复位，玩家向指定 NPC 说话，并写入新存档。
-
-    等同于人类在终端输入 /speak --target=<角色> --content=<内容>。
-    适用于【家园模式】，target 必须与玩家在同一场景。
-    本次 pipeline NPC 不主动推理，仅响应对话。
-    """
+    """玩家向指定 NPC 说话并归档。需处于家园模式。"""
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
@@ -325,11 +285,7 @@ def speak(snapshot: str, target: str, content: str) -> None:
     help="目标场景名（如 场景.云音居所）",
 )
 def switch_stage(snapshot: str, stage: str) -> None:
-    """从存档复位，将玩家传送至指定场景，并写入新存档。
-
-    等同于人类在终端输入 /switch_stage --stage=<场景名>。
-    适用于【家园模式】，stage 必须为合法的 HomeComponent 场景名。
-    """
+    """玩家切换到指定场景并归档。需处于家园模式。"""
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
@@ -366,12 +322,7 @@ def switch_stage(snapshot: str, stage: str) -> None:
     help="副本名称（对应 DUNGEONS_DIR 下的 JSON 文件名，如 Dungeon1）",
 )
 def enter_dungeon(snapshot: str, dungeon: str) -> None:
-    """从存档复位，启动副本第一关，并写入新存档。
-
-    等同于人类在终端输入 /ed。适用于【家园模式】。
-    执行后进入【副本模式】，战斗第一回合已创建。
-    下一步应使用 draw-cards。
-    """
+    """进入指定副本第一关并归档。执行后进入副本模式，下一步用 draw-cards。"""
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
@@ -403,12 +354,7 @@ def enter_dungeon(snapshot: str, dungeon: str) -> None:
     help="存档目录路径",
 )
 def draw_cards(snapshot: str) -> None:
-    """从存档复位，为所有角色随机抽牌，并写入新存档。
-
-    等同于人类在终端输入 /dc。适用于【副本模式】战斗进行中（is_ongoing）。
-    己方和敌方均随机选定本回合使用的技能牌。
-    下一步应使用 play-cards。
-    """
+    """全员抽牌并归档。需战斗进行中，下一步用 play-cards-specified。"""
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
@@ -458,12 +404,7 @@ def draw_cards(snapshot: str) -> None:
 def play_cards_specified(
     snapshot: str, actor: str, card: str, targets: tuple[str, ...]
 ) -> None:
-    """从存档复位，让指定角色打出指定手牌，并写入新存档。
-
-    适用于【副本模式】战斗进行中（is_ongoing），draw-cards 之后调用。
-    只有指定角色触发出牌结算，其他角色本次 pipeline 不出牌。
-    --card 须与手牌中卡牌名称完全一致，否则报错不归档。
-    """
+    """指定角色出牌（怪物则由 AI 自动出牌）并归档。需战斗进行中且 draw-cards 之后。"""
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
@@ -504,11 +445,7 @@ def play_cards_specified(
     help="过牌角色全名（如 旅行者.无名氏）",
 )
 def pass_turn(snapshot: str, actor: str) -> None:
-    """从存档复位，让指定角色跳过本次出牌机会，并写入新存档。
-
-    适用于【副本模式】战斗进行中（is_ongoing），draw-cards 之后调用。
-    指定角色消耗 1 点 energy，不打出任何卡牌，行动顺序推进至下一角色。
-    """
+    """指定角色跳过出牌并归档。需战斗进行中。"""
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
@@ -558,12 +495,7 @@ def pass_turn(snapshot: str, actor: str) -> None:
 def use_consumable(
     snapshot: str, actor: str, item: str, targets: tuple[str, ...]
 ) -> None:
-    """从存档复位，让指定角色使用背包内的消耗品，并写入新存档。
-
-    适用于【副本模式】战斗进行中（is_ongoing）。
-    使用消耗品不消耗 energy，可在玩家行动阶段内任意次数使用。
-    --item 须与背包中消耗品名称完全一致，否则报错不归档。
-    """
+    """指定角色使用消耗品并归档。需战斗进行中。"""
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
@@ -615,12 +547,7 @@ def use_consumable(
     help="目标角色名，可重复使用（如 --targets 盟友.云音）；SINGLE 时指定一个目标，敌我皆可",
 )
 def use_gear(snapshot: str, actor: str, item: str, targets: tuple[str, ...]) -> None:
-    """从存档复位，让指定角色在战斗中装备背包内的 GearItem，并写入新存档。
-
-    适用于【副本模式】战斗进行中（is_ongoing）。
-    装备后属性加成立即生效，装备者原装备会被替换。
-    --item 须与背包中 GearItem 名称完全一致，否则报错不归档。
-    """
+    """指定角色装备 GearItem 并归档。需战斗进行中。"""
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
@@ -654,12 +581,7 @@ def use_gear(snapshot: str, actor: str, item: str, targets: tuple[str, ...]) -> 
     help="存档目录路径",
 )
 def exit_dungeon(snapshot: str) -> None:
-    """从存档复位，结束副本并返回家园，并写入新存档。
-
-    等同于人类在终端输入 /th。适用于【副本模式】战斗结束后（is_post_combat）。
-    无论胜负，完成恢复满血、清空状态效果、移出远征队后回到家园场景。
-    执行后回到【家园模式】。
-    """
+    """退出副本返回家园并归档。需战斗已结束（无论胜负）。"""
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
@@ -691,13 +613,7 @@ def exit_dungeon(snapshot: str) -> None:
     help="存档目录路径",
 )
 def next_dungeon(snapshot: str) -> None:
-    """从存档复位，进入副本下一关，并写入新存档。
-
-    等同于人类在终端输入 /and。适用于【副本模式】胜利结算后（is_post_combat + is_won）。
-    且副本存在下一关（peek_next_stage() 不为 None）。
-    执行后新关卡战斗初始化完成，下一步继续 draw-cards。
-    若已是最后一关（peek_next_stage() 为 None），应使用 exit-dungeon。
-    """
+    """进入副本下一关并归档。需前一关已胜利且存在下一关。"""
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
@@ -729,16 +645,7 @@ def next_dungeon(snapshot: str) -> None:
     help="存档目录路径",
 )
 def collect_loot(snapshot: str) -> None:
-    """从存档复位，将战利品背包（CombatLootComponent）合并至随身背包，并写入新存档。
-
-    战斗胜利后，CombatLootSystem 自动将 LLM 推断的掉落物写入玩家实体的临时组件
-    CombatLootComponent。调用本命令后，战利品转入随身背包（InventoryComponent），
-    临时组件移除。
-
-    适用于【副本模式】战斗胜利结算后（is_post_combat + is_won）。
-    若当前无战利品可收（本场无掉落或已收取），记录警告并不写新存档。
-    收取后可继续使用 next-dungeon 进入下一关，或使用 exit-dungeon 返回家园。
-    """
+    """收取战利品至随身背包并归档。无战利品时不归档。"""
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
@@ -770,12 +677,7 @@ def collect_loot(snapshot: str) -> None:
     help="存档目录路径",
 )
 def generate_dungeon_cmd(snapshot: str) -> None:
-    """从存档复位，调用 LLM 生成副本文件并写入新存档。
-
-    在家园模式下为玩家实体添加 GenerateDungeonAction，驱动 dungeon_generate_pipeline
-    执行 GenerateDungeonActionSystem（Steps 1-4 文本数据）成功后自动触发 IllustrateDungeonActionSystem。
-    适用于【家园模式】，执行结束后仍处于家园模式。
-    """
+    """LLM 动态生成副本并归档。需处于家园模式。"""
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
@@ -812,11 +714,7 @@ def generate_dungeon_cmd(snapshot: str) -> None:
     help="要加入远征队的盟友角色名称",
 )
 def roster_add(snapshot: str, member: str) -> None:
-    """从存档复位，将指定盟友加入远征队名单，并写入新存档。
-
-    适用于【家园模式】。--member 必须为已存在的 NPC（NPCComponent）角色名称且不能为玩家自身。
-    添加后可继续使用 enter-dungeon 进入副本。
-    """
+    """将指定盟友加入远征队名单并归档。"""
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
@@ -853,10 +751,7 @@ def roster_add(snapshot: str, member: str) -> None:
     help="要移除的盟友角色名称",
 )
 def roster_remove(snapshot: str, member: str) -> None:
-    """从存档复位，将指定盟友从远征队名单移除，并写入新存档。
-
-    适用于【家园模式】。--member 必须已在远征队名单中。
-    """
+    """将指定盟友从远征队名单移除并归档。"""
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
@@ -888,11 +783,7 @@ def roster_remove(snapshot: str, member: str) -> None:
     help="存档目录路径",
 )
 def roster(snapshot: str) -> None:
-    """从存档复位，打印当前远征队名单（只读，不写新存档）。
-
-    输出格式：每行一个同伴名称。名单为空时输出"（名单为空，玩家将独自冒险）"。
-    适用于任意模式。
-    """
+    """打印远征队名单（只读，不归档）。"""
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
@@ -926,12 +817,7 @@ def roster(snapshot: str) -> None:
     help="存档目录路径",
 )
 def retreat(snapshot: str) -> None:
-    """从存档复位，主动撤退并返回家园，并写入新存档。
-
-    等同于人类在终端输入 /rtt。适用于【副本模式】战斗进行中（is_ongoing）。
-    标记远征队撤退 → 战斗以失败结算 → 恢复满血并返回家园。
-    执行后回到【家园模式】，视为失败。
-    """
+    """主动撤退（视为失败）并归档。需战斗进行中。"""
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
@@ -968,10 +854,7 @@ def retreat(snapshot: str) -> None:
     help="要从储物箱取出的道具名称（精确匹配）",
 )
 def storage_to_inventory(snapshot: str, item: str) -> None:
-    """从存档复位，将指定道具从玩家储物箱移入随身背包，并写入新存档。
-
-    --item 必须精确匹配 StorageComponent.items 中的道具名称。道具对象本身被移动，不会复制。
-    """
+    """将指定道具从储物箱移入随身背包并归档。"""
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
         raise click.BadParameter(
@@ -1007,10 +890,7 @@ def storage_to_inventory(snapshot: str, item: str) -> None:
     help="要从随身背包存回的道具名称（精确匹配）",
 )
 def inventory_to_storage(snapshot: str, item: str) -> None:
-    """从存档复位，将指定道具从玩家随身背包移回储物箱，并写入新存档。
-
-    --item 必须精确匹配 InventoryComponent.items 中的道具名称。道具对象本身被移动，不会复制。
-    """
+    """将指定道具从随身背包移回储物箱并归档。"""
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
         raise click.BadParameter(
@@ -1051,13 +931,7 @@ def inventory_to_storage(snapshot: str, item: str) -> None:
     help="目标角色全名（如 学者.寒蝉；若作用于自己则传入玩家全名，如 旅行者.无名氏）",
 )
 def wear_costume(snapshot: str, item: str, target: str) -> None:
-    """从存档复位，为玩家或指定 NPC 穿上时装，LLM 语义合成外观后广播，并写入新存档。
-
-    --item 须精确匹配全局储物箱中某个 CostumeItem 的名称。若目标已穿戴其他时装，
-    会自动先脱下归还储物箱（换装）。
-    --target 指定换装对象（任意持有 AppearanceComponent 的角色），必须显式传入其真实全名，即使目标是玩家自身。
-    适用于【家园模式】。执行后外观变更广播至整个场景，仍处于家园模式。
-    """
+    """为指定角色穿装并归档。需处于家园模式。"""
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
         raise click.BadParameter(
@@ -1093,11 +967,7 @@ def wear_costume(snapshot: str, item: str, target: str) -> None:
     help="目标角色全名（如 学者.寒蝉；若作用于自己则传入玩家全名，如 旅行者.无名氏）",
 )
 def remove_costume(snapshot: str, target: str) -> None:
-    """从存档复位，为玩家或指定 NPC 移除当前时装，外观重置为基础体型，并写入新存档。
-
-    --target 指定操作对象（任意持有 AppearanceComponent 的角色），必须显式传入其真实全名，即使目标是玩家自身。
-    适用于【家园模式】。执行后外观变更广播至整个场景，仍处于家园模式。
-    """
+    """移除指定角色的时装并归档。需处于家园模式。"""
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
         raise click.BadParameter(
@@ -1134,12 +1004,7 @@ def remove_costume(snapshot: str, target: str) -> None:
     help="参与合成的材料名称，可重复使用（如 --materials 材料.草药.薄荷 --materials 材料.矿石.铁粉）",
 )
 def craft_item(snapshot: str, materials: tuple[str, ...]) -> None:
-    """从存档复位，用储物箱内的材料通过工坊 LLM 合成一件消耗品，并写入新存档。
-
-    --materials 可多次使用，相同名称重复传入代表使用多份。
-    材料须为储物箱（StorageComponent）内 type=MATERIAL_ITEM 的物品，且数量充足。
-    适用于【家园模式】。执行后消耗品追加至储物箱，已使用的材料对应扣减。
-    """
+    """使用储物箱材料合成消耗品并归档。需处于家园模式。"""
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
         raise click.BadParameter(
@@ -1178,12 +1043,7 @@ def craft_item(snapshot: str, materials: tuple[str, ...]) -> None:
     help="参与锻造的材料名称，可重复使用（如 --materials 材料.遗迹铁片 --materials 材料.硬化兽骨）",
 )
 def craft_gear(snapshot: str, materials: tuple[str, ...]) -> None:
-    """从存档复位，用储物箱内的材料通过工坊 LLM 锻造一件装备，并写入新存档。
-
-    --materials 可多次使用，相同名称重复传入代表使用多份。
-    材料须为储物箱（StorageComponent）内 type=MATERIAL_ITEM 的物品，且数量充足。
-    适用于【家园模式】。执行后装备追加至储物箱，已使用的材料对应扣减。
-    """
+    """使用储物箱材料锻造装备并归档。需处于家园模式。"""
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
         raise click.BadParameter(
@@ -1220,13 +1080,7 @@ def craft_gear(snapshot: str, materials: tuple[str, ...]) -> None:
     help="参与制作的材料名称，可重复使用（如 --materials 材料.丝质布料 --materials 材料.金线刺绣）",
 )
 def craft_costume(snapshot: str, materials: tuple[str, ...]) -> None:
-    """从存档复位，用储物箱内的材料通过工坊 LLM 制作一件时装，并写入新存档。
-
-    --materials 可多次使用，相同名称重复传入代表使用多份。
-    材料须为储物箱（StorageComponent）内 type=MATERIAL_ITEM 的物品，且数量充足。
-    适用于【家园模式】。执行后时装追加至储物箱，已使用的材料对应扣减。
-    时装不改变战斗属性，可通过 wear-costume 命令穿戴到指定角色。
-    """
+    """使用储物箱材料制作时装并归档。需处于家园模式。"""
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
         raise click.BadParameter(

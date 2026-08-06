@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""
-检查 models 目录下所有 BaseModel 继承类是否包含 set 类型的属性
-如果发现 set 类型，就报警
+"""检查 src/ai_rpg/models/ 中 BaseModel / NamedTuple 子类是否含 set/Set 类型属性。
+
+set 不可 JSON 序列化，Pydantic 序列化时会隐式转为 list，可能导致反序列化后类型变化。
+发现 set 属性时 exit 1（适配 CI），无问题时 exit 0。
 """
 
 import ast

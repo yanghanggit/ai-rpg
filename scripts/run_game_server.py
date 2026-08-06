@@ -37,54 +37,6 @@ from ai_rpg.replicate import (
     GENERATED_IMAGES_URL_PREFIX,
 )
 
-
-# @asynccontextmanager
-# async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-#     """FastAPI 应用生命周期管理
-
-#     处理应用启动和关闭时的初始化和清理操作。
-#     """
-#     # 启动时的初始化操作
-#     logger.info("🚀 DBG游戏服务器启动中...")
-
-#     # 在这里添加启动时需要执行的初始化操作
-#     try:
-
-#         logger.info(f"✅ 服务器配置已加载，端口: {GAME_SERVER_PORT}")
-
-#         # 可以在这里添加其他初始化操作，比如：
-#         # - 数据库连接初始化
-#         # - 缓存系统初始化
-#         # - 外部服务连接检查
-#         # - 游戏数据预加载
-
-#         logger.info("✅ DBG游戏服务器初始化完成")
-#         #DeepSeekClient.setup()
-#         logger.info("✅ DeepSeekClient 已初始化")
-
-#     except Exception as e:
-#         logger.error(f"❌ 服务器初始化失败: {e}")
-#         raise
-
-#     yield  # 应用运行期间
-
-#     # 关闭时的清理操作
-#     logger.info("🔄 DBG游戏服务器关闭中...")
-
-#     # 在这里添加关闭时需要执行的清理操作
-#     try:
-#         # 可以在这里添加清理操作，比如：
-#         # - 关闭数据库连接
-#         # - 清理缓存
-#         # - 保存游戏状态
-#         # - 关闭外部服务连接
-
-#         logger.info("✅ DBG游戏服务器清理完成")
-
-#     except Exception as e:
-#         logger.error(f"❌ 服务器清理失败: {e}")
-
-
 app = FastAPI()
 
 

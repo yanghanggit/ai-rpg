@@ -1,18 +1,12 @@
 #!/usr/bin/env python3
+"""检查/修复未使用的导入（ruff F401）。
+
+默认覆盖 src/ scripts/ tests/ demo/，可通过 --file 限定范围。
+    --check              只检查不修改
+    --fix                自动修复
+    --file PATH          限定目标路径（文件或目录）
 """
-检查和清理项目中未使用的导入的脚本
 
-使用方法：
-    python scripts/check_unused_imports.py --check          # 检查 src/ 和 scripts/，不修改
-    python scripts/check_unused_imports.py --fix            # 自动修复 src/ 和 scripts/
-    python scripts/check_unused_imports.py --check-file <filepath>  # 检查单个文件
-
-    python scripts/check_unused_imports.py --check --file src/      # 只检查 src/
-    python scripts/check_unused_imports.py --check --file scripts/  # 只检查 scripts/
-    python scripts/check_unused_imports.py --check --file tests/    # 只检查 tests/
-
-注意：该脚本专门检查F401未使用导入错误，与pyproject.toml中的ruff配置保持一致。
-"""
 
 import argparse
 import subprocess

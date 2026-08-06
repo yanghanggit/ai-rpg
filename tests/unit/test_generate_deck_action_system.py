@@ -7,12 +7,16 @@ import pytest
 from src.ai_rpg.entitas.context import Context
 from src.ai_rpg.entitas.entity import Entity
 from src.ai_rpg.game.dbg_game import DBGGame
-from src.ai_rpg.models import DeckComponent, DrawPileComponent, GenerateDeckAction
+from src.ai_rpg.models import (
+    DeckComponent,
+    DrawPileComponent,
+    GenerateDeckAction,
+    PartyMemberComponent,
+)
 from src.ai_rpg.models.messages import AIMessage
 from src.ai_rpg.models.target_type import TargetType
 from src.ai_rpg.systems.generate_deck_action_system import (
     GenerateDeckActionSystem,
-    _sample_keywords,
 )
 
 
@@ -42,12 +46,13 @@ def _response_json(cards: List[Dict[str, Any]]) -> str:
     return json.dumps({"cards": cards}, ensure_ascii=False)
 
 
-def _make_entity(ctx: Context, name: str = "英雄", num_cards: int = 2) -> Entity:
+def _make_entity(ctx: Context, name: str = "英雄") -> Entity:
     entity = ctx.create_entity()
     entity._name = name
     entity.add(DeckComponent, name, [], [])
     entity.add(DrawPileComponent, name, [])
-    entity.add(GenerateDeckAction, name, num_cards)
+    entity.add(GenerateDeckAction, name)
+    entity.add(PartyMemberComponent, name)
     return entity
 
 
@@ -82,25 +87,6 @@ def system(mock_game: MagicMock) -> GenerateDeckActionSystem:
 
 
 # ---------------------------------------------------------------------------
-# _sample_keywords
-# ---------------------------------------------------------------------------
-
-
-def test_sample_empty_pool_returns_empty() -> None:
-    assert _sample_keywords([], k=3) == []
-
-
-def test_sample_within_pool_no_duplicates() -> None:
-    result = _sample_keywords([f"kw{i}" for i in range(10)], k=3)
-    assert len(result) == 3 and len(set(result)) == 3
-
-
-def test_sample_exceeds_pool_allows_replacement() -> None:
-    result = _sample_keywords(["a", "b"], k=5)
-    assert len(result) == 5 and all(kw in ("a", "b") for kw in result)
-
-
-# ---------------------------------------------------------------------------
 # _process_generation_response
 # ---------------------------------------------------------------------------
 
@@ -109,7 +95,7 @@ def test_valid_cards_fill_deck_and_draw_pile(
     ctx: Context, mock_game: MagicMock, system: GenerateDeckActionSystem
 ) -> None:
     """合法响应：牌追加到 DeckComponent 和 DrawPileComponent。"""
-    entity = _make_entity(ctx, num_cards=2)
+    entity = _make_entity(ctx)
     mock_game.get_entity_by_name.return_value = entity
 
     system._process_generation_response(
@@ -126,7 +112,7 @@ def test_invalid_json_no_raise_draw_pile_empty(
     ctx: Context, mock_game: MagicMock, system: GenerateDeckActionSystem
 ) -> None:
     """JSON 解析失败时不抛出，DrawPile 保持空。"""
-    entity = _make_entity(ctx, num_cards=2)
+    entity = _make_entity(ctx)
     mock_game.get_entity_by_name.return_value = entity
 
     system._process_generation_response(_make_chat_client("英雄", "not json"))

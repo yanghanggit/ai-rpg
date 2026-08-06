@@ -9,7 +9,7 @@ from loguru import logger
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
-from ..game.dbg_combat_processor import compute_character_stats
+from ..game.dbg_combat_processor import compute_character_stats, get_cards_per_combat
 from ..models import (
     ActorComponent,
     DeckComponent,
@@ -39,17 +39,6 @@ class DiceValue(IntEnum):
     MAX = 100
 
 
-#######################################################################################################################################
-def _sample_keywords(keywords: List[str], k: int) -> List[str]:
-    """从关键词池中采样 k 个关键词，优先不重复，池不足时降级为有放回采样。"""
-    if not keywords:
-        return []
-    if len(keywords) >= k:
-        return random.sample(keywords, k=k)
-    return random.choices(keywords, k=k)
-
-
-#######################################################################################################################################
 @final
 class GenerateDeckActionSystem(ReactiveProcessor):
     """#generate_deck_action_system
@@ -98,13 +87,18 @@ class GenerateDeckActionSystem(ReactiveProcessor):
     def _build_client(self, entity: Entity) -> DeepSeekClient:
         """为单个实体构建牌库生成的 DeepSeekClient。"""
 
-        num_cards = self._get_num_cards(entity)
+        num_cards = get_cards_per_combat(entity)
 
         deck_comp_for_keywords = entity.get(DeckComponent)
         assert deck_comp_for_keywords is not None, f"{entity.name} 缺少 DeckComponent"
-        sampled_keywords = _sample_keywords(
-            deck_comp_for_keywords.keywords, k=num_cards
-        )
+
+        keywords_pool = deck_comp_for_keywords.keywords
+        if not keywords_pool:
+            sampled_keywords: List[str] = []
+        elif len(keywords_pool) >= num_cards:
+            sampled_keywords = random.sample(keywords_pool, k=num_cards)
+        else:
+            sampled_keywords = random.choices(keywords_pool, k=num_cards)
 
         # 生成随机骰值列表，长度为 num_cards，每个骰值在 DiceValue.MIN 和 DiceValue.MAX 之间
         dice_rolls = [
@@ -118,7 +112,6 @@ class GenerateDeckActionSystem(ReactiveProcessor):
         combat_stats = compute_character_stats(entity)
         prompt = generate_deck_prompt(
             actor_stats=combat_stats,
-            num_cards=num_cards,
             keywords=sampled_keywords,
             dice_rolls=dice_rolls,
         )
@@ -126,7 +119,6 @@ class GenerateDeckActionSystem(ReactiveProcessor):
         # 生成压缩提示词，减少 LLM token 消耗
         compressed_prompt = generate_compressed_deck_prompt(
             actor_stats=combat_stats,
-            num_cards=num_cards,
             keywords=sampled_keywords,
             dice_rolls=dice_rolls,
         )
@@ -138,16 +130,6 @@ class GenerateDeckActionSystem(ReactiveProcessor):
             compressed_prompt=compressed_prompt,
             context=self._game.get_agent_context(entity).context,
         )
-
-    #######################################################################################################################################
-    def _get_num_cards(self, entity: Entity) -> int:
-        """从实体的 GenerateDeckAction 中读取本次目标卡牌数。"""
-
-        generate_deck_action = entity.get(GenerateDeckAction)
-        assert (
-            generate_deck_action is not None
-        ), f"{entity.name} 缺少 GenerateDeckAction"
-        return generate_deck_action.num_cards
 
     #######################################################################################################################################
     def _process_generation_response(
@@ -166,7 +148,7 @@ class GenerateDeckActionSystem(ReactiveProcessor):
             entity is not None
         ), f"DeckGenerationSystem: 无法找到实体 {chat_client.name} 以处理生成结果"
 
-        num_cards = self._get_num_cards(entity)
+        num_cards = get_cards_per_combat(entity)
 
         try:
             # 解析 LLM 响应 JSON

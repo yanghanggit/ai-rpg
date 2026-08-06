@@ -9,7 +9,6 @@ from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import (
     get_alive_actors_in_stage,
     determine_camp_relationship,
-    get_cards_per_combat,
 )
 from ..game.dbg_combat_processor import (
     compute_character_stats,
@@ -128,7 +127,9 @@ class CombatInitActorSystem(ExecuteProcessor):
         )
 
         # 为所有参战角色添加 GenerateDeckAction，触发初始牌库生成
-        self._trigger_deck_generation(actor_entities)
+        for actor_entity in actor_entities:
+            actor_entity.replace(GenerateDeckAction, actor_entity.name)
+            logger.debug(f"[{actor_entity.name}] 已添加 GenerateDeckAction")
 
     ###################################################################################################################################################################
     def _initialize_piles_and_status_effects(self, actor_entities: Set[Entity]) -> None:
@@ -155,18 +156,6 @@ class CombatInitActorSystem(ExecuteProcessor):
                 [],
             )
             logger.debug(f"[{actor_entity.name}] 状态效果组件初始化完成（空）")
-
-    ###################################################################################################################################################################
-    def _trigger_deck_generation(self, actor_entities: Set[Entity]) -> None:
-        """为所有参战角色挂载 GenerateDeckAction，触发 DeckGenerationSystem 生成初始牌库。"""
-        for actor_entity in actor_entities:
-            cards_per_combat = get_cards_per_combat(actor_entity)
-            actor_entity.replace(
-                GenerateDeckAction, actor_entity.name, cards_per_combat
-            )
-            logger.debug(
-                f"[{actor_entity.name}] 已添加 GenerateDeckAction（cards_per_combat={cards_per_combat}）"
-            )
 
     ###################################################################################################################################################################
     def _add_context(

@@ -308,4 +308,3 @@ class GenerateDeckAction(Component):
     """触发为角色生成战斗初始牌库，由 DeckGenerationSystem 响应处理。"""
 
     name: str
-    num_cards: int  # 本场战斗为该角色生成的卡牌数（PartyMember=3，Monster=1）

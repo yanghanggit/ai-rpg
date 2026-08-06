@@ -4,8 +4,9 @@
 
 目录结构（persist_world_data）：
     {worlds_dir}/{username}/{game}/{timestamp}/
-        ├── world.json              # World 快照（不含 agents_context）
+        ├── world.json              # World 元信息（仅 entity_counter）
         ├── player_session.jsonl    # JSONL，首行元数据，后续每行一个事件
+        ├── blueprint/              # 世界蓝图配置
         ├── entities/               # 各 ECS 实体单独一个 json
         ├── contexts/               # Agent LLM 对话上下文，每个 agent 一个 .jsonl
         ├── dungeon/                # 副本数据
@@ -29,7 +30,9 @@ import zipfile
 from pathlib import Path
 from pydantic import TypeAdapter
 from ..models import get_buffer_string, AgentContext, PlayerSession, Dungeon, World
+from ..models.blueprint import Blueprint
 from ..models.messages import ContextMessage
+from ..models.serialization import EntitySerialization
 from ..models.session_message import SessionMessage
 from loguru import logger
 from .config import WORLDS_DIR
@@ -51,6 +54,7 @@ def archive_world(
         {save_dir}/
             ├── world.json
             ├── player_session.jsonl    # JSONL 格式，首行为元数据，后续每行一个事件
+            ├── blueprint/{blueprint_name}.json
             ├── entities/{entity}.json ...
             ├── contexts/{agent}.jsonl, {agent}_buffer.txt ...
             ├── dungeon/{dungeon_name}.json
@@ -81,8 +85,10 @@ def archive_world(
 
     try:
 
-        # 将 world 序列化为 JSON（agents_context 已在 contexts/ 中独立存储）
-        world_json = world.model_dump_json(exclude={"agents_context"})
+        # 将 world 序列化为 JSON（各字段已在独立目录中存储）
+        world_json = world.model_dump_json(
+            exclude={"agents_context", "entities", "dungeon", "blueprint"}
+        )
 
         # player_session 序列化为 JSONL（首行元数据，后续每行一个事件）
         session_lines = [
@@ -113,6 +119,9 @@ def archive_world(
         # contexts/
         dump_agent_contexts(save_dir, world)
 
+        # blueprint/
+        dump_blueprint(save_dir, world.blueprint)
+
         # dungeon/
         dump_dungeon(save_dir, world.dungeon)
 
@@ -135,6 +144,9 @@ def archive_world(
 
 ###############################################################################################################################################
 def dump_world_snapshot(debug_dir: Path, world: World) -> None:
+
+    # 写blueprint/目录
+    dump_blueprint(debug_dir, world.blueprint)
 
     # 写entities/目录
     dump_entities(debug_dir, world)
@@ -207,6 +219,17 @@ def dump_dungeon(debug_dir: Path, dungeon: Dungeon) -> None:
 
 
 ###############################################################################################################################################
+def dump_blueprint(debug_dir: Path, blueprint: Blueprint) -> None:
+
+    # 写blueprint/目录
+    blueprint_dir = debug_dir / "blueprint"
+    blueprint_dir.mkdir(parents=True, exist_ok=True)
+    (blueprint_dir / f"{blueprint.name}.json").write_text(
+        blueprint.model_dump_json(), encoding="utf-8"
+    )
+
+
+###############################################################################################################################################
 def restore_world(snapshot_dir: Path) -> Tuple[World, PlayerSession]:
     """从存档目录中读取并还原 World 与 PlayerSession。
 
@@ -250,6 +273,36 @@ def restore_world(snapshot_dir: Path) -> Tuple[World, PlayerSession]:
                 name=agent_name, context=context_messages
             )
     world.agents_context = agents_context
+
+    # 从 entities/ 目录重建 entities
+    entities_list: list[EntitySerialization] = []
+    entities_dir = snapshot_dir / "entities"
+    if entities_dir.exists():
+        for ent_file in entities_dir.glob("*.json"):
+            entities_list.append(
+                EntitySerialization.model_validate_json(
+                    ent_file.read_text(encoding="utf-8")
+                )
+            )
+    world.entities = entities_list
+
+    # 从 dungeon/ 目录重建 dungeon
+    dungeon_dir = snapshot_dir / "dungeon"
+    if dungeon_dir.exists():
+        for dun_file in dungeon_dir.glob("*.json"):
+            world.dungeon = Dungeon.model_validate_json(
+                dun_file.read_text(encoding="utf-8")
+            )
+            break
+
+    # 从 blueprint/ 目录重建 blueprint
+    blueprint_dir = snapshot_dir / "blueprint"
+    if blueprint_dir.exists():
+        for bp_file in blueprint_dir.glob("*.json"):
+            world.blueprint = Blueprint.model_validate_json(
+                bp_file.read_text(encoding="utf-8")
+            )
+            break
 
     # 读取并反序列化 PlayerSession（JSONL 格式：首行元数据，后续每行一个事件）
     lines = session_path.read_text(encoding="utf-8").strip().split("\n")

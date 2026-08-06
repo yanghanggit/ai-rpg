@@ -113,6 +113,11 @@ def generate_deck_prompt(
 
 {build_card_field_description()}
 
+## 核心原则
+
+- keywords 即边界，不是风格建议：要求的效果（破甲、穿透等）在对应字段体现；「纯攻击」「不携带附加效果」→ modifiers 与 affixes 强制为 []。未提及即禁止
+- modifiers（一次性修正）与 affixes（延迟触发信号）仅限 keywords 授权时填充；跨回合影响写入 affixes，由下游落地为 StatusEffect
+
 ## 约束
 
 - `description` 禁止提及任何场景地物（如断柱、沙地）、地名或即时情境细节，禁止含数字

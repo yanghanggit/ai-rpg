@@ -113,6 +113,11 @@ def _generate_add_status_effects_prompt(
 
 {effects_list}
 
+## 核心原则
+
+- affix 是因，StatusEffect 是果。每条 affix 严格 1:1 落地为一条 StatusEffect，不可合并或拆分
+- 效果仅通过 duration / speed / defense / counter 四字段生效；其余影响（HP 增减、手牌调整等）写入 description 交下游消费。禁止修改 max_hp，禁止引入新数值轴
+
 ## 状态效果字段说明
 
 每个状态效果必须指定 `phase` 字段，决定生效阶段与消费方。

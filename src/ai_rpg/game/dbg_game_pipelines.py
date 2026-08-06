@@ -5,7 +5,7 @@ from .game_session import GameSession
 from .rpg_game_pipeline_manager import RPGGameProcessPipeline
 
 
-def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
+def create_home_pipeline(game: GameSession) -> RPGGameProcessPipeline:
     """创建家园场景的流程管道（NPC 与玩家共用）"""
 
     ### 不这样就循环引用
@@ -85,7 +85,7 @@ def create_home_pipeline(game: GameSession) -> "RPGGameProcessPipeline":
 
 def create_combat_pipeline(
     game: GameSession,
-) -> "RPGGameProcessPipeline":
+) -> RPGGameProcessPipeline:
     """创建地牢战斗场景的流程管道"""
 
     ### 不这样就循环引用
@@ -239,7 +239,7 @@ def create_combat_pipeline(
 
 def create_dungeon_generate_pipeline(
     game: GameSession,
-) -> "RPGGameProcessPipeline":
+) -> RPGGameProcessPipeline:
     """创建副本生成流程管道（LLM 文本生成 + 图片生成）"""
 
     ### 不这样就循环引用

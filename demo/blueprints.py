@@ -98,6 +98,33 @@ def create_corridor_hall() -> Stage:
     )
 
 
+# ── 卡牌关键词常量（避免重复字符串，方便统一修改） ──────────────────────────────────────────────
+
+_KW_ATTACK: Final[str] = (
+    "攻击型：造成直接伤害的基础攻击卡牌，不携带特殊效果"
+    "（affixes 与 modifiers 均为 []），伤害值适中稳定，无骰值依赖。"
+)
+_KW_DEFENSE: Final[str] = (
+    "防御型：提供防御或减伤效果的基础卡牌，不携带特殊效果"
+    "（affixes 与 modifiers 均为 []），以提升自身防御或减少受到的伤害为核心，无骰值依赖。"
+)
+_KW_ARMOR_BREAK: Final[str] = (
+    "即时破甲型：卡牌必须携带至少一个即时破甲/穿透效果"
+    "（通过 modifiers 实现，非 affixes）；攻击造成直接伤害，效果在本次结算中即时生效。"
+    "骰值 0-10 为失败，破甲效果微弱、伤害偏低；"
+    "骰值 11-90 为正常，本次攻击忽略目标一半防御值；"
+    "骰值 91-100 为优质，本次攻击完全无视目标防御。"
+)
+_KW_CONTROL: Final[str] = (
+    "控制型：卡牌必须携带至少一个持续负面状态效果"
+    "（通过 affixes 实现，落地为 StatusEffect），直接伤害可以较低乃至为零。"
+    "可附加效果：易伤（目标受击时防御减半）或 减速（目标 speed 降低）。"
+    "骰值 0-10 为失败，状态持续时间短或效果微弱；"
+    "骰值 11-90 为正常，稳定施加易伤 或 减速 其中之一；"
+    "骰值 91-100 为优质，可同时叠加易伤与减速，或状态效果显著增强。"
+)
+
+
 #######################################################################################################################
 def create_wuming() -> Actor:
     """创建玩家角色——无名。"""
@@ -117,7 +144,15 @@ def create_wuming() -> Actor:
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
         keywords=[
-            "即时破甲型：每张卡牌必须携带至少一个在出牌时立即生效的特殊效果，优先体现破甲、穿透、无视防御等特性；攻击必须造成直接伤害，特殊效果在本次结算中即时生效。骰值 0-30 为失败，破甲效果微弱、伤害偏低；骰值 31-70 为正常，效果稳定清晰；骰值 71-100 为优质，穿透效果犀利且伤害偏高。"
+            # 3 张基础攻击 — 不参考骰值
+            _KW_ATTACK,
+            _KW_ATTACK,
+            _KW_ATTACK,
+            # 2 张基础防御 — 不参考骰值
+            _KW_DEFENSE,
+            _KW_DEFENSE,
+            # 1 张即时破甲 — 骰值驱动强度，走 modifiers
+            _KW_ARMOR_BREAK,
         ],
     )
 
@@ -144,7 +179,15 @@ def create_hanchan() -> Actor:
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
         keywords=[
-            "状态控制型：每张卡牌必须携带至少一个持续生效的负面状态，以给敌人施加长期控制效果为核心目标，直接伤害可以较低乃至为零。骰值 0-30 为失败，状态持续时间短或效果微弱；骰值 31-70 为正常，状态稳定可靠；骰值 71-100 为优质，状态效果显著增强或同时附带多个负面状态。"
+            # 3 张基础攻击 — 不参考骰值
+            _KW_ATTACK,
+            _KW_ATTACK,
+            _KW_ATTACK,
+            # 2 张基础防御 — 不参考骰值
+            _KW_DEFENSE,
+            _KW_DEFENSE,
+            # 1 张控制 — 骰值驱动强度，走 affixes → StatusEffect 链
+            _KW_CONTROL,
         ],
     )
 
@@ -161,8 +204,10 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
         name="时装.无名病号服",
         description="一件洗至发硬的灰白病号服，袖口与领口已微微起毛。宽松的剪裁反而衬出肩宽骨架，穿在身上像一件被反复浆洗过的旧衣——干净，但带着洗不掉的时间痕迹。",
     )
-    actor_wuming.character_stats.speed = 2
-    actor_wuming.character_stats.attack = 100
+
+    # 故意让无名的 character_stats 里有一些数值，方便演示战斗初始化时的属性展示
+    # actor_wuming.character_stats.speed = 2
+    # actor_wuming.character_stats.attack = 100
 
     actor_hanchan = create_hanchan()
     actor_hanchan.custom_item = CostumeItem(
@@ -196,7 +241,7 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
                 name="消耗品.止血药粉",
                 description="一小纸包灰白色粉末，闻起来有股辛辣的草药味。洒在伤口上会引起短暂刺痛，随后迅速止血。",
                 count=2,
-                target_type=TargetType.SELF,
+                target_type=TargetType.SINGLE,
             ),
             ConsumableItem(
                 name="消耗品.香灰投掷包",
@@ -277,7 +322,7 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
                 name="消耗品.吗啡针剂",
                 description="一支从疗养院药房取得的玻璃针剂，液体呈淡琥珀色。针管上有细小裂纹但封口尚好。注射后迅速镇痛止血，但会留下短暂的眩晕感。",
                 count=1,
-                target_type=TargetType.SELF,
+                target_type=TargetType.SINGLE,
                 affixes=["[镇痛]:可能移除当前出血状态"],
                 modifiers=["[速效]:优先恢复至战斗有效生命值，无视超量回复上限"],
             ),

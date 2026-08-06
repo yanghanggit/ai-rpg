@@ -2,6 +2,8 @@
 大傩副本工厂模块
 """
 
+from typing import Final
+
 from ai_rpg.models import (
     Dungeon,
     CombatRoom,
@@ -17,6 +19,25 @@ from ai_rpg.models import (
 )
 from demo.settings import (
     CAMPAIGN_SETTING,
+)
+
+
+# ── 卡牌关键词常量 ──────────────────────────────────────────────────────────────────────────────
+
+_KW_PAPER_ATTACK: Final[str] = (
+    "攻击型：造成直接伤害的基础攻击卡牌，以竹签指尖刺划或纸刃割裂为攻击方式，"
+    "不携带特殊效果（affixes 与 modifiers 均为 []），伤害值适中稳定，无骰值依赖。"
+)
+_KW_PAPER_DEFENSE: Final[str] = (
+    "防御型：纸人躯体以竹骨纸面偏转攻击，"
+    "提供防御或减伤效果的基础卡牌，不携带特殊效果（affixes 与 modifiers 均为 []），无骰值依赖。"
+)
+_KW_CINNABAR: Final[str] = (
+    "朱砂侵蚀型：卡牌携带朱砂毒性效果"
+    "（通过 affixes 实现，落地为 StatusEffect），攻击造成直接伤害的同时对目标施加持续侵蚀。"
+    "骰值 0-10 为失败，毒性微弱、仅持续极短回合；"
+    "骰值 11-90 为正常，稳定施加朱砂侵蚀（目标每回合末 HP -1）；"
+    "骰值 91-100 为优质，毒性深入骨髓，持续回合翻倍或每回合伤害提高。"
 )
 
 
@@ -36,7 +57,13 @@ def create_actor_paper_doll() -> Actor:
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
         keywords=[
-            "纯攻击型：每张卡牌专注于对单个敌人造成直接伤害，不携带任何附加效果或持续状态。骰值 0-30 为失败，攻击乏力、伤害偏低；骰值 31-70 为正常，伤害稳定适中；骰值 71-100 为优质，体现爆发感，伤害显著高于角色基础攻击力。"
+            # 2 张基础攻击 — 不参考骰值
+            _KW_PAPER_ATTACK,
+            _KW_PAPER_ATTACK,
+            # 1 张基础防御 — 不参考骰值
+            _KW_PAPER_DEFENSE,
+            # 1 张朱砂侵蚀 — 骰值驱动强度，走 affixes → StatusEffect 链
+            _KW_CINNABAR,
         ],
     )
 

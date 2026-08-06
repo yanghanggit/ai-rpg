@@ -5,7 +5,7 @@
 ## 🛠️ 技术栈
 
 - **Python 3.12+** / **FastAPI** / **Pydantic v2**
-- **LangChain** / **LangGraph** / **DeepSeek** (chat + reasoner)
+- **DeepSeek** (chat + reasoner)
 - **PostgreSQL** (pgvector) / **ChromaDB**
 - **Sentence Transformers** / **Replicate**（图像生成）
 - **UV** / **Black** / **Ruff** / **MyPy** / **Pytest**

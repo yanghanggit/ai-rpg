@@ -1,6 +1,4 @@
-"""战斗阶段/流程枚举模型定义
-PhaseType 描述战斗流程中各个阶段，供 StatusEffect、系统及 LLM 提示词复用。
-"""
+"""战斗阶段/流程枚举模型定义"""
 
 from enum import StrEnum, unique
 from typing import final

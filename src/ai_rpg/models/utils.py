@@ -14,15 +14,7 @@ def compute_effective_stats(
     status_effects: Optional[List[StatusEffect]] = None,
     equipped_gear: Optional[GearItem] = None,
 ) -> CharacterStats:
-    """计算角色的最终有效属性，聚合基础属性与状态效果的属性加成。
-
-    Args:
-        base_stats: 角色的基础属性
-        status_effects: 当前状态效果列表，为 None 时不计算状态效果加成
-
-    Returns:
-        包含基础属性与所有加成之和的新 CharacterStats 实例
-    """
+    """计算角色的最终有效属性，聚合基础属性与状态效果的属性加成。"""
 
     bonus_hp = 0
     bonus_max_hp = 0

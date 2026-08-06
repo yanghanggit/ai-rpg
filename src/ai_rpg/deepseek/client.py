@@ -1,4 +1,4 @@
-"""DeepSeek 直连客户端（无 langchain/langgraph 依赖）
+"""DeepSeek 直连客户端
 
 直接调用 DeepSeek 平台 REST API，不经过本地 deepseek_chat_server。
 公共接口与 ChatClient 保持一致，context 类型改用本模块的自定义消息类型。
@@ -42,7 +42,7 @@ _DEEPSEEK_API_URL: Final[str] = "https://api.deepseek.com/chat/completions"
 _DEEPSEEK_MODELS_URL: Final[str] = "https://api.deepseek.com/models"
 _DEEPSEEK_BALANCE_URL: Final[str] = "https://api.deepseek.com/user/balance"
 
-# DeepSeek 消息 role 映射，借鉴langchain的role定义，统一为 system/human/ai/tool
+# DeepSeek 消息 role 映射：system/human/ai/tool
 _ROLE_MAP: Final[Dict[str, str]] = {
     "system": "system",
     "human": "user",
@@ -84,7 +84,7 @@ class ToolCall(BaseModel):
 ############################################################################################################
 @final
 class DeepSeekClient:
-    """直连 DeepSeek 平台的聊天客户端（无 langchain/langgraph 依赖）
+    """直连 DeepSeek 平台的聊天客户端
 
     直接调用 https://api.deepseek.com/chat/completions，
     支持 deepseek-chat 和 deepseek-reasoner 两个模型。

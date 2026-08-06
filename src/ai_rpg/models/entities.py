@@ -11,8 +11,6 @@ from .items import CostumeItem
 class CharacterSheet(BaseModel):
     """
     角色卡片定义
-    包含角色的基本信息，如名称、类型、简介和外观描述等。
-    这些信息用于描述角色的背景和特征，帮助玩家更好地理解角色在游戏中的定位和作用。
     """
 
     name: str
@@ -26,8 +24,6 @@ class CharacterSheet(BaseModel):
 class StageProfile(BaseModel):
     """
     场景卡片定义
-    包含场景的基本信息，如名称、类型和简介等。
-    这些信息用于描述场景的背景和特征，帮助玩家更好地理解场景在游戏中的定位和作用。
     """
 
     name: str

@@ -1,8 +1,4 @@
-"""战斗相关模型定义
-
-包含战斗状态、战斗结果、战斗回合与战斗实例核心模型。
-状态效果与卡牌相关模型见 cards.py。
-"""
+"""战斗相关模型定义"""
 
 from enum import IntEnum, unique
 from typing import List, Optional, final

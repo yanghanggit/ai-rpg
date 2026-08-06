@@ -5,6 +5,7 @@
 import random
 from enum import IntEnum, unique
 from typing import Dict, Final, List, final, override
+from pydantic import BaseModel
 from loguru import logger
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
@@ -20,13 +21,34 @@ from ..models import (
     Card,
     TargetType,
     HumanMessage,
+    CharacterStats,
 )
 from ..utils import extract_json_from_code_block
-from .card_prompt_builders import (
-    DeckGenerateResponse,
-    generate_deck_prompt,
-    generate_compressed_deck_prompt,
-)
+from .card_prompt_builders import BUILD_CARD_FIELD_DESCRIPTION
+
+
+#######################################################################################################################################
+class DeckCardEntry(BaseModel):
+    """单张卡牌条目（用于 DeckGenerateResponse 解析）"""
+
+    name: str
+    description: str
+    affixes: List[str] = []
+    modifiers: List[str] = []
+    playable: bool = True
+    exhaust: bool = False
+    cost: int = 1
+    damage_dealt: int
+    energy_delta: int = 0
+    hit_count: int = 1
+    target_type: str = TargetType.SINGLE
+
+
+#######################################################################################################################################
+class DeckGenerateResponse(BaseModel):
+    """LLM 一次生成 num_cards 张牌库卡牌的响应模型"""
+
+    cards: List[DeckCardEntry]
 
 
 ###############################################################################################################################################
@@ -37,6 +59,106 @@ class DiceValue(IntEnum):
 
     MIN = 0
     MAX = 100
+
+
+#######################################################################################################################################
+def build_design_principle_prompt(
+    keywords: List[str],
+    dice_rolls: List[int] = [],
+) -> str:
+    """生成关键词约束段落。无关键词时输出差异化指引；有骰值时附加于各卡约束行末。"""
+    card_count = len(dice_rolls)
+    if not keywords:
+        return f"关键词约束：无（{card_count}张卡牌应有差异化，如高伤低防/高防低伤/均衡型）"
+    use_dice = len(dice_rolls) == len(keywords)
+    header = (
+        "关键词约束（按顺序对应；骰值仅在约束中明确说明用法时生效，否则忽略）："
+        if use_dice
+        else "关键词约束（按顺序对应）："
+    )
+    lines = "\n".join(
+        f"  - 卡牌{i + 1}：{keywords[i]}"
+        + (f"（骰值：{dice_rolls[i]}）" if use_dice else "")
+        for i in range(len(keywords))
+    )
+    return f"{header}\n{lines}"
+
+
+#######################################################################################################################################
+def generate_deck_prompt(
+    actor_stats: CharacterStats,
+    keywords: List[str] = [],
+    dice_rolls: List[int] = [],
+) -> str:
+    """生成战斗开始牌库生成 prompt（含字段说明与 JSON 示例）。"""
+
+    card_count = len(dice_rolls)
+    design_principle = build_design_principle_prompt(keywords, dice_rolls)
+
+    return f"""# 战斗开始：生成 {card_count} 张初始牌库卡牌
+
+## 角色属性
+
+| HP | 攻击 | 防御 | 每回合行动次数 |
+|---|---|---|---|
+| {actor_stats.hp}/{actor_stats.max_hp} | {actor_stats.attack} | {actor_stats.defense} | {actor_stats.energy} |
+
+## 设计约束
+
+{design_principle}
+
+{BUILD_CARD_FIELD_DESCRIPTION}
+
+## 核心原则
+
+- keywords 即边界，不是风格建议：要求的效果（破甲、穿透等）在对应字段体现；「纯攻击」「不携带附加效果」→ modifiers 与 affixes 强制为 []。未提及即禁止
+- modifiers（一次性修正）与 affixes（延迟触发信号）仅限 keywords 授权时填充；跨回合影响写入 affixes，由下游落地为 StatusEffect
+
+## 约束
+
+- `description` 禁止提及任何场景地物（如断柱、沙地）、地名或即时情境细节，禁止含数字
+- `affixes`/`modifiers` 禁止重述数值字段已确定性表达的效果：`energy_delta ≠ 0` 时不得描述行动次数变化；不得重复量化 `damage_dealt`/`hit_count` 已决定的伤害量级
+- `modifiers` 禁止出现任何跨回合表述（如"下回合"、"持续N回合"、"未来几回合"）；此类持续性效果一律归入 `affixes`，由出牌后独立推理生成状态效果表达
+- `cards` 数组长度必须恰好为 {card_count}
+- 只输出 JSON，不附加任何说明文字
+
+```json
+{{
+  "cards": [
+    {{
+      "name": "...",
+      "description": "...",
+      "affixes": [],
+      "modifiers": [],
+      "playable": true,
+      "exhaust": false,
+      "cost": 1,
+      "damage_dealt": 0,
+      "energy_delta": 0,
+      "hit_count": 1,
+      "target_type": "single"
+    }}
+  ]
+}}
+```
+
+（`affixes`/`modifiers` 有内容时数组元素须为字符串，格式 `名称:即时修正描述`，例如 `"无视防御:本次攻击无视目标防御"`；无内容时输出 `[]`；禁止输出对象）"""
+
+
+#######################################################################################################################################
+def generate_compressed_deck_prompt(
+    actor_stats: CharacterStats,
+    keywords: List[str] = [],
+    dice_rolls: List[int] = [],
+) -> str:
+    """生成牌库生成 prompt 的压缩版（写入对话历史，减少 token 消耗）。"""
+    card_count = len(dice_rolls)
+    design_principle = build_design_principle_prompt(keywords, dice_rolls)
+    return f"""# 战斗牌库生成（{card_count} 张）
+
+HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense} | 行动次数:{actor_stats.energy}
+
+{design_principle}"""
 
 
 @final

@@ -22,7 +22,7 @@ from ..models import (
 )
 from ..utils import extract_json_from_code_block
 from .arbitration_prompt_builders import fmt_duration
-from .card_prompt_builders import build_card_field_description
+from .card_prompt_builders import BUILD_CARD_FIELD_DESCRIPTION
 
 
 #######################################################################################################################################
@@ -121,7 +121,7 @@ def _generate_inject_cards_prompt(
 - 不滥用：若无明显可利用的环境要素，**必须输出空数组**
 - 塞牌字段（`inject_cards`）：`exhaust` 通常设为 `true`（一次性机遇，用后不再出现）；`cost` 由你自行判断，轻微动作（如随手投掷碎石）可设为 0，需专注/耗时的复杂互动可设为 1 或更高
 
-{build_card_field_description()}
+{BUILD_CARD_FIELD_DESCRIPTION}
 
 ## 输出格式
 

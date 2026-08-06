@@ -137,7 +137,7 @@ def _generate_inject_cards_prompt(
           "name": "碎柱投掷",
           "description": "抓起地面的断柱碎块用力掷向对方，造成钝击伤害",
           "affixes": [],
-          "modifiers": ["无视防御:本次攻击无视目标防御"],
+          "modifiers": [],
           "playable": true,
           "exhaust": true,
           "cost": 0,
@@ -152,7 +152,7 @@ def _generate_inject_cards_prompt(
 }}
 ```
 
-（`affixes`/`modifiers` 无内容时输出 `[]`；有内容时数组元素必须是如上示例的字符串，禁止输出对象）
+（`affixes`/`modifiers` 有内容时数组元素须为字符串，格式 `名称:即时修正描述`，例如 `"无视防御:本次攻击无视目标防御"`；无内容时输出 `[]`；禁止输出对象）
 
 **无干预时输出空的 per_actor 数组，只输出 JSON。**"""
 

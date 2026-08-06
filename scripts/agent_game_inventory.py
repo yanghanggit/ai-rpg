@@ -42,19 +42,7 @@ async def add_party_member_game(
     member_name: str,
     save_dir: Path,
 ) -> DBGGame:
-    """从存档复位，将指定盟友加入远征队名单，并归档新状态。
-
-    前置条件：玩家必须处于家园模式（is_player_in_home_stage）。
-
-    Args:
-        world: 由 restore_world() 反序列化的世界数据。
-        player_session: 由 restore_world() 反序列化的玩家会话。
-        member_name: 要加入名单的盟友角色名称。
-        save_dir: 新存档写入目录。
-
-    Returns:
-        执行完毕后的 DBGGame 实例；操作失败时提前返回未归档实例。
-    """
+    """将指定盟友加入远征队名单并归档。"""
     terminal_game = await restore_game(world, player_session)
 
     success, error_detail = add_party_member(terminal_game, member_name)
@@ -79,19 +67,7 @@ async def remove_party_member_game(
     member_name: str,
     save_dir: Path,
 ) -> DBGGame:
-    """从存档复位，将指定盟友从远征队名单移除，并归档新状态。
-
-    前置条件：玩家必须处于家园模式（is_player_in_home_stage）。
-
-    Args:
-        world: 由 restore_world() 反序列化的世界数据。
-        player_session: 由 restore_world() 反序列化的玩家会话。
-        member_name: 要移除的盟友角色名称。
-        save_dir: 新存档写入目录。
-
-    Returns:
-        执行完毕后的 DBGGame 实例；操作失败时提前返回未归档实例。
-    """
+    """将指定盟友从远征队名单移除并归档。"""
     terminal_game = await restore_game(world, player_session)
 
     success, error_detail = remove_party_member(terminal_game, member_name)
@@ -114,15 +90,7 @@ async def get_party_roster_game(
     world: World,
     player_session: PlayerSession,
 ) -> List[str]:
-    """从存档复位，返回当前远征队名单（只读，不写新存档）。
-
-    Args:
-        world: 由 restore_world() 反序列化的世界数据。
-        player_session: 由 restore_world() 反序列化的玩家会话。
-
-    Returns:
-        远征队同伴名称列表（不含玩家自身）。
-    """
+    """返回当前远征队名单（只读，不归档）。"""
     terminal_game = await restore_game(world, player_session)
     return get_party_roster(terminal_game)
 
@@ -134,17 +102,7 @@ async def move_item_to_inventory_game(
     item_name: str,
     save_dir: Path,
 ) -> DBGGame:
-    """从存档复位，将指定道具从储物箱移入随身背包，并归档新状态。
-
-    Args:
-        world: 由 restore_world() 反序列化的世界数据。
-        player_session: 由 restore_world() 反序列化的玩家会话。
-        item_name: 要移动的道具名称（精确匹配 StorageComponent.items）。
-        save_dir: 新存档写入目录。
-
-    Returns:
-        执行完毕后的 DBGGame 实例；操作失败时提前返回未归档实例。
-    """
+    """将指定道具从储物箱移入随身背包并归档。"""
     terminal_game = await restore_game(world, player_session)
 
     success, error_detail = move_item_to_inventory(terminal_game, item_name)
@@ -169,17 +127,7 @@ async def move_item_to_storage_game(
     item_name: str,
     save_dir: Path,
 ) -> DBGGame:
-    """从存档复位，将指定道具从随身背包移回储物箱，并归档新状态。
-
-    Args:
-        world: 由 restore_world() 反序列化的世界数据。
-        player_session: 由 restore_world() 反序列化的玩家会话。
-        item_name: 要移动的道具名称（精确匹配 InventoryComponent.items）。
-        save_dir: 新存档写入目录。
-
-    Returns:
-        执行完毕后的 DBGGame 实例；操作失败时提前返回未归档实例。
-    """
+    """将指定道具从随身背包移回储物箱并归档。"""
     terminal_game = await restore_game(world, player_session)
 
     success, error_detail = move_item_to_storage(terminal_game, item_name)
@@ -205,18 +153,7 @@ async def wear_costume_game(
     save_dir: Path,
     target_name: str,
 ) -> DBGGame:
-    """从存档复位，触发穿装动作并通过 home pipeline 执行 LLM 合成，归档新状态。
-
-    Args:
-        world: 由 restore_world() 反序列化的世界数据。
-        player_session: 由 restore_world() 反序列化的玩家会话。
-        item_name: CostumeItem 的精确名称。
-        save_dir: 新存档写入目录。
-        target_name: 目标角色全名，调用方必须显式传入（即使目标是玩家自身，也需传入其真实全名）。
-
-    Returns:
-        执行完毕后的 DBGGame 实例；操作失败时提前返回未归档实例。
-    """
+    """为指定角色穿装并归档。"""
     terminal_game = await restore_game(world, player_session)
 
     success, error_detail = activate_wear_costume(terminal_game, item_name, target_name)
@@ -242,17 +179,7 @@ async def remove_costume_game(
     save_dir: Path,
     target_name: str,
 ) -> DBGGame:
-    """从存档复位，触发脱装动作并通过 home pipeline 执行，归档新状态。
-
-    Args:
-        world: 由 restore_world() 反序列化的世界数据。
-        player_session: 由 restore_world() 反序列化的玩家会话。
-        save_dir: 新存档写入目录。
-        target_name: 目标角色全名，调用方必须显式传入（即使目标是玩家自身，也需传入其真实全名）。
-
-    Returns:
-        执行完毕后的 DBGGame 实例；操作失败时提前返回未归档实例。
-    """
+    """移除指定角色的时装并归档。"""
     terminal_game = await restore_game(world, player_session)
 
     success, error_detail = activate_remove_costume(terminal_game, target_name)
@@ -278,17 +205,7 @@ async def craft_consumable_game(
     material_names: List[str],
     save_dir: Path,
 ) -> DBGGame:
-    """从存档复位，触发工坊合成消耗品动作并通过 home pipeline 执行 LLM 推理，归档新状态。
-
-    Args:
-        world: 由 restore_world() 反序列化的世界数据。
-        player_session: 由 restore_world() 反序列化的玩家会话。
-        material_names: 参与合成的材料名称列表（允许重复代表多份）。
-        save_dir: 新存档写入目录。
-
-    Returns:
-        执行完毕后的 DBGGame 实例；操作失败时提前返回未归档实例。
-    """
+    """使用材料合成消耗品并归档。"""
     terminal_game = await restore_game(world, player_session)
 
     success, error_detail = activate_craft_consumable(terminal_game, material_names)
@@ -313,17 +230,7 @@ async def craft_gear_item_game(
     material_names: list[str],
     save_dir: Path,
 ) -> DBGGame:
-    """从存档复位，触发工坊锻造装备动作并通过 home pipeline 执行 LLM 推理，归档新状态。
-
-    Args:
-        world: 由 restore_world() 反序列化的世界数据。
-        player_session: 由 restore_world() 反序列化的玩家会话。
-        material_names: 参与锻造的材料名称列表（允许重复代表多份）。
-        save_dir: 新存档写入目录。
-
-    Returns:
-        执行完毕后的 DBGGame 实例；操作失败时提前返回未归档实例。
-    """
+    """使用材料锻造装备并归档。"""
     terminal_game = await restore_game(world, player_session)
 
     success, error_detail = activate_craft_gear_item(terminal_game, material_names)
@@ -349,17 +256,7 @@ async def craft_costume_game(
     material_names: list[str],
     save_dir: Path,
 ) -> DBGGame:
-    """从存档复位，触发工坊制作时装动作并通过 home pipeline 执行 LLM 推理，归档新状态。
-
-    Args:
-        world: 由 restore_world() 反序列化的世界数据。
-        player_session: 由 restore_world() 反序列化的玩家会话。
-        material_names: 参与制作的材料名称列表（允许重复代表多份）。
-        save_dir: 新存档写入目录。
-
-    Returns:
-        执行完毕后的 DBGGame 实例；操作失败时提前返回未归档实例。
-    """
+    """使用材料制作时装并归档。"""
     terminal_game = await restore_game(world, player_session)
 
     success, error_detail = activate_craft_costume_item(terminal_game, material_names)

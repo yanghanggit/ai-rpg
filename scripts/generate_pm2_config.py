@@ -1,12 +1,6 @@
 #!/usr/bin/env python3
 """
 生成 PM2 进程管理配置文件 (ecosystem.config.js)
-
-使用方式：
-    python scripts/generate_pm2_config.py
-
-Author: yanghanggit
-Date: 2025-07-30
 """
 
 import os

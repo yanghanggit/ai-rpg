@@ -29,19 +29,7 @@ from pathlib import Path
 async def create_and_initialize_game(
     user: str, game: str, dungeon_name: str, save_dir: Path
 ) -> DBGGame:
-    """创建并初始化一个新游戏实例。
-
-    从 BLUEPRINTS_DIR/{game}.json 加载蓝图，从 DUNGEONS_DIR/{dungeon_name}.json 加载副本。
-
-    Args:
-        user: 玩家用户名
-        game: 游戏名称（对应 BLUEPRINTS_DIR 下的文件名）
-        dungeon_name: 副本名称（对应 DUNGEONS_DIR 下的文件名）
-        save_dir: 存档目录
-
-    Returns:
-        已初始化完成的 DBGGame 实例
-    """
+    """从蓝图文件和副本文件创建并初始化新游戏实例，完成后归档。副本文件缺失时使用空副本占位。"""
     # 从 JSON 文件加载蓝图
     blueprint_path = BLUEPRINTS_DIR / f"{game}.json"
     assert blueprint_path.exists(), f"蓝图文件不存在: {blueprint_path}"
@@ -79,9 +67,6 @@ async def create_and_initialize_game(
         world=world_data,
     )
 
-    # DeepSeekClient.setup()
-    # ImageClient.setup(server_configuration.replicate_image_generation_server_port)
-
     assert (
         len(terminal_game._world.entities_serialization) == 0
     ), "测试阶段，游戏中不应该有实体数据！"
@@ -92,9 +77,6 @@ async def create_and_initialize_game(
     logger.info(
         f"游戏创建并初始化完成：user={user}, game={game}, dungeon={dungeon_name}"
     )
-
-    # 并发检查图片服务
-    # await ImageClient.health_check()
 
     # 持久化游戏世界数据到存档目录，并启用 gzip 快照功能
     archive_world(
@@ -110,19 +92,7 @@ async def restore_game(
     world: World,
     player_session: PlayerSession,
 ) -> DBGGame:
-    """从已还原的 World/PlayerSession 构造 DBGGame 并完成初始化。
-
-    各命令的共享入口：先由命令层调用 restore_world(snapshot_path) 拿到
-    (World, PlayerSession)，再传入本函数完成 DBGGame 的实体重建与服务初始化。
-
-    Args:
-        world: 由 restore_world() 反序列化的世界数据。
-        player_session: 由 restore_world() 反序列化的玩家会话。
-
-    Returns:
-        已完成 restore_from_snapshot() + initialize() 的 DBGGame 实例，
-        可直接调用 home_pipeline / combat_pipeline。
-    """
+    """从 World/PlayerSession 快照还原 DBGGame 实例。所有动作命令的共享入口。"""
     game = str(world.blueprint.name)
     terminal_game = DBGGame(
         name=game,

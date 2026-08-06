@@ -40,24 +40,7 @@ async def advance_game(
     actor_names: List[str],
     save_dir: Path,
 ) -> DBGGame:
-    """从存档复位，执行一轮家园推进（等同于终端命令 /ad），并归档新状态。
-
-    调用 activate_stage_plan 为调用方显式指定的角色列表激活行动计划，
-    然后驱动 home_pipeline.process() 完成本轮推理与叙事生成。
-
-    调用前应先用 stages_game() 查询当前场景的角色名单，确定 actor_names。
-
-    前置条件：玩家必须处于家园模式（is_player_in_home_stage）。
-
-    Args:
-        world: 由 restore_world() 反序列化的世界数据。
-        player_session: 由 restore_world() 反序列化的玩家会话。
-        actor_names: 本轮需要真正触发行动规划的角色名称列表（须为当前家园场景内的 NPC/玩家）。
-        save_dir: 新存档写入目录（由命令层根据时间戳预先构造）。
-
-    Returns:
-        执行完毕后的 DBGGame 实例（已归档）。
-    """
+    """推进一轮家园剧情，为指定角色激活行动计划并归档。"""
     terminal_game = await restore_game(world, player_session)
 
     success, error_detail = activate_plan_action(terminal_game, actor_names)
@@ -79,18 +62,7 @@ async def stages_game(
     world: World,
     player_session: PlayerSession,
 ) -> Dict[str, List[str]]:
-    """从存档复位，返回场景与角色的分布映射（只读，不写新存档）。
-
-    与服务端 /api/stages/v1/{user}/{game}/state（fetch_stages_state）功能对等，
-    供调用方在执行 advance 前查询当前场景内的角色名单，用于构造 --actors 参数。
-
-    Args:
-        world: 由 restore_world() 反序列化的世界数据。
-        player_session: 由 restore_world() 反序列化的玩家会话。
-
-    Returns:
-        场景名称 -> 角色名称列表 的映射。
-    """
+    """返回当前各场景内角色名单（只读，不归档）。"""
     terminal_game = await restore_game(world, player_session)
     return terminal_game.get_actors_by_stage_as_names()
 
@@ -103,23 +75,7 @@ async def speak_game(
     content: str,
     save_dir: Path,
 ) -> DBGGame:
-    """从存档复位，玩家向指定 NPC 说话（等同于终端命令 /speak），并归档新状态。
-
-    调用 activate_speak_action 添加玩家说话行动，然后驱动 home_pipeline.process()。
-    本次 pipeline 中 NPC 不进行主动推理，仅响应玩家的对话。
-
-    前置条件：玩家必须处于家园模式，且 target 角色须与玩家在同一场景。
-
-    Args:
-        world: 由 restore_world() 反序列化的世界数据。
-        player_session: 由 restore_world() 反序列化的玩家会话。
-        target: 对话目标角色全名（如 "术士.云音"）。
-        content: 玩家说话内容。
-        save_dir: 新存档写入目录。
-
-    Returns:
-        执行完毕后的 DBGGame 实例（已归档）；激活失败时提前返回未归档实例。
-    """
+    """玩家向指定 NPC 说话并归档。"""
     terminal_game = await restore_game(world, player_session)
 
     success, _ = activate_speak_action(
@@ -148,22 +104,7 @@ async def switch_stage_game(
     stage_name: str,
     save_dir: Path,
 ) -> DBGGame:
-    """从存档复位，玩家切换到指定场景（等同于终端命令 /switch_stage），并归档新状态。
-
-    调用 activate_switch_stage 添加玩家场景转换行动，然后驱动 home_pipeline.process()。
-    本次 pipeline 中 NPC 不进行主动推理，仅响应场景切换。
-
-    前置条件：玩家必须处于家园模式，且 stage_name 须为合法的 HomeComponent 场景。
-
-    Args:
-        world: 由 restore_world() 反序列化的世界数据。
-        player_session: 由 restore_world() 反序列化的玩家会话。
-        stage_name: 目标场景全名（如 "场景.村中议事堂"）。
-        save_dir: 新存档写入目录。
-
-    Returns:
-        执行完毕后的 DBGGame 实例（已归档）；激活失败时提前返回未归档实例。
-    """
+    """玩家切换到指定场景并归档。"""
     terminal_game = await restore_game(world, player_session)
 
     success, _ = activate_switch_stage(
@@ -191,25 +132,7 @@ async def enter_dungeon_game(
     dungeon_name: str,
     save_dir: Path,
 ) -> DBGGame:
-    """从存档复位，启动副本第一关（等同于终端命令 /ed），并归档新状态。
-
-    调用 setup_dungeon 从文件加载副本、赋值并创建副本实体，再调用 enter_dungeon_first_stage 将玩家和队友传送至第一关场景，
-    创建首个 CombatSequence，然后驱动 combat_pipeline.process() 完成战斗初始化
-    （场景描述生成、各角色初始状态效果生成、创建第一回合及行动顺序）。
-
-    执行后游戏进入【副本模式】，后续应使用 draw-cards → play-cards 流程。
-
-    前置条件：玩家必须处于家园模式。
-
-    Args:
-        world: 由 restore_world() 反序列化的世界数据。
-        player_session: 由 restore_world() 反序列化的玩家会话。
-        dungeon_name: 副本名称（对应 DUNGEONS_DIR 下的 JSON 文件名）。
-        save_dir: 新存档写入目录。
-
-    Returns:
-        执行完毕后的 DBGGame 实例（已归档）；失败时提前返回未归档实例。
-    """
+    """进入指定副本第一关并归档。需处于家园模式。"""
     terminal_game = await restore_game(world, player_session)
 
     success, error_detail = setup_dungeon(terminal_game, dungeon_name)
@@ -246,23 +169,7 @@ async def generate_dungeon_game(
     player_session: PlayerSession,
     save_dir: Path,
 ) -> DBGGame:
-    """从存档复位，激活副本生成动作并执行 dungeon_generate_pipeline，并归档新状态。
-
-    调用 activate_generate_dungeon 为玩家实体添加 GenerateDungeonAction，
-    然后驱动 _dungeon_generate_pipeline.process() 触发 GenerateDungeonActionSystem
-    执行副本文本数据生成流程（Steps 1-4），成功后自动触发 IllustrateDungeonActionSystem。
-    动作组件由 ActionCleanupSystem 在 pipeline 末端自动清除。
-
-    前置条件：玩家必须处于家园模式（is_player_in_home_stage）。
-
-    Args:
-        world: 由 restore_world() 反序列化的世界数据。
-        player_session: 由 restore_world() 反序列化的玩家会话。
-        save_dir: 新存档写入目录。
-
-    Returns:
-        执行完毕后的 DBGGame 实例（已归档）；激活失败时提前返回未归档实例。
-    """
+    """激活 LLM 动态生成副本流水线并归档。需处于家园模式。"""
     terminal_game = await restore_game(world, player_session)
 
     success, error_detail = activate_generate_dungeon(terminal_game)

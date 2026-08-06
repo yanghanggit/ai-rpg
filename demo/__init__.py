@@ -1,7 +1,7 @@
-from .dungeons import (
+from demo.dungeons import (
     create_shrine_ruins_dungeon,
 )
-from .blueprints import (
+from demo.blueprints import (
     create_ruins_blueprint,
 )
 

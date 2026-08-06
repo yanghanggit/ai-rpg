@@ -34,6 +34,8 @@ lint:
 	uv run mypy --strict src/
 	@echo "📁 检查 tests/ 目录..."
 	uv run mypy --strict tests/
+	@echo "📁 检查 demo/ 目录..."
+	uv run mypy --strict demo/
 
 # 格式化代码
 format:

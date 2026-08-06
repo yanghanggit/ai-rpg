@@ -79,8 +79,8 @@ def main() -> int:
         target = args.file
         target_display = target
     else:
-        target = ["src/", "scripts/", "tests/"]
-        target_display = "src/、scripts/ 和 tests/"
+        target = ["src/", "scripts/", "tests/", "demo/"]
+        target_display = "src/、scripts/、tests/ 和 demo/"
 
     if args.check:
         print(f"🔍 检查 {target_display} 中的未使用导入...")

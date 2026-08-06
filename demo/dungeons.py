@@ -2,7 +2,7 @@
 大傩副本工厂模块
 """
 
-from ..models import (
+from ai_rpg.models import (
     Dungeon,
     CombatRoom,
     StageProfile,
@@ -15,7 +15,7 @@ from ..models import (
     create_actor,
     create_stage,
 )
-from .settings import (
+from demo.settings import (
     CAMPAIGN_SETTING,
 )
 

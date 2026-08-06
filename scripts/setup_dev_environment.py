@@ -27,7 +27,7 @@ sys.path.insert(
 from loguru import logger
 from ai_rpg.game.config import BLUEPRINTS_DIR, DUNGEONS_DIR
 from ai_rpg.models import Blueprint
-from ai_rpg.demo import (
+from demo import (
     create_ruins_blueprint,
     create_shrine_ruins_dungeon,
 )

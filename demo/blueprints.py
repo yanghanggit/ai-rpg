@@ -3,7 +3,7 @@
 提供工厂函数创建预配置的游戏世界。
 """
 
-from ..models import (
+from ai_rpg.models import (
     Blueprint,
     CostumeItem,
     GearItem,
@@ -27,7 +27,7 @@ from ..models import (
     PlayerActionAuditComponent,
     WorkshopComponent,
 )
-from .settings import CAMPAIGN_SETTING
+from demo.settings import CAMPAIGN_SETTING
 from typing import Dict, Final, List
 
 

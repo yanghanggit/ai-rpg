@@ -8,10 +8,11 @@ import sys
 from typing import Final, final, List, Dict
 from pydantic import BaseModel
 
-# 将 src 目录添加到模块搜索路径
+# 将 src 目录和项目根目录添加到模块搜索路径
 sys.path.insert(
     0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
 )
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 from loguru import logger
 from ai_rpg.game.config import BLUEPRINTS_DIR, DUNGEONS_DIR
 from ai_rpg.models import Blueprint

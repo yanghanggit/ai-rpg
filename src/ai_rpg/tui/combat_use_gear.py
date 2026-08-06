@@ -63,7 +63,7 @@ class _GearSnapshot:
 
     stage_name: Optional[str] = None
     entities_map: Dict[str, EntitySerialization] = field(default_factory=dict)
-    entities_serialization: List[EntitySerialization] = field(default_factory=list)
+    entities: List[EntitySerialization] = field(default_factory=list)
     player_name: Optional[str] = None
     current_actor: Optional[str] = None
     current_actor_is_player: bool = False
@@ -257,9 +257,7 @@ class CombatUseGearScreen(BaseGameScreen):
             return False, msg
 
         entities_map = {
-            e.name: e
-            for e in entities_resp.entities_serialization
-            if e.name != stage_name
+            e.name: e for e in entities_resp.entities if e.name != stage_name
         }
 
         latest_round = combat.latest_round
@@ -295,7 +293,7 @@ class CombatUseGearScreen(BaseGameScreen):
         self._snapshot = _GearSnapshot(
             stage_name=stage_name,
             entities_map=entities_map,
-            entities_serialization=entities_resp.entities_serialization,
+            entities=entities_resp.entities,
             player_name=actor_name,
             current_actor=current_actor,
             current_actor_is_player=current_actor_is_player,
@@ -349,9 +347,7 @@ class CombatUseGearScreen(BaseGameScreen):
         )
         log.write("")
 
-        render_stage_actors(
-            log, self._snapshot.stage_name, self._snapshot.entities_serialization
-        )
+        render_stage_actors(log, self._snapshot.stage_name, self._snapshot.entities)
 
         log.write("[bold yellow]── 我方装备 ─────────────────────────────[/]")
         if not self._snapshot.gear_items:

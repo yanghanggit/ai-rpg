@@ -126,12 +126,10 @@ class DBGGame(RPGGame):
     ###############################################################################################################################################
     def build_from_blueprint(self) -> "DBGGame":
         """创建并初始化新游戏世界，包括世界系统、角色和场景"""
-        assert (
-            len(self._world.entities_serialization) == 0
-        ), "游戏中有实体，不能创建新的游戏"
-        if len(self._world.entities_serialization) > 0:
+        assert len(self._world.entities) == 0, "游戏中有实体，不能创建新的游戏"
+        if len(self._world.entities) > 0:
             logger.warning(
-                f"游戏中有实体，不能创建新的游戏，entities_serialization = {self._world.entities_serialization}"
+                f"游戏中有实体，不能创建新的游戏，entities = {self._world.entities}"
             )
             return self
 

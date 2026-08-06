@@ -86,11 +86,11 @@ class CombatDeckViewScreen(BaseGameScreen):
             log.write(f"[bold red]❌ 加载牌组失败：{e}[/]")
             return
 
-        if not resp.entities_serialization:
+        if not resp.entities:
             log.write("[yellow]未找到任何参战者。[/]")
             return
 
-        for entity in resp.entities_serialization:
+        for entity in resp.entities:
             deck_data = find_component_data(entity, DeckComponent.__name__)
             log.write(f"[bold yellow]── {display_name(entity.name)} ──[/]")
             if deck_data is None:

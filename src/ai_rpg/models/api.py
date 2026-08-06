@@ -442,7 +442,7 @@ class StagesStateResponse(BaseModel):
 
 @final
 class EntitiesDetailsResponse(BaseModel):
-    entities_serialization: List[EntitySerialization]
+    entities: List[EntitySerialization]
 
 
 ################################################################################################################

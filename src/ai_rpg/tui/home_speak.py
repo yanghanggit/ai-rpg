@@ -185,8 +185,7 @@ class HomeSpeakScreen(BaseGameScreen):
             return None
 
         components_by_entity = {
-            entity.name: entity.components
-            for entity in details_resp.entities_serialization
+            entity.name: entity.components for entity in details_resp.entities
         }
 
         narrative: Optional[str] = None

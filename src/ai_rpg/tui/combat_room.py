@@ -147,7 +147,7 @@ class CombatRoomScreen(BaseGameScreen):
         render_combat_summary(
             log, combat.name, combat.state.name, combat.result.name, combat.retreated
         )
-        render_stage_actors(log, stage_name, entities_resp.entities_serialization)
+        render_stage_actors(log, stage_name, entities_resp.entities)
 
         if combat.state == CombatState.INITIALIZATION:
             log.write(INIT_COMMANDS_MENU)

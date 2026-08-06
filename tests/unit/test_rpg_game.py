@@ -164,14 +164,14 @@ class TestAddSystemMessage:
 
 class TestFlushAndRestoreSnapshot:
     def test_flush_populates_entities_serialization(self, game: Any) -> None:
-        """flush_entities 后 world.entities_serialization 非空。"""
+        """flush_entities 后 world.entities 非空。"""
         _make_entity_with_identity(game, "EntityX", 1)
         game.flush_entities()
-        assert len(game._world.entities_serialization) > 0
+        assert len(game._world.entities) > 0
 
     def test_restore_from_empty_raises(self, game: Any) -> None:
-        """entities_serialization 为空时 restore_from_snapshot 触发 AssertionError。"""
-        assert len(game._world.entities_serialization) == 0
+        """entities 为空时 restore_from_snapshot 触发 AssertionError。"""
+        assert len(game._world.entities) == 0
         with pytest.raises(AssertionError):
             game.restore_from_snapshot()
 
@@ -190,7 +190,7 @@ class TestFlushAndRestoreSnapshot:
 
         # Flush: persist current state
         game.flush_entities()
-        assert len(game._world.entities_serialization) == 2
+        assert len(game._world.entities) == 2
 
         # Destroy all entities
         game.destroy_entity(e1)

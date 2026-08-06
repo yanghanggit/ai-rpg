@@ -57,7 +57,7 @@ class _MonsterTurnSnapshot:
 
     stage_name: Optional[str] = None
     entities_map: Dict[str, EntitySerialization] = field(default_factory=dict)
-    entities_serialization: List[EntitySerialization] = field(default_factory=list)
+    entities: List[EntitySerialization] = field(default_factory=list)
     current_actor: Optional[str] = None
     is_monster_turn: bool = False
 
@@ -167,9 +167,7 @@ class CombatMonsterTurnScreen(BaseGameScreen):
             return False, msg
 
         entities_map = {
-            e.name: e
-            for e in entities_resp.entities_serialization
-            if e.name != stage_name
+            e.name: e for e in entities_resp.entities if e.name != stage_name
         }
 
         latest_round = combat.latest_round
@@ -183,7 +181,7 @@ class CombatMonsterTurnScreen(BaseGameScreen):
         self._snapshot = _MonsterTurnSnapshot(
             stage_name=stage_name,
             entities_map=entities_map,
-            entities_serialization=entities_resp.entities_serialization,
+            entities=entities_resp.entities,
             current_actor=current_actor,
             is_monster_turn=is_monster_turn,
         )
@@ -231,9 +229,7 @@ class CombatMonsterTurnScreen(BaseGameScreen):
             log.write("  [dim]（无当前出牌角色）[/]")
         log.write("")
 
-        render_stage_actors(
-            log, self._snapshot.stage_name, self._snapshot.entities_serialization
-        )
+        render_stage_actors(log, self._snapshot.stage_name, self._snapshot.entities)
 
         log.write(self._render_menu_text())
 

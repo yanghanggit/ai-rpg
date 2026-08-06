@@ -52,7 +52,7 @@ def _make_game(
         )
     world = World(
         entity_counter=0,
-        entities_serialization=[],
+        entities=[],
         agents_context={},
         dungeon=Dungeon(name="dungeon_alpha", rooms=[], premise=""),
         blueprint=blueprint,
@@ -210,7 +210,7 @@ class TestBuildFromBlueprint:
         bp = self._make_full_blueprint()
         world = World(
             entity_counter=0,
-            entities_serialization=[],
+            entities=[],
             agents_context={},
             dungeon=Dungeon(name="", rooms=[], premise=""),
             blueprint=bp,

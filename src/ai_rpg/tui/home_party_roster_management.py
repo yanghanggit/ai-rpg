@@ -124,7 +124,7 @@ class HomePartyRosterManagementScreen(BaseGameScreen):
             entities_resp = await fetch_entities_details(
                 user_name, game_name, all_actor_names
             )
-            for entity in entities_resp.entities_serialization:
+            for entity in entities_resp.entities:
                 component_names = {comp.name for comp in entity.components}
                 if (
                     NPCComponent.__name__ in component_names
@@ -138,7 +138,7 @@ class HomePartyRosterManagementScreen(BaseGameScreen):
     ) -> Set[str]:
         """读取玩家实体的 PartyRosterComponent，取得当前远征队名单。"""
         resp = await fetch_entities_details(user_name, game_name, [player_actor_name])
-        for entity in resp.entities_serialization:
+        for entity in resp.entities:
             for comp in entity.components:
                 if comp.name == PartyRosterComponent.__name__:
                     return set(PartyRosterComponent(**comp.data).members)

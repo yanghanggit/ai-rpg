@@ -165,7 +165,7 @@ class CombatOngoingScreen(BaseGameScreen):
             log, combat.name, combat.state.name, combat.result.name, combat.retreated
         )
         render_round_info(log, combat)
-        render_stage_actors(log, stage_name, entities_resp.entities_serialization)
+        render_stage_actors(log, stage_name, entities_resp.entities)
 
         # 1-5 为查阅型（GET）指令，从不改变任何状态，无论战斗处于哪个阶段都可用；
         # 指令 6 依 combat.state 而变：ONGOING 阶段为「战斗中撤退」，
@@ -193,7 +193,7 @@ class CombatOngoingScreen(BaseGameScreen):
             if latest_round is not None and not latest_round.draw_completed:
                 menu += DRAW_CARDS_COMMAND_LINE
             else:
-                entities_map = {e.name: e for e in entities_resp.entities_serialization}
+                entities_map = {e.name: e for e in entities_resp.entities}
                 current_entity = (
                     entities_map.get(latest_round.current_actor)
                     if latest_round is not None and latest_round.current_actor
@@ -338,7 +338,7 @@ class CombatOngoingScreen(BaseGameScreen):
                     current_entity = next(
                         (
                             e
-                            for e in actor_entities_resp.entities_serialization
+                            for e in actor_entities_resp.entities
                             if e.name == current_actor
                         ),
                         None,

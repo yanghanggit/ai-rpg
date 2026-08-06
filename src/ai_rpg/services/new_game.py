@@ -80,7 +80,7 @@ async def new_game(
     # 重新生成world
     world_data = World(
         entity_counter=1000,
-        entities_serialization=[],
+        entities=[],
         agents_context={},
         dungeon=Dungeon(name="", rooms=[], premise=""),
         blueprint=blueprint_data,
@@ -96,7 +96,7 @@ async def new_game(
 
     # 根据蓝图构建游戏实例，并刷新实体数据到world中
     assert (
-        len(room._dbg_game._world.entities_serialization) == 0
+        len(room._dbg_game._world.entities) == 0
     ), "测试阶段，游戏中不应该有实体数据！"
     room._dbg_game.build_from_blueprint().flush_entities()
 

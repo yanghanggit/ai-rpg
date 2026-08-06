@@ -152,7 +152,7 @@ class CombatPostCombatScreen(BaseGameScreen):
             combat.retreated,
             total_rounds=len(combat.rounds),
         )
-        render_stage_actors(log, stage_name, entities_resp.entities_serialization)
+        render_stage_actors(log, stage_name, entities_resp.entities)
         log.write(POST_COMBAT_COMMANDS_MENU)
 
     ########################################################################################################################

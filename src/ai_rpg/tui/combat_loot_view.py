@@ -95,11 +95,11 @@ class CombatLootViewScreen(BaseGameScreen):
             log.write(f"[bold red]❌ 加载战利品失败：{e}[/]")
             return
 
-        if not resp.entities_serialization:
+        if not resp.entities:
             log.write(f"[yellow]未找到角色：{actor_name}[/]")
             return
 
-        entity = resp.entities_serialization[0]
+        entity = resp.entities[0]
         loot_data = next(
             (
                 c.data

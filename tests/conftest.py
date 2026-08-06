@@ -47,7 +47,7 @@ def sample_game() -> Any:
     dungeon = Dungeon(name="", rooms=[], premise="")
     world = World(
         entity_counter=1000,
-        entities_serialization=[],
+        entities=[],
         agents_context={},
         dungeon=dungeon,
         blueprint=blueprint,

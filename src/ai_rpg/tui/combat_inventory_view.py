@@ -68,11 +68,11 @@ class CombatInventoryViewScreen(BaseGameScreen):
             log.write(f"[bold red]❌ 加载背包失败：{e}[/]")
             return
 
-        if not resp.entities_serialization:
+        if not resp.entities:
             log.write(f"[yellow]未找到角色：{actor_name}[/]")
             return
 
-        entity = resp.entities_serialization[0]
+        entity = resp.entities[0]
         inventory_data = next(
             (
                 c.data

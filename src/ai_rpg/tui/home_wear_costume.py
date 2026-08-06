@@ -214,8 +214,7 @@ class HomeWearCostumeScreen(BaseGameScreen):
             return None
 
         components_by_actor = {
-            entity.name: entity.components
-            for entity in details_resp.entities_serialization
+            entity.name: entity.components for entity in details_resp.entities
         }
 
         for stage_name, actor_names in stages_resp.mapping.items():
@@ -258,7 +257,7 @@ class HomeWearCostumeScreen(BaseGameScreen):
             return None
 
         storage_data: Optional[Dict[str, Any]] = None
-        for entity in storage_details_resp.entities_serialization:
+        for entity in storage_details_resp.entities:
             if entity.name != storage_entity_name:
                 continue
             for comp in entity.components:
@@ -308,7 +307,7 @@ class HomeWearCostumeScreen(BaseGameScreen):
             log.write(f"[bold red]❌ 获取角色详情失败: {e}[/]")
             return None
 
-        for entity in actors_details_resp.entities_serialization:
+        for entity in actors_details_resp.entities:
             for comp in entity.components:
                 if comp.name == WornCostumeComponent.__name__:
                     equipped = WornCostumeComponent(**comp.data)
@@ -449,7 +448,7 @@ class HomeWearCostumeScreen(BaseGameScreen):
             return
 
         current_item_name: Optional[str] = None
-        for entity in details_resp.entities_serialization:
+        for entity in details_resp.entities:
             if entity.name != actor_name:
                 continue
             for comp in entity.components:
@@ -564,7 +563,7 @@ class HomeWearCostumeScreen(BaseGameScreen):
 
         try:
             details_resp = await get_entities_details(self.game_client, [actor_name])
-            for entity in details_resp.entities_serialization:
+            for entity in details_resp.entities:
                 if entity.name == actor_name:
                     self._render_actor_appearance(log, actor_name, entity.components)
         except Exception as e:

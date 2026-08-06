@@ -4,13 +4,13 @@
 
 目录结构（persist_world_data）：
     {worlds_dir}/{username}/{game}/{timestamp}/
-        ├── world.json              # 完整 World 序列化
-        ├── player_session.json     # 完整 PlayerSession 序列化
+        ├── world.json              # World 快照（不含 agents_context）
+        ├── player_session.jsonl    # JSONL，首行元数据，后续每行一个事件
         ├── entities/               # 各 ECS 实体单独一个 json
-        ├── contexts/               # Agent LLM 对话上下文
+        ├── contexts/               # Agent LLM 对话上下文，每个 agent 一个 .jsonl
         ├── dungeon/                # 副本数据
         └── snapshot/               # (仅 enable_gzip=True)
-            └── snapshot.zip        # 仅含 world.json + player_session.json
+            └── snapshot.zip        # 仅含 world.json + player_session.jsonl
 
 主要功能：
     - 持久化游戏世界（persist_world_data）
@@ -22,13 +22,19 @@
 """
 
 import datetime
+import json
 import shutil
 from typing import Optional, Tuple
 import zipfile
 from pathlib import Path
-from ..models import get_buffer_string, PlayerSession, Dungeon, World
+from pydantic import TypeAdapter
+from ..models import get_buffer_string, AgentContext, PlayerSession, Dungeon, World
+from ..models.messages import ContextMessage
+from ..models.session_message import SessionMessage
 from loguru import logger
 from .config import WORLDS_DIR
+
+_context_adapter: TypeAdapter[ContextMessage] = TypeAdapter(ContextMessage)
 
 
 ###############################################################################################################################################
@@ -44,9 +50,9 @@ def archive_world(
     存档目录结构：
         {save_dir}/
             ├── world.json
-            ├── player_session.json
+            ├── player_session.jsonl    # JSONL 格式，首行为元数据，后续每行一个事件
             ├── entities/{entity}.json ...
-            ├── contexts/{agent}.json, {agent}_buffer.txt ...
+            ├── contexts/{agent}.jsonl, {agent}_buffer.txt ...
             ├── dungeon/{dungeon_name}.json
             └── snapshot/snapshot.zip   (仅 enable_gzip=True)
 
@@ -57,7 +63,7 @@ def archive_world(
         save_dir: 显式指定存档目录。若为 None，则自动生成
                   {worlds_dir}/{username}/{game}/{timestamp}/
         enable_gzip: 为 True 时额外生成 snapshot/snapshot.zip，
-                     内含 world.json + player_session.json
+                     内含 world.json + player_session.jsonl
 
     Returns:
         保存成功返回 True，失败返回 False
@@ -75,16 +81,30 @@ def archive_world(
 
     try:
 
-        # 将 world 和 player_session 序列化为 JSON
-        world_json = world.model_dump_json()
-        player_session_json = player_session.model_dump_json()
+        # 将 world 序列化为 JSON（agents_context 已在 contexts/ 中独立存储）
+        world_json = world.model_dump_json(exclude={"agents_context"})
+
+        # player_session 序列化为 JSONL（首行元数据，后续每行一个事件）
+        session_lines = [
+            json.dumps(
+                {
+                    "name": player_session.name,
+                    "actor": player_session.actor,
+                    "game": player_session.game,
+                },
+                ensure_ascii=False,
+            )
+        ]
+        for msg in player_session.session_messages:
+            session_lines.append(msg.model_dump_json())
+        player_session_jsonl = "\n".join(session_lines) + "\n"
 
         # world.json
         (save_dir / "world.json").write_text(world_json, encoding="utf-8")
 
-        # player_session.json
-        (save_dir / "player_session.json").write_text(
-            player_session_json, encoding="utf-8"
+        # player_session.jsonl
+        (save_dir / "player_session.jsonl").write_text(
+            player_session_jsonl, encoding="utf-8"
         )
 
         # entities/
@@ -103,7 +123,7 @@ def archive_world(
             zip_path = snapshot_dir / "snapshot.zip"
             with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
                 zf.writestr("world.json", world_json)
-                zf.writestr("player_session.json", player_session_json)
+                zf.writestr("player_session.jsonl", player_session_jsonl)
 
         logger.debug(f"存档成功: {save_dir}")
         return True
@@ -135,12 +155,13 @@ def dump_agent_contexts(
     context_dir = debug_dir / "contexts"
     context_dir.mkdir(parents=True, exist_ok=True)
 
-    # 写每个 agent 的上下文 JSON 和 buffer.txt
+    # 写每个 agent 的上下文 JSONL 和 buffer.txt
     for agent_name, agent_context in world.agents_context.items():
 
-        # 写 agent_name.json
-        (context_dir / f"{agent_name}.json").write_text(
-            agent_context.model_dump_json(), encoding="utf-8"
+        # 写 agent_name.jsonl（每行一条消息）
+        context_lines = [msg.model_dump_json() for msg in agent_context.context]
+        (context_dir / f"{agent_name}.jsonl").write_text(
+            "\n".join(context_lines) + "\n", encoding="utf-8"
         )
 
         # 写 agent_name_buffer.txt
@@ -169,7 +190,7 @@ def dump_entities(debug_dir: Path, world: World) -> None:
     entities_dir.mkdir(parents=True, exist_ok=True)
 
     # 写每个实体的 JSON 文件
-    for entity_serialization in world.entities_serialization:
+    for entity_serialization in world.entities:
         path = entities_dir / f"{entity_serialization.name}.json"
         path.write_text(entity_serialization.model_dump_json(), encoding="utf-8")
 
@@ -190,34 +211,63 @@ def restore_world(snapshot_dir: Path) -> Tuple[World, PlayerSession]:
     """从存档目录中读取并还原 World 与 PlayerSession。
 
     Args:
-        snapshot_dir: 存档目录路径，即含有 world.json 与 player_session.json 的目录
+        snapshot_dir: 存档目录路径，即含有 world.json 与 player_session.jsonl 的目录
                       （例如 .worlds/{username}/{game}/{timestamp}/）
 
     Returns:
         (world, player_session) 元组
 
     Raises:
-        FileNotFoundError: 若 world.json 或 player_session.json 不存在
+        FileNotFoundError: 若 world.json 或 player_session.jsonl 不存在
     """
 
     # 检查 snapshot_dir 是否存在
     world_path = snapshot_dir / "world.json"
-    session_path = snapshot_dir / "player_session.json"
+    session_path = snapshot_dir / "player_session.jsonl"
 
     # 检查文件是否存在
     if not world_path.exists():
         raise FileNotFoundError(f"找不到 world.json: {world_path}")
 
-    # 检查 player_session.json 是否存在
+    # 检查 player_session.jsonl 是否存在
     if not session_path.exists():
-        raise FileNotFoundError(f"找不到 player_session.json: {session_path}")
+        raise FileNotFoundError(f"找不到 player_session.jsonl: {session_path}")
 
-    # 读取并反序列化 World 与 PlayerSession
+    # 读取并反序列化 World
     world = World.model_validate_json(world_path.read_text(encoding="utf-8"))
 
-    # 读取并反序列化 PlayerSession
-    player_session = PlayerSession.model_validate_json(
-        session_path.read_text(encoding="utf-8")
+    # 从 contexts/ 目录重建 agents_context
+    agents_context: dict[str, AgentContext] = {}
+    contexts_dir = snapshot_dir / "contexts"
+    if contexts_dir.exists():
+        for ctx_file in contexts_dir.glob("*.jsonl"):
+            agent_name = ctx_file.stem
+            context_messages: list[ContextMessage] = []
+            for line in ctx_file.read_text(encoding="utf-8").strip().split("\n"):
+                if line.strip():
+                    context_messages.append(_context_adapter.validate_json(line))
+            agents_context[agent_name] = AgentContext(
+                name=agent_name, context=context_messages
+            )
+    world.agents_context = agents_context
+
+    # 读取并反序列化 PlayerSession（JSONL 格式：首行元数据，后续每行一个事件）
+    lines = session_path.read_text(encoding="utf-8").strip().split("\n")
+    if not lines:
+        raise ValueError(f"player_session.jsonl 为空: {session_path}")
+
+    meta = json.loads(lines[0])
+    messages: list[SessionMessage] = []
+    for line in lines[1:]:
+        if line.strip():
+            messages.append(SessionMessage.model_validate_json(line))
+
+    player_session = PlayerSession(
+        name=meta["name"],
+        actor=meta["actor"],
+        game=meta["game"],
+        session_messages=messages,
+        event_sequence=max((m.sequence_id for m in messages), default=0),
     )
 
     # 返回

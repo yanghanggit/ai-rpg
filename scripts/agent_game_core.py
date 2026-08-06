@@ -50,7 +50,7 @@ async def create_and_initialize_game(
 
     world_data = World(
         entity_counter=1000,
-        entities_serialization=[],
+        entities=[],
         agents_context={},
         dungeon=dungeon,
         blueprint=world_blueprint,
@@ -67,9 +67,7 @@ async def create_and_initialize_game(
         world=world_data,
     )
 
-    assert (
-        len(terminal_game._world.entities_serialization) == 0
-    ), "测试阶段，游戏中不应该有实体数据！"
+    assert len(terminal_game._world.entities) == 0, "测试阶段，游戏中不应该有实体数据！"
     terminal_game.build_from_blueprint().flush_entities()
 
     await terminal_game.initialize()

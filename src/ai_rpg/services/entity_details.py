@@ -87,9 +87,9 @@ async def get_entities_details(
         entities.add(entity)
 
     # 序列化实体
-    entities_serialization = rpg_game.serialize_entities(entities)
+    serialize_entities = rpg_game.serialize_entities(entities)
 
     # 返回实体详情
     return EntitiesDetailsResponse(
-        entities_serialization=entities_serialization,
+        entities=serialize_entities,
     )

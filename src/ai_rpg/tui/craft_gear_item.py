@@ -209,7 +209,7 @@ class CraftGearItemScreen(BaseGameScreen):
             )
             materials: List[Dict[str, object]] = []
             known: Set[str] = set()
-            for entity in details_resp.entities_serialization:
+            for entity in details_resp.entities:
                 for comp in entity.components:
                     if comp.name == StorageComponent.__name__:
                         for item in comp.data.get("items", []):
@@ -308,7 +308,7 @@ class CraftGearItemScreen(BaseGameScreen):
             return
 
         shown = False
-        for entity in result_resp.entities_serialization:
+        for entity in result_resp.entities:
             for comp in entity.components:
                 if comp.name != StorageComponent.__name__:
                     continue

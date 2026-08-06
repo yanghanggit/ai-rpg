@@ -3,7 +3,6 @@
 """
 
 from typing import List, Optional
-
 from . import (
     Actor,
     CharacterSheet,

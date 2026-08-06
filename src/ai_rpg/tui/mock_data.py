@@ -784,8 +784,8 @@ def build_mock_entities_details_response(
 
     # 与真实接口行为对齐：仅返回请求中点名的实体（若请求为空则返回全部，便于调试）。
     if not entity_names:
-        return EntitiesDetailsResponse(entities_serialization=all_entities)
+        return EntitiesDetailsResponse(entities=all_entities)
 
     requested = set(entity_names)
     filtered = [e for e in all_entities if e.name in requested]
-    return EntitiesDetailsResponse(entities_serialization=filtered)
+    return EntitiesDetailsResponse(entities=filtered)

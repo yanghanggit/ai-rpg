@@ -65,25 +65,23 @@ class RPGGame(GameSession, RPGAgentContext, RPGEntityManager, RPGGamePipelineMan
     ###############################################################################################################################################
     def restore_from_snapshot(self) -> "RPGGame":
         """从序列化数据中恢复游戏世界状态"""
-        assert (
-            len(self._world.entities_serialization) > 0
-        ), "游戏中没有实体，不能恢复游戏"
+        assert len(self._world.entities) > 0, "游戏中没有实体，不能恢复游戏"
         assert len(self._entities) == 0, "游戏中有实体，不能恢复游戏"
-        if (len(self._world.entities_serialization) == 0) or (len(self._entities) > 0):
+        if (len(self._world.entities) == 0) or (len(self._entities) > 0):
             logger.warning(
-                f"游戏中没有实体，不能恢复游戏，entities_serialization = {self._world.entities_serialization}, entities = {self._entities}"
+                f"游戏中没有实体，不能恢复游戏，entities = {self._world.entities}, entities = {self._entities}"
             )
             return self
 
         # 从序列化数据中恢复实体状态
-        self.deserialize_entities(self._world.entities_serialization)
+        self.deserialize_entities(self._world.entities)
         return self
 
     ###############################################################################################################################################
     def flush_entities(self) -> "RPGGame":
         """保存当前游戏世界状态到持久化存储，并生成调试快照"""
         # 生成快照
-        self._world.entities_serialization = self.serialize_entities(self._entities)
+        self._world.entities = self.serialize_entities(self._entities)
         return self
 
     ###############################################################################################################################################

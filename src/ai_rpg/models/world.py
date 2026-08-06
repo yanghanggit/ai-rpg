@@ -18,10 +18,10 @@ class AgentContext(BaseModel):
 @final
 class World(BaseModel):
     entity_counter: int
-    entities_serialization: List[EntitySerialization]
-    agents_context: Dict[str, AgentContext]
+    entities: List[EntitySerialization]
     dungeon: Dungeon
     blueprint: Blueprint
+    agents_context: Dict[str, AgentContext] = {}
 
 
 ###############################################################################################################################################

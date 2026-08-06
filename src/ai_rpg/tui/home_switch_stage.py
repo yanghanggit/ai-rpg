@@ -163,8 +163,7 @@ class HomeSwitchStageScreen(BaseGameScreen):
             return None
 
         components_by_entity = {
-            entity.name: entity.components
-            for entity in details_resp.entities_serialization
+            entity.name: entity.components for entity in details_resp.entities
         }
 
         narrative: Optional[str] = None
@@ -185,7 +184,7 @@ class HomeSwitchStageScreen(BaseGameScreen):
 
         home_stages = {
             entity.name
-            for entity in details_resp.entities_serialization
+            for entity in details_resp.entities
             if any(comp.name == HomeComponent.__name__ for comp in entity.components)
         }
 

@@ -425,8 +425,7 @@ class HomeMainScreen(BaseGameScreen):
             return
 
         components_by_entity = {
-            entity.name: entity.components
-            for entity in details_resp.entities_serialization
+            entity.name: entity.components for entity in details_resp.entities
         }
 
         log.write(

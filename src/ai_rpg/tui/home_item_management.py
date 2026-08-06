@@ -167,7 +167,7 @@ class HomeItemManagementScreen(BaseGameScreen):
         inventory_items: List[AnyItem] = []
         storage_items: List[AnyItem] = []
 
-        for entity in resp.entities_serialization:
+        for entity in resp.entities:
             for comp in entity.components:
                 if comp.name == InventoryComponent.__name__:
                     inventory_items = [

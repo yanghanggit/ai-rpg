@@ -72,13 +72,11 @@ class RPGEntityManager(Context):
         return entity_serializations
 
     ###############################################################################################################################################
-    def deserialize_entities(
-        self, entities_serialization: List[EntitySerialization]
-    ) -> Set[Entity]:
+    def deserialize_entities(self, entities: List[EntitySerialization]) -> Set[Entity]:
         """从序列化数据还原实体集合。"""
         deserialized_entities: Set[Entity] = set()
 
-        for entity_serialization in entities_serialization:
+        for entity_serialization in entities:
 
             assert (
                 self.get_entity_by_name(entity_serialization.name) is None

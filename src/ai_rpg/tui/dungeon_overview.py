@@ -314,7 +314,7 @@ class DungeonOverviewScreen(BaseGameScreen):
                     user_name, game_name, [player_actor]
                 )
                 members: List[str] = []
-                for entity in resp.entities_serialization:
+                for entity in resp.entities:
                     for comp in entity.components:
                         if comp.name == PartyRosterComponent.__name__:
                             members = list(comp.data.get("members", []))

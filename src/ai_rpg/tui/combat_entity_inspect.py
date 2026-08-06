@@ -129,10 +129,10 @@ class CombatEntityInspectScreen(BaseGameScreen):
         )
         try:
             resp = await get_entities_details(self.game_client, [entity_name])
-            if not resp.entities_serialization:
+            if not resp.entities:
                 log.write(f"[yellow]未找到实体：{entity_name}[/]")
                 return
-            for entity in resp.entities_serialization:
+            for entity in resp.entities:
                 log.write(f"[bold yellow]── 实体：{display_name(entity.name)} ──[/]")
                 for comp in entity.components:
                     data_str = json.dumps(comp.data, ensure_ascii=False, indent=2)

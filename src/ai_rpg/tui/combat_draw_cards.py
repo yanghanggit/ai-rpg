@@ -124,7 +124,7 @@ class CombatDrawCardsScreen(BaseGameScreen):
 
         entity_map = {
             entity.name: entity
-            for entity in resp.entities_serialization
+            for entity in resp.entities
             if entity.name in self._participant_names
         }
 

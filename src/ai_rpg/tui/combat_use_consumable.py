@@ -63,7 +63,7 @@ class _ConsumableSnapshot:
 
     stage_name: Optional[str] = None
     entities_map: Dict[str, EntitySerialization] = field(default_factory=dict)
-    entities_serialization: List[EntitySerialization] = field(default_factory=list)
+    entities: List[EntitySerialization] = field(default_factory=list)
     player_name: Optional[str] = None
     current_actor: Optional[str] = None
     current_actor_is_party: bool = False
@@ -245,9 +245,7 @@ class CombatUseConsumableScreen(BaseGameScreen):
             return False, msg
 
         entities_map = {
-            e.name: e
-            for e in entities_resp.entities_serialization
-            if e.name != stage_name
+            e.name: e for e in entities_resp.entities if e.name != stage_name
         }
 
         latest_round = combat.latest_round
@@ -282,7 +280,7 @@ class CombatUseConsumableScreen(BaseGameScreen):
         self._snapshot = _ConsumableSnapshot(
             stage_name=stage_name,
             entities_map=entities_map,
-            entities_serialization=entities_resp.entities_serialization,
+            entities=entities_resp.entities,
             player_name=actor_name,
             current_actor=current_actor,
             current_actor_is_party=current_actor_is_party,
@@ -340,9 +338,7 @@ class CombatUseConsumableScreen(BaseGameScreen):
         log.write(f"  本回合已使用：   {used_label}")
         log.write("")
 
-        render_stage_actors(
-            log, self._snapshot.stage_name, self._snapshot.entities_serialization
-        )
+        render_stage_actors(log, self._snapshot.stage_name, self._snapshot.entities)
 
         log.write("[bold yellow]── 我方消耗品 ─────────────────────────────[/]")
         if not self._snapshot.consumable_items:

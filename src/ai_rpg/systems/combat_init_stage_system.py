@@ -13,7 +13,7 @@ from ..game.dbg_combat_processor import (
     wrap_scene_hints_as_affixes,
 )
 from ..models import StageDescriptionComponent
-from ..utils import extract_json_from_code_block
+from ..utils import extract_json
 
 
 ###################################################################################################################################################################
@@ -176,7 +176,7 @@ class CombatInitStageSystem(ExecuteProcessor):
 
         try:
             response = CombatInitAffixesResponse.model_validate_json(
-                extract_json_from_code_block(chat_client.response_content)
+                extract_json(chat_client.response_content)
             )
 
             for actor_name, hints in response.affixes.items():

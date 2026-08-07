@@ -16,7 +16,7 @@ from ..models import (
     StatusEffect,
     PhaseType,
 )
-from ..utils import extract_json_from_code_block
+from ..utils import extract_json
 from .arbitration_prompt_builders import fmt_duration
 from pydantic import BaseModel
 
@@ -304,7 +304,7 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
 
         # 解析 LLM 响应，追加状态效果
         try:
-            json_content = extract_json_from_code_block(chat_client.response_content)
+            json_content = extract_json(chat_client.response_content)
             format_response = _AddStatusEffectsResponse.model_validate_json(
                 json_content
             )

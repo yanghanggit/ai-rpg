@@ -12,7 +12,7 @@ from ..models import (
 )
 from ..game.dbg_game import DBGGame
 from ..deepseek import DeepSeekClient
-from ..utils import extract_json_from_code_block
+from ..utils import extract_json
 from ..models.messages import SystemMessage
 
 
@@ -193,7 +193,7 @@ class PlayerActionAuditSystem(ReactiveProcessor):
 
         try:
             audit_response = ContentAuditResponse.model_validate_json(
-                extract_json_from_code_block(response_content)
+                extract_json(response_content)
             )
         except Exception as e:
             logger.error(f"解析AI审核响应失败: {e}")

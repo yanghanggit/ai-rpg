@@ -12,7 +12,7 @@ from ..models import (
     StageComponent,
 )
 from ..utils import (
-    extract_json_from_code_block,
+    extract_json,
 )
 
 
@@ -162,7 +162,7 @@ class StageDescriptionSystem(ExecuteProcessor):
         # 尝试解析 AI 响应的 JSON 内容，构建 StageDescriptionResponse 对象。
         try:
             format_response = StageDescriptionResponse.model_validate_json(
-                extract_json_from_code_block(chat_client.response_content)
+                extract_json(chat_client.response_content)
             )
         except Exception as e:
             logger.error(f"Exception: {e}")

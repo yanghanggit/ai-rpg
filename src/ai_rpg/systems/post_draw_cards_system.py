@@ -26,7 +26,7 @@ from ..models import (
     StatusEffect,
     PhaseType,
 )
-from ..utils import extract_json_from_code_block
+from ..utils import extract_json
 
 
 #######################################################################################################################################
@@ -252,7 +252,7 @@ class PostDrawCardsSystem(ReactiveProcessor):
         # 尝试解析 LLM 返回的 JSON 内容，构建 DrawAdjustResponse 对象
         try:
             response = DrawAdjustResponse.model_validate_json(
-                extract_json_from_code_block(chat_client.response_content)
+                extract_json(chat_client.response_content)
             )
         except Exception as e:
             logger.error(

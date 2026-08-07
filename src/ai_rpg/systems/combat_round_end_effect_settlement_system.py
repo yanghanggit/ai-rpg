@@ -13,7 +13,7 @@ from ..game.dbg_combat_processor import (
     set_character_hp,
 )
 from ..models import HumanMessage, StatusEffect, StatusEffectsComponent, PhaseType
-from ..utils import extract_json_from_code_block
+from ..utils import extract_json
 
 
 def _make_round_end_hp_update_message(new_hp: int, max_hp: int) -> str:
@@ -167,7 +167,7 @@ class CombatRoundEndEffectSettlementSystem(ExecuteProcessor):
 
         # 尝试解析 LLM 返回的 JSON 内容，构建 ROUND_END 效果响应对象
         try:
-            json_content = extract_json_from_code_block(chat_client.response_content)
+            json_content = extract_json(chat_client.response_content)
             response = _RoundEndEffectResponse.model_validate_json(json_content)
         except Exception as e:
             logger.error(f"[{entity.name}] ROUND_END 效果结算异常: {e}")

@@ -23,7 +23,7 @@ from ..models import (
     CombatArbitrationEvent,
     HumanMessage,
 )
-from ..utils import extract_json_from_code_block
+from ..utils import extract_json
 from .arbitration_prompt_builders import (
     ArbitrationResponse,
     generate_gear_arbitration_prompt,
@@ -165,7 +165,7 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
 
             # 解析 LLM 返回的 JSON 内容，生成 ArbitrationResponse 对象
             response = ArbitrationResponse.model_validate_json(
-                extract_json_from_code_block(chat_client.response_content)
+                extract_json(chat_client.response_content)
             )
 
             # 验证 final_stats 中的实体是否都存在于游戏中，确保仲裁结果的有效性

@@ -14,7 +14,7 @@ from ..models import (
     PartyMemberComponent,
 )
 from ..models.items import AnyItem, MaterialItem
-from ..utils import extract_json_from_code_block
+from ..utils import extract_json
 
 
 #######################################################################################################################################
@@ -184,7 +184,7 @@ class CombatLootSystem(ExecuteProcessor):
             return items
 
         try:
-            json_str = extract_json_from_code_block(client.response_content)
+            json_str = extract_json(client.response_content)
             response = _MonsterLootResponse.model_validate_json(json_str)
         except Exception as e:
             logger.error(

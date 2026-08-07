@@ -12,7 +12,7 @@ from ..models import (
     StorageComponent,
 )
 from ..models.items import AnyItem, CostumeItem, ItemType, MaterialItem
-from ..utils import extract_json_from_code_block
+from ..utils import extract_json
 
 
 #######################################################################################################################################
@@ -159,7 +159,7 @@ class CraftCostumeItemActionSystem(ReactiveProcessor):
 
         # 尝试从 LLM 的回复中提取 JSON 并解析为 _CraftCostumeItemResponse 对象
         try:
-            json_str = extract_json_from_code_block(chat_client.response_content)
+            json_str = extract_json(chat_client.response_content)
             response = _CraftCostumeItemResponse.model_validate_json(json_str)
             assert response.name, "LLM 返回的 name 不能为空"
         except Exception as e:

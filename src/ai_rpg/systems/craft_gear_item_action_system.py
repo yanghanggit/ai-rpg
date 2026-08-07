@@ -13,7 +13,7 @@ from ..models import (
 )
 from ..models.items import AnyItem, GearItem, ItemType, MaterialItem
 from ..models.stats import CharacterStats
-from ..utils import extract_json_from_code_block
+from ..utils import extract_json
 
 
 #######################################################################################################################################
@@ -183,7 +183,7 @@ class CraftGearItemActionSystem(ReactiveProcessor):
 
         # 尝试从 LLM 的回复中提取 JSON 并解析为 _CraftGearItemResponse 对象
         try:
-            json_str = extract_json_from_code_block(chat_client.response_content)
+            json_str = extract_json(chat_client.response_content)
             response = _CraftGearItemResponse.model_validate_json(json_str)
             assert response.name, "LLM 返回的 name 不能为空"
         except Exception as e:

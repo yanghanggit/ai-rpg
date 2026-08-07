@@ -23,7 +23,7 @@ from ..models import (
     HumanMessage,
     CharacterStats,
 )
-from ..utils import extract_json_from_code_block
+from ..utils import extract_json
 from .card_prompt_builders import BUILD_CARD_FIELD_DESCRIPTION
 
 
@@ -275,7 +275,7 @@ class GenerateDeckActionSystem(ReactiveProcessor):
         try:
             # 解析 LLM 响应 JSON
             response = DeckGenerateResponse.model_validate_json(
-                extract_json_from_code_block(chat_client.response_content)
+                extract_json(chat_client.response_content)
             )
         except Exception as e:
             logger.error(

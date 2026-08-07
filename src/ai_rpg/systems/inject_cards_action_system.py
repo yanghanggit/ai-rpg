@@ -20,7 +20,7 @@ from ..models import (
     UseGearItemAction,
     StatusEffectsComponent,
 )
-from ..utils import extract_json_from_code_block
+from ..utils import extract_json
 from .arbitration_prompt_builders import fmt_duration
 from .card_prompt_builders import BUILD_CARD_FIELD_DESCRIPTION
 
@@ -275,7 +275,7 @@ class InjectCardsActionSystem(ReactiveProcessor):
 
             # 解析 LLM 响应为 StagePostArbitrationResponse
             response = StagePostArbitrationResponse.model_validate_json(
-                extract_json_from_code_block(chat_client.response_content)
+                extract_json(chat_client.response_content)
             )
 
             # 预验证所有目标角色是否存在，避免部分指令生效导致的状态不一致

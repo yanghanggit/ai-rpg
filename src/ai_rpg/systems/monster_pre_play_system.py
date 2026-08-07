@@ -20,7 +20,7 @@ from ..models import (
     StatusEffect,
     StatusEffectsComponent,
 )
-from ..utils import extract_json_from_code_block
+from ..utils import extract_json
 from .arbitration_prompt_builders import fmt_effects
 
 
@@ -331,7 +331,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
 
         try:
             decision = MonsterDecisionResponse.model_validate_json(
-                extract_json_from_code_block(client.response_content)
+                extract_json(client.response_content)
             )
         except Exception as e:
             logger.error(f"{client.response_content}")

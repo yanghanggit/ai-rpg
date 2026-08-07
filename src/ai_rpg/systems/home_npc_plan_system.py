@@ -17,7 +17,7 @@ from ..models import (
     NPCComponent,
     PlayerComponent,
 )
-from ..utils import extract_json_from_code_block
+from ..utils import extract_json
 from ..game import DBGGame
 from .home_planning_prompt_builders import (
     ActionPlanResponse,
@@ -90,7 +90,7 @@ class HomeNpcPlanSystem(ReactiveProcessor):
         try:
             # 验证响应
             validated_response = ActionPlanResponse.model_validate_json(
-                extract_json_from_code_block(chat_client.response_content)
+                extract_json(chat_client.response_content)
             )
         except Exception as e:
             logger.error(f"Exception: {e}")

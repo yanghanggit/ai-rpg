@@ -26,6 +26,7 @@ from ..models import (
     compute_effective_stats,
     HandComponent,
     DiscardPileComponent,
+    PartyRosterComponent,
 )
 from .dbg_game import DBGGame
 
@@ -513,3 +514,41 @@ def clear_combat_state(dbg_game: DBGGame) -> None:
             f"clear equipped gear: {entity.name}，已将装备 {equipped_item.name!r} "
             f"归还玩家 {player_entity.name} 的 InventoryComponent"
         )
+
+
+###################################################################################################################################################################
+def select_party_members(dbg_game: DBGGame) -> Set[Entity]:
+    """选择参与副本远征的队伍成员"""
+
+    # 1. 获取玩家实体
+    player_entity = dbg_game.get_player_entity()
+    assert player_entity is not None, "玩家实体不存在！"
+
+    # 2. 默认仅玩家自己参与；若存在 PartyRosterComponent 则按名单加入盟友
+    party_members: Set[Entity] = {player_entity}
+    logger.info(f"玩家 {player_entity.name} 将参与远征")
+    if player_entity.has(PartyRosterComponent):
+        for member_name in player_entity.get(PartyRosterComponent).members:
+            member_entity = dbg_game.get_actor_entity(member_name)
+            assert (
+                member_entity is not None
+            ), f"远征队名单中的成员 {member_name!r} 不存在！"
+            party_members.add(member_entity)
+            logger.info(f"按名单将 {member_name} 加入远征队")
+
+    # 打印最终选定的远征队成员名单
+    logger.info(
+        f"最终远征队成员 ({len(party_members)}): {[e.name for e in party_members]}"
+    )
+
+    # 3. 为所有选中成员挂载 PartyMemberComponent
+    for party_member in party_members:
+        party_member.replace(
+            PartyMemberComponent,
+            party_member.name,
+        )
+        logger.debug(
+            f"将 {party_member.name} 添加 PartyMemberComponent 组件，标记为远征队成员"
+        )
+
+    return party_members

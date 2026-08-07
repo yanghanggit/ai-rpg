@@ -59,9 +59,6 @@ def _validate_dungeon_prerequisites(
 
     # 3. 获取并验证游戏实例类型
     dbg_game = current_room._dbg_game
-    # assert isinstance(
-    #     dbg_game, DBGGame
-    # ), f"_validate_dungeon_prerequisites: invalid game type for {user_name}"
 
     # 4. 验证玩家在副本状态
     if not dbg_game.is_player_in_dungeon_stage:
@@ -70,10 +67,6 @@ def _validate_dungeon_prerequisites(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="只能在副本状态下使用",
         )
-
-    # assert (
-    #     dbg_game.current_combat_room.combat.state != CombatState.NONE
-    # ), f"副本操作失败: 玩家 {user_name} 没有可进行的战斗"
 
     return dbg_game
 

@@ -9,6 +9,7 @@ from ..game.dbg_combat_processor import (
     compute_character_stats,
     set_character_hp,
     clear_combat_state,
+    select_party_members,
 )
 from ..game.rpg_stage_transition import stage_transition
 from ..models import (
@@ -17,7 +18,6 @@ from ..models import (
     Combat,
     HumanMessage,
     PartyMemberComponent,
-    PartyRosterComponent,
     HomeComponent,
     DeathComponent,
     CombatRoom,
@@ -48,42 +48,6 @@ def _generate_return_home_message(
     return (
         f"""# 提示！副本：{dungeon_name} 结束，返回家园场景：{destination_stage_name}"""
     )
-
-
-###################################################################################################################################################################
-def _select_party_members(dbg_game: DBGGame, dungeon: Dungeon) -> Set[Entity]:
-    """选择参与副本远征的队伍成员"""
-
-    # 1. 获取玩家实体
-    player_entity = dbg_game.get_player_entity()
-    assert player_entity is not None, "玩家实体不存在！"
-
-    # 2. 默认仅玩家自己参与；若存在 PartyRosterComponent 则按名单加入盟友
-    party_members: Set[Entity] = {player_entity}
-    logger.info(f"玩家 {player_entity.name} 将参与远征")
-    if player_entity.has(PartyRosterComponent):
-        for member_name in player_entity.get(PartyRosterComponent).members:
-            member_entity = dbg_game.get_actor_entity(member_name)
-            assert (
-                member_entity is not None
-            ), f"远征队名单中的成员 {member_name!r} 不存在！"
-            party_members.add(member_entity)
-            logger.info(f"按名单将 {member_name} 加入远征队")
-
-    # 打印最终选定的远征队成员名单
-    logger.info(
-        f"最终远征队成员 ({len(party_members)}): {[e.name for e in party_members]}"
-    )
-
-    # 3. 为所有选中成员挂载 PartyMemberComponent
-    for party_member in party_members:
-        party_member.replace(
-            PartyMemberComponent,
-            party_member.name,
-        )
-        logger.debug(f"将 {party_member.name} 加入远征队，目标副本：{dungeon.name}")
-
-    return party_members
 
 
 ###################################################################################################################################################################
@@ -169,36 +133,6 @@ def _enter_dungeon_stage(
 
 
 ###################################################################################################################################################################
-# def _clear_combat_state(dbg_game: DBGGame) -> None:
-#     """清除一次战斗（Combat）结束后的临时状态。"""
-
-#     # 清除战斗回合状态
-#     clear_round_state(dbg_game)
-
-#     # 清除所有角色的状态效果
-#     for entity in dbg_game.get_group(Matcher(StatusEffectsComponent)).entities.copy():
-#         logger.debug(f"clear status effects: {entity.name}")
-#         entity.remove(StatusEffectsComponent)
-
-#     # 移动语义：装备背包持有者始终是玩家实体，清除装备前必须先将其归还玩家的
-#     # InventoryComponent，否则装备会随组件一起被丢弃、凭空消失。
-#     player_entity = dbg_game.get_player_entity()
-#     assert player_entity is not None, "玩家实体不存在！"
-#     assert player_entity.has(InventoryComponent), "玩家实体缺少 InventoryComponent"
-#     player_inventory = player_entity.get(InventoryComponent)
-
-#     # 清除所有角色的装备组件，装备物归还玩家背包
-#     for entity in dbg_game.get_group(Matcher(EquippedGearComponent)).entities.copy():
-#         equipped_item = entity.get(EquippedGearComponent).item
-#         player_inventory.items.append(equipped_item)
-#         entity.remove(EquippedGearComponent)
-#         logger.debug(
-#             f"clear equipped gear: {entity.name}，已将装备 {equipped_item.name!r} "
-#             f"归还玩家 {player_entity.name} 的 InventoryComponent"
-#         )
-
-
-###################################################################################################################################################################
 def enter_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> tuple[bool, str]:
     """组建远征队并传送至副本第一关，启动首个战斗序列。"""
     if not dungeon.setup_entities:
@@ -225,7 +159,9 @@ def enter_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> tuple[bool, str]:
     dungeon.current_room_index = 0
 
     # 选择远征队成员（玩家 + 最多1个随机盟友）
-    party_member_entities = _select_party_members(dbg_game, dungeon)
+    party_member_entities = select_party_members(dbg_game)
+    for party_member in party_member_entities:
+        logger.info(f"远征队成员: {party_member.name}，目标副本：{dungeon.name}")
 
     # 传送并初始化战斗
     if not _enter_dungeon_stage(dbg_game, dungeon, party_member_entities):

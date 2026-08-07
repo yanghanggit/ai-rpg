@@ -127,7 +127,13 @@ async def dungeon_advance_stage(
                 )
 
             # 推进副本到下一房间前，先检查下一房间是否存在，若不存在则抛出异常
-            advance_dungeon(rpg_game, rpg_game.current_dungeon)
+            success, msg = advance_dungeon(rpg_game, rpg_game.current_dungeon)
+            if not success:
+                logger.error(f"玩家 {payload.user_name} 副本前进失败: {msg}")
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=msg,
+                )
 
             # 推进副本到下一房间后，返回成功消息
             return DungeonAdvanceStageResponse(message="已前进到下一关")
@@ -191,7 +197,13 @@ async def dungeon_exit(
             )
 
         # 退出副本并返回家园
-        exit_dungeon(dbg_game, dbg_game._world.dungeon)
+        success, msg = exit_dungeon(dbg_game, dbg_game._world.dungeon)
+        if not success:
+            logger.error(f"玩家 {payload.user_name} 退出副本失败: {msg}")
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=msg,
+            )
 
         # 销毁副本实体并重置副本数据
         teardown_dungeon(dbg_game, dbg_game._world.dungeon)

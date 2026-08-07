@@ -240,7 +240,10 @@ async def exit_dungeon_and_return_home_game(
         return terminal_game
 
     # 执行退出副本流程，返回家园
-    exit_dungeon(terminal_game, terminal_game._world.dungeon)
+    success, msg = exit_dungeon(terminal_game, terminal_game._world.dungeon)
+    if not success:
+        logger.error(f"exit_dungeon 失败: {msg}")
+        return terminal_game
 
     # 销毁副本实体并重置副本数据
     teardown_dungeon(terminal_game, terminal_game._world.dungeon)
@@ -282,7 +285,10 @@ async def next_dungeon_game(
         return terminal_game
 
     # 推进副本到下一房间，更新当前房间索引和状态
-    advance_dungeon(terminal_game, terminal_game.current_dungeon)
+    success, msg = advance_dungeon(terminal_game, terminal_game.current_dungeon)
+    if not success:
+        logger.error(f"advance_dungeon 失败: {msg}")
+        return terminal_game
 
     # 进入下一关卡后，驱动战斗流水线处理新关卡的初始化，包括场景描述、初始状态效果、创建新回合等
     await terminal_game._combat_pipeline.process()

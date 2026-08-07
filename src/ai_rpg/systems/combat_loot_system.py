@@ -4,7 +4,7 @@ from typing import Final, List, final
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
-from ..deepseek import DeepSeekClient
+from ..deepseek import DeepSeekClient, batch_chat
 from ..entitas import Entity, ExecuteProcessor
 from ..game.dbg_game import DBGGame
 from ..models import (
@@ -137,7 +137,7 @@ class CombatLootSystem(ExecuteProcessor):
         clients = [self._create_loot_client(m) for m in monsters]
 
         # 并行调用 LLM 推理所有怪物掉落
-        await DeepSeekClient.batch_chat(clients=clients)
+        await batch_chat(clients=clients)
 
         # 解析所有怪物的掉落结果，合并基础掉落与部位破坏额外掉落
         loot_items = [

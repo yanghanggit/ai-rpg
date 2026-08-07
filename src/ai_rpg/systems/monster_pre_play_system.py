@@ -1,7 +1,7 @@
 from typing import Final, List, final, override, Dict
 from loguru import logger
 from pydantic import BaseModel
-from ..deepseek import DeepSeekClient
+from ..deepseek import DeepSeekClient, batch_chat
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import get_alive_actors_in_stage, resolve_targets
@@ -243,7 +243,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
             return
 
         # 并行 LLM 推理
-        await DeepSeekClient.batch_chat(clients=chat_clients)
+        await batch_chat(clients=chat_clients)
 
         # 解析并替换 PlayCardsAction
         for client in chat_clients:

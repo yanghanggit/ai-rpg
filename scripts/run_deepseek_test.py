@@ -11,11 +11,14 @@ sys.path.insert(
 )
 
 from ai_rpg.deepseek import (
+    AgentLoopConfig,
     DeepSeekClient,
     MODEL_FLASH,
     MODEL_PRO,
     ToolDefinition,
     ToolFunction,
+    batch_agent_loop,
+    batch_chat,
 )
 
 
@@ -60,7 +63,7 @@ async def test_batch_chat() -> None:
         for i, q in enumerate(questions)
     ]
 
-    await DeepSeekClient.batch_chat(clients)
+    await batch_chat(clients)
 
     for client in clients:
         print(f"\n❓ {client.prompt}")
@@ -147,7 +150,7 @@ async def test_model_matrix() -> None:
         for model, thinking in cases
     ]
 
-    await DeepSeekClient.batch_chat(clients)
+    await batch_chat(clients)
 
     for client in clients:
         label = client.name
@@ -275,6 +278,36 @@ async def test_tool_call_full_round() -> None:
     print("✅ 完整两转工具调用验证通过")
 
 
+async def test_batch_agent_loop() -> None:
+    """测试批量并发 agent_loop：两个 weather 查询同时执行"""
+    print("\n=== 测试 batch_agent_loop() ===")
+
+    configs = [
+        AgentLoopConfig(
+            name="batch_aloop_beijing",
+            prompt="北京今天天气怎么样？",
+            context=[_SYSTEM],
+            tools=[_WEATHER_TOOL],
+            handlers={"get_current_weather": _mock_get_weather},
+        ),
+        AgentLoopConfig(
+            name="batch_aloop_shanghai",
+            prompt="上海今天天气怎么样？",
+            context=[_SYSTEM],
+            tools=[_WEATHER_TOOL],
+            handlers={"get_current_weather": _mock_get_weather},
+        ),
+    ]
+
+    outcomes = await batch_agent_loop(configs)
+    for i, (cfg, ok) in enumerate(zip(configs, outcomes)):
+        status = "✅ 成功" if ok else "❌ 失败"
+        print(f"  [{i}] {cfg.name}: {status}")
+
+    assert all(outcomes), f"预期全部成功，实际: {outcomes}"
+    print("✅ batch_agent_loop 验证通过")
+
+
 async def _run_async_tests() -> None:
     # 所有异步测试共用同一个 event loop，避免跨 loop 复用 httpx.AsyncClient 报错
     await test_chat()
@@ -283,10 +316,10 @@ async def _run_async_tests() -> None:
     await test_model_matrix()
     await test_tool_call_single()
     await test_tool_call_full_round()
+    await test_batch_agent_loop()
 
 
 def main() -> None:
-    # DeepSeekClient.setup()
     test_get_buffer_string()
     test_list_models()
     test_get_balance()

@@ -3,7 +3,7 @@ from ..models.messages import HumanMessage
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
-from ..deepseek import DeepSeekClient
+from ..deepseek import DeepSeekClient, batch_chat
 from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.dbg_game import DBGGame
 from ..game.rpg_actor_appearances import get_actor_appearances_in_stage
@@ -113,7 +113,7 @@ class StageDescriptionSystem(ExecuteProcessor):
         ]
 
         # 批量发送请求给 AI，等待所有响应完成
-        await DeepSeekClient.batch_chat(clients=chat_clients)
+        await batch_chat(clients=chat_clients)
 
         # 处理每个场景实体的 AI 响应，更新 StageDescriptionComponent 并存入对话历史
         for chat_client in chat_clients:

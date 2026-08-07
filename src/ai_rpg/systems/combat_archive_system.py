@@ -3,7 +3,7 @@
 from typing import Final, List, final
 from loguru import logger
 from overrides import override
-from ..deepseek import DeepSeekClient
+from ..deepseek import DeepSeekClient, batch_chat
 from ..entitas import Entity, ExecuteProcessor
 from ..game.dbg_game import DBGGame
 from ..models import (
@@ -132,7 +132,7 @@ class CombatArchiveSystem(ExecuteProcessor):
         ]
 
         # 语言服务
-        await DeepSeekClient.batch_chat(clients=chat_clients)
+        await batch_chat(clients=chat_clients)
 
         # 处理所有响应
         for chat_client in chat_clients:

@@ -3,7 +3,7 @@
 from typing import Final, List, Optional, final, override
 from loguru import logger
 from pydantic import BaseModel
-from ..deepseek import DeepSeekClient
+from ..deepseek import DeepSeekClient, batch_chat
 from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import (
@@ -112,7 +112,7 @@ class CombatRoundEndEffectSettlementSystem(ExecuteProcessor):
 
         # 并发调用 LLM 推理所有实体的 ROUND_END 效果
         logger.debug(f"开始并发结算 {len(chat_clients)} 个实体的 ROUND_END 效果...")
-        await DeepSeekClient.batch_chat(clients=chat_clients)
+        await batch_chat(clients=chat_clients)
 
         # 处理每个实体的 LLM 响应，更新 HP 并写入上下文
         for chat_client in chat_clients:

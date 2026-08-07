@@ -3,7 +3,7 @@
 from typing import Final, List, final, Dict, Optional
 from loguru import logger
 from overrides import override
-from ..deepseek import DeepSeekClient
+from ..deepseek import DeepSeekClient, batch_chat
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..models import (
@@ -233,7 +233,7 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
 
         # 并发调用所有 LLM
         logger.debug(f"开始并发评估 {len(chat_clients)} 个角色的状态效果...")
-        await DeepSeekClient.batch_chat(clients=chat_clients)
+        await batch_chat(clients=chat_clients)
 
         # 处理每个角色的响应
         for chat_client in chat_clients:

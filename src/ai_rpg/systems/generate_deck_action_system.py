@@ -7,7 +7,7 @@ from enum import IntEnum, unique
 from typing import Dict, Final, List, final, override
 from pydantic import BaseModel
 from loguru import logger
-from ..deepseek import DeepSeekClient
+from ..deepseek import DeepSeekClient, batch_chat
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import compute_character_stats, get_cards_per_combat
@@ -199,7 +199,7 @@ class GenerateDeckActionSystem(ReactiveProcessor):
             self._build_client(entity) for entity in entities
         ]
 
-        await DeepSeekClient.batch_chat(clients=chat_clients)
+        await batch_chat(clients=chat_clients)
 
         # 解析结果，填入 DeckComponent 后洗牌移入 DrawPileComponent
         for chat_client in chat_clients:

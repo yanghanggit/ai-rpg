@@ -1,7 +1,7 @@
 from typing import Final, List, final
 from loguru import logger
 from overrides import override
-from ..deepseek import DeepSeekClient
+from ..deepseek import DeepSeekClient, batch_chat
 from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.dbg_game import DBGGame
 from ..models import (
@@ -50,7 +50,7 @@ class AppearanceInitializationSystem(ExecuteProcessor):
 
         # 批量构建 DeepSeekClient 并发送请求
         # 批量请求 DeepSeek 生成外观描述
-        await DeepSeekClient.batch_chat(chat_clients)
+        await batch_chat(chat_clients)
 
         # 将 LLM 响应应用回对应角色的外观组件
         for client in chat_clients:

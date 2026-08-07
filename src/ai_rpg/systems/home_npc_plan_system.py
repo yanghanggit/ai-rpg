@@ -2,7 +2,7 @@ from typing import Dict, Final, List, final
 from ..models.messages import HumanMessage
 from loguru import logger
 from overrides import override
-from ..deepseek import DeepSeekClient
+from ..deepseek import DeepSeekClient, batch_chat
 from ..entitas import Entity, Matcher, GroupEvent, ReactiveProcessor
 from ..models import (
     StageDescriptionComponent,
@@ -67,7 +67,7 @@ class HomeNpcPlanSystem(ReactiveProcessor):
             self._mock_inject_context(actor_entity)
 
         # 批量请求 LLM 合成行动规划
-        await DeepSeekClient.batch_chat(clients=chat_clients)
+        await batch_chat(clients=chat_clients)
 
         # 解析 LLM 响应并转化为游戏行动组件，保存对话历史
         for chat_client in chat_clients:

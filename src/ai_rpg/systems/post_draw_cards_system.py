@@ -6,7 +6,7 @@ DRAW 阶段后置处理系统模块：对存在 DRAW 阶段状态效果的实体
 from typing import Final, List, final, override, Dict
 from loguru import logger
 from pydantic import BaseModel
-from ..deepseek import DeepSeekClient
+from ..deepseek import DeepSeekClient, batch_chat
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import (
@@ -214,7 +214,7 @@ class PostDrawCardsSystem(ReactiveProcessor):
             )
 
         # 并行发送所有 LLM 请求，等待所有实体的 DRAW 阶段调整完成
-        await DeepSeekClient.batch_chat(clients=chat_clients)
+        await batch_chat(clients=chat_clients)
 
         # 解析调整结果并写入 HandComponent（未被调整的实体已持有 DrawCardsActionSystem 写入的原始手牌）
         for entity in entities_with_effects:

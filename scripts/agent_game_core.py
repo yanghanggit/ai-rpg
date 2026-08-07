@@ -82,6 +82,8 @@ async def create_and_initialize_game(
         terminal_game._player_session,
         save_dir=save_dir,
     )
+
+    # 返回游戏实例
     return terminal_game
 
 

@@ -26,8 +26,10 @@ from ai_rpg.services.home_actions import (
     activate_generate_dungeon,
 )
 from ai_rpg.services.dungeon_lifecycle import (
-    setup_dungeon,
     enter_dungeon,
+)
+from ai_rpg.services.dungeon_setup import (
+    setup_dungeon,
 )
 from pathlib import Path
 from agent_game_core import restore_game

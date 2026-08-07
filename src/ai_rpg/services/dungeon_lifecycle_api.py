@@ -16,6 +16,9 @@ from .dungeon_lifecycle import (
     advance_dungeon,
     exit_dungeon,
 )
+from .dungeon_setup import (
+    teardown_dungeon,
+)
 from ..game.game_server import GameServer
 
 ###################################################################################################################################################################
@@ -194,6 +197,10 @@ async def dungeon_exit(
 
         # 退出副本并返回家园
         exit_dungeon(dbg_game, dbg_game._world.dungeon)
+
+        # 销毁副本实体并重置副本数据
+        teardown_dungeon(dbg_game, dbg_game._world.dungeon)
+
         logger.info(f"玩家 {payload.user_name} 成功返回家园")
 
         # 返回

@@ -4,7 +4,6 @@
 
 from typing import Set
 from loguru import logger
-from ..game.config import DUNGEONS_DIR
 from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import (
     compute_character_stats,
@@ -13,7 +12,6 @@ from ..game.dbg_combat_processor import (
 )
 from ..game.rpg_stage_transition import stage_transition
 from ..models import (
-    ActorType,
     Dungeon,
     DungeonComponent,
     Combat,
@@ -24,7 +22,6 @@ from ..models import (
     PartyRosterComponent,
     HomeComponent,
     DeathComponent,
-    StageType,
     StatusEffectsComponent,
     CombatRoom,
     CombatState,
@@ -205,81 +202,6 @@ def _clear_combat_state(dbg_game: DBGGame) -> None:
 
 
 ###################################################################################################################################################################
-def setup_dungeon(dbg_game: DBGGame, dungeon_name: str) -> tuple[bool, str]:
-    """从文件加载副本数据、赋值到游戏世界，并创建全部游戏实体（敌人和场景）。（幂等）"""
-    # 1. 校验名称并加载文件
-    if not dungeon_name:
-        error_msg = "setup_dungeon 失败: dungeon_name 为空"
-        logger.error(error_msg)
-        return False, error_msg
-
-    dungeon_path = DUNGEONS_DIR / f"{dungeon_name}.json"
-    if not dungeon_path.exists():
-        error_msg = f"setup_dungeon 失败: 副本文件不存在 {dungeon_path}"
-        logger.error(error_msg)
-        return False, error_msg
-
-    dungeon = Dungeon.model_validate_json(dungeon_path.read_text(encoding="utf-8"))
-
-    if len(dungeon.rooms) == 0:
-        error_msg = f"setup_dungeon 失败: {dungeon.name} 没有关卡数据"
-        logger.error(error_msg)
-        return False, error_msg
-
-    # 守护：当前游戏世界中已有副本正在进行，不允许重新 setup
-    if dbg_game._world.dungeon.current_room_index >= 0:
-        error_msg = (
-            f"setup_dungeon 失败: 当前副本 {dbg_game._world.dungeon.name!r} 正在进行中 "
-            f"(current_room_index={dbg_game._world.dungeon.current_room_index})，请先退出"
-        )
-        logger.error(error_msg)
-        return False, error_msg
-
-    assert (
-        not dbg_game.is_player_in_dungeon_stage
-    ), "setup_dungeon 失败: 玩家已在副本场景中！"
-
-    # 2. 赋值到游戏世界（此后 dbg_game.current_dungeon 指向新加载的实例）
-    dbg_game._world.dungeon = dungeon
-    logger.debug(f"setup_dungeon: 已将 {dungeon.name} 赋值到 world.dungeon")
-
-    # 3. 幂等：实体已创建则跳过
-    if dungeon.setup_entities:
-        logger.debug(f"setup_dungeon: {dungeon.name} 实体已创建，跳过")
-        return True, f"副本实体已存在，跳过创建: {dungeon.name}"
-
-    # 4. 创建副本实体（内部将 setup_entities 置 True），索引保持 -1
-    for room in dungeon.rooms:
-        for actor in room.stage.actors:
-            actor_entity = dbg_game.get_actor_entity(actor.name)
-            assert actor_entity is None, "actor_entity is not None"
-            assert (
-                actor.character_sheet.type == ActorType.MONSTER
-            ), "actor_entity is not enemy type"
-
-    # 5. 创建关卡场景实体
-    for room in dungeon.rooms:
-        stage_entity = dbg_game.get_stage_entity(room.stage.name)
-        assert stage_entity is None, "stage_entity is not None"
-        assert (
-            room.stage.stage_profile.type == StageType.DUNGEON
-        ), "stage_entity is not dungeon type"
-
-    # 6. 创建副本实体（敌人和关卡场景）
-    logger.debug(f"正在根据副本模型创建实体: {dungeon.name}")
-    dbg_game.create_actor_entities(
-        [actor for room in dungeon.rooms for actor in room.stage.actors]
-    )
-    dbg_game.create_stage_entities([room.stage for room in dungeon.rooms])
-
-    # 7. 标记实体已创建
-    dungeon.setup_entities = True
-
-    logger.info(f"setup_dungeon 完成: {dungeon.name}")
-    return True, f"副本实体创建完成: {dungeon.name}"
-
-
-###################################################################################################################################################################
 def enter_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> tuple[bool, str]:
     """组建远征队并传送至副本第一关，启动首个战斗序列。"""
     if not dungeon.setup_entities:
@@ -432,24 +354,7 @@ def exit_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> None:
             f"[return_home] 传送后 {party_member_entity.name} 当前场景={after_stage_name!r}"
         )
 
-    # 4. 清理副本数据
-    logger.debug(f"[return_home] 开始清理副本实体: dungeon={dungeon.name!r}")
-    for room in dungeon.rooms:
-        for actor in room.stage.actors:
-            destroy_actor_entity = dbg_game.get_actor_entity(actor.name)
-            if destroy_actor_entity is not None:
-                dbg_game.destroy_entity(destroy_actor_entity)
-
-    for room in dungeon.rooms:
-        destroy_stage_entity = dbg_game.get_stage_entity(room.stage.name)
-        if destroy_stage_entity is not None:
-            dbg_game.destroy_entity(destroy_stage_entity)
-
-    # 5 重置副本数据
-    dbg_game._world.dungeon = Dungeon(name="", rooms=[], premise="")
-    logger.debug("[return_home] 副本实体清理完成，dungeon 已重置")
-
-    # 6. 恢复所有远征队成员的战斗状态
+    # 4. 恢复所有远征队成员的战斗状态
     for party_member_entity in party_member_entities:
         # 移除死亡组件
         if party_member_entity.has(DeathComponent):
@@ -468,17 +373,17 @@ def exit_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> None:
         party_member_entity.remove(PartyMemberComponent)
         logger.info(f"从远征队移除: {party_member_entity.name}")
 
-    # 7. 最终场景确认
+    # 5. 最终场景确认
     for party_member_entity in party_member_entities:
         final_stage = dbg_game.resolve_stage_entity(party_member_entity)
         logger.debug(
             f"[return_home] 最终确认 {party_member_entity.name} 场景={final_stage.name if final_stage else 'None'!r}"
         )
 
-    # 8. 清除战斗临时状态
+    # 6. 清除战斗临时状态
     _clear_combat_state(dbg_game)
 
-    # 9. 将运行时实体状态同步回序列化字段（stage_transition 只更新内存，必须显式 flush）
+    # 7. 将运行时实体状态同步回序列化字段（stage_transition 只更新内存，必须显式 flush）
     dbg_game.flush_entities()
 
 

@@ -31,8 +31,10 @@ from .home_actions import (
     move_item_to_storage,
 )
 from .dungeon_lifecycle import (
-    setup_dungeon,
     enter_dungeon,
+)
+from .dungeon_setup import (
+    setup_dungeon,
 )
 from ..models import (
     HomePlayerActionRequest,

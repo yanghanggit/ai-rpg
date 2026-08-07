@@ -32,6 +32,9 @@ from ai_rpg.services.dungeon_lifecycle import (
     advance_dungeon,
     exit_dungeon,
 )
+from ai_rpg.services.dungeon_setup import (
+    teardown_dungeon,
+)
 from pathlib import Path
 from typing import List
 from agent_game_core import restore_game
@@ -256,6 +259,9 @@ async def exit_dungeon_and_return_home_game(
 
     # 执行退出副本流程，返回家园
     exit_dungeon(terminal_game, terminal_game._world.dungeon)
+
+    # 销毁副本实体并重置副本数据
+    teardown_dungeon(terminal_game, terminal_game._world.dungeon)
 
     # 最后归档
     archive_world(

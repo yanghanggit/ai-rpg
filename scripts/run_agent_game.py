@@ -202,7 +202,7 @@ def stages(snapshot: str) -> None:
     "--actors",
     multiple=True,
     required=True,
-    help="本轮需要真正触发行动规划的角色全名，可重复使用（如 --actors 术士.云音 --actors 旅行者.无名氏）。"
+    help="本轮需要真正触发行动规划的角色全名，可重复使用（如 --actors 角色.A --actors 角色.B）。"
     "调用前建议先用 stages --snapshot PATH 查询当前场景内的角色名单。",
 )
 def advance(snapshot: str, actors: tuple[str, ...]) -> None:
@@ -240,7 +240,7 @@ def advance(snapshot: str, actors: tuple[str, ...]) -> None:
 @click.option(
     "--target",
     required=True,
-    help="对话目标角色名（如 术士.云音）",
+    help="对话目标角色名（如 角色.某某）",
 )
 @click.option(
     "--content",
@@ -282,7 +282,7 @@ def speak(snapshot: str, target: str, content: str) -> None:
 @click.option(
     "--stage",
     required=True,
-    help="目标场景名（如 场景.云音居所）",
+    help="目标场景名（如 场景.某某居所）",
 )
 def switch_stage(snapshot: str, stage: str) -> None:
     """玩家切换到指定场景并归档。需处于家园模式。"""
@@ -388,7 +388,7 @@ def draw_cards(snapshot: str) -> None:
 @click.option(
     "--actor",
     required=True,
-    help="出牌角色全名（如 旅行者.无名氏）",
+    help="出牌角色全名（如 角色.某某）",
 )
 @click.option(
     "--card",
@@ -442,7 +442,7 @@ def play_cards_specified(
 @click.option(
     "--actor",
     required=True,
-    help="过牌角色全名（如 旅行者.无名氏）",
+    help="过牌角色全名（如 角色.某某）",
 )
 def pass_turn(snapshot: str, actor: str) -> None:
     """指定角色跳过出牌并归档。需战斗进行中。"""
@@ -479,7 +479,7 @@ def pass_turn(snapshot: str, actor: str) -> None:
 @click.option(
     "--actor",
     required=True,
-    help="使用消耗品的角色全名（如 旅行者.无名氏）",
+    help="使用消耗品的角色全名（如 角色.某某）",
 )
 @click.option(
     "--item",
@@ -533,7 +533,7 @@ def use_consumable(
 @click.option(
     "--actor",
     required=True,
-    help="使用装备的角色全名（如 旅行者.无名氏）",
+    help="使用装备的角色全名（如 角色.某某）",
 )
 @click.option(
     "--item",
@@ -544,7 +544,7 @@ def use_consumable(
     "--targets",
     multiple=True,
     default=(),
-    help="目标角色名，可重复使用（如 --targets 盟友.云音）；SINGLE 时指定一个目标，敌我皆可",
+    help="目标角色名，可重复使用（如 --targets 盟友.某某）；SINGLE 时指定一个目标，敌我皆可",
 )
 def use_gear(snapshot: str, actor: str, item: str, targets: tuple[str, ...]) -> None:
     """指定角色装备 GearItem 并归档。需战斗进行中。"""
@@ -928,7 +928,7 @@ def inventory_to_storage(snapshot: str, item: str) -> None:
 @click.option(
     "--target",
     required=True,
-    help="目标角色全名（如 学者.寒蝉；若作用于自己则传入玩家全名，如 旅行者.无名氏）",
+    help="目标角色全名（如 角色.某某；若作用于自己则传入玩家全名）",
 )
 def wear_costume(snapshot: str, item: str, target: str) -> None:
     """为指定角色穿装并归档。需处于家园模式。"""
@@ -964,7 +964,7 @@ def wear_costume(snapshot: str, item: str, target: str) -> None:
 @click.option(
     "--target",
     required=True,
-    help="目标角色全名（如 学者.寒蝉；若作用于自己则传入玩家全名，如 旅行者.无名氏）",
+    help="目标角色全名（如 角色.某某；若作用于自己则传入玩家全名）",
 )
 def remove_costume(snapshot: str, target: str) -> None:
     """移除指定角色的时装并归档。需处于家园模式。"""

@@ -35,7 +35,7 @@ from src.ai_rpg.systems.home_planning_prompt_builders import ActionPlanResponse
 
 def _make_actor(
     context: Context,
-    name: str = "学者.寒蝉",
+    name: str = "角色.NPC_A",
     *,
     with_plan: bool = True,
     is_player: bool = False,
@@ -116,13 +116,13 @@ class TestApplyActorActionResponse:
 
         response = ActionPlanResponse(
             mind="有点热",
-            speak={"旅行者.无名氏": "你好"},
-            whisper={"旅行者.无名氏": "悄悄话"},
+            speak={"角色.玩家A": "你好"},
+            whisper={"角色.玩家A": "悄悄话"},
         )
         system._apply_actor_action_response(entity, response)
 
-        assert entity.get(SpeakAction).target_messages == {"旅行者.无名氏": "你好"}
-        assert entity.get(WhisperAction).target_messages == {"旅行者.无名氏": "悄悄话"}
+        assert entity.get(SpeakAction).target_messages == {"角色.玩家A": "你好"}
+        assert entity.get(WhisperAction).target_messages == {"角色.玩家A": "悄悄话"}
         mock_game.notify_entities.assert_called_once()
         notified_entities, event = mock_game.notify_entities.call_args.args
         assert notified_entities == {entity}
@@ -193,8 +193,8 @@ class TestReact:
         mock_game.get_group.return_value.entities.copy.return_value = set()
         mock_game.get_agent_context.return_value = MagicMock(context=[])
 
-        npc1 = _make_actor(context, "学者.寒蝉")
-        npc2 = _make_actor(context, "旅行者.无名氏")
+        npc1 = _make_actor(context, "角色.NPC_A")
+        npc2 = _make_actor(context, "角色.NPC_B")
 
         captured: List[object] = []
 

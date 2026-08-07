@@ -63,10 +63,7 @@ def _save_demo_dungeons() -> None:
     logger.info("🚀 保存演示副本...")
 
     dungeons = [
-        # create_mountain_beasts_dungeon(),  # 山林妖兽狩猎副本
-        # create_tiger_lair_dungeon(),  # 山中虎巢穴副本
         create_shrine_ruins_dungeon(),  # 坍塌庙祠副本
-        # create_training_dungeon(),  # 猎人训练场副本
     ]
 
     for dungeon in dungeons:

@@ -160,18 +160,18 @@ def create_wuming() -> Actor:
 
 
 #######################################################################################################################
-def create_hanchan() -> Actor:
-    """创建NPC同伴角色——寒蝉。"""
+def create_guzhiqiu() -> Actor:
+    """创建NPC同伴角色——顾知秋。"""
 
     actor = create_actor(
-        name="角色.寒蝉",
+        name="角色.顾知秋",
         character_sheet=CharacterSheet(
-            name="hanchan",
+            name="guzhiqiu",
             type=ActorType.NPC,
-            profile="""**历史**: 你没有历史。你醒来时坐在济世疗养院走廊大厅的长椅上，身上穿着自己的灰布长衫，脚边放着一本残破的笔记。你不知道自己是谁，也不知道为什么会在这里。你翻过那本笔记——字迹是你的，你认得出来，但每一个字都像某种你无法读懂的密文，只有扉页上写了两个字：「寒蝉」。你不知道那是什么，直到意识到，那大概是你自己。
-**性格**: 你冷静，有强烈的整理冲动——把看见的、听见的、想到的一一记录下来、分门别类、找出逻辑。你不知道这种冲动从何而来，就像你不知道任何关于自己的事。比起沉默，你更倾向于开口，但说的往往是观察与推断，不是情绪。
-**禁忌**: 你对毫无依据的臆断和盲目破坏未知事物有明确的反感。你最不能容忍的，是别人否定你所观察到的事实。
-**最爱**: 把新发现的东西记进笔记；安静的时候翻看那本旧记录，盯着上面不可辨认的字迹，试图从笔画走向里找出什么——虽然你从未成功过。""",
+            profile="""**历史**: 你是济世疗养院的档案管理员，负责记录病患名册、药品库存与院内日常事务。你在这里工作已近一年，对这栋建筑的来历与布局了如指掌——它由地方乡绅集资建于民国初年，原为西式教会医院格局，后改作精神病院。你那一手端正的小楷填满了厚厚的档案簿，也填满了你手边那本私人笔记。
+**性格**: 你冷静，有近乎本能的整理冲动——把看见的、听见的、想到的一一记录、分门别类、找出逻辑。比起沉默，你更倾向于开口，但说的往往是观察与推断，不是情绪。你对疗养院的日常运转有一种近乎固执的责任感：档案必须按时归档、药品必须按序排列、任何异常都必须记录在案。
+**禁忌**: 你对毫无依据的臆断和盲目破坏档案与秩序的行为有明确的反感。你最不能容忍的，是别人否定你亲眼观察到的事实或亲手记录的内容。
+**最爱**: 在煤油灯下翻开笔记，将新发现的信息分类归档；翻看旧档案时，从泛黄纸页的笔迹与日期间隔里读出某个病患的隐藏故事——你总能找到别人忽视的关联。""",
             base_body="二十五岁上下的女性，身穿自己的深灰色便服长衫，非病号服。骨架纤细，体态偏瘦，肩窄，锁骨稍显。肤色较浅，眼下有长期少眠留下的淡淡暗沉。右手中指有长期握笔形成的淡色压痕。眼神锐利，与瘦弱的外表形成反差——那是一种近乎本能的审视目光，仿佛每一样进入视野的东西都在被拆解、归类。"
             "",
         ),
@@ -201,7 +201,7 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
     # 创建角色
     actor_wuming = create_wuming()
     actor_wuming.custom_item = CostumeItem(
-        name="时装.无名病号服",
+        name="时装.灰白病号服",
         description="一件洗至发硬的灰白病号服，袖口与领口已微微起毛。宽松的剪裁反而衬出肩宽骨架，穿在身上像一件被反复浆洗过的旧衣——干净，但带着洗不掉的时间痕迹。",
     )
 
@@ -209,17 +209,17 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
     # actor_wuming.character_stats.speed = 2
     # actor_wuming.character_stats.attack = 100
 
-    actor_hanchan = create_hanchan()
-    actor_hanchan.custom_item = CostumeItem(
-        name="时装.寒蝉病号服",
-        description="一件洗至发硬的灰白病号服，肩线与腰身略窄，下摆刚过膝。布料已洗得薄而柔软，在煤油灯下泛着淡淡的米白色。穿在身上整洁却冷淡，像穿它的人一样——不属于这里，却暂时走不了。",
+    actor_guzhiqiu = create_guzhiqiu()
+    actor_guzhiqiu.custom_item = CostumeItem(
+        name="时装.灰布长衫",
+        description="一件半旧的深灰色棉布长衫，袖口微微磨损，右袖外侧有一块洗不掉的墨渍。剪裁合身但不束缚，方便在档案架间来回穿梭。穿在身上整洁素净，透着读书人特有的利落。",
     )
 
     # 创建场景
     stage_isolation_ward = create_isolation_ward()
     stage_corridor_hall = create_corridor_hall()
 
-    stage_corridor_hall.actors = [actor_wuming, actor_hanchan]
+    stage_corridor_hall.actors = [actor_wuming, actor_guzhiqiu]
 
     return Blueprint(
         name=game_name,

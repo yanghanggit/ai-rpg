@@ -32,7 +32,7 @@ from src.ai_rpg.systems.home_player_plan_system import HomePlayerPlanSystem
 # ---------------------------------------------------------------------------
 
 
-def _make_player(context: Context, name: str = "旅行者.无名氏") -> Entity:
+def _make_player(context: Context, name: str = "角色.玩家A") -> Entity:
     entity = context.create_entity()
     entity._name = name
     entity.add(ActorComponent, name, "wanderer", "场景.石台广场")
@@ -42,7 +42,7 @@ def _make_player(context: Context, name: str = "旅行者.无名氏") -> Entity:
     return entity
 
 
-def _make_npc(context: Context, name: str = "学者.寒蝉") -> Entity:
+def _make_npc(context: Context, name: str = "角色.NPC_A") -> Entity:
     entity = context.create_entity()
     entity._name = name
     entity.add(ActorComponent, name, "scholar", "场景.石台广场")
@@ -91,7 +91,7 @@ class TestFilter:
     ) -> None:
         """玩家实体必须同时挂载至少一种主动行动组件（如 SpeakAction）才会被接受。"""
         entity = _make_player(context)
-        entity.replace(SpeakAction, entity.name, {"学者.寒蝉": "你好"})
+        entity.replace(SpeakAction, entity.name, {"角色.NPC_A": "你好"})
         assert system.filter(entity) is True
 
     def test_rejects_player_entity_without_active_action(
@@ -118,12 +118,12 @@ class TestBuildPlayerActionResponse:
     ) -> None:
         """玩家本轮已由 API 挂载 SpeakAction：影子 plan 应还原该动作，mind 留空。"""
         entity = _make_player(context)
-        entity.replace(SpeakAction, entity.name, {"学者.寒蝉": "你好"})
+        entity.replace(SpeakAction, entity.name, {"角色.NPC_A": "你好"})
 
         response = system._build_player_action_response(entity)
 
         assert response is not None
-        assert response.speak == {"学者.寒蝉": "你好"}
+        assert response.speak == {"角色.NPC_A": "你好"}
         assert response.mind == ""
 
     def test_no_action_returns_none_and_logs_warning(
@@ -153,12 +153,12 @@ class TestInjectPlayerSceneContext:
     ) -> None:
         _stub_scene(context, mock_game)
         entity = _make_player(context)
-        entity.replace(SpeakAction, entity.name, {"学者.寒蝉": "你好"})
+        entity.replace(SpeakAction, entity.name, {"角色.NPC_A": "你好"})
 
         system._inject_player_scene_context(entity)
 
         ai_message = mock_game.add_ai_message.call_args.args[1]
         payload = json.loads(ai_message.content)
-        assert payload["speak"] == {"学者.寒蝉": "你好"}
+        assert payload["speak"] == {"角色.NPC_A": "你好"}
         assert payload["mind"] == ""
         mock_game.notify_entities.assert_not_called()  # 本系统不再产生 MindEvent 通知

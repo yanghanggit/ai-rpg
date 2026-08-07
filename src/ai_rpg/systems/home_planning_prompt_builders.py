@@ -44,10 +44,13 @@ def build_action_planning_prompt(
     available_home_stages: List[str],
 ) -> str:
     """构建角色行动规划提示词（完整版，含所有行动类型）。"""
+
     # 场景内角色外观描述
     other_actors_appearance_info = []
     for actor_name, appearance in other_actors_appearances.items():
         other_actors_appearance_info.append(f"{actor_name}: {appearance}")
+
+    # 如果场景内没有其他角色，则显示"无"
     if len(other_actors_appearance_info) == 0:
         other_actors_appearance_info.append("无")
 
@@ -63,64 +66,27 @@ def build_action_planning_prompt(
 
 {"\n".join(other_actors_appearance_info)}
 
-## 核心规则
+## 行动规则
 
-1. **每回合行动结构**
+- `mind`（必填）：第一人称内心独白。只写自身思考，禁止捏造他人动作、反应或对话，禁止虚构 context 中未记录的事件。
+- `query`（可选）：从外部知识库检索信息。可与任何行动并用。
+- `speak` / `whisper` / `announce`（至多选一）：speak 对场景内角色公开说话，whisper 私密耳语，announce 全家园广播。
+- `trans_stage`：移动至目标场景（从"可移动至"列表选择）。与 speak / whisper / announce 互斥。
 
-```
-每回合结构：
-├─ mind [必填] - 内心独白/思考
-├─ query - 检索外部知识库（可选）
-└─ 主要行动 [每轮至多选一类，与 query 互斥]
-   ├─ A. 对外交流（三选一）
-   │   ├─ speak
-   │   ├─ whisper
-   │   └─ announce
-   └─ B. trans_stage - 移动场景
-```
+## 输出格式
 
-> 向内查询与主要行动**不能同轮并用**：若本轮执行主要行动（A/B 任意一类），则不填 query。
-
-2. **第一人称视角**  
-   所有行动和思考必须以第一人称进行。
-
-3. **知识库检索** (`query`)
-   - System prompt 是信息目录，需要详细信息时用 query 向外部数据库检索，结果会添加到下一轮 context
-
-4. **对外交流** (`speak` / `whisper` / `announce`) - 三种方式的区别
-   - `speak`：对当前场景内指定角色说话（公开，场景内所有人都能听到）
-   - `whisper`：对指定角色耳语（私密，只有你和对方知道）
-   - `announce`：向所有家园场景发布公告（广播，所有家园场景的角色都能听到）
-
-   **约束**：三种方式每轮只选其一；只能使用 context 中已有的信息；本轮使用对外交流时，query 留空。
-
-5. **场景移动** (`trans_stage`)
-   - 填写目标场景全名（从"可移动至"列表选择）
-
-6. **严格禁止虚构**：`mind`/`speak`/`whisper` 均只能基于 context 中已有的信息。禁止在任何字段中捏造其他角色的动作、反应或对话，禁止虚构 context 中未记录的事件。`mind` 只写你自己的思考，不得描述他人行为。
-
-## 输出格式(JSON)
+严格按以下 JSON 格式输出，字段名不可更改。不使用的字段：speak / whisper 填 `{{}}`，其余填 `""`，禁止 `null`。
 
 ```json
 {{
-  "mind": "内心独白",
-  "query": "检索关键词",
-  "speak": {{
-    "角色全名": "说话内容"
-  }},
-  "whisper": {{
-    "角色全名": "耳语内容"
-  }},
-  "announce": "公开宣布内容",
-  "trans_stage": "移动目标场景全名"
+  "mind": "...",
+  "query": "...",
+  "speak": {{"角色全名": "..."}},
+  "whisper": {{"角色全名": "..."}},
+  "announce": "...",
+  "trans_stage": "..."
 }}
-```
-
-**约束规则**：
-
-- 严格按上述JSON格式输出你的行动决策
-- 所有字段名不可更改
-- `speak` / `whisper` 不使用时填 `{{}}`（空对象），`announce` / `trans_stage` 不使用时填 `""`（空字符串）；**这四个字段禁止填 `null`**"""
+```"""
 
 
 #######################################################################################################################################

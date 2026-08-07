@@ -1,11 +1,15 @@
 """AI RPG Textual TUI 客户端启动脚本。
 
-    uv run python scripts/run_tui_client.py                                   终端模式
-    uv run python scripts/run_tui_client.py --web                             浏览器模式（localhost:8080）
-    uv run python scripts/run_tui_client.py --web --host 0.0.0.0 --port 8080 --public-url http://IP:8080  局域网模式
+--server-host 和 --server-port 为必填参数，指定游戏服务器地址与端口。
+
+    uv run python scripts/run_tui_client.py --server-host <HOST> --server-port <PORT>                    终端模式
+    uv run python scripts/run_tui_client.py --web --server-host <HOST> --server-port <PORT>              浏览器模式（localhost:8080）
+    uv run python scripts/run_tui_client.py --web --host 0.0.0.0 --port 8080 \\
+        --public-url http://IP:8080 --server-host <HOST> --server-port <PORT>                            局域网模式
 
 开发用（跳过登录直接进入指定页面）：
-    --dev-screen combat-room | combat-post-combat | wear-costume
+    uv run python scripts/run_tui_client.py --server-host <HOST> --server-port <PORT> \\
+        --dev-screen combat-room | combat-post-combat | wear-costume
 """
 
 import sys
@@ -27,10 +31,6 @@ from textual.screen import Screen
 # PyInstaller frozen bundle 检测：打包后 sys.frozen = True
 _IS_FROZEN: bool = getattr(sys, "frozen", False)
 
-# 默认服务器连接配置（可通过命令行参数覆盖）──
-_DEFAULT_SERVER_HOST: Final[str] = "192.168.192.100"
-_DEFAULT_SERVER_PORT: Final[int] = 8000
-
 # ── loguru 配置：移除默认 stderr sink，改为文件输出（TUI 渲染期间不能写终端）──
 logger.remove()
 logger.add(
@@ -45,14 +45,13 @@ logger.add(
 @click.command()
 @click.option(
     "--server-host",
-    default=_DEFAULT_SERVER_HOST,
-    show_default=True,
+    required=True,
     help="游戏服务器地址",
 )
 @click.option(
     "--server-port",
-    default=_DEFAULT_SERVER_PORT,
-    show_default=True,
+    type=int,
+    required=True,
     help="游戏服务器端口",
 )
 @click.option(
@@ -88,6 +87,8 @@ def main(
     public_url: Optional[str],
     dev_screen: Optional[str],
 ) -> None:
+
+    # 设置游戏服务器连接配置！！！
     server_config.host = server_host
     server_config.port = server_port
 

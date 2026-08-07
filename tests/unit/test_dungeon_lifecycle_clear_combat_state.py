@@ -16,7 +16,7 @@ from src.ai_rpg.models import (
     StatusEffectsComponent,
 )
 from src.ai_rpg.models.items import GearItem
-from src.ai_rpg.services.dungeon_lifecycle import _clear_combat_state
+from src.ai_rpg.game.dbg_combat_processor import clear_combat_state
 
 
 def _make_gear(name: str, cost: int = 1) -> GearItem:
@@ -56,7 +56,7 @@ class TestClearCombatState:
 
         game = _make_mock_game(context, player_entity=player, equipped_holders=[holder])
 
-        _clear_combat_state(game)
+        clear_combat_state(game)
 
         assert not holder.has(EquippedGearComponent)
         assert gear in player.get(InventoryComponent).items
@@ -71,7 +71,7 @@ class TestClearCombatState:
 
         game = _make_mock_game(context, player_entity=player, equipped_holders=[])
 
-        _clear_combat_state(game)
+        clear_combat_state(game)
 
         assert player.get(InventoryComponent).items == [existing_item]
 
@@ -84,4 +84,4 @@ class TestClearCombatState:
         game = _make_mock_game(context, player_entity=player, equipped_holders=[])
 
         with pytest.raises(AssertionError):
-            _clear_combat_state(game)
+            clear_combat_state(game)

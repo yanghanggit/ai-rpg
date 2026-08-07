@@ -483,3 +483,33 @@ def clear_round_state(game: DBGGame) -> None:
     for entity in game.get_group(Matcher(RoundStatsComponent)).entities.copy():
         logger.debug(f"clear round stats: {entity.name}")
         entity.remove(RoundStatsComponent)
+
+
+###################################################################################################################################################################
+def clear_combat_state(dbg_game: DBGGame) -> None:
+    """清除一次战斗（Combat）结束后的临时状态。"""
+
+    # 清除战斗回合状态
+    clear_round_state(dbg_game)
+
+    # 清除所有角色的状态效果
+    for entity in dbg_game.get_group(Matcher(StatusEffectsComponent)).entities.copy():
+        logger.debug(f"clear status effects: {entity.name}")
+        entity.remove(StatusEffectsComponent)
+
+    # 移动语义：装备背包持有者始终是玩家实体，清除装备前必须先将其归还玩家的
+    # InventoryComponent，否则装备会随组件一起被丢弃、凭空消失。
+    player_entity = dbg_game.get_player_entity()
+    assert player_entity is not None, "玩家实体不存在！"
+    assert player_entity.has(InventoryComponent), "玩家实体缺少 InventoryComponent"
+    player_inventory = player_entity.get(InventoryComponent)
+
+    # 清除所有角色的装备组件，装备物归还玩家背包
+    for entity in dbg_game.get_group(Matcher(EquippedGearComponent)).entities.copy():
+        equipped_item = entity.get(EquippedGearComponent).item
+        player_inventory.items.append(equipped_item)
+        entity.remove(EquippedGearComponent)
+        logger.debug(
+            f"clear equipped gear: {entity.name}，已将装备 {equipped_item.name!r} "
+            f"归还玩家 {player_entity.name} 的 InventoryComponent"
+        )

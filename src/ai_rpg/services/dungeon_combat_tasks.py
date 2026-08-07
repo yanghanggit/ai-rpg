@@ -42,6 +42,10 @@ async def execute_init_combat_task(
             rpg_game = current_room._dbg_game
             assert isinstance(rpg_game, DBGGame), "Invalid game type"
 
+            # 验证当前副本房间是否为战斗房间
+            if not rpg_game.is_current_room_combat:
+                raise ValueError("当前副本房间不是战斗房间")
+
             # 验证战斗状态
             if not rpg_game.current_combat_room.combat.is_initializing:
                 raise ValueError("战斗未处于开始阶段")
@@ -96,6 +100,10 @@ async def execute_retreat_task(
             # 验证战斗状态
             rpg_game = current_room._dbg_game
             assert isinstance(rpg_game, DBGGame), "Invalid game type"
+
+            # 验证当前副本房间是否为战斗房间
+            if not rpg_game.is_current_room_combat:
+                raise ValueError("当前副本房间不是战斗房间")
 
             # 执行战斗流程让 CombatOutcomeSystem 检测到角色死亡并判定失败
             await rpg_game._combat_pipeline.execute()
@@ -155,6 +163,10 @@ async def execute_draw_cards_task(
             rpg_game = current_room._dbg_game
             assert isinstance(rpg_game, DBGGame), "Invalid game type"
 
+            # 验证当前副本房间是否为战斗房间
+            if not rpg_game.is_current_room_combat:
+                raise ValueError("当前副本房间不是战斗房间")
+
             # 验证战斗状态
             if not rpg_game.current_combat_room.combat.is_ongoing:
                 raise ValueError("战斗未在进行中")
@@ -211,6 +223,10 @@ async def execute_play_cards_task(
             # 验证游戏实例类型
             rpg_game = current_room._dbg_game
             assert isinstance(rpg_game, DBGGame), "Invalid game type"
+
+            # 验证当前副本房间是否为战斗房间
+            if not rpg_game.is_current_room_combat:
+                raise ValueError("当前副本房间不是战斗房间")
 
             # 验证战斗状态
             if not rpg_game.current_combat_room.combat.is_ongoing:
@@ -280,6 +296,10 @@ async def execute_pass_turn_task(
             rpg_game = current_room._dbg_game
             assert isinstance(rpg_game, DBGGame), "Invalid game type"
 
+            # 验证当前副本房间是否为战斗房间
+            if not rpg_game.is_current_room_combat:
+                raise ValueError("当前副本房间不是战斗房间")
+
             # 验证战斗状态
             if not rpg_game.current_combat_room.combat.is_ongoing:
                 raise ValueError("战斗未在进行中")
@@ -339,6 +359,10 @@ async def execute_use_consumable_task(
             # 验证游戏实例类型
             rpg_game = current_room._dbg_game
             assert isinstance(rpg_game, DBGGame), "Invalid game type"
+
+            # 验证当前副本房间是否为战斗房间
+            if not rpg_game.is_current_room_combat:
+                raise ValueError("当前副本房间不是战斗房间")
 
             # 验证战斗状态
             if not rpg_game.current_combat_room.combat.is_ongoing:
@@ -400,6 +424,10 @@ async def execute_use_gear_task(
             # 验证游戏实例类型
             rpg_game = current_room._dbg_game
             assert isinstance(rpg_game, DBGGame), "Invalid game type"
+
+            # 验证当前副本房间是否为战斗房间
+            if not rpg_game.is_current_room_combat:
+                raise ValueError("当前副本房间不是战斗房间")
 
             # 验证战斗状态
             if not rpg_game.current_combat_room.combat.is_ongoing:

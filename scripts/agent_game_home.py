@@ -145,10 +145,6 @@ async def enter_dungeon_game(
         logger.error(f"进入副本第一关失败: {error_detail}")
         return terminal_game
 
-    # assert (
-    #     terminal_game.current_combat_room.combat.state != CombatState.NONE
-    # ), "没有战斗可以进行"
-
     # 进入副本后直接执行一次 combat_pipeline，完成战斗的初始推理与叙事生成（场景描述、角色状态效果、第一回合及行动顺序）
     await terminal_game._combat_pipeline.process()
 

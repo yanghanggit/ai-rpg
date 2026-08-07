@@ -40,6 +40,10 @@ def _validate_play_turn(
 ) -> Tuple[Optional[Entity], str]:
     """校验当前是否轮到指定角色出牌，并返回其实体。"""
 
+    # 前置守卫：此函数仅应在战斗房间内调用
+    if not dbg_game.is_current_room_combat:
+        return None, "当前副本房间不是战斗房间"
+
     # 获取当前回合信息，检查是否存在进行中的回合，以及当前角色是否在行动快照中。
     latest_round = dbg_game.current_combat_room.combat.latest_round
     if latest_round is None:
@@ -92,6 +96,12 @@ def activate_all_card_draws(
         logger.error(error_msg)
         return False, error_msg
 
+    # 检查当前副本房间是否为战斗房间
+    if not dbg_game.is_current_room_combat:
+        error_msg = "当前副本房间不是战斗房间，无法抽牌"
+        logger.error(error_msg)
+        return False, error_msg
+
     # 检查当前副本是否处于进行中的战斗状态
     if not dbg_game.current_combat_room.combat.is_ongoing:
         error_msg = "只能在战斗中使用is_ongoing"
@@ -139,6 +149,12 @@ async def activate_play_cards_specified(
     # 检查当前是否在远征阶段，如果不在则无法出牌。
     if not dbg_game.is_player_in_dungeon_stage:
         msg = "当前不在远征阶段，无法出牌"
+        logger.error(msg)
+        return False, msg
+
+    # 检查当前副本房间是否为战斗房间
+    if not dbg_game.is_current_room_combat:
+        msg = "当前副本房间不是战斗房间，无法出牌"
         logger.error(msg)
         return False, msg
 
@@ -209,6 +225,12 @@ def activate_monster_play_trigger(
         logger.error(error_msg)
         return False, error_msg
 
+    # 检查当前副本房间是否为战斗房间
+    if not dbg_game.is_current_room_combat:
+        error_msg = "当前副本房间不是战斗房间，无法触发怪物出牌"
+        logger.error(error_msg)
+        return False, error_msg
+
     entity, error_msg = _validate_play_turn(dbg_game, actor_name)
     if entity is None:
         logger.error(f"activate_monster_play_trigger: {error_msg}")
@@ -234,6 +256,12 @@ def activate_retreat(
     # 检查当前是否处于玩家的副本阶段，如果不是则无法激活撤退动作。
     if not dbg_game.is_player_in_dungeon_stage:
         error_msg = "激活撤退动作失败: 当前不在玩家的副本阶段"
+        logger.error(error_msg)
+        return False, error_msg
+
+    # 检查当前副本房间是否为战斗房间
+    if not dbg_game.is_current_room_combat:
+        error_msg = "当前副本房间不是战斗房间，无法撤退"
         logger.error(error_msg)
         return False, error_msg
 
@@ -281,6 +309,12 @@ def activate_use_consumable(
     # 检查玩家是否在副本阶段，如果不是则无法使用消耗品。
     if not dbg_game.is_player_in_dungeon_stage:
         msg = "使用消耗品失败：玩家不在副本场景中"
+        logger.error(msg)
+        return False, msg
+
+    # 检查当前副本房间是否为战斗房间
+    if not dbg_game.is_current_room_combat:
+        msg = "当前副本房间不是战斗房间，无法使用消耗品"
         logger.error(msg)
         return False, msg
 
@@ -375,6 +409,12 @@ def activate_use_gear(
     # 检查玩家是否在副本场景中，如果不在则无法使用装备。
     if not dbg_game.is_player_in_dungeon_stage:
         msg = "使用装备失败：玩家不在副本场景中"
+        logger.error(msg)
+        return False, msg
+
+    # 检查当前副本房间是否为战斗房间
+    if not dbg_game.is_current_room_combat:
+        msg = "当前副本房间不是战斗房间，无法使用装备"
         logger.error(msg)
         return False, msg
 
@@ -495,6 +535,12 @@ def activate_pass_turn(
         logger.error(msg)
         return False, msg
 
+    # 检查当前副本房间是否为战斗房间
+    if not dbg_game.is_current_room_combat:
+        msg = "当前副本房间不是战斗房间，无法过牌"
+        logger.error(msg)
+        return False, msg
+
     # 验证当前回合是否允许该角色进行操作，包括是否存在该角色以及是否轮到该角色出牌。
     entity, error_msg = _validate_play_turn(dbg_game, actor_name)
     if entity is None:
@@ -516,6 +562,12 @@ def collect_combat_loot(
     # 检查玩家是否在副本场景中，如果不在则无法收取战利品。
     if not dbg_game.is_player_in_dungeon_stage:
         msg = "收取战利品失败：玩家不在副本场景中"
+        logger.error(msg)
+        return False, msg
+
+    # 检查当前副本房间是否为战斗房间
+    if not dbg_game.is_current_room_combat:
+        msg = "当前副本房间不是战斗房间，无法收取战利品"
         logger.error(msg)
         return False, msg
 

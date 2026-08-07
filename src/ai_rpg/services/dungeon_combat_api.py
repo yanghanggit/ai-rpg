@@ -76,6 +76,14 @@ async def dungeon_combat_retreat(
             game_server=game_server,
         )
 
+        # 验证当前副本房间是否为战斗房间
+        if not rpg_game.is_current_room_combat:
+            logger.error(f"玩家 {payload.user_name} 撤退失败: 当前副本房间不是战斗房间")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="当前副本房间不是战斗房间",
+            )
+
         # 验证战斗是否在进行中
         if not rpg_game.current_combat_room.combat.is_ongoing:
             logger.error(f"玩家 {payload.user_name} 撤退失败: 战斗未在进行中")
@@ -149,6 +157,16 @@ async def dungeon_combat_init(
             game_server=game_server,
         )
 
+        # 验证当前副本房间是否为战斗房间
+        if not rpg_game.is_current_room_combat:
+            logger.error(
+                f"玩家 {payload.user_name} 战斗初始化失败: 当前副本房间不是战斗房间"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="当前副本房间不是战斗房间",
+            )
+
         # 校验战斗处于初始化阶段
         if not rpg_game.current_combat_room.combat.is_initializing:
             logger.error(f"玩家 {payload.user_name} 战斗初始化失败: 战斗未处于开始阶段")
@@ -211,7 +229,17 @@ async def dungeon_combat_collect_loot(
             game_server=game_server,
         )
 
-        # 验证战斗是否已结束
+        # 验证当前副本房间是否为战斗房间
+        if not dbg_game.is_current_room_combat:
+            logger.error(
+                f"玩家 {payload.user_name} 收取战利品失败: 当前副本房间不是战斗房间"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="当前副本房间不是战斗房间",
+            )
+
+        # 收取战利品
         success, message = collect_combat_loot(dbg_game)
         if not success:
             logger.warning(f"玩家 {payload.user_name} 收取战利品失败: {message}")
@@ -257,6 +285,16 @@ async def dungeon_combat_draw_cards(
             user_name=payload.user_name,
             game_server=game_server,
         )
+
+        # 验证当前副本房间是否为战斗房间
+        if not rpg_game.is_current_room_combat:
+            logger.error(
+                f"玩家 {payload.user_name} 全员抽卡失败: 当前副本房间不是战斗房间"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="当前副本房间不是战斗房间",
+            )
 
         # 验证战斗是否在进行中
         if not rpg_game.current_combat_room.combat.is_ongoing:
@@ -328,6 +366,14 @@ async def dungeon_combat_play_cards(
             user_name=payload.user_name,
             game_server=game_server,
         )
+
+        # 验证当前副本房间是否为战斗房间
+        if not rpg_game.is_current_room_combat:
+            logger.error(f"玩家 {payload.user_name} 出牌失败: 当前副本房间不是战斗房间")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="当前副本房间不是战斗房间",
+            )
 
         # 验证战斗是否在进行中
         if not rpg_game.current_combat_room.combat.is_ongoing:
@@ -402,6 +448,14 @@ async def dungeon_combat_pass_turn(
             game_server=game_server,
         )
 
+        # 验证当前副本房间是否为战斗房间
+        if not rpg_game.is_current_room_combat:
+            logger.error(f"玩家 {payload.user_name} 过牌失败: 当前副本房间不是战斗房间")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="当前副本房间不是战斗房间",
+            )
+
         # 验证战斗是否在进行中
         if not rpg_game.current_combat_room.combat.is_ongoing:
             logger.error(f"玩家 {payload.user_name} 过牌失败: 战斗未在进行中")
@@ -475,6 +529,16 @@ async def dungeon_combat_use_consumable(
             user_name=payload.user_name,
             game_server=game_server,
         )
+
+        # 验证当前副本房间是否为战斗房间
+        if not rpg_game.is_current_room_combat:
+            logger.error(
+                f"玩家 {payload.user_name} 使用消耗品失败: 当前副本房间不是战斗房间"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="当前副本房间不是战斗房间",
+            )
 
         # 验证战斗是否在进行中
         if not rpg_game.current_combat_room.combat.is_ongoing:
@@ -552,6 +616,16 @@ async def dungeon_combat_use_gear(
             user_name=payload.user_name,
             game_server=game_server,
         )
+
+        # 验证当前副本房间是否为战斗房间
+        if not rpg_game.is_current_room_combat:
+            logger.error(
+                f"玩家 {payload.user_name} 使用装备失败: 当前副本房间不是战斗房间"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="当前副本房间不是战斗房间",
+            )
 
         # 验证战斗是否在进行中
         if not rpg_game.current_combat_room.combat.is_ongoing:

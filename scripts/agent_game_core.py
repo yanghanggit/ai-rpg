@@ -21,7 +21,7 @@ from ai_rpg.game.config import (
 from ai_rpg.models import PlayerSession
 from ai_rpg.game.dbg_game import DBGGame
 from ai_rpg.models import Blueprint, Dungeon, World
-from ai_rpg.game import archive_world
+from ai_rpg.game.dbg_store import store_game
 from pathlib import Path
 
 
@@ -77,11 +77,7 @@ async def create_and_initialize_game(
     )
 
     # 持久化游戏世界数据到存档目录，并启用 gzip 快照功能
-    archive_world(
-        terminal_game._world,
-        terminal_game._player_session,
-        save_dir=save_dir,
-    )
+    store_game(terminal_game, save_dir)
 
     # 返回游戏实例
     return terminal_game
@@ -99,8 +95,6 @@ async def restore_game(
         player_session=player_session,
         world=world,
     )
-    # DeepSeekClient.setup()
-    # ImageClient.setup(server_configuration.replicate_image_generation_server_port)
     terminal_game.restore_from_snapshot()
     await terminal_game.initialize()
     logger.info(f"游戏已从存档恢复：user={player_session.name}, game={game}")

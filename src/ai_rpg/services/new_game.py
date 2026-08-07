@@ -14,7 +14,7 @@ from ..models import (
 )
 from .game_server_dependencies import CurrentGameServer
 from ..game.config import BLUEPRINTS_DIR
-from ..game.world_store import archive_world
+from ..game.dbg_store import store_game
 
 ###################################################################################################################################################################
 new_game_api_router = APIRouter()
@@ -105,7 +105,7 @@ async def new_game(
 
     # 存档初始世界状态，便于调试和回放
     room._dbg_game.build_from_blueprint().flush_entities()
-    archive_world(room._dbg_game._world, room._dbg_game._player_session)
+    store_game(room._dbg_game)
 
     # 返回成功响应
     return NewGameResponse(

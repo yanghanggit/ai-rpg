@@ -6,7 +6,7 @@ from datetime import datetime
 from fastapi import HTTPException, status
 from loguru import logger
 from ..game.dbg_game import DBGGame
-from ..game.world_store import archive_world
+from ..game.dbg_store import store_game
 from ..game.game_server import GameServer
 from ..models import TaskStatus
 
@@ -75,7 +75,7 @@ async def execute_dungeon_generate_pipeline_task(
             await rpg_game._dungeon_generate_pipeline.process()
 
             # 存档当前世界状态，便于调试和回放
-            archive_world(rpg_game._world, rpg_game._player_session)
+            store_game(rpg_game)
 
         task_record = game_server.get_task(task_id)
         if task_record is not None:
@@ -121,7 +121,7 @@ async def execute_home_pipeline_task(
             await rpg_game._home_pipeline.process()
 
             # 存档当前世界状态，便于调试和回放
-            archive_world(rpg_game._world, rpg_game._player_session)
+            store_game(rpg_game)
 
         task_record = game_server.get_task(task_id)
         if task_record is not None:

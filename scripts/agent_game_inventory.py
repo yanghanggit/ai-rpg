@@ -17,7 +17,7 @@ from loguru import logger
 from ai_rpg.models import PlayerSession
 from ai_rpg.game.dbg_game import DBGGame
 from ai_rpg.models import World
-from ai_rpg.game import archive_world
+from ai_rpg.game.dbg_store import store_game
 from ai_rpg.services.home_actions import (
     activate_craft_consumable,
     activate_craft_gear_item,
@@ -50,12 +50,7 @@ async def add_party_member_game(
         logger.error(f"添加远征队成员失败: {error_detail}")
         return terminal_game
 
-    terminal_game.flush_entities()
-    archive_world(
-        terminal_game._world,
-        terminal_game._player_session,
-        save_dir=save_dir,
-    )
+    store_game(terminal_game, save_dir)
     logger.info(f"已将 {member_name} 加入远征队名单，存档: {save_dir}")
     return terminal_game
 
@@ -75,12 +70,7 @@ async def remove_party_member_game(
         logger.error(f"移除远征队成员失败: {error_detail}")
         return terminal_game
 
-    terminal_game.flush_entities()
-    archive_world(
-        terminal_game._world,
-        terminal_game._player_session,
-        save_dir=save_dir,
-    )
+    store_game(terminal_game, save_dir)
     logger.info(f"已将 {member_name} 从远征队名单移除，存档: {save_dir}")
     return terminal_game
 
@@ -110,12 +100,7 @@ async def move_item_to_inventory_game(
         logger.error(f"移动道具到背包失败: {error_detail}")
         return terminal_game
 
-    terminal_game.flush_entities()
-    archive_world(
-        terminal_game._world,
-        terminal_game._player_session,
-        save_dir=save_dir,
-    )
+    store_game(terminal_game, save_dir)
     logger.info(f"道具 {item_name!r} 已从储物箱移入随身背包，存档: {save_dir}")
     return terminal_game
 
@@ -135,12 +120,7 @@ async def move_item_to_storage_game(
         logger.error(f"移动道具到储物箱失败: {error_detail}")
         return terminal_game
 
-    terminal_game.flush_entities()
-    archive_world(
-        terminal_game._world,
-        terminal_game._player_session,
-        save_dir=save_dir,
-    )
+    store_game(terminal_game, save_dir)
     logger.info(f"道具 {item_name!r} 已从随身背包移回储物箱，存档: {save_dir}")
     return terminal_game
 
@@ -162,12 +142,7 @@ async def wear_costume_game(
         return terminal_game
 
     await terminal_game._home_pipeline.process()
-    terminal_game.flush_entities()
-    archive_world(
-        terminal_game._world,
-        terminal_game._player_session,
-        save_dir=save_dir,
-    )
+    store_game(terminal_game, save_dir)
     logger.info(f"穿装完成（{target_name} 穿上时装 {item_name!r}），存档: {save_dir}")
     return terminal_game
 
@@ -188,12 +163,7 @@ async def remove_costume_game(
         return terminal_game
 
     await terminal_game._home_pipeline.process()
-    terminal_game.flush_entities()
-    archive_world(
-        terminal_game._world,
-        terminal_game._player_session,
-        save_dir=save_dir,
-    )
+    store_game(terminal_game, save_dir)
     logger.info(f"脱装完成（{target_name} 移除时装），存档: {save_dir}")
     return terminal_game
 
@@ -214,12 +184,7 @@ async def craft_consumable_game(
         return terminal_game
 
     await terminal_game._home_pipeline.process()
-    terminal_game.flush_entities()
-    archive_world(
-        terminal_game._world,
-        terminal_game._player_session,
-        save_dir=save_dir,
-    )
+    store_game(terminal_game, save_dir)
     logger.info(f"合成消耗品完成（材料={material_names}），存档: {save_dir}")
     return terminal_game
 
@@ -239,12 +204,7 @@ async def craft_gear_item_game(
         return terminal_game
 
     await terminal_game._home_pipeline.process()
-    terminal_game.flush_entities()
-    archive_world(
-        terminal_game._world,
-        terminal_game._player_session,
-        save_dir=save_dir,
-    )
+    store_game(terminal_game, save_dir)
     logger.info(f"锻造装备完成（材料={material_names}），存档: {save_dir}")
     return terminal_game
 
@@ -265,11 +225,6 @@ async def craft_costume_game(
         return terminal_game
 
     await terminal_game._home_pipeline.process()
-    terminal_game.flush_entities()
-    archive_world(
-        terminal_game._world,
-        terminal_game._player_session,
-        save_dir=save_dir,
-    )
+    store_game(terminal_game, save_dir)
     logger.info(f"制作时装完成（材料={material_names}），存档: {save_dir}")
     return terminal_game

@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import List
 from loguru import logger
 from ..game.dbg_game import DBGGame
-from ..game.world_store import archive_world
+from ..game.dbg_store import store_game
 from ..game.game_server import GameServer
 from ..models import MonsterComponent, TaskStatus
 from .dungeon_combat_actions import (
@@ -54,7 +54,7 @@ async def execute_init_combat_task(
             await rpg_game._combat_pipeline.process()
 
             # 存储战斗初始化后的世界状态，便于调试和回放
-            archive_world(rpg_game._world, rpg_game._player_session)
+            store_game(rpg_game)
 
         # 保存结果
         task_record = game_server.get_task(task_id)
@@ -115,7 +115,7 @@ async def execute_retreat_task(
                 )
 
             # 存储撤退后进入 post_combat 状态的世界状态，便于调试和回放
-            archive_world(rpg_game._world, rpg_game._player_session)
+            store_game(rpg_game)
 
         # 保存结果
         task_record = game_server.get_task(task_id)
@@ -177,7 +177,7 @@ async def execute_draw_cards_task(
             await rpg_game._combat_pipeline.process()
 
             # 存储抽牌后的世界状态，便于调试和回放
-            archive_world(rpg_game._world, rpg_game._player_session)
+            store_game(rpg_game)
 
         # 保存结果
         task_record = game_server.get_task(task_id)
@@ -251,7 +251,7 @@ async def execute_play_cards_task(
             await rpg_game._combat_pipeline.process()
 
             # 存储出牌后的世界状态，便于调试和回放
-            archive_world(rpg_game._world, rpg_game._player_session)
+            store_game(rpg_game)
 
         # 保存结果
         task_record = game_server.get_task(task_id)
@@ -313,7 +313,7 @@ async def execute_pass_turn_task(
             await rpg_game._combat_pipeline.process()
 
             # 存储过牌后的世界状态，便于调试和回放
-            archive_world(rpg_game._world, rpg_game._player_session)
+            store_game(rpg_game)
 
         # 保存结果
         task_record = game_server.get_task(task_id)
@@ -377,7 +377,7 @@ async def execute_use_consumable_task(
             await rpg_game._combat_pipeline.process()
 
             # 存储使用消耗品后的世界状态，便于调试和回放
-            archive_world(rpg_game._world, rpg_game._player_session)
+            store_game(rpg_game)
 
         # 保存结果
         task_record = game_server.get_task(task_id)
@@ -442,7 +442,7 @@ async def execute_use_gear_task(
             await rpg_game._combat_pipeline.process()
 
             # 存储使用装备后的世界状态，便于调试和回放
-            archive_world(rpg_game._world, rpg_game._player_session)
+            store_game(rpg_game)
 
         # 保存结果
         task_record = game_server.get_task(task_id)

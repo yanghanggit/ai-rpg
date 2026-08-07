@@ -112,6 +112,16 @@ class DBGGame(RPGGame):
         return self._world.dungeon.current_room
 
     ###############################################################################################################################################
+    @property
+    def is_current_room_combat(self) -> bool:
+        """检查当前副本房间是否为战斗房间"""
+        if self._world.dungeon is None:
+            return False
+        if self._world.dungeon.current_room is None:
+            return False
+        return isinstance(self._world.dungeon.current_room, CombatRoom)
+
+    ###############################################################################################################################################
     def get_storage_entity(self) -> Optional[Entity]:
         """获取全局储物箱实体。"""
         storage_entities = self.get_group(

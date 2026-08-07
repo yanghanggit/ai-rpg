@@ -159,7 +159,6 @@ def _enter_dungeon_stage(
 
             # 恢复生命值1
             revived_stats = set_character_hp(party_member, 1)
-            # revived_stats = compute_character_stats(party_member)
             logger.info(
                 f"恢复生命值: {party_member.name} 生命值 = {revived_stats.hp}/{revived_stats.max_hp}"
             )
@@ -168,7 +167,6 @@ def _enter_dungeon_stage(
     stage_transition(dbg_game, party_member_entities, stage_entity)
 
     # 5. 创建战斗实例并初始化状态
-    # combat_room = cast(CombatRoom, current_room)
     combat = Combat(name=stage_entity.name)
     combat.state = CombatState.INITIALIZATION
     current_room.combat = combat

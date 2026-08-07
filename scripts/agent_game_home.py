@@ -17,7 +17,7 @@ from loguru import logger
 from typing import Dict, List
 from ai_rpg.models import PlayerSession
 from ai_rpg.game.dbg_game import DBGGame
-from ai_rpg.models import CombatState, World
+from ai_rpg.models import World
 from ai_rpg.game import archive_world
 from ai_rpg.services.home_actions import (
     activate_plan_action,
@@ -146,11 +146,8 @@ async def enter_dungeon_game(
         return terminal_game
 
     # assert (
-    #     terminal_game.current_dungeon.current_combat_room is not None
-    # ), "当前尚未进入任何战斗房间"
-    assert (
-        terminal_game.current_combat_room.combat.state != CombatState.NONE
-    ), "没有战斗可以进行"
+    #     terminal_game.current_combat_room.combat.state != CombatState.NONE
+    # ), "没有战斗可以进行"
 
     # 进入副本后直接执行一次 combat_pipeline，完成战斗的初始推理与叙事生成（场景描述、角色状态效果、第一回合及行动顺序）
     await terminal_game._combat_pipeline.process()

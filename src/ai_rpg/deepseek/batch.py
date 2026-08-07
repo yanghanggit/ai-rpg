@@ -29,6 +29,7 @@ class AgentLoopConfig(BaseModel):
     handlers: Dict[str, Callable[..., str]] = {}
     max_rounds: int = 5
     tool_choice: Literal["auto", "none", "required"] = "auto"
+    thinking: bool = False
 
 
 ############################################################################################################
@@ -89,6 +90,7 @@ async def batch_agent_loop(
                 handlers=cfg.handlers,
                 max_rounds=cfg.max_rounds,
                 tool_choice=cfg.tool_choice,
+                thinking=cfg.thinking,
             )
             for cfg in configs
         ],

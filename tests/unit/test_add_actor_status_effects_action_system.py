@@ -265,7 +265,7 @@ class TestAddActorStatusEffectsActionSystemReact:
         mock_game.current_combat_room.combat.is_ongoing = False
         entity = _make_actor_entity(context, "英雄", with_action=True)
         with patch(
-            "src.ai_rpg.systems.add_status_effects_action_system.DeepSeekClient.batch_chat",
+            "src.ai_rpg.systems.add_status_effects_action_system.batch_chat",
             new_callable=AsyncMock,
         ) as mock_batch:
             await system.react([entity])
@@ -295,7 +295,7 @@ class TestAddActorStatusEffectsActionSystemReact:
 
         with (
             patch(
-                "src.ai_rpg.systems.add_status_effects_action_system.DeepSeekClient.batch_chat",
+                "src.ai_rpg.systems.add_status_effects_action_system.batch_chat",
                 side_effect=_capture,
             ),
             patch.object(system, "_process_status_effects_response"),

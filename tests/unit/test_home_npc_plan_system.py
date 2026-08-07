@@ -203,7 +203,7 @@ class TestReact:
 
         with (
             patch(
-                "src.ai_rpg.systems.home_npc_plan_system.DeepSeekClient.batch_chat",
+                "src.ai_rpg.systems.home_npc_plan_system.batch_chat",
                 side_effect=_capture,
             ),
             patch.object(system, "_execute_actor_actions"),

@@ -176,7 +176,7 @@ class TestExecute:
         mock_game.get_group.return_value = MagicMock(entities=[target, initialized])
 
         with patch(
-            "src.ai_rpg.systems.appearance_initialization_system.DeepSeekClient.batch_chat",
+            "src.ai_rpg.systems.appearance_initialization_system.batch_chat",
         ) as mock_batch:
             await system.execute()
 
@@ -204,7 +204,7 @@ class TestExecute:
                 client._response_ai_message = AIMessage(content="穿着铁甲的战士")
 
         with patch(
-            "src.ai_rpg.systems.appearance_initialization_system.DeepSeekClient.batch_chat",
+            "src.ai_rpg.systems.appearance_initialization_system.batch_chat",
             side_effect=fake_batch_chat,
         ):
             await system.execute()

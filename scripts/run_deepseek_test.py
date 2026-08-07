@@ -17,6 +17,7 @@ from ai_rpg.deepseek import (
     MODEL_PRO,
     ToolDefinition,
     ToolFunction,
+    agent_loop,
     batch_agent_loop,
     batch_chat,
 )
@@ -278,6 +279,23 @@ async def test_tool_call_full_round() -> None:
     print("✅ 完整两转工具调用验证通过")
 
 
+async def test_tool_call_with_thinking() -> None:
+    """测试 tool calling + thinking 模式：agent_loop 驱动，LLM 思考后调用工具并回复"""
+    print("\n=== 测试 tool calling + thinking ===")
+
+    ok = await agent_loop(
+        name="tool_think",
+        prompt="广州今天天气怎么样？适合出门吗？",
+        context=[_SYSTEM],
+        tools=[_WEATHER_TOOL],
+        handlers={"get_current_weather": _mock_get_weather},
+        thinking=True,
+    )
+    print(f"agent_loop 结果: {'✅ 成功' if ok else '❌ 失败'}")
+    assert ok, "agent_loop（thinking）应成功完成"
+    print("✅ tool calling + thinking 验证通过")
+
+
 async def test_batch_agent_loop() -> None:
     """测试批量并发 agent_loop：两个 weather 查询同时执行"""
     print("\n=== 测试 batch_agent_loop() ===")
@@ -316,6 +334,7 @@ async def _run_async_tests() -> None:
     await test_model_matrix()
     await test_tool_call_single()
     await test_tool_call_full_round()
+    await test_tool_call_with_thinking()
     await test_batch_agent_loop()
 
 

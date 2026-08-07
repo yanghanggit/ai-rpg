@@ -15,6 +15,7 @@ async def agent_loop(
     handlers: Dict[str, Callable[..., str]],
     max_rounds: int = 5,
     tool_choice: Literal["auto", "none", "required"] = "auto",
+    thinking: bool = False,
 ) -> bool:
     """通用 agentic 循环：驱动 LLM 与工具交互，直到 LLM 主动 stop 或达到最大轮次。"""
     history: List[BaseMessage] = list(context)
@@ -31,6 +32,7 @@ async def agent_loop(
             context=history,
             tools=tools,
             tool_choice=tool_choice,
+            thinking=thinking,
         )
 
         # 发起 LLM 请求，捕获异常以防止整个循环崩溃

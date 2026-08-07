@@ -170,7 +170,7 @@ async def test_execute_processes_zero_health_entities_when_completed(
     # 无任何持有 ROUND_END 效果的实体，chat_clients 为空列表
     with (
         patch(
-            "src.ai_rpg.systems.combat_round_end_effect_settlement_system.DeepSeekClient.batch_chat",
+            "src.ai_rpg.systems.combat_round_end_effect_settlement_system.batch_chat",
             new_callable=AsyncMock,
         ) as mock_batch_chat,
         patch(

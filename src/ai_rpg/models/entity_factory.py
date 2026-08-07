@@ -2,7 +2,7 @@
 游戏实体工厂模块。
 """
 
-from typing import List, Optional
+from typing import List
 from . import (
     Actor,
     CharacterSheet,
@@ -26,6 +26,22 @@ def create_actor(
     创建一个游戏角色(Actor)实例。
     """
 
+    assert name.strip() != "", "DBG 游戏要求必须有角色名称(name)"
+    assert (
+        character_sheet.name.strip() != ""
+    ), "DBG 游戏要求必须有角色设定(character_sheet.name)"
+    assert (
+        character_sheet.profile.strip() != ""
+    ), "DBG 游戏要求必须有角色设定(character_sheet.profile)"
+    assert (
+        character_sheet.base_body.strip() != ""
+    ), "DBG 游戏要求必须有角色设定(character_sheet.base_body)"
+    assert (
+        campaign_setting.strip() != ""
+    ), "DBG 游戏要求必须有游戏设定(campaign_setting)"
+    assert system_rules.strip() != "", "DBG 游戏要求必须有系统规则(system_rules)"
+    assert len(keywords) > 0, f"DBG 游戏要求每个角色至少有一个关键词约束: {name}"
+
     actor = Actor(
         name=name,
         character_sheet=character_sheet,
@@ -39,35 +55,10 @@ def create_actor(
     assert actor.character_stats.hp == 0, "HP must be 0."
     actor.character_stats.hp = character_stats.max_hp
 
-    # 初次编译system_message!!!!
-    actor.system_message = build_actor_system_message(
-        actor_name=actor.name,
-        campaign_setting=campaign_setting,
-        system_rules=system_rules,
-        character_profile=character_sheet.profile,
-        base_body=character_sheet.base_body,
-    )
-
-    assert (
-        len(actor.keywords) > 0
-    ), f"DBG 游戏要求每个角色至少有一个关键词约束: {actor.name}"
-    return actor
-
-
-#######################################################################################################################################
-def build_actor_system_message(
-    actor_name: str,
-    campaign_setting: str,
-    system_rules: str,
-    character_profile: str,
-    base_body: str,
-) -> str:
-    """
-    组装角色 system_message。
-    """
-    return f"""# {actor_name}
+    # 系统提示词词
+    actor.system_message = f"""# {actor.name}
     
-你扮演角色: {actor_name}
+你扮演角色: {actor.name}
 
 ## 游戏设定
 
@@ -79,11 +70,13 @@ def build_actor_system_message(
 
 ## 角色设定
 
-{character_profile}
+{character_sheet.profile}
 
 ## 基础体型
 
-{base_body}"""
+{character_sheet.base_body}"""
+
+    return actor
 
 
 #######################################################################################################################################
@@ -97,6 +90,16 @@ def create_stage(
     创建一个游戏场景(Stage)实例。
     """
 
+    assert name.strip() != "", "DBG 游戏要求必须有场景名称(name)"
+    assert (
+        stage_profile.profile.strip() != ""
+    ), "DBG 游戏要求必须有场景设定(stage_profile.profile)"
+    assert (
+        campaign_setting.strip() != ""
+    ), "DBG 游戏要求必须有游戏设定(campaign_setting)"
+    assert system_rules.strip() != "", "DBG 游戏要求必须有系统规则(system_rules)"
+
+    # 创建场景实例
     stage = Stage(
         name=name,
         stage_profile=stage_profile,
@@ -104,30 +107,10 @@ def create_stage(
         actors=[],
     )
 
-    # 初次编译system_message!!!!
-    stage.system_message = build_stage_system_message(
-        stage_name=stage.name,
-        campaign_setting=campaign_setting,
-        system_rules=system_rules,
-        profile=stage_profile.profile,
-    )
-
-    return stage
-
-
-#######################################################################################################################################
-def build_stage_system_message(
-    stage_name: str,
-    campaign_setting: str,
-    system_rules: str,
-    profile: str,
-) -> str:
-    """
-    组装场景 system_message。
-    """
-    return f"""# {stage_name}
+    # 系统提示词词
+    stage.system_message = f"""# {stage.name}
     
-你扮演场景: {stage_name}
+你扮演场景: {stage.name}
 
 ## 游戏设定
 
@@ -139,31 +122,36 @@ def build_stage_system_message(
 
 ## 场景设定
 
-{profile}"""
+{stage.stage_profile.profile}"""
+
+    return stage
 
 
 #######################################################################################################################################
 
 
 def create_world_system(
-    name: str,
-    campaign_setting: str,
-    system_rules: str,
-    role_rules: Optional[str] = None,
+    name: str, campaign_setting: str, system_rules: str, role_rules: str
 ) -> WorldSystem:
     """
     创建一个世界系统(WorldSystem)实例。
     """
 
+    assert name.strip() != "", "DBG 游戏要求必须有世界系统名称(name)"
+    assert (
+        campaign_setting.strip() != ""
+    ), "DBG 游戏要求必须有游戏设定(campaign_setting)"
+    assert system_rules.strip() != "", "DBG 游戏要求必须有系统规则(system_rules)"
+    assert role_rules.strip() != "", "DBG 游戏要求必须有角色扮演规则(role_rules)"
+
+    # 创建世界系统实例
     world_system = WorldSystem(
         name=name,
         system_message="",
         components=[],
     )
 
-    role_rules_section = f"\n\n{role_rules}" if role_rules is not None else ""
-
-    # 初次编译system_message!!!!
+    # 系统提示词词
     world_system.system_message = f"""# {world_system.name}
 
 你扮演世界系统: {world_system.name}
@@ -174,6 +162,8 @@ def create_world_system(
 
 ## 全局规则
 
-{system_rules}{role_rules_section}"""
+{system_rules}
+
+{role_rules}"""
 
     return world_system

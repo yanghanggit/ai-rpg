@@ -15,7 +15,7 @@
 import sys
 import os
 from datetime import datetime
-from typing import Final, Optional, Type
+from typing import Optional, Type
 from textual_serve.server import Server
 import click
 from loguru import logger

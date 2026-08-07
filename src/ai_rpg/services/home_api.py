@@ -30,7 +30,7 @@ from .home_actions import (
     move_item_to_inventory,
     move_item_to_storage,
 )
-from .dungeon_lifecycle import (
+from .dungeon_enter import (
     enter_dungeon,
 )
 from .dungeon_setup import (

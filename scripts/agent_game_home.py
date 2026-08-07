@@ -25,7 +25,7 @@ from ai_rpg.services.home_actions import (
     activate_switch_stage,
     activate_generate_dungeon,
 )
-from ai_rpg.services.dungeon_lifecycle import (
+from ai_rpg.services.dungeon_enter import (
     enter_dungeon,
 )
 from ai_rpg.services.dungeon_setup import (

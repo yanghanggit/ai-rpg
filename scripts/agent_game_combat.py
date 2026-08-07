@@ -28,8 +28,10 @@ from ai_rpg.services.dungeon_combat_actions import (
     activate_use_gear,
     collect_combat_loot,
 )
-from ai_rpg.services.dungeon_lifecycle import (
+from ai_rpg.services.dungeon_advance import (
     advance_dungeon,
+)
+from ai_rpg.services.dungeon_exit import (
     exit_dungeon,
 )
 from ai_rpg.services.dungeon_setup import (

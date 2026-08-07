@@ -12,8 +12,10 @@ from ..models import (
     DungeonExitRequest,
     DungeonExitResponse,
 )
-from .dungeon_lifecycle import (
+from .dungeon_advance import (
     advance_dungeon,
+)
+from .dungeon_exit import (
     exit_dungeon,
 )
 from .dungeon_setup import (

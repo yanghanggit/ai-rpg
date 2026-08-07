@@ -104,7 +104,7 @@ async def new_game(
     await room._dbg_game.initialize()
 
     # 存档初始世界状态，便于调试和回放
-    room._dbg_game.build_from_blueprint().flush_entities()
+    room._dbg_game.build_from_blueprint()
     store_game(room._dbg_game)
 
     # 返回成功响应

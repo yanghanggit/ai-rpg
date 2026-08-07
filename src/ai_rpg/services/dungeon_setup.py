@@ -114,6 +114,6 @@ def teardown_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> None:
     dbg_game._world.dungeon = Dungeon(name="", rooms=[], premise="")
 
     # 4. 将运行时实体状态同步回序列化字段
-    dbg_game.flush_entities()
+    # dbg_game.flush_entities()
 
     logger.debug("[teardown_dungeon] 副本实体清理完成，dungeon 已重置")

@@ -81,6 +81,7 @@ class RPGGame(GameSession, RPGAgentContext, RPGEntityManager, RPGGamePipelineMan
     def flush_entities(self) -> "RPGGame":
         """保存当前游戏世界状态到持久化存储，并生成调试快照"""
         # 生成快照
+        assert len(self._entities) > 0, "游戏中没有实体，不能生成快照"
         self._world.entities = self.serialize_entities(self._entities)
         return self
 

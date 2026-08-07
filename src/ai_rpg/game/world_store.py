@@ -14,7 +14,6 @@ from ..models.messages import ContextMessage
 from ..models.serialization import EntitySerialization
 from ..models.session_message import SessionMessage
 from loguru import logger
-from .config import WORLDS_DIR
 
 # TypeAdapter 用于将 JSON 字符串转换为 ContextMessage 对象
 _context_adapter: TypeAdapter[ContextMessage] = TypeAdapter(ContextMessage)
@@ -129,7 +128,7 @@ def restore_world(snapshot_dir: Path) -> Tuple[World, PlayerSession]:
 def archive_world(
     world: World,
     player_session: PlayerSession,
-    worlds_dir: Path = WORLDS_DIR,
+    worlds_dir: Path,
     save_dir: Optional[Path] = None,
 ) -> bool:
     """持久化游戏世界数据到存档目录。

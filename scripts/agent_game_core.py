@@ -68,7 +68,7 @@ async def create_and_initialize_game(
     )
 
     assert len(terminal_game._world.entities) == 0, "测试阶段，游戏中不应该有实体数据！"
-    terminal_game.build_from_blueprint().flush_entities()
+    # terminal_game.build_from_blueprint().flush_entities()
 
     await terminal_game.initialize()
 

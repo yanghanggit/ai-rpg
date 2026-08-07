@@ -384,7 +384,7 @@ def exit_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> None:
     _clear_combat_state(dbg_game)
 
     # 7. 将运行时实体状态同步回序列化字段（stage_transition 只更新内存，必须显式 flush）
-    dbg_game.flush_entities()
+    # dbg_game.flush_entities()
 
 
 ###################################################################################################################################################################

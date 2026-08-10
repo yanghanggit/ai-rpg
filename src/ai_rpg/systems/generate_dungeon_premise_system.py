@@ -1,5 +1,6 @@
 """副本前提设定生成系统"""
 
+from functools import partial
 from pathlib import Path
 from typing import Dict, Final, List, Optional, final, override
 from loguru import logger
@@ -16,6 +17,47 @@ from .dungeon_generation import (
     PREMISE_TOOL,
     READ_PREMISE_FILE_TOOL,
 )
+
+
+####################################################################################################################################
+class _PremiseResult:
+    """record_dungeon_premise handler 的结果容器。"""
+
+    def __init__(self) -> None:
+        self.data: Optional[DungeonPremiseData] = None
+
+
+####################################################################################################################################
+def _handle_record_dungeon_premise(
+    result: _PremiseResult, name: str, premise: str, stage_count: int
+) -> str:
+    """处理 record_dungeon_premise 工具调用。"""
+    result.data = DungeonPremiseData(
+        dungeon_name=name,
+        premise=premise,
+        stage_count=stage_count,
+    )
+    file_path: Path = DUNGEON_PROCESS_DIR / f"{name}_premise.json"
+    file_path.write_text(result.data.model_dump_json(indent=4), encoding="utf-8")
+    logger.info(
+        f"[GenerateDungeonPremiseSystem] record_dungeon_premise 执行:\n"
+        f"  dungeon_name: {name}\n"
+        f"  stage_count:  {stage_count}\n"
+        f"  → {file_path}"
+    )
+    return (
+        f"已记录副本「{name}」，共 {stage_count} 个战斗场景。"
+        f"中间文件已写入: {file_path}"
+    )
+
+
+####################################################################################################################################
+def _handle_read_premise_file(dungeon_name: str) -> str:
+    """处理 read_premise_file 工具调用。"""
+    file_path: Path = DUNGEON_PROCESS_DIR / f"{dungeon_name}_premise.json"
+    if not file_path.exists():
+        return f"错误：文件不存在 {file_path}"
+    return file_path.read_text(encoding="utf-8")
 
 
 ####################################################################################################################################
@@ -68,37 +110,7 @@ class GenerateDungeonPremiseSystem(ReactiveProcessor):
     async def _run(self, entity: Entity) -> None:
         logger.info(f"[GenerateDungeonPremiseSystem] Step 1 开始: entity={entity.name}")
 
-        premise_file: Optional[DungeonPremiseData] = None
-
-        def _handle_record_dungeon_premise(
-            name: str, premise: str, stage_count: int
-        ) -> str:
-            nonlocal premise_file
-            premise_file = DungeonPremiseData(
-                dungeon_name=name,
-                premise=premise,
-                stage_count=stage_count,
-            )
-            file_path: Path = DUNGEON_PROCESS_DIR / f"{name}_premise.json"
-            file_path.write_text(
-                premise_file.model_dump_json(indent=4), encoding="utf-8"
-            )
-            logger.info(
-                f"[GenerateDungeonPremiseSystem] record_dungeon_premise 执行:\n"
-                f"  dungeon_name: {name}\n"
-                f"  stage_count:  {stage_count}\n"
-                f"  → {file_path}"
-            )
-            return (
-                f"已记录副本「{name}」，共 {stage_count} 个战斗场景。"
-                f"中间文件已写入: {file_path}"
-            )
-
-        def _handle_read_premise_file(dungeon_name: str) -> str:
-            file_path: Path = DUNGEON_PROCESS_DIR / f"{dungeon_name}_premise.json"
-            if not file_path.exists():
-                return f"错误：文件不存在 {file_path}"
-            return file_path.read_text(encoding="utf-8")
+        result = _PremiseResult()
 
         success = await agent_loop(
             name=entity.name,
@@ -106,7 +118,9 @@ class GenerateDungeonPremiseSystem(ReactiveProcessor):
             context=self._game.get_agent_context(entity).context,
             tools=[PREMISE_TOOL, READ_PREMISE_FILE_TOOL],
             handlers={
-                "record_dungeon_premise": _handle_record_dungeon_premise,
+                "record_dungeon_premise": partial(
+                    _handle_record_dungeon_premise, result
+                ),
                 "read_premise_file": _handle_read_premise_file,
             },
             max_rounds=5,
@@ -116,13 +130,14 @@ class GenerateDungeonPremiseSystem(ReactiveProcessor):
             logger.error("[GenerateDungeonPremiseSystem] Step 1 agent_loop 失败，中止")
             return
 
-        if premise_file is None:
+        if result.data is None:
             logger.error(
                 "[GenerateDungeonPremiseSystem] Step 1 LLM 已 stop "
                 "但未调用 record_dungeon_premise，中止"
             )
             return
 
+        premise_file = result.data
         logger.info(
             f"[GenerateDungeonPremiseSystem] Step 1 完成:\n"
             f"  dungeon_name: {premise_file.dungeon_name}\n"

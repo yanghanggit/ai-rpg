@@ -1,7 +1,7 @@
 """副本组装系统"""
 
 from pathlib import Path
-from typing import Dict, Final, List, final, override, Optional
+from typing import Dict, Final, List, final, override, Optional, Set
 from loguru import logger
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.config import DEBUG_CACHE_DIR, DUNGEON_PROCESS_DIR, DUNGEONS_DIR
@@ -14,6 +14,7 @@ from ..models import (
     CombatRoom,
     Dungeon,
     DungeonRoom,
+    EntryRoom,
     IllustrateDungeonAction,
     StageProfile,
     StageType,
@@ -71,6 +72,7 @@ class AssembleDungeonSystem(ReactiveProcessor):
             )
             return
 
+        # Step 3 中间文件中 stages 为空，无法构建 Dungeon
         if not blueprint.stages:
             logger.error(
                 f"[AssembleDungeonSystem] blueprint.stages 为空，无法构建 Dungeon: {blueprint_file_path}"
@@ -109,7 +111,7 @@ class AssembleDungeonSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     @staticmethod
-    def _deduplicate_name(seen: set[str], name: str) -> str:
+    def _deduplicate_name(seen: Set[str], name: str) -> str:
         """若 name 已在 seen 中，追加 _2/_3/... 直到唯一；否则直接返回原名。"""
         if name not in seen:
             seen.add(name)
@@ -130,8 +132,14 @@ class AssembleDungeonSystem(ReactiveProcessor):
         seen_stage_names: set[str] = set()
         seen_actor_names: set[str] = set()
         rooms: List[DungeonRoom] = []
+
+        # 组装每个 stage 对应的房间
         for i, stage_bp in enumerate(blueprint.stages, start=1):
+
+            # 处理 stage_name 重复问题
             stage_name = self._deduplicate_name(seen_stage_names, stage_bp.stage_name)
+
+            # 创建 Stage 实体
             stage = create_stage(
                 name=stage_name,
                 stage_profile=StageProfile(
@@ -143,33 +151,46 @@ class AssembleDungeonSystem(ReactiveProcessor):
                 system_rules=RPG_SYSTEM_RULES,
             )
 
-            actors = [
-                create_actor(
-                    name=self._deduplicate_name(seen_actor_names, actor_bp.actor_name),
-                    character_sheet=CharacterSheet(
-                        name=actor_bp.character_sheet_name,
-                        type=ActorType.MONSTER.value,
-                        profile=actor_bp.profile,
-                        base_body=actor_bp.base_body,
-                    ),
-                    character_stats=CharacterStats(),
-                    campaign_setting=self._game._world.blueprint.campaign_setting,
-                    system_rules=RPG_SYSTEM_RULES,
-                    keywords=[
-                        "纯攻击型：每张卡牌专注于对单个敌人造成直接伤害，不携带任何附加效果或持续状态。骰值 0-30 为失败，攻击乏力、伤害偏低；骰值 31-70 为正常，伤害稳定适中；骰值 71-100 为优质，体现爆发感，伤害显著高于角色基础攻击力。"
-                    ],
+            # 根据 room_type 创建对应的房间类型
+            if stage_bp.room_type == "entry":
+                stage.actors = []
+                rooms.append(EntryRoom(stage=stage))
+                logger.info(
+                    f"[AssembleDungeonSystem] Room {i}/{len(blueprint.stages)} 构建完成:\n"
+                    f"  type:   entry\n"
+                    f"  stage:  {stage.name}"
                 )
-                for actor_bp in stage_bp.actors
-            ]
+            elif stage_bp.room_type == "combat":
+                actors = [
+                    create_actor(
+                        name=self._deduplicate_name(
+                            seen_actor_names, actor_bp.actor_name
+                        ),
+                        character_sheet=CharacterSheet(
+                            name=actor_bp.character_sheet_name,
+                            type=ActorType.MONSTER.value,
+                            profile=actor_bp.profile,
+                            base_body=actor_bp.base_body,
+                        ),
+                        character_stats=CharacterStats(),
+                        campaign_setting=self._game._world.blueprint.campaign_setting,
+                        system_rules=RPG_SYSTEM_RULES,
+                        keywords=[
+                            "纯攻击型：每张卡牌专注于对单个敌人造成直接伤害，不携带任何附加效果或持续状态。骰值 0-30 为失败，攻击乏力、伤害偏低；骰值 31-70 为正常，伤害稳定适中；骰值 71-100 为优质，体现爆发感，伤害显著高于角色基础攻击力。"
+                        ],
+                    )
+                    for actor_bp in stage_bp.actors
+                ]
+                stage.actors = actors
+                rooms.append(CombatRoom(stage=stage))
+                logger.info(
+                    f"[AssembleDungeonSystem] Room {i}/{len(blueprint.stages)} 构建完成:\n"
+                    f"  type:   combat\n"
+                    f"  stage:  {stage.name}\n"
+                    f"  actors ({len(actors)}): " + ", ".join(a.name for a in actors)
+                )
 
-            stage.actors = actors
-            rooms.append(CombatRoom(stage=stage))
-            logger.info(
-                f"[AssembleDungeonSystem] Room {i}/{len(blueprint.stages)} 构建完成:\n"
-                f"  stage:  {stage.name}\n"
-                f"  actors ({len(actors)}): " + ", ".join(a.name for a in actors)
-            )
-
+        # 组装 Dungeon 实体
         dungeon = Dungeon(
             name=blueprint.dungeon_name,
             premise=blueprint.premise,

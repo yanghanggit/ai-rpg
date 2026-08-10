@@ -58,8 +58,8 @@ def _make_party_entity(context: Context, name: str, energy: int) -> Entity:
 
 
 def _setup_mock_dungeon(mock_game: MagicMock, *, round_count: int = 1) -> None:
-    mock_game.current_combat_room.combat.is_ongoing = True
-    mock_game.current_combat_room.combat.rounds = [MagicMock()] * round_count
+    mock_game.current_dungeon_combat_room.combat.is_ongoing = True
+    mock_game.current_dungeon_combat_room.combat.rounds = [MagicMock()] * round_count
 
 
 # ---------------------------------------------------------------------------
@@ -95,7 +95,7 @@ class TestReact:
         mock_game: MagicMock,
         system: UseGearItemActionSystem,
     ) -> None:
-        mock_game.current_combat_room.combat.is_ongoing = False
+        mock_game.current_dungeon_combat_room.combat.is_ongoing = False
         gear = _make_gear("装备.测试")
         player = _make_player_entity(context, "player", [gear], gear, ["队友A"])
 

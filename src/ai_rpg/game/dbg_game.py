@@ -10,8 +10,8 @@ from .rpg_game_pipeline_manager import RPGGameProcessPipeline
 from .rpg_game import RPGGame
 from .dbg_game_pipelines import (
     create_home_pipeline,
-    create_dungeon_entry_pipeline,
-    create_combat_pipeline,
+    create_dungeon_entry_room_pipeline,
+    create_dungeon_combat_room_pipeline,
     create_dungeon_generate_pipeline,
 )
 from ..models import (
@@ -67,13 +67,13 @@ class DBGGame(RPGGame):
         self._home_pipeline: Final[RPGGameProcessPipeline] = create_home_pipeline(self)
 
         # 副本入口流程（叙事 + 牌库生成，无战斗）
-        self._dungeon_entry_pipeline: Final[RPGGameProcessPipeline] = (
-            create_dungeon_entry_pipeline(self)
+        self._dungeon_entry_room_pipeline: Final[RPGGameProcessPipeline] = (
+            create_dungeon_entry_room_pipeline(self)
         )
 
         # 副本战斗流程
-        self._combat_pipeline: Final[RPGGameProcessPipeline] = create_combat_pipeline(
-            self
+        self._dungeon_combat_room_pipeline: Final[RPGGameProcessPipeline] = (
+            create_dungeon_combat_room_pipeline(self)
         )
 
         # 副本生成流程（LLM 文本生成 + 图片生成）
@@ -83,8 +83,8 @@ class DBGGame(RPGGame):
 
         # 注册所有管道到管道管理器
         self.register_pipeline(self._home_pipeline)
-        self.register_pipeline(self._dungeon_entry_pipeline)
-        self.register_pipeline(self._combat_pipeline)
+        self.register_pipeline(self._dungeon_entry_room_pipeline)
+        self.register_pipeline(self._dungeon_combat_room_pipeline)
         self.register_pipeline(self._dungeon_generate_pipeline)
 
     ###############################################################################################################################################
@@ -110,7 +110,7 @@ class DBGGame(RPGGame):
 
     ###############################################################################################################################################
     @property
-    def current_combat_room(self) -> CombatRoom:
+    def current_dungeon_combat_room(self) -> CombatRoom:
         """断言当前处于战斗房间中，返回战斗房间"""
         assert self._world.dungeon is not None, "当前副本不存在"
         assert self._world.dungeon.current_room is not None, "当前副本房间不存在"
@@ -121,7 +121,7 @@ class DBGGame(RPGGame):
 
     ###############################################################################################################################################
     @property
-    def is_current_room_combat(self) -> bool:
+    def is_current_room_dungeon_combat(self) -> bool:
         """检查当前副本房间是否为战斗房间"""
         if self._world.dungeon is None:
             return False

@@ -38,25 +38,25 @@ class CombatArchiveSystem(ExecuteProcessor):
     @override
     async def execute(self) -> None:
         """每帧检查战斗是否结束；未结束则立即返回，结束则触发归档流程。"""
-        if not self._game.current_combat_room.combat.is_combat_completed:
+        if not self._game.current_dungeon_combat_room.combat.is_combat_completed:
             # 不是本阶段就直接返回, 如果过了，要么胜利，要么失败。
             return
 
         assert (
-            self._game.current_combat_room.combat.is_won
-            or self._game.current_combat_room.combat.is_lost
+            self._game.current_dungeon_combat_room.combat.is_won
+            or self._game.current_dungeon_combat_room.combat.is_lost
         ), "战斗结果状态异常！"
 
         # 压缩总结战斗结果。
         await self._archive_all_combat_records()
 
         # 标记战斗已归档，触发后续流程（如记忆存储、场景过渡等）
-        self._game.current_combat_room.combat.transition_to_post_combat()
+        self._game.current_dungeon_combat_room.combat.transition_to_post_combat()
 
     #######################################################################################################################################
     def _create_combat_summary_client(self, combat_actor: Entity) -> DeepSeekClient:
         """为单个盟友创建配置好的 DeepSeekClient，用于生成战斗摘要。"""
-        total_rounds = len(self._game.current_combat_room.combat.rounds or [])
+        total_rounds = len(self._game.current_dungeon_combat_room.combat.rounds or [])
 
         combat_stage_entity = self._game.resolve_stage_entity(combat_actor)
         assert (

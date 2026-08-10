@@ -340,7 +340,7 @@ class TestInjectCardsActionSystemReact:
         system: InjectCardsActionSystem,
     ) -> None:
         """战斗未进行中时，_process_actor_action 不应被调用。"""
-        mock_game.current_combat_room.combat.is_ongoing = False
+        mock_game.current_dungeon_combat_room.combat.is_ongoing = False
         actor = _make_actor_with_play_cards_action(context, "英雄")
 
         with patch.object(
@@ -357,7 +357,7 @@ class TestInjectCardsActionSystemReact:
         system: InjectCardsActionSystem,
     ) -> None:
         """actor entity（携带 PlayCardsAction）→ _process_actor_action 应被调用一次。"""
-        mock_game.current_combat_room.combat.is_ongoing = True
+        mock_game.current_dungeon_combat_room.combat.is_ongoing = True
         actor = _make_actor_with_play_cards_action(context, "英雄")
 
         with patch.object(

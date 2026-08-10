@@ -81,8 +81,8 @@ def _configure_execute_prerequisites(
 ) -> None:
     """配置 execute() 中场景状态效果判定之前的前置流程所需的 mock（状态门禁/实体解析），
     以便测试可以直接调用 execute() 覆盖已内联的场景状态效果判定逻辑。"""
-    mock_game.current_combat_room.combat.is_initializing = True
-    mock_game.current_combat_room.combat.is_ongoing = True
+    mock_game.current_dungeon_combat_room.combat.is_initializing = True
+    mock_game.current_dungeon_combat_room.combat.is_ongoing = True
     mock_game.get_player_entity.return_value = player_entity
     mock_game.resolve_stage_entity.return_value = stage
 

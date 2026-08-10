@@ -159,11 +159,11 @@ class PostDrawCardsSystem(ReactiveProcessor):
     @override
     async def react(self, entities: List[Entity]) -> None:
 
-        if not self._game.current_combat_room.combat.is_ongoing:
+        if not self._game.current_dungeon_combat_room.combat.is_ongoing:
             logger.debug("当前战斗状态非 ONGOING，PostDrawCardsSystem 不执行")
             return
 
-        current_rounds = self._game.current_combat_room.combat.rounds
+        current_rounds = self._game.current_dungeon_combat_room.combat.rounds
         assert (
             current_rounds is not None and len(current_rounds) > 0
         ), "当前回合未创建，检查 CombatRoundTransitionSystem 是否正常执行"

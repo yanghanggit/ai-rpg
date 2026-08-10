@@ -56,8 +56,8 @@ def _make_player_entity(
 
 def _setup_mock_dungeon(mock_game: MagicMock, *, round_count: int = 1) -> None:
     """为 mock_game 配置进行中的战斗状态。"""
-    mock_game.current_combat_room.combat.is_ongoing = True
-    mock_game.current_combat_room.combat.rounds = [MagicMock()] * round_count
+    mock_game.current_dungeon_combat_room.combat.is_ongoing = True
+    mock_game.current_dungeon_combat_room.combat.rounds = [MagicMock()] * round_count
 
 
 # ---------------------------------------------------------------------------
@@ -116,7 +116,7 @@ class TestReact:
         mock_game: MagicMock,
         system: UseConsumableItemActionSystem,
     ) -> None:
-        mock_game.current_combat_room.combat.is_ongoing = False
+        mock_game.current_dungeon_combat_room.combat.is_ongoing = False
         item = _make_consumable("治愈药水", count=2)
         player = _make_player_entity(context, "player", [item], item, [])
 

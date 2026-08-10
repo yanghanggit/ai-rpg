@@ -50,7 +50,7 @@ class UseConsumableItemActionSystem(ReactiveProcessor):
     @override
     async def react(self, entities: List[Entity]) -> None:
 
-        if not self._game.current_combat_room.combat.is_ongoing:
+        if not self._game.current_dungeon_combat_room.combat.is_ongoing:
             logger.debug("UseConsumableItemActionSystem: 战斗未进行中，跳过")
             return
 
@@ -97,7 +97,7 @@ class UseConsumableItemActionSystem(ReactiveProcessor):
                 message=_generate_consumable_notice(
                     entity.name,
                     action,
-                    len(self._game.current_combat_room.combat.rounds),
+                    len(self._game.current_dungeon_combat_room.combat.rounds),
                 )
             ),
             exclude_entities={stage_entity},

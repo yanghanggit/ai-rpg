@@ -136,7 +136,7 @@ def test_tick_mixed_effects(
 async def test_execute_skips_when_not_ongoing(
     game: MagicMock, system: CombatStatusEffectTickSystem
 ) -> None:
-    game.current_combat_room.combat.is_ongoing = False
+    game.current_dungeon_combat_room.combat.is_ongoing = False
     await system.execute()
     game.get_group.assert_not_called()
 
@@ -145,8 +145,8 @@ async def test_execute_skips_when_not_ongoing(
 async def test_execute_skips_when_no_rounds(
     game: MagicMock, system: CombatStatusEffectTickSystem
 ) -> None:
-    game.current_combat_room.combat.is_ongoing = True
-    game.current_combat_room.combat.rounds = []
+    game.current_dungeon_combat_room.combat.is_ongoing = True
+    game.current_dungeon_combat_room.combat.rounds = []
     await system.execute()
     game.get_group.assert_not_called()
 
@@ -155,9 +155,9 @@ async def test_execute_skips_when_no_rounds(
 async def test_execute_skips_when_round_not_completed(
     game: MagicMock, system: CombatStatusEffectTickSystem
 ) -> None:
-    game.current_combat_room.combat.is_ongoing = True
-    game.current_combat_room.combat.rounds = [MagicMock()]
-    game.current_combat_room.combat.latest_round.is_completed = False
+    game.current_dungeon_combat_room.combat.is_ongoing = True
+    game.current_dungeon_combat_room.combat.rounds = [MagicMock()]
+    game.current_dungeon_combat_room.combat.latest_round.is_completed = False
     await system.execute()
     game.get_group.assert_not_called()
 
@@ -167,9 +167,9 @@ async def test_execute_ticks_when_completed(
     ctx: Context, game: MagicMock, system: CombatStatusEffectTickSystem
 ) -> None:
     """回合完成时应推进状态效果时钟。"""
-    game.current_combat_room.combat.is_ongoing = True
-    game.current_combat_room.combat.rounds = [MagicMock()]
-    game.current_combat_room.combat.latest_round.is_completed = True
+    game.current_dungeon_combat_room.combat.is_ongoing = True
+    game.current_dungeon_combat_room.combat.rounds = [MagicMock()]
+    game.current_dungeon_combat_room.combat.latest_round.is_completed = True
     _make_actor(ctx, "英雄", [_effect("中毒", 1)])
 
     await system.execute()

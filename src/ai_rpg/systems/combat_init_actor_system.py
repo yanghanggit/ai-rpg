@@ -85,7 +85,7 @@ class CombatInitActorSystem(ExecuteProcessor):
     @override
     async def execute(self) -> None:
 
-        if not self._game.current_combat_room.combat.is_initializing:
+        if not self._game.current_dungeon_combat_room.combat.is_initializing:
             logger.debug("当前战斗状态非 initializing，跳过战斗初始化（角色侧）")
             return
 
@@ -95,7 +95,7 @@ class CombatInitActorSystem(ExecuteProcessor):
 
         assert self._game.is_player_in_dungeon_stage, "战斗初始化阶段玩家必须在场景中！"
         assert (
-            len(self._game.current_combat_room.combat.rounds or []) == 0
+            len(self._game.current_dungeon_combat_room.combat.rounds or []) == 0
         ), "战斗触发阶段不允许有回合数！"
 
         # 获取玩家实体，player 所在场景即战斗场景

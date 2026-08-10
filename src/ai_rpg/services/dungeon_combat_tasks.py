@@ -43,15 +43,15 @@ async def execute_init_combat_task(
             assert isinstance(rpg_game, DBGGame), "Invalid game type"
 
             # 验证当前副本房间是否为战斗房间
-            if not rpg_game.is_current_room_combat:
+            if not rpg_game.is_current_room_dungeon_combat:
                 raise ValueError("当前副本房间不是战斗房间")
 
             # 验证战斗状态
-            if not rpg_game.current_combat_room.combat.is_initializing:
+            if not rpg_game.current_dungeon_combat_room.combat.is_initializing:
                 raise ValueError("战斗未处于开始阶段")
 
             # 推进战斗流程处理战斗初始化
-            await rpg_game._combat_pipeline.process()
+            await rpg_game._dungeon_combat_room_pipeline.process()
 
             # 存储战斗初始化后的世界状态，便于调试和回放
             store_game(rpg_game)
@@ -102,14 +102,14 @@ async def execute_retreat_task(
             assert isinstance(rpg_game, DBGGame), "Invalid game type"
 
             # 验证当前副本房间是否为战斗房间
-            if not rpg_game.is_current_room_combat:
+            if not rpg_game.is_current_room_dungeon_combat:
                 raise ValueError("当前副本房间不是战斗房间")
 
             # 执行战斗流程让 CombatOutcomeSystem 检测到角色死亡并判定失败
-            await rpg_game._combat_pipeline.execute()
+            await rpg_game._dungeon_combat_room_pipeline.execute()
 
             # 确认已进入 post_combat 状态
-            if not rpg_game.current_combat_room.combat.is_post_combat:
+            if not rpg_game.current_dungeon_combat_room.combat.is_post_combat:
                 raise RuntimeError(
                     "战斗管线执行后未进入 post_combat 状态，撤退流程异常"
                 )
@@ -164,17 +164,17 @@ async def execute_draw_cards_task(
             assert isinstance(rpg_game, DBGGame), "Invalid game type"
 
             # 验证当前副本房间是否为战斗房间
-            if not rpg_game.is_current_room_combat:
+            if not rpg_game.is_current_room_dungeon_combat:
                 raise ValueError("当前副本房间不是战斗房间")
 
             # 验证战斗状态
-            if not rpg_game.current_combat_room.combat.is_ongoing:
+            if not rpg_game.current_dungeon_combat_room.combat.is_ongoing:
                 raise ValueError("战斗未在进行中")
 
             # 推进战斗流程处理抽牌
             # 注意: 这里会阻塞当前协程直到战斗流程处理完成
             # 但因为使用了 asyncio.create_task，这个阻塞只影响后台任务，不影响 API 响应
-            await rpg_game._combat_pipeline.process()
+            await rpg_game._dungeon_combat_room_pipeline.process()
 
             # 存储抽牌后的世界状态，便于调试和回放
             store_game(rpg_game)
@@ -225,11 +225,11 @@ async def execute_play_cards_task(
             assert isinstance(rpg_game, DBGGame), "Invalid game type"
 
             # 验证当前副本房间是否为战斗房间
-            if not rpg_game.is_current_room_combat:
+            if not rpg_game.is_current_room_dungeon_combat:
                 raise ValueError("当前副本房间不是战斗房间")
 
             # 验证战斗状态
-            if not rpg_game.current_combat_room.combat.is_ongoing:
+            if not rpg_game.current_dungeon_combat_room.combat.is_ongoing:
                 raise ValueError("战斗未在进行中")
 
             # 根据 actor_name 判断是玩家角色还是怪物，分别处理出牌逻辑
@@ -248,7 +248,7 @@ async def execute_play_cards_task(
                 raise ValueError(f"出牌失败: {message}")
 
             # 推进战斗流程处理出牌
-            await rpg_game._combat_pipeline.process()
+            await rpg_game._dungeon_combat_room_pipeline.process()
 
             # 存储出牌后的世界状态，便于调试和回放
             store_game(rpg_game)
@@ -297,11 +297,11 @@ async def execute_pass_turn_task(
             assert isinstance(rpg_game, DBGGame), "Invalid game type"
 
             # 验证当前副本房间是否为战斗房间
-            if not rpg_game.is_current_room_combat:
+            if not rpg_game.is_current_room_dungeon_combat:
                 raise ValueError("当前副本房间不是战斗房间")
 
             # 验证战斗状态
-            if not rpg_game.current_combat_room.combat.is_ongoing:
+            if not rpg_game.current_dungeon_combat_room.combat.is_ongoing:
                 raise ValueError("战斗未在进行中")
 
             # 执行过牌逻辑
@@ -310,7 +310,7 @@ async def execute_pass_turn_task(
                 raise ValueError(f"过牌失败: {message}")
 
             # 处理战斗流水线
-            await rpg_game._combat_pipeline.process()
+            await rpg_game._dungeon_combat_room_pipeline.process()
 
             # 存储过牌后的世界状态，便于调试和回放
             store_game(rpg_game)
@@ -361,11 +361,11 @@ async def execute_use_consumable_task(
             assert isinstance(rpg_game, DBGGame), "Invalid game type"
 
             # 验证当前副本房间是否为战斗房间
-            if not rpg_game.is_current_room_combat:
+            if not rpg_game.is_current_room_dungeon_combat:
                 raise ValueError("当前副本房间不是战斗房间")
 
             # 验证战斗状态
-            if not rpg_game.current_combat_room.combat.is_ongoing:
+            if not rpg_game.current_dungeon_combat_room.combat.is_ongoing:
                 raise ValueError("战斗未在进行中")
 
             # 执行使用消耗品逻辑
@@ -374,7 +374,7 @@ async def execute_use_consumable_task(
                 raise ValueError(f"使用消耗品失败: {message}")
 
             # 处理战斗流水线
-            await rpg_game._combat_pipeline.process()
+            await rpg_game._dungeon_combat_room_pipeline.process()
 
             # 存储使用消耗品后的世界状态，便于调试和回放
             store_game(rpg_game)
@@ -426,11 +426,11 @@ async def execute_use_gear_task(
             assert isinstance(rpg_game, DBGGame), "Invalid game type"
 
             # 验证当前副本房间是否为战斗房间
-            if not rpg_game.is_current_room_combat:
+            if not rpg_game.is_current_room_dungeon_combat:
                 raise ValueError("当前副本房间不是战斗房间")
 
             # 验证战斗状态
-            if not rpg_game.current_combat_room.combat.is_ongoing:
+            if not rpg_game.current_dungeon_combat_room.combat.is_ongoing:
                 raise ValueError("战斗未在进行中")
 
             # 执行使用装备逻辑
@@ -439,7 +439,7 @@ async def execute_use_gear_task(
                 raise ValueError(f"使用装备失败: {message}")
 
             # 处理战斗流水线
-            await rpg_game._combat_pipeline.process()
+            await rpg_game._dungeon_combat_room_pipeline.process()
 
             # 存储使用装备后的世界状态，便于调试和回放
             store_game(rpg_game)

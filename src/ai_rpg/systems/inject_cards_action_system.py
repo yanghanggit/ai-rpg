@@ -196,7 +196,7 @@ class InjectCardsActionSystem(ReactiveProcessor):
     #######################################################################################################################################
     @override
     async def react(self, entities: List[Entity]) -> None:
-        if not self._game.current_combat_room.combat.is_ongoing:
+        if not self._game.current_dungeon_combat_room.combat.is_ongoing:
             logger.debug("InjectCardsActionSystem: 战斗未进行中，跳过")
             return
 
@@ -218,7 +218,9 @@ class InjectCardsActionSystem(ReactiveProcessor):
             logger.debug("InjectCardsActionSystem: 无存活角色，跳过")
             return
 
-        current_round_number = len(self._game.current_combat_room.combat.rounds or [])
+        current_round_number = len(
+            self._game.current_dungeon_combat_room.combat.rounds or []
+        )
 
         prompt = _generate_inject_cards_prompt(
             actor_entities=actor_entities,

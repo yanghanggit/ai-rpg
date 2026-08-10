@@ -49,7 +49,7 @@
 # async def test_execute_skips_when_not_ongoing(
 #     game: MagicMock, system: CombatRoundCleanupSystem
 # ) -> None:
-#     game.current_combat_room.combat.is_ongoing = False
+#     game.current_dungeon_combat_room.combat.is_ongoing = False
 #     await system.execute()
 #     #game.clear_round_state.assert_not_called()
 
@@ -58,8 +58,8 @@
 # async def test_execute_skips_when_no_rounds(
 #     game: MagicMock, system: CombatRoundCleanupSystem
 # ) -> None:
-#     game.current_combat_room.combat.is_ongoing = True
-#     game.current_combat_room.combat.rounds = []
+#     game.current_dungeon_combat_room.combat.is_ongoing = True
+#     game.current_dungeon_combat_room.combat.rounds = []
 #     await system.execute()
 #     game.clear_round_state.assert_not_called()
 
@@ -68,9 +68,9 @@
 # async def test_execute_skips_when_round_not_completed(
 #     game: MagicMock, system: CombatRoundCleanupSystem
 # ) -> None:
-#     game.current_combat_room.combat.is_ongoing = True
-#     game.current_combat_room.combat.rounds = [MagicMock()]
-#     game.current_combat_room.combat.latest_round.is_completed = False
+#     game.current_dungeon_combat_room.combat.is_ongoing = True
+#     game.current_dungeon_combat_room.combat.rounds = [MagicMock()]
+#     game.current_dungeon_combat_room.combat.latest_round.is_completed = False
 #     await system.execute()
 #     game.clear_round_state.assert_not_called()
 
@@ -79,8 +79,8 @@
 # async def test_execute_clears_state_when_completed(
 #     game: MagicMock, system: CombatRoundCleanupSystem
 # ) -> None:
-#     game.current_combat_room.combat.is_ongoing = True
-#     game.current_combat_room.combat.rounds = [MagicMock()]
-#     game.current_combat_room.combat.latest_round.is_completed = True
+#     game.current_dungeon_combat_room.combat.is_ongoing = True
+#     game.current_dungeon_combat_room.combat.rounds = [MagicMock()]
+#     game.current_dungeon_combat_room.combat.latest_round.is_completed = True
 #     await system.execute()
 #     game.clear_round_state.assert_called_once()

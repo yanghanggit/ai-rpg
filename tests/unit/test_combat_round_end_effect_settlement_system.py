@@ -133,7 +133,7 @@ def test_apply_invalid_response_no_raise(mock_set_hp: MagicMock, ctx: Context) -
 async def test_execute_skips_when_not_ongoing(
     game: MagicMock, system: CombatRoundEndEffectSettlementSystem
 ) -> None:
-    game.current_combat_room.combat.is_ongoing = False
+    game.current_dungeon_combat_room.combat.is_ongoing = False
     await system.execute()
     game.get_group.assert_not_called()
 
@@ -142,8 +142,8 @@ async def test_execute_skips_when_not_ongoing(
 async def test_execute_skips_when_no_rounds(
     game: MagicMock, system: CombatRoundEndEffectSettlementSystem
 ) -> None:
-    game.current_combat_room.combat.is_ongoing = True
-    game.current_combat_room.combat.rounds = []
+    game.current_dungeon_combat_room.combat.is_ongoing = True
+    game.current_dungeon_combat_room.combat.rounds = []
     await system.execute()
     game.get_group.assert_not_called()
 
@@ -152,9 +152,9 @@ async def test_execute_skips_when_no_rounds(
 async def test_execute_skips_when_round_not_completed(
     game: MagicMock, system: CombatRoundEndEffectSettlementSystem
 ) -> None:
-    game.current_combat_room.combat.is_ongoing = True
-    game.current_combat_room.combat.rounds = [MagicMock()]
-    game.current_combat_room.combat.latest_round.is_completed = False
+    game.current_dungeon_combat_room.combat.is_ongoing = True
+    game.current_dungeon_combat_room.combat.rounds = [MagicMock()]
+    game.current_dungeon_combat_room.combat.latest_round.is_completed = False
     await system.execute()
     game.get_group.assert_not_called()
 
@@ -164,9 +164,9 @@ async def test_execute_processes_zero_health_entities_when_completed(
     ctx: Context, game: MagicMock, system: CombatRoundEndEffectSettlementSystem
 ) -> None:
     """回合完成时应并发结算 ROUND_END 效果，并调用死亡结算。"""
-    game.current_combat_room.combat.is_ongoing = True
-    game.current_combat_room.combat.rounds = [MagicMock()]
-    game.current_combat_room.combat.latest_round.is_completed = True
+    game.current_dungeon_combat_room.combat.is_ongoing = True
+    game.current_dungeon_combat_room.combat.rounds = [MagicMock()]
+    game.current_dungeon_combat_room.combat.latest_round.is_completed = True
     # 无任何持有 ROUND_END 效果的实体，chat_clients 为空列表
     with (
         patch(

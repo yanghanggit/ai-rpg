@@ -116,8 +116,8 @@ async def dungeon_advance_stage(
         )
 
         # 若当前为战斗房间，验证战斗是否处于等待阶段（即战斗已结束）
-        if rpg_game.is_current_room_combat:
-            if not rpg_game.current_combat_room.combat.is_post_combat:
+        if rpg_game.is_current_room_dungeon_combat:
+            if not rpg_game.current_dungeon_combat_room.combat.is_post_combat:
                 logger.error(
                     f"玩家 {payload.user_name} 前进下一关失败: 战斗未处于等待阶段"
                 )
@@ -126,14 +126,14 @@ async def dungeon_advance_stage(
                     detail="战斗未处于等待阶段",
                 )
 
-            if rpg_game.current_combat_room.combat.is_lost:
+            if rpg_game.current_dungeon_combat_room.combat.is_lost:
                 logger.warning(f"玩家 {payload.user_name} 战斗失败")
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
                     detail="战斗失败，无法继续",
                 )
 
-            if not rpg_game.current_combat_room.combat.is_won:
+            if not rpg_game.current_dungeon_combat_room.combat.is_won:
                 logger.error(f"玩家 {payload.user_name} 战斗状态异常: 既未胜利也未失败")
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -196,8 +196,8 @@ async def dungeon_exit(
         )
 
         # 若当前为战斗房间，验证战斗是否已结束
-        if dbg_game.is_current_room_combat:
-            if not dbg_game.current_combat_room.combat.is_post_combat:
+        if dbg_game.is_current_room_dungeon_combat:
+            if not dbg_game.current_dungeon_combat_room.combat.is_post_combat:
                 logger.error(f"玩家 {payload.user_name} 返回家园失败: 战斗未结束")
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,

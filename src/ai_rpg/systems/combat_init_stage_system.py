@@ -103,7 +103,7 @@ class CombatInitStageSystem(ExecuteProcessor):
     @override
     async def execute(self) -> None:
 
-        if not self._game.current_combat_room.combat.is_initializing:
+        if not self._game.current_dungeon_combat_room.combat.is_initializing:
             logger.debug("当前战斗状态非 initializing，跳过战斗初始化（场景侧）")
             return
 
@@ -124,9 +124,9 @@ class CombatInitStageSystem(ExecuteProcessor):
         stage_description_comp = current_stage_entity.get(StageDescriptionComponent)
 
         # 设置战斗为进行中（第一回合将由 CombatRoundTransitionSystem 创建）
-        self._game.current_combat_room.combat.transition_to_ongoing()
+        self._game.current_dungeon_combat_room.combat.transition_to_ongoing()
         assert (
-            self._game.current_combat_room.combat.is_ongoing
+            self._game.current_dungeon_combat_room.combat.is_ongoing
         ), "战斗状态转换失败，当前状态非 ONGOING！"
 
         # 参与战斗的角色实体列表

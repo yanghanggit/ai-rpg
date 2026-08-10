@@ -42,11 +42,11 @@ async def draw_cards_game(
     """为所有战斗角色抽牌并归档。需战斗进行中。"""
     terminal_game = await restore_game(world, player_session)
 
-    if not terminal_game.is_current_room_combat:
+    if not terminal_game.is_current_room_dungeon_combat:
         logger.error("draw-cards 只能在战斗房间中使用")
         return terminal_game
 
-    if not terminal_game.current_combat_room.combat.is_ongoing:
+    if not terminal_game.current_dungeon_combat_room.combat.is_ongoing:
         logger.error("draw-cards 只能在战斗进行中使用")
         return terminal_game
 
@@ -55,7 +55,7 @@ async def draw_cards_game(
         logger.error(f"激活全员抽牌失败: {message}")
         return terminal_game
 
-    await terminal_game._combat_pipeline.process()
+    await terminal_game._dungeon_combat_room_pipeline.process()
 
     store_game(terminal_game, save_dir)
     return terminal_game
@@ -73,15 +73,15 @@ async def play_cards_specified_game(
     """让指定角色打出手牌（怪物则由 AI 自动出牌）并归档。需战斗进行中且当前回合未完成。"""
     terminal_game = await restore_game(world, player_session)
 
-    if not terminal_game.is_current_room_combat:
+    if not terminal_game.is_current_room_dungeon_combat:
         logger.error("play-cards-specified 只能在战斗房间中使用")
         return terminal_game
 
-    if not terminal_game.current_combat_room.combat.is_ongoing:
+    if not terminal_game.current_dungeon_combat_room.combat.is_ongoing:
         logger.error("play-cards-specified 只能在战斗进行中使用")
         return terminal_game
 
-    last_round = terminal_game.current_combat_room.combat.latest_round
+    last_round = terminal_game.current_dungeon_combat_room.combat.latest_round
     if last_round is None or last_round.is_completed:
         logger.error("play-cards-specified 当前没有未完成的回合可供打牌")
         return terminal_game
@@ -97,9 +97,12 @@ async def play_cards_specified_game(
         logger.error(f"play-cards-specified 失败: {message}")
         return terminal_game
 
-    await terminal_game._combat_pipeline.process()
+    await terminal_game._dungeon_combat_room_pipeline.process()
 
-    if terminal_game.current_combat_room.combat.state == CombatState.POST_COMBAT:
+    if (
+        terminal_game.current_dungeon_combat_room.combat.state
+        == CombatState.POST_COMBAT
+    ):
         logger.debug("在本次处理中战斗已结束，进入后处理阶段")
 
     store_game(terminal_game, save_dir)
@@ -118,15 +121,15 @@ async def use_consumable_game(
     """让指定角色使用消耗品并归档。需战斗进行中且当前回合未完成。"""
     terminal_game = await restore_game(world, player_session)
 
-    if not terminal_game.is_current_room_combat:
+    if not terminal_game.is_current_room_dungeon_combat:
         logger.error("use-consumable 只能在战斗房间中使用")
         return terminal_game
 
-    if not terminal_game.current_combat_room.combat.is_ongoing:
+    if not terminal_game.current_dungeon_combat_room.combat.is_ongoing:
         logger.error("use-consumable 只能在战斗进行中使用")
         return terminal_game
 
-    last_round = terminal_game.current_combat_room.combat.latest_round
+    last_round = terminal_game.current_dungeon_combat_room.combat.latest_round
     if last_round is None or last_round.is_completed:
         logger.error("use-consumable 当前没有未完成的回合可供使用消耗品")
         return terminal_game
@@ -136,7 +139,7 @@ async def use_consumable_game(
         logger.error(f"use-consumable 失败: {message}")
         return terminal_game
 
-    await terminal_game._combat_pipeline.process()
+    await terminal_game._dungeon_combat_room_pipeline.process()
 
     store_game(terminal_game, save_dir)
     return terminal_game
@@ -154,15 +157,15 @@ async def use_gear_game(
     """让指定角色装备 GearItem 并归档。需战斗进行中且当前回合未完成。"""
     terminal_game = await restore_game(world, player_session)
 
-    if not terminal_game.is_current_room_combat:
+    if not terminal_game.is_current_room_dungeon_combat:
         logger.error("use-gear 只能在战斗房间中使用")
         return terminal_game
 
-    if not terminal_game.current_combat_room.combat.is_ongoing:
+    if not terminal_game.current_dungeon_combat_room.combat.is_ongoing:
         logger.error("use-gear 只能在战斗进行中使用")
         return terminal_game
 
-    last_round = terminal_game.current_combat_room.combat.latest_round
+    last_round = terminal_game.current_dungeon_combat_room.combat.latest_round
     if last_round is None or last_round.is_completed:
         logger.error("use-gear 当前没有未完成的回合可供使用装备")
         return terminal_game
@@ -172,7 +175,7 @@ async def use_gear_game(
         logger.error(f"use-gear 失败: {message}")
         return terminal_game
 
-    await terminal_game._combat_pipeline.process()
+    await terminal_game._dungeon_combat_room_pipeline.process()
 
     store_game(terminal_game, save_dir)
     return terminal_game
@@ -188,15 +191,15 @@ async def pass_turn_game(
     """让指定角色跳过本次出牌（过牌）并归档。需战斗进行中且当前回合未完成。"""
     terminal_game = await restore_game(world, player_session)
 
-    if not terminal_game.is_current_room_combat:
+    if not terminal_game.is_current_room_dungeon_combat:
         logger.error("pass-turn 只能在战斗房间中使用")
         return terminal_game
 
-    if not terminal_game.current_combat_room.combat.is_ongoing:
+    if not terminal_game.current_dungeon_combat_room.combat.is_ongoing:
         logger.error("pass-turn 只能在战斗进行中使用")
         return terminal_game
 
-    last_round = terminal_game.current_combat_room.combat.latest_round
+    last_round = terminal_game.current_dungeon_combat_room.combat.latest_round
     if last_round is None or last_round.is_completed:
         logger.error("pass-turn 当前没有未完成的回合可供过牌")
         return terminal_game
@@ -206,7 +209,7 @@ async def pass_turn_game(
         logger.error(f"pass-turn 失败: {message}")
         return terminal_game
 
-    await terminal_game._combat_pipeline.process()
+    await terminal_game._dungeon_combat_room_pipeline.process()
 
     store_game(terminal_game, save_dir)
     return terminal_game
@@ -222,12 +225,12 @@ async def retreat_game(
     # 复位游戏状态
     terminal_game = await restore_game(world, player_session)
 
-    if not terminal_game.is_current_room_combat:
+    if not terminal_game.is_current_room_dungeon_combat:
         logger.error("retreat 只能在战斗房间中使用")
         return terminal_game
 
     # 状态守卫：只能在战斗进行中撤退
-    if not terminal_game.current_combat_room.combat.is_ongoing:
+    if not terminal_game.current_dungeon_combat_room.combat.is_ongoing:
         logger.error("retreat 只能在战斗进行中使用")
         return terminal_game
 
@@ -239,7 +242,7 @@ async def retreat_game(
 
     logger.info(f"撤退动作激活成功: {message}")
 
-    await terminal_game._combat_pipeline.execute()
+    await terminal_game._dungeon_combat_room_pipeline.execute()
 
     # 最后归档
     store_game(terminal_game, save_dir)
@@ -255,7 +258,7 @@ async def collect_loot_game(
     """收取战利品至随身背包并归档。无战利品时不归档。"""
     terminal_game = await restore_game(world, player_session)
 
-    if not terminal_game.is_current_room_combat:
+    if not terminal_game.is_current_room_dungeon_combat:
         logger.error("collect-loot 只能在战斗房间中使用")
         return terminal_game
 

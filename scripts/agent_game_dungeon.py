@@ -47,16 +47,16 @@ async def next_dungeon_game(
     terminal_game = await restore_game(world, player_session)
 
     # 若当前为战斗房间，需确认战斗已结束且胜利
-    if terminal_game.is_current_room_combat:
-        if not terminal_game.current_combat_room.combat.is_post_combat:
+    if terminal_game.is_current_room_dungeon_combat:
+        if not terminal_game.current_dungeon_combat_room.combat.is_post_combat:
             logger.error("next-dungeon 只能在战斗结束后使用")
             return terminal_game
 
-        if terminal_game.current_combat_room.combat.is_lost:
+        if terminal_game.current_dungeon_combat_room.combat.is_lost:
             logger.info("英雄失败，应该返回营地")
             return terminal_game
 
-        if not terminal_game.current_combat_room.combat.is_won:
+        if not terminal_game.current_dungeon_combat_room.combat.is_won:
             assert False, "不可能出现的情况！"
 
     elif terminal_game.is_current_room_dungeon_entry:
@@ -76,7 +76,7 @@ async def next_dungeon_game(
         return terminal_game
 
     # 进入下一关卡后，驱动战斗流水线处理新关卡的初始化，包括场景描述、初始状态效果、创建新回合等
-    await terminal_game._combat_pipeline.process()
+    await terminal_game._dungeon_combat_room_pipeline.process()
 
     # 最后归档
     store_game(terminal_game, save_dir)
@@ -110,10 +110,10 @@ async def enter_dungeon_game(
         return terminal_game
 
     # 若是战斗房间则初始化战斗；入口房间运行入口管道（叙事 + 牌库生成）
-    if terminal_game.is_current_room_combat:
-        await terminal_game._combat_pipeline.process()
+    if terminal_game.is_current_room_dungeon_combat:
+        await terminal_game._dungeon_combat_room_pipeline.process()
     elif terminal_game.is_current_room_dungeon_entry:
-        await terminal_game._dungeon_entry_pipeline.process()
+        await terminal_game._dungeon_entry_room_pipeline.process()
     else:
         assert (
             terminal_game.current_dungeon.current_room is not None
@@ -142,8 +142,8 @@ async def exit_dungeon_and_return_home_game(
     terminal_game = await restore_game(world, player_session)
 
     # 若当前为战斗房间，状态守卫：只能在战斗结束后使用
-    if terminal_game.is_current_room_combat:
-        if not terminal_game.current_combat_room.combat.is_post_combat:
+    if terminal_game.is_current_room_dungeon_combat:
+        if not terminal_game.current_dungeon_combat_room.combat.is_post_combat:
             logger.error("exit-dungeon 只能在战斗结束后使用")
             return terminal_game
 

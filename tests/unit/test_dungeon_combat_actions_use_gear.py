@@ -12,8 +12,8 @@ from src.ai_rpg.services.dungeon_combat_actions import activate_use_gear
 def _make_game(*, current_actor: str, player_name: str = "player") -> MagicMock:
     game = MagicMock()
     game.is_player_in_dungeon_stage = True
-    game.current_combat_room.combat.is_ongoing = True
-    game.current_combat_room.combat.latest_round = SimpleNamespace(
+    game.current_dungeon_combat_room.combat.is_ongoing = True
+    game.current_dungeon_combat_room.combat.latest_round = SimpleNamespace(
         draw_completed=True,
         current_actor=current_actor,
     )

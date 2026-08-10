@@ -83,7 +83,7 @@ def create_home_pipeline(game: GameSession) -> RPGGameProcessPipeline:
     return processors
 
 
-def create_dungeon_entry_pipeline(
+def create_dungeon_entry_room_pipeline(
     game: GameSession,
 ) -> RPGGameProcessPipeline:
     """创建副本入口场景的流程管道（叙事 + 牌库生成，无战斗）"""
@@ -133,7 +133,7 @@ def create_dungeon_entry_pipeline(
     return processors
 
 
-def create_combat_pipeline(
+def create_dungeon_combat_room_pipeline(
     game: GameSession,
 ) -> RPGGameProcessPipeline:
     """创建地牢战斗场景的流程管道"""

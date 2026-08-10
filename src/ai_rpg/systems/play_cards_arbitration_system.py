@@ -69,7 +69,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
     @override
     async def react(self, entities: List[Entity]) -> None:
 
-        if not self._game.current_combat_room.combat.is_ongoing:
+        if not self._game.current_dungeon_combat_room.combat.is_ongoing:
             logger.debug("PlayCardsArbitrationSystem: 战斗未进行中，跳过仲裁")
             return
 
@@ -125,7 +125,9 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
         other_alive_actor_names = sorted(alive_actor_names - excluded_actor_names)
 
         # 获取当前回合数，用于仲裁提示生成
-        current_round_number = len(self._game.current_combat_room.combat.rounds or [])
+        current_round_number = len(
+            self._game.current_dungeon_combat_room.combat.rounds or []
+        )
 
         # 生成仲裁提示消息，包括出牌实体、目标实体的状态效果和装备附加属性等信息
         message = generate_combat_arbitration_prompt(
@@ -255,7 +257,9 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
         )
 
         # 广播当前回合的仲裁结果，包括战斗日志和叙事内容，通知场景中的所有实体（除当前场景实体外）
-        current_round_number = len(self._game.current_combat_room.combat.rounds or [])
+        current_round_number = len(
+            self._game.current_dungeon_combat_room.combat.rounds or []
+        )
         self._game.broadcast_to_stage(
             entity=stage_entity,
             agent_event=CombatArbitrationEvent(
@@ -346,7 +350,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                     )
 
         # 将本回合的战斗日志和叙事内容添加到当前回合的记录中，便于后续回合的回顾和游戏状态的追踪。
-        latest_round = self._game.current_combat_room.combat.latest_round
+        latest_round = self._game.current_dungeon_combat_room.combat.latest_round
         assert latest_round is not None, "current_rounds 不应为 None"
         latest_round.cards_combat_log.append(format_response.combat_log)
         latest_round.cards_narrative.append(format_response.narrative)

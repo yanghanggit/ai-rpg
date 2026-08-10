@@ -59,7 +59,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
     @override
     async def react(self, entities: List[Entity]) -> None:
 
-        if not self._game.current_combat_room.combat.is_ongoing:
+        if not self._game.current_dungeon_combat_room.combat.is_ongoing:
             logger.debug("UseConsumableItemArbitrationSystem: 战斗未进行中，跳过仲裁")
             return
 
@@ -84,7 +84,9 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
         )
 
         # 获取当前回合数，用于生成仲裁提示信息
-        current_round_number = len(self._game.current_combat_room.combat.rounds or [])
+        current_round_number = len(
+            self._game.current_dungeon_combat_room.combat.rounds or []
+        )
 
         # 获取场内其余存活角色名单（排除使用者与本次目标），供场景词缀 affixes 分配
         alive_actor_names = {
@@ -216,7 +218,9 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             ai_message=chat_client.response_ai_message,
         )
 
-        current_round_number = len(self._game.current_combat_room.combat.rounds or [])
+        current_round_number = len(
+            self._game.current_dungeon_combat_room.combat.rounds or []
+        )
         self._game.broadcast_to_stage(
             entity=stage_entity,
             agent_event=CombatArbitrationEvent(
@@ -260,7 +264,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                 apply_status_effect_patch(entity, patch.name, patch.counter)
 
         # 更新本回合的消耗品仲裁日志和计数
-        latest_round = self._game.current_combat_room.combat.latest_round
+        latest_round = self._game.current_dungeon_combat_room.combat.latest_round
         assert latest_round is not None, "latest_round 不应为 None"
         latest_round.consumable_combat_log.append(response.combat_log)
         latest_round.consumable_narrative.append(response.narrative)

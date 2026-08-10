@@ -262,7 +262,7 @@ class TestAddActorStatusEffectsActionSystemReact:
         system: AddStatusEffectsActionSystem,
     ) -> None:
         """战斗未进行中时，batch_chat 不应被调用。"""
-        mock_game.current_combat_room.combat.is_ongoing = False
+        mock_game.current_dungeon_combat_room.combat.is_ongoing = False
         entity = _make_actor_entity(context, "英雄", with_action=True)
         with patch(
             "src.ai_rpg.systems.add_status_effects_action_system.batch_chat",
@@ -279,8 +279,8 @@ class TestAddActorStatusEffectsActionSystemReact:
         system: AddStatusEffectsActionSystem,
     ) -> None:
         """2 个 actor → batch_chat 收到 2 个 client。"""
-        mock_game.current_combat_room.combat.is_ongoing = True
-        mock_game.current_combat_room.combat.rounds = [1, 2]
+        mock_game.current_dungeon_combat_room.combat.is_ongoing = True
+        mock_game.current_dungeon_combat_room.combat.rounds = [1, 2]
         mock_game.get_agent_context.return_value = MagicMock(context=[])
         actor1 = _make_actor_entity(context, "英雄", with_action=True)
         actor2 = _make_actor_entity(context, "法师", with_action=True)

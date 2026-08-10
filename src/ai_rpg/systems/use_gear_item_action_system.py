@@ -71,7 +71,7 @@ class UseGearItemActionSystem(ReactiveProcessor):
     @override
     async def react(self, entities: List[Entity]) -> None:
 
-        if not self._game.current_combat_room.combat.is_ongoing:
+        if not self._game.current_dungeon_combat_room.combat.is_ongoing:
             logger.debug("UseGearItemActionSystem: 战斗未进行中，跳过")
             return
 
@@ -151,7 +151,7 @@ class UseGearItemActionSystem(ReactiveProcessor):
         )
 
         # 向场景内所有存活角色广播装备使用通知
-        round_number = len(self._game.current_combat_room.combat.rounds)
+        round_number = len(self._game.current_dungeon_combat_room.combat.rounds)
         stage_entity = self._game.resolve_stage_entity(entity)
         assert (
             stage_entity is not None

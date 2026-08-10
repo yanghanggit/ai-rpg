@@ -68,7 +68,7 @@ def context() -> Context:
 def mock_game() -> MagicMock:
     """MagicMock DBGGame，预设战斗 ONGOING。"""
     game = MagicMock(spec=DBGGame)
-    game.current_combat_room.combat.is_ongoing = True
+    game.current_dungeon_combat_room.combat.is_ongoing = True
     return game
 
 
@@ -229,9 +229,9 @@ class TestExecute:
         self, context: Context, mock_game: MagicMock, system: CombatOutcomeSystem
     ) -> None:
         """战斗非 ONGOING 时，complete_combat / clear_round_state 均不应调用。"""
-        mock_game.current_combat_room.combat.is_ongoing = False
+        mock_game.current_dungeon_combat_room.combat.is_ongoing = False
         await system.execute()
-        mock_game.current_combat_room.combat.complete_combat.assert_not_called()
+        mock_game.current_dungeon_combat_room.combat.complete_combat.assert_not_called()
         # mock_game.clear_round_state.assert_not_called()
         mock_game.add_human_message.assert_not_called()
 
@@ -244,7 +244,7 @@ class TestExecute:
         monster = _make_actor(context, "哥布林", is_monster=True)
         self._setup(mock_game, context, {ally, monster})
         await system.execute()
-        mock_game.current_combat_room.combat.complete_combat.assert_not_called()
+        mock_game.current_dungeon_combat_room.combat.complete_combat.assert_not_called()
         # mock_game.clear_round_state.assert_not_called()
 
     @pytest.mark.asyncio
@@ -256,7 +256,7 @@ class TestExecute:
         dead_monster = _make_actor(context, "哥布林", is_monster=True, is_dead=True)
         self._setup(mock_game, context, {ally, dead_monster})
         await system.execute()
-        mock_game.current_combat_room.combat.complete_combat.assert_called_once_with(
+        mock_game.current_dungeon_combat_room.combat.complete_combat.assert_called_once_with(
             CombatResult.WIN
         )
         # mock_game.clear_round_state.assert_called_once()
@@ -281,7 +281,7 @@ class TestExecute:
         monster = _make_actor(context, "哥布林", is_monster=True)
         self._setup(mock_game, context, {dead_ally, monster})
         await system.execute()
-        mock_game.current_combat_room.combat.complete_combat.assert_called_once_with(
+        mock_game.current_dungeon_combat_room.combat.complete_combat.assert_called_once_with(
             CombatResult.LOSE
         )
         # mock_game.clear_round_state.assert_called_once()

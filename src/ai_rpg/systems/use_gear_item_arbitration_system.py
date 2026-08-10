@@ -58,7 +58,7 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
     @override
     async def react(self, entities: List[Entity]) -> None:
 
-        if not self._game.current_combat_room.combat.is_ongoing:
+        if not self._game.current_dungeon_combat_room.combat.is_ongoing:
             logger.debug("UseGearItemArbitrationSystem: 战斗未进行中，跳过仲裁")
             return
 
@@ -80,7 +80,9 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
         )
 
         # 获取当前回合的回合数，用于生成仲裁提示和与 LLM 交互
-        current_round_number = len(self._game.current_combat_room.combat.rounds or [])
+        current_round_number = len(
+            self._game.current_dungeon_combat_room.combat.rounds or []
+        )
 
         # 获取场内其余存活角色名单（排除使用者与本次目标），供场景词缀 affixes 分配
         alive_actor_names = {
@@ -209,7 +211,9 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
         )
 
         # 广播当前回合的仲裁结果，包括战斗日志和叙事内容，通知场景中的所有实体（除当前场景实体外）
-        current_round_number = len(self._game.current_combat_room.combat.rounds or [])
+        current_round_number = len(
+            self._game.current_dungeon_combat_room.combat.rounds or []
+        )
         self._game.broadcast_to_stage(
             entity=stage_entity,
             agent_event=CombatArbitrationEvent(
@@ -252,7 +256,7 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
                 apply_status_effect_patch(entity, patch.name, patch.counter)
 
         # 将本回合的装备使用战斗日志和叙事内容记录到当前副本的最新回合中，并增加装备使用计数
-        latest_round = self._game.current_combat_room.combat.latest_round
+        latest_round = self._game.current_dungeon_combat_room.combat.latest_round
         assert latest_round is not None, "latest_round 不应为 None"
         latest_round.gear_combat_log.append(response.combat_log)
         latest_round.gear_narrative.append(response.narrative)

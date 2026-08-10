@@ -41,7 +41,7 @@ source .venv/bin/activate        # macOS/Linux
 各启动脚本见 `scripts/` 目录。使用 PM2 一键启动所有服务（生产环境）：
 
 ```bash
-python scripts/setup_dev_environment.py
+python scripts/setup_demo.py
 pm2 start ecosystem.config.js
 ```
 

@@ -1,6 +1,7 @@
-"""背包、队伍与道具管理动作。
+"""背包与道具管理动作。
 
-包含所有与道具移动、队伍管理、外观更新、合成相关的游戏动作函数。
+包含所有与道具移动、外观更新、合成相关的游戏动作函数。
+（远征队 roster 相关已移至 agent_game_home.py）
 """
 
 import os
@@ -22,9 +23,6 @@ from ai_rpg.services.home_actions import (
     activate_craft_consumable,
     activate_craft_gear_item,
     activate_craft_costume_item,
-    add_party_member,
-    remove_party_member,
-    get_party_roster,
     move_item_to_inventory,
     move_item_to_storage,
     activate_wear_costume,
@@ -33,56 +31,6 @@ from ai_rpg.services.home_actions import (
 from pathlib import Path
 from typing import List
 from agent_game_core import restore_game
-
-
-###############################################################################
-async def add_party_member_game(
-    world: World,
-    player_session: PlayerSession,
-    member_name: str,
-    save_dir: Path,
-) -> DBGGame:
-    """将指定盟友加入远征队名单并归档。"""
-    terminal_game = await restore_game(world, player_session)
-
-    success, error_detail = add_party_member(terminal_game, member_name)
-    if not success:
-        logger.error(f"添加远征队成员失败: {error_detail}")
-        return terminal_game
-
-    store_game(terminal_game, save_dir)
-    logger.info(f"已将 {member_name} 加入远征队名单，存档: {save_dir}")
-    return terminal_game
-
-
-###############################################################################
-async def remove_party_member_game(
-    world: World,
-    player_session: PlayerSession,
-    member_name: str,
-    save_dir: Path,
-) -> DBGGame:
-    """将指定盟友从远征队名单移除并归档。"""
-    terminal_game = await restore_game(world, player_session)
-
-    success, error_detail = remove_party_member(terminal_game, member_name)
-    if not success:
-        logger.error(f"移除远征队成员失败: {error_detail}")
-        return terminal_game
-
-    store_game(terminal_game, save_dir)
-    logger.info(f"已将 {member_name} 从远征队名单移除，存档: {save_dir}")
-    return terminal_game
-
-
-###############################################################################
-async def get_party_roster_game(
-    world: World,
-    player_session: PlayerSession,
-) -> List[str]:
-    """返回当前远征队名单（只读，不归档）。"""
-    terminal_game = await restore_game(world, player_session)
-    return get_party_roster(terminal_game)
 
 
 ###############################################################################

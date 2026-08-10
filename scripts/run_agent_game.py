@@ -92,6 +92,9 @@ from agent_game_home import (
     enter_dungeon_game,
     generate_dungeon_game,
     stages_game,
+    add_party_member_game,
+    remove_party_member_game,
+    get_party_roster_game,
 )
 from agent_game_combat import (
     draw_cards_game,
@@ -104,10 +107,7 @@ from agent_game_combat import (
     retreat_game,
     collect_loot_game,
 )
-from agent_game_inventory import (
-    add_party_member_game,
-    remove_party_member_game,
-    get_party_roster_game,
+from agent_game_items import (
     move_item_to_inventory_game,
     move_item_to_storage_game,
     wear_costume_game,

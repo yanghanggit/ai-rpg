@@ -17,17 +17,6 @@ oauth2_scheme: Final[OAuth2PasswordBearer] = OAuth2PasswordBearer(tokenUrl="toke
 async def get_current_user(token: str = Depends(oauth2_scheme)) -> str:
     """
     获取当前认证用户（FastAPI 依赖注入函数）
-
-    验证 JWT 令牌并返回当前认证用户的用户名。
-
-    Args:
-        token: JWT 令牌字符串
-
-    Returns:
-        str: 当前认证用户的用户名
-
-    Raises:
-        HTTPException(401): 令牌无效、过期或用户不存在
     """
     # 解码并验证 JWT 令牌
     try:

@@ -42,7 +42,7 @@ class UserAccount(BaseModel):
 ########################################################################################################
 ########################################################################################################
 ########################################################################################################
-FAKE_USER = UserAccount(
+TEST_USER = UserAccount(
     username="yanghangethan@gmail.com",
     hashed_password="$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",  # 明文是 secret
     display_name="yh",
@@ -58,7 +58,7 @@ GAME_1: Final[str] = (
 ########################################################################################################
 ########################################################################################################
 ########################################################################################################
-def _save_demo_dungeons() -> None:
+def _setup_dungeons() -> None:
     """将演示副本序列化为 JSON 文件，存入 DUNGEONS_DIR"""
     logger.info("🚀 保存演示副本...")
 
@@ -75,7 +75,7 @@ def _save_demo_dungeons() -> None:
 ########################################################################################################
 ########################################################################################################
 ########################################################################################################
-def _save_demo_blueprints() -> None:
+def _setup_blueprints() -> None:
     """将演示游戏世界蓝图序列化为 JSON 文件，存入 BLUEPRINTS_DIR"""
     logger.info("🚀 保存演示游戏蓝图...")
 
@@ -88,29 +88,26 @@ def _save_demo_blueprints() -> None:
 ########################################################################################################
 ########################################################################################################
 ########################################################################################################
-def _pgsql_setup_test_user() -> None:
+def _setup_user() -> None:
     """检查并创建测试用户账号"""
     logger.info("🚀 检查并保存测试用户...")
-    if not has_user(FAKE_USER.username):
+    if not has_user(TEST_USER.username):
         save_user(
-            username=FAKE_USER.username,
-            hashed_password=FAKE_USER.hashed_password,
-            display_name=FAKE_USER.display_name,
+            username=TEST_USER.username,
+            hashed_password=TEST_USER.hashed_password,
+            display_name=TEST_USER.display_name,
         )
-        logger.info(f"测试用户 {FAKE_USER.username} 已创建")
+        logger.info(f"测试用户 {TEST_USER.username} 已创建")
     else:
-        logger.info(f"测试用户 {FAKE_USER.username} 已存在，跳过创建")
+        logger.info(f"测试用户 {TEST_USER.username} 已存在，跳过创建")
 
 
 ########################################################################################################
 ########################################################################################################
 ########################################################################################################
-def _setup_chromadb_rag_environment() -> None:
+def _setup_chromadb() -> None:
     """
     初始化 RAG 系统
-
-    清空 ChromaDB 数据库，遍历 BLUEPRINTS_DIR 下所有蓝图文件，
-    读取每个蓝图实例，使用其 knowledge_base 字段为对应的集合加载知识库。
     """
     logger.info("🚀 初始化RAG系统...")
 
@@ -174,13 +171,13 @@ def main() -> None:
 
     # 保存演示游戏蓝图
     try:
-        _save_demo_blueprints()
+        _setup_blueprints()
     except Exception as e:
         logger.error(f"❌ 保存演示游戏蓝图失败: {e}")
 
     # 保存演示副本
     try:
-        _save_demo_dungeons()
+        _setup_dungeons()
     except Exception as e:
         logger.error(f"❌ 保存演示副本失败: {e}")
 
@@ -196,7 +193,7 @@ def main() -> None:
         pgsql_ensure_database_tables()
 
         logger.info("� 设置PostgreSQL测试用户...")
-        _pgsql_setup_test_user()
+        _setup_user()
 
         logger.success("✅ PostgreSQL 初始化完成")
     except Exception as e:
@@ -205,7 +202,7 @@ def main() -> None:
     # RAG 系统相关操作
     try:
         logger.info("🚀 初始化RAG系统...")
-        _setup_chromadb_rag_environment()
+        _setup_chromadb()
         logger.success("✅ RAG 系统初始化完成")
     except Exception as e:
         logger.error(f"❌ RAG 系统初始化失败: {e}")

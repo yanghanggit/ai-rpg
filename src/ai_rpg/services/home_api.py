@@ -331,7 +331,7 @@ async def home_generate_dungeon(
 @home_api_router.post(
     path="/api/home/roster/add/v1/", response_model=HomeRosterAddResponse
 )
-async def add_party_member_endpoint(
+async def home_add_party_member(
     payload: HomeRosterAddRequest,
     game_server: CurrentGameServer,
 ) -> HomeRosterAddResponse:
@@ -358,7 +358,7 @@ async def add_party_member_endpoint(
 @home_api_router.post(
     path="/api/home/roster/remove/v1/", response_model=HomeRosterRemoveResponse
 )
-async def remove_party_member_endpoint(
+async def home_remove_party_member(
     payload: HomeRosterRemoveRequest,
     game_server: CurrentGameServer,
 ) -> HomeRosterRemoveResponse:
@@ -386,7 +386,7 @@ async def remove_party_member_endpoint(
     path="/api/home/item/move_to_inventory/v1/",
     response_model=HomeItemMoveToInventoryResponse,
 )
-async def home_item_move_to_inventory_endpoint(
+async def home_item_move_to_inventory(
     payload: HomeItemMoveToInventoryRequest,
     game_server: CurrentGameServer,
 ) -> HomeItemMoveToInventoryResponse:
@@ -420,7 +420,7 @@ async def home_item_move_to_inventory_endpoint(
     path="/api/home/item/move_to_storage/v1/",
     response_model=HomeItemMoveToStorageResponse,
 )
-async def home_item_move_to_storage_endpoint(
+async def home_item_move_to_storage(
     payload: HomeItemMoveToStorageRequest,
     game_server: CurrentGameServer,
 ) -> HomeItemMoveToStorageResponse:
@@ -452,7 +452,7 @@ async def home_item_move_to_storage_endpoint(
 @home_api_router.post(
     path="/api/home/costume/wear/v1/", response_model=HomeWearCostumeResponse
 )
-async def home_wear_costume_endpoint(
+async def home_wear_costume(
     payload: HomeWearCostumeRequest,
     game_server: CurrentGameServer,
 ) -> HomeWearCostumeResponse:
@@ -501,7 +501,7 @@ async def home_wear_costume_endpoint(
 @home_api_router.post(
     path="/api/home/costume/remove/v1/", response_model=HomeRemoveCostumeResponse
 )
-async def home_remove_costume_endpoint(
+async def home_remove_costume(
     payload: HomeRemoveCostumeRequest,
     game_server: CurrentGameServer,
 ) -> HomeRemoveCostumeResponse:
@@ -552,7 +552,7 @@ async def home_remove_costume_endpoint(
 @home_api_router.post(
     path="/api/home/craft/item/v1/", response_model=HomeCraftItemResponse
 )
-async def home_craft_item_endpoint(
+async def home_craft_item(
     payload: HomeCraftItemRequest,
     game_server: CurrentGameServer,
 ) -> HomeCraftItemResponse:
@@ -602,7 +602,7 @@ async def home_craft_item_endpoint(
 @home_api_router.post(
     path="/api/home/craft/gear/v1/", response_model=HomeCraftItemResponse
 )
-async def home_craft_gear_item_endpoint(
+async def home_craft_gear_item(
     payload: HomeCraftItemRequest,
     game_server: CurrentGameServer,
 ) -> HomeCraftItemResponse:
@@ -652,7 +652,7 @@ async def home_craft_gear_item_endpoint(
 @home_api_router.post(
     path="/api/home/craft/costume/v1/", response_model=HomeCraftItemResponse
 )
-async def home_craft_costume_item_endpoint(
+async def home_craft_costume_item(
     payload: HomeCraftItemRequest,
     game_server: CurrentGameServer,
 ) -> HomeCraftItemResponse:

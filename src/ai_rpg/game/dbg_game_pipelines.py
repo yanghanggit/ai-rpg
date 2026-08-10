@@ -83,6 +83,56 @@ def create_home_pipeline(game: GameSession) -> RPGGameProcessPipeline:
     return processors
 
 
+def create_dungeon_entry_pipeline(
+    game: GameSession,
+) -> RPGGameProcessPipeline:
+    """创建副本入口场景的流程管道（叙事 + 牌库生成，无战斗）"""
+
+    ### 不这样就循环引用
+    from .dbg_game import DBGGame
+    from ..systems.dungeon_entry_init_system import DungeonEntryInitSystem
+    from ..systems.generate_deck_action_system import GenerateDeckActionSystem
+    from ..systems.appearance_initialization_system import (
+        AppearanceInitializationSystem,
+    )
+    from ..systems.stage_description_system import (
+        StageDescriptionSystem,
+    )
+    from ..systems.epilogue_system import EpilogueSystem
+    from ..systems.prologue_system import PrologueSystem
+    from ..systems.action_cleanup_system import ActionCleanupSystem
+    from ..systems.destroy_entity_system import DestroyEntitySystem
+
+    dbg_game = cast(DBGGame, game)
+    processors = RPGGameProcessPipeline()
+
+    # 起始系统
+    processors.add(PrologueSystem(dbg_game))
+
+    # 角色外观生成系统
+    processors.add(AppearanceInitializationSystem(dbg_game))
+
+    # 入口场景描述系统
+    processors.add(StageDescriptionSystem(dbg_game))
+
+    # 入口初始化系统：建 piles + 添加 GenerateDeckAction
+    processors.add(DungeonEntryInitSystem(dbg_game))
+
+    # 牌库生成系统：LLM 生成初始卡牌 → DeckComponent + DrawPileComponent
+    processors.add(GenerateDeckActionSystem(dbg_game))
+
+    # 清除动作相关的临时状态
+    processors.add(ActionCleanupSystem(dbg_game))
+
+    # 是否需要销毁实体
+    processors.add(DestroyEntitySystem(dbg_game))
+
+    # 收尾系统
+    processors.add(EpilogueSystem(dbg_game))
+
+    return processors
+
+
 def create_combat_pipeline(
     game: GameSession,
 ) -> RPGGameProcessPipeline:
@@ -137,7 +187,7 @@ def create_combat_pipeline(
     )
     from ..systems.combat_archive_system import CombatArchiveSystem
     from ..systems.combat_loot_system import CombatLootSystem
-    from ..systems.generate_deck_action_system import GenerateDeckActionSystem
+    from ..systems.fill_draw_pile_system import FillDrawPileSystem
     from ..systems.combat_pile_teardown_system import CombatPileTeardownSystem
     from ..systems.stage_description_system import (
         StageDescriptionSystem,
@@ -173,8 +223,8 @@ def create_combat_pipeline(
     # 战斗初始化系统（场景侧）：注入战斗专用规则、转换战斗状态为进行中、推理场景状态效果依据
     processors.add(CombatInitStageSystem(dbg_game))
 
-    # 牌库生成系统（战斗开始时为每个角色生成初始牌库
-    processors.add(GenerateDeckActionSystem(dbg_game))
+    # 抽牌堆填充系统（从 DeckComponent 填 DrawPileComponent，零 LLM）
+    processors.add(FillDrawPileSystem(dbg_game))
 
     # 战斗核心动作处理相关的系统
     processors.add(DrawCardsActionSystem(dbg_game))

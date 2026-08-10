@@ -183,7 +183,6 @@ class GenerateDeckActionSystem(ReactiveProcessor):
             entity.has(GenerateDeckAction)
             and entity.has(ActorComponent)
             and entity.has(DeckComponent)
-            and entity.has(DrawPileComponent)
             and entity.has(CharacterStatsComponent)
             and not entity.has(DeathComponent)
         )
@@ -330,11 +329,10 @@ class GenerateDeckActionSystem(ReactiveProcessor):
         assert deck_comp is not None, f"{entity.name} 缺少 DeckComponent"
         deck_comp.cards.extend(cards)
 
-        # 洗牌后将本次新牌副本追加到 DrawPile（只操作本批次 cards，不受历史牌影响）
-        random.shuffle(cards)
-        draw_pile = entity.get(DrawPileComponent)
-        assert draw_pile is not None, f"{entity.name} 缺少 DrawPileComponent"
-        draw_pile.cards.extend([c.model_copy() for c in cards])
+        # GenerateDeckActionSystem 仅写 DeckComponent；DrawPileComponent 是战斗管道职责
+        assert not entity.has(
+            DrawPileComponent
+        ), f"{entity.name} 不应存在 DrawPileComponent，牌库生成阶段不应有临时牌堆"
 
         # 将本轮任务提示词与 LLM 回复写入 agent 对话历史
         self._game.add_human_message(
@@ -351,7 +349,7 @@ class GenerateDeckActionSystem(ReactiveProcessor):
         )
 
         logger.debug(
-            f"[{entity.name}] 牌库生成完成：本次 {len(cards)} 张副本已洗牌填入 DrawPile"
+            f"[{entity.name}] 牌库生成完成：本次 {len(cards)} 张"
             f"，DeckComponent 共 {len(deck_comp.cards)} 张原始牌（含本次）"
             f"：{[c.name for c in cards]}"
         )

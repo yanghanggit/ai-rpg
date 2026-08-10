@@ -10,6 +10,7 @@ from .rpg_game_pipeline_manager import RPGGameProcessPipeline
 from .rpg_game import RPGGame
 from .dbg_game_pipelines import (
     create_home_pipeline,
+    create_dungeon_entry_pipeline,
     create_combat_pipeline,
     create_dungeon_generate_pipeline,
 )
@@ -65,6 +66,11 @@ class DBGGame(RPGGame):
         # 家园流程（NPC 与玩家共用）
         self._home_pipeline: Final[RPGGameProcessPipeline] = create_home_pipeline(self)
 
+        # 副本入口流程（叙事 + 牌库生成，无战斗）
+        self._dungeon_entry_pipeline: Final[RPGGameProcessPipeline] = (
+            create_dungeon_entry_pipeline(self)
+        )
+
         # 副本战斗流程
         self._combat_pipeline: Final[RPGGameProcessPipeline] = create_combat_pipeline(
             self
@@ -77,6 +83,7 @@ class DBGGame(RPGGame):
 
         # 注册所有管道到管道管理器
         self.register_pipeline(self._home_pipeline)
+        self.register_pipeline(self._dungeon_entry_pipeline)
         self.register_pipeline(self._combat_pipeline)
         self.register_pipeline(self._dungeon_generate_pipeline)
 
@@ -124,7 +131,7 @@ class DBGGame(RPGGame):
 
     ###############################################################################################################################################
     @property
-    def current_entry_room(self) -> EntryRoom:
+    def current_dungeon_entry_room(self) -> EntryRoom:
         """断言当前处于入口房间中，返回入口房间"""
         assert self._world.dungeon is not None, "当前副本不存在"
         assert self._world.dungeon.current_room is not None, "当前副本房间不存在"
@@ -135,7 +142,7 @@ class DBGGame(RPGGame):
 
     ###############################################################################################################################################
     @property
-    def is_current_room_entry(self) -> bool:
+    def is_current_room_dungeon_entry(self) -> bool:
         """检查当前副本房间是否为入口房间"""
         if self._world.dungeon is None:
             return False

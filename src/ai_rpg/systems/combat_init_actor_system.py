@@ -135,9 +135,19 @@ class CombatInitActorSystem(ExecuteProcessor):
     def _initialize_piles_and_status_effects(self, actor_entities: Set[Entity]) -> None:
         """为所有参战角色初始化战斗临时牌堆（DrawPile / DiscardPile / ExhaustPile）与空的 StatusEffectsComponent。"""
         for actor_entity in actor_entities:
+
+            # 强制检查
             assert not actor_entity.has(
                 DrawPileComponent
-            ), f"角色 {actor_entity.name} 已存在 DrawPileComponent，战斗初始化不应重复挂载！"
+            ), f"角色 {actor_entity.name} 已有 DrawPileComponent，理论上不应该出现这种情况！如果确实出现了，请检查之前的系统是否正确清理了旧牌堆。"
+            assert not actor_entity.has(
+                DiscardPileComponent
+            ), f"角色 {actor_entity.name} 已有 DiscardPileComponent，理论上不应该出现这种情况！如果确实出现了，请检查之前的系统是否正确清理了旧牌堆。"
+            assert not actor_entity.has(
+                ExhaustPileComponent
+            ), f"角色 {actor_entity.name} 已有 ExhaustPileComponent，理论上不应该出现这种情况！如果确实出现了，请检查之前的系统是否正确清理了旧牌堆。"
+
+            # 强制初始化空的牌堆组件
             actor_entity.replace(DrawPileComponent, actor_entity.name, [])
             actor_entity.replace(DiscardPileComponent, actor_entity.name, [])
             actor_entity.replace(ExhaustPileComponent, actor_entity.name, [])

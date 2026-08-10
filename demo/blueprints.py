@@ -206,8 +206,8 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
     )
 
     # 故意让无名的 character_stats 里有一些数值，方便演示战斗初始化时的属性展示
-    # actor_wuming.character_stats.speed = 2
-    # actor_wuming.character_stats.attack = 100
+    actor_wuming.character_stats.speed = 2
+    actor_wuming.character_stats.attack = 100
 
     actor_guzhiqiu = create_guzhiqiu()
     actor_guzhiqiu.custom_item = CostumeItem(

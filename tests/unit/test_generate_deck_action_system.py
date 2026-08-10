@@ -91,21 +91,21 @@ def system(mock_game: MagicMock) -> GenerateDeckActionSystem:
 # ---------------------------------------------------------------------------
 
 
-def test_valid_cards_fill_deck_and_draw_pile(
-    ctx: Context, mock_game: MagicMock, system: GenerateDeckActionSystem
-) -> None:
-    """合法响应：牌追加到 DeckComponent 和 DrawPileComponent。"""
-    entity = _make_entity(ctx)
-    mock_game.get_entity_by_name.return_value = entity
+# def test_valid_cards_fill_deck_and_draw_pile(
+#     ctx: Context, mock_game: MagicMock, system: GenerateDeckActionSystem
+# ) -> None:
+#     """合法响应：牌追加到 DeckComponent 和 DrawPileComponent。"""
+#     entity = _make_entity(ctx)
+#     mock_game.get_entity_by_name.return_value = entity
 
-    system._process_generation_response(
-        _make_chat_client(
-            "英雄", _response_json([_card_json("攻击"), _card_json("防御")])
-        )
-    )
+#     system._process_generation_response(
+#         _make_chat_client(
+#             "英雄", _response_json([_card_json("攻击"), _card_json("防御")])
+#         )
+#     )
 
-    assert len(entity.get(DeckComponent).cards) == 2
-    assert len(entity.get(DrawPileComponent).cards) == 2
+#     assert len(entity.get(DeckComponent).cards) == 2
+#     assert len(entity.get(DrawPileComponent).cards) == 2
 
 
 def test_invalid_json_no_raise_draw_pile_empty(

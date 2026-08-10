@@ -59,7 +59,7 @@ async def next_dungeon_game(
         if not terminal_game.current_combat_room.combat.is_won:
             assert False, "不可能出现的情况！"
 
-    elif terminal_game.is_current_room_entry:
+    elif terminal_game.is_current_room_dungeon_entry:
         logger.info("当前为非战斗房间，直接进入下一关")
 
     # 获取下一房间索引和房间实例，确保存在下一房间，否则无法推进副本
@@ -109,16 +109,19 @@ async def enter_dungeon_game(
         logger.error(f"进入副本第一关失败: {error_detail}")
         return terminal_game
 
-    # 若是战斗房间则初始化战斗；入口房间仅停留在叙事场景，等待玩家手动推进
+    # 若是战斗房间则初始化战斗；入口房间运行入口管道（叙事 + 牌库生成）
     if terminal_game.is_current_room_combat:
         await terminal_game._combat_pipeline.process()
+    elif terminal_game.is_current_room_dungeon_entry:
+        await terminal_game._dungeon_entry_pipeline.process()
     else:
         assert (
             terminal_game.current_dungeon.current_room is not None
-        ), "当前房间不应为 None"
-        logger.info(
-            f"首间为 {terminal_game.current_dungeon.current_room.type!r} 房间，跳过战斗初始化"
+        ), f"当前房间为 {terminal_game.current_dungeon.current_room!r}，无法处理"
+        logger.error(
+            f"未知房间类型 {terminal_game.current_dungeon.current_room.type!r}，无法处理"
         )
+        return terminal_game
 
     # 最后归档
     store_game(terminal_game, save_dir)
@@ -144,7 +147,7 @@ async def exit_dungeon_and_return_home_game(
             logger.error("exit-dungeon 只能在战斗结束后使用")
             return terminal_game
 
-    elif terminal_game.is_current_room_entry:
+    elif terminal_game.is_current_room_dungeon_entry:
         logger.info("当前为非战斗房间，直接退出副本")
 
     # 执行退出副本流程，返回家园

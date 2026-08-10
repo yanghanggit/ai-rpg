@@ -9,7 +9,6 @@ from ..models import (
     DungeonRoomResponse,
     DungeonListResponse,
     Dungeon,
-    CombatRoom,
 )
 from ..game.config import DUNGEONS_DIR
 
@@ -100,15 +99,7 @@ async def get_dungeon_room(
             detail="当前副本没有进行中的房间",
         )
 
-    # 返回当前房间
-    if not isinstance(current_dungeon_room, CombatRoom):
-        logger.error(f"get_dungeon_room: {user_name} current room is not a CombatRoom")
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="当前房间不是战斗房间",
-        )
-
-    # 返回当前副本房间的响应对象，包含房间的关卡场景和战斗数据
+    # 返回当前副本房间的响应对象，包含房间的关卡场景（若是战斗房间则包含战斗数据）
     return DungeonRoomResponse(room=current_dungeon_room)
 
 

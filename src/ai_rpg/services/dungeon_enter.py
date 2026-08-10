@@ -114,15 +114,15 @@ def enter_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, str]:
     # 清除残留战斗状态，保底行为，此时就不应该有。
     clear_combat_state(dbg_game)
 
-    # 创建战斗实例并初始化
+    # 若是战斗房间则创建战斗实例并初始化；入口房间仅做场景传送，不创建战斗
     if isinstance(current_room, CombatRoom):
         combat = Combat(name=stage_entity.name)
         combat.state = CombatState.INITIALIZATION
         current_room.combat = combat
     else:
-        assert (
-            False
-        ), "当前房间不是战斗房间，无法创建战斗实例，请检查副本配置，功能未实现！！！！"
+        logger.info(
+            f"enter_dungeon: 首间为 {current_room.type!r} 房间，跳过战斗初始化，等待玩家手动推进"
+        )
 
     logger.info(f"enter_dungeon 完成: {dungeon.name}")
     return True, f"成功进入副本: {dungeon.name}"

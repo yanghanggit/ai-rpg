@@ -7,6 +7,7 @@ from typing import Final
 from ai_rpg.models import (
     Dungeon,
     CombatRoom,
+    EntryRoom,
     StageProfile,
     StageType,
     RPG_SYSTEM_RULES,
@@ -34,7 +35,7 @@ _KW_PAPER_DEFENSE: Final[str] = (
 )
 _KW_CINNABAR: Final[str] = (
     "朱砂侵蚀型：卡牌携带朱砂毒性效果"
-    "（通过 affixes 实现，落地为 StatusEffect），攻击造成直接伤害的同时对目标施加持续侵蚀。"
+    "（通过 affixes 实现），攻击造成直接伤害的同时对目标施加持续侵蚀。"
     "骰值 0-10 为失败，毒性微弱、仅持续极短回合；"
     "骰值 11-90 为正常，稳定施加朱砂侵蚀（目标每回合末 HP -1）；"
     "骰值 91-100 为优质，毒性深入骨髓，持续回合翻倍或每回合伤害提高。"
@@ -74,6 +75,22 @@ def create_actor_paper_doll() -> Actor:
 def create_shrine_ruins_dungeon() -> Dungeon:
     """创建坍塌庙祠副本。"""
 
+    # ── 入口叙事房间 ──
+    stage_shrine_entrance = create_stage(
+        name="场景.庙祠入口",
+        stage_profile=StageProfile(
+            name="shrine_entrance",
+            type=StageType.DUNGEON,
+            profile="""你是大傩深处一条被荒草半掩的碎石小径，尽头立着一座坍塌过半的庙祠。
+天色是介于黄昏与夜晚之间的那种灰蓝，四下无风，但路旁的枯草丛偶尔簌簌作响，像有什么极轻的东西从其间穿行。
+庙祠的山门已经完全倒塌，只剩两根石柱歪斜地插在瓦砾堆里。门后的前院在暮色中只是一个模糊的轮廓——隐约能看到倾倒的香炉和地面散落的圆形纸钱。
+空气中有一股陈旧纸张与干燥竹骨的气味，淡得像记忆一样不真实。小径在距山门废墟三步之处戛然而止，仿佛连脚下的路也不愿再靠近。""",
+        ),
+        campaign_setting=CAMPAIGN_SETTING,
+        system_rules=RPG_SYSTEM_RULES,
+    )
+
+    # ── 战斗房间 ──
     stage_shrine_courtyard = create_stage(
         name="场景.破败殿前",
         stage_profile=StageProfile(
@@ -94,6 +111,7 @@ def create_shrine_ruins_dungeon() -> Dungeon:
         name="副本.坍塌庙祠",
         premise="庙祠前院静得异常。碎裂的青石地面上散落着纸钱，纸钱的方孔在视线扫过时似乎都在微微调整方向。院角的纸扎残件与倾覆的香炉让这地方像一场进行到一半就被打断的仪式。殿内，神像正背对着你。",
         rooms=[
+            EntryRoom(stage=stage_shrine_entrance),
             CombatRoom(stage=stage_shrine_courtyard),
         ],
     )

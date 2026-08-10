@@ -29,12 +29,6 @@ from ai_rpg.services.home_actions import (
     remove_party_member,
     get_party_roster,
 )
-from ai_rpg.services.dungeon_enter import (
-    enter_dungeon,
-)
-from ai_rpg.services.dungeon_setup import (
-    setup_dungeon,
-)
 from pathlib import Path
 from agent_game_core import restore_game
 
@@ -164,33 +158,6 @@ async def switch_stage_game(
         return terminal_game
 
     await terminal_game._home_pipeline.process()
-
-    store_game(terminal_game, save_dir)
-    return terminal_game
-
-
-###############################################################################
-async def enter_dungeon_game(
-    world: World,
-    player_session: PlayerSession,
-    dungeon_name: str,
-    save_dir: Path,
-) -> DBGGame:
-    """进入指定副本第一关并归档。需处于家园模式。"""
-    terminal_game = await restore_game(world, player_session)
-
-    success, error_detail = setup_dungeon(terminal_game, dungeon_name)
-    if not success:
-        logger.error(f"副本实体创建失败: {error_detail}")
-        return terminal_game
-
-    success, error_detail = enter_dungeon(terminal_game, terminal_game.current_dungeon)
-    if not success:
-        logger.error(f"进入副本第一关失败: {error_detail}")
-        return terminal_game
-
-    # 进入副本后直接执行一次 combat_pipeline，完成战斗的初始推理与叙事生成（场景描述、角色状态效果、第一回合及行动顺序）
-    await terminal_game._combat_pipeline.process()
 
     store_game(terminal_game, save_dir)
     return terminal_game

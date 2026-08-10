@@ -1,5 +1,5 @@
 """
-副本生命周期 API 路由模块（关卡推进、退出等与具体房间类型无关的流程接口）
+副本生命周期 API 路由模块（进入、关卡推进、退出等与具体房间类型无关的流程接口）
 """
 
 from fastapi import APIRouter, HTTPException, status
@@ -11,15 +11,24 @@ from ..models import (
     DungeonAdvanceStageResponse,
     DungeonExitRequest,
     DungeonExitResponse,
+    HomeEnterDungeonRequest,
+    HomeEnterDungeonResponse,
 )
 from .dungeon_advance import (
     advance_dungeon,
+)
+from .dungeon_enter import (
+    enter_dungeon,
 )
 from .dungeon_exit import (
     exit_dungeon,
 )
 from .dungeon_setup import (
+    setup_dungeon,
     teardown_dungeon,
+)
+from .home_tasks import (
+    _validate_player_at_home,
 )
 from ..game.game_server import GameServer
 
@@ -106,54 +115,52 @@ async def dungeon_advance_stage(
             game_server=game_server,
         )
 
-        # 验证战斗是否处于等待阶段（即战斗已结束，胜利或失败）
-        if not rpg_game.current_combat_room.combat.is_post_combat:
-            logger.error(f"玩家 {payload.user_name} 前进下一关失败: 战斗未处于等待阶段")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="战斗未处于等待阶段",
-            )
-
-        if rpg_game.current_combat_room.combat.is_won:
-
-            # 获取下一房间索引和房间实例，确保存在下一房间，否则无法推进副本
-            next_room_index = rpg_game.current_dungeon.current_room_index + 1
-            next_room = rpg_game.current_dungeon.get_room(next_room_index)
-            if next_room is None:
-                logger.error(f"玩家 {payload.user_name} 副本前进失败，没有更多房间")
+        # 若当前为战斗房间，验证战斗是否处于等待阶段（即战斗已结束）
+        if rpg_game.is_current_room_combat:
+            if not rpg_game.current_combat_room.combat.is_post_combat:
+                logger.error(
+                    f"玩家 {payload.user_name} 前进下一关失败: 战斗未处于等待阶段"
+                )
                 raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail="副本已全部通关，请返回营地",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="战斗未处于等待阶段",
                 )
 
-            # 推进副本到下一房间前，先检查下一房间是否存在，若不存在则抛出异常
-            success, msg = advance_dungeon(rpg_game, rpg_game.current_dungeon)
-            if not success:
-                logger.error(f"玩家 {payload.user_name} 副本前进失败: {msg}")
+            if rpg_game.current_combat_room.combat.is_lost:
+                logger.warning(f"玩家 {payload.user_name} 战斗失败")
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
-                    detail=msg,
+                    detail="战斗失败，无法继续",
                 )
 
-            # 推进副本到下一房间后，返回成功消息
-            return DungeonAdvanceStageResponse(message="已前进到下一关")
+            if not rpg_game.current_combat_room.combat.is_won:
+                logger.error(f"玩家 {payload.user_name} 战斗状态异常: 既未胜利也未失败")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="战斗状态异常",
+                )
 
-        elif rpg_game.current_combat_room.combat.is_lost:
-
-            # 玩家战斗失败，无法推进副本
-            logger.warning(f"玩家 {payload.user_name} 战斗失败")
+        # 获取下一房间索引和房间实例，确保存在下一房间，否则无法推进副本
+        next_room_index = rpg_game.current_dungeon.current_room_index + 1
+        next_room = rpg_game.current_dungeon.get_room(next_room_index)
+        if next_room is None:
+            logger.error(f"玩家 {payload.user_name} 副本前进失败，没有更多房间")
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="战斗失败，无法继续",
+                detail="副本已全部通关，请返回营地",
             )
-        else:
 
-            # 战斗状态异常，既未胜利也未失败
-            logger.error(f"玩家 {payload.user_name} 战斗状态异常: 既未胜利也未失败")
+        # 推进副本到下一房间
+        success, msg = advance_dungeon(rpg_game, rpg_game.current_dungeon)
+        if not success:
+            logger.error(f"玩家 {payload.user_name} 副本前进失败: {msg}")
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="战斗状态异常",
+                status_code=status.HTTP_409_CONFLICT,
+                detail=msg,
             )
+
+        # 推进副本到下一房间后，返回成功消息
+        return DungeonAdvanceStageResponse(message="已前进到下一关")
 
 
 ###################################################################################################################################################################
@@ -188,13 +195,14 @@ async def dungeon_exit(
             game_server=game_server,
         )
 
-        # 验证战斗是否已结束
-        if not dbg_game.current_combat_room.combat.is_post_combat:
-            logger.error(f"玩家 {payload.user_name} 返回家园失败: 战斗未结束")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="只能在战斗结束后回家",
-            )
+        # 若当前为战斗房间，验证战斗是否已结束
+        if dbg_game.is_current_room_combat:
+            if not dbg_game.current_combat_room.combat.is_post_combat:
+                logger.error(f"玩家 {payload.user_name} 返回家园失败: 战斗未结束")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="只能在战斗结束后回家",
+                )
 
         # 退出副本并返回家园
         success, msg = exit_dungeon(dbg_game, dbg_game._world.dungeon)
@@ -213,6 +221,61 @@ async def dungeon_exit(
         # 返回
         return DungeonExitResponse(
             message="成功返回家园",
+        )
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
+@dungeon_lifecycle_api_router.post(
+    path="/api/home/enter_dungeon/v1/", response_model=HomeEnterDungeonResponse
+)
+async def dungeon_enter(
+    payload: HomeEnterDungeonRequest,
+    game_server: CurrentGameServer,
+) -> HomeEnterDungeonResponse:
+    """
+    副本进入接口（从家园传送至副本第一关）
+    """
+
+    logger.info(f"/api/home/enter_dungeon/v1/: user={payload.user_name}")
+
+    # 获取房间并用每玩家锁避免并发状态竞争
+    current_room = game_server.get_room(payload.user_name)
+    if current_room is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="没有登录，请先登录",
+        )
+
+    async with current_room._lock:
+        # 验证前置条件（玩家必须处于家园模式）
+        rpg_game = await _validate_player_at_home(
+            payload.user_name,
+            game_server,
+        )
+
+        # 第一步：从文件加载副本并创建实体（幂等）
+        success, error_detail = setup_dungeon(rpg_game, payload.dungeon_name)
+        if not success:
+            logger.error(f"玩家 {payload.user_name} 副本实体创建失败: {error_detail}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="副本实体创建失败",
+            )
+
+        # 第二步：组建远征队并进入第一关
+        success, error_detail = enter_dungeon(rpg_game, rpg_game.current_dungeon)
+        if not success:
+            logger.error(f"玩家 {payload.user_name} 进入副本失败: {error_detail}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="进入副本失败",
+            )
+
+        # 返回传送成功响应
+        return HomeEnterDungeonResponse(
+            message=payload.model_dump_json(),
         )
 
 

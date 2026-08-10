@@ -41,6 +41,7 @@ from ..models import (
     AnyItem,
     PlayerSession,
     CombatRoom,
+    EntryRoom,
 )
 from ..entitas import Matcher, Entity
 
@@ -120,6 +121,27 @@ class DBGGame(RPGGame):
         if self._world.dungeon.current_room is None:
             return False
         return isinstance(self._world.dungeon.current_room, CombatRoom)
+
+    ###############################################################################################################################################
+    @property
+    def current_entry_room(self) -> EntryRoom:
+        """断言当前处于入口房间中，返回入口房间"""
+        assert self._world.dungeon is not None, "当前副本不存在"
+        assert self._world.dungeon.current_room is not None, "当前副本房间不存在"
+        assert isinstance(
+            self._world.dungeon.current_room, EntryRoom
+        ), "当前副本房间不是入口房间"
+        return self._world.dungeon.current_room
+
+    ###############################################################################################################################################
+    @property
+    def is_current_room_entry(self) -> bool:
+        """检查当前副本房间是否为入口房间"""
+        if self._world.dungeon is None:
+            return False
+        if self._world.dungeon.current_room is None:
+            return False
+        return isinstance(self._world.dungeon.current_room, EntryRoom)
 
     ###############################################################################################################################################
     def get_storage_entity(self) -> Optional[Entity]:

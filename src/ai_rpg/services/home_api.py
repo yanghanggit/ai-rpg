@@ -30,20 +30,12 @@ from .home_actions import (
     move_item_to_inventory,
     move_item_to_storage,
 )
-from .dungeon_enter import (
-    enter_dungeon,
-)
-from .dungeon_setup import (
-    setup_dungeon,
-)
 from ..models import (
     HomePlayerActionRequest,
     HomePlayerActionResponse,
     HomePlayerActionType,
     HomeAdvanceRequest,
     HomeAdvanceResponse,
-    HomeEnterDungeonRequest,
-    HomeEnterDungeonResponse,
     HomeGenerateDungeonRequest,
     HomeGenerateDungeonResponse,
     HomeRosterAddRequest,
@@ -207,61 +199,6 @@ async def home_advance(
         status=TaskStatus.RUNNING.value,
         message="home pipeline 任务已启动，请通过会话消息查询结果",
     )
-
-
-###################################################################################################################################################################
-###################################################################################################################################################################
-###################################################################################################################################################################
-@home_api_router.post(
-    path="/api/home/enter_dungeon/v1/", response_model=HomeEnterDungeonResponse
-)
-async def home_enter_dungeon(
-    payload: HomeEnterDungeonRequest,
-    game_server: CurrentGameServer,
-) -> HomeEnterDungeonResponse:
-    """
-    家园传送副本接口
-    """
-
-    logger.info(f"/api/home/enter_dungeon/v1/: user={payload.user_name}")
-
-    # 获取房间并用每玩家锁避免并发状态竞争
-    current_room = game_server.get_room(payload.user_name)
-    if current_room is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="没有登录，请先登录",
-        )
-
-    async with current_room._lock:
-        # 验证前置条件并获取游戏实例
-        rpg_game = await _validate_player_at_home(
-            payload.user_name,
-            game_server,
-        )
-
-        # 第一步：从文件加载副本并创建实体（幂等）
-        success, error_detail = setup_dungeon(rpg_game, payload.dungeon_name)
-        if not success:
-            logger.error(f"玩家 {payload.user_name} 副本实体创建失败: {error_detail}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="副本实体创建失败",
-            )
-
-        # 第二步：组建远征队并进入第一关
-        success, error_detail = enter_dungeon(rpg_game, rpg_game.current_dungeon)
-        if not success:
-            logger.error(f"玩家 {payload.user_name} 进入副本失败: {error_detail}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="进入副本失败",
-            )
-
-        # 返回传送成功响应
-        return HomeEnterDungeonResponse(
-            message=payload.model_dump_json(),
-        )
 
 
 ###################################################################################################################################################################

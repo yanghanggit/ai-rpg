@@ -1,6 +1,6 @@
-"""副本战斗动作与生命周期。
+"""副本战斗动作。
 
-包含所有在副本模式（战斗中或战斗后）执行的游戏动作函数。
+包含所有在战斗房间中执行的游戏动作函数（抽牌、出牌、过牌、撤退、使用物品、收取战利品等）。
 """
 
 import os
@@ -27,15 +27,6 @@ from ai_rpg.services.dungeon_combat_actions import (
     activate_use_consumable,
     activate_use_gear,
     collect_combat_loot,
-)
-from ai_rpg.services.dungeon_advance import (
-    advance_dungeon,
-)
-from ai_rpg.services.dungeon_exit import (
-    exit_dungeon,
-)
-from ai_rpg.services.dungeon_setup import (
-    teardown_dungeon,
 )
 from pathlib import Path
 from typing import List
@@ -215,82 +206,6 @@ async def pass_turn_game(
         logger.error(f"pass-turn 失败: {message}")
         return terminal_game
 
-    await terminal_game._combat_pipeline.process()
-
-    store_game(terminal_game, save_dir)
-    return terminal_game
-
-
-###############################################################################
-async def exit_dungeon_and_return_home_game(
-    world: World,
-    player_session: PlayerSession,
-    save_dir: Path,
-) -> DBGGame:
-    """结束副本返回家园并归档。需战斗已结束（无论胜负）。"""
-    terminal_game = await restore_game(world, player_session)
-
-    if not terminal_game.is_current_room_combat:
-        logger.error("exit-dungeon 只能在战斗房间中使用")
-        return terminal_game
-
-    # 状态守卫：只能在战斗结束后使用
-    if not terminal_game.current_combat_room.combat.is_post_combat:
-        logger.error("exit-dungeon 只能在战斗结束后使用")
-        return terminal_game
-
-    # 执行退出副本流程，返回家园
-    success, msg = exit_dungeon(terminal_game, terminal_game._world.dungeon)
-    if not success:
-        logger.error(f"exit_dungeon 失败: {msg}")
-        return terminal_game
-
-    # 销毁副本实体并重置副本数据
-    teardown_dungeon(terminal_game, terminal_game._world.dungeon)
-
-    # 最后归档
-    store_game(terminal_game, save_dir)
-    return terminal_game
-
-
-###############################################################################
-async def next_dungeon_game(
-    world: World,
-    player_session: PlayerSession,
-    save_dir: Path,
-) -> DBGGame:
-    """进入副本下一关并归档。需前一关已胜利且存在下一关。"""
-    terminal_game = await restore_game(world, player_session)
-
-    if not terminal_game.is_current_room_combat:
-        logger.error("next-dungeon 只能在战斗房间中使用")
-        return terminal_game
-
-    if not terminal_game.current_combat_room.combat.is_post_combat:
-        logger.error("next-dungeon 只能在战斗结束后使用")
-        return terminal_game
-
-    if terminal_game.current_combat_room.combat.is_lost:
-        logger.info("英雄失败，应该返回营地")
-        return terminal_game
-
-    if not terminal_game.current_combat_room.combat.is_won:
-        assert False, "不可能出现的情况！"
-
-    # 获取下一房间索引和房间实例，确保存在下一房间，否则无法推进副本
-    next_room_index = terminal_game.current_dungeon.current_room_index + 1
-    next_room = terminal_game.current_dungeon.get_room(next_room_index)
-    if next_room is None:
-        logger.error("副本前进失败，没有更多房间")
-        return terminal_game
-
-    # 推进副本到下一房间，更新当前房间索引和状态
-    success, msg = advance_dungeon(terminal_game, terminal_game.current_dungeon)
-    if not success:
-        logger.error(f"advance_dungeon 失败: {msg}")
-        return terminal_game
-
-    # 进入下一关卡后，驱动战斗流水线处理新关卡的初始化，包括场景描述、初始状态效果、创建新回合等
     await terminal_game._combat_pipeline.process()
 
     store_game(terminal_game, save_dir)

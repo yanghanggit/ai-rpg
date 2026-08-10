@@ -89,7 +89,6 @@ from agent_game_home import (
     advance_game,
     speak_game,
     switch_stage_game,
-    enter_dungeon_game,
     generate_dungeon_game,
     stages_game,
     add_party_member_game,
@@ -102,10 +101,13 @@ from agent_game_combat import (
     pass_turn_game,
     use_consumable_game,
     use_gear_game,
-    exit_dungeon_and_return_home_game,
-    next_dungeon_game,
     retreat_game,
     collect_loot_game,
+)
+from agent_game_dungeon import (
+    enter_dungeon_game,
+    next_dungeon_game,
+    exit_dungeon_and_return_home_game,
 )
 from agent_game_items import (
     move_item_to_inventory_game,

@@ -8,6 +8,8 @@ from ..models import (
     DungeonAdvanceStageRequest,
     DungeonAdvanceStageResponse,
     DungeonCombatDrawCardsRequest,
+    DungeonEntryInitRequest,
+    DungeonEntryInitResponse,
     DungeonCombatDrawCardsResponse,
     DungeonCombatInitRequest,
     DungeonCombatInitResponse,
@@ -340,6 +342,22 @@ async def dungeon_advance_stage(
         )
         response.raise_for_status()
         return DungeonAdvanceStageResponse.model_validate(response.json())
+
+
+async def dungeon_entry_init(
+    user_name: str, game_name: str
+) -> DungeonEntryInitResponse:
+    """触发入口房间初始化（叙事 + 牌库生成），返回后台任务ID。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.post(
+            server_config.base_url + "/api/dungeon/entry/init/v1/",
+            json=DungeonEntryInitRequest(
+                user_name=user_name,
+                game_name=game_name,
+            ).model_dump(),
+        )
+        response.raise_for_status()
+        return DungeonEntryInitResponse.model_validate(response.json())
 
 
 async def dungeon_combat_collect_loot(

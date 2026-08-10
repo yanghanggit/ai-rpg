@@ -9,6 +9,7 @@ from textual.widgets import Static
 from .base import BaseGameScreen
 from .server_client import fetch_dungeon_state
 from .combat_room import CombatRoomScreen
+from .dungeon_entry_room import DungeonEntryRoomScreen
 from ..models import CombatRoom, EntryRoom, DungeonRoom
 
 
@@ -53,11 +54,11 @@ class DungeonRoomRouterRoom(BaseGameScreen):
         if isinstance(room, CombatRoom):
             logger.info("DungeonRoomRouterRoom._route: 路由至 CombatRoomScreen")
             self.app.switch_screen(CombatRoomScreen())
-        elif isinstance(room, (EntryRoom, DungeonRoom)):
-            logger.info(
-                f"DungeonRoomRouterRoom._route: 路由至非战斗房间 type={room.type}"
-            )
-            # 非战斗房间（入口/叙事场景）：显示场景描述，提示玩家推进
+        elif isinstance(room, EntryRoom):
+            logger.info("DungeonRoomRouterRoom._route: 路由至 EntryRoomScreen")
+            self.app.switch_screen(DungeonEntryRoomScreen())
+        elif isinstance(room, DungeonRoom):
+            logger.info(f"DungeonRoomRouterRoom._route: 未知基类房间 type={room.type}")
             self.query_one(Static).update(
                 f"[bold cyan]📍 {room.stage.name}[/]\n\n"
                 f"{room.stage.stage_profile.profile}\n\n"

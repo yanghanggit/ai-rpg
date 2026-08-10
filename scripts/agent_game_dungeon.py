@@ -18,16 +18,16 @@ from ai_rpg.models import PlayerSession
 from ai_rpg.game.dbg_game import DBGGame
 from ai_rpg.models import World
 from ai_rpg.game.dbg_store import store_game
-from ai_rpg.services.dungeon_advance import (
+from ai_rpg.services.dungeon_advance_action import (
     advance_dungeon,
 )
-from ai_rpg.services.dungeon_exit import (
+from ai_rpg.services.dungeon_exit_action import (
     exit_dungeon,
 )
-from ai_rpg.services.dungeon_enter import (
+from ai_rpg.services.dungeon_enter_action import (
     enter_dungeon,
 )
-from ai_rpg.services.dungeon_setup import (
+from ai_rpg.services.dungeon_setup_action import (
     setup_dungeon,
     teardown_dungeon,
 )

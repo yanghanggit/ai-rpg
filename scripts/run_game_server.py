@@ -20,6 +20,9 @@ from ai_rpg.services.dungeon_lifecycle_api import (
 from ai_rpg.services.dungeon_combat_api import (
     dungeon_combat_api_router,
 )
+from ai_rpg.services.dungeon_entry_api import (
+    dungeon_entry_api_router,
+)
 from ai_rpg.services.home_api import home_api_router
 from ai_rpg.services.login import login_api_router
 from ai_rpg.services.new_game import new_game_api_router
@@ -99,6 +102,7 @@ app.include_router(router=new_game_api_router)
 app.include_router(router=home_api_router)
 app.include_router(router=dungeon_lifecycle_api_router)
 app.include_router(router=dungeon_combat_api_router)
+app.include_router(router=dungeon_entry_api_router)
 
 
 def main() -> None:

@@ -14,16 +14,16 @@ from ..models import (
     HomeEnterDungeonRequest,
     HomeEnterDungeonResponse,
 )
-from .dungeon_advance import (
+from .dungeon_advance_action import (
     advance_dungeon,
 )
-from .dungeon_enter import (
+from .dungeon_enter_action import (
     enter_dungeon,
 )
-from .dungeon_exit import (
+from .dungeon_exit_action import (
     exit_dungeon,
 )
-from .dungeon_setup import (
+from .dungeon_setup_action import (
     setup_dungeon,
     teardown_dungeon,
 )

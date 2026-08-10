@@ -393,6 +393,24 @@ class DungeonCombatUseGearItemResponse(BaseModel):
 
 
 @final
+class DungeonEntryInitRequest(BaseModel):
+    user_name: str
+    game_name: str
+
+
+@final
+class DungeonEntryInitResponse(BaseModel):
+    task_id: str
+    status: str
+    message: str
+
+
+################################################################################################################
+################################################################################################################
+################################################################################################################
+
+
+@final
 class DungeonCombatDrawCardsRequest(BaseModel):
     user_name: str
     game_name: str

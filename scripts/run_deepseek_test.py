@@ -279,6 +279,41 @@ async def test_tool_call_full_round() -> None:
     print("✅ 完整两转工具调用验证通过")
 
 
+async def test_tool_call_multi() -> None:
+    """测试单次 response 内 LLM 同时调用多个工具"""
+    print("\n=== 测试单次 response 内一次调用多个工具（multi tool_calls）===")
+    import json
+
+    client = DeepSeekClient(
+        name="test_tool_multi",
+        prompt="北京和上海分别是什么天气？",
+        context=[_SYSTEM],
+        tools=[_WEATHER_TOOL],
+    )
+    await client.chat()
+
+    print(f"finish_reason : {client.finish_reason}")
+    print(f"tool_calls 数量: {len(client.tool_calls)}")
+    for tc in client.tool_calls:
+        args = json.loads(tc.function.arguments)
+        print(f"  工具名称 : {tc.function.name}")
+        print(f"  调用参数 : {args}")
+        print(f"  调用 ID   : {tc.id}")
+
+    assert (
+        client.finish_reason == "tool_calls"
+    ), f"预期 finish_reason='tool_calls'，实际得到='{client.finish_reason}'"
+    assert (
+        len(client.tool_calls) >= 2
+    ), f"预期单次 response 内调用多个工具（>=2），实际 {len(client.tool_calls)} 个"
+
+    cities = {json.loads(tc.function.arguments).get("city") for tc in client.tool_calls}
+    assert {"北京", "上海"}.issubset(
+        cities
+    ), f"预期工具调用覆盖北京和上海，实际城市集合: {cities}"
+    print("✅ 单次 response 内多工具调用验证通过")
+
+
 async def test_tool_call_with_thinking() -> None:
     """测试 tool calling + thinking 模式：agent_loop 驱动，LLM 思考后调用工具并回复"""
     print("\n=== 测试 tool calling + thinking ===")
@@ -334,6 +369,7 @@ async def _run_async_tests() -> None:
     await test_model_matrix()
     await test_tool_call_single()
     await test_tool_call_full_round()
+    await test_tool_call_multi()
     await test_tool_call_with_thinking()
     await test_batch_agent_loop()
 

@@ -140,7 +140,7 @@ FINAL_STATS_DESCRIPTION: Final[
     str
 ] = """### final_stats
 
-必须包含**所有相关角色**——即使 HP 无变化也必须列出（hp 保持原值），格式：
+必须包含**本次行动的行动者与所有目标**——即使 HP 无变化也须列出并保持原值，不得包含场内无关角色，格式：
 ```json
 {"角色全名": {"hp": 数值, "status_effect_patches": []}}
 ```

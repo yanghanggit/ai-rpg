@@ -25,20 +25,17 @@ from demo.settings import (
 
 # ── 卡牌关键词常量 ──────────────────────────────────────────────────────────────────────────────
 
-_KW_PAPER_ATTACK: Final[str] = (
-    "攻击型：造成直接伤害的基础攻击卡牌，以竹签指尖刺划或纸刃割裂为攻击方式，"
-    "不携带特殊效果（affixes 与 modifiers 均为 []），伤害值适中稳定，无骰值依赖。"
+_KW_ATTACK: Final[str] = (
+    "攻击型：造成直接伤害的基础攻击卡牌，不携带特殊效果，伤害值适中稳定，无骰值依赖。"
 )
-_KW_PAPER_DEFENSE: Final[str] = (
-    "防御型：纸人躯体以竹骨纸面偏转攻击，以提升自身防御、减少受到的伤害为核心的基础卡牌，无骰值依赖。"
-    "通过 affixes 实现（modifiers 为 []）：携带一个防御类延迟词缀，"
-    "落地为持续一回合的防御提升状态效果，本回合后续受击减伤，回合末到期。"
+_KW_DEFENSE: Final[str] = (
+    "防御型：以提升自身防御、减少受到的伤害为核心的基础卡牌，无骰值依赖。"
+    "为自身添加一个防御的增益状态，持续一回合。"
 )
-_KW_CINNABAR: Final[str] = (
-    "朱砂侵蚀型：卡牌携带朱砂毒性效果"
-    "（通过 affixes 实现），攻击造成直接伤害的同时对目标施加持续侵蚀。"
+_KW_EROSION: Final[str] = (
+    "持续侵蚀型：卡牌携带毒性效果，攻击造成直接伤害的同时对目标施加持续侵蚀。"
     "骰值 0-10 为失败，毒性微弱、仅持续极短回合；"
-    "骰值 11-90 为正常，稳定施加朱砂侵蚀（目标每回合末 HP -1）；"
+    "骰值 11-90 为正常，稳定施加毒性侵蚀（目标每回合末 HP -1）；"
     "骰值 91-100 为优质，毒性深入骨髓，持续回合翻倍或每回合伤害提高。"
 )
 
@@ -60,12 +57,12 @@ def create_actor_paper_doll() -> Actor:
         system_rules=RPG_SYSTEM_RULES,
         keywords=[
             # 2 张基础攻击 — 不参考骰值
-            _KW_PAPER_ATTACK,
-            _KW_PAPER_ATTACK,
+            _KW_ATTACK,
+            _KW_ATTACK,
             # 1 张基础防御 — 不参考骰值
-            _KW_PAPER_DEFENSE,
-            # 1 张朱砂侵蚀 — 骰值驱动强度，走 affixes → StatusEffect 链
-            _KW_CINNABAR,
+            _KW_DEFENSE,
+            # 1 张持续侵蚀 — 骰值驱动强度
+            _KW_EROSION,
         ],
     )
 

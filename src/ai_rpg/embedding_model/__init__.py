@@ -3,9 +3,9 @@
 """
 
 from .sentence_transformer import (
-    multilingual_model,
+    embedding_model,
 )
 
 __all__ = [
-    "multilingual_model",
+    "embedding_model",
 ]

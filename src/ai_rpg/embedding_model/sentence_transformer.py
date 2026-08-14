@@ -19,7 +19,8 @@ try:
             f"模型缓存目录不存在: {cache_model_path}，请先运行 scripts/download_sentence_transformers_models.py 下载模型"
         )
 
-    multilingual_model: SentenceTransformer = SentenceTransformer(str(cache_model_path))
+    # 全局嵌入模型实例：将文本编码为向量，供 RAG 语义检索使用
+    embedding_model: SentenceTransformer = SentenceTransformer(str(cache_model_path))
     logger.info("✅ [EMBEDDING] 预加载多语言模型成功")
 
 except Exception as e:

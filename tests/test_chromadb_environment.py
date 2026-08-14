@@ -11,7 +11,7 @@ from pathlib import Path
 import chromadb
 import requests
 
-from src.ai_rpg.embedding_model import multilingual_model
+from src.ai_rpg.embedding_model import embedding_model
 
 # 模型缓存路径，与 src/ai_rpg/embedding_model/sentence_transformer.py 保持一致
 cache_model_path = (
@@ -44,7 +44,7 @@ class TestChromaDBEnvironment:
     def test_model_encodes(self) -> None:
         """多语言模型应能对中英文文本编码。"""
         texts = ["这是一个测试文档", "another test document"]
-        embeddings = multilingual_model.encode(texts)
+        embeddings = embedding_model.encode(texts)
         assert embeddings.shape[0] == len(texts)
 
     def test_chromadb_add_and_query(self) -> None:
@@ -61,14 +61,14 @@ class TestChromaDBEnvironment:
             collection = client.create_collection(collection_name)
 
             documents = ["这是一个测试文档", "这是另一个测试文档"]
-            embeddings = multilingual_model.encode(documents)
+            embeddings = embedding_model.encode(documents)
             collection.add(
                 embeddings=embeddings.tolist(),
                 documents=documents,
                 ids=["doc1", "doc2"],
             )
 
-            query_embedding = multilingual_model.encode(["测试文档"])
+            query_embedding = embedding_model.encode(["测试文档"])
             results = collection.query(
                 query_embeddings=query_embedding.tolist(),
                 n_results=1,

@@ -12,20 +12,20 @@ import sys
 from typing import List, Callable, Any
 
 # 导入预加载的模型实例
-from src.ai_rpg.embedding_model import multilingual_model
+from src.ai_rpg.embedding_model import embedding_model
 
 
 # Global fixtures for model caching to improve test performance
 @pytest.fixture(scope="session")
-def multilingual_model_fixture() -> "SentenceTransformer":
+def embedding_model_fixture() -> "SentenceTransformer":
     """Get the pre-loaded multilingual model."""
     print(
         "\n✅ Using pre-loaded multilingual model (paraphrase-multilingual-MiniLM-L12-v2)..."
     )
     from sentence_transformers import SentenceTransformer
 
-    assert isinstance(multilingual_model, SentenceTransformer)
-    return multilingual_model
+    assert isinstance(embedding_model, SentenceTransformer)
+    return embedding_model
 
 
 @pytest.fixture(scope="session")
@@ -50,22 +50,22 @@ class TestSentenceTransformersBasic:
         except ImportError as e:
             pytest.fail(f"Failed to import sentence-transformers: {e}")
 
-    def test_load_model_basic(self, multilingual_model_fixture: Any) -> None:
+    def test_load_model_basic(self, embedding_model_fixture: Any) -> None:
         """Test basic model functionality using cached model."""
-        assert multilingual_model_fixture is not None
-        assert hasattr(multilingual_model_fixture, "encode")
+        assert embedding_model_fixture is not None
+        assert hasattr(embedding_model_fixture, "encode")
 
-    def test_encode_single_sentence(self, multilingual_model_fixture: Any) -> None:
+    def test_encode_single_sentence(self, embedding_model_fixture: Any) -> None:
         """Test encoding a single sentence using cached model."""
         test_sentence = "This is a test sentence."
-        embedding = multilingual_model_fixture.encode(test_sentence)
+        embedding = embedding_model_fixture.encode(test_sentence)
 
         assert isinstance(embedding, np.ndarray)
         assert len(embedding.shape) == 1  # 1D array for single sentence
         assert embedding.shape[0] > 0  # Non-empty embedding
         assert not np.isnan(embedding).any()  # No NaN values
 
-    def test_encode_multiple_sentences(self, multilingual_model_fixture: Any) -> None:
+    def test_encode_multiple_sentences(self, embedding_model_fixture: Any) -> None:
         """Test encoding multiple sentences using cached model."""
         test_sentences = [
             "This is the first sentence.",
@@ -73,7 +73,7 @@ class TestSentenceTransformersBasic:
             "This is a completely different sentence.",
         ]
 
-        embeddings = multilingual_model_fixture.encode(test_sentences)
+        embeddings = embedding_model_fixture.encode(test_sentences)
 
         assert isinstance(embeddings, np.ndarray)
         assert len(embeddings.shape) == 2  # 2D array for multiple sentences
@@ -82,7 +82,7 @@ class TestSentenceTransformersBasic:
         assert not np.isnan(embeddings).any()  # No NaN values
 
     def test_similarity_computation(
-        self, multilingual_model_fixture: Any, cos_sim_func: Callable[..., Any]
+        self, embedding_model_fixture: Any, cos_sim_func: Callable[..., Any]
     ) -> None:
         """Test computing similarity between sentences using cached model."""
         # Similar sentences
@@ -92,9 +92,7 @@ class TestSentenceTransformersBasic:
         # Different sentence
         sentence3 = "The weather is very nice today."
 
-        embeddings = multilingual_model_fixture.encode(
-            [sentence1, sentence2, sentence3]
-        )
+        embeddings = embedding_model_fixture.encode([sentence1, sentence2, sentence3])
 
         # Compute similarities
         sim_1_2 = cos_sim_func(embeddings[0], embeddings[1])
@@ -126,10 +124,10 @@ class TestSentenceTransformersGameContext:
         ]
 
     def test_chinese_text_encoding(
-        self, game_knowledge_base: List[str], multilingual_model_fixture: Any
+        self, game_knowledge_base: List[str], embedding_model_fixture: Any
     ) -> None:
         """Test encoding Chinese game content using cached model."""
-        embeddings = multilingual_model_fixture.encode(game_knowledge_base)
+        embeddings = embedding_model_fixture.encode(game_knowledge_base)
 
         assert isinstance(embeddings, np.ndarray)
         assert embeddings.shape[0] == len(game_knowledge_base)
@@ -139,12 +137,12 @@ class TestSentenceTransformersGameContext:
     def test_semantic_search_simulation(
         self,
         game_knowledge_base: List[str],
-        multilingual_model_fixture: Any,
+        embedding_model_fixture: Any,
         cos_sim_func: Callable[..., Any],
     ) -> None:
         """Test simulating semantic search functionality using cached model."""
         # Encode knowledge base
-        kb_embeddings = multilingual_model_fixture.encode(game_knowledge_base)
+        kb_embeddings = embedding_model_fixture.encode(game_knowledge_base)
 
         # Test queries
         queries = [
@@ -154,7 +152,7 @@ class TestSentenceTransformersGameContext:
         ]
 
         for query in queries:
-            query_embedding = multilingual_model_fixture.encode([query])
+            query_embedding = embedding_model_fixture.encode([query])
             similarities = cos_sim_func(query_embedding, kb_embeddings)[0]
 
             # Find most similar document
@@ -172,16 +170,16 @@ class TestSentenceTransformersGameContext:
     def test_document_ranking(
         self,
         game_knowledge_base: List[str],
-        multilingual_model_fixture: Any,
+        embedding_model_fixture: Any,
         cos_sim_func: Callable[..., Any],
     ) -> None:
         """Test ranking documents by relevance using cached model."""
         # Encode knowledge base
-        kb_embeddings = multilingual_model_fixture.encode(game_knowledge_base)
+        kb_embeddings = embedding_model_fixture.encode(game_knowledge_base)
 
         # Query about sword/weapon
         query = "武器和剑的信息"
-        query_embedding = multilingual_model_fixture.encode([query])
+        query_embedding = embedding_model_fixture.encode([query])
 
         similarities = cos_sim_func(query_embedding, kb_embeddings)[0]
 
@@ -200,7 +198,7 @@ class TestSentenceTransformersGameContext:
 class TestSentenceTransformersPerformance:
     """Performance and resource usage tests."""
 
-    def test_model_memory_usage(self, multilingual_model_fixture: Any) -> None:
+    def test_model_memory_usage(self, embedding_model_fixture: Any) -> None:
         """Test that model doesn't consume excessive memory using cached model."""
         import psutil
         import os
@@ -210,7 +208,7 @@ class TestSentenceTransformersPerformance:
         current_memory = process.memory_info().rss / 1024 / 1024  # MB
 
         # Use the model to ensure it's active
-        test_embedding = multilingual_model_fixture.encode("Memory test sentence")
+        test_embedding = embedding_model_fixture.encode("Memory test sentence")
 
         # Memory should be reasonable (models are already loaded)
         if current_memory >= 2000:
@@ -220,7 +218,7 @@ class TestSentenceTransformersPerformance:
 
         assert test_embedding.shape[0] > 0  # Ensure model works
 
-    def test_encoding_speed(self, multilingual_model_fixture: Any) -> None:
+    def test_encoding_speed(self, embedding_model_fixture: Any) -> None:
         """Test encoding speed for reasonable performance using cached model."""
         import time
 
@@ -229,7 +227,7 @@ class TestSentenceTransformersPerformance:
 
         # Measure encoding time (model already loaded)
         start_time = time.time()
-        embeddings = multilingual_model_fixture.encode(sentences)
+        embeddings = embedding_model_fixture.encode(sentences)
         end_time = time.time()
 
         encoding_time = end_time - start_time
@@ -244,32 +242,32 @@ class TestSentenceTransformersPerformance:
 class TestSentenceTransformersErrorHandling:
     """Test error handling and edge cases."""
 
-    def test_empty_input(self, multilingual_model_fixture: Any) -> None:
+    def test_empty_input(self, embedding_model_fixture: Any) -> None:
         """Test handling of empty input using cached model."""
         # Empty string
-        embedding = multilingual_model_fixture.encode("")
+        embedding = embedding_model_fixture.encode("")
         assert isinstance(embedding, np.ndarray)
         assert embedding.shape[0] > 0
 
         # Empty list
-        embeddings = multilingual_model_fixture.encode([])
+        embeddings = embedding_model_fixture.encode([])
         assert isinstance(embeddings, np.ndarray)
         assert embeddings.shape[0] == 0
 
-    def test_very_long_text(self, multilingual_model_fixture: Any) -> None:
+    def test_very_long_text(self, embedding_model_fixture: Any) -> None:
         """Test handling of very long text using cached model."""
         # Very long text (beyond typical token limits)
         long_text = "This is a test sentence. " * 1000
 
         try:
-            embedding = multilingual_model_fixture.encode(long_text)
+            embedding = embedding_model_fixture.encode(long_text)
             assert isinstance(embedding, np.ndarray)
             assert embedding.shape[0] > 0
         except Exception as e:
             # If it fails, it should fail gracefully
             assert "token" in str(e).lower() or "length" in str(e).lower()
 
-    def test_special_characters(self, multilingual_model_fixture: Any) -> None:
+    def test_special_characters(self, embedding_model_fixture: Any) -> None:
         """Test handling of special characters and mixed languages using cached model."""
         special_texts = [
             "Hello 世界! 🌍",
@@ -280,7 +278,7 @@ class TestSentenceTransformersErrorHandling:
         ]
 
         for text in special_texts:
-            embedding = multilingual_model_fixture.encode(text)
+            embedding = embedding_model_fixture.encode(text)
             assert isinstance(embedding, np.ndarray)
             assert embedding.shape[0] > 0
             assert not np.isnan(embedding).any()
@@ -299,19 +297,19 @@ if __name__ == "__main__":
             print("1. Testing import...")
             from sentence_transformers import SentenceTransformer
             from sentence_transformers.util import cos_sim
-            from src.ai_rpg.embedding_model import multilingual_model
+            from src.ai_rpg.embedding_model import embedding_model
 
             print("✅ Import successful")
 
             # Test 2: Use pre-loaded model
             print("\n2. Testing pre-loaded model...")
-            assert isinstance(multilingual_model, SentenceTransformer)
+            assert isinstance(embedding_model, SentenceTransformer)
             print("✅ Pre-loaded model is ready")
 
             # Test 3: Encode single sentence
             print("\n3. Testing single sentence encoding...")
             sentence = "This is a test sentence."
-            embedding = multilingual_model.encode(sentence)
+            embedding = embedding_model.encode(sentence)
             print(f"✅ Encoded sentence: '{sentence}'")
             print(f"   Embedding shape: {embedding.shape}")
             print(f"   Embedding type: {type(embedding)}")
@@ -323,7 +321,7 @@ if __name__ == "__main__":
                 "This is the second sentence.",
                 "This is a different sentence.",
             ]
-            embeddings = multilingual_model.encode(sentences)
+            embeddings = embedding_model.encode(sentences)
             print(f"✅ Encoded {len(sentences)} sentences")
             print(f"   Embeddings shape: {embeddings.shape}")
 
@@ -352,11 +350,11 @@ if __name__ == "__main__":
         try:
             from sentence_transformers import SentenceTransformer
             from sentence_transformers.util import cos_sim
-            from src.ai_rpg.embedding_model import multilingual_model
+            from src.ai_rpg.embedding_model import embedding_model
 
             # Use pre-loaded multilingual model for Chinese content
             print("1. Using pre-loaded multilingual model...")
-            assert isinstance(multilingual_model, SentenceTransformer)
+            assert isinstance(embedding_model, SentenceTransformer)
             print("✅ Pre-loaded multilingual model is ready")
 
             # Game knowledge base
@@ -369,7 +367,7 @@ if __name__ == "__main__":
             ]
 
             print(f"\n2. Encoding knowledge base ({len(knowledge_base)} documents)...")
-            kb_embeddings = multilingual_model.encode(knowledge_base)
+            kb_embeddings = embedding_model.encode(knowledge_base)
             print(f"✅ Knowledge base encoded: {kb_embeddings.shape}")
 
             # Test queries
@@ -382,7 +380,7 @@ if __name__ == "__main__":
             print(f"\n3. Testing semantic search with {len(queries)} queries...")
             for i, query in enumerate(queries):
                 print(f"\n   Query {i+1}: '{query}'")
-                query_embedding = multilingual_model.encode([query])
+                query_embedding = embedding_model.encode([query])
                 similarities = cos_sim(query_embedding, kb_embeddings)[0]
 
                 # Find best match
@@ -411,16 +409,16 @@ if __name__ == "__main__":
         try:
             import time
             from sentence_transformers import SentenceTransformer
-            from src.ai_rpg.embedding_model import multilingual_model
+            from src.ai_rpg.embedding_model import embedding_model
 
             print("1. Testing encoding speed with pre-loaded model...")
-            assert isinstance(multilingual_model, SentenceTransformer)
+            assert isinstance(embedding_model, SentenceTransformer)
 
             # Test sentences
             test_sentences = [f"This is test sentence number {i}." for i in range(50)]
 
             start_time = time.time()
-            embeddings = multilingual_model.encode(test_sentences)
+            embeddings = embedding_model.encode(test_sentences)
             end_time = time.time()
 
             encoding_time = end_time - start_time
@@ -501,12 +499,12 @@ if __name__ == "__main__":
 
         try:
             from sentence_transformers import SentenceTransformer
-            from src.ai_rpg.embedding_model import multilingual_model
+            from src.ai_rpg.embedding_model import embedding_model
 
-            assert isinstance(multilingual_model, SentenceTransformer)
+            assert isinstance(embedding_model, SentenceTransformer)
 
             test_sentence = "Hello, world!"
-            embedding = multilingual_model.encode(test_sentence)
+            embedding = embedding_model.encode(test_sentence)
 
             print(f"✅ Successfully encoded sentence: '{test_sentence}'")
             print(f"✅ Embedding shape: {embedding.shape}")

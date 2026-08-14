@@ -8,7 +8,7 @@ from ..models import (
 )
 from loguru import logger
 from ..embedding_model import (
-    multilingual_model,
+    embedding_model,
 )
 from ..chroma import get_custom_collection, search_documents
 from ..game.dbg_game import DBGGame
@@ -102,7 +102,7 @@ class QueryActionSystem(ReactiveProcessor):
             docs, scores = search_documents(
                 query=original_message,
                 collection=get_custom_collection(self._game.name),
-                embedding_model=multilingual_model,
+                embedding_model=embedding_model,
                 top_k=self._top_k,
             )
 

@@ -19,7 +19,7 @@ from chromadb.api.models.Collection import Collection
 
 from src.ai_rpg.chroma import chroma_client
 from src.ai_rpg.chroma import add_documents, search_documents
-from src.ai_rpg.embedding_model import multilingual_model
+from src.ai_rpg.embedding_model import embedding_model
 
 
 # ============================================================================
@@ -90,7 +90,7 @@ def _init_test_rag_system() -> bool:
     logger.info(f"开始加载测试知识库，共 {len(documents_list)} 个文档")
     return add_documents(
         collection=collection,
-        embedding_model=multilingual_model,
+        embedding_model=embedding_model,
         documents=documents_list,
         metadatas=metadatas_list,
         ids=ids_list,
@@ -100,7 +100,7 @@ def _init_test_rag_system() -> bool:
 def _test_search(query: str, top_k: int = 5) -> Tuple[List[str], List[float]]:
     """测试专用的语义搜索函数"""
     collection = _get_test_collection()
-    return search_documents(query, collection, multilingual_model, top_k)
+    return search_documents(query, collection, embedding_model, top_k)
 
 
 class TestChromaDBRAGIntegration:
@@ -118,7 +118,7 @@ class TestChromaDBRAGIntegration:
         logger.info(f"✅ ChromaDB collection创建成功: {type(collection)}")
 
         # 获取嵌入模型
-        assert multilingual_model is not None, "预加载的多语言模型不可用"
+        assert embedding_model is not None, "预加载的多语言模型不可用"
 
         # 测试完整初始化
         success = _init_test_rag_system()
@@ -263,7 +263,7 @@ class TestChromaDBRAGIntegration:
             collection_count = collection.count()
 
         # 验证全局嵌入模型已加载
-        assert multilingual_model is not None, "预加载的多语言模型不可用"
+        assert embedding_model is not None, "预加载的多语言模型不可用"
 
         # 验证集合中有数据
         expected_count = sum(len(docs) for docs in TEST_KNOWLEDGE_BASE.values())

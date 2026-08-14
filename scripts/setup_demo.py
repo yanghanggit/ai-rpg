@@ -28,7 +28,7 @@ from ai_rpg.pgsql import (
 )
 from ai_rpg.pgsql.user_operations import has_user, save_user
 from ai_rpg.chroma import reset_client, get_custom_collection, add_documents
-from ai_rpg.embedding_model.sentence_transformer import multilingual_model
+from ai_rpg.embedding_model.sentence_transformer import embedding_model
 
 
 #######################################################################################################
@@ -149,7 +149,7 @@ def _setup_chromadb() -> None:
         logger.info(f"📚 为 {blueprint.name} 加载知识库...")
         success = add_documents(
             collection=get_custom_collection(blueprint.name),
-            embedding_model=multilingual_model,
+            embedding_model=embedding_model,
             documents=documents_list,
             metadatas=metadatas_list,
             ids=ids_list,

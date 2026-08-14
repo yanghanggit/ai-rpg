@@ -119,7 +119,7 @@ def search_documents(
         docs, scores = search_documents(
             query="魔法系统是什么",
             collection=get_default_collection(),
-            embedding_model=multilingual_model,
+            embedding_model=embedding_model,
             top_k=5
         )
     """

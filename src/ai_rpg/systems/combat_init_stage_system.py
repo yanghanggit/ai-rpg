@@ -1,4 +1,4 @@
-"""战斗初始化系统（场景侧）：为战斗场景注入战斗专用规则，将战斗状态转换为进行中，并推理场景状态效果依据。"""
+"""战斗初始化系统（场景侧）：为战斗场景注入战斗专用规则，将战斗状态转换为进行中，并设计场景词缀。"""
 
 from typing import Dict, Final, List, Optional, final, override, Set
 from pydantic import BaseModel
@@ -19,7 +19,7 @@ from ..utils import extract_json
 ###################################################################################################################################################################
 @final
 class CombatInitAffixesResponse(BaseModel):
-    """战斗初始化阶段场景词缀判定响应"""
+    """战斗初始化阶段场景词缀设计响应"""
 
     affixes: Dict[str, List[str]] = (
         {}
@@ -32,11 +32,11 @@ def _generate_combat_init_interaction_prompt(
     stage_description: str,
     actor_entities: Set[Entity],
 ) -> str:
-    """生成战斗初始化阶段场景状态效果判定提示词"""
+    """生成战斗初始化阶段场景词缀设计提示词"""
 
     actor_lines = "\n".join(f"- {actor.name}" for actor in actor_entities)
 
-    return f"""# 战斗初始化 — 场景状态效果判定
+    return f"""# 战斗初始化 — 场景词缀设计
 
 ## 场景叙事
 
@@ -75,11 +75,11 @@ def _generate_compressed_combat_init_interaction_prompt(
     stage_description: str,
     actor_entities: Set[Entity],
 ) -> str:
-    """生成压缩版战斗初始化阶段场景状态效果判定提示词（仅动态感知部分，省略静态规则/格式说明）"""
+    """生成压缩版战斗初始化阶段场景词缀设计提示词（仅动态感知部分，省略静态规则/格式说明）"""
 
     actor_lines = "\n".join(f"- {actor.name}" for actor in actor_entities)
 
-    return f"""# 战斗初始化 — 场景状态效果判定
+    return f"""# 战斗初始化 — 场景词缀设计
 
 ## 场景叙事
 
@@ -93,7 +93,7 @@ def _generate_compressed_combat_init_interaction_prompt(
 ###################################################################################################################################################################
 @final
 class CombatInitStageSystem(ExecuteProcessor):
-    """战斗初始化系统（场景侧）：注入战斗专用规则、转换战斗状态为进行中、推理场景状态效果依据。"""
+    """战斗初始化系统（场景侧）：注入战斗专用规则、转换战斗状态为进行中、设计场景词缀。"""
 
     def __init__(self, game: DBGGame, use_compressed_prompt: bool = True) -> None:
         self._game: Final[DBGGame] = game
@@ -133,7 +133,7 @@ class CombatInitStageSystem(ExecuteProcessor):
         actor_entities = get_alive_actors_in_stage(self._game, player_entity)
         assert len(actor_entities) > 0, "不可能出现没人参与战斗的情况！"
 
-        # 让 stage agent 推理一次，判定战斗开始时是否存在可转化为状态效果的场景依据；
+        # 让 stage agent 扮演策划，设计一次战斗开始时的场景词缀；
         # 若有，则直接为受影响角色追加 AddStatusEffectsAction，交由 AddStatusEffectsActionSystem 生成具体状态效果；
         # 本阶段不产生任何塞牌可能性。
         prompt = _generate_combat_init_interaction_prompt(
@@ -157,20 +157,20 @@ class CombatInitStageSystem(ExecuteProcessor):
             context=self._game.get_agent_context(current_stage_entity).context,
         )
 
-        logger.debug(f"[{current_stage_entity.name}] 战斗初始化场景状态效果判定开始")
+        logger.debug(f"[{current_stage_entity.name}] 战斗初始化场景词缀设计开始")
 
         # 发起 LLM 请求，捕获异常以防止整个战斗初始化流程崩溃
         try:
             await chat_client.chat()
         except Exception as e:
             logger.error(
-                f"[{current_stage_entity.name}] 战斗初始化场景状态效果判定 LLM 请求失败: {e}"
+                f"[{current_stage_entity.name}] 战斗初始化场景词缀设计 LLM 请求失败: {e}"
             )
             return
 
         if chat_client.response_ai_message is None:
             logger.warning(
-                f"[{current_stage_entity.name}] 战斗初始化场景状态效果判定 LLM 响应为空，跳过"
+                f"[{current_stage_entity.name}] 战斗初始化场景词缀设计 LLM 响应为空，跳过"
             )
             return
 
@@ -185,7 +185,7 @@ class CombatInitStageSystem(ExecuteProcessor):
 
         except Exception as e:
             logger.error(
-                f"[{current_stage_entity.name}] 解析战斗初始化场景状态效果判定响应失败: {e}"
+                f"[{current_stage_entity.name}] 解析战斗初始化场景词缀设计响应失败: {e}"
             )
             logger.error(f"原始响应: {chat_client.response_content}")
             return
@@ -213,7 +213,7 @@ class CombatInitStageSystem(ExecuteProcessor):
 
         # 若 LLM 判定存在场景词缀依据，则直接为受影响角色追加 AddStatusEffectsAction
         if not response.affixes:
-            logger.debug(f"[{current_stage_entity.name}] 战斗初始化判定无场景词缀依据")
+            logger.debug(f"[{current_stage_entity.name}] 战斗初始化设计无场景词缀依据")
             return
 
         for actor_name, hints in response.affixes.items():

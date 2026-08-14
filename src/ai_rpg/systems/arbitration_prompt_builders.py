@@ -35,7 +35,6 @@ class ArbitrationResponse(BaseModel):
     combat_log: str
     final_stats: Dict[str, ArbitrationEntityFinalStats]
     narrative: str
-    affixes: Dict[str, List[str]] = {}
 
 
 #######################################################################################################################################
@@ -137,27 +136,11 @@ def build_combat_arbitration_effects_lines(
     return lines
 
 
-def build_other_alive_actors_lines(other_alive_actor_names: List[str]) -> str:
-    """构建"场内其余存活角色"段落，供仲裁 LLM 在 affixes 中选择场景词缀的分配目标。"""
-    if not other_alive_actor_names:
-        return "- 无"
-    return "\n".join(f"- {name}" for name in other_alive_actor_names)
-
-
-AFFIXES_DESCRIPTION: Final[
-    str
-] = """### affixes
-
-字典，键为受场景交互影响的角色全名（须取自"场内其余存活角色"或本次行动的出牌者/目标），值为该角色对应的场景词缀（affix）字符串列表。
-判断规则：仅当本次行动的 **narrative 叙事中涉及与已存在场景要素的物理交互**（如搅起沙尘、触发机关、破坏地面物件等），且该交互**合理推断可对某些角色产生状态效果**时，为每个受影响角色各生成一条词缀文本（格式：`[场景] 具体描述`，20-40 字，描述场景要素及可能产生的效果倾向，作为触发信号交由下游状态效果生成系统转化为具体 StatusEffect）；
-可同时影响多个角色，也可以不影响出牌者/使用者自身；无场景词缀依据时输出空对象 `{}`。"""
-
-
 FINAL_STATS_DESCRIPTION: Final[
     str
 ] = """### final_stats
 
-必须包含**所有相关角色**，格式：
+必须包含**所有相关角色**——即使 HP 无变化也必须列出（hp 保持原值），格式：
 ```json
 {"角色全名": {"hp": 数值, "status_effect_patches": []}}
 ```
@@ -180,7 +163,7 @@ CALC_RULES_SECTION: Final[
     str
 ] = """## 计算规则
 
-**卡牌出牌**：单段有效伤害 = max(1, damage_dealt − 目标防御)（最低保底 1），共 hit_count 段；出牌者 HP 已为 0 则跳过结算；当卡牌描述涉及自身减伤/护盾，或仲裁状态效果含反伤规则时，结合上下文决定是否使用出牌者防御。
+**卡牌出牌**：单段有效伤害 = max(1, damage_dealt − 目标防御)（最低保底 1），共 hit_count 段；出牌者 HP 已为 0 则跳过结算。
 **装备穿戴**：stat_bonuses 已由系统确定性写入，无需重复计算；仅处理 modifiers 词缀对目标 HP 的叠加影响。
 **消耗品使用**：依物品描述中明确写明的数值计算；描述模糊时给出合理推断并体现在 narrative 中。
 
@@ -238,7 +221,6 @@ def generate_combat_arbitration_prompt(
     target_arbitration_effects: Dict[str, List[StatusEffect]],
     actor_gear_modifiers: List[str],
     target_gear_modifiers: Dict[str, List[str]],
-    other_alive_actor_names: List[str],
 ) -> str:
     target_lines = build_target_stats_lines(
         target_stats, target_gear_modifiers, show_defense=True
@@ -246,7 +228,6 @@ def generate_combat_arbitration_prompt(
     arbitration_effects_lines = build_combat_arbitration_effects_lines(
         actor_name, actor_arbitration_effects, target_arbitration_effects
     )
-    other_actors_lines = build_other_alive_actors_lines(other_alive_actor_names)
     spread = build_spread_sections(card, targets)
 
     modifiers = card.modifiers
@@ -278,10 +259,6 @@ def generate_combat_arbitration_prompt(
 
 {target_lines}
 
-## 场内其余存活角色
-
-{other_actors_lines}
-
 ## 仲裁状态效果
 
 {arbitration_effects_lines}
@@ -294,12 +271,9 @@ def generate_combat_arbitration_prompt(
 {{
   "combat_log": "字符串",
   "final_stats": {{}},
-  "narrative": "战斗演出",
-  "affixes": {{}}
+  "narrative": "战斗演出"
 }}
 ```
-
-{AFFIXES_DESCRIPTION}
 
 ### combat_log（简名 = 全名最后一段）
 
@@ -403,14 +377,12 @@ def generate_gear_arbitration_prompt(
     target_stats: Dict[str, CharacterStats],
     current_round_number: int,
     target_arbitration_effects: Dict[str, List[StatusEffect]],
-    other_alive_actor_names: List[str],
 ) -> str:
     """生成装备仲裁提示词（完整版）。"""
     target_lines = build_target_stats_lines(target_stats)
     arbitration_effects_lines = build_arbitration_effects_lines(
         target_arbitration_effects
     )
-    other_actors_lines = build_other_alive_actors_lines(other_alive_actor_names)
     modifiers_line = (
         "\n- 即时修正词缀：\n" + "\n".join(f"  - {m}" for m in item.modifiers)
         if item.modifiers
@@ -429,10 +401,6 @@ def generate_gear_arbitration_prompt(
 
 {target_lines}
 
-## 场内其余存活角色
-
-{other_actors_lines}
-
 ## 仲裁状态效果
 
 {arbitration_effects_lines}
@@ -445,12 +413,9 @@ def generate_gear_arbitration_prompt(
 {{
   "combat_log": "字符串",
   "final_stats": {{}},
-  "narrative": "演出描述",
-  "affixes": {{}}
+  "narrative": "演出描述"
 }}
 ```
-
-{AFFIXES_DESCRIPTION}
 
 ### combat_log（简名 = 全名最后一段）
 
@@ -522,14 +487,12 @@ def generate_consumable_arbitration_prompt(
     current_round_number: int,
     target_arbitration_effects: Dict[str, List[StatusEffect]],
     target_gear_modifiers: Dict[str, List[str]],
-    other_alive_actor_names: List[str],
 ) -> str:
     """生成消耗品仲裁提示词（完整版）。"""
     target_lines = build_target_stats_lines(target_stats, target_gear_modifiers)
     arbitration_effects_lines = build_arbitration_effects_lines(
         target_arbitration_effects
     )
-    other_actors_lines = build_other_alive_actors_lines(other_alive_actor_names)
 
     modifiers = item.modifiers
     modifiers_line = (
@@ -557,10 +520,6 @@ def generate_consumable_arbitration_prompt(
 
 {target_lines}
 
-## 场内其余存活角色
-
-{other_actors_lines}
-
 ## 仲裁状态效果
 
 {arbitration_effects_lines}
@@ -573,12 +532,9 @@ def generate_consumable_arbitration_prompt(
 {{
   "combat_log": "字符串",
   "final_stats": {{}},
-  "narrative": "演出描述",
-  "affixes": {{}}
+  "narrative": "演出描述"
 }}
 ```
-
-{AFFIXES_DESCRIPTION}
 
 ### combat_log（简名 = 全名最后一段）
 

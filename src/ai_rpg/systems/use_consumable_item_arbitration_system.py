@@ -13,9 +13,7 @@ from ..game.dbg_combat_processor import (
     collect_target_character_stats,
     collect_target_gear_modifiers,
     compute_character_stats,
-    get_alive_actors_in_stage,
     set_character_hp,
-    wrap_scene_hints_as_affixes,
 )
 from ..game.dbg_combat_processor import process_zero_health_entities
 from ..models import (
@@ -88,14 +86,6 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             self._game.current_dungeon_combat_room.combat.rounds or []
         )
 
-        # 获取场内其余存活角色名单（排除使用者与本次目标），供场景词缀 affixes 分配
-        alive_actor_names = {
-            entity.name
-            for entity in get_alive_actors_in_stage(self._game, actor_entity)
-        }
-        excluded_actor_names = set(target_stats.keys()) | {actor_entity.name}
-        other_alive_actor_names = sorted(alive_actor_names - excluded_actor_names)
-
         # 生成仲裁提示信息，包括当前行动、目标属性、回合数、目标状态效果和装备附加属性
         message = generate_consumable_arbitration_prompt(
             actor_name=actor_entity.name,
@@ -105,7 +95,6 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             current_round_number=current_round_number,
             target_arbitration_effects=target_arbitration_effects,
             target_gear_modifiers=target_gear_modifiers,
-            other_alive_actor_names=other_alive_actor_names,
         )
 
         # 生成压缩后的仲裁提示信息，用于在需要时向 LLM 提供更简洁的上下文
@@ -184,12 +173,6 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                 if self._game.get_entity_by_name(entity_name) is None:
                     raise ValueError(
                         f"final_stats 中的实体不存在于游戏中: {entity_name}"
-                    )
-
-            for affix_target_name, _ in response.affixes.items():
-                if self._game.get_entity_by_name(affix_target_name) is None:
-                    raise ValueError(
-                        f"affixes 中的实体不存在于游戏中: {affix_target_name}"
                     )
 
         except Exception as e:
@@ -284,19 +267,3 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                 logger.debug(f"[{entity_name}] 消耗品仲裁后添加 AddStatusEffectsAction")
         else:
             logger.debug("消耗品 affixes 为空，跳过 AddStatusEffectsAction")
-
-        # 根据 response.affixes 直接为受影响角色追加 AddStatusEffectsAction
-        for affix_target_name, affix_texts in response.affixes.items():
-            if not affix_texts:
-                continue
-            affix_target_entity = self._game.get_entity_by_name(affix_target_name)
-            assert (
-                affix_target_entity is not None
-            ), f"无法找到 affixes 中的实体: {affix_target_name}"
-            accumulate_status_effects_action(
-                affix_target_entity,
-                wrap_scene_hints_as_affixes("场景交互", affix_texts),
-            )
-            logger.debug(
-                f"[{affix_target_name}] 场景交互后追加 {len(affix_texts)} 条 AddStatusEffectsAction affixes"
-            )

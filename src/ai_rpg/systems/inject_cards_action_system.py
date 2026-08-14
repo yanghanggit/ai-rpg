@@ -119,7 +119,7 @@ def _generate_inject_cards_prompt(
 - ✅ 干预前先推断该物件当前状态（完好/部分损耗/已触发/已取走/仍可操作…），仅状态允许进一步交互时才可转化；若当前不可用，需在 `description` 中体现，并将对应卡牌的 `playable` 设为 `false`
 - ❌ 禁止：无中生有的卡牌（即与环境交互无关、纯粹基于角色内在情绪/能力的卡牌）
 - 不滥用：若无明显可利用的环境要素，**必须输出空数组**
-- 塞牌字段（`inject_cards`）：`exhaust` 通常设为 `true`（一次性机遇，用后不再出现）；`cost` 由你自行判断，轻微动作（如随手投掷碎石）可设为 0，需专注/耗时的复杂互动可设为 1 或更高
+- 塞牌字段（`inject_cards`）：`exhaust` 通常设为 `true`
 
 {BUILD_CARD_FIELD_DESCRIPTION}
 
@@ -135,7 +135,7 @@ def _generate_inject_cards_prompt(
       "inject_cards": [
         {{
           "name": "碎柱投掷",
-          "description": "抓起地面的断柱碎块用力掷向对方，造成钝击伤害",
+          "description": "掷出断柱碎块，造成钝击伤害",
           "affixes": [],
           "modifiers": [],
           "playable": true,
@@ -151,8 +151,6 @@ def _generate_inject_cards_prompt(
   ]
 }}
 ```
-
-（`affixes`/`modifiers` 有内容时数组元素须为字符串，格式 `名称:即时修正描述`，例如 `"无视防御:本次攻击无视目标防御"`；无内容时输出 `[]`；禁止输出对象）
 
 **无干预时输出空的 per_actor 数组，只输出 JSON。**"""
 

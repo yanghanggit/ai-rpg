@@ -36,7 +36,6 @@ def _card_json(
         "playable": True,
         "exhaust": False,
         "damage_dealt": 3,
-        "energy_delta": 0,
         "hit_count": 1,
         "target_type": target_type,
     }

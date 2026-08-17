@@ -123,8 +123,6 @@ def render_card(card: Card) -> str:
         f"连击:{card.hit_count}",
         f"目标:{target_label}",
     ]
-    if card.energy_delta:
-        stat_parts.append(f"行动改变:{card.energy_delta:+d}")
     lines.append("      " + "  ".join(stat_parts))
 
     if card.affixes:

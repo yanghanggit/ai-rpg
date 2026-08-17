@@ -253,7 +253,7 @@ def generate_combat_arbitration_prompt(
 - 卡牌：{card.name}
 - damage_dealt：{card.damage_dealt}（单次伤害）
 - hit_count：{card.hit_count}（攻击次数）
-{f'- energy_delta：{card.energy_delta:+d}（改变目标行动次数，已由系统直接结算）\n' if card.energy_delta != 0 else ''}{modifiers_line}{actor_gear_modifiers_line}{spread.hit_assignment}
+{modifiers_line}{actor_gear_modifiers_line}{spread.hit_assignment}
 
 ## 目标
 
@@ -330,7 +330,7 @@ def generate_compressed_combat_arbitration_prompt(
 - 卡牌：{card.name}
 - damage_dealt：{card.damage_dealt}（单次伤害）
 - hit_count：{card.hit_count}（攻击次数）
-{f'- energy_delta：{card.energy_delta:+d}（改变目标行动次数，已由系统直接结算）\n' if card.energy_delta != 0 else ''}{modifiers_line}{actor_gear_modifiers_line}{spread.hit_assignment}
+{modifiers_line}{actor_gear_modifiers_line}{spread.hit_assignment}
 
 ## 目标
 

@@ -16,7 +16,6 @@ from ..game.dbg_combat_processor import (
     get_gear_modifiers,
     get_gear_on_hit_affixes,
     get_status_effects_by_phase,
-    give_energy,
     set_character_hp,
 )
 from ..game.dbg_combat_processor import process_zero_health_entities
@@ -319,16 +318,6 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                 if affix_triggers:
                     accumulate_status_effects_action(entity, affix_triggers)
                     logger.debug(f"[{entity_name}] 仲裁后添加 AddStatusEffectsAction")
-
-        # 确定性结算 energy_delta：直接改变每个目标行动次数（正值增加/负值剥夺），不经 LLM 仲裁
-        if action.card.energy_delta != 0:
-            for target_name in dict.fromkeys(action.targets):
-                target_entity = self._game.get_entity_by_name(target_name)
-                if target_entity is not None:
-                    give_energy(target_entity, action.card.energy_delta)
-                    logger.debug(
-                        f"[{target_name}] energy_delta {action.card.energy_delta:+d}"
-                    )
 
         # 将本回合的战斗日志和叙事内容添加到当前回合的记录中，便于后续回合的回顾和游戏状态的追踪。
         latest_round = self._game.current_dungeon_combat_room.combat.latest_round

@@ -188,18 +188,6 @@ def consume_energy(entity: Entity, amount: int = 1) -> None:
 
 
 #################################################################################################################################################
-def give_energy(entity: Entity, amount: int = 1) -> None:
-    """改变角色实体的 energy（用于卡牌 energy_delta 效果）。"""
-    if not entity.has(RoundStatsComponent):
-        return
-    entity.replace(
-        RoundStatsComponent,
-        entity.name,
-        max(0, get_energy(entity) + amount),
-    )
-
-
-#################################################################################################################################################
 def accumulate_status_effects_action(
     entity: Entity, affixes: List[AffixTrigger]
 ) -> None:

@@ -26,24 +26,16 @@ def save_vector_document(
 ) -> VectorDocumentDB:
     """
     保存文档及其向量嵌入到数据库
-
-    参数:
-        content: 文档内容
-        embedding: 向量嵌入 (1536维)
-        title: 文档标题
-        source: 文档来源
-        doc_type: 文档类型
-        metadata: 元数据字典
-
-    返回:
-        VectorDocumentDB: 保存的文档对象
     """
+
     db = SessionLocal()
     try:
+
         # 验证向量维度
         if len(embedding) != 1536:
             raise ValueError(f"向量维度必须是1536，当前维度: {len(embedding)}")
 
+        # 创建 VectorDocumentDB 实例
         document = VectorDocumentDB(
             content=content,
             embedding=embedding,
@@ -54,6 +46,7 @@ def save_vector_document(
             doc_metadata=json.dumps(metadata) if metadata else None,
         )
 
+        # 将文档添加到数据库会话并提交事务
         db.add(document)
         db.commit()
         db.refresh(document)
@@ -65,10 +58,13 @@ def save_vector_document(
         db.rollback()
         logger.error(f"❌ 保存向量文档失败: {e}")
         raise e
+
     finally:
+
         db.close()
 
 
+###################################################################################################################
 def search_similar_documents(
     query_embedding: List[float],
     limit: int = 10,
@@ -77,18 +73,12 @@ def search_similar_documents(
 ) -> List[Tuple[VectorDocumentDB, float]]:
     """
     基于向量相似度搜索文档
-
-    参数:
-        query_embedding: 查询向量
-        limit: 返回结果数量限制
-        doc_type_filter: 文档类型过滤
-        similarity_threshold: 相似度阈值
-
-    返回:
-        List[Tuple[VectorDocumentDB, float]]: (文档对象, 相似度分数) 的列表
     """
+
     db = SessionLocal()
     try:
+
+        # 验证查询向量维度
         if len(query_embedding) != 1536:
             raise ValueError(
                 f"查询向量维度必须是1536，当前维度: {len(query_embedding)}"
@@ -96,18 +86,23 @@ def search_similar_documents(
 
         # 构建SQL条件
         conditions = ["embedding IS NOT NULL"]
+
         # 将向量转换为PostgreSQL向量格式的字符串
         vector_str = "[" + ",".join(map(str, query_embedding)) + "]"
+
+        # 构建参数字典
         params = {
             "query_vector": vector_str,
             "threshold": similarity_threshold,
             "limit": limit,
         }
 
+        # 如果提供了文档类型过滤器，则添加到条件中
         if doc_type_filter:
             conditions.append("doc_type = :doc_type_filter")
             params["doc_type_filter"] = doc_type_filter
 
+        # 构建WHERE子句
         where_clause = " AND ".join(conditions)
 
         # 直接使用原生SQL进行向量搜索
@@ -120,6 +115,7 @@ def search_similar_documents(
             LIMIT :limit
         """
 
+        # 执行SQL查询并获取结果
         results = db.execute(text(sql), params).fetchall()
 
         # 转换结果
@@ -129,6 +125,7 @@ def search_similar_documents(
             if doc:
                 documents_with_scores.append((doc, float(row.similarity)))
 
+        # 记录日志
         logger.info(f"🔍 找到 {len(documents_with_scores)} 个相似文档")
         return documents_with_scores
 

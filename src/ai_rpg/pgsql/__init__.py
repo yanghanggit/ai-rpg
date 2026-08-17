@@ -1,11 +1,5 @@
 """
 Database access layer for the nirva_service application.
-
-This module provides:
-- Database clients (PostgreSQL)
-- ORM models and mappings
-- Database utilities and helpers
-- Data access objects (DAOs)
 """
 
 from typing import List

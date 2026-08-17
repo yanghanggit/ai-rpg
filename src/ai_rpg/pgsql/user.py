@@ -9,15 +9,22 @@ from .base import UUIDBase
 class UserDB(UUIDBase):
     __tablename__ = "users"
 
+    # 用户名字段，唯一且不能为空
     username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+
+    # 密码字段，不能为空
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    # 显示名称字段，可选
     display_name: Mapped[Optional[str]] = mapped_column(
         String(100), index=True, nullable=True
     )
+
     # 新增创建时间字段
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
+
     # 新增更新时间字段
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

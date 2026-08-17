@@ -4,15 +4,17 @@ Artifact / Artefact (神器/古物)：比“Relic”的使用更普遍，是许�
 
 from uuid import uuid4
 from pydantic import BaseModel, Field
+from typing import List
 
 
 ###############################################################################################################################################
 class Artifact(BaseModel):
-    """物品基类"""
+    """Artifact / Artefact (神器/古物)"""
 
     name: str
-    uuid: str = Field(default_factory=lambda: str(uuid4()))  # 全局唯一标识符
     description: str
+    modifiers: List[str] = []  # 物品属性修饰符
+    uuid: str = Field(default_factory=lambda: str(uuid4()))  # 全局唯一标识符
 
 
 ###############################################################################################################################################

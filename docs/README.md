@@ -39,7 +39,6 @@
 | [副本生成管道（Dungeon Generation Pipeline）](wiki/dungeon-generation.md) | 核心哲学：机制与内容分离、四步接力管道的分工意图与设计决策、与工坊合成的架构对比 |
 | [战斗管道（Combat Pipeline）](wiki/combat-pipeline.md) | ECS 处理器链的架构设计：管道心跳驱动、场景实体仲裁、词缀因果链、回合行动序列与四个生命周期阶段 |
 | [卡牌关键词（keywords）](wiki/keywords.md) | 角色牌库蓝图：风格池声明、设计原则（不写机制/不携带特化）、牌库多样性与骰值 |
-| [即时修正词缀（modifier）](wiki/modifier.md) | 词缀二分的即时分支：设计者固化、注入仲裁结算、不落地状态效果 |
 | [词缀（Affix）](wiki/affix.md) | 词缀作为 StatusEffect 种子的创建、流转、落地与回述全线路 |
 | [LLM 生成型游戏对象：Card 与 StatusEffect](wiki/llm-generated-objects.md) | 两类 LLM 动态产出的核心对象的生成点定位、全局约束视角、生成链与规则来源 |
 | [公共知识检索系统（RAG / QueryAction）](wiki/rag-knowledge-base.md) | 公共记忆与私人记忆的二元分离、Blueprint.knowledge_base 的编排约束、ChromaDB 两阶段生命周期、QueryActionSystem 的触发与消费 |

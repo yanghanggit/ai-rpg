@@ -11,7 +11,6 @@ from ..game.dbg_combat_processor import (
     apply_status_effect_patch,
     collect_target_arbitration_effects,
     collect_target_character_stats,
-    collect_target_gear_modifiers,
     compute_character_stats,
     set_character_hp,
 )
@@ -77,9 +76,6 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
         target_arbitration_effects = collect_target_arbitration_effects(
             self._game, action.targets
         )
-        target_gear_modifiers = collect_target_gear_modifiers(
-            self._game, action.targets
-        )
 
         # 获取当前回合数，用于生成仲裁提示信息
         current_round_number = len(
@@ -94,7 +90,6 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             target_stats=target_stats,
             current_round_number=current_round_number,
             target_arbitration_effects=target_arbitration_effects,
-            target_gear_modifiers=target_gear_modifiers,
         )
 
         # 生成压缩后的仲裁提示信息，用于在需要时向 LLM 提供更简洁的上下文
@@ -106,7 +101,6 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                 target_stats=target_stats,
                 current_round_number=current_round_number,
                 target_arbitration_effects=target_arbitration_effects,
-                target_gear_modifiers=target_gear_modifiers,
             )
             if self._use_compressed_prompt
             else None

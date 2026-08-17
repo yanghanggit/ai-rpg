@@ -35,7 +35,7 @@ from .arbitration_prompt_builders import (
 #######################################################################################################################################
 @final
 class UseGearItemArbitrationSystem(ReactiveProcessor):
-    """响应 UseGearItemAction 事件，LLM 结算装备即时修正效果（HP/属性），生成叙事并广播。"""
+    """响应 UseGearItemAction 事件，LLM 结算装备穿戴效果（HP/状态效果），生成叙事并广播。"""
 
     def __init__(self, game: DBGGame, use_compressed_prompt: bool = True) -> None:
         super().__init__(game)

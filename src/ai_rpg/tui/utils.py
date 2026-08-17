@@ -72,9 +72,6 @@ def render_item(item: AnyItem) -> str:
         if item.on_hit_affixes:
             for affix in item.on_hit_affixes:
                 lines.append(f"  [dim]词缀(命中时) {affix}[/]")
-        if item.modifiers:
-            for mod in item.modifiers:
-                lines.append(f"  [dim]修正 {mod}[/]")
 
     elif isinstance(item, CostumeItem):
         lines.append(f"[bold]{item.name}[/]{count_str} [magenta]【外观】[/]")
@@ -89,9 +86,6 @@ def render_item(item: AnyItem) -> str:
         if item.affixes:
             for affix in item.affixes:
                 lines.append(f"  [dim]词缀 {affix}[/]")
-        if item.modifiers:
-            for mod in item.modifiers:
-                lines.append(f"  [dim]修正 {mod}[/]")
 
     else:  # MaterialItem
         assert isinstance(item, MaterialItem)
@@ -127,8 +121,6 @@ def render_card(card: Card) -> str:
 
     if card.affixes:
         lines.append(f"      [yellow]affixes: {'、'.join(card.affixes)}[/]")
-    if card.modifiers:
-        lines.append(f"      [cyan]modifiers: {'、'.join(card.modifiers)}[/]")
     if card.source:
         lines.append(f"      [dim]来源: {card.source}[/]")
 

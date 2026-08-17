@@ -31,8 +31,8 @@ RPG_SYSTEM_RULES: Final[
 **战斗专用规则**
 
 - **回合制无位置与命中**：无空间位置与移动、无概率命中与闪避，攻击与效果必定生效；hit_count 仅表示重复结算次数。
-- **词缀二分（modifiers / affixes）**：特殊效果名称可自由创造，但先判时效——即时者写 modifiers（一次性数值修正，仅本次结算），跨回合者写 affixes（不含数值的触发信号）。
-- **载体二分（Card / StatusEffect）**：Card 是一次性动作载体，只产生即时效果，可挂载 modifiers 或 affixes；StatusEffect 是唯一持续性载体，跨回合效果必须落地为其字段数值；二者均仅归角色持有。
+- **词缀（affix）**：特殊效果名称可自由创造，一律写 affixes（不含数值的触发信号），后续独立推理生成 StatusEffect。
+- **载体二分（Card / StatusEffect）**：Card 是一次性动作载体，只产生即时效果，可挂载 affixes；StatusEffect 是唯一持续性载体，跨回合效果必须落地为其字段数值；二者均仅归角色持有。
 - **affix → StatusEffect**：affix 是因、StatusEffect 是果，须独立推理生成，不可跳过。
 
 **场景移动**

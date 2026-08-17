@@ -27,7 +27,6 @@ class _CraftGearItemResponse(BaseModel):
     cost: int = 1
     equip_affixes: List[str] = []
     on_hit_affixes: List[str] = []
-    modifiers: List[str] = []
 
 
 #######################################################################################################################################
@@ -63,8 +62,7 @@ def _build_craft_gear_prompt(materials: List[MaterialItem]) -> str:
   - speed：速度加成（轻型装备或饰品可给 1~2）
 - **cost**：装备费用，表示穿戴目标需要消耗的当前回合 energy。普通装备为 1；强力、重型或复杂装备可为 2；不要输出负数
 - **equip_affixes**：装备时对装备者触发的延迟词缀列表，格式 `[名称]:触发倾向描述`（如 `[皮革韧性]:承受重击时可能激活韧性层，减少下一次伤害`）；无持续效果时输出 []
-- **on_hit_affixes**：出牌命中目标时触发的延迟词缀列表，格式同上（如 `[撕裂伤]:命中后可能引发持续流血`）；凡涉及"本回合/下回合/持续N回合"等跨回合影响的效果必须放在这里；无命中效果时输出 []
-- **modifiers**：即时修正词缀列表，格式 `[名称]:即时修正描述`，仅描述本次仲裁计算内立即生效的一次性数值修正（如 `[穿甲]:无视目标防御的一部分`）；严禁出现"本回合/下回合/持续N回合"等跨回合表述；无即时修正时输出 []
+- **on_hit_affixes**：出牌命中目标时触发的延迟词缀列表，格式同上（如 `[撕裂伤]:命中后可能引发持续流血`）；凡涉及“本回合/下回合/持续N回合”等跨回合影响的效果必须放在这里；无命中效果时输出 []
 
 ## 输出格式
 
@@ -75,8 +73,7 @@ def _build_craft_gear_prompt(materials: List[MaterialItem]) -> str:
   "stat_bonuses": {{"hp": 0, "max_hp": 0, "attack": 3, "defense": 0, "energy": 0, "speed": 0}},
   "cost": 1,
   "equip_affixes": [],
-  "on_hit_affixes": ["[撕裂伤]:命中后可能引发持续流血"],
-  "modifiers": ["[穿甲]:无视目标防御的一部分"]
+  "on_hit_affixes": ["[撕裂伤]:命中后可能引发持续流血"]
 }}
 ```
 
@@ -141,7 +138,6 @@ class CraftGearItemActionSystem(ReactiveProcessor):
             cost=result.cost,
             equip_affixes=result.equip_affixes,
             on_hit_affixes=result.on_hit_affixes,
-            modifiers=result.modifiers,
             craft_materials=action.material_items,
         )
         self._update_storage(storage_entity, action.material_names, new_item)
@@ -149,8 +145,7 @@ class CraftGearItemActionSystem(ReactiveProcessor):
         logger.info(
             f"[CraftGearItemActionSystem] 合成完成: {new_item.name} "
             f"(cost={new_item.cost}, stat_bonuses={new_item.stat_bonuses}, "
-            f"equip_affixes={new_item.equip_affixes}, on_hit_affixes={new_item.on_hit_affixes}, "
-            f"modifiers={new_item.modifiers})"
+            f"equip_affixes={new_item.equip_affixes}, on_hit_affixes={new_item.on_hit_affixes})"
         )
 
     ####################################################################################################################################

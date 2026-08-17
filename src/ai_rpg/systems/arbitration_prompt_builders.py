@@ -1,6 +1,6 @@
 """仲裁提示词构建器模块。"""
 
-from typing import Dict, Final, List, Optional, final
+from typing import Dict, Final, List, final
 from pydantic import BaseModel
 from ..models import (
     AffixTrigger,
@@ -92,10 +92,9 @@ def fmt_stat_bonuses_compact(stats: CharacterStats) -> str:
 
 def build_target_stats_lines(
     target_stats: Dict[str, CharacterStats],
-    target_gear_modifiers: Optional[Dict[str, List[str]]] = None,
     show_defense: bool = False,
 ) -> str:
-    """构建目标信息段落：名称、HP，可选防御与装备修正。"""
+    """构建目标信息段落：名称、HP，可选防御。"""
     if not target_stats:
         return "- 无目标"
     target_line_parts = []
@@ -104,10 +103,6 @@ def build_target_stats_lines(
             line = f"- {name}（HP {stats.hp}/{stats.max_hp} | 防御:{stats.defense}）"
         else:
             line = f"- {name}（HP {stats.hp}/{stats.max_hp}）"
-        if target_gear_modifiers:
-            mods = target_gear_modifiers.get(name, [])
-            if mods:
-                line += "\n  装备修正：" + "、".join(mods)
         target_line_parts.append(line)
     return "\n".join(target_line_parts)
 
@@ -164,10 +159,9 @@ CALC_RULES_SECTION: Final[
 ] = """## 计算规则
 
 **卡牌出牌**：单段有效伤害 = max(1, damage_dealt − 目标防御)（最低保底 1），共 hit_count 段；出牌者 HP 已为 0 则跳过结算。
-**装备穿戴**：stat_bonuses 已由系统确定性写入，无需重复计算；仅处理 modifiers 词缀对目标 HP 的叠加影响。
+**装备穿戴**：stat_bonuses 已由系统确定性写入，无需重复计算。
 **消耗品使用**：依物品描述中明确写明的数值计算；描述模糊时给出合理推断并体现在 narrative 中。
 
-即时修正词缀（若有）声明的修正规则**叠加**到上述计算之上，在 final_stats 中体现。
 目标 HP = max(0, min(计算后 HP, 最大 HP))"""
 
 
@@ -219,28 +213,12 @@ def generate_combat_arbitration_prompt(
     current_round_number: int,
     actor_arbitration_effects: List[StatusEffect],
     target_arbitration_effects: Dict[str, List[StatusEffect]],
-    actor_gear_modifiers: List[str],
-    target_gear_modifiers: Dict[str, List[str]],
 ) -> str:
-    target_lines = build_target_stats_lines(
-        target_stats, target_gear_modifiers, show_defense=True
-    )
+    target_lines = build_target_stats_lines(target_stats, show_defense=True)
     arbitration_effects_lines = build_combat_arbitration_effects_lines(
         actor_name, actor_arbitration_effects, target_arbitration_effects
     )
     spread = build_spread_sections(card, targets)
-
-    modifiers = card.modifiers
-    modifiers_line = (
-        "\n- 即时修正词缀：\n" + "\n".join(f"  - {a}" for a in modifiers)
-        if modifiers
-        else ""
-    )
-    actor_gear_modifiers_line = (
-        "\n- 装备即时修正词缀：\n" + "\n".join(f"  - {m}" for m in actor_gear_modifiers)
-        if actor_gear_modifiers
-        else ""
-    )
 
     return f"""# 第 {current_round_number} 回合：战斗结算（以 JSON 格式返回）
 
@@ -253,7 +231,7 @@ def generate_combat_arbitration_prompt(
 - 卡牌：{card.name}
 - damage_dealt：{card.damage_dealt}（单次伤害）
 - hit_count：{card.hit_count}（攻击次数）
-{modifiers_line}{actor_gear_modifiers_line}{spread.hit_assignment}
+{spread.hit_assignment}
 
 ## 目标
 
@@ -295,29 +273,13 @@ def generate_compressed_combat_arbitration_prompt(
     current_round_number: int,
     actor_arbitration_effects: List[StatusEffect],
     target_arbitration_effects: Dict[str, List[StatusEffect]],
-    actor_gear_modifiers: List[str],
-    target_gear_modifiers: Dict[str, List[str]],
 ) -> str:
     """压缩版仲裁提示词，省略静态规则与格式说明，用于写入对话历史减少重复 token。"""
-    target_lines = build_target_stats_lines(
-        target_stats, target_gear_modifiers, show_defense=True
-    )
+    target_lines = build_target_stats_lines(target_stats, show_defense=True)
     arbitration_effects_lines = build_combat_arbitration_effects_lines(
         actor_name, actor_arbitration_effects, target_arbitration_effects
     )
     spread = build_spread_sections(card, targets)
-
-    modifiers = card.modifiers
-    modifiers_line = (
-        "\n- 即时修正词缀：\n" + "\n".join(f"  - {a}" for a in modifiers)
-        if modifiers
-        else ""
-    )
-    actor_gear_modifiers_line = (
-        "\n- 装备即时修正词缀：\n" + "\n".join(f"  - {m}" for m in actor_gear_modifiers)
-        if actor_gear_modifiers
-        else ""
-    )
 
     return f"""# 第 {current_round_number} 回合：战斗结算（以 JSON 格式返回）
 
@@ -330,7 +292,7 @@ def generate_compressed_combat_arbitration_prompt(
 - 卡牌：{card.name}
 - damage_dealt：{card.damage_dealt}（单次伤害）
 - hit_count：{card.hit_count}（攻击次数）
-{modifiers_line}{actor_gear_modifiers_line}{spread.hit_assignment}
+{spread.hit_assignment}
 
 ## 目标
 
@@ -383,11 +345,6 @@ def generate_gear_arbitration_prompt(
     arbitration_effects_lines = build_arbitration_effects_lines(
         target_arbitration_effects
     )
-    modifiers_line = (
-        "\n- 即时修正词缀：\n" + "\n".join(f"  - {m}" for m in item.modifiers)
-        if item.modifiers
-        else ""
-    )
 
     return f"""# 第 {current_round_number} 回合：装备使用结算（以 JSON 格式返回）
 
@@ -395,7 +352,7 @@ def generate_gear_arbitration_prompt(
 
 - 名称：{item.name}
 - 描述：{item.description}
-- 确定性属性加成（已生效）：{fmt_stat_bonuses(item.stat_bonuses)}{modifiers_line}
+- 确定性属性加成（已生效）：{fmt_stat_bonuses(item.stat_bonuses)}
 
 ## 目标
 
@@ -437,11 +394,6 @@ def generate_compressed_gear_arbitration_prompt(
     arbitration_effects_lines = build_arbitration_effects_lines(
         target_arbitration_effects
     )
-    modifiers_line = (
-        "\n- 即时修正词缀：\n" + "\n".join(f"  - {m}" for m in item.modifiers)
-        if item.modifiers
-        else ""
-    )
 
     return f"""# 第 {current_round_number} 回合：装备使用结算
 
@@ -449,7 +401,7 @@ def generate_compressed_gear_arbitration_prompt(
 
 - 名称：{item.name}
 - 描述：{item.description}
-- 确定性属性加成（已生效）：{fmt_stat_bonuses(item.stat_bonuses)}{modifiers_line}
+- 确定性属性加成（已生效）：{fmt_stat_bonuses(item.stat_bonuses)}
 
 ## 目标
 
@@ -486,19 +438,11 @@ def generate_consumable_arbitration_prompt(
     target_stats: Dict[str, CharacterStats],
     current_round_number: int,
     target_arbitration_effects: Dict[str, List[StatusEffect]],
-    target_gear_modifiers: Dict[str, List[str]],
 ) -> str:
     """生成消耗品仲裁提示词（完整版）。"""
-    target_lines = build_target_stats_lines(target_stats, target_gear_modifiers)
+    target_lines = build_target_stats_lines(target_stats)
     arbitration_effects_lines = build_arbitration_effects_lines(
         target_arbitration_effects
-    )
-
-    modifiers = item.modifiers
-    modifiers_line = (
-        "\n- 即时修正词缀：\n" + "\n".join(f"  - {m}" for m in modifiers)
-        if modifiers
-        else ""
     )
 
     # 攻击性消耗品（target_type 非 SELF）时使用者不在 target_stats 中，需单独展示其身份与 HP，
@@ -514,7 +458,7 @@ def generate_consumable_arbitration_prompt(
 ## 消耗品
 
 - 名称：{item.name}
-- 描述：{item.description}{modifiers_line}{actor_section}
+- 描述：{item.description}{actor_section}
 
 ## 目标
 
@@ -553,19 +497,11 @@ def generate_compressed_consumable_arbitration_prompt(
     target_stats: Dict[str, CharacterStats],
     current_round_number: int,
     target_arbitration_effects: Dict[str, List[StatusEffect]],
-    target_gear_modifiers: Dict[str, List[str]],
 ) -> str:
     """生成压缩版消耗品仲裁提示词，用于写入对话历史。"""
-    target_lines = build_target_stats_lines(target_stats, target_gear_modifiers)
+    target_lines = build_target_stats_lines(target_stats)
     arbitration_effects_lines = build_arbitration_effects_lines(
         target_arbitration_effects
-    )
-
-    modifiers = item.modifiers
-    modifiers_line = (
-        "\n- 即时修正词缀：\n" + "\n".join(f"  - {m}" for m in modifiers)
-        if modifiers
-        else ""
     )
 
     actor_section = (
@@ -579,7 +515,7 @@ def generate_compressed_consumable_arbitration_prompt(
 ## 消耗品
 
 - 名称：{item.name}
-- 描述：{item.description}{modifiers_line}{actor_section}
+- 描述：{item.description}{actor_section}
 
 ## 目标
 

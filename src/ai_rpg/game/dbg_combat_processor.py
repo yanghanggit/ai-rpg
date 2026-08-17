@@ -94,16 +94,6 @@ def collect_target_arbitration_effects(
 
 
 #################################################################################################################################################
-def get_gear_modifiers(entity: Entity) -> List[str]:
-    """获取实体已装备道具的即时修正词缀；未装备任何道具则返回空列表。"""
-    return (
-        entity.get(EquippedGearComponent).item.modifiers
-        if entity.has(EquippedGearComponent)
-        else []
-    )
-
-
-#################################################################################################################################################
 def get_gear_on_hit_affixes(entity: Entity) -> List[str]:
     """获取实体已装备道具的 on_hit_affixes（命中时生效的词缀）；未装备任何道具则返回空列表。"""
     return (
@@ -111,19 +101,6 @@ def get_gear_on_hit_affixes(entity: Entity) -> List[str]:
         if entity.has(EquippedGearComponent)
         else []
     )
-
-
-#################################################################################################################################################
-def collect_target_gear_modifiers(
-    game: DBGGame, target_names: Sequence[str]
-) -> Dict[str, List[str]]:
-    """按目标名去重保序收集目标已装备道具的即时修正词缀。"""
-    target_gear_modifiers: Dict[str, List[str]] = {}
-    for target_name in dict.fromkeys(target_names):
-        target_entity = game.get_entity_by_name(target_name)
-        assert target_entity is not None, f"无法找到目标实体: {target_name}"
-        target_gear_modifiers[target_name] = get_gear_modifiers(target_entity)
-    return target_gear_modifiers
 
 
 #################################################################################################################################################

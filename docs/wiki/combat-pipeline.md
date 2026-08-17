@@ -61,6 +61,6 @@ affix 是信号，StatusEffect 是落地的果。这条链横跨多个系统：C
 ## 跨系统关系
 
 - **副本生成管道**产出 `CombatRoom`（stage + actors + keywords），战斗管道消费它 → 参见：[副本生成管道](dungeon-generation.md)
-- **装备系统**提供仲裁阶段的 `modifiers` 和命中时的 `on_hit_affixes`，在 `PlayCardsArbitrationSystem` 中与卡牌效果合并结算 → 参见：[装备系统](gear-item.md)
+- **装备系统**提供命中时的 `on_hit_affixes`，在 `PlayCardsArbitrationSystem` 中与卡牌 affixes 合并后进入状态效果落地链 → 参见：[装备系统](gear-item.md)
 - **消耗品系统**走同一场景实体仲裁模式 → 参见：[消耗品系统](consumable-item.md)
 - 战斗结束后 `CombatArchiveSystem` 触发记忆存储，衔接家园模式的叙事连续性

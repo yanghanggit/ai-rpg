@@ -11,9 +11,7 @@ from ..game.dbg_combat_processor import (
     apply_status_effect_patch,
     collect_target_arbitration_effects,
     collect_target_character_stats,
-    collect_target_gear_modifiers,
     compute_character_stats,
-    get_gear_modifiers,
     get_gear_on_hit_affixes,
     get_status_effects_by_phase,
     set_character_hp,
@@ -101,17 +99,11 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
         target_arbitration_effects = collect_target_arbitration_effects(
             self._game, play_cards_action.targets
         )
-        target_gear_modifiers = collect_target_gear_modifiers(
-            self._game, play_cards_action.targets
-        )
 
         # 获取出牌实体在仲裁阶段的状态效果，用于生成仲裁提示
         actor_arbitration_effects: List[StatusEffect] = get_status_effects_by_phase(
             actor_entity, PhaseType.ARBITRATION
         )
-
-        # 获取出牌实体的装备附加属性，用于生成仲裁提示
-        actor_gear_modifiers: List[str] = get_gear_modifiers(actor_entity)
 
         # 获取当前回合数，用于仲裁提示生成
         current_round_number = len(
@@ -128,8 +120,6 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             current_round_number,
             actor_arbitration_effects,
             target_arbitration_effects,
-            actor_gear_modifiers,
-            target_gear_modifiers,
         )
 
         # 生成压缩后的仲裁提示消息，用于在需要时向 LLM 提供更简洁的上下文信息
@@ -143,8 +133,6 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                 current_round_number,
                 actor_arbitration_effects,
                 target_arbitration_effects,
-                actor_gear_modifiers,
-                target_gear_modifiers,
             )
             if self._use_compressed_prompt
             else None

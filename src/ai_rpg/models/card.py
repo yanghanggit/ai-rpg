@@ -20,9 +20,6 @@ class Card(BaseModel):
     affixes: List[str] = (
         []
     )  # 延迟词缀列表；格式"[名称]:触发倾向描述"（如"[燃烧]:可能引发持续扣血"）；出牌后独立推理生成 StatusEffect；无持续效果时输出 []
-    modifiers: List[str] = (
-        []
-    )  # 即时修正词缀列表；格式"[名称]:即时修正描述"（如"[穿甲]:无视目标防御"）；直接注入本次仲裁计算；无即时修正时输出 []
     playable: bool = True  # 是否可出牌；False 时系统阻止出牌操作
     exhaust: bool = (
         False  # 是否为消耗牌；True 时出牌后永久归入 ExhaustPile，不进入 DiscardPile 循环

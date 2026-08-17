@@ -49,7 +49,6 @@ class GearItem(Item):
     on_hit_affixes: List[str] = (
         []
     )  # 出牌命中目标时触发的延迟词缀；格式同 Card.affixes；由 PlayCardsArbitrationSystem 评估
-    modifiers: List[str] = []  # 即时修正词缀列表（同 Card.modifiers）
     craft_materials: Sequence["AnyItem"] = Field(
         default_factory=list
     )  # 合成时消耗的原料列表；当前仅存 MaterialItem，保留 AnyItem 扩展余地
@@ -78,9 +77,6 @@ class ConsumableItem(Item):
     affixes: List[str] = (
         []
     )  # 延迟词缀列表；格式"[名称]:触发倾向描述"（如"[燃烧]:可能引发持续扣血"）；使用后独立推理生成 StatusEffect；无持续效果时输出 []
-    modifiers: List[str] = (
-        []
-    )  # 即时修正词缀列表；格式"[名称]:即时修正描述"（如"[穿甲]:无视目标防御"）；直接注入本次仲裁计算；无即时修正时输出 []
     craft_materials: Sequence["AnyItem"] = Field(
         default_factory=list
     )  # 合成时消耗的原料列表；当前仅存 MaterialItem，保留 AnyItem 扩展余地

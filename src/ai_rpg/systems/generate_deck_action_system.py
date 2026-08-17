@@ -34,7 +34,6 @@ class DeckCardEntry(BaseModel):
     name: str
     description: str
     affixes: List[str] = []
-    modifiers: List[str] = []
     playable: bool = True
     exhaust: bool = False
     cost: int = 1
@@ -111,12 +110,12 @@ def generate_deck_prompt(
 ## 核心原则
 
 - keywords 即边界，不是风格建议：要求的效果在对应字段体现；未提及即禁止
-- modifiers 与 affixes 仅限 keywords 授权时填充
+- affixes 仅限 keywords 授权时填充
 
 ## 约束
 
 - `description` 禁止提及任何场景地物（如断柱、沙地）、地名或即时情境细节
-- `affixes`/`modifiers` 禁止重述数值字段已确定性表达的效果：不得重复量化 `damage_dealt`/`hit_count` 已决定的伤害量级
+- `affixes` 禁止重述数值字段已确定性表达的效果：不得重复量化 `damage_dealt`/`hit_count` 已决定的伤害量级
 - `cards` 数组长度必须恰好为 {card_count}
 - 只输出 JSON，不附加任何说明文字
 
@@ -127,7 +126,6 @@ def generate_deck_prompt(
       "name": "...",
       "description": "...",
       "affixes": [],
-      "modifiers": [],
       "playable": true,
       "exhaust": false,
       "cost": 1,
@@ -304,7 +302,6 @@ class GenerateDeckActionSystem(ReactiveProcessor):
                     name=entry.name,
                     description=entry.description,
                     affixes=entry.affixes,
-                    modifiers=entry.modifiers,
                     playable=entry.playable,
                     exhaust=entry.exhaust,
                     cost=entry.cost,

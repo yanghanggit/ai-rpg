@@ -32,7 +32,6 @@ def _card_json(
         "name": name,
         "description": "描述",
         "affixes": [],
-        "modifiers": [],
         "playable": True,
         "exhaust": False,
         "damage_dealt": 3,

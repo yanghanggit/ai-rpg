@@ -16,12 +16,12 @@
 
 **系统级**：`RPG_SYSTEM_RULES` 的战斗专用规则节，通过 entity factory 烤入每个实体的 system message。这是 Agent 的「世界观宪法」——从对话首条消息就携带，无需运行时注入。核心条款：
 
-- 词缀二分：modifiers 是一次性数值修正（仅本次结算），affixes 是延迟触发信号（后续独立推理落地）。禁止在 modifiers 中写入跨回合表述，禁止在 affixes 中写入可直接量化的数值。
+- 词缀（affix）：affixes 是延迟触发信号（后续独立推理落地为 StatusEffect）。禁止在 affixes 中写入可直接量化的数值。
 - 载体二分：Card 是动作，StatusEffect 是持续影响。一切跨回合效果必须落地为 StatusEffect。
 - affixes → StatusEffect 因果：affix 是因，StatusEffect 是果，不可跳过落地步骤。
 - 禁止项：命中率、闪避、位置、移动、新数值轴。
 
-**prompt 级**：各系统的 prompt builder 在每次 LLM 调用时附加字段 schema、JSON 示例、具体约束。prompt 级是系统级的实例化——系统级说「词缀二分」，prompt 级给出 modifiers 和 affixes 各自允许和禁止的表述形式。
+**prompt 级**：各系统的 prompt builder 在每次 LLM 调用时附加字段 schema、JSON 示例、具体约束。prompt 级是系统级的实例化——系统级说「词缀（affix）」，prompt 级给出 affixes 允许和禁止的表述形式。
 
 ---
 
@@ -37,7 +37,7 @@
 
 这意味着：keywords 数量可以大于单场战斗生成数，未被采样的 keyword 在本场不会出现——这是设计层面的「牌库多样性」机制：角色有固定风格池，但每场战斗抽到哪些风格存在变数。骰值在此基础上叠加质量变体。
 
-这是「机制与内容分离」的体现——角色设计者只需写关键词（纯攻击型 / 即时破甲型），具体卡牌名称、描述、数值由 LLM 按关键词创作。
+这是「机制与内容分离」的体现——角色设计者只需写关键词（纯攻击型 / 破甲型），具体卡牌名称、描述、数值由 LLM 按关键词创作。
 
 **消费方**：产出直接写入 `DeckComponent` 和 `DrawPileComponent`，被 `DrawCardsActionSystem` 抽入手中。
 

@@ -108,10 +108,11 @@ _KW_DEFENSE: Final[str] = (
     "为自身添加一个防御的增益状态，持续一回合。"
 )
 _KW_ARMOR_BREAK: Final[str] = (
-    "即时破甲型：卡牌必须携带至少一个即时破甲/穿透效果；攻击造成直接伤害，效果在本次结算中即时生效。"
-    "骰值 0-10 为失败，破甲效果微弱、伤害偏低；"
-    "骰值 11-90 为正常，本次攻击忽略目标一半防御值；"
-    "骰值 91-100 为优质，本次攻击完全无视目标防御。"
+    "破甲型：卡牌必须携带至少一个降低目标防御的持续负面效果（破甲/易伤），"
+    "通过延迟词缀落地为持续状态效果；攻击造成直接伤害。"
+    "骰值 0-10 为失败，破甲效果微弱、持续时间短；"
+    "骰值 11-90 为正常，稳定施加降防（目标受击时防御减半）；"
+    "骰值 91-100 为优质，显著降防或持续时间延长。"
 )
 _KW_CONTROL: Final[str] = (
     "控制型：卡牌必须携带至少一个持续负面状态效果，直接伤害可以较低乃至为零。"
@@ -148,7 +149,7 @@ def create_wuming() -> Actor:
             # 2 张基础防御 — 不参考骰值
             _KW_DEFENSE,
             _KW_DEFENSE,
-            # 1 张即时破甲 — 骰值驱动强度
+            # 1 张破甲 — 骰值驱动强度
             _KW_ARMOR_BREAK,
         ],
     )
@@ -299,9 +300,6 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
                 stat_bonuses=CharacterStats(
                     hp=0, max_hp=0, attack=2, defense=0, energy=0, speed=0
                 ),
-                modifiers=[
-                    "[锈刃穿透]:刃口锈蚀形成的微锯齿结构增加穿透力，攻击时额外无视目标防御的一部分"
-                ],
                 on_hit_affixes=["[锈蚀创口]:命中后锈迹可能引发伤口感染，造成持续伤害"],
             ),
             GearItem(
@@ -310,7 +308,6 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
                 stat_bonuses=CharacterStats(
                     hp=0, max_hp=0, attack=0, defense=2, energy=0, speed=0
                 ),
-                modifiers=["[层叠构造]:受击时防御值完整生效，不因移动或姿态产生减值"],
                 equip_affixes=[
                     "[棉布韧性]:承受重击时可能激活韧性层，减少下一次受到的伤害"
                 ],
@@ -321,7 +318,6 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
                 count=1,
                 target_type=TargetType.SINGLE,
                 affixes=["[镇痛]:可能移除当前出血状态"],
-                modifiers=["[速效]:优先恢复至战斗有效生命值，无视超量回复上限"],
             ),
             ConsumableItem(
                 name="消耗品.纸钱爆散",
@@ -329,7 +325,6 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
                 count=1,
                 target_type=TargetType.ALL,
                 affixes=["[惊魂]:爆炸冲击可能令目标下回合行动延迟"],
-                modifiers=["[驱邪]:纸钱与香灰穿透部分非实体目标的物理防御"],
             ),
         ],
     )

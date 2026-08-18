@@ -15,6 +15,7 @@ from .server_client import (
     stream_session_messages,
     fetch_stages_state,
     fetch_entities_details,
+    fetch_entities_group,
     watch_task_until_done,
     TaskFailedError,
     home_advance as server_home_advance,
@@ -49,6 +50,7 @@ MENU_TEXT = """\
 [bold cyan]── 消息 ──────────────────────────────────────[/]
   [bold green]/session[/] [sequence_id]  查看指定序号之后的消息（留空则查看最新未读消息，简写：/ss）
   [bold green]/stage[/]  查看玩家当前所在场景描述与场景内全部角色外观（简写：/st）
+  [bold green]/testgroup[/]  测试 get_group 查询（简写：/tg）
 
 [bold cyan]── 系统 ──────────────────────────────────────[/]
   [bold green]0[/]  显示此菜单
@@ -208,6 +210,10 @@ class HomeMainScreen(BaseGameScreen):
 
         if parts[0].lower() in ("/stage", "/st"):
             self._do_view_stage()
+            return
+
+        if parts[0].lower() in ("/testgroup", "/tg"):
+            self._do_test_group()
             return
 
         log.write(f"[dim]> {cmd}[/]")
@@ -458,6 +464,56 @@ class HomeMainScreen(BaseGameScreen):
                 else "    [dim]（未持有 AppearanceComponent）[/]"
             )
         log.write("")
+
+    @work
+    async def _do_test_group(self) -> None:
+        """测试 fetch_entities_group：分别执行 any_of/none_of 与 all_of 两种查询。"""
+        log = self.query_one(RichLog)
+        app = self.game_client
+        if app.session is None:
+            return
+        user_name = app.session.user_name
+        game_name = app.session.game_name
+
+        log.write(
+            "[bold yellow]── 测试 get_group ──────────────────────────────────────[/]"
+        )
+
+        # 测试 1：any_of=ActorComponent, none_of=PlayerComponent
+        try:
+            resp = await fetch_entities_group(
+                user_name,
+                game_name,
+                all_of=[],
+                any_of=["ActorComponent"],
+                none_of=["PlayerComponent"],
+            )
+            names = [entity.name for entity in resp.entities]
+            log.write(
+                "[cyan]any_of=ActorComponent, none_of=PlayerComponent[/] → "
+                f"共 {len(names)} 个实体: {', '.join(display_name(n) for n in names)}"
+            )
+        except Exception as e:
+            logger.error(f"_do_test_group: 测试1失败 error={e}")
+            log.write(f"[bold red]❌ 测试1失败: {e}[/]")
+
+        # 测试 2：all_of=ActorComponent
+        try:
+            resp = await fetch_entities_group(
+                user_name,
+                game_name,
+                all_of=["ActorComponent"],
+                any_of=[],
+                none_of=[],
+            )
+            names = [entity.name for entity in resp.entities]
+            log.write(
+                "[cyan]all_of=ActorComponent[/] → "
+                f"共 {len(names)} 个实体: {', '.join(display_name(n) for n in names)}"
+            )
+        except Exception as e:
+            logger.error(f"_do_test_group: 测试2失败 error={e}")
+            log.write(f"[bold red]❌ 测试2失败: {e}[/]")
 
     def _update_notify_badge(self) -> None:
         """根据通知流探测到的最高 sequence_id 与当前已读 last_sequence_id 的差值，更新未读提示。

@@ -199,6 +199,27 @@ async def fetch_entities_details(
         return EntitiesDetailsResponse.model_validate(response.json())
 
 
+async def fetch_entities_group(
+    user_name: str,
+    game_name: str,
+    all_of: List[str],
+    any_of: List[str],
+    none_of: List[str],
+) -> EntitiesDetailsResponse:
+    """按组件条件分组查询实体，返回匹配实体的序列化数据。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.get(
+            server_config.base_url + f"/api/entities/v1/{user_name}/{game_name}/group",
+            params={
+                "all_of": all_of,
+                "any_of": any_of,
+                "none_of": none_of,
+            },
+        )
+        response.raise_for_status()
+        return EntitiesDetailsResponse.model_validate(response.json())
+
+
 async def fetch_dungeon_list() -> DungeonListResponse:
     """获取可用副本列表。"""
     async with httpx.AsyncClient(timeout=10) as client:

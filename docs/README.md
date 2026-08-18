@@ -44,3 +44,4 @@
 | [LLM 生成型游戏对象：Card 与 StatusEffect](wiki/llm-generated-objects.md) | 两类 LLM 动态产出的核心对象的生成点定位、全局约束视角、生成链与规则来源 |
 | [公共知识检索系统（RAG / QueryAction）](wiki/rag-knowledge-base.md) | 公共记忆与私人记忆的二元分离、Blueprint.knowledge_base 的编排约束、ChromaDB 两阶段生命周期、QueryActionSystem 的触发与消费 |
 | [新故事设计：《大渊》](wiki/新故事设计.md) | 新故事世界观草稿：双重世界（济世疗养院 / 大傩）、核心冲突、角色设定与玩法方向 |
+| [战役设定与全局规则桥接（CAMPAIGN_SETTING / RPG_SYSTEM_RULES）](wiki/campaign-setting-rules-bridge.md) | 动态设定与静态规则的分层、抽象设定的惰性知识问题、事件级引用提示的桥接方案 |

@@ -66,7 +66,10 @@ def exit_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, str]:
         dbg_game.add_human_message(
             party_member_entity,
             HumanMessage(
-                content=f"# 提示！副本：{dungeon.name} 结束，返回家园场景：{dest_stage.name}",
+                content=(
+                    f"# 提示！副本：{dungeon.name} 结束，返回家园场景：{dest_stage.name}\n"
+                    f"（关于「副本」及进出副本的具体设定，见你的「游戏设定」与「全局规则」。）"
+                ),
                 dungeon_lifecycle_completion=dungeon.name,
             ),
         )

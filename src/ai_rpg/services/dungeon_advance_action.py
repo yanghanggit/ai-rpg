@@ -85,7 +85,8 @@ def advance_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, str]:
 
     # 生成并发送传送提示消息
     trans_message = (
-        f"# 副本：{dungeon.name}，进入下一关卡场景：{next_stage_entity.name}"
+        f"# 副本：{dungeon.name}，进入下一关卡场景：{next_stage_entity.name}\n"
+        f"（关于「副本」及进出副本的具体设定，见你的「游戏设定」与「全局规则」。）"
     )
     for party_member in party_member_entities:
         dbg_game.add_human_message(

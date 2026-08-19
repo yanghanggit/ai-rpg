@@ -336,7 +336,7 @@ async def fetch_dungeon_room(user_name: str, game_name: str) -> DungeonRoomRespo
 
 
 async def dungeon_exit(user_name: str, game_name: str) -> DungeonExitResponse:
-    """退出副本，返回家园。"""
+    """触发退出副本后台任务，返回后台任务ID。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
             server_config.base_url + "/api/dungeon/exit/v1/",

@@ -228,6 +228,8 @@ class DungeonExitRequest(BaseModel):
 
 @final
 class DungeonExitResponse(BaseModel):
+    task_id: str
+    status: str
     message: str
 
 

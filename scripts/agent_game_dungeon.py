@@ -33,6 +33,9 @@ from ai_rpg.services.dungeon_setup_action import (
 from ai_rpg.services.dungeon_teardown_action import (
     teardown_dungeon,
 )
+from ai_rpg.services.dungeon_archive_action import (
+    archive_dungeon,
+)
 from pathlib import Path
 from agent_game_core import restore_game
 
@@ -157,6 +160,10 @@ async def exit_dungeon_and_return_home_game(
     if not success:
         logger.error(f"exit_dungeon 失败: {msg}")
         return terminal_game
+
+    # 副本本体归档：以拟人化副本视角总结本次所有场景/角色的记忆
+    # （best-effort，失败不阻断退出，且不写入任何状态）
+    await archive_dungeon(terminal_game, terminal_game._world.dungeon)
 
     # 销毁副本实体并重置副本数据
     teardown_dungeon(terminal_game, terminal_game._world.dungeon)

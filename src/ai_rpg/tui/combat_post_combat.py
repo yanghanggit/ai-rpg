@@ -29,7 +29,7 @@ from .combat_inventory_view import CombatInventoryViewScreen
 from .combat_loot_view import CombatLootViewScreen
 from .combat_round_history import CombatRoundHistoryScreen
 from .mock_data import set_mock_combat_state, set_mock_current_room_index
-from .server_client import dungeon_advance_stage, dungeon_exit
+from .server_client import dungeon_advance_stage, dungeon_exit, watch_task_until_done
 from .home_main import HomeMainScreen
 
 BASE_INFO_HEADER = """\
@@ -251,6 +251,9 @@ class CombatPostCombatScreen(BaseGameScreen):
         try:
             user_name, game_name, _ = resolve_identity(self.game_client)
             resp = await dungeon_exit(user_name, game_name)
+
+            log.write(f"[dim]任务已提交：{resp.task_id}，等待完成...[/]")
+            await watch_task_until_done(resp.task_id)
         except Exception as e:
             logger.error(f"CombatPostCombatScreen._do_exit_dungeon: 退出失败 error={e}")
             log.write(f"[bold red]❌ 退出副本失败：{e}[/]")

@@ -27,6 +27,7 @@ from ..models import (
     StatusEffect,
     PhaseType,
     EquippedGearComponent,
+    StageDescriptionComponent,
 )
 from ..utils import extract_json
 from .arbitration_prompt_builders import (
@@ -110,6 +111,13 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             self._game.current_dungeon_combat_room.combat.rounds or []
         )
 
+        assert stage_entity.has(
+            StageDescriptionComponent
+        ), "当前场景实体缺少 StageDescriptionComponent 组件！"
+        current_stage_description = stage_entity.get(
+            StageDescriptionComponent
+        ).narrative
+
         # 生成仲裁提示消息，包括出牌实体、目标实体的状态效果和装备附加属性等信息
         message = generate_combat_arbitration_prompt(
             actor_entity.name,
@@ -120,6 +128,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             current_round_number,
             actor_arbitration_effects,
             target_arbitration_effects,
+            current_stage_description,
         )
 
         # 生成压缩后的仲裁提示消息，用于在需要时向 LLM 提供更简洁的上下文信息
@@ -133,6 +142,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                 current_round_number,
                 actor_arbitration_effects,
                 target_arbitration_effects,
+                current_stage_description,
             )
             if self._use_compressed_prompt
             else None
@@ -201,6 +211,14 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
         except Exception as e:
             logger.error(f"Exception: {e}")
             return
+
+        # 仲裁者（combat stage）更新自身场景环境快照
+        if format_response.stage_description.strip():
+            stage_entity.replace(
+                StageDescriptionComponent,
+                stage_entity.name,
+                format_response.stage_description,
+            )
 
         # 根据是否使用压缩提示，添加上下文。
         if self._use_compressed_prompt:

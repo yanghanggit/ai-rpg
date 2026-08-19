@@ -20,6 +20,7 @@ from ..models import (
     CharacterStatsComponent,
     CombatArbitrationEvent,
     HumanMessage,
+    StageDescriptionComponent,
 )
 from ..utils import extract_json
 from .arbitration_prompt_builders import (
@@ -82,12 +83,26 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
             self._game.current_dungeon_combat_room.combat.rounds or []
         )
 
+        # 获取当前行动者所在的场景实体，确保后续的仲裁结果能够正确应用到对应的场景上下文
+        stage_entity = self._game.resolve_stage_entity(actor_entity)
+        assert (
+            stage_entity is not None
+        ), f"UseGearItemArbitrationSystem: 无法获取 {actor_entity.name} 所在场景实体！"
+
+        assert stage_entity.has(
+            StageDescriptionComponent
+        ), "当前场景实体缺少 StageDescriptionComponent 组件！"
+        current_stage_description = stage_entity.get(
+            StageDescriptionComponent
+        ).narrative
+
         # 生成装备仲裁提示消息，包括使用装备动作、目标实体的状态效果、当前回合数等信息
         message = generate_gear_arbitration_prompt(
             item=action.item,
             target_stats=target_stats,
             current_round_number=current_round_number,
             target_arbitration_effects=target_arbitration_effects,
+            current_stage_description=current_stage_description,
         )
 
         # 生成压缩后的装备仲裁提示消息，用于在需要时向 LLM 提供更简洁的上下文信息
@@ -97,16 +112,11 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
                 target_stats=target_stats,
                 current_round_number=current_round_number,
                 target_arbitration_effects=target_arbitration_effects,
+                current_stage_description=current_stage_description,
             )
             if self._use_compressed_prompt
             else None
         )
-
-        # 获取当前行动者所在的场景实体，确保后续的仲裁结果能够正确应用到对应的场景上下文
-        stage_entity = self._game.resolve_stage_entity(actor_entity)
-        assert (
-            stage_entity is not None
-        ), f"UseGearItemArbitrationSystem: 无法获取 {actor_entity.name} 所在场景实体！"
 
         # 初始化 DeepSeekClient，用于与 LLM 进行交互，传入生成的装备仲裁提示消息和压缩提示消息（如果启用）
         chat_client = DeepSeekClient(
@@ -170,6 +180,14 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
             error_msg = f"装备仲裁结果应用失败: {e}"
             logger.error(error_msg)
             return
+
+        # 仲裁者（combat stage）更新自身场景环境快照
+        if response.stage_description.strip():
+            stage_entity.replace(
+                StageDescriptionComponent,
+                stage_entity.name,
+                response.stage_description,
+            )
 
         # 根据是否使用压缩提示，添加上下文。
         if self._use_compressed_prompt:

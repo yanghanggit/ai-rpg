@@ -35,6 +35,9 @@ class ArbitrationResponse(BaseModel):
     combat_log: str
     final_stats: Dict[str, ArbitrationEntityFinalStats]
     narrative: str
+    stage_description: str = (
+        ""  # 仲裁后场景环境快照（写入 StageDescriptionComponent.narrative）
+    )
 
 
 #######################################################################################################################################
@@ -154,6 +157,13 @@ NARRATIVE_DESCRIPTION: Final[
 若本次行动涉及与场景对象的交互（取用、触发、破坏、移动、部分使用等），叙述中须体现该对象在交互后的**物理状态变化**（如"碎石散落殆尽"、"机关齿轮转动一格发出咔哒声"、"绳索断裂后仍有一截悬挂在梁上"），使后续上下文能推断其当前可用性与剩余状态。"""
 
 
+STAGE_DESCRIPTION_DESCRIPTION: Final[
+    str
+] = """### stage_description
+
+在「当前场景环境」基础上，输出本次行动结束后的**完整环境快照**（第三人称、纯环境描写）。须保留原有环境要素，并融入本次行动造成的物理状态变化（如地面裂痕、墙体破损、药剂溅洒、物件移位或损毁、残留的灼烧/冰冻痕迹等），供后续推断场景当前可用状态。不得提及任何角色本身（不得出现角色名称、角色形态或角色行为）。"""
+
+
 CALC_RULES_SECTION: Final[
     str
 ] = """## 计算规则
@@ -213,6 +223,7 @@ def generate_combat_arbitration_prompt(
     current_round_number: int,
     actor_arbitration_effects: List[StatusEffect],
     target_arbitration_effects: Dict[str, List[StatusEffect]],
+    current_stage_description: str,
 ) -> str:
     target_lines = build_target_stats_lines(target_stats, show_defense=True)
     arbitration_effects_lines = build_combat_arbitration_effects_lines(
@@ -241,6 +252,10 @@ def generate_combat_arbitration_prompt(
 
 {arbitration_effects_lines}
 
+## 当前场景环境
+
+{current_stage_description}
+
 {CALC_RULES_SECTION}
 
 ## 输出格式
@@ -249,7 +264,8 @@ def generate_combat_arbitration_prompt(
 {{
   "combat_log": "字符串",
   "final_stats": {{}},
-  "narrative": "战斗演出"
+  "narrative": "战斗演出",
+  "stage_description": "场景环境快照"
 }}
 ```
 
@@ -261,7 +277,9 @@ def generate_combat_arbitration_prompt(
 
 {FINAL_STATS_DESCRIPTION}
 
-{NARRATIVE_DESCRIPTION}"""
+{NARRATIVE_DESCRIPTION}
+
+{STAGE_DESCRIPTION_DESCRIPTION}"""
 
 
 def generate_compressed_combat_arbitration_prompt(
@@ -273,6 +291,7 @@ def generate_compressed_combat_arbitration_prompt(
     current_round_number: int,
     actor_arbitration_effects: List[StatusEffect],
     target_arbitration_effects: Dict[str, List[StatusEffect]],
+    current_stage_description: str,
 ) -> str:
     """压缩版仲裁提示词，省略静态规则与格式说明，用于写入对话历史减少重复 token。"""
     target_lines = build_target_stats_lines(target_stats, show_defense=True)
@@ -300,7 +319,11 @@ def generate_compressed_combat_arbitration_prompt(
 
 ## 仲裁状态效果
 
-{arbitration_effects_lines}"""
+{arbitration_effects_lines}
+
+## 当前场景环境
+
+{current_stage_description}"""
 
 
 def generate_arbitration_broadcast(
@@ -339,6 +362,7 @@ def generate_gear_arbitration_prompt(
     target_stats: Dict[str, CharacterStats],
     current_round_number: int,
     target_arbitration_effects: Dict[str, List[StatusEffect]],
+    current_stage_description: str,
 ) -> str:
     """生成装备仲裁提示词（完整版）。"""
     target_lines = build_target_stats_lines(target_stats)
@@ -362,6 +386,10 @@ def generate_gear_arbitration_prompt(
 
 {arbitration_effects_lines}
 
+## 当前场景环境
+
+{current_stage_description}
+
 {CALC_RULES_SECTION}
 
 ## 输出格式
@@ -370,7 +398,8 @@ def generate_gear_arbitration_prompt(
 {{
   "combat_log": "字符串",
   "final_stats": {{}},
-  "narrative": "演出描述"
+  "narrative": "演出描述",
+  "stage_description": "场景环境快照"
 }}
 ```
 
@@ -380,7 +409,9 @@ def generate_gear_arbitration_prompt(
 
 {FINAL_STATS_DESCRIPTION}
 
-{NARRATIVE_DESCRIPTION}"""
+{NARRATIVE_DESCRIPTION}
+
+{STAGE_DESCRIPTION_DESCRIPTION}"""
 
 
 def generate_compressed_gear_arbitration_prompt(
@@ -388,6 +419,7 @@ def generate_compressed_gear_arbitration_prompt(
     target_stats: Dict[str, CharacterStats],
     current_round_number: int,
     target_arbitration_effects: Dict[str, List[StatusEffect]],
+    current_stage_description: str,
 ) -> str:
     """生成压缩版装备仲裁提示词，用于写入对话历史。"""
     target_lines = build_target_stats_lines(target_stats)
@@ -409,7 +441,11 @@ def generate_compressed_gear_arbitration_prompt(
 
 ## 仲裁状态效果
 
-{arbitration_effects_lines}"""
+{arbitration_effects_lines}
+
+## 当前场景环境
+
+{current_stage_description}"""
 
 
 def generate_gear_arbitration_broadcast(
@@ -438,6 +474,7 @@ def generate_consumable_arbitration_prompt(
     target_stats: Dict[str, CharacterStats],
     current_round_number: int,
     target_arbitration_effects: Dict[str, List[StatusEffect]],
+    current_stage_description: str,
 ) -> str:
     """生成消耗品仲裁提示词（完整版）。"""
     target_lines = build_target_stats_lines(target_stats)
@@ -468,6 +505,10 @@ def generate_consumable_arbitration_prompt(
 
 {arbitration_effects_lines}
 
+## 当前场景环境
+
+{current_stage_description}
+
 {CALC_RULES_SECTION}
 
 ## 输出格式
@@ -476,7 +517,8 @@ def generate_consumable_arbitration_prompt(
 {{
   "combat_log": "字符串",
   "final_stats": {{}},
-  "narrative": "演出描述"
+  "narrative": "演出描述",
+  "stage_description": "场景环境快照"
 }}
 ```
 
@@ -487,7 +529,9 @@ def generate_consumable_arbitration_prompt(
 
 {FINAL_STATS_DESCRIPTION}
 
-{NARRATIVE_DESCRIPTION}"""
+{NARRATIVE_DESCRIPTION}
+
+{STAGE_DESCRIPTION_DESCRIPTION}"""
 
 
 def generate_compressed_consumable_arbitration_prompt(
@@ -497,6 +541,7 @@ def generate_compressed_consumable_arbitration_prompt(
     target_stats: Dict[str, CharacterStats],
     current_round_number: int,
     target_arbitration_effects: Dict[str, List[StatusEffect]],
+    current_stage_description: str,
 ) -> str:
     """生成压缩版消耗品仲裁提示词，用于写入对话历史。"""
     target_lines = build_target_stats_lines(target_stats)
@@ -523,7 +568,11 @@ def generate_compressed_consumable_arbitration_prompt(
 
 ## 仲裁状态效果
 
-{arbitration_effects_lines}"""
+{arbitration_effects_lines}
+
+## 当前场景环境
+
+{current_stage_description}"""
 
 
 def generate_consumable_arbitration_broadcast(

@@ -20,6 +20,7 @@ from ..models import (
     CharacterStatsComponent,
     CombatArbitrationEvent,
     HumanMessage,
+    StageDescriptionComponent,
 )
 from ..utils import extract_json
 from .arbitration_prompt_builders import (
@@ -82,6 +83,17 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             self._game.current_dungeon_combat_room.combat.rounds or []
         )
 
+        # 获取当前行动者所在的场景实体，确保后续的仲裁请求能够正确发送到对应的场景上下文
+        stage_entity = self._game.resolve_stage_entity(actor_entity)
+        assert stage_entity is not None, f"无法找到 {actor_entity.name} 所在的场景实体"
+
+        assert stage_entity.has(
+            StageDescriptionComponent
+        ), "当前场景实体缺少 StageDescriptionComponent 组件！"
+        current_stage_description = stage_entity.get(
+            StageDescriptionComponent
+        ).narrative
+
         # 生成仲裁提示信息，包括当前行动、目标属性、回合数、目标状态效果和装备附加属性
         message = generate_consumable_arbitration_prompt(
             actor_name=actor_entity.name,
@@ -90,6 +102,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             target_stats=target_stats,
             current_round_number=current_round_number,
             target_arbitration_effects=target_arbitration_effects,
+            current_stage_description=current_stage_description,
         )
 
         # 生成压缩后的仲裁提示信息，用于在需要时向 LLM 提供更简洁的上下文
@@ -101,14 +114,11 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                 target_stats=target_stats,
                 current_round_number=current_round_number,
                 target_arbitration_effects=target_arbitration_effects,
+                current_stage_description=current_stage_description,
             )
             if self._use_compressed_prompt
             else None
         )
-
-        # 获取当前行动者所在的场景实体，确保后续的仲裁请求能够正确发送到对应的场景上下文
-        stage_entity = self._game.resolve_stage_entity(actor_entity)
-        assert stage_entity is not None, f"无法找到 {actor_entity.name} 所在的场景实体"
 
         # 初始化 DeepSeekClient，用于与 LLM 进行交互，并发送仲裁提示信息请求
         chat_client = DeepSeekClient(
@@ -173,6 +183,14 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             error_msg = f"消耗品仲裁结果应用失败: {e}"
             logger.error(error_msg)
             return
+
+        # 仲裁者（combat stage）更新自身场景环境快照
+        if response.stage_description.strip():
+            stage_entity.replace(
+                StageDescriptionComponent,
+                stage_entity.name,
+                response.stage_description,
+            )
 
         # 根据是否使用压缩提示，向游戏中添加人类消息，确保 LLM 的请求和响应能够在游戏中被记录和追踪
         if self._use_compressed_prompt:

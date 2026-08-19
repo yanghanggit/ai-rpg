@@ -225,6 +225,15 @@ class WorkshopComponent(Component):
 ############################################################################################################
 @final
 @register_component_type
+class DungeonPersonaComponent(Component):
+    """标记世界系统实体为副本本体（地下城拟人化人格），负责副本记忆总结压缩。"""
+
+    name: str
+
+
+############################################################################################################
+@final
+@register_component_type
 class DrawPileComponent(MutableComponent):
     """战斗内抽牌堆；Draw 阶段 FIFO 消耗，耗尽时自动将 DiscardPile 洗牌补入；存放 DeckComponent 原始牌的 model_copy() 副本，战斗结束后由 CombatPileTeardownSystem 清空。"""
 

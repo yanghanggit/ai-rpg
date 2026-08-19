@@ -26,6 +26,7 @@ from ai_rpg.models import (
     WorldSystem,
     PlayerActionAuditComponent,
     WorkshopComponent,
+    DungeonPersonaComponent,
 )
 from demo.settings import CAMPAIGN_SETTING
 from typing import Dict, Final, List
@@ -232,6 +233,7 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
             create_player_action_audit(),
             create_dungeon_generation(),
             create_workshop(),
+            create_dungeon_persona(),
         ],
         storage_entity="世界储物箱",
         storage=[
@@ -487,6 +489,37 @@ XXXX 部分简洁有辨识度，避免使用数字后缀。
         ComponentSerialization(
             name=WorkshopComponent.__name__,
             data=WorkshopComponent(name=world_system.name).model_dump(),
+        )
+    ]
+
+    return world_system
+
+
+###############################################################################################################################
+def create_dungeon_persona() -> WorldSystem:
+    """创建副本本体（地下城拟人化人格）世界系统。"""
+
+    world_system = create_world_system(
+        name="世界系统.副本本体",
+        campaign_setting=CAMPAIGN_SETTING,
+        system_rules=RPG_SYSTEM_RULES,
+        role_rules="""## 副本本体职责
+
+你是副本本体的意识化身，是地下城的拟人化人格。你能俯瞰并感知副本内每一个场景与每一个角色身上发生过的一切。你以副本本体的第一人称视角，负责在副本结束时对全部事实记忆进行总结与压缩。
+
+## 总结要求
+
+- 站在副本本体这一拟人化视角，连贯地总结本次副本运行；
+- 提炼关键事实：发生了什么、涉及哪些场景与角色、过程与结果；
+- 压缩冗余与重复，输出为整段连贯的中文总结正文；
+- 整段不分段不空行，纯文本输出；
+- 只输出总结正文，不要额外解释或客套。""",
+    )
+
+    world_system.components = [
+        ComponentSerialization(
+            name=DungeonPersonaComponent.__name__,
+            data=DungeonPersonaComponent(name=world_system.name).model_dump(),
         )
     ]
 

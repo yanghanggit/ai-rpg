@@ -3,6 +3,9 @@
 在副本退出、实体销毁之前，以「副本本体」的拟人化视角，对本次副本中所有
 场景与角色实体的事实记忆（Human/AI/Tool 消息）做一次总结与压缩。
 
+副本本体人设由 world system 实体「世界系统.副本本体」承载（见 demo/blueprints.py），
+本模块通过标准 entity 方式 `get_agent_context(entity)` 读取其人设 context。
+
 设计约束（当前阶段）：
   - 只读取实体上下文，绝不修改任何实体上下文、组件或游戏状态；
   - 与 CombatArchiveSystem 完全独立，互不依赖、互不污染；
@@ -12,35 +15,63 @@
 
 from typing import List, Optional, Sequence, Set, Tuple
 from loguru import logger
-
 from ..deepseek import DeepSeekClient, MODEL_FLASH
-from ..entitas import Entity
+from ..entitas import Entity, Matcher
 from ..game.dbg_game import DBGGame
 from ..models import (
     BaseMessage,
     Dungeon,
+    DungeonPersonaComponent,
     SystemMessage,
     get_buffer_string,
 )
 
 
 ###################################################################################################################################################################
-def _build_dungeon_persona(dungeon: Dungeon) -> SystemMessage:
-    """构建副本本体的拟人化系统提示词（人设来源：dungeon.premise）。"""
+def _get_dungeon_persona_entity(
+    dbg_game: DBGGame,
+) -> Optional[Entity]:
+    """获取副本本体 world system 实体（首个符合条件的实体）。
 
-    premise = dungeon.premise or "（无）"
+    找不到实体（或缺少 DungeonPersonaComponent）时返回 None，表示应跳过归档。
+    """
 
-    return SystemMessage(
-        content=(
-            f"你是副本「{dungeon.name}」本身的意识化身，是的拟人化人格。\n"
-            f"\n"
-            f"你的身份设定（premise）：\n"
-            f"{premise}\n"
-            f"\n"
-            f"你能俯瞰并感知副本内每一个场景与每一个角色身上发生过的一切。"
-            f"你以副本本体的第一人称视角，负责在副本结束时对全部事实记忆进行总结与压缩。"
-        )
-    )
+    entities = dbg_game.get_group(
+        Matcher(all_of=[DungeonPersonaComponent])
+    ).entities.copy()
+
+    if not entities:
+        return None
+
+    # 取第一个符合条件的实体作为副本本体实体
+    entity = next(iter(entities))
+    logger.debug(f"[archive_dungeon] 找到副本本体实体：{entity.name!r}")
+    return entity
+
+
+###################################################################################################################################################################
+def _build_dungeon_setting_block(dungeon: Dungeon) -> str:
+    """构建副本初始设定文本块（不含 Round/Combat 等运行时战斗细节）。"""
+
+    lines: List[str] = [
+        "### 副本",
+        f"- 名称：{dungeon.name}",
+        f"- 前提（premise）：{dungeon.premise or '（无）'}",
+    ]
+
+    for index, room in enumerate(dungeon.rooms, start=1):
+        stage = room.stage
+        lines.append(f"### 房间 {index}（类型：{room.type}）")
+        lines.append(f"- 场景：{stage.name}（类型：{stage.stage_profile.type}）")
+        lines.append(f"- 场景设定：{stage.stage_profile.profile}")
+
+        for actor in stage.actors:
+            sheet = actor.character_sheet
+            lines.append(f"- 角色：{actor.name}（类型：{sheet.type}）")
+            lines.append(f"  - 角色设定：{sheet.profile}")
+            lines.append(f"  - 外观：{sheet.base_body}")
+
+    return "\n".join(lines)
 
 
 ###################################################################################################################################################################
@@ -70,19 +101,22 @@ def _build_entity_fact_block(
 
 ###################################################################################################################################################################
 def _build_archive_prompt(dungeon: Dungeon, facts_block: str) -> str:
-    """构建副本本体归档总结提示词。"""
+    """构建副本本体归档总结提示词（副本初始设定 + 运行时事实记忆）。"""
+
+    setting_block = _build_dungeon_setting_block(dungeon)
 
     return f"""# 任务：以副本本体的视角，总结并压缩本次副本的全部事实记忆。
 
-以下是本次副本运行中，所有场景与角色留下的事实记忆（已去除各实体的系统人设，只保留事件内容）：
+## 副本初始设定
+
+{setting_block}
+
+## 运行时事实记忆
 
 {facts_block}
 
 ## 要求
-- 站在副本「{dungeon.name}」这一拟人化本体的第一人称视角，连贯地总结；
-- 提炼关键事实：发生了什么、涉及哪些场景与角色、过程与结果；
-- 压缩冗余与重复，输出一段简洁的中文总结正文；
-- 只输出总结正文，不要额外解释或客套。"""
+站在副本「{dungeon.name}」这一拟人化本体的第一人称视角，输出一段连贯的中文总结正文。整段不分段不空行，纯文本输出。"""
 
 
 ###################################################################################################################################################################
@@ -129,13 +163,19 @@ async def archive_dungeon(
 
     try:
 
-        # 1. 检索副本中所有 actor/stage 实体（与 teardown 相同的数据来源）
+        # 1. 获取副本本体 world system 实体；缺失则跳过归档
+        dungeon_persona_entity = _get_dungeon_persona_entity(dbg_game)
+        if dungeon_persona_entity is None:
+            logger.warning(f"[archive_dungeon] 未找到副本本体实体，归档跳过")
+            return None
+
+        # 2. 检索副本中所有 actor/stage 实体（与 teardown 相同的数据来源）
         entities = _collect_dungeon_entities(dbg_game, dungeon)
         if not entities:
             logger.warning(f"[archive_dungeon] 副本 {dungeon.name!r} 没有可归档的实体")
             return None
 
-        # 2. 取出每个实体的 agent context，过滤出事实记忆并拼接
+        # 3. 取出每个实体的 agent context，过滤出事实记忆并拼接
         facts_block = "\n\n".join(
             _build_entity_fact_block(
                 label,
@@ -145,19 +185,20 @@ async def archive_dungeon(
             for label, entity in entities
         )
 
-        # 3. 以副本本体人设 + 全部事实记忆，驱动一个额外的 agent 做总结压缩
-        persona = _build_dungeon_persona(dungeon)
+        # 4. 以副本本体人设 + 副本初始设定 + 运行时事实，驱动额外 agent 做总结压缩
         prompt = _build_archive_prompt(dungeon, facts_block)
 
+        # 5. 调用 DeepSeekClient 进行归档总结
         client = DeepSeekClient(
             name=f"dungeon:{dungeon.name}",
             prompt=prompt,
-            context=[persona],
+            context=dbg_game.get_agent_context(dungeon_persona_entity).context,
             model=MODEL_FLASH,
             thinking=False,
         )
         await client.chat()
 
+        # 6. 获取归档总结结果
         summary = client.response_content
         if not summary:
             logger.warning(f"[archive_dungeon] 副本 {dungeon.name!r} 归档结果为空")

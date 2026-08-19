@@ -6,7 +6,7 @@
 
 - **Python 3.12+** / **FastAPI** / **Pydantic v2**
 - **DeepSeek** (chat + reasoner)
-- **PostgreSQL** (pgvector) / **ChromaDB**
+- **PostgreSQL** (pgvector)
 - **Sentence Transformers** / **Replicate**（图像生成）
 - **UV** / **Black** / **Ruff** / **MyPy** / **Pytest**
 

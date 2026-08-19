@@ -27,7 +27,7 @@ from ai_rpg.pgsql import (
     postgresql_config,
 )
 from ai_rpg.pgsql.user_operations import has_user, save_user
-from ai_rpg.chroma import reset_client, get_custom_collection, add_documents
+from ai_rpg.rag import add_documents
 from ai_rpg.embedding_model.sentence_transformer import embedding_model
 
 
@@ -105,15 +105,13 @@ def _setup_user() -> None:
 ########################################################################################################
 ########################################################################################################
 ########################################################################################################
-def _setup_chromadb() -> None:
+def _setup_rag() -> None:
     """
     初始化 RAG 系统
+
+    注意：vector_documents 表已在 PostgreSQL 初始化阶段随数据库一并重建，此处无需再清空。
     """
     logger.info("🚀 初始化RAG系统...")
-
-    # 清空数据库
-    logger.info("🧹 清空ChromaDB数据库...")
-    reset_client()
 
     # 读取 BLUEPRINTS_DIR 下所有蓝图文件为 Blueprint 实例
     blueprints = [
@@ -136,23 +134,18 @@ def _setup_chromadb() -> None:
         # 准备文档数据：将 Dict[str, List[str]] 展开为 flat lists
         documents_list: List[str] = []
         metadatas_list: List[Dict[str, str]] = []
-        ids_list: List[str] = []
 
-        doc_index = 0
         for category, docs in blueprint.knowledge_base.items():
             for doc in docs:
                 documents_list.append(doc)
                 metadatas_list.append({"category": category})
-                ids_list.append(f"{category}_{doc_index}")
-                doc_index += 1
 
         logger.info(f"📚 为 {blueprint.name} 加载知识库...")
         success = add_documents(
-            collection=get_custom_collection(blueprint.name),
+            collection=blueprint.name,
             embedding_model=embedding_model,
             documents=documents_list,
             metadatas=metadatas_list,
-            ids=ids_list,
         )
         if not success:
             logger.error(f"❌ {blueprint.name} 知识库加载失败!")
@@ -202,7 +195,7 @@ def main() -> None:
     # RAG 系统相关操作
     try:
         logger.info("🚀 初始化RAG系统...")
-        _setup_chromadb()
+        _setup_rag()
         logger.success("✅ RAG 系统初始化完成")
     except Exception as e:
         logger.error(f"❌ RAG 系统初始化失败: {e}")

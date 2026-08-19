@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from loguru import logger
 from sqlalchemy import text
 from .client import SessionLocal
-from .vector_document import VectorDocumentDB
+from .vector_document import VectorDocumentDB, EMBEDDING_DIMENSION
 
 
 ##################################################################################################################
@@ -19,6 +19,7 @@ from .vector_document import VectorDocumentDB
 def save_vector_document(
     content: str,
     embedding: List[float],
+    collection: str,
     title: Optional[str] = None,
     source: Optional[str] = None,
     doc_type: Optional[str] = None,
@@ -32,13 +33,16 @@ def save_vector_document(
     try:
 
         # 验证向量维度
-        if len(embedding) != 1536:
-            raise ValueError(f"向量维度必须是1536，当前维度: {len(embedding)}")
+        if len(embedding) != EMBEDDING_DIMENSION:
+            raise ValueError(
+                f"向量维度必须是{EMBEDDING_DIMENSION}，当前维度: {len(embedding)}"
+            )
 
         # 创建 VectorDocumentDB 实例
         document = VectorDocumentDB(
             content=content,
             embedding=embedding,
+            collection=collection,
             title=title,
             source=source,
             doc_type=doc_type,
@@ -68,6 +72,7 @@ def save_vector_document(
 def search_similar_documents(
     query_embedding: List[float],
     limit: int = 10,
+    collection_filter: Optional[str] = None,
     doc_type_filter: Optional[str] = None,
     similarity_threshold: float = 0.3,
 ) -> List[Tuple[VectorDocumentDB, float]]:
@@ -79,9 +84,9 @@ def search_similar_documents(
     try:
 
         # 验证查询向量维度
-        if len(query_embedding) != 1536:
+        if len(query_embedding) != EMBEDDING_DIMENSION:
             raise ValueError(
-                f"查询向量维度必须是1536，当前维度: {len(query_embedding)}"
+                f"查询向量维度必须是{EMBEDDING_DIMENSION}，当前维度: {len(query_embedding)}"
             )
 
         # 构建SQL条件
@@ -96,6 +101,11 @@ def search_similar_documents(
             "threshold": similarity_threshold,
             "limit": limit,
         }
+
+        # 如果提供了集合过滤器，则添加到条件中
+        if collection_filter:
+            conditions.append("collection = :collection_filter")
+            params["collection_filter"] = collection_filter
 
         # 如果提供了文档类型过滤器，则添加到条件中
         if doc_type_filter:

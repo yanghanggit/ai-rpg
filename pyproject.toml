@@ -34,8 +34,6 @@ dependencies = [
     "replicate>=1.0.7",
     # AI and embeddings
     "sentence-transformers>=4.1.0",
-    # Vector database
-    "chromadb>=1.0.15",
     # Database
     "sqlalchemy>=2.0.27",
     "pgvector>=0.4.1",

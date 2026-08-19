@@ -13,6 +13,7 @@ import hashlib
 
 # 导入配置
 from src.ai_rpg.pgsql import postgresql_config
+from src.ai_rpg.pgsql.vector_document import EMBEDDING_DIMENSION
 
 
 # ================================
@@ -43,18 +44,18 @@ def setup_database_tables() -> Any:
 
 def mock_get_embedding(text: str) -> List[float]:
     """
-    模拟获取文本嵌入向量的函数 (1536维)
+    模拟获取文本嵌入向量的函数 (EMBEDDING_DIMENSION维)
     实际使用时应该调用OpenAI或其他嵌入API
 
     参数:
         text: 输入文本
 
     返回:
-        List[float]: 1536维的向量
+        List[float]: EMBEDDING_DIMENSION维的向量
     """
     # 使用文本哈希生成确定性的向量 (仅用于测试)
     np.random.seed(hash(text) % 2**32)
-    vector = np.random.randn(1536).astype(float)
+    vector = np.random.randn(EMBEDDING_DIMENSION).astype(float)
     # 归一化向量
     vector = vector / np.linalg.norm(vector)
     return cast(List[float], list(vector))
@@ -69,7 +70,7 @@ def mock_openai_embedding(text: str) -> List[float]:
     seed = int(hash_obj.hexdigest(), 16) % (2**32)
 
     np.random.seed(seed)
-    vector = np.random.randn(1536).astype(float)
+    vector = np.random.randn(EMBEDDING_DIMENSION).astype(float)
     vector = vector / np.linalg.norm(vector)  # 归一化
     return cast(List[float], vector.tolist())
 
@@ -337,6 +338,7 @@ def test_vector_document_operations() -> None:
             doc = save_vector_document(
                 content=doc_data["content"],
                 embedding=embedding,
+                collection="test_documents",
                 title=doc_data["title"],
                 doc_type=doc_data["doc_type"],
                 source=doc_data["source"],
@@ -442,6 +444,7 @@ def demo_document_rag_system() -> None:
         save_vector_document(
             content=doc_data["content"],
             embedding=embedding,
+            collection="demo_knowledge_base",
             title=doc_data["title"],
             doc_type=doc_data["doc_type"],
             source=doc_data["source"],

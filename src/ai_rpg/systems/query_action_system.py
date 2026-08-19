@@ -10,7 +10,7 @@ from loguru import logger
 from ..embedding_model import (
     embedding_model,
 )
-from ..chroma import get_custom_collection, search_documents
+from ..rag import search_documents
 from ..game.dbg_game import DBGGame
 
 
@@ -101,7 +101,7 @@ class QueryActionSystem(ReactiveProcessor):
             logger.info(f"📚 查询公共知识库（游戏: {self._game.name}）...")
             docs, scores = search_documents(
                 query=original_message,
-                collection=get_custom_collection(self._game.name),
+                collection=self._game.name,
                 embedding_model=embedding_model,
                 top_k=self._top_k,
             )

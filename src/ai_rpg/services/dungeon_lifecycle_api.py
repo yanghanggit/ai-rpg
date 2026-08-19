@@ -25,6 +25,8 @@ from .dungeon_exit_action import (
 )
 from .dungeon_setup_action import (
     setup_dungeon,
+)
+from .dungeon_teardown_action import (
     teardown_dungeon,
 )
 from .home_tasks import (

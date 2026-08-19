@@ -1,8 +1,7 @@
 """
-副本实体创建与销毁模块
+副本实体创建模块
 
-负责根据副本模型创建游戏实体（敌人、场景），以及退出副本时销毁这些实体。
-setup_dungeon 与 teardown_dungeon 互为逆操作。
+负责根据副本模型创建游戏实体（敌人、场景）。
 """
 
 from typing import Tuple
@@ -89,31 +88,3 @@ def setup_dungeon(dbg_game: DBGGame, dungeon_name: str) -> Tuple[bool, str]:
 
     logger.info(f"setup_dungeon 完成: {dungeon.name}")
     return True, f"副本实体创建完成: {dungeon.name}"
-
-
-###################################################################################################################################################################
-def teardown_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> None:
-    """销毁副本相关实体并重置副本数据，是 setup_dungeon 的逆操作。"""
-
-    logger.debug(f"[teardown_dungeon] 开始清理副本实体: dungeon={dungeon.name!r}")
-
-    # 1. 销毁所有副本中的 actor 实体
-    for room in dungeon.rooms:
-        for actor in room.stage.actors:
-            destroy_actor_entity = dbg_game.get_actor_entity(actor.name)
-            if destroy_actor_entity is not None:
-                dbg_game.destroy_entity(destroy_actor_entity)
-
-    # 2. 销毁所有副本中的 stage 实体
-    for room in dungeon.rooms:
-        destroy_stage_entity = dbg_game.get_stage_entity(room.stage.name)
-        if destroy_stage_entity is not None:
-            dbg_game.destroy_entity(destroy_stage_entity)
-
-    # 3. 重置副本数据为空副本
-    dbg_game._world.dungeon = Dungeon(name="", rooms=[], premise="")
-
-    # 4. 将运行时实体状态同步回序列化字段
-    # dbg_game.flush_entities()
-
-    logger.debug("[teardown_dungeon] 副本实体清理完成，dungeon 已重置")

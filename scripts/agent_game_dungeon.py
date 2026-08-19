@@ -29,6 +29,8 @@ from ai_rpg.services.dungeon_enter_action import (
 )
 from ai_rpg.services.dungeon_setup_action import (
     setup_dungeon,
+)
+from ai_rpg.services.dungeon_teardown_action import (
     teardown_dungeon,
 )
 from pathlib import Path

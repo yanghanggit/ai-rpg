@@ -27,6 +27,10 @@ from ..models import (
 )
 
 
+# 实体记忆块之间的长分割线
+_SEP: str = "-" * 86
+
+
 ###################################################################################################################################################################
 def _get_dungeon_persona_entity(
     dbg_game: DBGGame,
@@ -80,12 +84,16 @@ def _build_entity_fact_block(
     entity: Entity,
     messages: Sequence[BaseMessage],
 ) -> str:
-    """将单个实体的上下文（跳过 SystemMessage）拼接为一段事实文本。"""
+    """将单个实体的上下文（跳过 SystemMessage）整理为一段事实记忆文本。
 
-    # 只总结 Human/AI/Tool 的事件内容，跳过首条 SystemMessage（人设/规则）
+    模块标题使用纯文本（不使用 # 标题，避免与消息内容中的多级 # 混淆），
+    消息内容沿用 Human / AI(实体名) / Tool(实体名) 的角色标记。
+    """
+
+    # 只保留 Human/AI/Tool 的事件内容，跳过首条 SystemMessage（人设/规则）
     facts = [msg for msg in messages if not isinstance(msg, SystemMessage)]
 
-    header = f"## {label}：{entity.name}"
+    header = f"{label}：{entity.name}（事实记忆）"
 
     if not facts:
         return f"{header}\n（本次副本中无事实记忆）"
@@ -115,7 +123,10 @@ def _build_archive_prompt(dungeon: Dungeon, facts_block: str) -> str:
 
 {facts_block}
 
+{_SEP}
+
 ## 要求
+
 站在副本「{dungeon.name}」这一拟人化本体的第一人称视角，输出一段连贯的中文总结正文。整段不分段不空行，纯文本输出。"""
 
 
@@ -175,8 +186,8 @@ async def archive_dungeon(
             logger.warning(f"[archive_dungeon] 副本 {dungeon.name!r} 没有可归档的实体")
             return None
 
-        # 3. 取出每个实体的 agent context，过滤出事实记忆并拼接
-        facts_block = "\n\n".join(
+        # 3. 取出每个实体的 agent context，过滤出事实记忆，用长分割线拼接各实体模块
+        facts_block = ("\n" + _SEP + "\n").join(
             _build_entity_fact_block(
                 label,
                 entity,

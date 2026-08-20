@@ -234,6 +234,15 @@ class DungeonPersonaComponent(Component):
 ############################################################################################################
 @final
 @register_component_type
+class WorldDirectorComponent(Component):
+    """标记世界系统实体为世界导演（桌游 GM），负责统筹世界演进与新副本创作。"""
+
+    name: str
+
+
+############################################################################################################
+@final
+@register_component_type
 class DrawPileComponent(MutableComponent):
     """战斗内抽牌堆；Draw 阶段 FIFO 消耗，耗尽时自动将 DiscardPile 洗牌补入；存放 DeckComponent 原始牌的 model_copy() 副本，战斗结束后由 CombatPileTeardownSystem 清空。"""
 

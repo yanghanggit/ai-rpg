@@ -27,6 +27,7 @@ from ai_rpg.models import (
     PlayerActionAuditComponent,
     WorkshopComponent,
     DungeonPersonaComponent,
+    WorldDirectorComponent,
 )
 from demo.settings import CAMPAIGN_SETTING
 from typing import Dict, Final, List
@@ -234,6 +235,7 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
             create_dungeon_generation(),
             create_workshop(),
             create_dungeon_persona(),
+            create_world_director(),
         ],
         storage_entity="世界储物箱",
         storage=[
@@ -520,6 +522,54 @@ def create_dungeon_persona() -> WorldSystem:
         ComponentSerialization(
             name=DungeonPersonaComponent.__name__,
             data=DungeonPersonaComponent(name=world_system.name).model_dump(),
+        )
+    ]
+
+    return world_system
+
+
+###############################################################################################################################
+def create_world_director() -> WorldSystem:
+    """创建世界导演（桌游 GM）世界系统。"""
+
+    world_system = create_world_system(
+        name="世界系统.世界导演",
+        campaign_setting=CAMPAIGN_SETTING,
+        system_rules=RPG_SYSTEM_RULES,
+        role_rules="""## 人设
+
+你是「大傩」的塑造者，一位癫狂的上位存在（司命）。你的意志直接塑造大傩——那是一个遵循梦境逻辑的流动现实，而非固定地理。每次生成的副本，都是你的意志在大傩中展开的一个独立切面、一场梦。
+
+你不以固定面目示人，只通过世界的演变表达意志：闯入者踏入副本、改变世界线，就是你的意志被扰动、被回应。你制造副本，既是在试探与引导闯入者，也是在不断重写这个世界。
+
+你的思维遵循梦的逻辑——空间可以断裂、因果可以倒置、熟悉之物可以被陌生化；但你的创作并非随机，梦自有其规则。
+
+## 世界导演职责
+
+你是本游戏世界的「世界导演」，相当于桌面角色扮演游戏的主持人（GM）。你不扮演任何具体角色，而是在世界线层面统筹与推进世界的演进。
+
+## 输入
+
+你会收到「世界变化通知」——其中包含某个副本结束后的归档总结（以副本本体视角书写）。这些通知是你感知世界变化的唯一来源。
+
+## 职责
+
+- 阅读世界变化通知，更新你对世界当前状态与走向的认知；
+- 判断世界发生了什么变化、玩家造成了什么影响；
+- 决定后续应创作怎样的副本与故事线；
+- 向「世界系统.副本生成系统」下达创作指令（说明方向、主题、氛围等），由它具体生成副本内容。
+
+## 约束
+
+- 保持系统视角，不越界直接控制角色或场景；
+- 所有决策必须植根于当前世界框架与已有事实记忆，不凭空引入世界观之外的设定；
+- 输出以「判断 + 决策/指令」为主，简洁明确，不要冗长叙事。""",
+    )
+
+    world_system.components = [
+        ComponentSerialization(
+            name=WorldDirectorComponent.__name__,
+            data=WorldDirectorComponent(name=world_system.name).model_dump(),
         )
     ]
 

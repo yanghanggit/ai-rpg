@@ -1,19 +1,6 @@
-"""副本本体记忆归档模块
+"""副本本体记忆归档模块"""
 
-在副本退出、实体销毁之前，以「副本本体」的拟人化视角，对本次副本中所有
-场景与角色实体的事实记忆（Human/AI/Tool 消息）做一次总结与压缩。
-
-副本本体人设由 world system 实体「世界系统.副本本体」承载（见 demo/blueprints.py），
-本模块通过标准 entity 方式 `get_agent_context(entity)` 读取其人设 context。
-
-设计约束（当前阶段）：
-  - 只读取实体上下文，绝不修改任何实体上下文、组件或游戏状态；
-  - 与 CombatArchiveSystem 完全独立，互不依赖、互不污染；
-  - 压缩结果当前不落盘、不写回任何 AgentContext，仅通过日志输出并返回给调用方，
-    供观察验证后再决定后续落点。
-"""
-
-from typing import List, Optional, Sequence, Set, Tuple
+from typing import Final, List, Optional, Sequence, Set, Tuple
 from loguru import logger
 from ..deepseek import DeepSeekClient, MODEL_FLASH
 from ..entitas import Entity, Matcher
@@ -22,13 +9,16 @@ from ..models import (
     BaseMessage,
     Dungeon,
     DungeonPersonaComponent,
+    HumanMessage,
+    AIMessage,
     SystemMessage,
+    WorldDirectorComponent,
     get_buffer_string,
 )
 
 
 # 实体记忆块之间的长分割线
-_SEP: str = "-" * 86
+_SEP: Final[str] = "-" * 100
 
 
 ###################################################################################################################################################################
@@ -51,6 +41,102 @@ def _get_dungeon_persona_entity(
     entity = next(iter(entities))
     logger.debug(f"[archive_dungeon] 找到副本本体实体：{entity.name!r}")
     return entity
+
+
+###################################################################################################################################################################
+def _get_world_director_entity(
+    dbg_game: DBGGame,
+) -> Optional[Entity]:
+    """获取世界导演（桌游 GM）world system 实体（首个符合条件的实体）。"""
+
+    entities = dbg_game.get_group(
+        Matcher(all_of=[WorldDirectorComponent])
+    ).entities.copy()
+
+    if not entities:
+        return None
+
+    entity = next(iter(entities))
+    logger.debug(f"[archive_dungeon] 找到世界导演实体：{entity.name!r}")
+    return entity
+
+
+###################################################################################################################################################################
+def _notify_world_director(
+    dbg_game: DBGGame,
+    dungeon: Dungeon,
+    summary: str,
+) -> Optional[Entity]:
+    """将副本归档总结作为「世界变化通知」写入世界导演的上下文。
+
+    只追加消息、不触发 LLM 思考；世界导演后续的决策由未来 action/system 驱动。
+    返回世界导演实体（找不到时返回 None）。
+    """
+
+    world_director_entity = _get_world_director_entity(dbg_game)
+    if world_director_entity is None:
+        logger.warning("[archive_dungeon] 未找到世界导演实体，跳过世界变化通知")
+        return None
+
+    notification = HumanMessage(
+        content=(
+            f"# 世界变化通知\n"
+            f"\n"
+            f"副本「{dungeon.name}」已结束。\n"
+            f"前提（premise）：{dungeon.premise or '（无）'}\n"
+            f"\n"
+            f"副本本体归档总结：\n"
+            f"{summary}\n"
+            f"\n"
+            f"请据此思考：这次扰动让梦魇世界发生了怎样的变化？哪些疯癫之处会被进一步牵动？"
+        )
+    )
+
+    dbg_game.add_human_message(world_director_entity, notification)
+    logger.info(
+        f"[archive_dungeon] 已向世界导演 {world_director_entity.name!r} "
+        f"发送世界变化通知（副本：{dungeon.name!r}）"
+    )
+    return world_director_entity
+
+
+###################################################################################################################################################################
+async def _test_world_director_next_dungeon(
+    dbg_game: DBGGame,
+    world_director_entity: Entity,
+) -> None:
+    """【测试用】让世界导演回答一次：下一步想创建怎样的副本。
+
+    仅用于观察 GM 人设与通知链路是否生效，后续会替换为正式的 GM 决策流程。
+    """
+
+    client = DeepSeekClient(
+        name="world_director:test",
+        prompt=(
+            "这次探索只扰动了梦魇世界的一个小角落。"
+            "下一步如果要创造新的副本，你会让梦魇世界的哪些疯癫之处产生怎样的变化？"
+            "为什么？说说你的想法。"
+        ),
+        context=dbg_game.get_agent_context(world_director_entity).context,
+        model=MODEL_FLASH,
+        thinking=False,
+    )
+    await client.chat()
+
+    # 如果世界导演没有生成回答，则直接返回
+    if client.response_ai_message is None:
+        return
+
+    # 打印世界导演的测试回答
+    logger.info(f"[archive_dungeon] 世界导演测试回答:\n{client.response_content}")
+
+    # 将世界导演的测试回答添加到游戏上下文中
+    dbg_game.add_human_message(
+        world_director_entity, HumanMessage(content=client.prompt)
+    )
+    dbg_game.add_ai_message(
+        world_director_entity, AIMessage(content=client.response_content)
+    )
 
 
 ###################################################################################################################################################################
@@ -165,7 +251,7 @@ def _collect_dungeon_entities(
 async def archive_dungeon(
     dbg_game: DBGGame,
     dungeon: Dungeon,
-) -> Optional[str]:
+) -> None:
     """以副本本体的拟人化视角，对本次副本所有场景/角色的事实记忆做总结压缩。
 
     只读取实体上下文，不写入任何状态；结果仅通过日志输出并返回给调用方。
@@ -216,11 +302,19 @@ async def archive_dungeon(
             return None
 
         logger.info(f"[archive_dungeon] 副本「{dungeon.name}」本体总结:\n{summary}")
-        return summary
+
+        # 7. 将总结作为「世界变化通知」写入世界导演（GM）的上下文
+        world_director_entity = _notify_world_director(dbg_game, dungeon, summary)
+
+        # 8. 【测试用】让世界导演推理一次，观察其回答
+        if world_director_entity is not None:
+            await _test_world_director_next_dungeon(
+                dbg_game,
+                world_director_entity,
+            )
 
     except Exception as e:
         logger.error(
             f"[archive_dungeon] 副本 {dungeon.name!r} 归档失败: "
             f"{type(e).__name__}: {e}"
         )
-        return None

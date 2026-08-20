@@ -5,7 +5,7 @@
 import datetime
 import json
 import shutil
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Dict
 from pathlib import Path
 from pydantic import TypeAdapter
 from ..models import get_buffer_string, AgentContext, PlayerSession, Dungeon, World
@@ -50,7 +50,7 @@ def restore_world(snapshot_dir: Path) -> Tuple[World, PlayerSession]:
     world = World.model_validate_json(world_path.read_text(encoding="utf-8"))
 
     # 从 contexts/ 目录重建 agents_context
-    agents_context: dict[str, AgentContext] = {}
+    agents_context: Dict[str, AgentContext] = {}
     contexts_dir = snapshot_dir / "contexts"
     if contexts_dir.exists():
         for ctx_file in contexts_dir.glob("*.jsonl"):
@@ -171,8 +171,12 @@ def archive_world(
                 ensure_ascii=False,
             )
         ]
+
+        # 将每条会话消息序列化为 JSONL 格式
         for msg in player_session.session_messages:
             session_lines.append(msg.model_dump_json())
+
+        # 将 player_session 的 JSONL 内容写入文件
         player_session_jsonl = "\n".join(session_lines) + "\n"
 
         # world.json
@@ -213,6 +217,9 @@ def _dump_agent_contexts(
     context_dir = debug_dir / "contexts"
     context_dir.mkdir(parents=True, exist_ok=True)
 
+    # 实体记忆块之间的长分割线
+    sep: str = "-" * 100
+
     # 写每个 agent 的上下文 JSONL 和 buffer.txt
     for agent_name, agent_context in world.agents_context.items():
 
@@ -224,13 +231,17 @@ def _dump_agent_contexts(
 
         # 写 agent_name_buffer.txt
         if should_write_buffer_string:
+
+            # 构建 agent 的 buffer 字符串
             buffer_str = get_buffer_string(
                 agent_context.context,
-                system_prefix="\n" + "-" * 86 + "\nSystem",
-                human_prefix="\n" + "-" * 86 + "\nHuman",
-                ai_prefix="\n" + "-" * 86 + f"\nAI({agent_name})",
-                tool_prefix="\n" + "-" * 86 + f"\nTool({agent_name})",
+                system_prefix="\n" + sep + "\nSystem",
+                human_prefix="\n" + sep + "\nHuman",
+                ai_prefix="\n" + sep + f"\nAI({agent_name})",
+                tool_prefix="\n" + sep + f"\nTool({agent_name})",
             )
+
+            # 写入 agent_name_buffer.txt 文件
             (context_dir / f"{agent_name}_buffer.txt").write_text(
                 buffer_str, encoding="utf-8"
             )

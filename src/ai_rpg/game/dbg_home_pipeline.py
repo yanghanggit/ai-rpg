@@ -35,11 +35,6 @@ def create_home_pipeline(game: GameSession) -> RPGGameProcessPipeline:
     )
     from ..systems.home_npc_plan_system import HomeNpcPlanSystem
     from ..systems.home_player_plan_system import HomePlayerPlanSystem
-    from ..systems.craft_consumable_item_action_system import (
-        CraftConsumableItemActionSystem,
-    )
-    from ..systems.craft_gear_item_action_system import CraftGearItemActionSystem
-    from ..systems.craft_costume_item_action_system import CraftCostumeItemActionSystem
 
     ##
     dbg_game = cast(DBGGame, game)
@@ -65,11 +60,6 @@ def create_home_pipeline(game: GameSession) -> RPGGameProcessPipeline:
     processors.add(TransStageActionSystem(dbg_game))
     processors.add(RemoveCostumeActionSystem(dbg_game))
     processors.add(WearCostumeActionSystem(dbg_game))
-
-    # 制作相关的系统
-    processors.add(CraftConsumableItemActionSystem(dbg_game))
-    processors.add(CraftGearItemActionSystem(dbg_game))
-    processors.add(CraftCostumeItemActionSystem(dbg_game))
 
     # 清除动作相关的临时状态、标记等，准备下一轮输入
     processors.add(ActionCleanupSystem(dbg_game))

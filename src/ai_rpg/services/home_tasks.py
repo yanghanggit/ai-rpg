@@ -144,3 +144,51 @@ async def execute_home_pipeline_task(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
+async def execute_home_craft_pipeline_task(
+    task_id: str,
+    user_name: str,
+    game_server: GameServer,
+) -> None:
+    """后台执行 home craft pipeline 任务"""
+    try:
+        logger.info(
+            f"🚀 home craft pipeline 任务开始: task_id={task_id}, user={user_name}"
+        )
+
+        current_room = game_server.get_room(user_name)
+        if current_room is None:
+            raise ValueError(f"游戏实例不存在: user={user_name}")
+
+        async with current_room._lock:
+
+            rpg_game = await _validate_player_at_home(user_name, game_server)
+
+            # 执行 home craft pipeline，仅处理合成相关动作，可能比较耗时
+            await rpg_game._home_craft_pipeline.process()
+
+            # 存档当前世界状态，便于调试和回放
+            store_game(rpg_game)
+
+        task_record = game_server.get_task(task_id)
+        if task_record is not None:
+            task_record.status = TaskStatus.COMPLETED
+            task_record.end_time = datetime.now().isoformat()
+
+        logger.info(
+            f"✅ home craft pipeline 任务完成: task_id={task_id}, user={user_name}"
+        )
+
+    except Exception as e:
+        logger.error(
+            f"❌ home craft pipeline 任务失败: task_id={task_id}, user={user_name}, error={e}"
+        )
+        task_record = game_server.get_task(task_id)
+        if task_record is not None:
+            task_record.status = TaskStatus.FAILED
+            task_record.error = str(e)
+            task_record.end_time = datetime.now().isoformat()
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################

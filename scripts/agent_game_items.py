@@ -131,7 +131,7 @@ async def craft_consumable_game(
         logger.error(f"合成消耗品失败: {error_detail}")
         return terminal_game
 
-    await terminal_game._home_pipeline.process()
+    await terminal_game._home_craft_pipeline.process()
     store_game(terminal_game, save_dir)
     logger.info(f"合成消耗品完成（材料={material_names}），存档: {save_dir}")
     return terminal_game
@@ -151,7 +151,7 @@ async def craft_gear_item_game(
         logger.error(f"锻造装备失败: {error_detail}")
         return terminal_game
 
-    await terminal_game._home_pipeline.process()
+    await terminal_game._home_craft_pipeline.process()
     store_game(terminal_game, save_dir)
     logger.info(f"锻造装备完成（材料={material_names}），存档: {save_dir}")
     return terminal_game
@@ -172,7 +172,7 @@ async def craft_costume_game(
         logger.error(f"制作时装失败: {error_detail}")
         return terminal_game
 
-    await terminal_game._home_pipeline.process()
+    await terminal_game._home_craft_pipeline.process()
     store_game(terminal_game, save_dir)
     logger.info(f"制作时装完成（材料={material_names}），存档: {save_dir}")
     return terminal_game

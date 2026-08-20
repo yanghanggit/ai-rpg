@@ -13,6 +13,7 @@ from .game_server_dependencies import CurrentGameServer
 from .home_tasks import (
     _validate_player_at_home,
     execute_home_pipeline_task,
+    execute_home_craft_pipeline_task,
     execute_dungeon_generate_pipeline_task,
 )
 from .home_actions import (
@@ -518,7 +519,7 @@ async def home_craft_item(
 
     craft_task = game_server.create_task()
     asyncio.create_task(
-        execute_home_pipeline_task(
+        execute_home_craft_pipeline_task(
             craft_task.task_id,
             payload.user_name,
             game_server,
@@ -568,7 +569,7 @@ async def home_craft_gear_item(
 
     craft_task = game_server.create_task()
     asyncio.create_task(
-        execute_home_pipeline_task(
+        execute_home_craft_pipeline_task(
             craft_task.task_id,
             payload.user_name,
             game_server,
@@ -618,7 +619,7 @@ async def home_craft_costume_item(
 
     craft_task = game_server.create_task()
     asyncio.create_task(
-        execute_home_pipeline_task(
+        execute_home_craft_pipeline_task(
             craft_task.task_id,
             payload.user_name,
             game_server,

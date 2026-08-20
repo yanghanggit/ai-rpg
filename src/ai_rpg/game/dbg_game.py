@@ -9,6 +9,7 @@ from loguru import logger
 from .rpg_game_pipeline_manager import RPGGameProcessPipeline
 from .rpg_game import RPGGame
 from .dbg_home_pipeline import create_home_pipeline
+from .dbg_home_craft_pipeline import create_home_craft_pipeline
 from .dbg_dungeon_entry_room_pipeline import create_dungeon_entry_room_pipeline
 from .dbg_dungeon_combat_room_pipeline import create_dungeon_combat_room_pipeline
 from .dbg_dungeon_generate_pipeline import create_dungeon_generate_pipeline
@@ -64,6 +65,11 @@ class DBGGame(RPGGame):
         # 家园流程（NPC 与玩家共用）
         self._home_pipeline: Final[RPGGameProcessPipeline] = create_home_pipeline(self)
 
+        # 家园制作流程（仅处理 craft 动作）
+        self._home_craft_pipeline: Final[RPGGameProcessPipeline] = (
+            create_home_craft_pipeline(self)
+        )
+
         # 副本入口流程（叙事 + 牌库生成，无战斗）
         self._dungeon_entry_room_pipeline: Final[RPGGameProcessPipeline] = (
             create_dungeon_entry_room_pipeline(self)
@@ -81,6 +87,7 @@ class DBGGame(RPGGame):
 
         # 注册所有管道到管道管理器
         self.register_pipeline(self._home_pipeline)
+        self.register_pipeline(self._home_craft_pipeline)
         self.register_pipeline(self._dungeon_entry_room_pipeline)
         self.register_pipeline(self._dungeon_combat_room_pipeline)
         self.register_pipeline(self._dungeon_generate_pipeline)

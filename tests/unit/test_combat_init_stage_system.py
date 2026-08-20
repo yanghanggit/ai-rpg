@@ -143,7 +143,7 @@ class TestExecuteCombatInitStatusEffects:
             await system.execute()
 
         assert actor.has(AddStatusEffectsAction)
-        assert actor.get(AddStatusEffectsAction).affixes == [
+        assert actor.get(AddStatusEffectsAction).affix_triggers == [
             AffixTrigger(source="战斗初始化场景", affix="[场景] 浓烟弥漫，可致眼盲")
         ]
 

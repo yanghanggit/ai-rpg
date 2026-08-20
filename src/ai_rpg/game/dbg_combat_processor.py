@@ -166,7 +166,7 @@ def consume_energy(entity: Entity, amount: int = 1) -> None:
 
 #################################################################################################################################################
 def accumulate_status_effects_action(
-    entity: Entity, affixes: List[AffixTrigger]
+    entity: Entity, affix_triggers: List[AffixTrigger]
 ) -> None:
     """为实体追加 AddStatusEffectsAction，自动合并已有的 affixes。"""
     existing = (
@@ -174,7 +174,7 @@ def accumulate_status_effects_action(
         if entity.has(AddStatusEffectsAction)
         else None
     )
-    merged = (existing.affixes if existing is not None else []) + affixes
+    merged = (existing.affix_triggers if existing is not None else []) + affix_triggers
     entity.replace(AddStatusEffectsAction, entity.name, merged)
 
 

@@ -137,7 +137,7 @@ class AddStatusEffectsAction(Component):
     """触发对当前场景所有参战角色进行状态效果评估。"""
 
     name: str
-    affixes: List[
+    affix_triggers: List[
         AffixTrigger
     ]  # affixes 触发信号列表，每条对应一个待生成的状态效果，与 StatusEffect 严格 1:1
 

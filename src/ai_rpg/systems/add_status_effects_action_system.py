@@ -44,7 +44,7 @@ def _format_affix_trigger(trigger: AffixTrigger, index: int) -> str:
 def _generate_compressed_add_status_effects_prompt(
     current_status_effects: List[StatusEffect],
     current_round_number: int,
-    affixes: List[AffixTrigger],
+    affix_triggers: List[AffixTrigger],
 ) -> str:
     """生成压缩版追加状态效果提示词（仅动态感知部分，省略静态字段说明与 JSON 示例）"""
 
@@ -59,9 +59,9 @@ def _generate_compressed_add_status_effects_prompt(
         )
 
     hints_block = "\n".join(
-        _format_affix_trigger(t, i + 1) for i, t in enumerate(affixes)
+        _format_affix_trigger(t, i + 1) for i, t in enumerate(affix_triggers)
     )
-    max_effects = len(affixes)
+    max_effects = len(affix_triggers)
 
     return f"""# 第 {current_round_number} 回合 — 追加状态效果
 
@@ -82,7 +82,7 @@ def _generate_compressed_add_status_effects_prompt(
 def _generate_add_status_effects_prompt(
     current_status_effects: List[StatusEffect],
     current_round_number: int,
-    affixes: List[AffixTrigger],
+    affix_triggers: List[AffixTrigger],
 ) -> str:
     """生成追加状态效果提示词"""
 
@@ -97,9 +97,9 @@ def _generate_add_status_effects_prompt(
         )
 
     hints_block = "\n".join(
-        _format_affix_trigger(t, i + 1) for i, t in enumerate(affixes)
+        _format_affix_trigger(t, i + 1) for i, t in enumerate(affix_triggers)
     )
-    max_effects = len(affixes)
+    max_effects = len(affix_triggers)
 
     return f"""# 第 {current_round_number} 回合 — 追加状态效果
 
@@ -263,7 +263,7 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
         prompt = _generate_add_status_effects_prompt(
             current_status_effects=combat_status_effects.status_effects,
             current_round_number=current_round_number,
-            affixes=add_status_effects_action.affixes,
+            affix_triggers=add_status_effects_action.affix_triggers,
         )
 
         # 如果启用了压缩提示词，则生成压缩后的提示词，用于在与 LLM 交互时减少上下文长度，提高效率
@@ -272,7 +272,7 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
             compressed_message = _generate_compressed_add_status_effects_prompt(
                 current_status_effects=combat_status_effects.status_effects,
                 current_round_number=current_round_number,
-                affixes=add_status_effects_action.affixes,
+                affix_triggers=add_status_effects_action.affix_triggers,
             )
 
         # 构建 DeepSeekClient 实例，用于与 LLM 交互，传入实体名称、提示词、压缩提示词以及实体上下文信息
@@ -341,15 +341,15 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
 
             # LLM 必须严格按 prompt 要求的 1:1 顺序返回，否则无法追溯 affix 来源
             assert len(format_response.add_effects) == len(
-                add_status_effects_action.affixes
+                add_status_effects_action.affix_triggers
             ), (
                 f"[{entity.name}] LLM 返回效果数({len(format_response.add_effects)}) "
-                f"与触发提示数({len(add_status_effects_action.affixes)}) 不一致"
+                f"与触发提示数({len(add_status_effects_action.affix_triggers)}) 不一致"
             )
 
             # 将新增效果的 source/affix 字段回填，便于后续追踪来源
             for trigger, effect in zip(
-                add_status_effects_action.affixes, format_response.add_effects
+                add_status_effects_action.affix_triggers, format_response.add_effects
             ):
                 effect.source = entity.name
                 effect.affix = trigger.affix

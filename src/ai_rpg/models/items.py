@@ -45,10 +45,10 @@ class GearItem(Item):
     )  # 装备费用；消耗被装备目标当前 energy 的点数；energy 不足时无法装备
     equip_affixes: List[str] = (
         []
-    )  # 装备时对装备者触发的延迟词缀；格式同 Card.affixes；由 UseGearItemArbitrationSystem 评估
+    )  # 装备时对装备者触发的延迟词缀；格式同 Card.on_hit_affixes；由 UseGearItemArbitrationSystem 评估
     on_hit_affixes: List[str] = (
         []
-    )  # 出牌命中目标时触发的延迟词缀；格式同 Card.affixes；由 PlayCardsArbitrationSystem 评估
+    )  # 出牌命中目标时触发的延迟词缀；格式同 Card.on_hit_affixes；由 PlayCardsArbitrationSystem 评估
     craft_materials: Sequence["AnyItem"] = Field(
         default_factory=list
     )  # 合成时消耗的原料列表；当前仅存 MaterialItem，保留 AnyItem 扩展余地
@@ -74,9 +74,12 @@ class ConsumableItem(Item):
         default=ItemType.CONSUMABLE_ITEM, frozen=True
     )
     target_type: TargetType = TargetType.SELF  # 使用目标类型，默认仅作用于自身
-    affixes: List[str] = (
+    on_use_affixes: List[str] = (
         []
-    )  # 延迟词缀列表；格式"[名称]:触发倾向描述"（如"[燃烧]:可能引发持续扣血"）；使用后独立推理生成 StatusEffect；无持续效果时输出 []
+    )  # 即时词缀列表；格式"[名称]:触发倾向描述"（如"[穿透]:本次使用无视目标防御"）；参与本次使用仲裁，由仲裁 LLM 直接套用，不落地 StatusEffect；无即时效果时输出 []
+    on_hit_affixes: List[str] = (
+        []
+    )  # 延迟词缀列表；格式"[名称]:触发倾向描述"（如"[燃烧]:可能引发持续扣血"）；使用命中目标后独立推理生成 StatusEffect；无持续效果时输出 []
     craft_materials: Sequence["AnyItem"] = Field(
         default_factory=list
     )  # 合成时消耗的原料列表；当前仅存 MaterialItem，保留 AnyItem 扩展余地

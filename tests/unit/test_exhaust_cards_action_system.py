@@ -26,7 +26,6 @@ def _make_card(name: str, source: str, *, exhaust: bool = False) -> Card:
     return Card(
         name=name,
         description="测试卡牌",
-        affixes=[],
         playable=True,
         exhaust=exhaust,
         damage_dealt=1,

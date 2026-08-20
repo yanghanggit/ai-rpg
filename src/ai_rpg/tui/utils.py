@@ -83,9 +83,12 @@ def render_item(item: AnyItem) -> str:
             f"[bold]{item.name}[/]{count_str} [green]【消耗品】[/]  [dim]目标: {target_label}[/]"
         )
         lines.append(f"  [dim]{item.description}[/]")
-        if item.affixes:
-            for affix in item.affixes:
-                lines.append(f"  [dim]词缀 {affix}[/]")
+        if item.on_use_affixes:
+            for affix in item.on_use_affixes:
+                lines.append(f"  [dim]词缀(使用时) {affix}[/]")
+        if item.on_hit_affixes:
+            for affix in item.on_hit_affixes:
+                lines.append(f"  [dim]词缀(命中后) {affix}[/]")
 
     else:  # MaterialItem
         assert isinstance(item, MaterialItem)
@@ -119,8 +122,10 @@ def render_card(card: Card) -> str:
     ]
     lines.append("      " + "  ".join(stat_parts))
 
-    if card.affixes:
-        lines.append(f"      [yellow]affixes: {'、'.join(card.affixes)}[/]")
+    if card.on_play_affixes:
+        lines.append(f"      [yellow]即时词缀: {'、'.join(card.on_play_affixes)}[/]")
+    if card.on_hit_affixes:
+        lines.append(f"      [yellow]延迟词缀: {'、'.join(card.on_hit_affixes)}[/]")
     if card.source:
         lines.append(f"      [dim]来源: {card.source}[/]")
 

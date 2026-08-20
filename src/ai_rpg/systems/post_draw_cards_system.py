@@ -36,7 +36,8 @@ class AdjustedCardEntry(BaseModel):
 
     name: str
     description: str
-    affixes: List[str] = []
+    on_play_affixes: List[str] = []
+    on_hit_affixes: List[str] = []
     playable: bool = True
     exhaust: bool = False
     cost: int = 1
@@ -97,7 +98,7 @@ def _generate_adjust_prompt(
 
 根据以上 DRAW 阶段状态效果，调整每张手牌的数值，使其体现状态效果的影响（如某状态效果使本回合手牌费用增加，可调整 `cost`）。
 
-**可修改字段**：`description`、`affixes`、`playable`、`exhaust`、`cost`、`damage_dealt`、`hit_count`、`target_type`
+**可修改字段**：`description`、`on_play_affixes`、`on_hit_affixes`、`playable`、`exhaust`、`cost`、`damage_dealt`、`hit_count`、`target_type`
 
 **不可修改字段**：`name`（用于对位识别，须原样回传）、`uuid`、`source`（系统自动保留，无需输出）
 
@@ -109,7 +110,8 @@ def _generate_adjust_prompt(
     {{
       "name": "（原样回传，不得修改）",
       "description": "...",
-      "affixes": [],
+      "on_play_affixes": [],
+      "on_hit_affixes": [],
       "playable": true,
       "exhaust": false,
       "cost": 1,
@@ -278,7 +280,8 @@ class PostDrawCardsSystem(ReactiveProcessor):
                     uuid=orig.uuid,  # 保留副本 uuid，确保跨系统身份一致
                     name=orig.name,  # 保持原名
                     description=entry.description,
-                    affixes=entry.affixes,
+                    on_play_affixes=entry.on_play_affixes,
+                    on_hit_affixes=entry.on_hit_affixes,
                     playable=entry.playable,
                     exhaust=entry.exhaust,
                     cost=entry.cost,

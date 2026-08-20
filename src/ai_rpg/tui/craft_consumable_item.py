@@ -331,13 +331,20 @@ class CraftConsumableItemScreen(BaseGameScreen):
                         shown = True
                     desc = str(item.get("description", ""))
                     target = str(item.get("target_type", ""))
-                    affixes: List[str] = [str(a) for a in item.get("affixes", [])]
+                    on_use_affixes: List[str] = [
+                        str(a) for a in item.get("on_use_affixes", [])
+                    ]
+                    on_hit_affixes: List[str] = [
+                        str(a) for a in item.get("on_hit_affixes", [])
+                    ]
                     log.write(f"  [bold magenta]道具[/]：{display_name(name)}")
                     if desc:
                         log.write(f"  [dim]{desc}[/]")
                     log.write(f"  [cyan]目标类型[/]：{target}")
-                    if affixes:
-                        log.write(f"  [cyan]词缀[/]：{', '.join(affixes)}")
+                    if on_use_affixes:
+                        log.write(f"  [cyan]即时词缀[/]：{', '.join(on_use_affixes)}")
+                    if on_hit_affixes:
+                        log.write(f"  [cyan]延迟词缀[/]：{', '.join(on_hit_affixes)}")
                     log.write("")
 
         if not shown:

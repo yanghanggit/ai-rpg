@@ -31,7 +31,8 @@ def _card_json(
     return {
         "name": name,
         "description": "描述",
-        "affixes": [],
+        "on_play_affixes": [],
+        "on_hit_affixes": [],
         "playable": True,
         "exhaust": False,
         "damage_dealt": 3,

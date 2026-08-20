@@ -134,6 +134,13 @@ def build_combat_arbitration_effects_lines(
     return lines
 
 
+def build_instant_affix_section(title: str, affixes: List[str]) -> str:
+    """构建「即时词缀」段落（卡牌/消耗品仲裁专用）；affixes 为空时返回空字符串。"""
+    if not affixes:
+        return ""
+    return f"\n\n## {title}\n\n" + "\n".join(f"- {a}" for a in affixes)
+
+
 FINAL_STATS_DESCRIPTION: Final[
     str
 ] = """### final_stats
@@ -171,6 +178,7 @@ CALC_RULES_SECTION: Final[
 **卡牌出牌**：单段有效伤害 = max(1, damage_dealt − 目标防御)（最低保底 1），共 hit_count 段；出牌者 HP 已为 0 则跳过结算。
 **装备穿戴**：stat_bonuses 已由系统确定性写入，无需重复计算。
 **消耗品使用**：依物品描述中明确写明的数值计算；描述模糊时给出合理推断并体现在 narrative 中。
+**即时词缀**：若本卡/本消耗品列出即时词缀，按其倾向直接套用到本次结算（如「穿透」= 本次伤害无视目标防御），幅度合理判断，不引入词缀未提及的新机制。
 
 目标 HP = max(0, min(计算后 HP, 最大 HP))"""
 
@@ -242,7 +250,7 @@ def generate_combat_arbitration_prompt(
 - 卡牌：{card.name}
 - damage_dealt：{card.damage_dealt}（单次伤害）
 - hit_count：{card.hit_count}（攻击次数）
-{spread.hit_assignment}
+{spread.hit_assignment}{build_instant_affix_section("本卡即时词缀", card.on_play_affixes)}
 
 ## 目标
 
@@ -311,7 +319,7 @@ def generate_compressed_combat_arbitration_prompt(
 - 卡牌：{card.name}
 - damage_dealt：{card.damage_dealt}（单次伤害）
 - hit_count：{card.hit_count}（攻击次数）
-{spread.hit_assignment}
+{spread.hit_assignment}{build_instant_affix_section("本卡即时词缀", card.on_play_affixes)}
 
 ## 目标
 
@@ -495,7 +503,7 @@ def generate_consumable_arbitration_prompt(
 ## 消耗品
 
 - 名称：{item.name}
-- 描述：{item.description}{actor_section}
+- 描述：{item.description}{actor_section}{build_instant_affix_section("本消耗品即时词缀", item.on_use_affixes)}
 
 ## 目标
 
@@ -560,7 +568,7 @@ def generate_compressed_consumable_arbitration_prompt(
 ## 消耗品
 
 - 名称：{item.name}
-- 描述：{item.description}{actor_section}
+- 描述：{item.description}{actor_section}{build_instant_affix_section("本消耗品即时词缀", item.on_use_affixes)}
 
 ## 目标
 
@@ -599,18 +607,18 @@ def generate_play_cards_affix_triggers(
     card: Card,
     targets: List[str],
 ) -> List[AffixTrigger]:
-    """生成卡牌词缀（card.affixes）对应的 AffixTrigger 列表。
+    """生成卡牌延迟词缀（card.on_hit_affixes）对应的 AffixTrigger 列表。
 
     仅携带原始词缀文本与触发上下文，具体提示词措辞由 AddStatusEffectsActionSystem 统一拼装。
     伤害/HP 变化已经通过仲裁广播（combat_log）与个人 HP 更新通知同步给相关实体，此处无需重复。
     """
-    if not card.affixes:
+    if not card.on_hit_affixes:
         return []
     targets_str = "、".join(targets) or "无"
     context = f"{actor_name}的「{card.name}」→{targets_str}"
     return [
         AffixTrigger(source="卡牌", context=context, affix=affix)
-        for affix in card.affixes
+        for affix in card.on_hit_affixes
     ]
 
 
@@ -652,12 +660,12 @@ def generate_consumable_affix_triggers(
     item: ConsumableItem,
     targets: List[str],
 ) -> List[AffixTrigger]:
-    """生成消耗品 affixes 对应的 AffixTrigger 列表。"""
-    if not item.affixes:
+    """生成消耗品延迟词缀（item.on_hit_affixes）对应的 AffixTrigger 列表。"""
+    if not item.on_hit_affixes:
         return []
     targets_str = "、".join(targets) or "无"
     context = f"「{item.name}」→{targets_str}"
     return [
         AffixTrigger(source="消耗品", context=context, affix=affix)
-        for affix in item.affixes
+        for affix in item.on_hit_affixes
     ]

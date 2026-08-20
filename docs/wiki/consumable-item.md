@@ -24,13 +24,14 @@
 
 ## 词缀机制
 
-`ConsumableItem` 携带延迟词缀：
+`ConsumableItem` 按时效携带两类词缀：
 
-- **延迟词缀**：仲裁结束后触发独立状态效果推理，由 LLM 决定是否生成持续 `StatusEffect`。
+- **即时词缀（`on_use_affixes`）**：参与本次使用仲裁，仅对本次结算生效，不落地状态效果（如「穿透」）。
+- **延迟词缀（`on_hit_affixes`）**：使用命中目标后触发独立状态效果推理，由 LLM 决定是否生成持续 `StatusEffect`。
 
-`GearItem` 的延迟词缀按触发时机进一步拆分为装备时（`equip_affixes`）与命中时（`on_hit_affixes`）两组字段。
+与 `Card`（`on_play_affixes` / `on_hit_affixes`）保持同一「即时 / 延迟」二分；`GearItem` 的延迟词缀按触发时机进一步拆分为装备时（`equip_affixes`）与命中时（`on_hit_affixes`）两组字段。
 
-→ 参见：[装备系统（GearItem）](gear-item.md)（两类延迟词缀的触发时机区分）
+→ 参见：[词缀（Affix）](affix.md)、[装备系统（GearItem）](gear-item.md)
 
 ---
 

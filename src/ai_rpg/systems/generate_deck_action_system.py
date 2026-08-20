@@ -33,7 +33,8 @@ class DeckCardEntry(BaseModel):
 
     name: str
     description: str
-    affixes: List[str] = []
+    on_play_affixes: List[str] = []
+    on_hit_affixes: List[str] = []
     playable: bool = True
     exhaust: bool = False
     cost: int = 1
@@ -110,12 +111,12 @@ def generate_deck_prompt(
 ## 核心原则
 
 - keywords 即边界，不是风格建议：要求的效果在对应字段体现；未提及即禁止
-- affixes 仅限 keywords 授权时填充
+- 即时词缀（on_play_affixes）与延迟词缀（on_hit_affixes）仅限 keywords 授权时填充
 
 ## 约束
 
 - `description` 禁止提及任何场景地物（如断柱、沙地）、地名或即时情境细节
-- `affixes` 禁止重述数值字段已确定性表达的效果：不得重复量化 `damage_dealt`/`hit_count` 已决定的伤害量级
+- `on_play_affixes`/`on_hit_affixes` 禁止重述数值字段已确定性表达的效果：不得重复量化 `damage_dealt`/`hit_count` 已决定的伤害量级
 - `cards` 数组长度必须恰好为 {card_count}
 - 只输出 JSON，不附加任何说明文字
 
@@ -125,7 +126,8 @@ def generate_deck_prompt(
     {{
       "name": "...",
       "description": "...",
-      "affixes": [],
+      "on_play_affixes": [],
+      "on_hit_affixes": [],
       "playable": true,
       "exhaust": false,
       "cost": 1,
@@ -301,7 +303,8 @@ class GenerateDeckActionSystem(ReactiveProcessor):
                 Card(
                     name=entry.name,
                     description=entry.description,
-                    affixes=entry.affixes,
+                    on_play_affixes=entry.on_play_affixes,
+                    on_hit_affixes=entry.on_hit_affixes,
                     playable=entry.playable,
                     exhaust=entry.exhaust,
                     cost=entry.cost,

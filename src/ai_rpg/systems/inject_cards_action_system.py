@@ -136,7 +136,8 @@ def _generate_inject_cards_prompt(
         {{
           "name": "碎柱投掷",
           "description": "掷出断柱碎块，造成钝击伤害",
-          "affixes": [],
+          "on_play_affixes": [],
+          "on_hit_affixes": [],
           "playable": true,
           "exhaust": true,
           "cost": 0,

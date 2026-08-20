@@ -266,7 +266,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
         latest_round.consumable_use_count += 1
 
         # 消耗品仲裁结算后为所有目标（action.targets）添加 AddStatusEffectsAction
-        if action.item.affixes:
+        if action.item.on_hit_affixes:
             for entity_name in action.targets:
                 entity = self._game.get_entity_by_name(entity_name)
                 assert entity is not None, f"无法找到实体: {entity_name}"
@@ -278,4 +278,4 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                 accumulate_status_effects_action(entity, affix_triggers)
                 logger.debug(f"[{entity_name}] 消耗品仲裁后添加 AddStatusEffectsAction")
         else:
-            logger.debug("消耗品 affixes 为空，跳过 AddStatusEffectsAction")
+            logger.debug("消耗品 on_hit_affixes 为空，跳过 AddStatusEffectsAction")

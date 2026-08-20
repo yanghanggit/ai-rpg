@@ -30,7 +30,7 @@
 
 ### 词缀因果链
 
-affix 是信号，StatusEffect 是落地的果。这条链横跨多个系统：Card 生成时写入 affixes → 仲裁时转为 `AffixTrigger` → `AddStatusEffectsActionSystem` 独立推理生成 StatusEffect。三类来源（卡牌 affix、装备 on_hit_affix、场景交互）在同一 tick 内合并，统一落地。
+affix 是信号，StatusEffect 是落地的果。延迟 affix 这条链横跨多个系统：Card/Consumable 生成时写入 `on_hit_affixes` → 仲裁时转为 `AffixTrigger` → `AddStatusEffectsActionSystem` 独立推理生成 StatusEffect。三类来源（卡牌 on_hit_affix、装备 on_hit_affix、场景交互）在同一 tick 内合并，统一落地；即时 affix（`on_play_affixes`/`on_use_affixes`）则由各自仲裁系统在本次结算时直接套用。
 
 ### 回合行动序列
 
@@ -61,6 +61,6 @@ affix 是信号，StatusEffect 是落地的果。这条链横跨多个系统：C
 ## 跨系统关系
 
 - **副本生成管道**产出 `CombatRoom`（stage + actors + keywords），战斗管道消费它 → 参见：[副本生成管道](dungeon-generation.md)
-- **装备系统**提供命中时的 `on_hit_affixes`，在 `PlayCardsArbitrationSystem` 中与卡牌 affixes 合并后进入状态效果落地链 → 参见：[装备系统](gear-item.md)
+- **装备系统**提供命中时的 `on_hit_affixes`，在 `PlayCardsArbitrationSystem` 中与卡牌 `on_hit_affixes` 合并后进入状态效果落地链 → 参见：[装备系统](gear-item.md)
 - **消耗品系统**走同一场景实体仲裁模式 → 参见：[消耗品系统](consumable-item.md)
 - 战斗结束后 `CombatArchiveSystem` 触发记忆存储，衔接家园模式的叙事连续性

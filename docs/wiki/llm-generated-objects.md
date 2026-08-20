@@ -16,12 +16,12 @@
 
 **系统级**：`RPG_SYSTEM_RULES` 的战斗专用规则节，通过 entity factory 烤入每个实体的 system message。这是 Agent 的「世界观宪法」——从对话首条消息就携带，无需运行时注入。核心条款：
 
-- 词缀（affix）：affixes 是延迟触发信号（后续独立推理落地为 StatusEffect）。禁止在 affixes 中写入可直接量化的数值。
+- 词缀（affix）：affix 是不含可直接量化数值的触发信号，按时效分两类——即时 affix（`on_play_affixes`/`on_use_affixes`）参与本次仲裁、不落地 StatusEffect；延迟 affix（`on_hit_affixes`）后续独立推理落地为 StatusEffect。
 - 载体二分：Card 是动作，StatusEffect 是持续影响。一切跨回合效果必须落地为 StatusEffect。
-- affixes → StatusEffect 因果：affix 是因，StatusEffect 是果，不可跳过落地步骤。
+- 延迟 affix → StatusEffect 因果：延迟 affix 是因，StatusEffect 是果，不可跳过落地步骤；即时 affix 只在本次仲裁套用。
 - 禁止项：命中率、闪避、位置、移动、新数值轴。
 
-**prompt 级**：各系统的 prompt builder 在每次 LLM 调用时附加字段 schema、JSON 示例、具体约束。prompt 级是系统级的实例化——系统级说「词缀（affix）」，prompt 级给出 affixes 允许和禁止的表述形式。
+**prompt 级**：各系统的 prompt builder 在每次 LLM 调用时附加字段 schema、JSON 示例、具体约束。prompt 级是系统级的实例化——系统级说「词缀（affix）」，prompt 级给出即时/延迟词缀字段允许和禁止的表述形式。
 
 ---
 
@@ -63,7 +63,7 @@
 
 ### 词缀落地（AddStatusEffectsActionSystem）
 
-**生成者**：受影响角色自身 LLM。设计意图：affix 是外源触发（来自卡牌 / 装备 / 场景），但最终以什么形态影响该角色，由角色自己推理——同一根毒刺扎在不同角色身上，落地效果应由目标体质决定。
+**生成者**：受影响角色自身 LLM。设计意图：延迟 affix 是外源触发（来自卡牌 / 装备 / 场景），但最终以什么形态影响该角色，由角色自己推理——同一根毒刺扎在不同角色身上，落地效果应由目标体质决定。
 
 **核心约束**：严格 1:1 映射——N 条 `AffixTrigger` 必须产出 N 个 StatusEffect。每个效果须指定 `phase`，决定被哪个下游系统消费：
 
@@ -79,6 +79,6 @@
 
 完整链路展示两类对象如何衔接——也揭示了为什么全局约束必须一致：
 
-> Card 生成者写入 affixes（信号）→ 仲裁时转为 `AffixTrigger` → `AddStatusEffectsActionSystem` 推理落地 StatusEffect（持续效果）→ 按 phase 分发消费者（`PostDrawCardsSystem` / `PlayCardsArbitrationSystem` / `CombatRoundEndEffectSettlementSystem`）
+> Card 生成者写入即时词缀（`on_play_affixes`，本次仲裁套用）与延迟词缀（`on_hit_affixes`，信号）→ 延迟词缀仲裁时转为 `AffixTrigger` → `AddStatusEffectsActionSystem` 推理落地 StatusEffect（持续效果）→ 按 phase 分发消费者（`PostDrawCardsSystem` / `PlayCardsArbitrationSystem` / `CombatRoundEndEffectSettlementSystem`）
 
 链上三个 Agent 使用不同的上下文（角色自身 vs 场景实体）、在不同阶段工作，但必须共享同一套语义约定——这就是全局约束体系存在的根本原因。

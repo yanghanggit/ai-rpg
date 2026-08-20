@@ -49,7 +49,6 @@ def _make_card(name: str, source: str) -> Card:
     return Card(
         name=name,
         description="测试卡牌",
-        affixes=[],
         playable=True,
         exhaust=False,
         damage_dealt=1,

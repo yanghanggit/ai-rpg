@@ -290,8 +290,8 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
 
         # 根据仲裁后的状态，为卡牌命中的所有目标（action.targets，去重）添加状态效果动作，
         # 确保状态效果在游戏中正确生效；只按出牌目标挂载，不依赖 final_stats 的实体范围。
-        # card.affixes 与装备 on_hit_affixes 均为空时，本次出牌无延迟状态效果，直接跳过。
-        card_affixes = action.card.affixes
+        # card.on_hit_affixes 与装备 on_hit_affixes 均为空时，本次出牌无延迟状态效果，直接跳过。
+        card_affixes = action.card.on_hit_affixes
         gear_on_hit_affixes = get_gear_on_hit_affixes(actor_entity)
         if not card_affixes and not gear_on_hit_affixes:
             logger.debug(

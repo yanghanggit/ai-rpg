@@ -294,6 +294,9 @@ def create_dungeon_generate_pipeline(
 
     ### 不这样就循环引用
     from .dbg_game import DBGGame
+    from ..systems.generate_dungeon_directive_system import (
+        GenerateDungeonDirectiveSystem,
+    )
     from ..systems.generate_dungeon_premise_system import GenerateDungeonPremiseSystem
     from ..systems.generate_dungeon_stages_system import GenerateDungeonStagesSystem
     from ..systems.generate_dungeon_actors_system import GenerateDungeonActorsSystem
@@ -311,7 +314,8 @@ def create_dungeon_generate_pipeline(
     # 起始系统
     processors.add(PrologueSystem(dbg_game))
 
-    # 副本生成流程（Steps 1-4，在同一次 pipeline.process() 内顺序触发）
+    # 副本生成流程（Steps 0-4，在同一次 pipeline.process() 内顺序触发）
+    processors.add(GenerateDungeonDirectiveSystem(dbg_game))  # Step 0: 世界导演创作指令
     processors.add(GenerateDungeonPremiseSystem(dbg_game))  # Step 1: 前提设定生成
     processors.add(GenerateDungeonStagesSystem(dbg_game))  # Step 2: 场景批量生成
     processors.add(GenerateDungeonActorsSystem(dbg_game))  # Step 3: 怪物并发生成

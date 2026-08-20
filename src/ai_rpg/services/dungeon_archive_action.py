@@ -10,7 +10,6 @@ from ..models import (
     Dungeon,
     DungeonPersonaComponent,
     HumanMessage,
-    AIMessage,
     SystemMessage,
     WorldDirectorComponent,
     get_buffer_string,
@@ -98,45 +97,6 @@ def _notify_world_director(
         f"发送世界变化通知（副本：{dungeon.name!r}）"
     )
     return world_director_entity
-
-
-###################################################################################################################################################################
-async def _test_world_director_next_dungeon(
-    dbg_game: DBGGame,
-    world_director_entity: Entity,
-) -> None:
-    """【测试用】让世界导演回答一次：下一步想创建怎样的副本。
-
-    仅用于观察 GM 人设与通知链路是否生效，后续会替换为正式的 GM 决策流程。
-    """
-
-    client = DeepSeekClient(
-        name="world_director:test",
-        prompt=(
-            "这次探索只扰动了梦魇世界的一个小角落。"
-            "下一步如果要创造新的副本，你会让梦魇世界的哪些疯癫之处产生怎样的变化？"
-            "为什么？说说你的想法。"
-        ),
-        context=dbg_game.get_agent_context(world_director_entity).context,
-        model=MODEL_FLASH,
-        thinking=False,
-    )
-    await client.chat()
-
-    # 如果世界导演没有生成回答，则直接返回
-    if client.response_ai_message is None:
-        return
-
-    # 打印世界导演的测试回答
-    logger.info(f"[archive_dungeon] 世界导演测试回答:\n{client.response_content}")
-
-    # 将世界导演的测试回答添加到游戏上下文中
-    dbg_game.add_human_message(
-        world_director_entity, HumanMessage(content=client.prompt)
-    )
-    dbg_game.add_ai_message(
-        world_director_entity, AIMessage(content=client.response_content)
-    )
 
 
 ###################################################################################################################################################################
@@ -304,14 +264,7 @@ async def archive_dungeon(
         logger.info(f"[archive_dungeon] 副本「{dungeon.name}」本体总结:\n{summary}")
 
         # 7. 将总结作为「世界变化通知」写入世界导演（GM）的上下文
-        world_director_entity = _notify_world_director(dbg_game, dungeon, summary)
-
-        # 8. 【测试用】让世界导演推理一次，观察其回答
-        if world_director_entity is not None:
-            await _test_world_director_next_dungeon(
-                dbg_game,
-                world_director_entity,
-            )
+        _notify_world_director(dbg_game, dungeon, summary)
 
     except Exception as e:
         logger.error(

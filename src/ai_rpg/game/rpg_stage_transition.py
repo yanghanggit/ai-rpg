@@ -37,16 +37,7 @@ def _format_stage_transition_message(from_stage_name: str, to_stage_name: str) -
 def _validate_stage_transition_prerequisites(
     game: RPGGame, actors: Set[Entity], stage_destination: Entity
 ) -> Set[Entity]:
-    """验证场景传送的前置条件并过滤有效的角色
-
-    Args:
-        game: RPG 游戏实例
-        actors: 需要传送的角色集合
-        stage_destination: 目标场景
-
-    Returns:
-        Set[Entity]: 需要实际传送的角色集合（排除已在目标场景的角色）
-    """
+    """验证场景传送的前置条件并过滤有效的角色"""
     # 验证所有角色都有ActorComponent
     for actor in actors:
         assert actor.has(ActorComponent), f"角色 {actor.name} 缺少 ActorComponent"
@@ -68,12 +59,7 @@ def _validate_stage_transition_prerequisites(
 
 #################################################################################################################################################
 def _broadcast_departure_notifications(game: RPGGame, actors: Set[Entity]) -> None:
-    """处理角色离开场景的通知
-
-    Args:
-        game: RPG 游戏实例
-        actors: 要离开的角色集合
-    """
+    """处理角色离开场景的通知"""
     for actor_entity in actors:
         current_stage = game.resolve_stage_entity(actor_entity)
         assert current_stage is not None
@@ -94,13 +80,7 @@ def _broadcast_departure_notifications(game: RPGGame, actors: Set[Entity]) -> No
 def _update_actors_stage_membership(
     game: RPGGame, actors: Set[Entity], stage_destination: Entity
 ) -> None:
-    """执行角色的场景传送，包括更新场景归属和行动队列
-
-    Args:
-        game: RPG 游戏实例
-        actors: 要传送的角色集合
-        stage_destination: 目标场景
-    """
+    """执行角色的场景传送，包括更新场景归属和行动队列"""
     for actor_entity in actors:
         current_stage = game.resolve_stage_entity(actor_entity)
         assert current_stage is not None, "角色没有当前场景"
@@ -135,13 +115,7 @@ def _update_actors_stage_membership(
 def _broadcast_arrival_notifications(
     game: RPGGame, actors: Set[Entity], stage_destination: Entity
 ) -> None:
-    """处理角色进入场景的通知
-
-    Args:
-        game: RPG 游戏实例
-        actors: 进入的角色集合
-        stage_destination: 目标场景
-    """
+    """处理角色进入场景的通知"""
     for actor_entity in actors:
         # 向所在场景及所在场景内除自身外的其他人宣布，这货到了
         game.broadcast_to_stage(
@@ -159,13 +133,7 @@ def _broadcast_arrival_notifications(
 def stage_transition(
     game: RPGGame, actors: Set[Entity], stage_destination: Entity
 ) -> None:
-    """处理角色在场景间的转换，包括访问控制、通知广播
-
-    Args:
-        game: RPG 游戏实例
-        actors: 需要传送的角色集合
-        stage_destination: 目标场景
-    """
+    """处理角色在场景间的转换，包括访问控制、通知广播"""
     # 1. 验证前置条件并过滤有效角色
     actors_to_transfer = _validate_stage_transition_prerequisites(
         game, actors, stage_destination

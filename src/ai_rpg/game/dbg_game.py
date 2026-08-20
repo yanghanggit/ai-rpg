@@ -8,12 +8,10 @@ from typing import Final, List, Optional
 from loguru import logger
 from .rpg_game_pipeline_manager import RPGGameProcessPipeline
 from .rpg_game import RPGGame
-from .dbg_game_pipelines import (
-    create_home_pipeline,
-    create_dungeon_entry_room_pipeline,
-    create_dungeon_combat_room_pipeline,
-    create_dungeon_generate_pipeline,
-)
+from .dbg_home_pipeline import create_home_pipeline
+from .dbg_dungeon_entry_room_pipeline import create_dungeon_entry_room_pipeline
+from .dbg_dungeon_combat_room_pipeline import create_dungeon_combat_room_pipeline
+from .dbg_dungeon_generate_pipeline import create_dungeon_generate_pipeline
 from ..models import (
     Actor,
     ActorComponent,

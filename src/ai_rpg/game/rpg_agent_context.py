@@ -1,7 +1,8 @@
-from typing import Any, Dict, List, Sequence
+from typing import Callable, List, Sequence
 from ..models.messages import (
     AIMessage,
     BaseMessage,
+    ContextMessage,
     HumanMessage,
     SystemMessage,
     ToolMessage,
@@ -9,6 +10,9 @@ from ..models.messages import (
 from loguru import logger
 from ..entitas import Entity
 from ..models import AgentContext, World
+
+
+MessagePredicate = Callable[[BaseMessage, int, Sequence[ContextMessage]], bool]
 
 
 #################################################################################################################################################
@@ -63,42 +67,27 @@ class RPGAgentContext:
         agent_context.context.append(ai_message)
 
     ###############################################################################################################################################
-    def filter_messages_by_attributes(
+    def filter_messages(
         self,
         entity: Entity,
-        attributes: Dict[str, Any],
+        predicate: MessagePredicate,
         reverse_order: bool = True,
-    ) -> List[SystemMessage | HumanMessage | AIMessage | ToolMessage]:
-        """根据属性字典过滤实体上下文中的消息"""
-        found_messages: List[SystemMessage | HumanMessage | AIMessage | ToolMessage] = (
-            []
-        )
+    ) -> List[ContextMessage]:
+        """根据外部传入的谓词函数过滤实体上下文中的消息。"""
         context = self.get_agent_context(entity).context
+        found_messages: List[ContextMessage] = []
 
-        # 空字典不匹配任何消息
-        if not attributes:
-            return []
-
-        # 进行查找
-        for chat_message in reversed(context) if reverse_order else context:
+        # 生成遍历索引：默认从最新到最旧；index 始终保持原始插入顺序
+        indices = (
+            range(len(context) - 1, -1, -1) if reverse_order else range(len(context))
+        )
+        for index in indices:
+            chat_message = context[index]
             try:
-                # 严格匹配：消息必须有所有指定的属性，且值必须匹配
-                all_matched = True
-                for attr_key, attr_value in attributes.items():
-                    if not hasattr(chat_message, attr_key):
-                        all_matched = False
-                        break
-                    if getattr(chat_message, attr_key) != attr_value:
-                        all_matched = False
-                        break
-
-                if all_matched:
+                if predicate(chat_message, index, context):
                     found_messages.append(chat_message)
-
             except Exception as e:
-                logger.error(
-                    f"filter_messages_by_attributes error for {entity.name}: {e}"
-                )
+                logger.error(f"filter_messages error for {entity.name}: {e}")
                 continue
 
         return found_messages

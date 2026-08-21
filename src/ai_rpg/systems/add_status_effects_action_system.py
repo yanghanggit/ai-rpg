@@ -366,9 +366,11 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
                 )
 
             # 追加提示消息：告知当前完整状态效果列表（Markdown 格式，全字段），便于后续 LLM 交互感知最新状态
-            notification_messages = self._game.filter_messages_by_attributes(
+            notification_messages = self._game.filter_messages(
                 entity=entity,
-                attributes={"status_effects_notification": entity.name},
+                predicate=lambda msg, index, context: (
+                    getattr(msg, "status_effects_notification", None) == entity.name
+                ),
             )
             if notification_messages:
                 # 如果已有通知类消息，就全部删除旧的然后添加新的

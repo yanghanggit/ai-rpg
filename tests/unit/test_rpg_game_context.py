@@ -2,7 +2,7 @@
 Tests for RPGGame context message management methods:
   - add_human_message
   - add_ai_message
-  - filter_messages_by_attributes
+  - filter_messages
   - remove_messages
   - remove_message_range
 """
@@ -135,17 +135,19 @@ class TestAddAiMessage:
 
 
 # ---------------------------------------------------------------------------
-# filter_messages_by_attributes
+# filter_messages
 # ---------------------------------------------------------------------------
 
 
-class TestFilterMessagesByAttributes:
-    def test_empty_attributes_returns_empty(self, game: Any, actor: Entity) -> None:
-        """Empty attribute dict always returns []."""
+class TestFilterMessages:
+    def test_predicate_false_returns_empty(self, game: Any, actor: Entity) -> None:
+        """Predicate returning False for every message returns []."""
         game.add_human_message(
             actor, HumanMessage(content="msg", home_actor_planning="TestActor")
         )
-        result = game.filter_messages_by_attributes(actor, {})
+        result = game.filter_messages(
+            actor, predicate=lambda msg, index, context: False
+        )
         assert result == []
 
     def test_matches_custom_kwarg(self, game: Any, actor: Entity) -> None:
@@ -153,19 +155,25 @@ class TestFilterMessagesByAttributes:
         game.add_human_message(
             actor, HumanMessage(content="planning msg", home_actor_planning="TestActor")
         )
-        result = game.filter_messages_by_attributes(
-            actor, {"home_actor_planning": "TestActor"}
+        result = game.filter_messages(
+            actor,
+            predicate=lambda msg, index, context: (
+                getattr(msg, "home_actor_planning", None) == "TestActor"
+            ),
         )
         assert len(result) == 1
         assert result[0].content == "planning msg"
 
     def test_no_match_returns_empty(self, game: Any, actor: Entity) -> None:
-        """Returns [] when no message matches the given attribute value."""
+        """Returns [] when no message matches the predicate."""
         game.add_human_message(
             actor, HumanMessage(content="msg", home_actor_planning="TestActor")
         )
-        result = game.filter_messages_by_attributes(
-            actor, {"home_actor_planning": "NonExistent"}
+        result = game.filter_messages(
+            actor,
+            predicate=lambda msg, index, context: (
+                getattr(msg, "home_actor_planning", None) == "NonExistent"
+            ),
         )
         assert result == []
 
@@ -174,7 +182,12 @@ class TestFilterMessagesByAttributes:
     ) -> None:
         """Returns [] when no message has the requested attribute at all."""
         game.add_human_message(actor, HumanMessage(content="plain msg"))
-        result = game.filter_messages_by_attributes(actor, {"no_such_attr": True})
+        result = game.filter_messages(
+            actor,
+            predicate=lambda msg, index, context: (
+                getattr(msg, "no_such_attr", None) is not None
+            ),
+        )
         assert result == []
 
     def test_multiple_matches(self, game: Any, actor: Entity) -> None:
@@ -189,8 +202,11 @@ class TestFilterMessagesByAttributes:
             actor, HumanMessage(content="other", home_actor_planning="OtherActor")
         )
 
-        result = game.filter_messages_by_attributes(
-            actor, {"home_actor_planning": "TestActor"}
+        result = game.filter_messages(
+            actor,
+            predicate=lambda msg, index, context: (
+                getattr(msg, "home_actor_planning", None) == "TestActor"
+            ),
         )
         assert len(result) == 2
         contents = {m.content for m in result}
@@ -207,8 +223,12 @@ class TestFilterMessagesByAttributes:
             actor, HumanMessage(content="newer", home_actor_planning="TestActor")
         )
 
-        result = game.filter_messages_by_attributes(
-            actor, {"home_actor_planning": "TestActor"}, reverse_order=True
+        result = game.filter_messages(
+            actor,
+            predicate=lambda msg, index, context: (
+                getattr(msg, "home_actor_planning", None) == "TestActor"
+            ),
+            reverse_order=True,
         )
         assert result[0].content == "newer"
 
@@ -223,13 +243,17 @@ class TestFilterMessagesByAttributes:
             actor, HumanMessage(content="newer", home_actor_planning="TestActor")
         )
 
-        result = game.filter_messages_by_attributes(
-            actor, {"home_actor_planning": "TestActor"}, reverse_order=False
+        result = game.filter_messages(
+            actor,
+            predicate=lambda msg, index, context: (
+                getattr(msg, "home_actor_planning", None) == "TestActor"
+            ),
+            reverse_order=False,
         )
         assert result[0].content == "older"
 
-    def test_strict_multi_attribute_match(self, game: Any, actor: Entity) -> None:
-        """All specified attributes must match — partial match is not enough."""
+    def test_multi_field_predicate(self, game: Any, actor: Entity) -> None:
+        """Predicate can combine multiple conditions — partial match is not enough."""
         game.add_human_message(
             actor,
             HumanMessage(
@@ -246,15 +270,29 @@ class TestFilterMessagesByAttributes:
             ),
         )
 
-        result = game.filter_messages_by_attributes(
+        result = game.filter_messages(
             actor,
-            {
-                "home_actor_planning": "TestActor",
-                "home_actor_full_prompt": "prompt",
-            },
+            predicate=lambda msg, index, context: (
+                getattr(msg, "home_actor_planning", None) == "TestActor"
+                and getattr(msg, "home_actor_full_prompt", None) == "prompt"
+            ),
         )
         assert len(result) == 1
         assert result[0].content == "full match"
+
+    def test_index_and_context_available(self, game: Any, actor: Entity) -> None:
+        """Predicate receives the original index and the full context list."""
+        game.add_human_message(actor, HumanMessage(content="first"))
+        game.add_human_message(actor, HumanMessage(content="second"))
+        game.add_human_message(actor, HumanMessage(content="third"))
+
+        # 只保留原始索引为 1 且上下文长度为 3 的消息
+        result = game.filter_messages(
+            actor,
+            predicate=lambda msg, index, context: (index == 1 and len(context) == 3),
+        )
+        assert len(result) == 1
+        assert result[0].content == "second"
 
 
 # ---------------------------------------------------------------------------

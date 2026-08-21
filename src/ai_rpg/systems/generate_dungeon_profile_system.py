@@ -62,18 +62,12 @@ def _handle_read_profile_file(dungeon_name: str) -> str:
 
 ####################################################################################################################################
 def _build_dungeon_profile_prompt(directive: str = "") -> str:
-    """构建副本设定生成提示词。
-
-    无需任何种子数据，完全由世界观框架驱动创作。
-    世界观已通过调用方的 SystemMessage 提供给 LLM。
-    若世界导演已下达创作指令，则在首轮 prompt 中注入以引导创作方向。
-    """
+    """构建副本设定生成提示词。"""
     directive = directive.strip()
     directive_section = f"# 世界导演的创作指令\n\n{directive}\n\n" if directive else ""
     return f"""{directive_section}# 任务：创作一个副本的整体设定
 
 请在当前世界观框架内，为本次副本生成名称与整体设定写照。
-
 
 工作流程：调用 record_dungeon_profile 写入设定数据，确认无误后结束本次对话。
 如需核查已写入内容，可先调用 read_profile_file，再决定是否结束。"""

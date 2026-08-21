@@ -5,6 +5,7 @@
 import asyncio
 import os
 import sys
+from typing import List
 
 sys.path.insert(
     0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
@@ -25,6 +26,7 @@ from ai_rpg.deepseek import (
 
 from ai_rpg.models.messages import (
     AIMessage,
+    BaseMessage,
     HumanMessage,
     SystemMessage,
     ToolMessage,
@@ -319,7 +321,7 @@ async def test_tool_call_with_thinking() -> None:
     print("\n=== 测试 tool calling + thinking ===")
 
     # 方案 C 验证：自己持有 context 引用，观察 agent_loop 是否原地追加
-    context = [_SYSTEM]
+    context: List[BaseMessage] = [_SYSTEM]
     print(f"[before] context 消息数 = {len(context)}")
     print(get_buffer_string(context))
 

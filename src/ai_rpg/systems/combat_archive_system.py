@@ -148,18 +148,22 @@ class CombatArchiveSystem(ExecuteProcessor):
         assert stage_entity is not None, f"无法获取角色 {entity.name} 所在的场景实体！"
 
         # 获取最近的战斗消息。
-        begin_messages = self._game.filter_messages_by_attributes(
+        begin_messages = self._game.filter_messages(
             entity=entity,
-            attributes={"combat_initialization": stage_entity.name},
+            predicate=lambda msg, index, context: (
+                getattr(msg, "combat_initialization", None) == stage_entity.name
+            ),
         )
         assert (
             len(begin_messages) == 1
         ), f"没有找到战斗开始消息！entity: {entity.name}, stage_entity: {stage_entity.name}"
 
         # 获取最近的战斗消息。
-        end_messages = self._game.filter_messages_by_attributes(
+        end_messages = self._game.filter_messages(
             entity=entity,
-            attributes={"combat_outcome": stage_entity.name},
+            predicate=lambda msg, index, context: (
+                getattr(msg, "combat_outcome", None) == stage_entity.name
+            ),
         )
         assert (
             len(end_messages) == 1

@@ -318,17 +318,28 @@ async def test_tool_call_with_thinking() -> None:
     """测试 tool calling + thinking 模式：agent_loop 驱动，LLM 思考后调用工具并回复"""
     print("\n=== 测试 tool calling + thinking ===")
 
+    # 方案 C 验证：自己持有 context 引用，观察 agent_loop 是否原地追加
+    context = [_SYSTEM]
+    print(f"[before] context 消息数 = {len(context)}")
+    print(get_buffer_string(context))
+
     ok = await agent_loop(
         name="tool_think",
         prompt="广州今天天气怎么样？适合出门吗？",
-        context=[_SYSTEM],
+        context=context,
         tools=[_WEATHER_TOOL],
         handlers={"get_current_weather": _mock_get_weather},
         thinking=True,
     )
     print(f"agent_loop 结果: {'✅ 成功' if ok else '❌ 失败'}")
+
+    print(f"[after] context 消息数 = {len(context)}")
+    print(get_buffer_string(context))
+
     assert ok, "agent_loop（thinking）应成功完成"
-    print("✅ tool calling + thinking 验证通过")
+    # 方案 C：agent_loop 原地追加后，外部持有的 context 应已包含完整对话历史
+    assert len(context) > 1, "agent_loop 应原地追加消息到 context"
+    print("✅ tool calling + thinking 验证通过（context 已被原地追加）")
 
 
 async def test_batch_agent_loop() -> None:

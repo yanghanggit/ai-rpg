@@ -1,7 +1,7 @@
 """通用 agentic 循环工具函数。"""
 
 import json
-from typing import Callable, Dict, List, Literal, Sequence
+from typing import Callable, Dict, List, Literal
 from loguru import logger
 from ..models.messages import BaseMessage, HumanMessage, ToolMessage
 from .client import DeepSeekClient, ToolDefinition
@@ -10,15 +10,20 @@ from .client import DeepSeekClient, ToolDefinition
 async def agent_loop(
     name: str,
     prompt: str,
-    context: Sequence[BaseMessage],
+    context: List[BaseMessage],
     tools: List[ToolDefinition],
     handlers: Dict[str, Callable[..., str]],
     max_rounds: int = 5,
     tool_choice: Literal["auto", "none", "required"] = "auto",
     thinking: bool = False,
 ) -> bool:
-    """通用 agentic 循环：驱动 LLM 与工具交互，直到 LLM 主动 stop 或达到最大轮次。"""
-    history: List[BaseMessage] = list(context)
+    """通用 agentic 循环：驱动 LLM 与工具交互，直到 LLM 主动 stop 或达到最大轮次。
+
+    注意：本函数会原地修改传入的 context（追加首轮 prompt、每轮 AI 回复与工具结果）。
+    调用方若希望保留原列表不被改动，请在传入前自行复制，例如 ``list(context)``。
+    """
+    # 方案 C：不复制 context，直接原地追加，由调用方决定是否传入副本以隔离。
+    history: List[BaseMessage] = context
     current_prompt = prompt
 
     # 进入 agent 循环，每轮与 LLM 交互，处理工具调用，直到 LLM 主动 stop 或达到最大轮次
@@ -44,6 +49,18 @@ async def agent_loop(
             )
             continue  # 继续下一轮，而不是中止整个循环
 
+        # 首轮将 prompt 追加进历史（后续轮次 current_prompt 已置空，走 continuation 模式）
+        if current_prompt:
+            history.append(HumanMessage(content=current_prompt))
+            current_prompt = ""
+
+        # 无论 stop 还是 tool_calls，都先把本轮 AI 回复追加进历史，保证返回时历史完整
+        ai_message = client.response_ai_message
+        if ai_message is None:
+            logger.error(f"[agent_loop:{name}] LLM 回复消息为空，中止")
+            return False
+        history.append(ai_message)
+
         # 检查 LLM 的 finish_reason，决定下一步动作
         if client.finish_reason == "stop":
             logger.debug(f"[agent_loop:{name}] LLM stop，第 {round_num} 轮")
@@ -55,20 +72,6 @@ async def agent_loop(
                 f"[agent_loop:{name}] 意外的 finish_reason={client.finish_reason!r}，中止"
             )
             return False
-
-        # 第一轮将 prompt 追加到 history，后续轮次使用 continuation 模式
-        if current_prompt:
-            history.append(HumanMessage(content=current_prompt))
-            current_prompt = ""
-
-        # 将 LLM 的回复消息添加到历史记录中，以便在下一轮继续使用
-        ai_message = client.response_ai_message
-        if ai_message is None:
-            logger.error(f"[agent_loop:{name}] LLM 回复消息为空，中止")
-            return False
-
-        # 将 LLM 的回复消息添加到历史记录中，以便在下一轮继续使用
-        history.append(ai_message)
 
         # 遍历 LLM 的工具调用列表，依次处理每个工具调用，根据工具名称找到对应的处理函数并执行，捕获异常以防止整个循环崩溃
         for tc in client.tool_calls:

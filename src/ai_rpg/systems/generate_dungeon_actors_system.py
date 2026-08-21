@@ -112,7 +112,8 @@ class _SingleActorGenerator:
                 actor_index=actor_idx + 1,
                 total_actors=stage.actor_count,
             ),
-            context=self._context,
+            # 传入副本：并发隔离，且不把生成过程写入共享的 self._context
+            context=list(self._context),
             tools=[ACTOR_TOOL],
             handlers={
                 "record_dungeon_actor": partial(

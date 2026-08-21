@@ -131,7 +131,8 @@ class GenerateDungeonProfileSystem(ReactiveProcessor):
         success = await agent_loop(
             name=entity.name,
             prompt=_build_dungeon_profile_prompt(directive),
-            context=self._game.get_agent_context(entity).context,
+            # 传入副本：保持与旧行为一致，不把生成过程写入实体的持久化上下文
+            context=list(self._game.get_agent_context(entity).context),
             tools=[PROFILE_TOOL, READ_PROFILE_FILE_TOOL],
             handlers={
                 "record_dungeon_profile": partial(

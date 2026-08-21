@@ -5,7 +5,7 @@
 
 import asyncio
 import time
-from typing import Callable, Dict, List, Literal, Sequence
+from typing import Callable, Dict, List, Literal
 
 import httpx
 from loguru import logger
@@ -24,7 +24,9 @@ class AgentLoopConfig(BaseModel):
 
     name: str
     prompt: str
-    context: Sequence[BaseMessage]
+    context: List[
+        BaseMessage
+    ]  # agent_loop 会原地修改该列表；需隔离时请传入各自独立的副本
     tools: List[ToolDefinition] = []
     handlers: Dict[str, Callable[..., str]] = {}
     max_rounds: int = 5
@@ -72,6 +74,9 @@ async def batch_agent_loop(
     """批量并发执行 agent_loop。
 
     每个元素是一个 AgentLoopConfig，参数含义与 agent_loop() 一致。
+    agent_loop 会原地修改每个 config.context，调用结束后可通过 cfg.context 读取最终历史。
+    注意：Pydantic 在构造 config 时会复制传入的 list，因此多个 config 共享同一基础列表是安全的，
+    但原始列表不会被修改，最终历史只能通过 cfg.context 读取。
     返回与 configs 等长的 bool 列表，表示每个 agent_loop 是否成功。
     """
     if not configs:

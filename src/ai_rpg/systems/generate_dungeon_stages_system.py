@@ -158,7 +158,8 @@ class GenerateDungeonStagesSystem(ReactiveProcessor):
                 profile=profile_file.profile,
                 combat_stage_count=combat_stage_count,
             ),
-            context=self._game.get_agent_context(entity).context,
+            # 传入副本：保持与旧行为一致，不把生成过程写入实体的持久化上下文
+            context=list(self._game.get_agent_context(entity).context),
             tools=[
                 build_stages_tool(profile_file.stage_count),
                 READ_STAGES_FILE_TOOL,

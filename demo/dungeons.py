@@ -107,7 +107,7 @@ def create_shrine_ruins_dungeon() -> Dungeon:
 
     return Dungeon(
         name="副本.坍塌庙祠",
-        premise="庙祠前院静得异常。碎裂的青石地面上散落着纸钱，纸钱的方孔在视线扫过时似乎都在微微调整方向。院角的纸扎残件与倾覆的香炉让这地方像一场进行到一半就被打断的仪式。殿内，神像正背对着你。",
+        profile="庙祠前院静得异常。碎裂的青石地面上散落着纸钱，纸钱的方孔在视线扫过时似乎都在微微调整方向。院角的纸扎残件与倾覆的香炉让这地方像一场进行到一半就被打断的仪式。殿内，神像正背对着你。",
         rooms=[
             EntryRoom(stage=stage_shrine_entrance),
             CombatRoom(stage=stage_shrine_courtyard),

@@ -99,7 +99,7 @@ class GenerateDungeonDirectiveSystem(ReactiveProcessor):
                 AIMessage(content=directive),
             )
 
-        # 5. 挂接 GenerateDungeonDirectiveAction，将指令传递给 GenerateDungeonPremiseSystem
+        # 5. 挂接 GenerateDungeonDirectiveAction，将指令传递给 GenerateDungeonProfileSystem
         #    （无论是否获得指令都挂接，保证流程持续推进；不写入副本生成系统上下文）
         generation_entity.replace(
             GenerateDungeonDirectiveAction,

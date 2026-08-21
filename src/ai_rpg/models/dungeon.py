@@ -47,7 +47,7 @@ class Dungeon(BaseModel):
 
     name: str
     rooms: List[AnyDungeonRoom]
-    premise: str
+    profile: str
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc)
     )  # 创建时间戳（UTC）

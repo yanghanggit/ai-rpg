@@ -28,7 +28,7 @@ def teardown_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> None:
             dbg_game.destroy_entity(destroy_stage_entity)
 
     # 3. 重置副本数据为空副本
-    dbg_game._world.dungeon = Dungeon(name="", rooms=[], premise="")
+    dbg_game._world.dungeon = Dungeon(name="", rooms=[], profile="")
 
     # 4. 打印副本销毁完成日志
     logger.debug("[teardown_dungeon] 副本实体清理完成，dungeon 已重置")

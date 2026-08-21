@@ -50,19 +50,19 @@ def _detect_scene_type(profile: str) -> str:
 
 
 ####################################################################################################################################
-def _build_dungeon_cover_image_prompt(dungeon_name: str, premise: str) -> str:
+def _build_dungeon_cover_image_prompt(dungeon_name: str, profile: str) -> str:
     """构建副本封面图片生成提示词（7+1段式，无怪物）。
 
     Args:
         dungeon_name: 副本全名
-        premise: 副本整体前提描述
+        profile: 副本整体设定描述
 
     Returns:
-        由 premise 决定具体生态主题的像素艺术风格封面提示词
+        由 profile 决定具体生态主题的像素艺术风格封面提示词
     """
     return (
         "pixel art style，side view，2D game scene illustration，"
-        f"{premise}，"
+        f"{profile}，"
         "atmospheric depth，intricate environmental details，"
         "dramatic shadow and dim light contrast，"
         "mysterious and foreboding atmosphere，"
@@ -72,22 +72,22 @@ def _build_dungeon_cover_image_prompt(dungeon_name: str, premise: str) -> str:
 
 
 ####################################################################################################################################
-def _build_room_image_prompt(dungeon_name: str, premise: str, room: DungeonRoom) -> str:
+def _build_room_image_prompt(dungeon_name: str, profile: str, room: DungeonRoom) -> str:
     """构建副本房间战斗插图生成提示词（7+1段式，第5段插入怪物外观）。
 
     Args:
         dungeon_name: 副本全名
-        premise: 副本整体前提描述
+        profile: 副本整体设定描述
         room: 已填充 stage/actor 数据的副本房间
 
     Returns:
         包含场景环境与怪物形象的战斗插图提示词
     """
-    profile = room.stage.stage_profile.profile
+    stage_profile = room.stage.stage_profile.profile
     base_body = (
         room.stage.actors[0].character_sheet.base_body if room.stage.actors else ""
     )
-    scene_type = _detect_scene_type(profile)
+    scene_type = _detect_scene_type(stage_profile)
     scene_tag = (
         "enclosed interior space" if scene_type == "indoor" else "open exterior area"
     )
@@ -95,8 +95,8 @@ def _build_room_image_prompt(dungeon_name: str, premise: str, room: DungeonRoom)
     return (
         "pixel art style，side view，2D game battle scene illustration，"
         f"{scene_tag}，"
+        f"{stage_profile}，"
         f"{profile}，"
-        f"{premise}，"
         "dramatic shadow and dim light contrast，"
         "atmospheric depth，intricate environmental details，"
         f"{base_body}，"
@@ -189,7 +189,7 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
         # 封面客户端（index 0）
         cover_prompt = _build_dungeon_cover_image_prompt(
             dungeon_name=dungeon.name,
-            premise=dungeon.premise,
+            profile=dungeon.profile,
         )
         cover_client = ReplicateImageClient(
             name=f"{dungeon.name}.cover",
@@ -204,7 +204,7 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
         room_prompts: List[str] = [
             _build_room_image_prompt(
                 dungeon_name=dungeon.name,
-                premise=dungeon.premise,
+                profile=dungeon.profile,
                 room=room,
             )
             for room in dungeon.rooms

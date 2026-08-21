@@ -20,7 +20,7 @@ class World(BaseModel):
     entity_counter: int
     entities: List[EntitySerialization] = []
     dungeon: Dungeon = Field(
-        default_factory=lambda: Dungeon(name="", rooms=[], premise="")
+        default_factory=lambda: Dungeon(name="", rooms=[], profile="")
     )
     blueprint: Blueprint = Field(
         default_factory=lambda: Blueprint(

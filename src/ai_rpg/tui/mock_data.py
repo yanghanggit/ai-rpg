@@ -276,7 +276,7 @@ def build_mock_dungeon_state_response() -> DungeonStateResponse:
     dungeon = Dungeon(
         name=MOCK_DUNGEON_NAME,
         rooms=[current_room, next_room],
-        premise="模拟副本生态描述，用于本地无服务器调试。",
+        profile="模拟副本生态描述，用于本地无服务器调试。",
         current_room_index=_mock_current_room_index,
         setup_entities=True,
     )

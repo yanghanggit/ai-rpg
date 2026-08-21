@@ -47,7 +47,7 @@ async def create_and_initialize_game(
         logger.warning(
             f"副本文件未找到（dungeon_name={dungeon_name!r}），使用空副本占位"
         )
-        dungeon = Dungeon(name="", rooms=[], premise="")
+        dungeon = Dungeon(name="", rooms=[], profile="")
 
     # 创建游戏世界数据实例，并将蓝图和副本赋值到其中
     world_data = World(

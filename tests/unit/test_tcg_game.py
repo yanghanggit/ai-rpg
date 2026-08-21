@@ -54,7 +54,7 @@ def _make_game(
         entity_counter=0,
         entities=[],
         agents_context={},
-        dungeon=Dungeon(name="dungeon_alpha", rooms=[], premise=""),
+        dungeon=Dungeon(name="dungeon_alpha", rooms=[], profile=""),
         blueprint=blueprint,
     )
     session = PlayerSession(name=player_name, actor=actor_name, game="test")
@@ -133,7 +133,7 @@ def _make_dungeon_with_enemy(enemy_name: str, stage_name: str) -> Dungeon:
     enemy = _make_actor_model(enemy_name, ActorType.MONSTER)
     stage = _make_stage_model(stage_name, StageType.DUNGEON, actors=[enemy])
     room = CombatRoom(stage=stage)
-    return Dungeon(name="test_dungeon", rooms=[room], premise="")
+    return Dungeon(name="test_dungeon", rooms=[room], profile="")
 
 
 # ---------------------------------------------------------------------------
@@ -212,7 +212,7 @@ class TestBuildFromBlueprint:
             entity_counter=0,
             entities=[],
             agents_context={},
-            dungeon=Dungeon(name="", rooms=[], premise=""),
+            dungeon=Dungeon(name="", rooms=[], profile=""),
             blueprint=bp,
         )
         session = PlayerSession(name="p1", actor="hero", game="full_test")

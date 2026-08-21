@@ -13,7 +13,7 @@ from ..models import (
     GenerateDungeonStagesAction,
 )
 from .dungeon_generation import (
-    DungeonPremiseData,
+    DungeonProfileData,
     DungeonStageData,
     DungeonStagesData,
     READ_STAGES_FILE_TOOL,
@@ -23,7 +23,7 @@ from .dungeon_generation import (
 
 ####################################################################################################################################
 def _build_dungeon_stages_prompt(
-    dungeon_name: str, premise: str, combat_stage_count: int
+    dungeon_name: str, profile: str, combat_stage_count: int
 ) -> str:
     """构建副本场景生成的 LLM 提示词。"""
 
@@ -33,7 +33,7 @@ def _build_dungeon_stages_prompt(
 ## 副本信息
 
 - **副本名称**：{dungeon_name}
-- **整体前提**：{premise}
+- **整体设定**：{profile}
 
 共计 {total_stages} 个场景，房间类型与顺序必须严格遵守：
 
@@ -52,8 +52,8 @@ def _build_dungeon_stages_prompt(
 class _StagesResult:
     """record_dungeon_stages handler 的结果容器。"""
 
-    def __init__(self, premise: str) -> None:
-        self.premise = premise
+    def __init__(self, profile: str) -> None:
+        self.profile = profile
         self.data: Optional[DungeonStagesData] = None
 
 
@@ -65,7 +65,7 @@ def _handle_record_dungeon_stages(
     stage_items = [DungeonStageData(**s) for s in stages]
     result.data = DungeonStagesData(
         dungeon_name=dungeon_name,
-        premise=result.premise,
+        profile=result.profile,
         stages=stage_items,
     )
     file_path: Path = DUNGEON_PROCESS_DIR / f"{dungeon_name}_stages.json"
@@ -136,31 +136,31 @@ class GenerateDungeonStagesSystem(ReactiveProcessor):
         )
 
         # 读取 Step 1 中间文件
-        premise_file_path: Path = DUNGEON_PROCESS_DIR / f"{dungeon_name}_premise.json"
+        profile_file_path: Path = DUNGEON_PROCESS_DIR / f"{dungeon_name}_profile.json"
         try:
-            premise_file = DungeonPremiseData.model_validate_json(
-                premise_file_path.read_text(encoding="utf-8")
+            profile_file = DungeonProfileData.model_validate_json(
+                profile_file_path.read_text(encoding="utf-8")
             )
         except Exception as e:
             logger.error(
                 f"[GenerateDungeonStagesSystem] 读取 Step 1 文件失败: {e}\n"
-                f"  path: {premise_file_path}"
+                f"  path: {profile_file_path}"
             )
             return
 
-        result = _StagesResult(premise=premise_file.premise)
+        result = _StagesResult(profile=profile_file.profile)
 
-        combat_stage_count = premise_file.stage_count
+        combat_stage_count = profile_file.stage_count
         success = await agent_loop(
             name=entity.name,
             prompt=_build_dungeon_stages_prompt(
-                dungeon_name=premise_file.dungeon_name,
-                premise=premise_file.premise,
+                dungeon_name=profile_file.dungeon_name,
+                profile=profile_file.profile,
                 combat_stage_count=combat_stage_count,
             ),
             context=self._game.get_agent_context(entity).context,
             tools=[
-                build_stages_tool(premise_file.stage_count),
+                build_stages_tool(profile_file.stage_count),
                 READ_STAGES_FILE_TOOL,
             ],
             handlers={

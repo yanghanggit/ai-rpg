@@ -193,7 +193,7 @@ class AssembleDungeonSystem(ReactiveProcessor):
         # 组装 Dungeon 实体
         dungeon = Dungeon(
             name=blueprint.dungeon_name,
-            premise=blueprint.premise,
+            profile=blueprint.profile,
             rooms=rooms,
         )
         logger.info(

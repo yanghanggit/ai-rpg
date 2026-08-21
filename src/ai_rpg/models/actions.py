@@ -167,7 +167,7 @@ class MonsterTurnAction(Component):
 # 触发链（全部在同一次 dungeon_generate_pipeline.process() 内顺序完成）：
 #   GenerateDungeonAction
 #     → GenerateDungeonDirectiveSystem (Step 0) → GenerateDungeonDirectiveAction
-#     → GenerateDungeonPremiseSystem   (Step 1) → GenerateDungeonStagesAction
+#     → GenerateDungeonProfileSystem    (Step 1) → GenerateDungeonStagesAction
 #     → GenerateDungeonStagesSystem    (Step 2) → GenerateDungeonActorsAction
 #     → GenerateDungeonActorsSystem    (Step 3) → AssembleDungeonAction
 #     → AssembleDungeonSystem          (Step 4) → IllustrateDungeonAction
@@ -193,7 +193,7 @@ class GenerateDungeonAction(Component):
 class GenerateDungeonDirectiveAction(Component):
     """Step 0→1 衔接：由 GenerateDungeonDirectiveSystem 添加，携带世界导演创作指令。
 
-    触发 GenerateDungeonPremiseSystem（Step 1），其读取 directive 注入首轮 prompt。
+    触发 GenerateDungeonProfileSystem（Step 1），其读取 directive 注入首轮 prompt。
     """
 
     name: str

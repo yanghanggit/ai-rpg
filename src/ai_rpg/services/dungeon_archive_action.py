@@ -82,7 +82,7 @@ def _notify_world_director(
             f"# 世界变化通知\n"
             f"\n"
             f"副本「{dungeon.name}」已结束。\n"
-            f"前提（premise）：{dungeon.premise or '（无）'}\n"
+            f"设定（profile）：{dungeon.profile or '（无）'}\n"
             f"\n"
             f"副本本体归档总结：\n"
             f"{summary}\n"
@@ -106,7 +106,7 @@ def _build_dungeon_setting_block(dungeon: Dungeon) -> str:
     lines: List[str] = [
         "### 副本",
         f"- 名称：{dungeon.name}",
-        f"- 前提（premise）：{dungeon.premise or '（无）'}",
+        f"- 设定（profile）：{dungeon.profile or '（无）'}",
     ]
 
     for index, room in enumerate(dungeon.rooms, start=1):

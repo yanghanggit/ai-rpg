@@ -7,11 +7,11 @@ from ..deepseek import ToolDefinition, ToolFunction
 
 ####################################################################################################################################
 @final
-class DungeonPremiseData(BaseModel):
-    """Step 1 中间数据：副本名称、整体前提描写与战斗场景数量。"""
+class DungeonProfileData(BaseModel):
+    """Step 1 中间数据：副本名称、整体设定描写与战斗场景数量。"""
 
     dungeon_name: str = ""
-    premise: str = ""
+    profile: str = ""
     stage_count: int = 2  # 战斗场景数量（不含入口房间）
 
 
@@ -33,7 +33,7 @@ class DungeonStagesData(BaseModel):
     """Step 2 中间数据集合：副本的全部场景列表。"""
 
     dungeon_name: str = ""
-    premise: str = ""
+    profile: str = ""
     stages: List[DungeonStageData] = []
 
 
@@ -67,7 +67,7 @@ class DungeonBlueprint(BaseModel):
     """副本完整蓝图，承载 Steps 1-3 的全部产出。供 assemble_dungeon_system 使用。"""
 
     dungeon_name: str = ""
-    premise: str = ""
+    profile: str = ""
     stages: List[DungeonStageBlueprint] = []
     image_url: str = ""
 
@@ -75,10 +75,10 @@ class DungeonBlueprint(BaseModel):
 ####################################################################################################################################
 # Step 1 工具定义
 ####################################################################################################################################
-PREMISE_TOOL: Final[ToolDefinition] = ToolDefinition(
+PROFILE_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
-        name="record_dungeon_premise",
-        description="记录副本的名称、整体前提写照与场景数量。",
+        name="record_dungeon_profile",
+        description="记录副本的名称、整体设定写照与场景数量。",
         parameters={
             "type": "object",
             "properties": {
@@ -86,9 +86,9 @@ PREMISE_TOOL: Final[ToolDefinition] = ToolDefinition(
                     "type": "string",
                     "description": "副本全名，采用「副本.XXXX」命名格式，体现其核心特征",
                 },
-                "premise": {
+                "profile": {
                     "type": "string",
-                    "description": "该副本的整体前提写照，100-200字，聚焦感官与情境层面的直观细节，避免直接点出具体角色身份/阵营名称与威胁评价性词汇",
+                    "description": "该副本的整体设定写照，100-200字，聚焦感官与情境层面的直观细节，避免直接点出具体角色身份/阵营名称与威胁评价性词汇",
                 },
                 "stage_count": {
                     "type": "integer",
@@ -96,21 +96,21 @@ PREMISE_TOOL: Final[ToolDefinition] = ToolDefinition(
                     "description": "该副本应包含的战斗场景数量，依规模与层次丰富程度选择",
                 },
             },
-            "required": ["name", "premise", "stage_count"],
+            "required": ["name", "profile", "stage_count"],
         },
     )
 )
 
-READ_PREMISE_FILE_TOOL: Final[ToolDefinition] = ToolDefinition(
+READ_PROFILE_FILE_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
-        name="read_premise_file",
-        description="读取已写入磁盘的副本前提中间文件，返回其 JSON 内容。",
+        name="read_profile_file",
+        description="读取已写入磁盘的副本设定中间文件，返回其 JSON 内容。",
         parameters={
             "type": "object",
             "properties": {
                 "dungeon_name": {
                     "type": "string",
-                    "description": "副本全名，与 record_dungeon_premise 中填写的 name 字段一致",
+                    "description": "副本全名，与 record_dungeon_profile 中填写的 name 字段一致",
                 },
             },
             "required": ["dungeon_name"],
@@ -158,7 +158,7 @@ def build_stages_tool(combat_stage_count: int) -> ToolDefinition:
                 "properties": {
                     "dungeon_name": {
                         "type": "string",
-                        "description": "副本全名，与 Step 1 premise 文件中的 dungeon_name 一致",
+                        "description": "副本全名，与 Step 1 profile 文件中的 dungeon_name 一致",
                     },
                     "stages": {
                         "type": "array",

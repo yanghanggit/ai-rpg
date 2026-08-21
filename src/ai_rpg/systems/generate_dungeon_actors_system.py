@@ -28,7 +28,7 @@ from .dungeon_generation import (
 ####################################################################################################################################
 def _build_dungeon_actor_prompt(
     dungeon_name: str,
-    premise: str,
+    profile: str,
     stage_name: str,
     stage_profile: str,
     actor_index: int = 1,
@@ -46,7 +46,7 @@ def _build_dungeon_actor_prompt(
 ## 所在副本
 
 - **副本名称**：{dungeon_name}
-- **整体前提**：{premise}
+- **整体设定**：{profile}
 
 ## 当前场景
 
@@ -89,11 +89,11 @@ class _SingleActorGenerator:
     def __init__(
         self,
         dungeon_name: str,
-        premise: str,
+        profile: str,
         context: Sequence[BaseMessage],
     ) -> None:
         self._dungeon_name: str = dungeon_name
-        self._premise: str = premise
+        self._profile: str = profile
         self._context: Sequence[BaseMessage] = context
 
     async def generate(
@@ -106,7 +106,7 @@ class _SingleActorGenerator:
             name=f"{stage.stage_name}[{actor_idx + 1}]",
             prompt=_build_dungeon_actor_prompt(
                 dungeon_name=self._dungeon_name,
-                premise=self._premise,
+                profile=self._profile,
                 stage_name=stage.stage_name,
                 stage_profile=stage.profile,
                 actor_index=actor_idx + 1,
@@ -193,7 +193,7 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
         # 创建怪物生成器（不变依赖在构造时绑定）
         generator = _SingleActorGenerator(
             dungeon_name=stages_file.dungeon_name,
-            premise=stages_file.premise,
+            profile=stages_file.profile,
             context=self._game.get_agent_context(entity).context,
         )
 
@@ -219,7 +219,7 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
         # Step 3 中间文件中 stages 全部为 entry 房间，无法生成怪物
         blueprint = DungeonBlueprint(
             dungeon_name=stages_file.dungeon_name,
-            premise=stages_file.premise,
+            profile=stages_file.profile,
         )
 
         # Step 2 中间文件中 stages 全部为 entry 房间，无法生成怪物

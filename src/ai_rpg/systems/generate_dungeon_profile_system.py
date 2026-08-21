@@ -1,30 +1,52 @@
 """副本设定生成系统"""
 
 from functools import partial
-from pathlib import Path
 from typing import Dict, Final, List, Optional, final, override
+from ..deepseek import ToolDefinition, ToolFunction
 from loguru import logger
 from ..deepseek import agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..game.config import DUNGEON_PROCESS_DIR
 from ..game.dbg_game import DBGGame
 from ..models import (
     GenerateDungeonDirectiveAction,
     GenerateDungeonStagesAction,
 )
-from .dungeon_generation import (
-    DungeonProfileData,
-    PROFILE_TOOL,
-    READ_PROFILE_FILE_TOOL,
+from pydantic import BaseModel
+
+
+PROFILE_TOOL: Final[ToolDefinition] = ToolDefinition(
+    function=ToolFunction(
+        name="record_dungeon_profile",
+        description="记录副本的名称、整体设定写照与场景数量。",
+        parameters={
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "副本全名，采用「副本.XXXX」命名格式，体现其核心特征",
+                },
+                "profile": {
+                    "type": "string",
+                    "description": "该副本的整体设定写照，100-200字，聚焦感官与情境层面的直观细节，避免直接点出具体角色身份/阵营名称与威胁评价性词汇",
+                },
+                "stage_count": {
+                    "type": "integer",
+                    "enum": [2, 3],
+                    "description": "该副本应包含的战斗场景数量，依规模与层次丰富程度选择",
+                },
+            },
+            "required": ["name", "profile", "stage_count"],
+        },
+    )
 )
 
 
 ####################################################################################################################################
-class _ProfileResult:
+class _ProfileResult(BaseModel):
     """record_dungeon_profile handler 的结果容器。"""
-
-    def __init__(self) -> None:
-        self.data: Optional[DungeonProfileData] = None
+    dungeon_name: Optional[str] = None
+    dungeon_profile: Optional[str] = None
+    dungeon_room_count: Optional[int] = None
 
 
 ####################################################################################################################################
@@ -32,32 +54,15 @@ def _handle_record_dungeon_profile(
     result: _ProfileResult, name: str, profile: str, stage_count: int
 ) -> str:
     """处理 record_dungeon_profile 工具调用。"""
-    result.data = DungeonProfileData(
-        dungeon_name=name,
-        profile=profile,
-        stage_count=stage_count,
-    )
-    file_path: Path = DUNGEON_PROCESS_DIR / f"{name}_profile.json"
-    file_path.write_text(result.data.model_dump_json(indent=4), encoding="utf-8")
+    result.dungeon_name = name
+    result.dungeon_profile = profile
+    result.dungeon_room_count = stage_count
     logger.info(
         f"[GenerateDungeonProfileSystem] record_dungeon_profile 执行:\n"
         f"  dungeon_name: {name}\n"
-        f"  stage_count:  {stage_count}\n"
-        f"  → {file_path}"
+        f"  stage_count:  {stage_count}"
     )
-    return (
-        f"已记录副本「{name}」，共 {stage_count} 个战斗场景。"
-        f"中间文件已写入: {file_path}"
-    )
-
-
-####################################################################################################################################
-def _handle_read_profile_file(dungeon_name: str) -> str:
-    """处理 read_profile_file 工具调用。"""
-    file_path: Path = DUNGEON_PROCESS_DIR / f"{dungeon_name}_profile.json"
-    if not file_path.exists():
-        return f"错误：文件不存在 {file_path}"
-    return file_path.read_text(encoding="utf-8")
+    return result.model_dump_json(ensure_ascii=False)
 
 
 ####################################################################################################################################
@@ -69,8 +74,7 @@ def _build_dungeon_profile_prompt(directive: str = "") -> str:
 
 请在当前世界观框架内，为本次副本生成名称与整体设定写照。
 
-工作流程：调用 record_dungeon_profile 写入设定数据，确认无误后结束本次对话。
-如需核查已写入内容，可先调用 read_profile_file，再决定是否结束。"""
+工作流程：调用 record_dungeon_profile 写入设定数据，确认无误后结束本次对话。"""
 
 
 ####################################################################################################################################
@@ -125,14 +129,14 @@ class GenerateDungeonProfileSystem(ReactiveProcessor):
         success = await agent_loop(
             name=entity.name,
             prompt=_build_dungeon_profile_prompt(directive),
-            # 传入副本：保持与旧行为一致，不把生成过程写入实体的持久化上下文
-            context=list(self._game.get_agent_context(entity).context),
-            tools=[PROFILE_TOOL, READ_PROFILE_FILE_TOOL],
+            # 直接传入实体的持久化 agent context：agent_loop 原地追加，
+            # 本步完整对话即成为后续步骤的记忆
+            context=self._game.get_agent_context(entity).context,
+            tools=[PROFILE_TOOL],
             handlers={
                 "record_dungeon_profile": partial(
                     _handle_record_dungeon_profile, result
                 ),
-                "read_profile_file": _handle_read_profile_file,
             },
             max_rounds=5,
         )
@@ -141,23 +145,30 @@ class GenerateDungeonProfileSystem(ReactiveProcessor):
             logger.error("[GenerateDungeonProfileSystem] Step 1 agent_loop 失败，中止")
             return
 
-        if result.data is None:
+        if (
+            result.dungeon_name is None
+            or result.dungeon_profile is None
+            or result.dungeon_room_count is None
+        ):
             logger.error(
                 "[GenerateDungeonProfileSystem] Step 1 LLM 已 stop "
                 "但未调用 record_dungeon_profile，中止"
             )
             return
 
-        profile_file = result.data
         logger.info(
             f"[GenerateDungeonProfileSystem] Step 1 完成:\n"
-            f"  dungeon_name: {profile_file.dungeon_name}\n"
-            f"  profile:      {profile_file.profile}"
+            f"  dungeon_name: {result.dungeon_name}\n"
+            f"  dungeon_profile: {result.dungeon_profile}"
         )
         entity.replace(
-            GenerateDungeonStagesAction, entity.name, profile_file.dungeon_name
+            GenerateDungeonStagesAction,
+            entity.name,
+            result.dungeon_name,
+            result.dungeon_profile,
+            result.dungeon_room_count,
         )
         logger.info(
             f"[GenerateDungeonProfileSystem] 添加 GenerateDungeonStagesAction: "
-            f"dungeon={profile_file.dungeon_name}"
+            f"dungeon={result.dungeon_name}, dungeon_room_count={result.dungeon_room_count}"
         )

@@ -26,7 +26,7 @@ from ai_rpg.deepseek import (
 
 from ai_rpg.models.messages import (
     AIMessage,
-    BaseMessage,
+    ContextMessage,
     HumanMessage,
     SystemMessage,
     ToolMessage,
@@ -321,7 +321,7 @@ async def test_tool_call_with_thinking() -> None:
     print("\n=== 测试 tool calling + thinking ===")
 
     # 方案 C 验证：自己持有 context 引用，观察 agent_loop 是否原地追加
-    context: List[BaseMessage] = [_SYSTEM]
+    context: List[ContextMessage] = [_SYSTEM]
     print(f"[before] context 消息数 = {len(context)}")
     print(get_buffer_string(context))
 

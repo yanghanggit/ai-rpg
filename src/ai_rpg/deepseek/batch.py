@@ -11,7 +11,7 @@ import httpx
 from loguru import logger
 from pydantic import BaseModel, ConfigDict
 
-from ..models.messages import BaseMessage
+from ..models.messages import ContextMessage
 from .agent_loop import agent_loop
 from .client import DeepSeekClient, ToolDefinition
 
@@ -25,7 +25,7 @@ class AgentLoopConfig(BaseModel):
     name: str
     prompt: str
     context: List[
-        BaseMessage
+        ContextMessage
     ]  # agent_loop 会原地修改该列表；需隔离时请传入各自独立的副本
     tools: List[ToolDefinition] = []
     handlers: Dict[str, Callable[..., str]] = {}

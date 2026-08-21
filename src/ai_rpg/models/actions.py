@@ -205,10 +205,16 @@ class GenerateDungeonDirectiveAction(Component):
 @register_action_component_type
 @register_component_type
 class GenerateDungeonStagesAction(Component):
-    """ """
+    """Step 1→2 衔接：由 GenerateDungeonProfileSystem 添加，携带副本设定产物。
+
+    触发 GenerateDungeonStagesSystem（Step 2），其直接读取本组件的字段。
+    """
 
     name: str
     dungeon_name: str
+    dungeon_profile: str = ""
+    # TODO: 语义待重构——目标为「副本房间总数（含入口）」，届时移除下游 `1 + ...` 的 +1 entry 写法
+    dungeon_room_count: int = 2  # 当前临时语义：战斗房间数量（不含入口房间）
 
 
 ############################################################################################################

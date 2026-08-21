@@ -13,7 +13,6 @@ from ..models import (
     GenerateDungeonStagesAction,
 )
 from .dungeon_generation import (
-    DungeonProfileData,
     DungeonStageData,
     DungeonStagesData,
     READ_STAGES_FILE_TOOL,
@@ -23,11 +22,11 @@ from .dungeon_generation import (
 
 ####################################################################################################################################
 def _build_dungeon_stages_prompt(
-    dungeon_name: str, profile: str, combat_stage_count: int
+    dungeon_name: str, profile: str, dungeon_room_count: int
 ) -> str:
     """构建副本场景生成的 LLM 提示词。"""
 
-    total_stages = 1 + combat_stage_count
+    total_stages = 1 + dungeon_room_count
     return f"""# 任务：为副本创作 {total_stages} 个场景
 
 ## 副本信息
@@ -41,7 +40,7 @@ def _build_dungeon_stages_prompt(
   描写副本入口处的外部氛围——玩家站在副本门口的第一印象。
   不涉及任何怪物，纯粹的场景氛围铺垫。
   
-- **第 2 ~ {total_stages} 个场景**：战斗房间（room_type = "combat"），共 {combat_stage_count} 个，
+- **第 2 ~ {total_stages} 个场景**：战斗房间（room_type = "combat"），共 {dungeon_room_count} 个，
   从入口区域逐步深入到副本最深处，actor_count = 1 或 2。
 
 工作流程：调用 record_dungeon_stages 写入全部场景数据，确认无误后结束本次对话。
@@ -130,38 +129,27 @@ class GenerateDungeonStagesSystem(ReactiveProcessor):
     async def _run(self, entity: Entity) -> None:
         action_comp = entity.get(GenerateDungeonStagesAction)
         dungeon_name = action_comp.dungeon_name
+        profile = action_comp.dungeon_profile
+        dungeon_room_count = action_comp.dungeon_room_count
 
         logger.info(
-            f"[GenerateDungeonStagesSystem] Step 2 开始: dungeon={dungeon_name}"
+            f"[GenerateDungeonStagesSystem] Step 2 开始: dungeon={dungeon_name}, "
+            f"dungeon_room_count={dungeon_room_count}"
         )
 
-        # 读取 Step 1 中间文件
-        profile_file_path: Path = DUNGEON_PROCESS_DIR / f"{dungeon_name}_profile.json"
-        try:
-            profile_file = DungeonProfileData.model_validate_json(
-                profile_file_path.read_text(encoding="utf-8")
-            )
-        except Exception as e:
-            logger.error(
-                f"[GenerateDungeonStagesSystem] 读取 Step 1 文件失败: {e}\n"
-                f"  path: {profile_file_path}"
-            )
-            return
+        result = _StagesResult(profile=profile)
 
-        result = _StagesResult(profile=profile_file.profile)
-
-        combat_stage_count = profile_file.stage_count
         success = await agent_loop(
             name=entity.name,
             prompt=_build_dungeon_stages_prompt(
-                dungeon_name=profile_file.dungeon_name,
-                profile=profile_file.profile,
-                combat_stage_count=combat_stage_count,
+                dungeon_name=dungeon_name,
+                profile=profile,
+                dungeon_room_count=dungeon_room_count,
             ),
             # 传入副本：保持与旧行为一致，不把生成过程写入实体的持久化上下文
             context=list(self._game.get_agent_context(entity).context),
             tools=[
-                build_stages_tool(profile_file.stage_count),
+                build_stages_tool(dungeon_room_count),
                 READ_STAGES_FILE_TOOL,
             ],
             handlers={

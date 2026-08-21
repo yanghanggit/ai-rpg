@@ -7,16 +7,6 @@ from ..deepseek import ToolDefinition, ToolFunction
 
 ####################################################################################################################################
 @final
-class DungeonProfileData(BaseModel):
-    """Step 1 中间数据：副本名称、整体设定描写与战斗场景数量。"""
-
-    dungeon_name: str = ""
-    profile: str = ""
-    stage_count: int = 2  # 战斗场景数量（不含入口房间）
-
-
-####################################################################################################################################
-@final
 class DungeonStageData(BaseModel):
     """Step 2 中间数据：单个场景的名称、类型、标识、环境描写与角色种类数量。"""
 
@@ -75,49 +65,6 @@ class DungeonBlueprint(BaseModel):
 ####################################################################################################################################
 # Step 1 工具定义
 ####################################################################################################################################
-PROFILE_TOOL: Final[ToolDefinition] = ToolDefinition(
-    function=ToolFunction(
-        name="record_dungeon_profile",
-        description="记录副本的名称、整体设定写照与场景数量。",
-        parameters={
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "description": "副本全名，采用「副本.XXXX」命名格式，体现其核心特征",
-                },
-                "profile": {
-                    "type": "string",
-                    "description": "该副本的整体设定写照，100-200字，聚焦感官与情境层面的直观细节，避免直接点出具体角色身份/阵营名称与威胁评价性词汇",
-                },
-                "stage_count": {
-                    "type": "integer",
-                    "enum": [2, 3],
-                    "description": "该副本应包含的战斗场景数量，依规模与层次丰富程度选择",
-                },
-            },
-            "required": ["name", "profile", "stage_count"],
-        },
-    )
-)
-
-READ_PROFILE_FILE_TOOL: Final[ToolDefinition] = ToolDefinition(
-    function=ToolFunction(
-        name="read_profile_file",
-        description="读取已写入磁盘的副本设定中间文件，返回其 JSON 内容。",
-        parameters={
-            "type": "object",
-            "properties": {
-                "dungeon_name": {
-                    "type": "string",
-                    "description": "副本全名，与 record_dungeon_profile 中填写的 name 字段一致",
-                },
-            },
-            "required": ["dungeon_name"],
-        },
-    )
-)
-
 
 ####################################################################################################################################
 # Step 2 工具定义
@@ -140,18 +87,18 @@ READ_STAGES_FILE_TOOL: Final[ToolDefinition] = ToolDefinition(
 )
 
 
-def build_stages_tool(combat_stage_count: int) -> ToolDefinition:
+def build_stages_tool(dungeon_room_count: int) -> ToolDefinition:
     """动态构建 record_dungeon_stages 工具定义。
 
-    总场景数 = 1 个叙事入口（entry） + combat_stage_count 个战斗场景（combat）。
+    总场景数 = 1 个叙事入口（entry） + dungeon_room_count 个战斗房间（combat）。
     """
-    total_stages = 1 + combat_stage_count
+    total_stages = 1 + dungeon_room_count
     return ToolDefinition(
         function=ToolFunction(
             name="record_dungeon_stages",
             description=(
                 f"记录副本全部 {total_stages} 个场景：首个为叙事入口（entry），"
-                f"其余 {combat_stage_count} 个为战斗场景（combat）。"
+                f"其余 {dungeon_room_count} 个为战斗房间（combat）。"
             ),
             parameters={
                 "type": "object",

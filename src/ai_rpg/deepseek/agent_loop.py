@@ -3,14 +3,14 @@
 import json
 from typing import Callable, Dict, List, Literal
 from loguru import logger
-from ..models.messages import BaseMessage, HumanMessage, ToolMessage
+from ..models.messages import ContextMessage, HumanMessage, ToolMessage
 from .client import DeepSeekClient, ToolDefinition
 
 
 async def agent_loop(
     name: str,
     prompt: str,
-    context: List[BaseMessage],
+    context: List[ContextMessage],
     tools: List[ToolDefinition],
     handlers: Dict[str, Callable[..., str]],
     max_rounds: int = 5,
@@ -23,7 +23,7 @@ async def agent_loop(
     调用方若希望保留原列表不被改动，请在传入前自行复制，例如 ``list(context)``。
     """
     # 方案 C：不复制 context，直接原地追加，由调用方决定是否传入副本以隔离。
-    history: List[BaseMessage] = context
+    history: List[ContextMessage] = context
     current_prompt = prompt
 
     # 进入 agent 循环，每轮与 LLM 交互，处理工具调用，直到 LLM 主动 stop 或达到最大轮次

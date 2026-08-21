@@ -10,7 +10,7 @@ from ..deepseek import agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.config import DUNGEON_PROCESS_DIR
 from ..game.dbg_game import DBGGame
-from ..models.messages import BaseMessage
+from ..models.messages import ContextMessage
 from ..models import (
     AssembleDungeonAction,
     GenerateDungeonActorsAction,
@@ -90,11 +90,11 @@ class _SingleActorGenerator:
         self,
         dungeon_name: str,
         profile: str,
-        context: Sequence[BaseMessage],
+        context: Sequence[ContextMessage],
     ) -> None:
         self._dungeon_name: str = dungeon_name
         self._profile: str = profile
-        self._context: Sequence[BaseMessage] = context
+        self._context: Sequence[ContextMessage] = context
 
     async def generate(
         self, stage: DungeonStageData, actor_idx: int

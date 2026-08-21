@@ -41,7 +41,7 @@ class AdjustedCardEntry(BaseModel):
     playable: bool = True
     exhaust: bool = False
     cost: int = 1
-    damage_dealt: int
+    damage: int
     hit_count: int = 1
     target_type: str = TargetType.SINGLE
 
@@ -72,7 +72,7 @@ def _generate_adjust_prompt(
     )
 
     cards_rows = "\n".join(
-        f"| {i + 1} | {c.name} | {c.description} | {c.cost} | {c.damage_dealt} | {c.hit_count} | {c.target_type.value} |"
+        f"| {i + 1} | {c.name} | {c.description} | {c.cost} | {c.damage} | {c.hit_count} | {c.target_type.value} |"
         for i, c in enumerate(drawn_cards)
     )
 
@@ -90,7 +90,7 @@ def _generate_adjust_prompt(
 
 ## 当前手牌
 
-| # | name | description | cost | damage_dealt | hit_count | target_type |
+| # | name | description | cost | damage | hit_count | target_type |
 |---|---|---|---|---|---|---|---|
 {cards_rows}
 
@@ -98,7 +98,7 @@ def _generate_adjust_prompt(
 
 根据以上 DRAW 阶段状态效果，调整每张手牌的数值，使其体现状态效果的影响（如某状态效果使本回合手牌费用增加，可调整 `cost`）。
 
-**可修改字段**：`description`、`on_play_affixes`、`on_hit_affixes`、`playable`、`exhaust`、`cost`、`damage_dealt`、`hit_count`、`target_type`
+**可修改字段**：`description`、`on_play_affixes`、`on_hit_affixes`、`playable`、`exhaust`、`cost`、`damage`、`hit_count`、`target_type`
 
 **不可修改字段**：`name`（用于对位识别，须原样回传）、`uuid`、`source`（系统自动保留，无需输出）
 
@@ -115,7 +115,7 @@ def _generate_adjust_prompt(
       "playable": true,
       "exhaust": false,
       "cost": 1,
-      "damage_dealt": 0,
+      "damage": 0,
       "hit_count": 1,
       "target_type": "single"
     }}
@@ -285,7 +285,7 @@ class PostDrawCardsSystem(ReactiveProcessor):
                     playable=entry.playable,
                     exhaust=entry.exhaust,
                     cost=entry.cost,
-                    damage_dealt=entry.damage_dealt,
+                    damage=entry.damage,
                     hit_count=entry.hit_count,
                     target_type=TargetType(entry.target_type),
                     source=orig.source,

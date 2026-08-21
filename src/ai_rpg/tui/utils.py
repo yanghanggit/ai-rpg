@@ -116,7 +116,7 @@ def render_card(card: Card) -> str:
 
     stat_parts = [
         f"费用:{card.cost}",
-        f"伤害:{card.damage_dealt}",
+        f"伤害:{card.damage}",
         f"连击:{card.hit_count}",
         f"目标:{target_label}",
     ]

@@ -60,7 +60,7 @@ def _generate_monster_decision_prompt(
             else ""
         )
         + (f"  延迟词缀：{'\u3001'.join(c.on_hit_affixes)}" if c.on_hit_affixes else "")
-        + f"  damage_dealt:{c.damage_dealt}  hit_count:{c.hit_count}  target_type:{c.target_type}"
+        + f"  damage:{c.damage}  hit_count:{c.hit_count}  target_type:{c.target_type}"
         for c in hand_cards
     )
 
@@ -148,7 +148,7 @@ def _generate_compressed_monster_decision_prompt(
         f"- 【{c.name}】描述：{c.description}"
         + (f"  即时词缀：{'、'.join(c.on_play_affixes)}" if c.on_play_affixes else "")
         + (f"  延迟词缀：{'、'.join(c.on_hit_affixes)}" if c.on_hit_affixes else "")
-        + f"  damage_dealt:{c.damage_dealt}  hit_count:{c.hit_count}  target_type:{c.target_type}"
+        + f"  damage:{c.damage}  hit_count:{c.hit_count}  target_type:{c.target_type}"
         for c in hand_cards
     )
 

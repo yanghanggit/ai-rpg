@@ -35,7 +35,7 @@ def _card_json(
         "on_hit_affixes": [],
         "playable": True,
         "exhaust": False,
-        "damage_dealt": 3,
+        "damage": 3,
         "hit_count": 1,
         "target_type": target_type,
     }

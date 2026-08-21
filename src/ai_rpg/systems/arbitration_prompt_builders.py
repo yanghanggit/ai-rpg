@@ -175,7 +175,7 @@ CALC_RULES_SECTION: Final[
     str
 ] = """## 计算规则
 
-**卡牌出牌**：单段有效伤害 = max(1, damage_dealt − 目标防御)（最低保底 1），共 hit_count 段；出牌者 HP 已为 0 则跳过结算。
+**卡牌出牌**：单段有效伤害 = max(1, damage − 目标防御)（最低保底 1），共 hit_count 段；出牌者 HP 已为 0 则跳过结算。
 **装备穿戴**：stat_bonuses 已由系统确定性写入，无需重复计算。
 **消耗品使用**：依物品描述中明确写明的数值计算；描述模糊时给出合理推断并体现在 narrative 中。
 **即时词缀**：若本次结算列出即时词缀，以上方结算规则为基础逻辑，结合即时词缀共同考量，务必保证即时词缀被实际执行、不被遗漏；两者如何结合由你发挥判断力自行泛化，不引入词缀未提及的新机制。
@@ -248,7 +248,7 @@ def generate_combat_arbitration_prompt(
 ## 出牌
 
 - 卡牌：{card.name}
-- damage_dealt：{card.damage_dealt}（单次伤害）
+- damage：{card.damage}（单次伤害）
 - hit_count：{card.hit_count}（攻击次数）
 {spread.hit_assignment}{build_instant_affix_section("本卡即时词缀", card.on_play_affixes)}
 
@@ -317,7 +317,7 @@ def generate_compressed_combat_arbitration_prompt(
 ## 出牌
 
 - 卡牌：{card.name}
-- damage_dealt：{card.damage_dealt}（单次伤害）
+- damage：{card.damage}（单次伤害）
 - hit_count：{card.hit_count}（攻击次数）
 {spread.hit_assignment}{build_instant_affix_section("本卡即时词缀", card.on_play_affixes)}
 

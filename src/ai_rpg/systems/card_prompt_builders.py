@@ -18,7 +18,7 @@ BUILD_CARD_FIELD_DESCRIPTION: Final[
 | playable | 是否可出牌；默认 true |
 | exhaust | 出牌后是否永久消耗（本场战斗不再进入抽牌循环）；默认 false |
 | cost | 出牌费用，消耗行动者当前 energy 点数；默认 1 |
-| damage_dealt | 单次命中造成的伤害（以角色攻击力为基数计算；无伤害取 0） |
+| damage | 单次命中造成的伤害（以角色攻击力为基数计算；无伤害取 0） |
 | hit_count | 攻击次数（默认 1；多段时每段独立作用） |
 | target_type | 出牌目标类型（见下表） |
 

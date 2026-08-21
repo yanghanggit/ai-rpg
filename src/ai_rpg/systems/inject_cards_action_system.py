@@ -141,7 +141,7 @@ def _generate_inject_cards_prompt(
           "playable": true,
           "exhaust": true,
           "cost": 0,
-          "damage_dealt": 2,
+          "damage": 2,
           "hit_count": 1,
           "target_type": "{TargetType.SINGLE}"
         }}

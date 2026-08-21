@@ -515,7 +515,7 @@ class CombatPlayCardsScreen(BaseGameScreen):
             log.write("[bold yellow]── 出牌结果 ─────────────────────────────────[/]")
             log.write(
                 f"  [dim]战斗：[/] {actor_name} 使用『{card.name}』对 "
-                f"{targets_label} 造成 {card.damage_dealt} 点伤害。"
+                f"{targets_label} 造成 {card.damage} 点伤害。"
             )
             log.write(
                 f"  [dim]叙事：[/] {display_name(actor_name)}挥出『{card.name}』，一击命中！"

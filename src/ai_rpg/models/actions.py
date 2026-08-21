@@ -3,7 +3,7 @@
 from typing import Dict, List, final
 from ..entitas.components import Component
 from .card import Card
-from .dungeon_generation import DungeonRoomData
+from .dungeon_generation import DungeonBlueprint, DungeonRoomData
 from .items import ConsumableItem, CostumeItem, GearItem, MaterialItem
 from .registry import register_action_component_type, register_component_type
 from .status_effect import AffixTrigger
@@ -238,10 +238,14 @@ class GenerateDungeonActorsAction(Component):
 @register_action_component_type
 @register_component_type
 class AssembleDungeonAction(Component):
-    """ """
+    """Step 3→4 衔接：由 GenerateDungeonActorsSystem 添加，携带完整副本蓝图。
+
+    触发 AssembleDungeonSystem（Step 4），其直接读取本组件的 blueprint。
+    """
 
     name: str
     dungeon_name: str
+    blueprint: DungeonBlueprint
 
 
 ############################################################################################################

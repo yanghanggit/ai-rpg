@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Dict, Final, List, final, override, Optional, Set
 from loguru import logger
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..game.config import DEBUG_CACHE_DIR, DUNGEON_PROCESS_DIR, DUNGEONS_DIR
+from ..game.config import DEBUG_CACHE_DIR, DUNGEONS_DIR
 from ..game.dbg_game import DBGGame
 from ..models import (
     ActorType,
@@ -19,9 +19,10 @@ from ..models import (
     StageProfile,
     StageType,
     RPG_SYSTEM_RULES,
+    SystemMessage,
 )
+from ..models.dungeon_generation import DungeonBlueprint
 from ..models.entity_factory import create_actor, create_stage
-from .dungeon_generation import DungeonBlueprint
 
 
 ####################################################################################################################################
@@ -54,28 +55,13 @@ class AssembleDungeonSystem(ReactiveProcessor):
     async def _run(self, entity: Entity) -> None:
         action_comp = entity.get(AssembleDungeonAction)
         dungeon_name = action_comp.dungeon_name
+        blueprint = action_comp.blueprint
 
         logger.info(f"[AssembleDungeonSystem] Step 4 开始: dungeon={dungeon_name}")
 
-        # 读取 Step 3 中间文件
-        blueprint_file_path: Path = (
-            DUNGEON_PROCESS_DIR / f"{dungeon_name}_blueprint.json"
-        )
-        try:
-            blueprint = DungeonBlueprint.model_validate_json(
-                blueprint_file_path.read_text(encoding="utf-8")
-            )
-        except Exception as e:
+        if not blueprint.rooms:
             logger.error(
-                f"[AssembleDungeonSystem] 读取 Step 3 文件失败: {e}\n"
-                f"  path: {blueprint_file_path}"
-            )
-            return
-
-        # Step 3 中间文件中 stages 为空，无法构建 Dungeon
-        if not blueprint.stages:
-            logger.error(
-                f"[AssembleDungeonSystem] blueprint.stages 为空，无法构建 Dungeon: {blueprint_file_path}"
+                "[AssembleDungeonSystem] blueprint.rooms 为空，无法构建 Dungeon"
             )
             return
 
@@ -109,6 +95,17 @@ class AssembleDungeonSystem(ReactiveProcessor):
             f"[AssembleDungeonSystem] 添加 IllustrateDungeonAction: dungeon={dungeon_name}"
         )
 
+        # 副本生成完成：重置副本生成系统实体（WorldComponent + DungeonGenerationComponent）
+        # 的 agent context，仅保留首条 system prompt，清除其余全部对话
+        agent_context = self._game.get_agent_context(entity)
+        del agent_context.context[1:]
+        logger.info(
+            f"[AssembleDungeonSystem] 已重置 agent context，保留 {len(agent_context.context)} 条消息"
+        )
+        assert isinstance(
+            agent_context.context[0], SystemMessage
+        ), "首条消息不是 SystemMessage"
+
     ####################################################################################################################################
     @staticmethod
     def _deduplicate_name(seen: Set[str], name: str) -> str:
@@ -129,38 +126,38 @@ class AssembleDungeonSystem(ReactiveProcessor):
     ####################################################################################################################################
     def _build_dungeon(self, blueprint: DungeonBlueprint) -> Optional[Dungeon]:
         """将 DungeonBlueprint 组装为完整 Dungeon 实体树（纯数据，无 LLM 调用）。"""
-        seen_stage_names: set[str] = set()
+        seen_room_names: set[str] = set()
         seen_actor_names: set[str] = set()
         rooms: List[DungeonRoom] = []
 
-        # 组装每个 stage 对应的房间
-        for i, stage_bp in enumerate(blueprint.stages, start=1):
+        # 组装每个 room 对应的房间
+        for i, room_bp in enumerate(blueprint.rooms, start=1):
 
-            # 处理 stage_name 重复问题
-            stage_name = self._deduplicate_name(seen_stage_names, stage_bp.stage_name)
+            # 处理 room_name 重复问题
+            room_name = self._deduplicate_name(seen_room_names, room_bp.room_name)
 
             # 创建 Stage 实体
             stage = create_stage(
-                name=stage_name,
+                name=room_name,
                 stage_profile=StageProfile(
-                    name=stage_bp.profile_name,
+                    name=room_bp.profile_name,
                     type=StageType.DUNGEON,
-                    profile=stage_bp.profile,
+                    profile=room_bp.profile,
                 ),
                 campaign_setting=self._game._world.blueprint.campaign_setting,
                 system_rules=RPG_SYSTEM_RULES,
             )
 
             # 根据 room_type 创建对应的房间类型
-            if stage_bp.room_type == "entry":
+            if room_bp.room_type == "entry":
                 stage.actors = []
                 rooms.append(EntryRoom(stage=stage))
                 logger.info(
-                    f"[AssembleDungeonSystem] Room {i}/{len(blueprint.stages)} 构建完成:\n"
+                    f"[AssembleDungeonSystem] Room {i}/{len(blueprint.rooms)} 构建完成:\n"
                     f"  type:   entry\n"
                     f"  stage:  {stage.name}"
                 )
-            elif stage_bp.room_type == "combat":
+            elif room_bp.room_type == "combat":
                 actors = [
                     create_actor(
                         name=self._deduplicate_name(
@@ -179,12 +176,12 @@ class AssembleDungeonSystem(ReactiveProcessor):
                             "纯攻击型：每张卡牌专注于对单个敌人造成直接伤害，不携带任何附加效果或持续状态。骰值 0-30 为失败，攻击乏力、伤害偏低；骰值 31-70 为正常，伤害稳定适中；骰值 71-100 为优质，体现爆发感，伤害显著高于角色基础攻击力。"
                         ],
                     )
-                    for actor_bp in stage_bp.actors
+                    for actor_bp in room_bp.actors
                 ]
                 stage.actors = actors
                 rooms.append(CombatRoom(stage=stage))
                 logger.info(
-                    f"[AssembleDungeonSystem] Room {i}/{len(blueprint.stages)} 构建完成:\n"
+                    f"[AssembleDungeonSystem] Room {i}/{len(blueprint.rooms)} 构建完成:\n"
                     f"  type:   combat\n"
                     f"  stage:  {stage.name}\n"
                     f"  actors ({len(actors)}): " + ", ".join(a.name for a in actors)

@@ -9,7 +9,7 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..models import (
     GenerateDungeonDirectiveAction,
-    GenerateDungeonStagesAction,
+    GenerateDungeonRoomsAction,
 )
 from pydantic import BaseModel
 
@@ -17,7 +17,7 @@ from pydantic import BaseModel
 PROFILE_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="record_dungeon_profile",
-        description="记录副本的名称、整体设定写照与场景数量。",
+        description="记录副本的名称、整体设定写照与房间总数。",
         parameters={
             "type": "object",
             "properties": {
@@ -29,13 +29,13 @@ PROFILE_TOOL: Final[ToolDefinition] = ToolDefinition(
                     "type": "string",
                     "description": "该副本的整体设定写照，100-200字，聚焦感官与情境层面的直观细节，避免直接点出具体角色身份/阵营名称与威胁评价性词汇",
                 },
-                "stage_count": {
+                "dungeon_room_count": {
                     "type": "integer",
-                    "enum": [2, 3],
-                    "description": "该副本应包含的战斗场景数量，依规模与层次丰富程度选择",
+                    "enum": [3, 4],
+                    "description": "副本房间总数（含 1 个入口房间），依规模与层次丰富程度选择",
                 },
             },
-            "required": ["name", "profile", "stage_count"],
+            "required": ["name", "profile", "dungeon_room_count"],
         },
     )
 )
@@ -44,6 +44,7 @@ PROFILE_TOOL: Final[ToolDefinition] = ToolDefinition(
 ####################################################################################################################################
 class _ProfileResult(BaseModel):
     """record_dungeon_profile handler 的结果容器。"""
+
     dungeon_name: Optional[str] = None
     dungeon_profile: Optional[str] = None
     dungeon_room_count: Optional[int] = None
@@ -51,16 +52,16 @@ class _ProfileResult(BaseModel):
 
 ####################################################################################################################################
 def _handle_record_dungeon_profile(
-    result: _ProfileResult, name: str, profile: str, stage_count: int
+    result: _ProfileResult, name: str, profile: str, dungeon_room_count: int
 ) -> str:
     """处理 record_dungeon_profile 工具调用。"""
     result.dungeon_name = name
     result.dungeon_profile = profile
-    result.dungeon_room_count = stage_count
+    result.dungeon_room_count = dungeon_room_count
     logger.info(
         f"[GenerateDungeonProfileSystem] record_dungeon_profile 执行:\n"
         f"  dungeon_name: {name}\n"
-        f"  stage_count:  {stage_count}"
+        f"  dungeon_room_count: {dungeon_room_count}"
     )
     return result.model_dump_json(ensure_ascii=False)
 
@@ -162,13 +163,13 @@ class GenerateDungeonProfileSystem(ReactiveProcessor):
             f"  dungeon_profile: {result.dungeon_profile}"
         )
         entity.replace(
-            GenerateDungeonStagesAction,
+            GenerateDungeonRoomsAction,
             entity.name,
             result.dungeon_name,
             result.dungeon_profile,
             result.dungeon_room_count,
         )
         logger.info(
-            f"[GenerateDungeonProfileSystem] 添加 GenerateDungeonStagesAction: "
+            f"[GenerateDungeonProfileSystem] 添加 GenerateDungeonRoomsAction: "
             f"dungeon={result.dungeon_name}, dungeon_room_count={result.dungeon_room_count}"
         )

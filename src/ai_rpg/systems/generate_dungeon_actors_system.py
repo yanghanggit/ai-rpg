@@ -15,13 +15,12 @@ from ..models import (
     AssembleDungeonAction,
     GenerateDungeonActorsAction,
 )
+from ..models.dungeon_generation import DungeonRoomData
 from .dungeon_generation import (
     ACTOR_TOOL,
     DungeonActorBlueprint,
     DungeonBlueprint,
     DungeonStageBlueprint,
-    DungeonStageData,
-    DungeonStagesData,
 )
 
 
@@ -97,20 +96,20 @@ class _SingleActorGenerator:
         self._context: Sequence[ContextMessage] = context
 
     async def generate(
-        self, stage: DungeonStageData, actor_idx: int
+        self, room: DungeonRoomData, actor_idx: int
     ) -> Optional[DungeonActorBlueprint]:
-        """为指定场景生成第 actor_idx 个怪物。成功返回蓝图，失败返回 None。"""
+        """为指定房间生成第 actor_idx 个怪物。成功返回蓝图，失败返回 None。"""
         result: List[Optional[DungeonActorBlueprint]] = [None]
 
         success = await agent_loop(
-            name=f"{stage.stage_name}[{actor_idx + 1}]",
+            name=f"{room.room_name}[{actor_idx + 1}]",
             prompt=_build_dungeon_actor_prompt(
                 dungeon_name=self._dungeon_name,
                 profile=self._profile,
-                stage_name=stage.stage_name,
-                stage_profile=stage.profile,
+                stage_name=room.room_name,
+                stage_profile=room.profile,
                 actor_index=actor_idx + 1,
-                total_actors=stage.actor_count,
+                total_actors=room.actor_count,
             ),
             # 传入副本：并发隔离，且不把生成过程写入共享的 self._context
             context=list(self._context),
@@ -119,7 +118,7 @@ class _SingleActorGenerator:
                 "record_dungeon_actor": partial(
                     _handle_record_dungeon_actor,
                     result,
-                    stage.stage_name,
+                    room.room_name,
                     actor_idx,
                 )
             },
@@ -128,7 +127,7 @@ class _SingleActorGenerator:
 
         if not success or result[0] is None:
             logger.error(
-                f"[GenerateDungeonActorsSystem] Stage '{stage.stage_name}' "
+                f"[GenerateDungeonActorsSystem] Room '{room.room_name}' "
                 f"actor[{actor_idx + 1}] 生成失败，该条跳过"
             )
             return None
@@ -166,108 +165,94 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
     async def _run(self, entity: Entity) -> None:
         action_comp = entity.get(GenerateDungeonActorsAction)
         dungeon_name = action_comp.dungeon_name
+        dungeon_profile = action_comp.dungeon_profile
+        rooms = action_comp.rooms
 
         logger.info(
-            f"[GenerateDungeonActorsSystem] Step 3 开始: dungeon={dungeon_name}"
+            f"[GenerateDungeonActorsSystem] Step 3 开始: dungeon={dungeon_name}, rooms={len(rooms)}"
         )
 
-        # 读取 Step 2 中间文件
-        stages_file_path: Path = DUNGEON_PROCESS_DIR / f"{dungeon_name}_stages.json"
-        try:
-            stages_file = DungeonStagesData.model_validate_json(
-                stages_file_path.read_text(encoding="utf-8")
-            )
-        except Exception as e:
+        if not rooms:
             logger.error(
-                f"[GenerateDungeonActorsSystem] 读取 Step 2 文件失败: {e}\n"
-                f"  path: {stages_file_path}"
-            )
-            return
-
-        # Step 2 中间文件中 stages 为空，无法生成怪物
-        if not stages_file.stages:
-            logger.error(
-                f"[GenerateDungeonActorsSystem] Step 2 文件中 stages 为空: {stages_file_path}"
+                "[GenerateDungeonActorsSystem] Step 2 产物 rooms 为空，无法生成怪物"
             )
             return
 
         # 创建怪物生成器（不变依赖在构造时绑定）
         generator = _SingleActorGenerator(
-            dungeon_name=stages_file.dungeon_name,
-            profile=stages_file.profile,
+            dungeon_name=dungeon_name,
+            profile=dungeon_profile,
             context=self._game.get_agent_context(entity).context,
         )
 
-        # 展开 (stage, actor_idx) 对，仅 combat 房间生成怪物
+        # 展开 (room, actor_idx) 对，仅 combat 房间生成怪物
         client_tasks = [
-            (stage, actor_idx)
-            for stage in stages_file.stages
-            if stage.room_type == "combat"
-            for actor_idx in range(stage.actor_count)
+            (room, actor_idx)
+            for room in rooms
+            if room.room_type == "combat"
+            for actor_idx in range(room.actor_count)
         ]
 
         # 并发生成所有怪物
         actor_results = await asyncio.gather(
-            *[generator.generate(stage, actor_idx) for stage, actor_idx in client_tasks]
+            *[generator.generate(room, actor_idx) for room, actor_idx in client_tasks]
         )
 
-        # 按 stage 归组并组装 DungeonBlueprint
-        stage_actors: Dict[str, List[DungeonActorBlueprint]] = defaultdict(list)
-        for (stage, _), actor_bp in zip(client_tasks, actor_results):
+        # 按 room 归组并组装 DungeonBlueprint
+        room_actors: Dict[str, List[DungeonActorBlueprint]] = defaultdict(list)
+        for (room, _), actor_bp in zip(client_tasks, actor_results):
             if actor_bp is not None:
-                stage_actors[stage.stage_name].append(actor_bp)
+                room_actors[room.room_name].append(actor_bp)
 
-        # Step 3 中间文件中 stages 全部为 entry 房间，无法生成怪物
         blueprint = DungeonBlueprint(
-            dungeon_name=stages_file.dungeon_name,
-            profile=stages_file.profile,
+            dungeon_name=dungeon_name,
+            profile=dungeon_profile,
         )
 
-        # Step 2 中间文件中 stages 全部为 entry 房间，无法生成怪物
-        for i, stage in enumerate(stages_file.stages, start=1):
-            actors = stage_actors.get(stage.stage_name, [])
+        for i, room in enumerate(rooms, start=1):
+            actors = room_actors.get(room.room_name, [])
 
             # entry 房间无怪物，直接纳入 blueprint
-            if stage.room_type == "entry":
-                stage_bp = DungeonStageBlueprint(
-                    room_type=stage.room_type,
-                    stage_name=stage.stage_name,
-                    profile_name=stage.profile_name,
-                    profile=stage.profile,
+            if room.room_type == "entry":
+                room_bp = DungeonStageBlueprint(
+                    room_type=room.room_type,
+                    stage_name=room.room_name,
+                    profile_name=room.profile_name,
+                    profile=room.profile,
                     actors=[],
                 )
-                blueprint.stages.append(stage_bp)
+                blueprint.stages.append(room_bp)
                 logger.info(
-                    f"[GenerateDungeonActorsSystem] Entry stage {i}/{len(stages_file.stages)} 写入 blueprint:\n"
-                    f"  stage_name: {stage_bp.stage_name}"
+                    f"[GenerateDungeonActorsSystem] Entry room {i}/{len(rooms)} 写入 blueprint:\n"
+                    f"  room_name: {room_bp.stage_name}"
                 )
                 continue
 
             # combat 房间必须有怪物
             if not actors:
                 logger.error(
-                    f"[GenerateDungeonActorsSystem] combat stage '{stage.stage_name}' 所有 actor 解析均失败，该场景不纳入 blueprint"
+                    f"[GenerateDungeonActorsSystem] combat room '{room.room_name}' 所有 actor 解析均失败，该房间不纳入 blueprint"
                 )
                 continue
 
             # 将 combat 房间及其怪物纳入 blueprint
-            stage_bp = DungeonStageBlueprint(
-                room_type=stage.room_type,
-                stage_name=stage.stage_name,
-                profile_name=stage.profile_name,
-                profile=stage.profile,
+            room_bp = DungeonStageBlueprint(
+                room_type=room.room_type,
+                stage_name=room.room_name,
+                profile_name=room.profile_name,
+                profile=room.profile,
                 actors=actors,
             )
-            blueprint.stages.append(stage_bp)
+            blueprint.stages.append(room_bp)
             logger.info(
-                f"[GenerateDungeonActorsSystem] Stage+Actors {i}/{len(stages_file.stages)} 写入 blueprint:\n"
-                f"  stage_name: {stage_bp.stage_name}\n"
+                f"[GenerateDungeonActorsSystem] Room+Actors {i}/{len(rooms)} 写入 blueprint:\n"
+                f"  room_name: {room_bp.stage_name}\n"
                 f"  actors ({len(actors)}): " + ", ".join(a.actor_name for a in actors)
             )
 
         if not blueprint.stages:
             logger.error(
-                "[GenerateDungeonActorsSystem] 所有场景怪物解析均失败，blueprint.stages 为空，Step 3 中止"
+                "[GenerateDungeonActorsSystem] 所有房间怪物解析均失败，blueprint.stages 为空，Step 3 中止"
             )
             return
 

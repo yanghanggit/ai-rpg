@@ -3,6 +3,7 @@
 from typing import Dict, List, final
 from ..entitas.components import Component
 from .card import Card
+from .dungeon_generation import DungeonRoomData
 from .items import ConsumableItem, CostumeItem, GearItem, MaterialItem
 from .registry import register_action_component_type, register_component_type
 from .status_effect import AffixTrigger
@@ -167,8 +168,8 @@ class MonsterTurnAction(Component):
 # 触发链（全部在同一次 dungeon_generate_pipeline.process() 内顺序完成）：
 #   GenerateDungeonAction
 #     → GenerateDungeonDirectiveSystem (Step 0) → GenerateDungeonDirectiveAction
-#     → GenerateDungeonProfileSystem    (Step 1) → GenerateDungeonStagesAction
-#     → GenerateDungeonStagesSystem    (Step 2) → GenerateDungeonActorsAction
+#     → GenerateDungeonProfileSystem    (Step 1) → GenerateDungeonRoomsAction
+#     → GenerateDungeonRoomsSystem     (Step 2) → GenerateDungeonActorsAction
 #     → GenerateDungeonActorsSystem    (Step 3) → AssembleDungeonAction
 #     → AssembleDungeonSystem          (Step 4) → IllustrateDungeonAction
 #     → IllustrateDungeonActionSystem  (Step 5)
@@ -204,17 +205,16 @@ class GenerateDungeonDirectiveAction(Component):
 @final
 @register_action_component_type
 @register_component_type
-class GenerateDungeonStagesAction(Component):
+class GenerateDungeonRoomsAction(Component):
     """Step 1→2 衔接：由 GenerateDungeonProfileSystem 添加，携带副本设定产物。
 
-    触发 GenerateDungeonStagesSystem（Step 2），其直接读取本组件的字段。
+    触发 GenerateDungeonRoomsSystem（Step 2），其直接读取本组件的字段。
     """
 
     name: str
     dungeon_name: str
     dungeon_profile: str = ""
-    # TODO: 语义待重构——目标为「副本房间总数（含入口）」，届时移除下游 `1 + ...` 的 +1 entry 写法
-    dungeon_room_count: int = 2  # 当前临时语义：战斗房间数量（不含入口房间）
+    dungeon_room_count: int = 3  # 副本房间总数（含 1 个入口房间）
 
 
 ############################################################################################################
@@ -222,10 +222,15 @@ class GenerateDungeonStagesAction(Component):
 @register_action_component_type
 @register_component_type
 class GenerateDungeonActorsAction(Component):
-    """ """
+    """Step 2→3 衔接：由 GenerateDungeonRoomsSystem 添加，携带房间列表产物。
+
+    触发 GenerateDungeonActorsSystem（Step 3），其直接读取本组件的字段。
+    """
 
     name: str
     dungeon_name: str
+    dungeon_profile: str = ""
+    rooms: List[DungeonRoomData] = []
 
 
 ############################################################################################################

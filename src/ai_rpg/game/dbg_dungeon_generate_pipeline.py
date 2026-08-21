@@ -16,7 +16,7 @@ def create_dungeon_generate_pipeline(
         GenerateDungeonDirectiveSystem,
     )
     from ..systems.generate_dungeon_profile_system import GenerateDungeonProfileSystem
-    from ..systems.generate_dungeon_stages_system import GenerateDungeonStagesSystem
+    from ..systems.generate_dungeon_rooms_system import GenerateDungeonRoomsSystem
     from ..systems.generate_dungeon_actors_system import GenerateDungeonActorsSystem
     from ..systems.assemble_dungeon_system import AssembleDungeonSystem
 
@@ -35,7 +35,7 @@ def create_dungeon_generate_pipeline(
     # 副本生成流程（Steps 0-4，在同一次 pipeline.process() 内顺序触发）
     processors.add(GenerateDungeonDirectiveSystem(dbg_game))  # Step 0: 世界导演创作指令
     processors.add(GenerateDungeonProfileSystem(dbg_game))  # Step 1: 副本设定生成
-    processors.add(GenerateDungeonStagesSystem(dbg_game))  # Step 2: 场景批量生成
+    processors.add(GenerateDungeonRoomsSystem(dbg_game))  # Step 2: 房间批量生成
     processors.add(GenerateDungeonActorsSystem(dbg_game))  # Step 3: 怪物并发生成
     processors.add(AssembleDungeonSystem(dbg_game))  # Step 4: 实体树组装
 

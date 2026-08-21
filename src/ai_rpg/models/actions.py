@@ -163,25 +163,41 @@ class MonsterTurnAction(Component):
 
 
 ############################################################################################################
-# ── 副本生成流程（Step 1-4）内部衔接 Action ──────────────────────────────────────────────────────────
+# ── 副本生成流程（Step 0-4）内部衔接 Action ──────────────────────────────────────────────────────────
 # 触发链（全部在同一次 dungeon_generate_pipeline.process() 内顺序完成）：
 #   GenerateDungeonAction
-#     → GenerateDungeonPremiseSystem  (Step 1) → GenerateDungeonStagesAction
-#     → GenerateDungeonStagesSystem   (Step 2) → GenerateDungeonActorsAction
-#     → GenerateDungeonActorsSystem   (Step 3) → AssembleDungeonAction
-#     → AssembleDungeonSystem         (Step 4) → IllustrateDungeonAction
-#     → IllustrateDungeonActionSystem (Step 5)
+#     → GenerateDungeonDirectiveSystem (Step 0) → GenerateDungeonDirectiveAction
+#     → GenerateDungeonPremiseSystem   (Step 1) → GenerateDungeonStagesAction
+#     → GenerateDungeonStagesSystem    (Step 2) → GenerateDungeonActorsAction
+#     → GenerateDungeonActorsSystem    (Step 3) → AssembleDungeonAction
+#     → AssembleDungeonSystem          (Step 4) → IllustrateDungeonAction
+#     → IllustrateDungeonActionSystem  (Step 5)
 ############################################################################################################
 @final
 @register_action_component_type
 @register_component_type
 class GenerateDungeonAction(Component):
-    """Step 0 → 触发副本生成流程入口（GenerateDungeonPremiseSystem）。
+    """副本生成流程入口。
 
-    由 home_actions.activate_generate_dungeon() 在家园状态下添加到玩家实体。
+    由 home_actions.activate_generate_dungeon() 在家园状态下添加到副本生成系统实体，
+    触发 GenerateDungeonDirectiveSystem（Step 0）执行世界导演指令推理。
     """
 
     name: str
+
+
+############################################################################################################
+@final
+@register_action_component_type
+@register_component_type
+class GenerateDungeonDirectiveAction(Component):
+    """Step 0→1 衔接：由 GenerateDungeonDirectiveSystem 添加，携带世界导演创作指令。
+
+    触发 GenerateDungeonPremiseSystem（Step 1），其读取 directive 注入首轮 prompt。
+    """
+
+    name: str
+    directive: str = ""
 
 
 ############################################################################################################

@@ -8,6 +8,7 @@ from ..game.dbg_game import DBGGame
 from ..models import (
     AIMessage,
     GenerateDungeonAction,
+    GenerateDungeonDirectiveAction,
     HumanMessage,
     WorldDirectorComponent,
 )
@@ -28,11 +29,7 @@ def _build_directive_prompt() -> str:
 ####################################################################################################################################
 @final
 class GenerateDungeonDirectiveSystem(ReactiveProcessor):
-    """副本生成指令系统
-
-    在副本生成流程的最前面，由世界导演（桌游 GM）执行一次推理，下达副本创作指令，
-    并注入到「世界系统.副本生成系统」的上下文，引导后续的副本生成。
-    """
+    """副本生成指令系统"""
 
     def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
@@ -59,21 +56,18 @@ class GenerateDungeonDirectiveSystem(ReactiveProcessor):
     async def _run(self, generation_entity: Entity) -> None:
         logger.info("[GenerateDungeonDirectiveSystem] 开始：世界导演推理副本创作指令")
 
-        # 1. 查找世界导演实体
+        # 1. 查找世界导演实体（允许缺失时降级为空指令）
         director_entities = self._game.get_group(
             Matcher(all_of=[WorldDirectorComponent])
         ).entities.copy()
-        if not director_entities:
-            logger.warning(
-                "[GenerateDungeonDirectiveSystem] 未找到世界导演实体，跳过指令注入"
-            )
-            return
+
+        assert len(director_entities) == 1, "存在多个世界导演实体，数据异常"
         director_entity = next(iter(director_entities))
 
         # 2. 让世界导演推理一次
         prompt = _build_directive_prompt()
         client = DeepSeekClient(
-            name="world_director:directive",
+            name=director_entity.name,
             prompt=prompt,
             context=self._game.get_agent_context(director_entity).context,
             model=MODEL_FLASH,
@@ -81,31 +75,38 @@ class GenerateDungeonDirectiveSystem(ReactiveProcessor):
         )
         await client.chat()
 
-        directive = client.response_content
-        if not directive:
+        # 默认指令为空，防止世界导演未返回时流程中断
+        directive = ""
+
+        # 3. 检查世界导演是否返回指令
+        if client.response_ai_message is None:
             logger.warning(
                 "[GenerateDungeonDirectiveSystem] 世界导演未返回指令，跳过注入"
             )
-            return
+        else:
+            directive = client.response_ai_message.content
+            logger.info(
+                f"[GenerateDungeonDirectiveSystem] 世界导演创作指令:\n{directive}"
+            )
 
-        logger.info(f"[GenerateDungeonDirectiveSystem] 世界导演创作指令:\n{directive}")
+            # 4. 持久化导演 Q&A 到导演上下文
+            self._game.add_human_message(
+                director_entity,
+                HumanMessage(content=prompt),
+            )
+            self._game.add_ai_message(
+                director_entity,
+                AIMessage(content=directive),
+            )
 
-        # 3. 持久化导演 Q&A 到导演上下文
-        self._game.add_human_message(
-            director_entity,
-            HumanMessage(content=prompt),
-        )
-        self._game.add_ai_message(
-            director_entity,
-            AIMessage(content=directive),
-        )
-
-        # 4. 注入指令到副本生成系统上下文
-        self._game.add_human_message(
-            generation_entity,
-            HumanMessage(content=f"# 世界导演的创作指令\n\n{directive}"),
+        # 5. 挂接 GenerateDungeonDirectiveAction，将指令传递给 GenerateDungeonPremiseSystem
+        #    （无论是否获得指令都挂接，保证流程持续推进；不写入副本生成系统上下文）
+        generation_entity.replace(
+            GenerateDungeonDirectiveAction,
+            generation_entity.name,
+            directive,
         )
         logger.info(
-            f"[GenerateDungeonDirectiveSystem] 已向副本生成系统 "
-            f"{generation_entity.name!r} 注入导演指令"
+            f"[GenerateDungeonDirectiveSystem] 已挂接 GenerateDungeonDirectiveAction: "
+            f"{generation_entity.name!r}, directive 长度={len(directive)}"
         )

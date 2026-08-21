@@ -9,7 +9,7 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.config import DUNGEON_PROCESS_DIR
 from ..game.dbg_game import DBGGame
 from ..models import (
-    GenerateDungeonAction,
+    GenerateDungeonDirectiveAction,
     GenerateDungeonStagesAction,
 )
 from .dungeon_generation import (
@@ -61,13 +61,16 @@ def _handle_read_premise_file(dungeon_name: str) -> str:
 
 
 ####################################################################################################################################
-def _build_dungeon_premise_prompt() -> str:
+def _build_dungeon_premise_prompt(directive: str = "") -> str:
     """构建副本前提设定生成提示词。
 
     无需任何种子数据，完全由世界观框架驱动创作。
     世界观已通过调用方的 SystemMessage 提供给 LLM。
+    若世界导演已下达创作指令，则在首轮 prompt 中注入以引导创作方向。
     """
-    return """# 任务：创作一个副本的整体前提
+    directive = directive.strip()
+    directive_section = f"# 世界导演的创作指令\n\n{directive}\n\n" if directive else ""
+    return f"""{directive_section}# 任务：创作一个副本的整体前提
 
 请在当前世界观框架内，为本次副本生成名称与整体前提写照。
 
@@ -82,7 +85,7 @@ class GenerateDungeonPremiseSystem(ReactiveProcessor):
     """副本前提设定生成系统
 
     Note:
-        - GenerateDungeonAction 由 home_actions.activate_generate_dungeon() 在家园状态下添加
+        - GenerateDungeonDirectiveAction 由 GenerateDungeonDirectiveSystem（Step 0）添加
     """
 
     def __init__(self, game: DBGGame) -> None:
@@ -92,17 +95,19 @@ class GenerateDungeonPremiseSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def get_trigger(self) -> Dict[Matcher, GroupEvent]:
-        return {Matcher(GenerateDungeonAction): GroupEvent.ADDED}
+        return {Matcher(GenerateDungeonDirectiveAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(GenerateDungeonAction)
+        return entity.has(GenerateDungeonDirectiveAction)
 
     ####################################################################################################################################
     @override
     async def react(self, entities: List[Entity]) -> None:
-        assert len(entities) == 1, "同时存在多个 GenerateDungeonAction，数据异常"
+        assert (
+            len(entities) == 1
+        ), "同时存在多个 GenerateDungeonDirectiveAction，数据异常"
         entity = entities[0]
         await self._run(entity)
 
@@ -110,11 +115,22 @@ class GenerateDungeonPremiseSystem(ReactiveProcessor):
     async def _run(self, entity: Entity) -> None:
         logger.info(f"[GenerateDungeonPremiseSystem] Step 1 开始: entity={entity.name}")
 
+        # 从 GenerateDungeonDirectiveAction 读取世界导演指令（可能为空）
+        directive = entity.get(GenerateDungeonDirectiveAction).directive
+        if directive.strip():
+            logger.info(
+                "[GenerateDungeonPremiseSystem] 检测到世界导演指令，将注入首轮 prompt"
+            )
+        else:
+            logger.info(
+                "[GenerateDungeonPremiseSystem] 未检测到世界导演指令，按纯世界观框架生成"
+            )
+
         result = _PremiseResult()
 
         success = await agent_loop(
             name=entity.name,
-            prompt=_build_dungeon_premise_prompt(),
+            prompt=_build_dungeon_premise_prompt(directive),
             context=self._game.get_agent_context(entity).context,
             tools=[PREMISE_TOOL, READ_PREMISE_FILE_TOOL],
             handlers={

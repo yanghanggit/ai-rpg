@@ -14,10 +14,10 @@
 
 副本涉及三层创作——整体设定、逐个房间、每个房间的怪物——且后一层依赖前一层的产出。因此设计为多步 `ReactiveProcessor` 接力，每步完成时把产物写入两条通道，并替换实体上的 Action 组件触发下一步：
 
-1. **Agent Context（LLM 记忆）**：每步的 prompt / AI 回复 / 工具结果原地追加到副本生成实体的持久化上下文，后续步骤的 LLM 直接继承前序创作，保持叙事连贯。
+1. **Agent Context（LLM 记忆）**：Step 1–3 的 prompt / AI 回复 / 工具结果原地追加到副本生成实体的持久化上下文，后续步骤的 LLM 直接继承前序创作，保持叙事连贯。例外是 Step 0：世界导演的 Q&A 写入导演实体自己的 context，指令经 Action 组件字段（`GenerateDungeonDirectiveAction.directive`）传入 Step 1，而非写入副本生成实体 context。
 2. **Action 组件（控制流数据）**：确定性字段（房间数、房间列表、蓝图）经 Action 组件传给下一步，供代码构建工具 schema 与组装实体。
 
-不再写任何中间 JSON 文件，数据全在内存流转。
+Step 0–3 之间不再写任何中间 JSON 文件，数据全在内存流转；Step 4 才将最终副本（Dungeon）与调试蓝图（DungeonBlueprint）写入磁盘。
 
 ---
 
@@ -25,7 +25,7 @@
 
 **Step 0 — 世界导演指令**（`GenerateDungeonDirectiveSystem`）。世界导演推理一条创作指令，挂 `GenerateDungeonDirectiveAction`。
 
-**Step 1 — 副本设定生成**（`GenerateDungeonProfileSystem`）。一次 LLM 调用锁定副本名称、整体设定（`dungeon_profile`）与房间总数（`dungeon_room_count`，含 1 个入口房间）。设定刻意回避角色身份与评价性词汇，只呈现感官与情境细节。产物挂 `GenerateDungeonRoomsAction`。
+**Step 1 — 副本设定生成**（`GenerateDungeonProfileSystem`）。单次 `agent_loop`（调用一次 `record_dungeon_profile` 工具）锁定副本名称、整体设定（`dungeon_profile`）与房间总数（`dungeon_room_count`，含 1 个入口房间）。设定刻意回避角色身份与评价性词汇，只呈现感官与情境细节。产物挂 `GenerateDungeonRoomsAction`。
 
 **Step 2 — 房间设计**（`GenerateDungeonRoomsSystem`）。在 Step 1 的同一 agent 上下文内一次性生成全部房间。首房间强制为叙事入口（`room_type = "entry"`），纯氛围描写；其余为战斗房间（`room_type = "combat"`）。同上下文保证入口到深处的叙事递进。产物 `rooms: List[DungeonRoomData]` 挂 `GenerateDungeonActorsAction`。
 
@@ -33,13 +33,13 @@
 
 **Step 4 — 实体组装**（`AssembleDungeonSystem`）。零 LLM 调用，纯确定性映射。根据 `room_type` 分发：`"entry"` → `EntryRoom`，`"combat"` → `CombatRoom`（含 Stage + Actor）。当前为所有怪物统一赋予「纯攻击型」战斗关键词——框架层行为预设，与故事内容无关。
 
-Step 5（场景插画）已实现但未接入主管道，不阻塞副本基础可用性。
+Step 5（场景插画）已实现但未接入主管道，不阻塞副本基础可用性。`AssembleDungeonSystem` 仍会挂 `IllustrateDungeonAction`，但因 `IllustrateDungeonActionSystem` 未注册，该动作会在当轮 `ActionCleanupSystem` 中被清除，无副作用。
 
 ---
 
 ## 数据流一览
 
-```
+```text
 Step 0  directive ── GenerateDungeonDirectiveAction ─▶
 Step 1  profile   ── GenerateDungeonRoomsAction(dungeon_name, dungeon_profile, dungeon_room_count) ─▶
 Step 2  rooms     ── GenerateDungeonActorsAction(dungeon_name, dungeon_profile, rooms) ─▶

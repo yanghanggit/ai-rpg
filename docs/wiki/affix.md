@@ -11,7 +11,7 @@ affix 是设计者产出的文本触发信号，按时效分两类：**即时 af
 ## 分类：即时与延迟
 
 | 类别 | 字段落点 | 消费方 | 产物 | 典型 |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | 即时 affix | Card.`on_play_affixes`、ConsumableItem.`on_use_affixes` | 出牌/消耗品仲裁 LLM | 无（直接改变本次结算） | `[穿透]:本次伤害无视目标防御` |
 | 延迟 affix | Card.`on_hit_affixes`、ConsumableItem.`on_hit_affixes`、GearItem.`equip_affixes`/`on_hit_affixes`、场景 | `AddStatusEffectsActionSystem` | 1:1 落地为 `StatusEffect` | `[燃烧]:可能引发持续扣血` |
 

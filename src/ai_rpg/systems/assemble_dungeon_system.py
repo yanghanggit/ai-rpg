@@ -83,7 +83,7 @@ class AssembleDungeonSystem(ReactiveProcessor):
         )
 
         # 保存 DungeonBlueprint 副本到 DEBUG_CACHE_DIR（便于调试）
-        debug_path: Path = DEBUG_CACHE_DIR / f"{dungeon_name}.json"
+        debug_path: Path = DEBUG_CACHE_DIR / f"{dungeon_name}.blueprint.json"
         debug_path.write_text(blueprint.model_dump_json(indent=4), encoding="utf-8")
         logger.info(
             f"[AssembleDungeonSystem] DungeonBlueprint 已保存（调试）: {debug_path}"

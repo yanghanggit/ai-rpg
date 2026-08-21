@@ -18,14 +18,7 @@ _CONTEXT_MESSAGE_ADAPTER: TypeAdapter[ContextMessage] = TypeAdapter(ContextMessa
 def compute_cache_key(
     context: List[ContextMessage],
 ) -> str:
-    """计算对话上下文列表的 SHA-256 hash，作为缓存文件名。
-
-    Args:
-        context: 当前实体的完整对话历史。
-
-    Returns:
-        64 位十六进制 SHA-256 hash 字符串。
-    """
+    """计算对话上下文列表的 SHA-256 hash，作为缓存文件名。"""
     raw = json.dumps(
         [m.model_dump() for m in context],
         ensure_ascii=False,
@@ -36,15 +29,7 @@ def compute_cache_key(
 
 ###########################################################################################################################################
 def load_debug_cache(cache_key: str) -> Optional[ContextMessage]:
-    """从磁盘加载缓存的 ContextMessage。
-
-    Args:
-        cache_key: 由 compute_cache_key 生成的 hash 字符串。
-
-    Returns:
-        缓存的 ContextMessage（SystemMessage / HumanMessage / AIMessage / ToolMessage
-        之一）；若缓存不存在或读取失败则返回 None。
-    """
+    """从磁盘加载缓存的 ContextMessage。"""
     cache_file = DEBUG_CACHE_DIR / f"{cache_key}.json"
     if not cache_file.exists():
         return None
@@ -58,12 +43,7 @@ def load_debug_cache(cache_key: str) -> Optional[ContextMessage]:
 
 ###########################################################################################################################################
 def save_debug_cache(cache_key: str, message: ContextMessage) -> None:
-    """将 ContextMessage 序列化后写入磁盘缓存。
-
-    Args:
-        cache_key: 由 compute_cache_key 生成的 hash 字符串。
-        message: 需要缓存的 ContextMessage。
-    """
+    """将 ContextMessage 序列化后写入磁盘缓存。"""
     DEBUG_CACHE_DIR.mkdir(parents=True, exist_ok=True)
     cache_file = DEBUG_CACHE_DIR / f"{cache_key}.json"
     cache_file.write_text(

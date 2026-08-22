@@ -19,7 +19,7 @@ from .serialization import *
 from .stats import *
 from .task import *
 from .blueprint import *
-from .world import *
+from .world_state import *
 from .player_session import *
 from .rules import *
 from .entity_factory import *

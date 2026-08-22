@@ -9,7 +9,7 @@ from ..models.messages import (
 )
 from loguru import logger
 from ..entitas import Entity
-from ..models import AgentContext, World
+from ..models import AgentContext, WorldState
 
 
 MessagePredicate = Callable[[BaseMessage, int, Sequence[ContextMessage]], bool]
@@ -22,10 +22,10 @@ class RPGAgentContext:
     职责：封装所有基于 agents_context 的纯读写操作，包括消息添加、查询和删除。
 
     Protocol 依赖声明：
-        `_world: World` 由 RPGGame.__init__ 注入，本类声明该属性以获得完整类型安全。
+        `_world: WorldState` 由 RPGGame.__init__ 注入，本类声明该属性以获得完整类型安全。
     """
 
-    _world: World  # 依赖声明：由 RPGGame.__init__ 注入
+    _world: WorldState  # 依赖声明：由 RPGGame.__init__ 注入
 
     ###############################################################################################################################################
     def get_agent_context(self, entity: Entity) -> AgentContext:

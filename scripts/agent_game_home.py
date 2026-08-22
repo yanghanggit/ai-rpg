@@ -18,7 +18,7 @@ from loguru import logger
 from typing import Dict, List
 from ai_rpg.models import PlayerSession
 from ai_rpg.game.dbg_game import DBGGame
-from ai_rpg.models import World
+from ai_rpg.models import WorldState
 from ai_rpg.game.dbg_store import store_game
 from ai_rpg.services.home_actions import (
     activate_plan_action,
@@ -35,7 +35,7 @@ from agent_game_core import restore_game
 
 ###############################################################################
 async def add_party_member_game(
-    world: World,
+    world: WorldState,
     player_session: PlayerSession,
     member_name: str,
     save_dir: Path,
@@ -55,7 +55,7 @@ async def add_party_member_game(
 
 ###############################################################################
 async def remove_party_member_game(
-    world: World,
+    world: WorldState,
     player_session: PlayerSession,
     member_name: str,
     save_dir: Path,
@@ -75,7 +75,7 @@ async def remove_party_member_game(
 
 ###############################################################################
 async def get_party_roster_game(
-    world: World,
+    world: WorldState,
     player_session: PlayerSession,
 ) -> List[str]:
     """返回当前远征队名单（只读，不归档）。"""
@@ -85,7 +85,7 @@ async def get_party_roster_game(
 
 ###############################################################################
 async def advance_game(
-    world: World,
+    world: WorldState,
     player_session: PlayerSession,
     actor_names: List[str],
     save_dir: Path,
@@ -105,7 +105,7 @@ async def advance_game(
 
 ###############################################################################
 async def stages_game(
-    world: World,
+    world: WorldState,
     player_session: PlayerSession,
 ) -> Dict[str, List[str]]:
     """返回当前各场景内角色名单（只读，不归档）。"""
@@ -115,7 +115,7 @@ async def stages_game(
 
 ###############################################################################
 async def speak_game(
-    world: World,
+    world: WorldState,
     player_session: PlayerSession,
     target: str,
     content: str,
@@ -141,7 +141,7 @@ async def speak_game(
 
 ###############################################################################
 async def switch_stage_game(
-    world: World,
+    world: WorldState,
     player_session: PlayerSession,
     stage_name: str,
     save_dir: Path,
@@ -165,7 +165,7 @@ async def switch_stage_game(
 
 ###############################################################################
 async def generate_dungeon_game(
-    world: World,
+    world: WorldState,
     player_session: PlayerSession,
     save_dir: Path,
 ) -> DBGGame:

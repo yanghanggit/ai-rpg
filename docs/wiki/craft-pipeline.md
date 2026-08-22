@@ -14,7 +14,7 @@
 
 工坊 agent 每次调用 LLM 时，实际传递的信息由两个独立来源组合而成：
 
-**系统消息（system_message）**：在游戏蓝图构建阶段由 `create_world_system` 编译，包含战役设定、全局规则与工坊专属的角色规范。该消息作为实体 agent 上下文的第一条消息持久驻留，每次 LLM 调用时随 context 一同发送。
+**系统消息（system_message）**：在游戏蓝图构建阶段由 `create_world` 编译，包含战役设定、全局规则与工坊专属的角色规范。该消息作为实体 agent 上下文的第一条消息持久驻留，每次 LLM 调用时随 context 一同发送。
 
 **任务提示（prompt）**：由各合成系统的 `_build_craft_*_prompt` 函数即时构建，仅包含本次合成的材料清单、输出 JSON schema 以及框架层的机制约束。模板中不出现任何世界观相关文本。
 
@@ -26,7 +26,7 @@
 
 要将工坊适配到新的游戏世界观，需修改以下配置文件，合成系统代码无需变动：
 
-- **战役设定**：`settings.py` 中的 `CAMPAIGN_SETTING` 与 `KNOWLEDGE_BASE`，定义世界的生态区域、历史背景、环境联动关系。该内容通过 `create_world_system` 注入工坊 agent 的系统消息。
+- **战役设定**：`settings.py` 中的 `CAMPAIGN_SETTING` 与 `KNOWLEDGE_BASE`，定义世界的生态区域、历史背景、环境联动关系。该内容通过 `create_world` 注入工坊 agent 的系统消息。
 - **工坊角色规范**：蓝图中的 `create_workshop` 函数传入的 `role_rules`，定义工坊的命名格式、描述约束、以及各生态区域对应的感官风格指引。该内容同样通过系统消息注入。
 - **初始材料池**：蓝图中预设的 `MaterialItem` 列表，决定工坊的原料语义空间。材料的名称与描述是 LLM 推断合成产物的唯一内容线索，更换材料即更换产出风味。
 

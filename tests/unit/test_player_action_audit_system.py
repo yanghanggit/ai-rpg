@@ -14,7 +14,7 @@ from src.ai_rpg.models.components import (
     WorldComponent,
 )
 from src.ai_rpg.models.messages import SystemMessage
-from src.ai_rpg.models.world import AgentContext
+from src.ai_rpg.models.world_state import AgentContext
 from src.ai_rpg.systems.player_action_audit_system import (
     ContentAuditResponse,
     PlayerActionAuditSystem,
@@ -227,11 +227,11 @@ class TestRemoveAllActions:
 
 class TestFilterPlayerActions:
     def _make_audit_entity(self, context: Context) -> Entity:
-        """创建带有审计组件的世界系统实体。"""
+        """创建带有审计组件的世界实体。"""
         entity = context.create_entity()
-        entity._name = "世界系统.玩家行动审计系统"
-        entity.add(WorldComponent, "世界系统.玩家行动审计系统")
-        entity.add(PlayerActionAuditComponent, "世界系统.玩家行动审计系统")
+        entity._name = "世界.玩家行动审计系统"
+        entity.add(WorldComponent, "世界.玩家行动审计系统")
+        entity.add(PlayerActionAuditComponent, "世界.玩家行动审计系统")
         return entity
 
     def _make_player_entity(self, context: Context) -> Entity:
@@ -358,9 +358,9 @@ class TestFilterPlayerActions:
 class TestReact:
     def _make_audit_entity(self, context: Context) -> Entity:
         entity = context.create_entity()
-        entity._name = "世界系统.玩家行动审计系统"
-        entity.add(WorldComponent, "世界系统.玩家行动审计系统")
-        entity.add(PlayerActionAuditComponent, "世界系统.玩家行动审计系统")
+        entity._name = "世界.玩家行动审计系统"
+        entity.add(WorldComponent, "世界.玩家行动审计系统")
+        entity.add(PlayerActionAuditComponent, "世界.玩家行动审计系统")
         return entity
 
     def _make_player_entity(self, context: Context) -> Entity:

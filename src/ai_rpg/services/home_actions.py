@@ -314,28 +314,28 @@ def activate_generate_dungeon(dbg_game: DBGGame) -> Tuple[bool, str]:
         return False, error_detail
 
     # 获取副本生成系统实体，确保存在且唯一，以便后续激活副本创建动作。
-    world_system_entities = dbg_game.get_group(
+    world_entities = dbg_game.get_group(
         Matcher(all_of=[WorldComponent, DungeonGenerationComponent])
     ).entities.copy()
 
     # 检查是否找到了副本生成系统实体，如果没有找到则无法激活副本创建动作。
-    if not world_system_entities:
+    if not world_entities:
         error_detail = "未找到副本生成系统实体，无法激活副本创建"
         logger.error(f"激活副本创建失败: {error_detail}")
         return False, error_detail
 
-    assert len(world_system_entities) == 1, "存在多个副本生成系统实体，数据异常"
-    world_system_entity = next(iter(world_system_entities))
+    assert len(world_entities) == 1, "存在多个副本生成系统实体，数据异常"
+    world_entity = next(iter(world_entities))
 
     # 检查副本生成系统实体是否已经有 GenerateDungeonAction，如果有则说明动作已激活，避免重复激活。
-    if world_system_entity.has(GenerateDungeonAction):
+    if world_entity.has(GenerateDungeonAction):
         error_detail = "副本创建动作已存在，请勿重复激活"
         logger.warning(f"激活副本创建失败: {error_detail}")
         return False, error_detail
 
     # 激活副本创建动作，将 GenerateDungeonAction 添加到副本生成系统实体中。
-    logger.debug(f"激活副本创建: {world_system_entity.name}")
-    world_system_entity.replace(GenerateDungeonAction, world_system_entity.name)
+    logger.debug(f"激活副本创建: {world_entity.name}")
+    world_entity.replace(GenerateDungeonAction, world_entity.name)
     return True, ""
 
 
@@ -590,28 +590,28 @@ def activate_craft_consumable(
         copied.count = used
         material_items.append(copied)
 
-    # 获取工坊世界系统实体，并确保只存在一个实体，否则返回错误。
+    # 获取工坊世界实体，并确保只存在一个实体，否则返回错误。
     workshop_entities = dbg_game.get_group(
         Matcher(all_of=[WorldComponent, WorkshopComponent])
     ).entities.copy()
 
-    # 检查是否存在工坊世界系统实体，如果不存在则返回错误。
+    # 检查是否存在工坊世界实体，如果不存在则返回错误。
     if not workshop_entities:
-        error_detail = "未找到工坊世界系统实体，无法激活合成动作"
+        error_detail = "未找到工坊世界实体，无法激活合成动作"
         logger.error(f"激活合成消耗品失败: {error_detail}")
         return False, error_detail
 
-    # 确保只存在一个工坊世界系统实体，否则返回错误。
-    assert len(workshop_entities) == 1, "存在多个工坊世界系统实体，数据异常"
+    # 确保只存在一个工坊世界实体，否则返回错误。
+    assert len(workshop_entities) == 1, "存在多个工坊世界实体，数据异常"
     workshop_entity = next(iter(workshop_entities))
 
-    # 检查工坊世界系统实体是否已经存在合成动作，如果存在则返回错误。
+    # 检查工坊世界实体是否已经存在合成动作，如果存在则返回错误。
     if workshop_entity.has(CraftConsumableItemAction):
         error_detail = "合成动作已存在，请勿重复激活"
         logger.warning(f"激活合成消耗品失败: {error_detail}")
         return False, error_detail
 
-    # 激活合成消耗品动作，将材料信息填入工坊世界系统实体的 CraftConsumableAction 中。
+    # 激活合成消耗品动作，将材料信息填入工坊世界实体的 CraftConsumableAction 中。
     logger.debug(f"激活合成消耗品: {workshop_entity.name}, 材料={material_names}")
     workshop_entity.replace(
         CraftConsumableItemAction,
@@ -683,28 +683,28 @@ def activate_craft_gear_item(
         copied.count = used
         material_items.append(copied)
 
-    # 获取工坊世界系统实体，用于激活合成动作。
+    # 获取工坊世界实体，用于激活合成动作。
     workshop_entities = dbg_game.get_group(
         Matcher(all_of=[WorldComponent, WorkshopComponent])
     ).entities.copy()
 
-    # 如果没有找到工坊世界系统实体，则无法激活合成动作。
+    # 如果没有找到工坊世界实体，则无法激活合成动作。
     if not workshop_entities:
-        error_detail = "未找到工坊世界系统实体，无法激活合成动作"
+        error_detail = "未找到工坊世界实体，无法激活合成动作"
         logger.error(f"激活合成装备失败: {error_detail}")
         return False, error_detail
 
-    # 确保只存在一个工坊世界系统实体，否则数据异常。
-    assert len(workshop_entities) == 1, "存在多个工坊世界系统实体，数据异常"
+    # 确保只存在一个工坊世界实体，否则数据异常。
+    assert len(workshop_entities) == 1, "存在多个工坊世界实体，数据异常"
     workshop_entity = next(iter(workshop_entities))
 
-    # 检查工坊世界系统实体是否已经存在合成动作，如果存在则无法重复激活。
+    # 检查工坊世界实体是否已经存在合成动作，如果存在则无法重复激活。
     if workshop_entity.has(CraftGearItemAction):
         error_detail = "合成动作已存在，请勿重复激活"
         logger.warning(f"激活合成装备失败: {error_detail}")
         return False, error_detail
 
-    # 激活合成动作，将材料信息填入工坊世界系统实体的 CraftGearItemAction 中。
+    # 激活合成动作，将材料信息填入工坊世界实体的 CraftGearItemAction 中。
     logger.debug(f"激活合成装备: {workshop_entity.name}, 材料={material_names}")
     workshop_entity.replace(
         CraftGearItemAction, workshop_entity.name, list(material_names), material_items
@@ -773,28 +773,28 @@ def activate_craft_costume_item(
         copied.count = used
         material_items.append(copied)
 
-    # 获取工坊世界系统实体，用于激活制作动作。
+    # 获取工坊世界实体，用于激活制作动作。
     workshop_entities = dbg_game.get_group(
         Matcher(all_of=[WorldComponent, WorkshopComponent])
     ).entities.copy()
 
-    # 如果没有找到工坊世界系统实体，则无法激活制作动作。
+    # 如果没有找到工坊世界实体，则无法激活制作动作。
     if not workshop_entities:
-        error_detail = "未找到工坊世界系统实体，无法激活制作动作"
+        error_detail = "未找到工坊世界实体，无法激活制作动作"
         logger.error(f"激活制作时装失败: {error_detail}")
         return False, error_detail
 
-    # 确保只存在一个工坊世界系统实体，否则数据异常。
-    assert len(workshop_entities) == 1, "存在多个工坊世界系统实体，数据异常"
+    # 确保只存在一个工坊世界实体，否则数据异常。
+    assert len(workshop_entities) == 1, "存在多个工坊世界实体，数据异常"
     workshop_entity = next(iter(workshop_entities))
 
-    # 检查工坊世界系统实体是否已经存在制作动作，如果存在则无法重复激活。
+    # 检查工坊世界实体是否已经存在制作动作，如果存在则无法重复激活。
     if workshop_entity.has(CraftCostumeItemAction):
         error_detail = "制作动作已存在，请勿重复激活"
         logger.warning(f"激活制作时装失败: {error_detail}")
         return False, error_detail
 
-    # 激活制作动作，将材料信息填入工坊世界系统实体的 CraftCostumeItemAction 中。
+    # 激活制作动作，将材料信息填入工坊世界实体的 CraftCostumeItemAction 中。
     logger.debug(f"激活制作时装: {workshop_entity.name}, 材料={material_names}")
     workshop_entity.replace(
         CraftCostumeItemAction,

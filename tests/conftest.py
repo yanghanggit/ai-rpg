@@ -8,14 +8,14 @@ try:
     from src.ai_rpg.models.entities import Actor
     from src.ai_rpg.models import (
         ActorType,
-        World,
+        WorldState,
         Blueprint,
         Dungeon,
         CharacterStats,
     )
 
     # from src.ai_rpg.models.entities import CharacterStats
-    # from src.ai_rpg.models.world import World, Blueprint
+    # from src.ai_rpg.models.world_state import WorldState, Blueprint
     # from src.ai_rpg.models.dungeon import Dungeon
     from src.ai_rpg.models import PlayerSession
 
@@ -41,11 +41,11 @@ def sample_game() -> Any:
         campaign_setting="test_setting",
         knowledge_base={},
         stages=[],
-        world_systems=[],
+        world_entities=[],
         storage_entity="世界储物箱",
     )
     dungeon = Dungeon(name="", rooms=[], profile="")
-    world = World(
+    world = WorldState(
         entity_counter=1000,
         entities=[],
         agents_context={},

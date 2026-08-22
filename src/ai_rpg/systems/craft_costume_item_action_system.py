@@ -97,7 +97,7 @@ class CraftCostumeItemActionSystem(ReactiveProcessor):
         """执行完整制作流程。
 
         Args:
-            entity: 携带 CraftCostumeItemAction 的工坊世界系统实体
+            entity: 携带 CraftCostumeItemAction 的工坊世界实体
         """
         action = entity.get(CraftCostumeItemAction)
 

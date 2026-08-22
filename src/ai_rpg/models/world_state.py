@@ -14,9 +14,9 @@ class AgentContext(BaseModel):
 
 
 ###############################################################################################################################################
-# 生成世界的运行时文件，记录世界的状态
+# 世界状态（WorldState）：运行时全状态容器，序列化为 world_state.json
 @final
-class World(BaseModel):
+class WorldState(BaseModel):
     entity_counter: int
     entities: List[EntitySerialization] = []
     dungeon: Dungeon = Field(
@@ -29,7 +29,7 @@ class World(BaseModel):
             campaign_setting="",
             knowledge_base={},
             stages=[],
-            world_systems=[],
+            world_entities=[],
             storage_entity="",
         )
     )

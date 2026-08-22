@@ -89,22 +89,22 @@ class PlayerActionAuditSystem(ReactiveProcessor):
     async def react(self, entities: List[Entity]) -> None:
 
         # 获取玩家行动审计系统实体
-        world_system_entities = self._game.get_group(
+        world_entities = self._game.get_group(
             Matcher(all_of=[WorldComponent, PlayerActionAuditComponent])
         ).entities.copy()
 
         # 确保存在玩家行动审计系统实体
-        if not world_system_entities:
+        if not world_entities:
             logger.error("未找到玩家行动审计系统实体，无法进行内容审核")
             return
 
         # 应该只有一个玩家行动审计系统实体
-        assert len(world_system_entities) == 1, "存在多个玩家行动审计系统实体，数据异常"
-        world_system_entity = next(iter(world_system_entities))
+        assert len(world_entities) == 1, "存在多个玩家行动审计系统实体，数据异常"
+        world_entity = next(iter(world_entities))
 
         # 单机游戏，应该只有一个玩家实体
         assert len(entities) == 1, "单机游戏，玩家实体不应该超过1个"
-        await self._filter_player_actions(entities[0], world_system_entity)
+        await self._filter_player_actions(entities[0], world_entity)
 
     ####################################################################################################################################
     def _extract_all_action_contents(self, player_entity: Entity) -> str:
@@ -152,7 +152,7 @@ class PlayerActionAuditSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     async def _filter_player_actions(
-        self, entity: Entity, world_system_entity: Entity
+        self, entity: Entity, world_entity: Entity
     ) -> None:
         """审核玩家动作内容。"""
         # 提取所有需要审核的内容
@@ -165,15 +165,15 @@ class PlayerActionAuditSystem(ReactiveProcessor):
         # 构建审核提示词
         prompt = _build_audit_prompt(content)
 
-        # 获取审计世界系统的AI上下文
-        agent_context = self._game.get_agent_context(world_system_entity)
+        # 获取审计世界实体的AI上下文
+        agent_context = self._game.get_agent_context(world_entity)
         assert isinstance(
             agent_context.context[0], SystemMessage
-        ), "审计世界系统AI上下文的第一条消息必须是SystemMessage类型"
+        ), "审计世界实体AI上下文的第一条消息必须是SystemMessage类型"
 
-        # 创建AI审核请求（使用审计世界系统的system prompt）
+        # 创建AI审核请求（使用审计世界实体的system prompt）
         chat_client = DeepSeekClient(
-            name=world_system_entity.name,
+            name=world_entity.name,
             prompt=prompt,
             context=[agent_context.context[0]],
         )

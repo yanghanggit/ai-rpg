@@ -9,7 +9,7 @@ from . import (
     CharacterStats,
     Stage,
     StageType,
-    WorldSystem,
+    World,
 )
 
 
@@ -127,31 +127,31 @@ def create_stage(
 #######################################################################################################################################
 
 
-def create_world_system(
+def create_world(
     name: str, campaign_setting: str, system_rules: str, role_rules: str
-) -> WorldSystem:
+) -> World:
     """
-    创建一个世界系统(WorldSystem)实例。
+    创建一个世界(World)实例。
     """
 
-    assert name.strip() != "", "DBG 游戏要求必须有世界系统名称(name)"
+    assert name.strip() != "", "DBG 游戏要求必须有世界名称(name)"
     assert (
         campaign_setting.strip() != ""
     ), "DBG 游戏要求必须有游戏设定(campaign_setting)"
     assert system_rules.strip() != "", "DBG 游戏要求必须有系统规则(system_rules)"
     assert role_rules.strip() != "", "DBG 游戏要求必须有角色扮演规则(role_rules)"
 
-    # 创建世界系统实例
-    world_system = WorldSystem(
+    # 创建世界实例
+    world = World(
         name=name,
         system_message="",
         components=[],
     )
 
     # 系统提示词词
-    world_system.system_message = f"""# {world_system.name}
+    world.system_message = f"""# {world.name}
 
-你扮演世界系统: {world_system.name}
+你扮演世界: {world.name}
 
 ## 游戏设定
 
@@ -163,4 +163,4 @@ def create_world_system(
 
 {role_rules}"""
 
-    return world_system
+    return world

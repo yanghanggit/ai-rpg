@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from loguru import logger
 from ai_rpg.models import PlayerSession
 from ai_rpg.game.dbg_game import DBGGame
-from ai_rpg.models import World
+from ai_rpg.models import WorldState
 from ai_rpg.game.dbg_store import store_game
 from ai_rpg.services.dungeon_advance_action import (
     advance_dungeon,
@@ -42,7 +42,7 @@ from agent_game_core import restore_game
 
 ###############################################################################
 async def next_dungeon_game(
-    world: World,
+    world: WorldState,
     player_session: PlayerSession,
     save_dir: Path,
 ) -> DBGGame:
@@ -92,7 +92,7 @@ async def next_dungeon_game(
 
 ###############################################################################
 async def enter_dungeon_game(
-    world: World,
+    world: WorldState,
     player_session: PlayerSession,
     dungeon_name: str,
     save_dir: Path,
@@ -137,7 +137,7 @@ async def enter_dungeon_game(
 
 ###############################################################################
 async def exit_dungeon_and_return_home_game(
-    world: World,
+    world: WorldState,
     player_session: PlayerSession,
     save_dir: Path,
 ) -> DBGGame:

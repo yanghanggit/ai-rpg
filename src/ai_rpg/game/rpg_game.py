@@ -9,7 +9,7 @@ from .rpg_entity_manager import RPGEntityManager
 from .rpg_game_pipeline_manager import RPGGamePipelineManager
 from ..models import (
     AnyAgentEvent,
-    World,
+    WorldState,
 )
 from ..models import PlayerSession
 
@@ -24,7 +24,7 @@ class RPGGame(GameSession, RPGAgentContext, RPGEntityManager, RPGGamePipelineMan
         self,
         name: str,
         player_session: PlayerSession,
-        world: World,
+        world: WorldState,
     ) -> None:
 
         # 必须按着此顺序实现父类
@@ -34,7 +34,7 @@ class RPGGame(GameSession, RPGAgentContext, RPGEntityManager, RPGGamePipelineMan
 
         # 初始化player_session 和 world
         self._player_session: Final[PlayerSession] = player_session
-        self._world: World = world
+        self._world: WorldState = world
 
         # 验证玩家信息
         assert self._player_session.name != "", "玩家名字不能为空"

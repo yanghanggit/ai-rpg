@@ -24,7 +24,7 @@ class IdentityComponent(Component):
 @final
 @register_component_type
 class WorldComponent(Component):
-    """标记实体为世界系统类型。"""
+    """标记实体为世界级实体（全局、唯一、独立于场景）。"""
 
     name: str
 
@@ -197,7 +197,7 @@ class StatusEffectsComponent(MutableComponent):
 @final
 @register_component_type
 class PlayerActionAuditComponent(Component):
-    """标记世界系统实体具有玩家行动审计功能。"""
+    """标记世界实体具有玩家行动审计功能。"""
 
     name: str
 
@@ -206,7 +206,7 @@ class PlayerActionAuditComponent(Component):
 @final
 @register_component_type
 class DungeonGenerationComponent(Component):
-    """标记世界系统实体具有副本图片生成职责。"""
+    """标记世界实体具有副本图片生成职责。"""
 
     name: str
 
@@ -215,7 +215,7 @@ class DungeonGenerationComponent(Component):
 @final
 @register_component_type
 class WorkshopComponent(Component):
-    """标记世界系统实体具有制造工坊职责（LLM 驱动，根据材料创意生成物品）。"""
+    """标记世界实体具有制造工坊职责（LLM 驱动，根据材料创意生成物品）。"""
 
     name: str
 
@@ -224,7 +224,7 @@ class WorkshopComponent(Component):
 @final
 @register_component_type
 class DungeonPersonaComponent(Component):
-    """标记世界系统实体为副本本体（地下城拟人化人格），负责副本记忆总结压缩。"""
+    """标记世界实体为副本本体（地下城拟人化人格），负责副本记忆总结压缩。"""
 
     name: str
 
@@ -233,7 +233,7 @@ class DungeonPersonaComponent(Component):
 @final
 @register_component_type
 class WorldDirectorComponent(Component):
-    """标记世界系统实体为世界导演（桌游 GM），负责统筹世界演进与新副本创作。"""
+    """标记世界实体为世界导演（桌游 GM），负责统筹世界演进与新副本创作。"""
 
     name: str
 

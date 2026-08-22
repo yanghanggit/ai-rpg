@@ -99,10 +99,8 @@ class NewGameScreen(BaseGameScreen):
                         f"  [bold cyan]{display_name(stage.name)}[/] → {actors_str}"
                     )
                 log.write("")
-                log.write(
-                    "[bold cyan]── 世界系统 ──────────────────────────────────[/]"
-                )
-                for ws in bp.world_systems:
+                log.write("[bold cyan]── 世界 ──────────────────────────────────[/]")
+                for ws in bp.world_entities:
                     comp_names = (
                         "、".join(c.name for c in ws.components)
                         if ws.components

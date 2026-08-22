@@ -33,9 +33,9 @@ from ..models import (
     Stage,
     StageComponent,
     StageType,
-    World,
+    WorldState,
     WorldComponent,
-    WorldSystem,
+    World,
     WornCostumeComponent,
     SystemMessage,
     AnyItem,
@@ -56,7 +56,7 @@ class DBGGame(RPGGame):
         self,
         name: str,
         player_session: PlayerSession,
-        world: World,
+        world: WorldState,
     ) -> None:
 
         # 必须按着此顺序实现父类
@@ -169,7 +169,7 @@ class DBGGame(RPGGame):
 
     ###############################################################################################################################################
     def build_from_blueprint(self) -> "DBGGame":
-        """创建并初始化新游戏世界，包括世界系统、角色和场景"""
+        """创建并初始化新游戏世界，包括世界、角色和场景"""
         assert len(self._world.entities) == 0, "游戏中有实体，不能创建新的游戏"
         if len(self._world.entities) > 0:
             logger.warning(
@@ -177,8 +177,8 @@ class DBGGame(RPGGame):
             )
             return self
 
-        ## 第1步，创建world_system
-        self._create_world_entities(self._world.blueprint.world_systems)
+        ## 第1步，创建world
+        self._create_world_entities(self._world.blueprint.world_entities)
 
         ## 第1.5步，创建全局储物箱实体（挂载在 WorldComponent）
         initial_items = copy.deepcopy(self._world.blueprint.storage)
@@ -249,54 +249,52 @@ class DBGGame(RPGGame):
     ###############################################################################################################################################
     def _create_world_entities(
         self,
-        world_system_models: List[WorldSystem],
+        world_models: List[World],
     ) -> List[Entity]:
-        """创建世界系统实体（全局规则管理器、叙事者）"""
+        """创建世界实体（全局规则管理器、叙事者）"""
         world_entities: List[Entity] = []
 
-        for world_system_model in world_system_models:
+        for world_model in world_models:
 
             # 创建实体
-            world_system_entity = self._create_entity(world_system_model.name)
-            assert (
-                world_system_entity is not None
-            ), f"创建world_system_entity失败: {world_system_model.name}"
+            world_entity = self._create_entity(world_model.name)
+            assert world_entity is not None, f"创建world_entity失败: {world_model.name}"
 
             # 必要组件：identifier
             self._world.entity_counter += 1
-            world_system_entity.add(
+            world_entity.add(
                 IdentityComponent,
-                world_system_model.name,
+                world_model.name,
                 self._world.entity_counter,
                 str(uuid.uuid4()),
             )
 
-            # 必要组件：身份类型标记-世界系统
-            world_system_entity.add(WorldComponent, world_system_model.name)
+            # 必要组件：身份类型标记-世界
+            world_entity.add(WorldComponent, world_model.name)
 
             # 添加系统消息
             assert (
-                world_system_model.name in world_system_model.system_message
-            ), f"world_system_model.system_message 缺少 {world_system_model.name} 的系统消息"
+                world_model.name in world_model.system_message
+            ), f"world_model.system_message 缺少 {world_model.name} 的系统消息"
             self.add_system_message(
-                world_system_entity,
-                SystemMessage(content=world_system_model.system_message),
+                world_entity,
+                SystemMessage(content=world_model.system_message),
             )
 
-            # 特殊组件，根据 world_system_model.components 数据驱动动态添加
-            for comp_serialization in world_system_model.components:
+            # 特殊组件，根据 world_model.components 数据驱动动态添加
+            for comp_serialization in world_model.components:
                 comp_class = COMPONENT_TYPES.get(comp_serialization.name)
                 assert (
                     comp_class is not None
                 ), f"未知组件类型: {comp_serialization.name}"
                 restore_comp = comp_class(**comp_serialization.data)
                 logger.debug(
-                    f"为 WorldSystem 实体 {world_system_entity.name} 添加 {comp_serialization.name}"
+                    f"为 World 实体 {world_entity.name} 添加 {comp_serialization.name}"
                 )
-                world_system_entity.set(comp_class, restore_comp)
+                world_entity.set(comp_class, restore_comp)
 
             # 添加到返回值
-            world_entities.append(world_system_entity)
+            world_entities.append(world_entity)
 
         return world_entities
 

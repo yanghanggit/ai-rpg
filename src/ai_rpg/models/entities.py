@@ -51,7 +51,7 @@ class Stage(BaseModel):
 
 ###############################################################################################################################################
 @final
-class WorldSystem(BaseModel):
+class World(BaseModel):
     name: str
     system_message: str
     components: List[ComponentSerialization] = []

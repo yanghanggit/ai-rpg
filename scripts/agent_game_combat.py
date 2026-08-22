@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from loguru import logger
 from ai_rpg.models import PlayerSession, CombatState
 from ai_rpg.game.dbg_game import DBGGame
-from ai_rpg.models import World, MonsterComponent
+from ai_rpg.models import WorldState, MonsterComponent
 from ai_rpg.game.dbg_store import store_game
 from ai_rpg.services.dungeon_combat_actions import (
     activate_all_card_draws,
@@ -35,7 +35,7 @@ from agent_game_core import restore_game
 
 ###############################################################################
 async def draw_cards_game(
-    world: World,
+    world: WorldState,
     player_session: PlayerSession,
     save_dir: Path,
 ) -> DBGGame:
@@ -63,7 +63,7 @@ async def draw_cards_game(
 
 ###############################################################################
 async def play_cards_specified_game(
-    world: World,
+    world: WorldState,
     player_session: PlayerSession,
     actor: str,
     card: str,
@@ -111,7 +111,7 @@ async def play_cards_specified_game(
 
 ###############################################################################
 async def use_consumable_game(
-    world: World,
+    world: WorldState,
     player_session: PlayerSession,
     actor: str,
     item: str,
@@ -147,7 +147,7 @@ async def use_consumable_game(
 
 ###############################################################################
 async def use_gear_game(
-    world: World,
+    world: WorldState,
     player_session: PlayerSession,
     actor: str,
     item: str,
@@ -183,7 +183,7 @@ async def use_gear_game(
 
 ###############################################################################
 async def pass_turn_game(
-    world: World,
+    world: WorldState,
     player_session: PlayerSession,
     actor: str,
     save_dir: Path,
@@ -217,7 +217,7 @@ async def pass_turn_game(
 
 ###############################################################################
 async def retreat_game(
-    world: World,
+    world: WorldState,
     player_session: PlayerSession,
     save_dir: Path,
 ) -> DBGGame:
@@ -251,7 +251,7 @@ async def retreat_game(
 
 ###############################################################################
 async def collect_loot_game(
-    world: World,
+    world: WorldState,
     player_session: PlayerSession,
     save_dir: Path,
 ) -> DBGGame:

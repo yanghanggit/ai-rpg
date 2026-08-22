@@ -20,7 +20,7 @@ from ai_rpg.game.config import (
 )
 from ai_rpg.models import PlayerSession
 from ai_rpg.game.dbg_game import DBGGame
-from ai_rpg.models import Blueprint, Dungeon, World
+from ai_rpg.models import Blueprint, Dungeon, WorldState
 from ai_rpg.game.dbg_store import store_game
 from pathlib import Path
 
@@ -50,7 +50,7 @@ async def create_and_initialize_game(
         dungeon = Dungeon(name="", rooms=[], profile="")
 
     # 创建游戏世界数据实例，并将蓝图和副本赋值到其中
-    world_data = World(
+    world_data = WorldState(
         entity_counter=1000,
         entities=[],
         agents_context={},
@@ -59,7 +59,7 @@ async def create_and_initialize_game(
     )
 
     # 创建 DBGGame 实例并初始化
-    assert world_data is not None, "World data must exist to create a game"
+    assert world_data is not None, "WorldState data must exist to create a game"
     terminal_game = DBGGame(
         name=game,
         player_session=PlayerSession(
@@ -89,10 +89,10 @@ async def create_and_initialize_game(
 
 ###############################################################################
 async def restore_game(
-    world: World,
+    world: WorldState,
     player_session: PlayerSession,
 ) -> DBGGame:
-    """从 World/PlayerSession 快照还原 DBGGame 实例。所有动作命令的共享入口。"""
+    """从 WorldState/PlayerSession 快照还原 DBGGame 实例。所有动作命令的共享入口。"""
 
     # 创建 DBGGame 实例并从快照恢复游戏状态
     game = str(world.blueprint.name)

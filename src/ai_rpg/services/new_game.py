@@ -7,7 +7,7 @@ from ..game.dbg_game import DBGGame
 from ..models import (
     NewGameRequest,
     NewGameResponse,
-    World,
+    WorldState,
     Blueprint,
     Dungeon,
     BlueprintListResponse,
@@ -78,7 +78,7 @@ async def new_game(
     assert room._player_session is not None, "房间玩家客户端实例不存在"
 
     # 重新生成world
-    world_data = World(
+    world_data = WorldState(
         entity_counter=1000,
         entities=[],
         agents_context={},
@@ -87,7 +87,7 @@ async def new_game(
     )
 
     # 依赖注入，创建新的游戏
-    assert world_data is not None, "World data must exist to create a game"
+    assert world_data is not None, "WorldState data must exist to create a game"
     room._dbg_game = DBGGame(
         name=payload.game_name,
         player_session=room._player_session,

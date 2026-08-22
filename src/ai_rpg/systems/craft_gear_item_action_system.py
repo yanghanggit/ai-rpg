@@ -111,7 +111,7 @@ class CraftGearItemActionSystem(ReactiveProcessor):
         """执行完整合成流程。
 
         Args:
-            entity: 携带 CraftGearItemAction 的工坊世界系统实体
+            entity: 携带 CraftGearItemAction 的工坊世界实体
         """
         action = entity.get(CraftGearItemAction)
 

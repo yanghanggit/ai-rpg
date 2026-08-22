@@ -1,7 +1,7 @@
 """AI 操作工具 —— 基于快照的无状态游戏推进 CLI。
 
 每条命令 = 读快照 → 执行动作 → 写新快照。命令间无持久内存，状态全在 .worlds/ 中。
-存档位置：.worlds/{user}/{game}/{timestamp}/（含 world.json / player_session.json）
+存档位置：.worlds/{user}/{game}/{timestamp}/（含 world_state.json / player_session.json）
 查存档：find .worlds -mindepth 3 -maxdepth 3 -type d | sort
 日志：logs/run_agent_game_{timestamp}.log
 

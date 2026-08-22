@@ -8,7 +8,7 @@ import shutil
 from typing import Optional, Tuple, Dict
 from pathlib import Path
 from pydantic import TypeAdapter
-from ..models import get_buffer_string, AgentContext, PlayerSession, Dungeon, World
+from ..models import get_buffer_string, AgentContext, PlayerSession, Dungeon, WorldState
 from ..models.blueprint import Blueprint
 from ..models.messages import ContextMessage
 from ..models.serialization import EntitySerialization
@@ -20,34 +20,34 @@ _context_adapter: TypeAdapter[ContextMessage] = TypeAdapter(ContextMessage)
 
 
 ###############################################################################################################################################
-def restore_world(snapshot_dir: Path) -> Tuple[World, PlayerSession]:
-    """从存档目录中读取并还原 World 与 PlayerSession。
+def restore_world(snapshot_dir: Path) -> Tuple[WorldState, PlayerSession]:
+    """从存档目录中读取并还原 WorldState 与 PlayerSession。
 
     Args:
-        snapshot_dir: 存档目录路径，即含有 world.json 与 player_session.jsonl 的目录
+        snapshot_dir: 存档目录路径，即含有 world_state.json 与 player_session.jsonl 的目录
                       （例如 .worlds/{username}/{game}/{timestamp}/）
 
     Returns:
         (world, player_session) 元组
 
     Raises:
-        FileNotFoundError: 若 world.json 或 player_session.jsonl 不存在
+        FileNotFoundError: 若 world_state.json 或 player_session.jsonl 不存在
     """
 
     # 检查 snapshot_dir 是否存在
-    world_path = snapshot_dir / "world.json"
+    world_path = snapshot_dir / "world_state.json"
     session_path = snapshot_dir / "player_session.jsonl"
 
     # 检查文件是否存在
     if not world_path.exists():
-        raise FileNotFoundError(f"找不到 world.json: {world_path}")
+        raise FileNotFoundError(f"找不到 world_state.json: {world_path}")
 
     # 检查 player_session.jsonl 是否存在
     if not session_path.exists():
         raise FileNotFoundError(f"找不到 player_session.jsonl: {session_path}")
 
-    # 读取并反序列化 World
-    world = World.model_validate_json(world_path.read_text(encoding="utf-8"))
+    # 读取并反序列化 WorldState
+    world = WorldState.model_validate_json(world_path.read_text(encoding="utf-8"))
 
     # 从 contexts/ 目录重建 agents_context
     agents_context: Dict[str, AgentContext] = {}
@@ -126,7 +126,7 @@ def restore_world(snapshot_dir: Path) -> Tuple[World, PlayerSession]:
 
 ###############################################################################################################################################
 def archive_world(
-    world: World,
+    world: WorldState,
     player_session: PlayerSession,
     worlds_dir: Path,
     save_dir: Optional[Path] = None,
@@ -135,7 +135,7 @@ def archive_world(
 
     存档目录结构：
         {save_dir}/
-            ├── world.json
+            ├── world_state.json
             ├── player_session.jsonl    # JSONL 格式，首行为元数据，后续每行一个事件
             ├── blueprint/{blueprint_name}.json
             ├── entities/{entity}.json ...
@@ -156,7 +156,7 @@ def archive_world(
     try:
 
         # 将 world 序列化为 JSON（各字段已在独立目录中存储）
-        world_json = world.model_dump_json(
+        world_state_json = world.model_dump_json(
             exclude={"agents_context", "entities", "dungeon", "blueprint"}
         )
 
@@ -179,8 +179,8 @@ def archive_world(
         # 将 player_session 的 JSONL 内容写入文件
         player_session_jsonl = "\n".join(session_lines) + "\n"
 
-        # world.json
-        (save_dir / "world.json").write_text(world_json, encoding="utf-8")
+        # world_state.json
+        (save_dir / "world_state.json").write_text(world_state_json, encoding="utf-8")
 
         # player_session.jsonl
         (save_dir / "player_session.jsonl").write_text(
@@ -209,7 +209,7 @@ def archive_world(
 
 ###############################################################################################################################################
 def _dump_agent_contexts(
-    debug_dir: Path, world: World, should_write_buffer_string: bool = True
+    debug_dir: Path, world: WorldState, should_write_buffer_string: bool = True
 ) -> None:
     """写入每个 agent 的上下文 JSONL 和 buffer.txt 文件到 contexts/ 目录"""
 
@@ -248,7 +248,7 @@ def _dump_agent_contexts(
 
 
 ###############################################################################################################################################
-def _dump_entities(debug_dir: Path, world: World) -> None:
+def _dump_entities(debug_dir: Path, world: WorldState) -> None:
     """写入每个实体的 JSON 文件到 entities/ 目录"""
 
     # 写entities/目录

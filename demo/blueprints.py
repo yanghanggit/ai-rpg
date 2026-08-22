@@ -20,8 +20,8 @@ from ai_rpg.models import (
     Actor,
     ComponentSerialization,
     DungeonGenerationComponent,
-    create_world_system,
-    WorldSystem,
+    create_world,
+    World,
     PlayerActionAuditComponent,
     WorkshopComponent,
     DungeonPersonaComponent,
@@ -215,7 +215,7 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
             stage_isolation_ward,
             stage_corridor_hall,
         ],
-        world_systems=[
+        world_entities=[
             create_player_action_audit(),
             create_dungeon_generation(),
             create_workshop(),
@@ -320,11 +320,11 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
 
 
 ###############################################################################################################################
-def create_dungeon_generation() -> WorldSystem:
+def create_dungeon_generation() -> World:
     """创建副本生成系统。"""
 
-    world_system = create_world_system(
-        name="世界系统.副本生成系统",
+    world = create_world(
+        name="世界.副本生成系统",
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
         role_rules="""## 大傩本质
@@ -376,22 +376,22 @@ def create_dungeon_generation() -> WorldSystem:
 - 同场景有多个生物时，须在形态类型、活动方式、威胁风格上有所区别，避免重复""",
     )
 
-    world_system.components = [
+    world.components = [
         ComponentSerialization(
             name=DungeonGenerationComponent.__name__,
-            data=DungeonGenerationComponent(name=world_system.name).model_dump(),
+            data=DungeonGenerationComponent(name=world.name).model_dump(),
         )
     ]
 
-    return world_system
+    return world
 
 
 ###############################################################################################################################
-def create_player_action_audit() -> WorldSystem:
+def create_player_action_audit() -> World:
     """创建玩家行动审计系统。"""
 
-    world_system = create_world_system(
-        name="世界系统.玩家行动审计系统",
+    world = create_world(
+        name="世界.玩家行动审计系统",
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
         role_rules="""## 玩家行动审计系统职责
@@ -421,22 +421,22 @@ def create_player_action_audit() -> WorldSystem:
 - 拒绝时给出简短明确的理由""",
     )
 
-    world_system.components = [
+    world.components = [
         ComponentSerialization(
             name=PlayerActionAuditComponent.__name__,
-            data=PlayerActionAuditComponent(name=world_system.name).model_dump(),
+            data=PlayerActionAuditComponent(name=world.name).model_dump(),
         )
     ]
 
-    return world_system
+    return world
 
 
 ###############################################################################################################################
-def create_workshop() -> WorldSystem:
-    """创建制造工坊世界系统。"""
+def create_workshop() -> World:
+    """创建制造工坊世界。"""
 
-    world_system = create_world_system(
-        name="世界系统.制造工坊",
+    world = create_world(
+        name="世界.制造工坊",
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
         role_rules="""## 制造工坊职责
@@ -471,22 +471,22 @@ XXXX 部分简洁有辨识度，避免使用数字后缀。
 两类材料的混合使用应产生合理的化学反应——不是量变，而是质变：旧纱布浸泡香灰后不再是"纱布加香灰"，而是一件具有驱邪倾向的消耗品。""",
     )
 
-    world_system.components = [
+    world.components = [
         ComponentSerialization(
             name=WorkshopComponent.__name__,
-            data=WorkshopComponent(name=world_system.name).model_dump(),
+            data=WorkshopComponent(name=world.name).model_dump(),
         )
     ]
 
-    return world_system
+    return world
 
 
 ###############################################################################################################################
-def create_dungeon_persona() -> WorldSystem:
-    """创建副本本体（地下城拟人化人格）世界系统。"""
+def create_dungeon_persona() -> World:
+    """创建副本本体（地下城拟人化人格）世界。"""
 
-    world_system = create_world_system(
-        name="世界系统.副本本体",
+    world = create_world(
+        name="世界.副本本体",
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
         role_rules="""## 副本本体职责
@@ -502,22 +502,22 @@ def create_dungeon_persona() -> WorldSystem:
 - 只输出总结正文，不要额外解释或客套。""",
     )
 
-    world_system.components = [
+    world.components = [
         ComponentSerialization(
             name=DungeonPersonaComponent.__name__,
-            data=DungeonPersonaComponent(name=world_system.name).model_dump(),
+            data=DungeonPersonaComponent(name=world.name).model_dump(),
         )
     ]
 
-    return world_system
+    return world
 
 
 ###############################################################################################################################
-def create_world_director() -> WorldSystem:
-    """创建世界导演（桌游 GM）世界系统。"""
+def create_world_director() -> World:
+    """创建世界导演（桌游 GM）世界。"""
 
-    world_system = create_world_system(
-        name="世界系统.世界导演",
+    world = create_world(
+        name="世界.世界导演",
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
         role_rules="""## 人设
@@ -541,7 +541,7 @@ def create_world_director() -> WorldSystem:
 - 阅读世界变化通知，更新你对世界当前状态与走向的认知；
 - 判断世界发生了什么变化、玩家造成了什么影响；
 - 决定后续应创作怎样的副本与故事线；
-- 向「世界系统.副本生成系统」下达创作指令（说明方向、主题、氛围等），由它具体生成副本内容。
+- 向「世界.副本生成系统」下达创作指令（说明方向、主题、氛围等），由它具体生成副本内容。
 
 ## 约束
 
@@ -550,11 +550,11 @@ def create_world_director() -> WorldSystem:
 - 输出以「判断 + 决策/指令」为主，简洁明确，不要冗长叙事。""",
     )
 
-    world_system.components = [
+    world.components = [
         ComponentSerialization(
             name=WorldDirectorComponent.__name__,
-            data=WorldDirectorComponent(name=world_system.name).model_dump(),
+            data=WorldDirectorComponent(name=world.name).model_dump(),
         )
     ]
 
-    return world_system
+    return world

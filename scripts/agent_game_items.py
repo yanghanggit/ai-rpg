@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from loguru import logger
 from ai_rpg.models import PlayerSession
 from ai_rpg.game.dbg_game import DBGGame
-from ai_rpg.models import World
+from ai_rpg.models import WorldState
 from ai_rpg.game.dbg_store import store_game
 from ai_rpg.services.home_actions import (
     activate_craft_consumable,
@@ -35,7 +35,7 @@ from agent_game_core import restore_game
 
 ###############################################################################
 async def move_item_to_inventory_game(
-    world: World,
+    world: WorldState,
     player_session: PlayerSession,
     item_name: str,
     save_dir: Path,
@@ -55,7 +55,7 @@ async def move_item_to_inventory_game(
 
 ###############################################################################
 async def move_item_to_storage_game(
-    world: World,
+    world: WorldState,
     player_session: PlayerSession,
     item_name: str,
     save_dir: Path,
@@ -75,7 +75,7 @@ async def move_item_to_storage_game(
 
 ###############################################################################
 async def wear_costume_game(
-    world: World,
+    world: WorldState,
     player_session: PlayerSession,
     item_name: str,
     save_dir: Path,
@@ -97,7 +97,7 @@ async def wear_costume_game(
 
 ###############################################################################
 async def remove_costume_game(
-    world: World,
+    world: WorldState,
     player_session: PlayerSession,
     save_dir: Path,
     target_name: str,
@@ -118,7 +118,7 @@ async def remove_costume_game(
 
 ###############################################################################
 async def craft_consumable_game(
-    world: World,
+    world: WorldState,
     player_session: PlayerSession,
     material_names: List[str],
     save_dir: Path,
@@ -138,7 +138,7 @@ async def craft_consumable_game(
 
 
 async def craft_gear_item_game(
-    world: World,
+    world: WorldState,
     player_session: PlayerSession,
     material_names: list[str],
     save_dir: Path,
@@ -159,7 +159,7 @@ async def craft_gear_item_game(
 
 ###############################################################################
 async def craft_costume_game(
-    world: World,
+    world: WorldState,
     player_session: PlayerSession,
     material_names: list[str],
     save_dir: Path,

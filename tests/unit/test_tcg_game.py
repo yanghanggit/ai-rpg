@@ -24,7 +24,7 @@ from src.ai_rpg.models import (
     Stage,
     StageType,
     Blueprint,
-    World,
+    WorldState,
 )
 
 # ---------------------------------------------------------------------------
@@ -45,10 +45,10 @@ def _make_game(
             campaign_setting="",
             knowledge_base={},
             stages=[],
-            world_systems=[],
+            world_entities=[],
             storage_entity="世界储物箱",
         )
-    world = World(
+    world = WorldState(
         entity_counter=0,
         entities=[],
         agents_context={},
@@ -198,13 +198,13 @@ class TestBuildFromBlueprint:
             campaign_setting="",
             knowledge_base={},
             stages=[home],
-            world_systems=[],
+            world_entities=[],
             storage_entity="世界储物箱",
         )
 
     def _make_game_for_build(self) -> DBGGame:
         bp = self._make_full_blueprint()
-        world = World(
+        world = WorldState(
             entity_counter=0,
             entities=[],
             agents_context={},

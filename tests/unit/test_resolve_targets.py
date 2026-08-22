@@ -16,7 +16,7 @@ from src.ai_rpg.models import (
     PlayerSession,
     StageComponent,
     TargetType,
-    World,
+    WorldState,
 )
 
 
@@ -27,10 +27,10 @@ def _make_game(player_name: str = "player", actor_name: str = "hero") -> DBGGame
         campaign_setting="",
         knowledge_base={},
         stages=[],
-        world_systems=[],
+        world_entities=[],
         storage_entity="世界储物箱",
     )
-    world = World(
+    world = WorldState(
         entity_counter=0,
         entities=[],
         agents_context={},

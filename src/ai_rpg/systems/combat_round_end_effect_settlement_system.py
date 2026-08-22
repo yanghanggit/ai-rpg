@@ -1,18 +1,20 @@
 """战斗回合末状态效果结算系统：并发调用 LLM 推理 ROUND_END 状态效果对 HP 的影响，并处理死亡结算。"""
 
 from typing import Final, List, Optional, final, override
+
 from loguru import logger
 from pydantic import BaseModel
+
 from ..deepseek import DeepSeekClient, batch_chat
 from ..entitas import Entity, ExecuteProcessor, Matcher
-from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import (
     compute_character_stats,
     get_status_effects_by_phase,
     process_zero_health_entities,
     set_character_hp,
 )
-from ..models import HumanMessage, StatusEffect, StatusEffectsComponent, PhaseType
+from ..game.dbg_game import DBGGame
+from ..models import HumanMessage, PhaseType, StatusEffect, StatusEffectsComponent
 from ..utils import extract_json
 
 
@@ -147,7 +149,7 @@ class CombatRoundEndEffectSettlementSystem(ExecuteProcessor):
         # 返回 DeepSeekClient，用于并发调用 LLM 推理 ROUND_END 效果
         return DeepSeekClient(
             name=entity.name,
-            prompt=prompt,
+            full_prompt=prompt,
             context=self._game.get_agent_context(entity).context,
         )
 
@@ -175,7 +177,9 @@ class CombatRoundEndEffectSettlementSystem(ExecuteProcessor):
             return
 
         # 将本轮 prompt 和 AI 回复写入 agent 上下文，完成对话
-        self._game.add_human_message(entity, HumanMessage(content=chat_client.prompt))
+        self._game.add_human_message(
+            entity, HumanMessage(content=chat_client.full_prompt)
+        )
 
         # 将 LLM 的 JSON 响应写入 agent 上下文，保持对话连续性
         self._game.add_ai_message(entity, chat_client.response_ai_message)

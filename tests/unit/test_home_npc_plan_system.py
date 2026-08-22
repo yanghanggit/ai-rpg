@@ -8,7 +8,9 @@
 
 from typing import List
 from unittest.mock import MagicMock, patch
+
 import pytest
+
 from src.ai_rpg.entitas.context import Context
 from src.ai_rpg.entitas.entity import Entity
 from src.ai_rpg.game.dbg_game import DBGGame
@@ -26,7 +28,6 @@ from src.ai_rpg.models import (
 from src.ai_rpg.models.messages import AIMessage
 from src.ai_rpg.systems.home_npc_plan_system import HomeNpcPlanSystem
 from src.ai_rpg.systems.home_planning_prompt_builders import ActionPlanResponse
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -54,8 +55,8 @@ def _make_actor(
 def _make_chat_client(name: str, response_json: str) -> MagicMock:
     client = MagicMock()
     client.name = name
-    client.prompt = "prompt"
-    client.compressed_prompt = "compressed"
+    client.full_prompt = "prompt"
+    client.condensed_prompt = "condensed"
     client.response_content = response_json
     client.response_ai_message = AIMessage(content=response_json)
     return client

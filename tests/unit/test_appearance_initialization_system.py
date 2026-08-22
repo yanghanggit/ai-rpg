@@ -2,7 +2,9 @@
 
 from typing import List
 from unittest.mock import MagicMock, patch
+
 import pytest
+
 from src.ai_rpg.deepseek import DeepSeekClient
 from src.ai_rpg.entitas.context import Context
 from src.ai_rpg.entitas.entity import Entity
@@ -89,9 +91,9 @@ class TestBuildClient:
         client = system._build_client(entity)
 
         assert client.name == "英雄"
-        assert _BASE_BODY in client.prompt
-        assert _COSTUME.name in client.prompt
-        assert _COSTUME.description in client.prompt
+        assert _BASE_BODY in client.full_prompt
+        assert _COSTUME.name in client.full_prompt
+        assert _COSTUME.description in client.full_prompt
 
 
 # ---------------------------------------------------------------------------

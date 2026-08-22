@@ -1,28 +1,30 @@
 """家园玩家上下文注入系统。"""
 
 from typing import Dict, Final, List, Optional, final
+
 from loguru import logger
-from ..models.messages import AIMessage, HumanMessage
 from overrides import override
-from ..entitas import Entity, Matcher, GroupEvent, ReactiveProcessor
-from ..models import (
-    AnnounceAction,
-    StageDescriptionComponent,
-    SpeakAction,
-    WhisperAction,
-    PlanAction,
-    TransStageAction,
-    ActorComponent,
-    PlayerComponent,
-    NPCComponent,
-)
+
+from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game import DBGGame
+from ..models import (
+    ActorComponent,
+    AnnounceAction,
+    NPCComponent,
+    PlanAction,
+    PlayerComponent,
+    SpeakAction,
+    StageDescriptionComponent,
+    TransStageAction,
+    WhisperAction,
+)
+from ..models.messages import AIMessage, HumanMessage
 from .home_planning_prompt_builders import (
     ActionPlanResponse,
     build_action_planning_prompt,
-    build_compressed_planning_prompt,
-    get_other_actors_appearances,
+    build_condensed_planning_prompt,
     get_available_home_stages,
+    get_other_actors_appearances,
 )
 
 
@@ -31,10 +33,10 @@ from .home_planning_prompt_builders import (
 class HomePlayerPlanSystem(ReactiveProcessor):
     """家园玩家上下文注入系统。让Player Agent以为自己做了规划然后产生行动，这样就和NPC的上下文格式一致了。"""
 
-    def __init__(self, game: DBGGame, use_compressed_prompt: bool = True) -> None:
+    def __init__(self, game: DBGGame, use_condensed_prompt: bool = True) -> None:
         super().__init__(game)
         self._game: Final[DBGGame] = game
-        self._use_compressed_prompt: Final[bool] = use_compressed_prompt
+        self._use_condensed_prompt: Final[bool] = use_condensed_prompt
 
     ####################################################################################################################################
     @override
@@ -103,27 +105,27 @@ class HomePlayerPlanSystem(ReactiveProcessor):
             available_home_stages=available_stage_names,
         )
 
-        # 如果配置了使用压缩提示，则构建压缩后的行动规划提示并发送给游戏系统
-        if self._use_compressed_prompt:
-            compressed_prompt = build_compressed_planning_prompt(
+        # 如果配置了使用精简提示，则构建精简后的行动规划提示并发送给游戏系统
+        if self._use_condensed_prompt:
+            condensed_prompt = build_condensed_planning_prompt(
                 current_stage=current_stage.name,
                 current_stage_narration=stage_narrative,
                 other_actors_appearances=other_actors_appearances,
                 available_home_stages=available_stage_names,
             )
 
-            # 将压缩后的行动规划提示发送给游戏系统，附带玩家的全量提示以便参考
+            # 将精简后的行动规划提示发送给游戏系统，附带玩家的全量提示以便参考
             self._game.add_human_message(
                 player_entity,
                 HumanMessage(
-                    content=compressed_prompt,
+                    content=condensed_prompt,
                     home_actor_planning=player_entity.name,
                     home_actor_full_prompt=full_prompt,
                 ),
             )
         else:
 
-            # 如果未配置使用压缩提示，则直接将完整的行动规划提示发送给游戏系统
+            # 如果未配置使用精简提示，则直接将完整的行动规划提示发送给游戏系统
             self._game.add_human_message(
                 player_entity,
                 HumanMessage(

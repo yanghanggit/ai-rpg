@@ -1,7 +1,7 @@
 """AddActorStatusEffectsActionSystem 单元测试。"""
 
-from unittest.mock import AsyncMock, MagicMock, patch
 from typing import List
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -13,9 +13,10 @@ from src.ai_rpg.models import (
     AddStatusEffectsAction,
     AffixTrigger,
     DeathComponent,
+    PhaseType,
+    StatusEffect,
     StatusEffectsComponent,
 )
-from src.ai_rpg.models import StatusEffect, PhaseType
 from src.ai_rpg.models.messages import AIMessage
 from src.ai_rpg.systems.add_status_effects_action_system import (
     AddStatusEffectsActionSystem,
@@ -73,12 +74,12 @@ def _make_mock_chat_client(
     response_json: str,
     *,
     prompt: str = "full prompt",
-    compressed_prompt: str = "compressed prompt",
+    condensed_prompt: str = "condensed prompt",
 ) -> MagicMock:
     client = MagicMock()
     client.name = name
-    client.prompt = prompt
-    client.compressed_prompt = compressed_prompt
+    client.full_prompt = prompt
+    client.condensed_prompt = condensed_prompt
     client.response_content = response_json
     client.response_ai_message = AIMessage(content=response_json)
     return client
@@ -101,12 +102,12 @@ def mock_game() -> MagicMock:
 
 @pytest.fixture()
 def system(mock_game: MagicMock) -> AddStatusEffectsActionSystem:
-    return AddStatusEffectsActionSystem(mock_game, use_compressed_prompt=True)
+    return AddStatusEffectsActionSystem(mock_game, use_condensed_prompt=True)
 
 
 @pytest.fixture()
-def system_no_compress(mock_game: MagicMock) -> AddStatusEffectsActionSystem:
-    return AddStatusEffectsActionSystem(mock_game, use_compressed_prompt=False)
+def system_no_condense(mock_game: MagicMock) -> AddStatusEffectsActionSystem:
+    return AddStatusEffectsActionSystem(mock_game, use_condensed_prompt=False)
 
 
 class TestProcessStatusEffectsResponse:
@@ -208,40 +209,40 @@ class TestProcessStatusEffectsResponse:
         )
         assert entity.get(StatusEffectsComponent).status_effects == []
 
-    def test_compressed_prompt_mode(
+    def test_condensed_prompt_mode(
         self,
         context: Context,
         mock_game: MagicMock,
         system: AddStatusEffectsActionSystem,
     ) -> None:
-        """use_compressed_prompt=True 时 message_content 应为 compressed_prompt。"""
+        """use_condensed_prompt=True 时 message_content 应为 condensed_prompt。"""
         entity = _make_actor_entity(context, "猎人", with_action=True)
         mock_game.get_entity_by_name.return_value = entity
         client = _make_mock_chat_client(
-            "猎人", '{"add_effects": []}', prompt="full", compressed_prompt="compressed"
+            "猎人", '{"add_effects": []}', prompt="full", condensed_prompt="condensed"
         )
         system._process_status_effects_response(client)
         assert (
             mock_game.add_human_message.call_args[1]["human_message"].content
-            == "compressed"
+            == "condensed"
         )
 
     def test_full_prompt_mode(
         self,
         context: Context,
         mock_game: MagicMock,
-        system_no_compress: AddStatusEffectsActionSystem,
+        system_no_condense: AddStatusEffectsActionSystem,
     ) -> None:
-        """use_compressed_prompt=False 时 message_content 应为 full prompt。"""
+        """use_condensed_prompt=False 时 message_content 应为 full prompt。"""
         entity = _make_actor_entity(context, "游侠", with_action=True)
         mock_game.get_entity_by_name.return_value = entity
         client = _make_mock_chat_client(
             "游侠",
             '{"add_effects": []}',
             prompt="full prompt content",
-            compressed_prompt="compressed",
+            condensed_prompt="condensed",
         )
-        system_no_compress._process_status_effects_response(client)
+        system_no_condense._process_status_effects_response(client)
         assert (
             mock_game.add_human_message.call_args[1]["human_message"].content
             == "full prompt content"

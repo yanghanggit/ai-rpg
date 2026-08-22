@@ -1,8 +1,10 @@
 """副本生成指令系统（世界导演在副本生成时执行）"""
 
 from typing import Dict, Final, List, final, override
+
 from loguru import logger
-from ..deepseek import DeepSeekClient, MODEL_FLASH
+
+from ..deepseek import MODEL_FLASH, DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..models import (
@@ -68,7 +70,7 @@ class GenerateDungeonDirectiveSystem(ReactiveProcessor):
         prompt = _build_directive_prompt()
         client = DeepSeekClient(
             name=director_entity.name,
-            prompt=prompt,
+            full_prompt=prompt,
             context=self._game.get_agent_context(director_entity).context,
             model=MODEL_FLASH,
             thinking=False,

@@ -3,7 +3,9 @@
 import json
 from typing import Any, Dict, List
 from unittest.mock import MagicMock
+
 import pytest
+
 from src.ai_rpg.entitas.context import Context
 from src.ai_rpg.entitas.entity import Entity
 from src.ai_rpg.game.dbg_game import DBGGame
@@ -18,7 +20,6 @@ from src.ai_rpg.models.target_type import TargetType
 from src.ai_rpg.systems.generate_deck_action_system import (
     GenerateDeckActionSystem,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -59,8 +60,8 @@ def _make_chat_client(entity_name: str, response_content: str) -> MagicMock:
     client = MagicMock()
     client.name = entity_name
     client.response_content = response_content
-    client.prompt = "prompt"
-    client.compressed_prompt = "compressed_prompt"
+    client.full_prompt = "prompt"
+    client.condensed_prompt = "condensed_prompt"
     client.response_ai_message = AIMessage(content=response_content)
     return client
 

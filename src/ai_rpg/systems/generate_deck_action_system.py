@@ -5,23 +5,25 @@
 import random
 from enum import IntEnum, unique
 from typing import Dict, Final, List, final, override
-from pydantic import BaseModel
+
 from loguru import logger
+from pydantic import BaseModel
+
 from ..deepseek import DeepSeekClient, batch_chat
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import compute_character_stats, get_cards_per_combat
+from ..game.dbg_game import DBGGame
 from ..models import (
     ActorComponent,
+    Card,
+    CharacterStats,
+    CharacterStatsComponent,
+    DeathComponent,
     DeckComponent,
     DrawPileComponent,
-    DeathComponent,
     GenerateDeckAction,
-    CharacterStatsComponent,
-    Card,
-    TargetType,
     HumanMessage,
-    CharacterStats,
+    TargetType,
 )
 from ..utils import extract_json
 from .card_prompt_builders import BUILD_CARD_FIELD_DESCRIPTION
@@ -141,12 +143,12 @@ def generate_deck_prompt(
 
 
 #######################################################################################################################################
-def generate_compressed_deck_prompt(
+def generate_condensed_deck_prompt(
     actor_stats: CharacterStats,
     keywords: List[str] = [],
     dice_rolls: List[int] = [],
 ) -> str:
-    """生成牌库生成 prompt 的压缩版（写入对话历史，减少 token 消耗）。"""
+    """生成牌库生成 prompt 的精简版（写入对话历史，减少 token 消耗）。"""
     card_count = len(dice_rolls)
     design_principle = build_design_principle_prompt(keywords, dice_rolls)
     return f"""# 战斗牌库生成（{card_count} 张）
@@ -232,18 +234,18 @@ class GenerateDeckActionSystem(ReactiveProcessor):
             dice_rolls=dice_rolls,
         )
 
-        # 生成压缩提示词，减少 LLM token 消耗
-        compressed_prompt = generate_compressed_deck_prompt(
+        # 生成精简提示词，减少 LLM token 消耗
+        condensed_prompt = generate_condensed_deck_prompt(
             actor_stats=combat_stats,
             keywords=sampled_keywords,
             dice_rolls=dice_rolls,
         )
 
-        # 构建 DeepSeekClient，传入完整提示词、压缩提示词和上下文
+        # 构建 DeepSeekClient，传入完整提示词、精简提示词和上下文
         return DeepSeekClient(
             name=entity.name,
-            prompt=prompt,
-            compressed_prompt=compressed_prompt,
+            full_prompt=prompt,
+            condensed_prompt=condensed_prompt,
             context=self._game.get_agent_context(entity).context,
         )
 
@@ -332,8 +334,8 @@ class GenerateDeckActionSystem(ReactiveProcessor):
         self._game.add_human_message(
             entity=entity,
             human_message=HumanMessage(
-                content=chat_client.compressed_prompt,
-                deck_generation_full_prompt=chat_client.prompt,
+                content=chat_client.condensed_prompt,
+                deck_generation_full_prompt=chat_client.full_prompt,
             ),
         )
 

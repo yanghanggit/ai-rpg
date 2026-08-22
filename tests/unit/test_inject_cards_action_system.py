@@ -1,26 +1,28 @@
 """InjectCardsActionSystem 单元测试。"""
 
-import pytest
+from typing import Dict, List, Optional
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+
 from src.ai_rpg.entitas.context import Context
 from src.ai_rpg.entitas.entity import Entity
 from src.ai_rpg.game.dbg_game import DBGGame
 from src.ai_rpg.models import (
     ActorComponent,
-    DungeonComponent,
+    AIMessage,
+    Card,
     DiscardPileComponent,
+    DungeonComponent,
     PlayCardsAction,
     StageComponent,
     StatusEffectsComponent,
 )
-from src.ai_rpg.models import Card, AIMessage
+from src.ai_rpg.systems.arbitration_prompt_builders import fmt_duration
 from src.ai_rpg.systems.inject_cards_action_system import (
     ActorPostArbitrationDirective,
     InjectCardsActionSystem,
 )
-from src.ai_rpg.systems.arbitration_prompt_builders import fmt_duration
-from typing import Dict, List, Optional
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -64,12 +66,12 @@ def _make_mock_chat_client(
     response_json: str,
     *,
     prompt: str = "full prompt",
-    compressed_prompt: str = "compressed prompt",
+    condensed_prompt: str = "condensed prompt",
 ) -> MagicMock:
     client = MagicMock()
     client.name = name
-    client.prompt = prompt
-    client.compressed_prompt = compressed_prompt
+    client.full_prompt = prompt
+    client.condensed_prompt = condensed_prompt
     client.response_content = response_json
     client.response_ai_message = AIMessage(content=response_json)
     return client
@@ -125,7 +127,7 @@ def mock_game() -> MagicMock:
 def system(mock_game: MagicMock) -> InjectCardsActionSystem:
     return InjectCardsActionSystem(
         mock_game,
-        use_compressed_prompt=True,
+        use_condensed_prompt=True,
     )
 
 
@@ -301,13 +303,13 @@ class TestApplyResponse:
         mock_game.add_human_message.assert_called_once()
         mock_game.add_ai_message.assert_called_once()
 
-    def test_compressed_prompt_forwarded_to_add_human_message(
+    def test_condensed_prompt_forwarded_to_add_human_message(
         self,
         context: Context,
         mock_game: MagicMock,
         system: InjectCardsActionSystem,
     ) -> None:
-        """use_compressed_prompt=True 时，compressed_prompt 应传入 add_human_message。"""
+        """use_condensed_prompt=True 时，condensed_prompt 应传入 add_human_message。"""
         stage = _make_stage_entity(context, "副本")
         target = _make_actor_entity(context, "牧师")
         _configure_lookup(mock_game, stage, target)
@@ -316,12 +318,12 @@ class TestApplyResponse:
             "副本",
             '{"per_actor": []}',
             prompt="full prompt",
-            compressed_prompt="compressed",
+            condensed_prompt="condensed",
         )
         system._apply_response(client)
 
         call_kwargs = mock_game.add_human_message.call_args[1]
-        assert call_kwargs.get("human_message").content == "compressed"
+        assert call_kwargs.get("human_message").content == "condensed"
 
 
 # ---------------------------------------------------------------------------

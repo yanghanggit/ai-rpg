@@ -1,8 +1,10 @@
 """副本本体记忆归档模块"""
 
 from typing import Final, List, Optional, Sequence, Set, Tuple
+
 from loguru import logger
-from ..deepseek import DeepSeekClient, MODEL_FLASH
+
+from ..deepseek import MODEL_FLASH, DeepSeekClient
 from ..entitas import Entity, Matcher
 from ..game.dbg_game import DBGGame
 from ..models import (
@@ -14,7 +16,6 @@ from ..models import (
     WorldDirectorComponent,
     get_buffer_string,
 )
-
 
 # 实体记忆块之间的长分割线
 _SEP: Final[str] = "-" * 100
@@ -247,7 +248,7 @@ async def archive_dungeon(
         # 5. 调用 DeepSeekClient 进行归档总结
         client = DeepSeekClient(
             name=f"dungeon:{dungeon.name}",
-            prompt=prompt,
+            full_prompt=prompt,
             context=dbg_game.get_agent_context(dungeon_persona_entity).context,
             model=MODEL_FLASH,
             thinking=False,

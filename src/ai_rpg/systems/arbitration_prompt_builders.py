@@ -1,17 +1,19 @@
 """仲裁提示词构建器模块。"""
 
+from dataclasses import dataclass
 from typing import Dict, Final, List, final
+
 from pydantic import BaseModel
+
 from ..models import (
     AffixTrigger,
     Card,
     CharacterStats,
     ConsumableItem,
+    GearItem,
     StatusEffect,
     TargetType,
-    GearItem,
 )
-from dataclasses import dataclass
 
 #######################################################################################################################################
 # 共享仲裁响应数据模型
@@ -290,7 +292,7 @@ def generate_combat_arbitration_prompt(
 {STAGE_DESCRIPTION_DESCRIPTION}"""
 
 
-def generate_compressed_combat_arbitration_prompt(
+def generate_condensed_combat_arbitration_prompt(
     actor_name: str,
     actor_stats: CharacterStats,
     card: Card,
@@ -301,7 +303,7 @@ def generate_compressed_combat_arbitration_prompt(
     target_arbitration_effects: Dict[str, List[StatusEffect]],
     current_stage_description: str,
 ) -> str:
-    """压缩版仲裁提示词，省略静态规则与格式说明，用于写入对话历史减少重复 token。"""
+    """精简版仲裁提示词，省略静态规则与格式说明，用于写入对话历史减少重复 token。"""
     target_lines = build_target_stats_lines(target_stats, show_defense=True)
     arbitration_effects_lines = build_combat_arbitration_effects_lines(
         actor_name, actor_arbitration_effects, target_arbitration_effects
@@ -422,14 +424,14 @@ def generate_gear_arbitration_prompt(
 {STAGE_DESCRIPTION_DESCRIPTION}"""
 
 
-def generate_compressed_gear_arbitration_prompt(
+def generate_condensed_gear_arbitration_prompt(
     item: GearItem,
     target_stats: Dict[str, CharacterStats],
     current_round_number: int,
     target_arbitration_effects: Dict[str, List[StatusEffect]],
     current_stage_description: str,
 ) -> str:
-    """生成压缩版装备仲裁提示词，用于写入对话历史。"""
+    """生成精简版装备仲裁提示词，用于写入对话历史。"""
     target_lines = build_target_stats_lines(target_stats)
     arbitration_effects_lines = build_arbitration_effects_lines(
         target_arbitration_effects
@@ -542,7 +544,7 @@ def generate_consumable_arbitration_prompt(
 {STAGE_DESCRIPTION_DESCRIPTION}"""
 
 
-def generate_compressed_consumable_arbitration_prompt(
+def generate_condensed_consumable_arbitration_prompt(
     actor_name: str,
     actor_stats: CharacterStats,
     item: ConsumableItem,
@@ -551,7 +553,7 @@ def generate_compressed_consumable_arbitration_prompt(
     target_arbitration_effects: Dict[str, List[StatusEffect]],
     current_stage_description: str,
 ) -> str:
-    """生成压缩版消耗品仲裁提示词，用于写入对话历史。"""
+    """生成精简版消耗品仲裁提示词，用于写入对话历史。"""
     target_lines = build_target_stats_lines(target_stats)
     arbitration_effects_lines = build_arbitration_effects_lines(
         target_arbitration_effects

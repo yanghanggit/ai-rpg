@@ -1,14 +1,16 @@
 from typing import Final, List, final
+
 from loguru import logger
 from overrides import override
+
 from ..deepseek import DeepSeekClient, batch_chat
 from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.dbg_game import DBGGame
 from ..models import (
     ActorComponent,
     AppearanceComponent,
-    WornCostumeComponent,
     HumanMessage,
+    WornCostumeComponent,
 )
 from ..models.items import CostumeItem
 from .appearance_prompt_builders import (
@@ -71,7 +73,7 @@ class AppearanceInitializationSystem(ExecuteProcessor):
 
         return DeepSeekClient(
             name=entity.name,
-            prompt=prompt,
+            full_prompt=prompt,
             context=self._game.get_agent_context(entity).context,
         )
 

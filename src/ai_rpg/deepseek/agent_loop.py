@@ -2,7 +2,9 @@
 
 import json
 from typing import Callable, Dict, List, Literal
+
 from loguru import logger
+
 from ..models.messages import ContextMessage, HumanMessage, ToolMessage
 from .client import DeepSeekClient, ToolDefinition
 
@@ -33,7 +35,7 @@ async def agent_loop(
         # 初始化 DeepSeekClient，用于与 LLM 进行交互，传入当前轮次的 prompt、上下文、工具定义和工具选择策略
         client = DeepSeekClient(
             name=name,
-            prompt=current_prompt,
+            full_prompt=current_prompt,
             context=history,
             tools=tools,
             tool_choice=tool_choice,

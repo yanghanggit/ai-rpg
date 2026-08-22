@@ -1,8 +1,11 @@
 """战斗状态效果追加系统模块"""
 
-from typing import Final, List, final, Dict, Optional
+from typing import Dict, Final, List, Optional, final
+
 from loguru import logger
 from overrides import override
+from pydantic import BaseModel
+
 from ..deepseek import DeepSeekClient, batch_chat
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
@@ -10,15 +13,14 @@ from ..models import (
     ActorComponent,
     AddStatusEffectsAction,
     AffixTrigger,
-    HumanMessage,
-    StatusEffectsComponent,
     DeathComponent,
-    StatusEffect,
+    HumanMessage,
     PhaseType,
+    StatusEffect,
+    StatusEffectsComponent,
 )
 from ..utils import extract_json
 from .arbitration_prompt_builders import fmt_duration
-from pydantic import BaseModel
 
 
 #######################################################################################################################################
@@ -41,12 +43,12 @@ def _format_affix_trigger(trigger: AffixTrigger, index: int) -> str:
 
 
 #######################################################################################################################################
-def _generate_compressed_add_status_effects_prompt(
+def _generate_condensed_add_status_effects_prompt(
     current_status_effects: List[StatusEffect],
     current_round_number: int,
     affix_triggers: List[AffixTrigger],
 ) -> str:
-    """生成压缩版追加状态效果提示词（仅动态感知部分，省略静态字段说明与 JSON 示例）"""
+    """生成精简版追加状态效果提示词（仅动态感知部分，省略静态字段说明与 JSON 示例）"""
 
     if len(current_status_effects) == 0:
         effects_list = "无"
@@ -191,11 +193,11 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
     def __init__(
         self,
         game: DBGGame,
-        use_compressed_prompt: bool = True,
+        use_condensed_prompt: bool = True,
     ) -> None:
         super().__init__(game)
         self._game: Final[DBGGame] = game
-        self._use_compressed_prompt: Final[bool] = use_compressed_prompt
+        self._use_condensed_prompt: Final[bool] = use_condensed_prompt
 
     #######################################################################################################################################
     @override
@@ -266,20 +268,20 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
             affix_triggers=add_status_effects_action.affix_triggers,
         )
 
-        # 如果启用了压缩提示词，则生成压缩后的提示词，用于在与 LLM 交互时减少上下文长度，提高效率
-        compressed_message: Optional[str] = None
-        if self._use_compressed_prompt:
-            compressed_message = _generate_compressed_add_status_effects_prompt(
+        # 如果启用了精简提示词，则生成精简后的提示词，用于在与 LLM 交互时减少上下文长度，提高效率
+        condensed_message: Optional[str] = None
+        if self._use_condensed_prompt:
+            condensed_message = _generate_condensed_add_status_effects_prompt(
                 current_status_effects=combat_status_effects.status_effects,
                 current_round_number=current_round_number,
                 affix_triggers=add_status_effects_action.affix_triggers,
             )
 
-        # 构建 DeepSeekClient 实例，用于与 LLM 交互，传入实体名称、提示词、压缩提示词以及实体上下文信息
+        # 构建 DeepSeekClient 实例，用于与 LLM 交互，传入实体名称、提示词、精简提示词以及实体上下文信息
         return DeepSeekClient(
             name=entity.name,
-            prompt=prompt,
-            compressed_prompt=compressed_message,
+            full_prompt=prompt,
+            condensed_prompt=condensed_message,
             context=self._game.get_agent_context(entity).context,
         )
 
@@ -316,18 +318,18 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
             return
 
         # 将本轮 prompt 写入角色上下文（Human 端）
-        if self._use_compressed_prompt:
+        if self._use_condensed_prompt:
             self._game.add_human_message(
                 entity=entity,
                 human_message=HumanMessage(
-                    content=chat_client.compressed_prompt,
-                    add_status_effects_full_prompt=chat_client.prompt,
+                    content=chat_client.condensed_prompt,
+                    add_status_effects_full_prompt=chat_client.full_prompt,
                 ),
             )
         else:
             self._game.add_human_message(
                 entity=entity,
-                human_message=HumanMessage(content=chat_client.prompt),
+                human_message=HumanMessage(content=chat_client.full_prompt),
             )
 
         # 将 LLM 回复写入角色上下文（AI 端），完成本轮对话

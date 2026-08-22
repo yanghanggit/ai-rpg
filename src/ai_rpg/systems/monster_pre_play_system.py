@@ -1,22 +1,27 @@
-from typing import Final, List, final, override, Dict
+from typing import Dict, Final, List, final, override
+
 from loguru import logger
 from pydantic import BaseModel
+
 from ..deepseek import DeepSeekClient, batch_chat
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
+from ..game.dbg_combat_processor import (
+    compute_character_stats,
+    get_alive_actors_in_stage,
+    resolve_targets,
+)
 from ..game.dbg_game import DBGGame
-from ..game.dbg_combat_processor import get_alive_actors_in_stage, resolve_targets
-from ..game.dbg_combat_processor import compute_character_stats
 from ..models import (
-    PlayCardsAction,
-    MonsterTurnAction,
-    PassTurnAction,
-    HumanMessage,
-    MonsterComponent,
+    Card,
+    CharacterStats,
     DeathComponent,
     HandComponent,
-    CharacterStats,
+    HumanMessage,
+    MonsterComponent,
+    MonsterTurnAction,
     PartyMemberComponent,
-    Card,
+    PassTurnAction,
+    PlayCardsAction,
     StatusEffect,
     StatusEffectsComponent,
 )
@@ -127,7 +132,7 @@ pass_turn 为 true 时表示跳过出牌，其他字段可省略"""
 
 
 #######################################################################################################################################
-def _generate_compressed_monster_decision_prompt(
+def _generate_condensed_monster_decision_prompt(
     monster_name: str,
     monster_stats: CharacterStats,
     monster_status_effects: List[StatusEffect],
@@ -137,7 +142,7 @@ def _generate_compressed_monster_decision_prompt(
     completed_actors: List[str],
     current_round_number: int,
 ) -> str:
-    """生成怪物出牌决策的压缩版提示词（写入对话历史，减少 token 消耗）。"""
+    """生成怪物出牌决策的精简版提示词（写入对话历史，减少 token 消耗）。"""
     stats = monster_stats
     self_info = (
         f"HP:{stats.hp}/{stats.max_hp} | 攻击:{stats.attack} | 防御:{stats.defense}"
@@ -302,7 +307,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
             current_round_number=current_round_number,
         )
 
-        compressed_prompt = _generate_compressed_monster_decision_prompt(
+        condensed_prompt = _generate_condensed_monster_decision_prompt(
             monster_name=entity.name,
             monster_stats=monster_stats,
             monster_status_effects=monster_status_effects,
@@ -315,9 +320,9 @@ class MonsterPrePlaySystem(ReactiveProcessor):
 
         return DeepSeekClient(
             name=entity.name,
-            prompt=prompt,
+            full_prompt=prompt,
             context=self._game.get_agent_context(entity).context,
-            compressed_prompt=compressed_prompt,
+            condensed_prompt=condensed_prompt,
         )
 
     ####################################################################################################################################
@@ -347,16 +352,16 @@ class MonsterPrePlaySystem(ReactiveProcessor):
             entity.replace(PassTurnAction, entity.name)
             return
 
-        # 写对话历史（压缩版 prompt + AI 原文，附挂全量 prompt 供检索）
+        # 写对话历史（精简版 prompt + AI 原文，附挂全量 prompt 供检索）
         current_round_number = len(
             self._game.current_dungeon_combat_room.combat.rounds or []
         )
         self._game.add_human_message(
             entity=entity,
             human_message=HumanMessage(
-                content=client.compressed_prompt,
+                content=client.condensed_prompt,
                 draw_cards_round_number=current_round_number,
-                draw_cards_full_prompt=client.prompt,
+                draw_cards_full_prompt=client.full_prompt,
             ),
         )
 

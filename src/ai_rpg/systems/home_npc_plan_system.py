@@ -1,31 +1,33 @@
 from typing import Dict, Final, List, final
-from ..models.messages import HumanMessage
+
 from loguru import logger
 from overrides import override
+
 from ..deepseek import DeepSeekClient, batch_chat
-from ..entitas import Entity, Matcher, GroupEvent, ReactiveProcessor
+from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
+from ..game import DBGGame
 from ..models import (
-    StageDescriptionComponent,
+    ActorComponent,
+    AnnounceAction,
+    MindEvent,
+    NPCComponent,
+    PlanAction,
+    PlayerComponent,
     QueryAction,
     SpeakAction,
-    WhisperAction,
-    AnnounceAction,
-    PlanAction,
+    StageDescriptionComponent,
     TransStageAction,
-    MindEvent,
-    ActorComponent,
-    NPCComponent,
-    PlayerComponent,
+    WhisperAction,
 )
+from ..models.messages import HumanMessage
 from ..utils import extract_json
-from ..game import DBGGame
 from .home_planning_prompt_builders import (
     ActionPlanResponse,
     build_action_planning_prompt,
-    build_compressed_planning_prompt,
+    build_condensed_planning_prompt,
     format_mind_notification,
-    get_other_actors_appearances,
     get_available_home_stages,
+    get_other_actors_appearances,
 )
 
 
@@ -34,10 +36,10 @@ from .home_planning_prompt_builders import (
 class HomeNpcPlanSystem(ReactiveProcessor):
     """家园 NPC 自主行动规划系统。"""
 
-    def __init__(self, game: DBGGame, use_compressed_prompt: bool = True) -> None:
+    def __init__(self, game: DBGGame, use_condensed_prompt: bool = True) -> None:
         super().__init__(game)
         self._game: Final[DBGGame] = game
-        self._use_compressed_prompt: Final[bool] = use_compressed_prompt
+        self._use_condensed_prompt: Final[bool] = use_condensed_prompt
 
     ####################################################################################################################################
     @override
@@ -96,21 +98,21 @@ class HomeNpcPlanSystem(ReactiveProcessor):
             logger.error(f"Exception: {e}")
             return
 
-        # 添加上下文！存入压缩版 prompt，附挂原始全量 prompt 供检索
-        if self._use_compressed_prompt:
+        # 添加上下文！存入精简版 prompt，附挂原始全量 prompt 供检索
+        if self._use_condensed_prompt:
             self._game.add_human_message(
                 actor_entity,
                 HumanMessage(
-                    content=chat_client.compressed_prompt,
+                    content=chat_client.condensed_prompt,
                     home_actor_planning=actor_entity.name,
-                    home_actor_full_prompt=chat_client.prompt,
+                    home_actor_full_prompt=chat_client.full_prompt,
                 ),
             )
         else:
             self._game.add_human_message(
                 actor_entity,
                 HumanMessage(
-                    content=chat_client.prompt,
+                    content=chat_client.full_prompt,
                     home_actor_planning=actor_entity.name,
                 ),
             )
@@ -204,20 +206,20 @@ class HomeNpcPlanSystem(ReactiveProcessor):
         # 生成行动规划提示词
         return DeepSeekClient(
             name=entity.name,
-            prompt=build_action_planning_prompt(
+            full_prompt=build_action_planning_prompt(
                 current_stage=current_stage.name,
                 current_stage_narration=stage_narrative,
                 other_actors_appearances=other_actors_appearances,
                 available_home_stages=available_stage_names,
             ),
-            compressed_prompt=(
-                build_compressed_planning_prompt(
+            condensed_prompt=(
+                build_condensed_planning_prompt(
                     current_stage=current_stage.name,
                     current_stage_narration=stage_narrative,
                     other_actors_appearances=other_actors_appearances,
                     available_home_stages=available_stage_names,
                 )
-                if self._use_compressed_prompt
+                if self._use_condensed_prompt
                 else None
             ),
             context=self._game.get_agent_context(entity).context,

@@ -1,18 +1,20 @@
 """战斗初始化系统（场景侧）：为战斗场景注入战斗专用规则，将战斗状态转换为进行中，并设计场景词缀。"""
 
-from typing import Dict, Final, List, Optional, final, override, Set
-from pydantic import BaseModel
-from ..models.messages import HumanMessage
+from typing import Dict, Final, List, Optional, Set, final, override
+
 from loguru import logger
+from pydantic import BaseModel
+
 from ..deepseek import DeepSeekClient
-from ..entitas import ExecuteProcessor, Entity
-from ..game.dbg_game import DBGGame
+from ..entitas import Entity, ExecuteProcessor
 from ..game.dbg_combat_processor import (
     accumulate_status_effects_action,
     get_alive_actors_in_stage,
     wrap_scene_hints_as_affixes,
 )
+from ..game.dbg_game import DBGGame
 from ..models import StageDescriptionComponent
+from ..models.messages import HumanMessage
 from ..utils import extract_json
 
 
@@ -70,12 +72,12 @@ def _generate_combat_init_interaction_prompt(
 
 
 ###################################################################################################################################################################
-def _generate_compressed_combat_init_interaction_prompt(
+def _generate_condensed_combat_init_interaction_prompt(
     stage_name: str,
     stage_description: str,
     actor_entities: Set[Entity],
 ) -> str:
-    """生成压缩版战斗初始化阶段场景词缀设计提示词（仅动态感知部分，省略静态规则/格式说明）"""
+    """生成精简版战斗初始化阶段场景词缀设计提示词（仅动态感知部分，省略静态规则/格式说明）"""
 
     actor_lines = "\n".join(f"- {actor.name}" for actor in actor_entities)
 
@@ -95,9 +97,9 @@ def _generate_compressed_combat_init_interaction_prompt(
 class CombatInitStageSystem(ExecuteProcessor):
     """战斗初始化系统（场景侧）：注入战斗专用规则、转换战斗状态为进行中、设计场景词缀。"""
 
-    def __init__(self, game: DBGGame, use_compressed_prompt: bool = True) -> None:
+    def __init__(self, game: DBGGame, use_condensed_prompt: bool = True) -> None:
         self._game: Final[DBGGame] = game
-        self._use_compressed_prompt: Final[bool] = use_compressed_prompt
+        self._use_condensed_prompt: Final[bool] = use_condensed_prompt
 
     ###################################################################################################################################################################
     @override
@@ -142,9 +144,9 @@ class CombatInitStageSystem(ExecuteProcessor):
             actor_entities=actor_entities,
         )
 
-        compressed_message: Optional[str] = None
-        if self._use_compressed_prompt:
-            compressed_message = _generate_compressed_combat_init_interaction_prompt(
+        condensed_message: Optional[str] = None
+        if self._use_condensed_prompt:
+            condensed_message = _generate_condensed_combat_init_interaction_prompt(
                 stage_name=current_stage_entity.name,
                 stage_description=stage_description_comp.narrative,
                 actor_entities=actor_entities,
@@ -152,8 +154,8 @@ class CombatInitStageSystem(ExecuteProcessor):
 
         chat_client = DeepSeekClient(
             name=current_stage_entity.name,
-            prompt=prompt,
-            compressed_prompt=compressed_message,
+            full_prompt=prompt,
+            condensed_prompt=condensed_message,
             context=self._game.get_agent_context(current_stage_entity).context,
         )
 
@@ -191,18 +193,18 @@ class CombatInitStageSystem(ExecuteProcessor):
             return
 
         # 将本轮判定写入 stage entity 的对话历史，便于后续回顾与调试
-        if self._use_compressed_prompt:
+        if self._use_condensed_prompt:
             self._game.add_human_message(
                 entity=current_stage_entity,
                 human_message=HumanMessage(
-                    content=chat_client.compressed_prompt,
-                    combat_init_status_effect_hints_full_prompt=chat_client.prompt,
+                    content=chat_client.condensed_prompt,
+                    combat_init_status_effect_hints_full_prompt=chat_client.full_prompt,
                 ),
             )
         else:
             self._game.add_human_message(
                 entity=current_stage_entity,
-                human_message=HumanMessage(content=chat_client.prompt),
+                human_message=HumanMessage(content=chat_client.full_prompt),
             )
 
         # 将 LLM 回复写入 stage entity 的对话历史，便于后续回顾与调试

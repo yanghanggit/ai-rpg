@@ -1,16 +1,18 @@
 from typing import Dict, Final, List, final
-from ..models.messages import HumanMessage
+
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
+
 from ..deepseek import DeepSeekClient, batch_chat
 from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.dbg_game import DBGGame
 from ..game.rpg_actor_appearances import get_actor_appearances_in_stage
 from ..models import (
-    StageDescriptionComponent,
     StageComponent,
+    StageDescriptionComponent,
 )
+from ..models.messages import HumanMessage
 from ..utils import (
     extract_json,
 )
@@ -25,10 +27,10 @@ class StageDescriptionResponse(BaseModel):
 
 
 #######################################################################################################################################
-def _build_compressed_stage_description_prompt(
+def _build_condensed_stage_description_prompt(
     actor_appearances_in_stage: Dict[str, str],
 ) -> str:
-    """生成压缩版场景描述提示词（仅角色外观动态感知，省略静态输出格式与约束规则）"""
+    """生成精简版场景描述提示词（仅角色外观动态感知，省略静态输出格式与约束规则）"""
 
     actor_appearances_in_stage_info = []
     for actor_name, appearance in actor_appearances_in_stage.items():
@@ -93,10 +95,10 @@ class StageDescriptionSystem(ExecuteProcessor):
     def __init__(
         self,
         game: DBGGame,
-        use_compressed_prompt: bool = True,
+        use_condensed_prompt: bool = True,
     ) -> None:
         self._game: Final[DBGGame] = game
-        self._use_compressed_prompt: Final[bool] = use_compressed_prompt
+        self._use_condensed_prompt: Final[bool] = use_condensed_prompt
 
     #######################################################################################################################################
     @override
@@ -131,10 +133,10 @@ class StageDescriptionSystem(ExecuteProcessor):
 
         return DeepSeekClient(
             name=stage_entity.name,
-            prompt=_build_stage_description_prompt(actor_appearances),
-            compressed_prompt=(
-                _build_compressed_stage_description_prompt(actor_appearances)
-                if self._use_compressed_prompt
+            full_prompt=_build_stage_description_prompt(actor_appearances),
+            condensed_prompt=(
+                _build_condensed_stage_description_prompt(actor_appearances)
+                if self._use_condensed_prompt
                 else None
             ),
             context=self._game.get_agent_context(stage_entity).context,
@@ -169,21 +171,21 @@ class StageDescriptionSystem(ExecuteProcessor):
             return False
 
         # 添加上下文。
-        if self._use_compressed_prompt:
+        if self._use_condensed_prompt:
 
-            # 使用压缩 prompt 加入上下文。
+            # 使用精简 prompt 加入上下文。
             self._game.add_human_message(
                 stage_entity,
                 HumanMessage(
-                    content=chat_client.compressed_prompt,
-                    stage_description_full_prompt=chat_client.prompt,
+                    content=chat_client.condensed_prompt,
+                    stage_description_full_prompt=chat_client.full_prompt,
                 ),
             )
         else:
 
             # 直接使用完整 prompt 加入上下文。
             self._game.add_human_message(
-                stage_entity, HumanMessage(content=chat_client.prompt)
+                stage_entity, HumanMessage(content=chat_client.full_prompt)
             )
 
         # 添加上下文。

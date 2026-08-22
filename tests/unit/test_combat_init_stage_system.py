@@ -23,7 +23,6 @@ from src.ai_rpg.models import (
 from src.ai_rpg.models.stats import CharacterStats
 from src.ai_rpg.systems.combat_init_stage_system import CombatInitStageSystem
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -62,8 +61,8 @@ def _make_stage_entity(
 
 def _make_mock_chat_client(response_json: str) -> MagicMock:
     client = MagicMock()
-    client.prompt = "full prompt"
-    client.compressed_prompt = "compressed prompt"
+    client.full_prompt = "full prompt"
+    client.condensed_prompt = "condensed prompt"
     client.response_content = response_json
     client.response_ai_message = AIMessage(content=response_json)
     client.chat = AsyncMock()

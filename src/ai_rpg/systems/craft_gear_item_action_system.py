@@ -1,9 +1,11 @@
 """工坊合成装备系统模块。"""
 
-from typing import Final, List, Optional, final, Dict
+from typing import Dict, Final, List, Optional, final
+
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
+
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
@@ -160,7 +162,7 @@ class CraftGearItemActionSystem(ReactiveProcessor):
         prompt = _build_craft_gear_prompt(materials)
         chat_client = DeepSeekClient(
             name=entity.name,
-            prompt=prompt,
+            full_prompt=prompt,
             context=self._game.get_agent_context(entity).context,
         )
 

@@ -18,6 +18,7 @@ import os
 import time
 from datetime import datetime
 from typing import Any, Dict, Final, List, Literal, Optional, Sequence, final
+
 import httpx
 import requests
 from dotenv import load_dotenv
@@ -25,9 +26,9 @@ from loguru import logger
 from pydantic import BaseModel
 
 from ..models.messages import (
-    HumanMessage,
     AIMessage,
     BaseMessage,
+    HumanMessage,
     ToolMessage,
     get_buffer_string,
 )
@@ -164,13 +165,13 @@ class DeepSeekClient:
     def __init__(
         self,
         name: str,
-        prompt: str,
+        full_prompt: str,
         context: Sequence[BaseMessage],
         model: str = MODEL_FLASH,
         thinking: bool = False,
         timeout: Optional[int] = None,
         temperature: Optional[float] = None,
-        compressed_prompt: Optional[str] = None,
+        condensed_prompt: Optional[str] = None,
         tools: Optional[Sequence[ToolDefinition]] = None,
         tool_choice: Optional[Literal["auto", "none", "required"]] = None,
         reasoning_effort: Optional[Literal["low", "high", "max"]] = None,
@@ -179,13 +180,13 @@ class DeepSeekClient:
         assert name != "", "name should not be empty"
         _tools: List[ToolDefinition] = list(tools) if tools else []
         assert (
-            prompt != "" or len(_tools) > 0
-        ), "prompt should not be empty when no tools are provided"
+            full_prompt != "" or len(_tools) > 0
+        ), "full_prompt should not be empty when no tools are provided"
 
         self._name: Final[str] = name
-        self._prompt: Final[str] = prompt
-        self._compressed_prompt: Final[str] = (
-            compressed_prompt if compressed_prompt is not None else prompt
+        self._full_prompt: Final[str] = full_prompt
+        self._condensed_prompt: Final[str] = (
+            condensed_prompt if condensed_prompt is not None else full_prompt
         )
         self._context: Final[Sequence[BaseMessage]] = context
         self._model: Final[str] = model
@@ -222,14 +223,14 @@ class DeepSeekClient:
 
     ################################################################################################################################################################################
     @property
-    def prompt(self) -> str:
-        return self._prompt
+    def full_prompt(self) -> str:
+        return self._full_prompt
 
     ################################################################################################################################################################################
     @property
-    def compressed_prompt(self) -> str:
-        """写入对话历史的压缩版提示词"""
-        return self._compressed_prompt
+    def condensed_prompt(self) -> str:
+        """写入对话历史的精简版提示词"""
+        return self._condensed_prompt
 
     ################################################################################################################################################################################
     @property
@@ -302,9 +303,9 @@ class DeepSeekClient:
                 )
                 messages.append({"role": role, "content": content})
 
-        # prompt 为空字符串时表示 continuation 模式，不追加 user 消息
-        if self._prompt != "":
-            messages.append({"role": "user", "content": self._prompt})
+        # full_prompt 为空字符串时表示 continuation 模式，不追加 user 消息
+        if self._full_prompt != "":
+            messages.append({"role": "user", "content": self._full_prompt})
 
         payload: Dict[str, Any] = {
             "messages": messages,
@@ -411,7 +412,7 @@ class DeepSeekClient:
         单独调用时不传 client，内部临时创建；
         batch_chat 时传入共享 client 以复用连接池。
         """
-        logger.debug(f"{self._name} a_request prompt:\n{self._prompt}")
+        logger.debug(f"{self._name} a_request full_prompt:\n{self._full_prompt}")
         start_time = time.time()
 
         async def _do_post(http_client: httpx.AsyncClient) -> httpx.Response:
@@ -494,7 +495,7 @@ class DeepSeekClient:
             messages: List[BaseMessage] = list(self._context)
 
             # 添加本轮 prompt / response
-            messages.append(HumanMessage(content=(self._prompt)))
+            messages.append(HumanMessage(content=(self._full_prompt)))
 
             # 添加本轮 response，注意 response_content 可能为空字符串，但仍然需要记录
             messages.append(AIMessage(content=self.response_content))

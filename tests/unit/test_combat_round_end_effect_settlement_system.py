@@ -23,7 +23,6 @@ from src.ai_rpg.systems.combat_round_end_effect_settlement_system import (
     _make_round_end_hp_update_message,
 )
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -52,7 +51,7 @@ def _make_game(ctx: Context) -> MagicMock:
 def _make_client(name: str, json_str: str) -> MagicMock:
     client = MagicMock(spec=DeepSeekClient)
     client.name = name
-    client.prompt = "prompt"
+    client.full_prompt = "prompt"
     client.response_content = json_str
     client.response_ai_message = AIMessage(content=json_str)
     return client

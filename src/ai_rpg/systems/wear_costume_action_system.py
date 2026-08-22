@@ -1,16 +1,18 @@
 """穿上时装动作系统模块。"""
 
-from typing import final, override, Dict, List, Final
+from typing import Dict, Final, List, final, override
+
 from loguru import logger
+
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..models import (
-    WearCostumeAction,
     AppearanceComponent,
     AppearanceUpdateEvent,
-    WornCostumeComponent,
     StorageComponent,
+    WearCostumeAction,
+    WornCostumeComponent,
 )
 from ..models.items import CostumeItem
 from .appearance_prompt_builders import (
@@ -119,7 +121,7 @@ class WearCostumeActionSystem(ReactiveProcessor):
         # 创建 DeepSeekClient 并发送请求
         client = DeepSeekClient(
             name=entity.name,
-            prompt=prompt,
+            full_prompt=prompt,
             context=self._game.get_agent_context(entity).context,
         )
 

@@ -1,9 +1,11 @@
 """战斗掉落系统。"""
 
 from typing import Final, List, final
+
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
+
 from ..deepseek import DeepSeekClient, batch_chat
 from ..entitas import Entity, ExecuteProcessor
 from ..game.dbg_game import DBGGame
@@ -168,7 +170,7 @@ class CombatLootSystem(ExecuteProcessor):
         )
         return DeepSeekClient(
             name=monster.name,
-            prompt=_build_loot_prompt(
+            full_prompt=_build_loot_prompt(
                 monster.name, appearance, stage_name, total_rounds
             ),
             context=self._game.get_agent_context(monster).context,

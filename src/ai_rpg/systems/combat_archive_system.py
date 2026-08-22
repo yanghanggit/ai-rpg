@@ -1,17 +1,19 @@
 """战斗归档系统。"""
 
 from typing import Final, List, final
+
 from loguru import logger
 from overrides import override
+
 from ..deepseek import DeepSeekClient, batch_chat
 from ..entitas import Entity, ExecuteProcessor
 from ..game.dbg_game import DBGGame
 from ..models import (
     AIMessage,
     HumanMessage,
+    PartyMemberComponent,
     SystemMessage,
     ToolMessage,
-    PartyMemberComponent,
     get_buffer_string,
 )
 
@@ -65,7 +67,7 @@ class CombatArchiveSystem(ExecuteProcessor):
 
         return DeepSeekClient(
             name=combat_actor.name,
-            prompt=_generate_combat_summary_prompt(
+            full_prompt=_generate_combat_summary_prompt(
                 combat_stage_entity.name, total_rounds
             ),
             context=self._game.get_agent_context(combat_actor).context,
@@ -96,7 +98,7 @@ class CombatArchiveSystem(ExecuteProcessor):
         # 将原始消息内容附在事件上，供后续流程（如记忆存储）使用
         self._game.add_human_message(
             entity=processed_actor_entity,
-            human_message=HumanMessage(content=chat_client.prompt),
+            human_message=HumanMessage(content=chat_client.full_prompt),
         )
 
         # 将 LLM 生成的摘要写回角色上下文

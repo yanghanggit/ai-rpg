@@ -3,28 +3,30 @@ DRAW 阶段后置处理系统模块：对存在 DRAW 阶段状态效果的实体
 当前实现为按状态效果调整已有卡牌的数值，未来可扩展为插入/删除手牌，统称为 DRAW 阶段的通用后置处理。
 """
 
-from typing import Final, List, final, override, Dict
+from typing import Dict, Final, List, final, override
+
 from loguru import logger
 from pydantic import BaseModel
+
 from ..deepseek import DeepSeekClient, batch_chat
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import (
     compute_character_stats,
     get_status_effects_by_phase,
 )
+from ..game.dbg_game import DBGGame
 from ..models import (
     ActorComponent,
+    Card,
+    CharacterStats,
+    CharacterStatsComponent,
+    DeathComponent,
     DrawCardsAction,
     HandComponent,
     HumanMessage,
-    Card,
-    TargetType,
-    DeathComponent,
-    CharacterStats,
-    CharacterStatsComponent,
-    StatusEffect,
     PhaseType,
+    StatusEffect,
+    TargetType,
 )
 from ..utils import extract_json
 
@@ -206,7 +208,7 @@ class PostDrawCardsSystem(ReactiveProcessor):
             chat_clients.append(
                 DeepSeekClient(
                     name=entity.name,
-                    prompt=prompt,
+                    full_prompt=prompt,
                     context=self._game.get_agent_context(entity).context,
                 )
             )
@@ -304,7 +306,7 @@ class PostDrawCardsSystem(ReactiveProcessor):
         self._game.add_human_message(
             entity=entity,
             human_message=HumanMessage(
-                content=chat_client.prompt,
+                content=chat_client.full_prompt,
                 draw_cards_round_number=current_round_number,
             ),
         )

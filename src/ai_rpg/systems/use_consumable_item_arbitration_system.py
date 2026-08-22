@@ -1,35 +1,37 @@
 """使用消耗品仲裁系统模块。"""
 
 from typing import Dict, Final, List, final
+
 from loguru import logger
 from overrides import override
+
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import (
     accumulate_status_effects_action,
     apply_status_effect_patch,
     collect_target_arbitration_effects,
     collect_target_character_stats,
     compute_character_stats,
+    process_zero_health_entities,
     set_character_hp,
 )
-from ..game.dbg_combat_processor import process_zero_health_entities
+from ..game.dbg_game import DBGGame
 from ..models import (
-    UseConsumableItemAction,
     CharacterStatsComponent,
     CombatArbitrationEvent,
     HumanMessage,
     StageDescriptionComponent,
+    UseConsumableItemAction,
 )
 from ..utils import extract_json
 from .arbitration_prompt_builders import (
     ArbitrationResponse,
-    generate_consumable_arbitration_prompt,
-    generate_compressed_consumable_arbitration_prompt,
-    generate_consumable_arbitration_broadcast,
-    stats_update_notification,
+    generate_condensed_consumable_arbitration_prompt,
     generate_consumable_affix_triggers,
+    generate_consumable_arbitration_broadcast,
+    generate_consumable_arbitration_prompt,
+    stats_update_notification,
 )
 
 
@@ -38,10 +40,10 @@ from .arbitration_prompt_builders import (
 class UseConsumableItemArbitrationSystem(ReactiveProcessor):
     """响应 UseConsumableItemAction 事件，调用 LLM 仲裁消耗品效果（HP/状态效果描述更新）。"""
 
-    def __init__(self, game: DBGGame, use_compressed_prompt: bool = True) -> None:
+    def __init__(self, game: DBGGame, use_condensed_prompt: bool = True) -> None:
         super().__init__(game)
         self._game: Final[DBGGame] = game
-        self._use_compressed_prompt: Final[bool] = use_compressed_prompt
+        self._use_condensed_prompt: Final[bool] = use_condensed_prompt
 
     #######################################################################################################################################
     @override
@@ -105,9 +107,9 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             current_stage_description=current_stage_description,
         )
 
-        # 生成压缩后的仲裁提示信息，用于在需要时向 LLM 提供更简洁的上下文
-        compressed_message = (
-            generate_compressed_consumable_arbitration_prompt(
+        # 生成精简后的仲裁提示信息，用于在需要时向 LLM 提供更简洁的上下文
+        condensed_message = (
+            generate_condensed_consumable_arbitration_prompt(
                 actor_name=actor_entity.name,
                 actor_stats=compute_character_stats(actor_entity),
                 item=action.item,
@@ -116,15 +118,15 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                 target_arbitration_effects=target_arbitration_effects,
                 current_stage_description=current_stage_description,
             )
-            if self._use_compressed_prompt
+            if self._use_condensed_prompt
             else None
         )
 
         # 初始化 DeepSeekClient，用于与 LLM 进行交互，并发送仲裁提示信息请求
         chat_client = DeepSeekClient(
             name=stage_entity.name,
-            prompt=message,
-            compressed_prompt=compressed_message,
+            full_prompt=message,
+            condensed_prompt=condensed_message,
             context=self._game.get_agent_context(stage_entity).context,
             timeout=60 * 2,
         )
@@ -192,19 +194,19 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                 response.stage_description,
             )
 
-        # 根据是否使用压缩提示，向游戏中添加人类消息，确保 LLM 的请求和响应能够在游戏中被记录和追踪
-        if self._use_compressed_prompt:
+        # 根据是否使用精简提示，向游戏中添加人类消息，确保 LLM 的请求和响应能够在游戏中被记录和追踪
+        if self._use_condensed_prompt:
             self._game.add_human_message(
                 entity=stage_entity,
                 human_message=HumanMessage(
-                    content=chat_client.compressed_prompt,
-                    combat_arbitration_full_prompt=chat_client.prompt,
+                    content=chat_client.condensed_prompt,
+                    full_prompt=chat_client.full_prompt,
                 ),
             )
         else:
             self._game.add_human_message(
                 entity=stage_entity,
-                human_message=HumanMessage(content=chat_client.prompt),
+                human_message=HumanMessage(content=chat_client.full_prompt),
             )
 
         # assert chat_client.response_ai_message is not None

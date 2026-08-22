@@ -12,18 +12,16 @@ sys.path.insert(
 )
 
 from ai_rpg.deepseek import (
-    AgentLoopConfig,
-    DeepSeekClient,
     MODEL_FLASH,
     MODEL_PRO,
+    AgentLoopConfig,
+    DeepSeekClient,
     ToolDefinition,
     ToolFunction,
     agent_loop,
     batch_agent_loop,
     batch_chat,
 )
-
-
 from ai_rpg.models.messages import (
     AIMessage,
     ContextMessage,
@@ -41,7 +39,7 @@ async def test_chat() -> None:
     print("\n=== 测试 chat() ===")
     client = DeepSeekClient(
         name="test_chat",
-        prompt="请简单介绍一下你自己。",
+        full_prompt="请简单介绍一下你自己。",
         context=[_SYSTEM],
     )
     await client.chat()
@@ -60,7 +58,7 @@ async def test_batch_chat() -> None:
     clients = [
         DeepSeekClient(
             name=f"batch_{i}",
-            prompt=q,
+            full_prompt=q,
             context=[_SYSTEM],
         )
         for i, q in enumerate(questions)
@@ -69,7 +67,7 @@ async def test_batch_chat() -> None:
     await batch_chat(clients)
 
     for client in clients:
-        print(f"\n❓ {client.prompt}")
+        print(f"\n❓ {client.full_prompt}")
         print(f"💬 {client.response_content}")
 
 
@@ -123,7 +121,7 @@ async def test_cache_tokens() -> None:
     print("\n=== 测试 prompt_cache_hit/miss_tokens ===")
     client = DeepSeekClient(
         name="test_cache",
-        prompt="请用一句话解释什么是缓存。",
+        full_prompt="请用一句话解释什么是缓存。",
         context=[_SYSTEM],
     )
     await client.chat()
@@ -145,7 +143,7 @@ async def test_model_matrix() -> None:
     clients = [
         DeepSeekClient(
             name=f"{model}__thinking={thinking}",
-            prompt=_PROMPT,
+            full_prompt=_PROMPT,
             context=[_SYSTEM],
             model=model,
             thinking=thinking,
@@ -206,7 +204,7 @@ async def test_tool_call_single() -> None:
     print("\n=== 测试 tool calling 第一转（LLM 返回 tool_calls）===")
     client = DeepSeekClient(
         name="test_tool_single",
-        prompt="北京现在天气怎么样？",
+        full_prompt="北京现在天气怎么样？",
         context=[_SYSTEM],
         tools=[_WEATHER_TOOL],
     )
@@ -239,7 +237,7 @@ async def test_tool_call_full_round() -> None:
     # 转 1：LLM 返回 tool_calls
     first = DeepSeekClient(
         name="tool_round1",
-        prompt=user_question,
+        full_prompt=user_question,
         context=[_SYSTEM],
         tools=[_WEATHER_TOOL],
     )
@@ -266,7 +264,7 @@ async def test_tool_call_full_round() -> None:
     # 转 2：LLM 利用工具结果给出自然语言回复
     second = DeepSeekClient(
         name="tool_round2",
-        prompt="",  # continuation 模式
+        full_prompt="",  # continuation 模式
         context=history,
         tools=[_WEATHER_TOOL],
         tool_choice="none",  # 强制回答，不再调用工具
@@ -288,7 +286,7 @@ async def test_tool_call_multi() -> None:
 
     client = DeepSeekClient(
         name="test_tool_multi",
-        prompt="北京和上海分别是什么天气？",
+        full_prompt="北京和上海分别是什么天气？",
         context=[_SYSTEM],
         tools=[_WEATHER_TOOL],
     )

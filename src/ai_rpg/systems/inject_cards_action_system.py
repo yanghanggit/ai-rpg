@@ -1,24 +1,28 @@
 """场景塞牌系统模块"""
 
-from typing import Final, List, Optional, Set, final, Dict
+from typing import Dict, Final, List, Optional, Set, final
+
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
+
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
+from ..game.dbg_combat_processor import (
+    compute_character_stats,
+    get_alive_actors_in_stage,
+)
 from ..game.dbg_game import DBGGame
-from ..game.dbg_combat_processor import get_alive_actors_in_stage
-from ..game.dbg_combat_processor import compute_character_stats
 from ..models import (
     Card,
-    TargetType,
     CharacterStatsComponent,
     DiscardPileComponent,
     HumanMessage,
     PlayCardsAction,
+    StatusEffectsComponent,
+    TargetType,
     UseConsumableItemAction,
     UseGearItemAction,
-    StatusEffectsComponent,
 )
 from ..utils import extract_json
 from .arbitration_prompt_builders import fmt_duration
@@ -79,11 +83,11 @@ def _build_actors_summary(actor_entities: Set[Entity]) -> str:
 
 
 #######################################################################################################################################
-def _generate_compressed_inject_cards_prompt(
+def _generate_condensed_inject_cards_prompt(
     actor_entities: Set[Entity],
     current_round_number: int,
 ) -> str:
-    """生成压缩版塞牌评估提示词（仅动态感知部分，省略静态规则/格式说明）"""
+    """生成精简版塞牌评估提示词（仅动态感知部分，省略静态规则/格式说明）"""
 
     actors_summary = _build_actors_summary(actor_entities)
 
@@ -166,11 +170,11 @@ class InjectCardsActionSystem(ReactiveProcessor):
     def __init__(
         self,
         game: DBGGame,
-        use_compressed_prompt: bool = True,
+        use_condensed_prompt: bool = True,
     ) -> None:
         super().__init__(game)
         self._game: Final[DBGGame] = game
-        self._use_compressed_prompt: Final[bool] = use_compressed_prompt
+        self._use_condensed_prompt: Final[bool] = use_condensed_prompt
 
     #######################################################################################################################################
     @override
@@ -224,17 +228,17 @@ class InjectCardsActionSystem(ReactiveProcessor):
             current_round_number=current_round_number,
         )
 
-        compressed_message: Optional[str] = None
-        if self._use_compressed_prompt:
-            compressed_message = _generate_compressed_inject_cards_prompt(
+        condensed_message: Optional[str] = None
+        if self._use_condensed_prompt:
+            condensed_message = _generate_condensed_inject_cards_prompt(
                 actor_entities=actor_entities,
                 current_round_number=current_round_number,
             )
 
         chat_client = DeepSeekClient(
             name=stage_entity.name,
-            prompt=prompt,
-            compressed_prompt=compressed_message,
+            full_prompt=prompt,
+            condensed_prompt=condensed_message,
             context=self._game.get_agent_context(stage_entity).context,
         )
 
@@ -293,18 +297,18 @@ class InjectCardsActionSystem(ReactiveProcessor):
             return
 
         # 添加上下文消息到 stage entity 的对话历史，便于后续回顾与调试
-        if self._use_compressed_prompt:
+        if self._use_condensed_prompt:
             self._game.add_human_message(
                 entity=stage_entity,
                 human_message=HumanMessage(
-                    content=chat_client.compressed_prompt,
-                    inject_cards_full_prompt=chat_client.prompt,
+                    content=chat_client.condensed_prompt,
+                    inject_cards_full_prompt=chat_client.full_prompt,
                 ),
             )
         else:
             self._game.add_human_message(
                 entity=stage_entity,
-                human_message=HumanMessage(content=chat_client.prompt),
+                human_message=HumanMessage(content=chat_client.full_prompt),
             )
 
         # 添加 LLM 响应消息到 stage entity 的对话历史

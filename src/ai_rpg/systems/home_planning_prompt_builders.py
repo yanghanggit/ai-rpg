@@ -1,11 +1,13 @@
 """家园规划系统共享工具模块。"""
 
 from typing import Any, Dict, List, Set
+
 from pydantic import BaseModel, field_validator
-from ..models import HomeComponent
+
+from ..entitas import Entity, Matcher
 from ..game import DBGGame
 from ..game.rpg_actor_appearances import get_actor_appearances_in_stage
-from ..entitas import Entity, Matcher
+from ..models import HomeComponent
 
 
 #######################################################################################################################################
@@ -90,13 +92,13 @@ def build_action_planning_prompt(
 
 
 #######################################################################################################################################
-def build_compressed_planning_prompt(
+def build_condensed_planning_prompt(
     current_stage: str,
     current_stage_narration: str,
     other_actors_appearances: Dict[str, str],
     available_home_stages: List[str],
 ) -> str:
-    """构建角色行动规划提示词（压缩版，仅保留动态上下文）。"""
+    """构建角色行动规划提示词（精简版，仅保留动态上下文）。"""
     other_actors_appearance_info = []
     for actor_name, appearance in other_actors_appearances.items():
         other_actors_appearance_info.append(f"{actor_name}: {appearance}")

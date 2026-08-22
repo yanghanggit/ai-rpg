@@ -1,19 +1,21 @@
-from typing import Final, final, override, List, Dict
+from typing import Dict, Final, List, final, override
+
 from loguru import logger
 from pydantic import BaseModel, field_validator
+
+from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
+from ..game.dbg_game import DBGGame
 from ..models import (
+    AnnounceAction,
+    PlayerActionAuditComponent,
     PlayerComponent,
     SpeakAction,
     WhisperAction,
-    AnnounceAction,
     WorldComponent,
-    PlayerActionAuditComponent,
 )
-from ..game.dbg_game import DBGGame
-from ..deepseek import DeepSeekClient
-from ..utils import extract_json
 from ..models.messages import SystemMessage
+from ..utils import extract_json
 
 
 ####################################################################################################################################
@@ -174,7 +176,7 @@ class PlayerActionAuditSystem(ReactiveProcessor):
         # 创建AI审核请求（使用审计世界实体的system prompt）
         chat_client = DeepSeekClient(
             name=world_entity.name,
-            prompt=prompt,
+            full_prompt=prompt,
             context=[agent_context.context[0]],
         )
 

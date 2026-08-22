@@ -65,8 +65,8 @@ def create_dungeon_combat_room_pipeline(
         StageDescriptionSystem,
     )
     from ..systems.combat_round_cleanup_system import CombatRoundCleanupSystem
-    from ..systems.combat_round_end_effect_settlement_system import (
-        CombatRoundEndEffectSettlementSystem,
+    from ..systems.combat_round_end_settlement_system import (
+        CombatRoundEndSettlementSystem,
     )
     from ..systems.combat_status_effect_tick_system import CombatStatusEffectTickSystem
     from ..systems.combat_round_transition_system import (
@@ -128,7 +128,7 @@ def create_dungeon_combat_room_pipeline(
     processors.add(CombatRoundCleanupSystem(dbg_game))
 
     # 战斗回合末状态效果结算系统（并发 LLM 推理 ROUND_END 效果 HP 变化 + 处理死亡）
-    processors.add(CombatRoundEndEffectSettlementSystem(dbg_game))
+    processors.add(CombatRoundEndSettlementSystem(dbg_game))
 
     # 战斗状态效果 tick 系统（推进持续时间、移除到期效果）
     processors.add(CombatStatusEffectTickSystem(dbg_game))

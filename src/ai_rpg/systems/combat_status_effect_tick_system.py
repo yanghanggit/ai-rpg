@@ -4,22 +4,19 @@ from typing import Final, List, final, override
 from loguru import logger
 from ..entitas import ExecuteProcessor, Matcher
 from ..game.dbg_game import DBGGame
-from ..models import ActorComponent, HumanMessage, StatusEffect, StatusEffectsComponent
+from ..models import (
+    DeathComponent,
+    HumanMessage,
+    StatusEffect,
+    StatusEffectsComponent,
+)
 
 
 def _make_status_effects_tick_message(
     ticked: List[StatusEffect],
     expired: List[StatusEffect],
 ) -> str:
-    """生成回合结束时状态效果更新的 LLM 通知文本。
-
-    Args:
-        ticked: 持续时间已递减但尚未过期的效果列表
-        expired: 本回合耗尽（已移除）的效果列表
-
-    Returns:
-        写入 agent 上下文的 human message 文本
-    """
+    """生成回合结束时状态效果更新的 LLM 通知文本。"""
     lines = ["# 回合结束 — 状态效果更新"]
     for e in ticked:
         lines.append(f"- {e.name}（剩余{e.duration}回合）")
@@ -57,27 +54,27 @@ class CombatStatusEffectTickSystem(ExecuteProcessor):
         if not last_round.is_completed:
             return
 
-        self.tick_status_effects_duration()
-
-    ############################################################################################################
-    def tick_status_effects_duration(self) -> None:
-        """推进所有角色的状态效果时钟，移除到期效果，并将变化同步写入角色 agent 上下文。"""
+        # 遍历所有具有状态效果组件且未死亡的实体，推进状态效果时钟并移除到期效果
         for entity in self._game.get_group(
-            Matcher(StatusEffectsComponent)
+            Matcher(all_of=[StatusEffectsComponent], none_of=[DeathComponent])
         ).entities.copy():
-            assert entity.has(
-                ActorComponent
-            ), f"Entity {entity.name} has StatusEffectsComponent but is not an Actor"
+
             comp = entity.get(StatusEffectsComponent)
 
             # 递减持续时间并移除过期效果
             updated = []
             ticked = []
             expired = []
+
+            # 遍历每个状态效果，递减其持续时间并根据是否到期分类为已更新、已触发或已过期
             for effect in comp.status_effects:
+
+                # 如果状态效果的持续时间为 -1，表示该效果是永久性的，不进行递减，直接加入已更新列表
                 if effect.duration == -1:
                     updated.append(effect)
                     continue
+
+                # 递减状态效果的持续时间，并根据是否到期分类为已更新、已触发或已过期
                 effect.duration -= 1
                 if effect.duration > 0:
                     updated.append(effect)

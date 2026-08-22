@@ -14,7 +14,13 @@ from ..game.dbg_combat_processor import (
     set_character_hp,
 )
 from ..game.dbg_game import DBGGame
-from ..models import HumanMessage, PhaseType, StatusEffect, StatusEffectsComponent
+from ..models import (
+    DeathComponent,
+    HumanMessage,
+    PhaseType,
+    StatusEffect,
+    StatusEffectsComponent,
+)
 from ..utils import extract_json
 
 
@@ -78,7 +84,7 @@ def _generate_round_end_effects_prompt(
 
 ###############################################################################################################################################
 @final
-class CombatRoundEndEffectSettlementSystem(ExecuteProcessor):
+class CombatRoundEndSettlementSystem(ExecuteProcessor):
     """
     战斗回合末状态效果结算系统：并发调用 LLM 推理 ROUND_END 效果的 HP 变化，并在结算后处理 HP 归零的实体（如标记死亡）。
     """
@@ -104,8 +110,10 @@ class CombatRoundEndEffectSettlementSystem(ExecuteProcessor):
         if not last_round.is_completed:
             return
 
-        # 为所有持有 ROUND_END 状态效果的实体创建聊天客户端，用于并发调用 LLM 推理 HP 变化
-        entities = self._game.get_group(Matcher(StatusEffectsComponent)).entities.copy()
+        # 为所有存活且持有 ROUND_END 状态效果的实体创建聊天客户端，用于并发调用 LLM 推理 HP 变化
+        entities = self._game.get_group(
+            Matcher(all_of=[StatusEffectsComponent], none_of=[DeathComponent])
+        ).entities.copy()
         chat_clients = [
             client
             for entity in entities

@@ -45,6 +45,13 @@ def _make_game(ctx: Context) -> MagicMock:
     return game
 
 
+def _prepare_ongoing_round(game: MagicMock) -> None:
+    """将战斗 mock 置为进行中且最新回合已完成，使 execute() 进入 tick 阶段。"""
+    game.current_dungeon_combat_room.combat.is_ongoing = True
+    game.current_dungeon_combat_room.combat.rounds = [MagicMock()]
+    game.current_dungeon_combat_room.combat.latest_round.is_completed = True
+
+
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -81,48 +88,56 @@ def test_tick_message_expired_shows_text() -> None:
 
 
 # ---------------------------------------------------------------------------
-# tick_status_effects_duration
+# tick 逻辑（通过 execute() 触发）
 # ---------------------------------------------------------------------------
 
 
-def test_tick_permanent_unchanged_no_message(
+@pytest.mark.asyncio
+async def test_tick_permanent_unchanged_no_message(
     ctx: Context, game: MagicMock, system: CombatStatusEffectTickSystem
 ) -> None:
     """duration == -1 永久效果不递减，不写上下文。"""
+    _prepare_ongoing_round(game)
     actor = _make_actor(ctx, "英雄", [_effect("祝福", -1)])
-    system.tick_status_effects_duration()
+    await system.execute()
     assert actor.get(StatusEffectsComponent).status_effects[0].duration == -1
     game.add_human_message.assert_not_called()
 
 
-def test_tick_effect_expires_at_one(
+@pytest.mark.asyncio
+async def test_tick_effect_expires_at_one(
     ctx: Context, game: MagicMock, system: CombatStatusEffectTickSystem
 ) -> None:
     """duration == 1 效果到期后移除，写入一次上下文。"""
+    _prepare_ongoing_round(game)
     actor = _make_actor(ctx, "英雄", [_effect("中毒", 1)])
-    system.tick_status_effects_duration()
+    await system.execute()
     assert actor.get(StatusEffectsComponent).status_effects == []
     game.add_human_message.assert_called_once()
 
 
-def test_tick_effect_decrements_and_retains(
+@pytest.mark.asyncio
+async def test_tick_effect_decrements_and_retains(
     ctx: Context, game: MagicMock, system: CombatStatusEffectTickSystem
 ) -> None:
     """duration > 1 时递减保留，写入上下文。"""
+    _prepare_ongoing_round(game)
     actor = _make_actor(ctx, "英雄", [_effect("减速", 3)])
-    system.tick_status_effects_duration()
+    await system.execute()
     assert actor.get(StatusEffectsComponent).status_effects[0].duration == 2
     game.add_human_message.assert_called_once()
 
 
-def test_tick_mixed_effects(
+@pytest.mark.asyncio
+async def test_tick_mixed_effects(
     ctx: Context, game: MagicMock, system: CombatStatusEffectTickSystem
 ) -> None:
     """永久/到期/存活效果混合：各自独立处理，结果只保留永久与存活。"""
+    _prepare_ongoing_round(game)
     actor = _make_actor(
         ctx, "英雄", [_effect("祝福", -1), _effect("燃烧", 1), _effect("中毒", 3)]
     )
-    system.tick_status_effects_duration()
+    await system.execute()
     names = {e.name for e in actor.get(StatusEffectsComponent).status_effects}
     assert names == {"祝福", "中毒"}
 
@@ -167,9 +182,7 @@ async def test_execute_ticks_when_completed(
     ctx: Context, game: MagicMock, system: CombatStatusEffectTickSystem
 ) -> None:
     """回合完成时应推进状态效果时钟。"""
-    game.current_dungeon_combat_room.combat.is_ongoing = True
-    game.current_dungeon_combat_room.combat.rounds = [MagicMock()]
-    game.current_dungeon_combat_room.combat.latest_round.is_completed = True
+    _prepare_ongoing_round(game)
     _make_actor(ctx, "英雄", [_effect("中毒", 1)])
 
     await system.execute()

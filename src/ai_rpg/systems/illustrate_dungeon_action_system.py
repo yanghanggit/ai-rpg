@@ -83,11 +83,9 @@ def _build_room_image_prompt(dungeon_name: str, profile: str, room: DungeonRoom)
     Returns:
         包含场景环境与怪物形象的战斗插图提示词
     """
-    stage_profile = room.stage.stage_profile.profile
-    base_body = (
-        room.stage.actors[0].character_sheet.base_body if room.stage.actors else ""
-    )
-    scene_type = _detect_scene_type(stage_profile)
+    stage_profile_text = room.stage.profile
+    base_body = room.stage.actors[0].base_body if room.stage.actors else ""
+    scene_type = _detect_scene_type(stage_profile_text)
     scene_tag = (
         "enclosed interior space" if scene_type == "indoor" else "open exterior area"
     )
@@ -95,7 +93,7 @@ def _build_room_image_prompt(dungeon_name: str, profile: str, room: DungeonRoom)
     return (
         "pixel art style，side view，2D game battle scene illustration，"
         f"{scene_tag}，"
-        f"{stage_profile}，"
+        f"{stage_profile_text}，"
         f"{profile}，"
         "dramatic shadow and dim light contrast，"
         "atmospheric depth，intricate environmental details，"

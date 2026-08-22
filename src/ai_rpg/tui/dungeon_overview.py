@@ -181,17 +181,14 @@ class DungeonOverviewScreen(BaseGameScreen):
 
         for i, room in enumerate(dungeon.rooms, start=1):
             stage = room.stage
-            is_combat = any(
-                actor.character_sheet.type == ActorType.MONSTER
-                for actor in stage.actors
-            )
+            is_combat = any(actor.type == ActorType.MONSTER for actor in stage.actors)
             room_tag = "[bold red]⚔ 战斗[/]" if is_combat else "[dim cyan]○ 探索[/]"
             log.write(
                 f"  [bold cyan]房间 {i}：[/][green]{display_name(stage.name)}[/]  {room_tag}"
             )
             if is_combat:
                 for actor in stage.actors:
-                    if actor.character_sheet.type == ActorType.MONSTER:
+                    if actor.type == ActorType.MONSTER:
                         stats = actor.character_stats
                         log.write(
                             f"    · [bold]{display_name(actor.name)}[/]"

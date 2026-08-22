@@ -39,7 +39,7 @@ def _make_actor(
 ) -> Entity:
     entity = context.create_entity()
     entity._name = name
-    entity.add(ActorComponent, name, f"{name}_sheet", "")
+    entity.add(ActorComponent, name, "")
     entity.add(CharacterStatsComponent, name, CharacterStats())
     entity.add(AppearanceComponent, name, "base_body", appearance)
     if is_ally:
@@ -54,7 +54,7 @@ def _make_stage_entity(
 ) -> Entity:
     entity = context.create_entity()
     entity._name = name
-    entity.add(StageComponent, name, "test_stage_sheet")
+    entity.add(StageComponent, name)
     entity.add(DungeonComponent, name)
     entity.add(StageDescriptionComponent, name, narrative)
     return entity

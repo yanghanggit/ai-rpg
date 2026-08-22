@@ -43,10 +43,6 @@ def _build_actor_tool(combat_rooms: List[DungeonRoomData]) -> ToolDefinition:
                         "type": "string",
                         "description": "角色全名，采用「怪物.XXXX」格式，XXXX 体现该角色的特征",
                     },
-                    "character_sheet_name": {
-                        "type": "string",
-                        "description": "角色英文标识，snake_case 格式（如 bone_crawler、mist_spirit），所有怪物标识不重复",
-                    },
                     "profile": {
                         "type": "string",
                         "description": "第一人称 AI 扮演描述，50-100字，描述该角色的性格、行为倾向、与所处房间的关系；禁止出现战斗数值、技能名称、等级等游戏机制词汇",
@@ -59,7 +55,6 @@ def _build_actor_tool(combat_rooms: List[DungeonRoomData]) -> ToolDefinition:
                 "required": [
                     "room_name",
                     "actor_name",
-                    "character_sheet_name",
                     "profile",
                     "base_body",
                 ],
@@ -107,7 +102,6 @@ def _handle_record_dungeon_actor(
     result: _ActorsResult,
     room_name: str,
     actor_name: str,
-    character_sheet_name: str,
     profile: str,
     base_body: str,
 ) -> str:
@@ -115,16 +109,14 @@ def _handle_record_dungeon_actor(
     record = DungeonActorData(
         room_name=room_name,
         actor_name=actor_name,
-        character_sheet_name=character_sheet_name,
         profile=profile,
         base_body=base_body,
     )
     result.actors.append(record)
     logger.info(
         f"[GenerateDungeonActorsSystem] record_dungeon_actor 执行:\n"
-        f"  actor_name:           {actor_name}\n"
-        f"  room_name:            {room_name}\n"
-        f"  character_sheet_name: {character_sheet_name}\n"
+        f"  actor_name: {actor_name}\n"
+        f"  room_name:  {room_name}\n"
         f"  累计: {len(result.actors)} 个"
     )
     # 返回结构化 JSON 文本，作为 ToolMessage 进入 agent context，供后续步骤的 LLM 记忆使用
@@ -228,7 +220,6 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
             actors_by_room.setdefault(record.room_name, []).append(
                 DungeonActorBlueprint(
                     actor_name=record.actor_name,
-                    character_sheet_name=record.character_sheet_name,
                     profile=record.profile,
                     base_body=record.base_body,
                 )
@@ -253,7 +244,6 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
                 room_bp = DungeonRoomBlueprint(
                     room_type=room.room_type,
                     room_name=room.room_name,
-                    profile_name=room.profile_name,
                     profile=room.profile,
                     actors=[],
                 )
@@ -267,7 +257,6 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
             room_bp = DungeonRoomBlueprint(
                 room_type=room.room_type,
                 room_name=room.room_name,
-                profile_name=room.profile_name,
                 profile=room.profile,
                 actors=actors_by_room[room.room_name],
             )

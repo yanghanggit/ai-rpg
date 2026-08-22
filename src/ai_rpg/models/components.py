@@ -36,7 +36,6 @@ class StageComponent(Component):
     """标记实体为场景类型。"""
 
     name: str
-    character_sheet_name: str  # 场景配置表名称
 
 
 ############################################################################################################
@@ -46,7 +45,6 @@ class ActorComponent(Component):
     """标记实体为角色类型，记录当前所在场景。"""
 
     name: str
-    character_sheet_name: str  # 角色配置表名称
     current_stage: str  # 当前所在场景名称
 
 

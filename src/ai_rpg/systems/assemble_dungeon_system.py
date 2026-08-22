@@ -9,14 +9,12 @@ from ..game.dbg_game import DBGGame
 from ..models import (
     ActorType,
     AssembleDungeonAction,
-    CharacterSheet,
     CharacterStats,
     CombatRoom,
     Dungeon,
     DungeonRoom,
     EntryRoom,
     IllustrateDungeonAction,
-    StageProfile,
     StageType,
     RPG_SYSTEM_RULES,
     SystemMessage,
@@ -139,11 +137,8 @@ class AssembleDungeonSystem(ReactiveProcessor):
             # 创建 Stage 实体
             stage = create_stage(
                 name=room_name,
-                stage_profile=StageProfile(
-                    name=room_bp.profile_name,
-                    type=StageType.DUNGEON,
-                    profile=room_bp.profile,
-                ),
+                stage_type=StageType.DUNGEON,
+                profile=room_bp.profile,
                 campaign_setting=self._game._world.blueprint.campaign_setting,
                 system_rules=RPG_SYSTEM_RULES,
             )
@@ -163,12 +158,9 @@ class AssembleDungeonSystem(ReactiveProcessor):
                         name=self._deduplicate_name(
                             seen_actor_names, actor_bp.actor_name
                         ),
-                        character_sheet=CharacterSheet(
-                            name=actor_bp.character_sheet_name,
-                            type=ActorType.MONSTER.value,
-                            profile=actor_bp.profile,
-                            base_body=actor_bp.base_body,
-                        ),
+                        actor_type=ActorType.MONSTER,
+                        profile=actor_bp.profile,
+                        base_body=actor_bp.base_body,
                         character_stats=CharacterStats(),
                         campaign_setting=self._game._world.blueprint.campaign_setting,
                         system_rules=RPG_SYSTEM_RULES,

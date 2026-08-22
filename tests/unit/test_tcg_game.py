@@ -20,10 +20,8 @@ from src.ai_rpg.models import (
     CombatRoom,
     Dungeon,
     Actor,
-    CharacterSheet,
     CharacterStats,
     Stage,
-    StageProfile,
     StageType,
     Blueprint,
     World,
@@ -63,14 +61,14 @@ def _make_game(
 
 def _make_home_stage_entity(game: Any, name: str) -> Entity:
     entity: Entity = cast(Entity, game._create_entity(name))
-    entity.add(StageComponent, name, "")
+    entity.add(StageComponent, name)
     entity.add(HomeComponent, name)
     return entity
 
 
 def _make_dungeon_stage_entity(game: Any, name: str) -> Entity:
     entity: Entity = cast(Entity, game._create_entity(name))
-    entity.add(StageComponent, name, "")
+    entity.add(StageComponent, name)
     entity.add(DungeonComponent, name)
     return entity
 
@@ -79,14 +77,14 @@ def _make_player_actor_entity(
     game: Any, actor_name: str, player_name: str, stage_name: str
 ) -> Entity:
     entity: Entity = cast(Entity, game._create_entity(actor_name))
-    entity.add(ActorComponent, actor_name, "sheet", stage_name)
+    entity.add(ActorComponent, actor_name, stage_name)
     entity.add(PlayerComponent, player_name)
     return entity
 
 
 def _make_actor_entity(game: Any, actor_name: str, stage_name: str = "") -> Entity:
     entity: Entity = cast(Entity, game._create_entity(actor_name))
-    entity.add(ActorComponent, actor_name, "sheet", stage_name)
+    entity.add(ActorComponent, actor_name, stage_name)
     entity.add(CharacterStatsComponent, actor_name, CharacterStats(hp=20, max_hp=20))
     entity.add(NPCComponent, actor_name)
     entity.add(AppearanceComponent, actor_name, "human body", "")
@@ -102,12 +100,9 @@ def _make_actor_model(
 ) -> Actor:
     return Actor(
         name=name,
-        character_sheet=CharacterSheet(
-            name=f"{name}_sheet",
-            type=actor_type,
-            profile="",
-            base_body="human body",
-        ),
+        type=actor_type,
+        profile="",
+        base_body="human body",
         system_message=f"{name} is a character.",
         character_stats=CharacterStats(
             hp=hp, max_hp=hp, attack=attack, defense=defense
@@ -123,7 +118,8 @@ def _make_stage_model(
 ) -> Stage:
     return Stage(
         name=name,
-        stage_profile=StageProfile(name=f"{name}_profile", type=stage_type, profile=""),
+        type=stage_type,
+        profile="",
         system_message=f"{name} is a stage.",
         actors=actors or [],
     )
@@ -267,7 +263,7 @@ class TestComputeCharacterStats:
     def test_missing_stats_component_raises(self) -> None:
         game = _make_game()
         entity = game._create_entity("ghost")
-        entity.add(ActorComponent, "ghost", "sheet", "")
+        entity.add(ActorComponent, "ghost", "")
         with pytest.raises(AssertionError):
             compute_character_stats(entity)
 

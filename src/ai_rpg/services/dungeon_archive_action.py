@@ -112,14 +112,13 @@ def _build_dungeon_setting_block(dungeon: Dungeon) -> str:
     for index, room in enumerate(dungeon.rooms, start=1):
         stage = room.stage
         lines.append(f"### 房间 {index}（类型：{room.type}）")
-        lines.append(f"- 场景：{stage.name}（类型：{stage.stage_profile.type}）")
-        lines.append(f"- 场景设定：{stage.stage_profile.profile}")
+        lines.append(f"- 场景：{stage.name}（类型：{stage.type}）")
+        lines.append(f"- 场景设定：{stage.profile}")
 
         for actor in stage.actors:
-            sheet = actor.character_sheet
-            lines.append(f"- 角色：{actor.name}（类型：{sheet.type}）")
-            lines.append(f"  - 角色设定：{sheet.profile}")
-            lines.append(f"  - 外观：{sheet.base_body}")
+            lines.append(f"- 角色：{actor.name}（类型：{actor.type}）")
+            lines.append(f"  - 角色设定：{actor.profile}")
+            lines.append(f"  - 外观：{actor.base_body}")
 
     return "\n".join(lines)
 

@@ -93,7 +93,6 @@ def _update_actors_stage_membership(
         actor_entity.replace(
             ActorComponent,
             actor_comp.name,
-            actor_comp.character_sheet_name,
             stage_destination.name,
         )
 

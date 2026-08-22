@@ -41,7 +41,7 @@ def _make_actor(
 ) -> Entity:
     entity = context.create_entity()
     entity._name = name
-    entity.add(ActorComponent, name, f"{name}_sheet", "")
+    entity.add(ActorComponent, name, "")
     entity.add(CharacterStatsComponent, name, CharacterStats())
     entity.add(AppearanceComponent, name, "base_body", appearance)
     if is_ally:

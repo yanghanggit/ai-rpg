@@ -35,7 +35,7 @@ def _make_actor_entity(
     """创建一个带有 Actor、Appearance、Costume 组件的实体。"""
     entity = context.create_entity()
     entity._name = name
-    entity.add(ActorComponent, name, "test_sheet", "test_stage")
+    entity.add(ActorComponent, name, "test_stage")
     entity.add(AppearanceComponent, name, _BASE_BODY, appearance)
     entity.add(WornCostumeComponent, name, costume)
     return entity

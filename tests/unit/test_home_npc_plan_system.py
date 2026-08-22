@@ -42,7 +42,7 @@ def _make_actor(
 ) -> Entity:
     entity = context.create_entity()
     entity._name = name
-    entity.add(ActorComponent, name, "scholar", "场景.石台广场")
+    entity.add(ActorComponent, name, "场景.石台广场")
     entity.add(NPCComponent, name)
     if with_plan:
         entity.add(PlanAction, name)

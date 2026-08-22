@@ -61,7 +61,7 @@ class DungeonRoomRouterRoom(BaseGameScreen):
             logger.info(f"DungeonRoomRouterRoom._route: 未知基类房间 type={room.type}")
             self.query_one(Static).update(
                 f"[bold cyan]📍 {room.stage.name}[/]\n\n"
-                f"{room.stage.stage_profile.profile}\n\n"
+                f"{room.stage.profile}\n\n"
                 f"[dim]输入 'next' 前进到下一关[/]"
             )
         else:

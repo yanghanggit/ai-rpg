@@ -131,7 +131,7 @@ class DungeonEntryRoomScreen(BaseGameScreen):
         log.write(
             f"[bold yellow]── 场景：{stage_name} ─────────────────────────────[/]"
         )
-        log.write(f"  {room.stage.stage_profile.profile}")
+        log.write(f"  {room.stage.profile}")
         log.write("")
 
         # 渲染场景内角色有效属性

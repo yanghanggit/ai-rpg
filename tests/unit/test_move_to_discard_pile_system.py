@@ -39,7 +39,7 @@ def _make_entity(context: Context, name: str) -> Entity:
     """创建带必要战斗组件的角色实体。"""
     entity = context.create_entity()
     entity._name = name
-    entity.add(ActorComponent, name, "sheet", "dungeon")
+    entity.add(ActorComponent, name, "dungeon")
     entity.add(HandComponent, name, [])
     entity.add(DiscardPileComponent, name, [])
     return entity

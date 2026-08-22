@@ -30,7 +30,7 @@ from typing import Dict, List, Optional
 def _make_actor_entity(context: Context, name: str) -> Entity:
     entity = context.create_entity()
     entity._name = name
-    entity.add(ActorComponent, name, "test_sheet", "test_stage")
+    entity.add(ActorComponent, name, "test_stage")
     entity.add(StatusEffectsComponent, name, [])
     entity.add(DiscardPileComponent, name, [])
     return entity
@@ -39,7 +39,7 @@ def _make_actor_entity(context: Context, name: str) -> Entity:
 def _make_stage_entity(context: Context, name: str) -> Entity:
     entity = context.create_entity()
     entity._name = name
-    entity.add(StageComponent, name, "test_stage_sheet")
+    entity.add(StageComponent, name)
     entity.add(DungeonComponent, name)
     return entity
 

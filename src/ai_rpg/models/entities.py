@@ -8,31 +8,6 @@ from .items import CostumeItem
 
 ###############################################################################################################################################
 @final
-class CharacterSheet(BaseModel):
-    """
-    角色卡片定义
-    """
-
-    name: str
-    type: str
-    profile: str
-    base_body: str
-
-
-###############################################################################################################################################
-@final
-class StageProfile(BaseModel):
-    """
-    场景卡片定义
-    """
-
-    name: str
-    type: str
-    profile: str
-
-
-###############################################################################################################################################
-@final
 @unique
 class ActorType(StrEnum):
     NONE = "None"
@@ -53,7 +28,9 @@ class StageType(StrEnum):
 @final
 class Actor(BaseModel):
     name: str
-    character_sheet: CharacterSheet
+    type: ActorType
+    profile: str
+    base_body: str
     system_message: str
     character_stats: CharacterStats
     custom_item: Optional[CostumeItem] = None  # 当前穿戴的时装，None 表示未穿戴任何时装
@@ -66,7 +43,8 @@ class Actor(BaseModel):
 @final
 class Stage(BaseModel):
     name: str
-    stage_profile: StageProfile
+    type: StageType
+    profile: str
     system_message: str
     actors: List[Actor]
 

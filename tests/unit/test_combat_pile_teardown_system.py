@@ -62,7 +62,7 @@ def _make_combat_entity(context: Context, name: str) -> Entity:
     """创建持有全部战斗组件的角色实体（模拟战斗中状态）。"""
     entity = context.create_entity()
     entity._name = name
-    entity.add(ActorComponent, name, "sheet", "home")
+    entity.add(ActorComponent, name, "home")
     entity.add(DeckComponent, name, [], [])
     entity.add(DrawPileComponent, name, [])
     entity.add(DiscardPileComponent, name, [])

@@ -43,14 +43,14 @@ def _make_game(player_name: str = "player", actor_name: str = "hero") -> DBGGame
 
 def _make_stage(game: Any, name: str) -> Entity:
     entity: Entity = cast(Entity, game._create_entity(name))
-    entity.add(StageComponent, name, "")
+    entity.add(StageComponent, name)
     entity.add(DungeonComponent, name)
     return entity
 
 
 def _make_ally(game: Any, name: str, stage_name: str, dead: bool = False) -> Entity:
     entity: Entity = cast(Entity, game._create_entity(name))
-    entity.add(ActorComponent, name, "sheet", stage_name)
+    entity.add(ActorComponent, name, stage_name)
     entity.add(PartyMemberComponent, name)
     if dead:
         entity.add(DeathComponent, name)
@@ -59,7 +59,7 @@ def _make_ally(game: Any, name: str, stage_name: str, dead: bool = False) -> Ent
 
 def _make_monster(game: Any, name: str, stage_name: str, dead: bool = False) -> Entity:
     entity: Entity = cast(Entity, game._create_entity(name))
-    entity.add(ActorComponent, name, "sheet", stage_name)
+    entity.add(ActorComponent, name, stage_name)
     entity.add(MonsterComponent, name)
     if dead:
         entity.add(DeathComponent, name)
@@ -156,7 +156,7 @@ class TestResolveTargetsAll:
         _make_stage(game, "stage1")
         hero = _make_ally(game, "hero", "stage1")
         neutral = game._create_entity("中立者")
-        neutral.add(ActorComponent, "中立者", "sheet", "stage1")
+        neutral.add(ActorComponent, "中立者", "stage1")
 
         targets, err = resolve_targets(TargetType.ALL, 1, hero, ["中立者"], game)
         assert targets == []

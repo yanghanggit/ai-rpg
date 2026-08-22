@@ -35,7 +35,7 @@ from src.ai_rpg.systems.home_player_plan_system import HomePlayerPlanSystem
 def _make_player(context: Context, name: str = "角色.玩家A") -> Entity:
     entity = context.create_entity()
     entity._name = name
-    entity.add(ActorComponent, name, "wanderer", "场景.石台广场")
+    entity.add(ActorComponent, name, "场景.石台广场")
     entity.add(NPCComponent, name)
     entity.add(PlayerComponent, "player1")
     entity.add(PlanAction, name)
@@ -45,7 +45,7 @@ def _make_player(context: Context, name: str = "角色.玩家A") -> Entity:
 def _make_npc(context: Context, name: str = "角色.NPC_A") -> Entity:
     entity = context.create_entity()
     entity._name = name
-    entity.add(ActorComponent, name, "scholar", "场景.石台广场")
+    entity.add(ActorComponent, name, "场景.石台广场")
     entity.add(NPCComponent, name)
     entity.add(PlanAction, name)
     return entity

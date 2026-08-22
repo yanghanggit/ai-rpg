@@ -7,7 +7,7 @@ try:
     from src.ai_rpg.game.dbg_game import DBGGame
     from src.ai_rpg.models.entities import Actor
     from src.ai_rpg.models import (
-        CharacterSheet,
+        ActorType,
         World,
         Blueprint,
         Dungeon,
@@ -70,13 +70,9 @@ def sample_actor() -> Any:
 
     return _Actor(
         name="test_actor",
-        character_sheet=CharacterSheet(
-            name="test_character",
-            type="hero",
-            profile="test profile",
-            base_body="",
-            # appearance="test appearance",
-        ),
+        type=ActorType.NPC,
+        profile="test profile",
+        base_body="",
         system_message="test system message",
         # kick_off_message="test kick off message",
         character_stats=CharacterStats(max_hp=50, attack=10, defense=5),

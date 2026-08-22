@@ -10,6 +10,7 @@ EntitiesDetailsResponse）严格一致，均通过真实 Pydantic 模型构造�
 from typing import Dict, Final, List, Optional
 from ..models import (
     ActorComponent,
+    ActorType,
     AnyItem,
     AppearanceComponent,
     Card,
@@ -18,7 +19,6 @@ from ..models import (
     CombatResult,
     CombatRoom,
     CombatState,
-    CharacterSheet,
     CharacterStats,
     CharacterStatsComponent,
     ComponentSerialization,
@@ -49,7 +49,7 @@ from ..models import (
     Round,
     Stage as DungeonStage,
     StageComponent,
-    StageProfile,
+    StageType,
     StagesStateResponse,
     StatusEffect,
     StatusEffectsComponent,
@@ -164,17 +164,14 @@ def get_mock_current_room_index() -> int:
 
 ###############################################################################################################################################
 def _mock_dungeon_actor(
-    name: str, actor_type: str, stats: CharacterStats
+    name: str, actor_type: ActorType, stats: CharacterStats
 ) -> DungeonActor:
     """构造 CombatRoom.stage.actors 中使用的蓝图 Actor（非 ECS 实时数据）。"""
     return DungeonActor(
         name=name,
-        character_sheet=CharacterSheet(
-            name=name,
-            type=actor_type,
-            profile=f"{name}（Mock 固定数据，用于本地无服务器调试）",
-            base_body="",
-        ),
+        type=actor_type,
+        profile=f"{name}（Mock 固定数据，用于本地无服务器调试）",
+        base_body="",
         system_message="",
         character_stats=stats,
         custom_item=None,
@@ -187,37 +184,34 @@ def build_mock_dungeon_room_response() -> DungeonRoomResponse:
     """构造固定的战斗房间响应：2v2（玩家+队友 vs 怪物x2），state=ONGOING。"""
     stage = DungeonStage(
         name=MOCK_STAGE_NAME,
-        stage_profile=StageProfile(
-            name=MOCK_STAGE_NAME,
-            type="Dungeon",
-            profile="模拟副本房间，用于本地无服务器调试。",
-        ),
+        type=StageType.DUNGEON,
+        profile="模拟副本房间，用于本地无服务器调试。",
         system_message="",
         actors=[
             _mock_dungeon_actor(
                 MOCK_ACTOR_NAME,
-                "NPC",
+                ActorType.NPC,
                 CharacterStats(
                     hp=18, max_hp=20, attack=6, defense=3, energy=2, speed=5
                 ),
             ),
             _mock_dungeon_actor(
                 MOCK_TEAMMATE_NAME,
-                "NPC",
+                ActorType.NPC,
                 CharacterStats(
                     hp=15, max_hp=15, attack=4, defense=4, energy=2, speed=4
                 ),
             ),
             _mock_dungeon_actor(
                 MOCK_MONSTER_1_NAME,
-                "Monster",
+                ActorType.MONSTER,
                 CharacterStats(
                     hp=10, max_hp=12, attack=5, defense=2, energy=1, speed=3
                 ),
             ),
             _mock_dungeon_actor(
                 MOCK_MONSTER_2_NAME,
-                "Monster",
+                ActorType.MONSTER,
                 CharacterStats(
                     hp=12, max_hp=12, attack=4, defense=2, energy=1, speed=2
                 ),
@@ -260,11 +254,8 @@ def build_mock_dungeon_state_response() -> DungeonStateResponse:
 
     next_stage = DungeonStage(
         name=MOCK_NEXT_STAGE_NAME,
-        stage_profile=StageProfile(
-            name=MOCK_NEXT_STAGE_NAME,
-            type="Dungeon",
-            profile="模拟副本下一关卡占位数据，用于本地无服务器调试。",
-        ),
+        type=StageType.DUNGEON,
+        profile="模拟副本下一关卡占位数据，用于本地无服务器调试。",
         system_message="",
         actors=[],
     )
@@ -450,9 +441,7 @@ def build_mock_entities_details_response(
             *_identity_components(MOCK_STAGE_NAME, 0),
             ComponentSerialization(
                 name=StageComponent.__name__,
-                data=StageComponent(
-                    name=MOCK_STAGE_NAME, character_sheet_name=MOCK_STAGE_NAME
-                ).model_dump(),
+                data=StageComponent(name=MOCK_STAGE_NAME).model_dump(),
             ),
             ComponentSerialization(
                 name=DungeonComponent.__name__,
@@ -475,7 +464,6 @@ def build_mock_entities_details_response(
                     name=ActorComponent.__name__,
                     data=ActorComponent(
                         name=name,
-                        character_sheet_name=name,
                         current_stage=MOCK_STAGE_NAME,
                     ).model_dump(),
                 ),

@@ -33,14 +33,14 @@ from src.ai_rpg.models.messages import HumanMessage, SystemMessage
 def _make_stage(game: Any, stage_name: str) -> Entity:
     """创建带 StageComponent 的场景实体。"""
     entity: Entity = game._create_entity(stage_name)
-    entity.add(StageComponent, stage_name, "")
+    entity.add(StageComponent, stage_name)
     return entity
 
 
 def _make_actor(game: Any, actor_name: str, current_stage_name: str) -> Entity:
     """创建带 ActorComponent 的角色实体。"""
     entity: Entity = game._create_entity(actor_name)
-    entity.add(ActorComponent, actor_name, "sheet", current_stage_name)
+    entity.add(ActorComponent, actor_name, current_stage_name)
     return entity
 
 

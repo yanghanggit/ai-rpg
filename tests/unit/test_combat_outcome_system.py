@@ -36,7 +36,7 @@ def _make_actor(
     """创建带阵营与死亡标记的参战角色实体。"""
     entity = context.create_entity()
     entity._name = name
-    entity.add(ActorComponent, name, "sheet", "stage")
+    entity.add(ActorComponent, name, "stage")
     if is_ally:
         entity.add(PartyMemberComponent, name)
     if is_monster:
@@ -49,7 +49,7 @@ def _make_actor(
 def _make_stage(context: Context, name: str) -> Entity:
     entity = context.create_entity()
     entity._name = name
-    entity.add(StageComponent, name, "")
+    entity.add(StageComponent, name)
     return entity
 
 

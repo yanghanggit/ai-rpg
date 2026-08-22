@@ -36,7 +36,7 @@ def _make_actor_entity(
 ) -> Entity:
     entity = context.create_entity()
     entity._name = name
-    entity.add(ActorComponent, name, "test_sheet", "test_stage")
+    entity.add(ActorComponent, name, "test_stage")
     if with_status_effects:
         entity.add(StatusEffectsComponent, name, [])
     if with_action:

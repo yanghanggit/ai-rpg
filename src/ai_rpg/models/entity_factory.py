@@ -5,10 +5,10 @@
 from typing import List
 from . import (
     Actor,
-    CharacterSheet,
+    ActorType,
     CharacterStats,
     Stage,
-    StageProfile,
+    StageType,
     WorldSystem,
 )
 
@@ -16,7 +16,9 @@ from . import (
 #######################################################################################################################################
 def create_actor(
     name: str,
-    character_sheet: CharacterSheet,
+    actor_type: ActorType,
+    profile: str,
+    base_body: str,
     character_stats: CharacterStats,
     campaign_setting: str,
     system_rules: str,
@@ -27,15 +29,8 @@ def create_actor(
     """
 
     assert name.strip() != "", "DBG 游戏要求必须有角色名称(name)"
-    assert (
-        character_sheet.name.strip() != ""
-    ), "DBG 游戏要求必须有角色设定(character_sheet.name)"
-    assert (
-        character_sheet.profile.strip() != ""
-    ), "DBG 游戏要求必须有角色设定(character_sheet.profile)"
-    assert (
-        character_sheet.base_body.strip() != ""
-    ), "DBG 游戏要求必须有角色设定(character_sheet.base_body)"
+    assert profile.strip() != "", "DBG 游戏要求必须有角色设定(profile)"
+    assert base_body.strip() != "", "DBG 游戏要求必须有角色设定(base_body)"
     assert (
         campaign_setting.strip() != ""
     ), "DBG 游戏要求必须有游戏设定(campaign_setting)"
@@ -44,7 +39,9 @@ def create_actor(
 
     actor = Actor(
         name=name,
-        character_sheet=character_sheet,
+        type=actor_type,
+        profile=profile,
+        base_body=base_body,
         system_message="",
         character_stats=character_stats,
         keywords=keywords,
@@ -70,11 +67,11 @@ def create_actor(
 
 ## 角色设定
 
-{character_sheet.profile}
+{profile}
 
 ## 基础体型
 
-{character_sheet.base_body}"""
+{base_body}"""
 
     return actor
 
@@ -82,7 +79,8 @@ def create_actor(
 #######################################################################################################################################
 def create_stage(
     name: str,
-    stage_profile: StageProfile,
+    stage_type: StageType,
+    profile: str,
     campaign_setting: str,
     system_rules: str,
 ) -> Stage:
@@ -91,9 +89,7 @@ def create_stage(
     """
 
     assert name.strip() != "", "DBG 游戏要求必须有场景名称(name)"
-    assert (
-        stage_profile.profile.strip() != ""
-    ), "DBG 游戏要求必须有场景设定(stage_profile.profile)"
+    assert profile.strip() != "", "DBG 游戏要求必须有场景设定(profile)"
     assert (
         campaign_setting.strip() != ""
     ), "DBG 游戏要求必须有游戏设定(campaign_setting)"
@@ -102,7 +98,8 @@ def create_stage(
     # 创建场景实例
     stage = Stage(
         name=name,
-        stage_profile=stage_profile,
+        type=stage_type,
+        profile=profile,
         system_message="",
         actors=[],
     )
@@ -122,7 +119,7 @@ def create_stage(
 
 ## 场景设定
 
-{stage.stage_profile.profile}"""
+{profile}"""
 
     return stage
 

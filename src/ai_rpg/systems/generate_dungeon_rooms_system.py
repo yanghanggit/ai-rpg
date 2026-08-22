@@ -55,10 +55,6 @@ def _build_rooms_tool(dungeon_room_count: int) -> ToolDefinition:
                                     "type": "string",
                                     "description": "房间全名，采用「房间.XXXX」命名格式，体现该局部区域的核心特征，所有房间名称不重复",
                                 },
-                                "profile_name": {
-                                    "type": "string",
-                                    "description": "房间英文标识，snake_case 格式（如 forest_edge、deep_pool），所有标识不重复",
-                                },
                                 "profile": {
                                     "type": "string",
                                     "description": "该房间的感官环境描写，50-100字，只描述「这里有什么」，避免直接点出具体角色身份/阵营名称与威胁评价性词汇",
@@ -72,7 +68,6 @@ def _build_rooms_tool(dungeon_room_count: int) -> ToolDefinition:
                             "required": [
                                 "room_type",
                                 "room_name",
-                                "profile_name",
                                 "profile",
                                 "actor_count",
                             ],
@@ -132,7 +127,6 @@ def _handle_record_dungeon_rooms(
             f"[GenerateDungeonRoomsSystem] Room {i}/{len(room_items)}:\n"
             f"  room_type:    {room.room_type}\n"
             f"  room_name:    {room.room_name}\n"
-            f"  profile_name: {room.profile_name}\n"
             f"  actor_count:  {room.actor_count}\n"
             f"  profile:      {room.profile}"
         )

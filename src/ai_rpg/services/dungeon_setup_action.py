@@ -64,17 +64,13 @@ def setup_dungeon(dbg_game: DBGGame, dungeon_name: str) -> Tuple[bool, str]:
         for actor in room.stage.actors:
             actor_entity = dbg_game.get_actor_entity(actor.name)
             assert actor_entity is None, "actor_entity is not None"
-            assert (
-                actor.character_sheet.type == ActorType.MONSTER
-            ), "actor_entity is not enemy type"
+            assert actor.type == ActorType.MONSTER, "actor_entity is not enemy type"
 
     # 5. 验证：所有关卡场景必须是 DUNGEON 类型
     for room in dungeon.rooms:
         stage_entity = dbg_game.get_stage_entity(room.stage.name)
         assert stage_entity is None, "stage_entity is not None"
-        assert (
-            room.stage.stage_profile.type == StageType.DUNGEON
-        ), "stage_entity is not dungeon type"
+        assert room.stage.type == StageType.DUNGEON, "stage_entity is not dungeon type"
 
     # 6. 创建副本实体（敌人和关卡场景）
     logger.debug(f"正在根据副本模型创建实体: {dungeon.name}")

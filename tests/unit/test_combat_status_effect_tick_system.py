@@ -34,7 +34,7 @@ def _effect(name: str, duration: int) -> StatusEffect:
 def _make_actor(ctx: Context, name: str, effects: List[StatusEffect]) -> Entity:
     entity = ctx.create_entity()
     entity._name = name
-    entity.add(ActorComponent, name, "sheet", "stage")
+    entity.add(ActorComponent, name, "stage")
     entity.add(StatusEffectsComponent, name, effects)
     return entity
 

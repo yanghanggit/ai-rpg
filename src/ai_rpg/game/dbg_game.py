@@ -321,9 +321,7 @@ class DBGGame(RPGGame):
             )
 
             # 必要组件：身份类型标记-角色Actor
-            actor_entity.add(
-                ActorComponent, actor_model.name, actor_model.character_sheet.name, ""
-            )
+            actor_entity.add(ActorComponent, actor_model.name, "")
 
             # 必要组件：系统消息
             assert (
@@ -335,13 +333,13 @@ class DBGGame(RPGGame):
 
             # 必要组件：外观
             assert (
-                actor_model.character_sheet.base_body != ""
-            ), f"actor_model.character_sheet.base_body 不能为空: {actor_model.name}"
+                actor_model.base_body != ""
+            ), f"actor_model.base_body 不能为空: {actor_model.name}"
             actor_entity.add(
                 AppearanceComponent,
                 actor_model.name,
-                actor_model.character_sheet.base_body,
-                actor_model.character_sheet.base_body,  # 初始外观与基础身体相同，后续可通过装备 CostumeItem 挂载 CostumeComponent 来改变外观，但不影响基础身体（base_body）
+                actor_model.base_body,
+                actor_model.base_body,  # 初始外观与基础身体相同，后续可通过装备 CostumeItem 挂载 CostumeComponent 来改变外观，但不影响基础身体（base_body）
             )
 
             # 必要组件：基础属性，这里用浅拷贝，不能动原有的。
@@ -352,15 +350,13 @@ class DBGGame(RPGGame):
             )
 
             # 必要组件：类型标记
-            match actor_model.character_sheet.type:
+            match actor_model.type:
                 case ActorType.NPC:
                     actor_entity.add(NPCComponent, actor_model.name)
                 case ActorType.MONSTER:
                     actor_entity.add(MonsterComponent, actor_model.name)
                 case _:
-                    assert (
-                        False
-                    ), f"未知的 ActorType: {actor_model.character_sheet.type}"
+                    assert False, f"未知的 ActorType: {actor_model.type}"
 
             # DBG 组件：牌组 + 关键词约束
             assert (
@@ -409,10 +405,8 @@ class DBGGame(RPGGame):
                 str(uuid.uuid4()),
             )
 
-            # 必要组件: StageComponent，包含场景名称和场景配置文件名称（stage_profile.name），方便后续访问和识别
-            stage_entity.add(
-                StageComponent, stage_model.name, stage_model.stage_profile.name
-            )
+            # 必要组件: StageComponent，包含场景名称，方便后续访问和识别
+            stage_entity.add(StageComponent, stage_model.name)
 
             # 必要组件：系统消息
             assert stage_model.name in stage_model.system_message
@@ -421,13 +415,13 @@ class DBGGame(RPGGame):
             )
 
             # 必要组件：类型
-            match stage_model.stage_profile.type:
+            match stage_model.type:
                 case StageType.DUNGEON:
                     stage_entity.add(DungeonComponent, stage_model.name)
                 case StageType.HOME:
                     stage_entity.add(HomeComponent, stage_model.name)
                 case _:
-                    assert False, f"未知的 StageType: {stage_model.stage_profile.type}"
+                    assert False, f"未知的 StageType: {stage_model.type}"
 
             ## 重新设置Actor和stage的关系
             for actor_model in stage_model.actors:
@@ -438,7 +432,6 @@ class DBGGame(RPGGame):
                 actor_entity.replace(
                     ActorComponent,
                     actor_model.name,
-                    actor_model.character_sheet.name,
                     stage_model.name,
                 )
 

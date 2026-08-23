@@ -5,7 +5,7 @@ This tests the new Pydantic-based component system.
 
 import pytest
 from src.ai_rpg.entitas import Entity, Context, Matcher
-from src.ai_rpg.entitas.components import Component, MutableComponent
+from src.ai_rpg.entitas.components import Component
 from tests.unit.test_components import Position, Health, Marker, Counter, ResourcePool
 
 
@@ -103,18 +103,6 @@ class TestPydanticComponents:
         assert new_pos.x == pos.x
         assert new_pos.y == pos.y
 
-    def test_component_immutability(self) -> None:
-        """Test that components are immutable (frozen)."""
-        entity = Entity()
-        entity.activate(1)
-
-        entity.add(Position, 10.0, 20.0)
-        pos = entity.get(Position)
-
-        # Should not be able to modify the component
-        with pytest.raises(Exception):  # Pydantic raises ValidationError
-            pos.x = 30.0
-
     def test_component_representation(self) -> None:
         """Test component string representation."""
         entity = Entity()
@@ -176,16 +164,16 @@ class TestPydanticComponents:
             assert hasattr(pos, "y")
 
     def test_mutable_component(self) -> None:
-        """Test that MutableComponent can be modified after creation."""
+        """Test that components can be modified after creation."""
         entity = Entity()
         entity.activate(1)
 
-        # Add a mutable counter component
+        # Add a counter component
         entity.add(Counter, 5)
         counter = entity.get(Counter)
 
-        # Verify it's mutable
-        assert isinstance(counter, MutableComponent)
+        # Verify it's a Component and mutable
+        assert isinstance(counter, Component)
 
         # Test modifying the component directly
         counter.value = 10
@@ -233,22 +221,6 @@ class TestPydanticComponents:
 
         with pytest.raises(ValueError, match="Refill amount must be positive"):
             pool.refill(0)
-
-    def test_mutable_vs_immutable_components(self) -> None:
-        """Compare behavior of mutable and immutable components."""
-        # Immutable component (standard Component)
-        pos = Position(x=10.0, y=20.0)
-
-        # Should not be modifiable
-        with pytest.raises(Exception):
-            pos.x = 30.0
-
-        # Mutable component
-        counter = Counter(value=5)
-
-        # Should be modifiable
-        counter.value = 10
-        assert counter.value == 10
 
     def test_mutable_component_in_context(self) -> None:
         """Test that mutable components work correctly with Context and Groups."""

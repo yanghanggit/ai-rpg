@@ -3,7 +3,7 @@ Test components for entitas testing.
 All components use Pydantic BaseModel for enhanced functionality.
 """
 
-from src.ai_rpg.entitas.components import Component, MutableComponent
+from src.ai_rpg.entitas.components import Component
 
 
 # Basic components for testing
@@ -85,13 +85,13 @@ class Transform(Component):
 
 
 # Mutable component examples
-class Counter(MutableComponent):
+class Counter(Component):
     """Counter component with mutable value for incremental operations."""
 
     value: int = 0
 
 
-class ResourcePool(MutableComponent):
+class ResourcePool(Component):
     """Resource pool with current and max values, demonstrates a mutable component."""
 
     current: int

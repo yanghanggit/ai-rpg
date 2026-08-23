@@ -1,7 +1,7 @@
 """ECS 组件定义。添加到实体后由对应系统读取处理。"""
 
 from typing import List, final
-from ..entitas.components import Component, MutableComponent
+from ..entitas.components import Component
 from .card import Card
 from .status_effect import StatusEffect
 from .items import AnyItem, CostumeItem, GearItem
@@ -145,7 +145,7 @@ class MonsterComponent(Component):
 ############################################################################################################
 @final
 @register_component_type
-class HandComponent(MutableComponent):
+class HandComponent(Component):
     """存储角色当前手牌与所在回合数。"""
 
     name: str
@@ -174,7 +174,7 @@ class DeathComponent(Component):
 ############################################################################################################
 @final
 @register_component_type
-class CharacterStatsComponent(MutableComponent):
+class CharacterStatsComponent(Component):
     """存储角色战斗属性（HP、攻击力、防御力等）。"""
 
     name: str
@@ -186,7 +186,7 @@ class CharacterStatsComponent(MutableComponent):
 
 @final
 @register_component_type
-class StatusEffectsComponent(MutableComponent):
+class StatusEffectsComponent(Component):
     """存储角色当前状态效果列表。"""
 
     name: str
@@ -241,7 +241,7 @@ class WorldDirectorComponent(Component):
 ############################################################################################################
 @final
 @register_component_type
-class DrawPileComponent(MutableComponent):
+class DrawPileComponent(Component):
     """战斗内抽牌堆；Draw 阶段 FIFO 消耗，耗尽时自动将 DiscardPile 洗牌补入；存放 DeckComponent 原始牌的 model_copy() 副本，战斗结束后由 CombatPileTeardownSystem 清空。"""
 
     name: str
@@ -251,7 +251,7 @@ class DrawPileComponent(MutableComponent):
 ############################################################################################################
 @final
 @register_component_type
-class ExhaustPileComponent(MutableComponent):
+class ExhaustPileComponent(Component):
     """消耗堆；存放主动弃置的自有牌副本，战斗内永久移出抽牌循环；战斗结束后由 CombatPileTeardownSystem 清空。"""
 
     name: str
@@ -261,7 +261,7 @@ class ExhaustPileComponent(MutableComponent):
 ############################################################################################################
 @final
 @register_component_type
-class DiscardPileComponent(MutableComponent):
+class DiscardPileComponent(Component):
     """弃牌堆；出牌使用后或回合末剩余手牌进入此堆，DrawPile 耗尽时洗牌回补；存放副本，战斗结束后由 CombatPileTeardownSystem 清空。"""
 
     name: str
@@ -271,7 +271,7 @@ class DiscardPileComponent(MutableComponent):
 ############################################################################################################
 @final
 @register_component_type
-class DeckComponent(MutableComponent):
+class DeckComponent(Component):
     """跨战斗持久牌库；战斗外唯一权威来源。战斗开始时由 DeckGenerationSystem 生成并锁定原始牌，战斗期间只读；战斗子堆流转的均为 model_copy() 副本。keywords 为卡牌生成关键词约束，指导 LLM 按特定风格生成手牌，运行时不可变。"""
 
     name: str
@@ -282,7 +282,7 @@ class DeckComponent(MutableComponent):
 ############################################################################################################
 @final
 @register_component_type
-class InventoryComponent(MutableComponent):
+class InventoryComponent(Component):
     """随身背包；存储角色当前携带的道具列表。"""
 
     name: str
@@ -292,7 +292,7 @@ class InventoryComponent(MutableComponent):
 ############################################################################################################
 @final
 @register_component_type
-class StorageComponent(MutableComponent):
+class StorageComponent(Component):
     """储物箱；存储角色全部道具，为备用库存；初始内容来自蓝图 items。"""
 
     name: str
@@ -302,7 +302,7 @@ class StorageComponent(MutableComponent):
 ############################################################################################################
 @final
 @register_component_type
-class CombatLootComponent(MutableComponent):
+class CombatLootComponent(Component):
     """战斗战利品背包；战斗胜利后由 CombatLootSystem 写入，调用 collect_combat_loot() 后合并至 InventoryComponent 并移除。"""
 
     name: str
@@ -314,7 +314,7 @@ class CombatLootComponent(MutableComponent):
 
 @final
 @register_component_type
-class WornCostumeComponent(MutableComponent):
+class WornCostumeComponent(Component):
     """时装组件，记录当前穿戴的时装（CostumeItem）"""
 
     name: str
@@ -324,7 +324,7 @@ class WornCostumeComponent(MutableComponent):
 ############################################################################################################
 @final
 @register_component_type
-class EquippedGearComponent(MutableComponent):
+class EquippedGearComponent(Component):
     """装备组件，记录当前装备中的武器/护甲（GearItem）。"""
 
     name: str

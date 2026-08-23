@@ -14,12 +14,10 @@ class Component(BaseModel):
     This provides:
     - Automatic validation of field types
     - JSON serialization/deserialization
-    - Immutability (frozen=True)
     - Documentation generation
     """
 
     model_config = ConfigDict(
-        frozen=True,  # Makes components immutable like namedtuples
         arbitrary_types_allowed=True,  # Allows custom types if needed
         str_strip_whitespace=True,  # Auto-strip strings
         validate_assignment=True,  # Validate on assignment
@@ -38,23 +36,3 @@ class Component(BaseModel):
     def __str__(self) -> str:
         """String representation - same as __repr__ for consistency."""
         return self.__repr__()
-
-
-class MutableComponent(Component):
-    """Base class for mutable components that can be modified after creation.
-
-    While standard components are immutable (frozen) to ensure consistency,
-    some special components may need to be modified in place. Use this base
-    class sparingly and only when necessary, as mutable state can lead to
-    harder-to-debug issues in an ECS system.
-
-    Examples of appropriate use cases:
-    - Components tracking rapid changes like positions in physics simulations
-    - Components managing complex internal state that would be inefficient to recreate
-    - Temporary components used for local calculations
-    """
-
-    model_config = ConfigDict(
-        frozen=False,  # Override base class to allow mutability
-        # Other settings are inherited from Component
-    )

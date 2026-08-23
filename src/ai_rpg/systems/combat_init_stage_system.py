@@ -10,10 +10,9 @@ from ..entitas import Entity, ExecuteProcessor
 from ..game.dbg_combat_processor import (
     accumulate_status_effects_action,
     get_alive_actors_in_stage,
-    wrap_scene_hints_as_affixes,
 )
 from ..game.dbg_game import DBGGame
-from ..models import StageDescriptionComponent
+from ..models import AffixTrigger, StageDescriptionComponent
 from ..models.messages import HumanMessage
 from ..utils import extract_json
 
@@ -224,7 +223,8 @@ class CombatInitStageSystem(ExecuteProcessor):
             actor_entity = self._game.get_entity_by_name(actor_name)
             assert actor_entity is not None, f"无法找到 affixes 中的实体: {actor_name}"
             accumulate_status_effects_action(
-                actor_entity, wrap_scene_hints_as_affixes("战斗初始化场景", hints)
+                actor_entity,
+                [AffixTrigger(source="战斗初始化场景", affix=hint) for hint in hints],
             )
             logger.debug(
                 f"[{actor_name}] 战斗初始化后追加 {len(hints)} 条 AddStatusEffectsAction affixes"

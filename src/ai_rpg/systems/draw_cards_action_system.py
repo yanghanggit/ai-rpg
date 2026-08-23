@@ -7,7 +7,6 @@ from typing import Final, List, final, override, Dict
 from loguru import logger
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
-from ..game.dbg_combat_processor import get_max_num_cards
 from ..models import (
     ActorComponent,
     DrawPileComponent,
@@ -17,6 +16,7 @@ from ..models import (
     Card,
     DeathComponent,
     CharacterStatsComponent,
+    PartyMemberComponent,
 )
 
 
@@ -88,7 +88,8 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
         # 从 DrawPile 抽牌（含 DiscardPile reshuffle 逻辑），并立即写入原始（未调整）手牌
         for entity in entities:
-            drawn = self._draw_from_pile(entity, get_max_num_cards(entity))
+            max_num_cards = 3 if entity.has(PartyMemberComponent) else 1
+            drawn = self._draw_from_pile(entity, max_num_cards)
             logger.debug(
                 f"[{entity.name}] 抽取 {len(drawn)} 张：{[c.name for c in drawn]}"
             )

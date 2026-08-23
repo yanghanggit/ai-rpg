@@ -13,7 +13,6 @@ from ..game.dbg_combat_processor import (
     collect_target_arbitration_effects,
     collect_target_character_stats,
     compute_character_stats,
-    get_gear_on_hit_affixes,
     get_status_effects_by_phase,
     process_zero_health_entities,
     set_character_hp,
@@ -294,7 +293,11 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
         # 确保状态效果在游戏中正确生效；只按出牌目标挂载，不依赖 final_stats 的实体范围。
         # card.on_hit_affixes 与装备 on_hit_affixes 均为空时，本次出牌无延迟状态效果，直接跳过。
         card_affixes = action.card.on_hit_affixes
-        gear_on_hit_affixes = get_gear_on_hit_affixes(actor_entity)
+        gear_on_hit_affixes = (
+            actor_entity.get(EquippedGearComponent).item.on_hit_affixes
+            if actor_entity.has(EquippedGearComponent)
+            else []
+        )
         if not card_affixes and not gear_on_hit_affixes:
             logger.debug(
                 f"[{actor_entity.name}] 出牌卡牌无延迟词缀且装备无 on_hit_affixes，跳过 AddStatusEffectsAction"

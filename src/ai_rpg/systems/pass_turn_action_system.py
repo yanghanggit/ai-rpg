@@ -13,7 +13,7 @@ from ..models import (
 )
 from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import consume_energy, get_energy
-from ..game.dbg_combat_processor import get_current_turn_actor, advance_turn
+from ..game.dbg_combat_processor import get_current_turn_actor
 
 
 #######################################################################################################################################
@@ -86,7 +86,10 @@ class PassTurnActionSystem(ReactiveProcessor):
         last_round.completed_actors.append(pass_turn_action.name)
 
         # 结束当前角色的回合，进入下一角色的回合
-        advance_turn(self._game, last_round)
+        last_round.current_actor = get_current_turn_actor(self._game, last_round)
+        logger.debug(
+            f"advance_turn: current_turn_actor_name updated to {last_round.current_actor}"
+        )
 
         # 输出当前回合状态日志
         logger.debug(

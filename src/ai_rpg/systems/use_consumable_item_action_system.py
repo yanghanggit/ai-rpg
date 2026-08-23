@@ -5,7 +5,6 @@ from loguru import logger
 from overrides import override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
-from ..game.dbg_combat_processor import deduct_item_from_inventory
 from ..models import (
     AgentEvent,
     InventoryComponent,
@@ -74,8 +73,22 @@ class UseConsumableItemActionSystem(ReactiveProcessor):
             f" | target_type={item.target_type} | 目标: {action.targets}"
         )
 
-        # 扣减背包中的消耗品数量
-        consumed = deduct_item_from_inventory(entity, item)
+        # 扣减背包中的消耗品数量：找到匹配条目并扣减，耗尽则移除该条目
+        inventory_comp = entity.get(InventoryComponent)
+        updated_items = []
+        consumed = False
+        for inv_item in inventory_comp.items:
+            if not consumed and inv_item.uuid == item.uuid:
+                consumed = True
+                if inv_item.count > 1:
+                    inv_item.count -= 1
+                    updated_items.append(inv_item)
+                # count == 1：不追加，即移除
+            else:
+                updated_items.append(inv_item)
+        if consumed:
+            inventory_comp.items = updated_items
+
         if not consumed:
             logger.warning(
                 f"UseConsumableItemActionSystem: [{entity.name}] 背包中未找到 '{item.name}'，跳过扣减"

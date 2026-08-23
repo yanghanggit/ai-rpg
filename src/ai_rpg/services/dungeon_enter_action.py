@@ -4,14 +4,11 @@
 enter_dungeon 是进入副本的唯一入口。
 """
 
-from typing import Tuple
+from typing import Set, Tuple
 from loguru import logger
 from ..models.dungeon import CombatRoom
 from ..game.dbg_game import DBGGame
-from ..game.dbg_combat_processor import (
-    clear_combat_state,
-    select_party_members,
-)
+from ..game.dbg_combat_processor import clear_combat_state
 from ..game.rpg_stage_transition import stage_transition
 from ..models import (
     Dungeon,
@@ -19,10 +16,11 @@ from ..models import (
     Combat,
     HumanMessage,
     PartyMemberComponent,
+    PartyRosterComponent,
     DeathComponent,
     CombatState,
 )
-from ..entitas import Matcher
+from ..entitas import Entity, Matcher
 
 
 ###################################################################################################################################################################
@@ -87,7 +85,28 @@ def enter_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, str]:
     # =========================================================================
 
     # 选择远征队成员并挂载 PartyMemberComponent
-    party_member_entities = select_party_members(dbg_game)
+    player_entity = dbg_game.get_player_entity()
+    assert player_entity is not None, "玩家实体不存在！"
+    party_member_entities: Set[Entity] = {player_entity}
+    logger.info(f"玩家 {player_entity.name} 将参与远征")
+    if player_entity.has(PartyRosterComponent):
+        for member_name in player_entity.get(PartyRosterComponent).members:
+            member_entity = dbg_game.get_actor_entity(member_name)
+            assert (
+                member_entity is not None
+            ), f"远征队名单中的成员 {member_name!r} 不存在！"
+            party_member_entities.add(member_entity)
+            logger.info(f"按名单将 {member_name} 加入远征队")
+    logger.info(
+        f"最终远征队成员 ({len(party_member_entities)}): "
+        f"{[e.name for e in party_member_entities]}"
+    )
+    for party_member in party_member_entities:
+        party_member.replace(PartyMemberComponent, party_member.name)
+        logger.debug(
+            f"将 {party_member.name} 添加 PartyMemberComponent 组件，标记为远征队成员"
+        )
+
     assert len(party_member_entities) > 0, "没有选择任何远征队成员，无法进入副本"
     for party_member in party_member_entities:
         assert not party_member.has(

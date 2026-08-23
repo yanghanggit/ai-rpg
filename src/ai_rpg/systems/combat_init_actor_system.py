@@ -7,11 +7,8 @@ from loguru import logger
 from ..entitas import ExecuteProcessor, Entity
 from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import (
-    get_alive_actors_in_stage,
-    determine_camp_relationship,
-)
-from ..game.dbg_combat_processor import (
     compute_character_stats,
+    get_alive_actors_in_stage,
 )
 from ..models import (
     GenerateDeckAction,
@@ -22,6 +19,8 @@ from ..models import (
     ExhaustPileComponent,
     CharacterStats,
     AppearanceComponent,
+    MonsterComponent,
+    PartyMemberComponent,
 )
 
 
@@ -189,12 +188,24 @@ class CombatInitActorSystem(ExecuteProcessor):
                 appearance_comp = other_entity.get(AppearanceComponent)
                 assert appearance_comp is not None, "每个参战角色都必须有外观组件！"
 
+                # 阵营判定：同是友方或同是敌方视为友方，否则为敌方
+                actor_is_ally = actor_entity.has(PartyMemberComponent)
+                actor_is_enemy = actor_entity.has(MonsterComponent)
+                other_is_ally = other_entity.has(PartyMemberComponent)
+                other_is_enemy = other_entity.has(MonsterComponent)
+                camp = (
+                    "友方"
+                    if (actor_is_ally and other_is_ally)
+                    or (actor_is_enemy and other_is_enemy)
+                    else "敌方"
+                )
+
                 # 生成其他角色信息
                 other_actors_info.append(
                     OtherActorInfo(
                         other_name=other_entity.name,
                         appearance=appearance_comp.appearance,
-                        camp=determine_camp_relationship(actor_entity, other_entity),
+                        camp=camp,
                     )
                 )
 

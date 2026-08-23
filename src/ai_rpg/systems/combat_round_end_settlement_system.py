@@ -1,4 +1,4 @@
-"""战斗回合末状态效果结算系统：并发调用 LLM 推理 ROUND_END 效果对 HP 的影响，处理排斥移除，并将繁殖/新增效果转发给 AddStatusEffectsActionSystem。"""
+"""战斗回合末状态效果结算系统：并发调用 LLM 推理 ROUND_END 效果对 HP 的影响，并将繁殖/新增效果转发给 UpdateStatusEffectsActionSystem 统一生成/移除。"""
 
 from typing import Final, List, Optional, final, override
 
@@ -30,25 +30,16 @@ def _make_round_end_hp_update_message(new_hp: int, max_hp: int) -> str:
     return f"# 回合末结算 — 生命值更新\n\n当前HP: {new_hp}/{max_hp}"
 
 
-def _make_round_end_remove_effects_message(removed: List[StatusEffect]) -> str:
-    """生成回合末状态效果移除通知文本。"""
-    lines = ["# 回合末结算 — 状态效果移除"]
-    for effect in removed:
-        lines.append(f"- {effect.name} 已被顶掉/清除")
-    return "\n".join(lines)
-
-
 ###############################################################################################################################################
 @final
 class _RoundEndEffectResponse(BaseModel):
     """回合末状态效果 LLM 推理响应"""
 
     hp: int  # 效果 tick 后的新 HP（LLM 计算；系统会 clamp 至 [0, max_hp]）
-    combat_log: str  # 简短战斗记录（如"中毒发作，扣除3HP"）
-    remove_effects: List[str] = []  # 排斥/克制：按名精确移除（同名全部移除）
+    combat_log: str  # 简短战斗记录（如“中毒发作，扣除3HP”）
     add_effect_affixes: List[str] = (
         []
-    )  # 繁殖/新增：affix 描述文本，交由 AddStatusEffectsActionSystem 生成
+    )  # 繁殖/新增：affix 描述文本，交由 UpdateStatusEffectsActionSystem 生成
 
 
 ###############################################################################################################################################
@@ -86,14 +77,12 @@ def _generate_round_end_effects_prompt(
 - 仅上方列出的效果参与本次计算，不考虑其他因素
 
 **效果增删规则**：
-- `remove_effects`：要顶掉/清除的现有效果名（按名精确匹配，同名全部移除）；仅在效果间存在克制/排斥关系时输出
-- `add_effect_affixes`：本回合末应繁殖/新生的效果描述文本（每条 affix 由下游生成 1 个 StatusEffect）；需写清目标效果名与规则，同名覆盖旧效果、异名追加；无则输出空数组
+- `add_effect_affixes`：本回合末应繁殖/新生的效果描述文本（每条 affix 由下游更新系统生成 1 个 StatusEffect，同名覆盖旧效果、异名追加；克制/排斥需顶掉现有者时也由下游统一处理）；需写清目标效果名与规则；无则输出空数组
 
 ```json
 {{
   "hp": <新HP整数值>,
   "combat_log": "<简短战斗记录，如：中毒发作，扣除3HP>",
-  "remove_effects": ["<被顶掉的效果名>"],
   "add_effect_affixes": ["<繁殖/新增效果的 affix 描述>"]
 }}
 ```
@@ -222,24 +211,7 @@ class CombatRoundEndSettlementSystem(ExecuteProcessor):
             HumanMessage(content=_make_round_end_hp_update_message(new_hp, max_hp)),
         )
 
-        # 排斥/克制：按名精确移除被顶掉的效果（同名全部移除）
-        if response.remove_effects:
-            removed = self._remove_status_effects_by_name(
-                entity, response.remove_effects
-            )
-            if removed:
-                logger.info(
-                    f"[{entity.name}] ROUND_END 移除 {len(removed)} 个效果: "
-                    f"{[e.name for e in removed]}"
-                )
-                self._game.add_human_message(
-                    entity,
-                    HumanMessage(
-                        content=_make_round_end_remove_effects_message(removed)
-                    ),
-                )
-
-        # 繁殖/新增：将 affix 描述转成 AffixTrigger，交由 AddStatusEffectsActionSystem 生成
+        # 繁殖/新增：将 affix 描述转成 AffixTrigger，交由 UpdateStatusEffectsActionSystem 生成/移除
         if response.add_effect_affixes:
             triggers = [
                 AffixTrigger(source="回合末结算", affix=affix)
@@ -248,24 +220,7 @@ class CombatRoundEndSettlementSystem(ExecuteProcessor):
             accumulate_status_effects_action(entity, triggers)
             logger.info(
                 f"[{entity.name}] ROUND_END 繁殖/新增 {len(triggers)} 条 affix，"
-                "待 AddStatusEffectsActionSystem 生成"
+                "待 UpdateStatusEffectsActionSystem 生成"
             )
-
-    ################################################################################################################
-    def _remove_status_effects_by_name(
-        self, entity: Entity, names: List[str]
-    ) -> List[StatusEffect]:
-        """按名称精确移除状态效果（同名全部移除），返回被移除的效果列表。"""
-        assert entity.has(
-            StatusEffectsComponent
-        ), f"{entity.name} 缺少 StatusEffectsComponent！"
-        status_comp = entity.get(StatusEffectsComponent)
-        remove_set = set(names)
-        removed = [e for e in status_comp.status_effects if e.name in remove_set]
-        if removed:
-            status_comp.status_effects = [
-                e for e in status_comp.status_effects if e.name not in remove_set
-            ]
-        return removed
 
     ################################################################################################################

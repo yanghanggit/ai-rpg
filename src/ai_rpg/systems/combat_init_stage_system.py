@@ -135,7 +135,7 @@ class CombatInitStageSystem(ExecuteProcessor):
         assert len(actor_entities) > 0, "不可能出现没人参与战斗的情况！"
 
         # 让 stage agent 扮演策划，设计一次战斗开始时的场景词缀；
-        # 若有，则直接为受影响角色追加 AddStatusEffectsAction，交由 AddStatusEffectsActionSystem 生成具体状态效果；
+        # 若有，则直接为受影响角色追加 AddStatusEffectsAction，交由 UpdateStatusEffectsActionSystem 生成具体状态效果；
         # 本阶段不产生任何塞牌可能性。
         prompt = _generate_combat_init_interaction_prompt(
             stage_name=current_stage_entity.name,

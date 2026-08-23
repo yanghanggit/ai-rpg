@@ -135,7 +135,7 @@ class PassTurnAction(Component):
 @register_action_component_type
 @register_component_type
 class AddStatusEffectsAction(Component):
-    """触发对当前场景所有参战角色进行状态效果评估。"""
+    """触发为当前实体追加状态效果；由 UpdateStatusEffectsActionSystem 统一生成并处理互斥顶替。"""
 
     name: str
     affix_triggers: List[

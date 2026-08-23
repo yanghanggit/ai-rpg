@@ -6,11 +6,8 @@ from src.ai_rpg.entitas.context import Context
 from src.ai_rpg.entitas.entity import Entity
 from src.ai_rpg.game.dbg_game import DBGGame
 from src.ai_rpg.models import PhaseType, StatusEffect, StatusEffectsComponent
-from src.ai_rpg.systems.add_status_effects_action_system import (
-    AddStatusEffectsActionSystem,
-)
-from src.ai_rpg.systems.combat_round_end_settlement_system import (
-    CombatRoundEndSettlementSystem,
+from src.ai_rpg.systems.update_status_effects_action_system import (
+    UpdateStatusEffectsActionSystem,
 )
 
 
@@ -25,16 +22,12 @@ def _effect(name: str, description: str = "desc") -> StatusEffect:
     return StatusEffect(name=name, description=description, duration=3)
 
 
-def _round_end_system() -> CombatRoundEndSettlementSystem:
-    return CombatRoundEndSettlementSystem(MagicMock(spec=DBGGame))
-
-
-def _add_system() -> AddStatusEffectsActionSystem:
-    return AddStatusEffectsActionSystem(MagicMock(spec=DBGGame))
+def _add_system() -> UpdateStatusEffectsActionSystem:
+    return UpdateStatusEffectsActionSystem(MagicMock(spec=DBGGame))
 
 
 # ---------------------------------------------------------------------------
-# CombatRoundEndSettlementSystem._remove_status_effects_by_name
+# UpdateStatusEffectsActionSystem._remove_status_effects_by_name
 # ---------------------------------------------------------------------------
 
 
@@ -47,7 +40,7 @@ def test_remove_by_name_removes_all_matching() -> None:
         _effect("中毒"),
     ]
 
-    removed = _round_end_system()._remove_status_effects_by_name(entity, ["中毒"])
+    removed = _add_system()._remove_status_effects_by_name(entity, ["中毒"])
 
     names = [e.name for e in entity.get(StatusEffectsComponent).status_effects]
     assert names == ["灼烧"]
@@ -59,14 +52,14 @@ def test_remove_by_name_no_match_returns_empty() -> None:
     entity = _make_entity(ctx, "英雄")
     entity.get(StatusEffectsComponent).status_effects = [_effect("中毒")]
 
-    removed = _round_end_system()._remove_status_effects_by_name(entity, ["不存在"])
+    removed = _add_system()._remove_status_effects_by_name(entity, ["不存在"])
 
     assert removed == []
     assert len(entity.get(StatusEffectsComponent).status_effects) == 1
 
 
 # ---------------------------------------------------------------------------
-# AddStatusEffectsActionSystem._upsert_status_effects
+# UpdateStatusEffectsActionSystem._upsert_status_effects
 # ---------------------------------------------------------------------------
 
 

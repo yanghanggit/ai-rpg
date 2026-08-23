@@ -21,7 +21,6 @@ from src.ai_rpg.models.stats import CharacterStats
 from src.ai_rpg.systems.combat_round_end_settlement_system import (
     CombatRoundEndSettlementSystem,
     _make_round_end_hp_update_message,
-    _make_round_end_remove_effects_message,
 )
 
 # ---------------------------------------------------------------------------
@@ -88,12 +87,6 @@ def test_round_end_hp_message_contains_values() -> None:
     assert "17" in result and "30" in result
 
 
-def test_round_end_remove_effects_message_contains_names() -> None:
-    removed = [_effect("中毒", 2), _effect("灼烧", 2)]
-    result = _make_round_end_remove_effects_message(removed)
-    assert "中毒" in result and "灼烧" in result
-
-
 # ---------------------------------------------------------------------------
 # _apply_round_end_effect_response
 # ---------------------------------------------------------------------------
@@ -131,46 +124,13 @@ def test_apply_invalid_response_no_raise(mock_set_hp: MagicMock, ctx: Context) -
 
 
 @patch(
-    "src.ai_rpg.systems.combat_round_end_settlement_system.CombatRoundEndSettlementSystem._remove_status_effects_by_name"
-)
-@patch("src.ai_rpg.systems.combat_round_end_settlement_system.set_character_hp")
-def test_apply_removes_effects_by_name(
-    mock_set_hp: MagicMock, mock_remove: MagicMock, ctx: Context
-) -> None:
-    """LLM 返回 remove_effects 时，应按名移除效果并写入移除通知。"""
-    game = _make_game(ctx)
-    entity = _make_actor(ctx, "英雄", [])
-    entity.add(CharacterStatsComponent, "英雄", CharacterStats(hp=20, max_hp=30))
-    game.get_entity_by_name.return_value = entity
-    mock_set_hp.return_value = MagicMock(hp=17, max_hp=30)
-    removed = [_effect("中毒", 2)]
-    mock_remove.return_value = removed
-    system = CombatRoundEndSettlementSystem(game)
-
-    system._apply_round_end_effect_response(
-        _make_client(
-            "英雄",
-            '{"hp": 17, "combat_log": "中毒发作", "remove_effects": ["中毒"]}',
-        )
-    )
-
-    mock_remove.assert_called_once_with(entity, ["中毒"])
-    notification_calls = [
-        call
-        for call in game.add_human_message.call_args_list
-        if "中毒" in call.args[1].content
-    ]
-    assert len(notification_calls) == 1
-
-
-@patch(
     "src.ai_rpg.systems.combat_round_end_settlement_system.accumulate_status_effects_action"
 )
 @patch("src.ai_rpg.systems.combat_round_end_settlement_system.set_character_hp")
 def test_apply_forwards_add_effect_affixes(
     mock_set_hp: MagicMock, mock_accumulate: MagicMock, ctx: Context
 ) -> None:
-    """LLM 返回 add_effect_affixes 时，应转成 AffixTrigger 交给追加系统。"""
+    """LLM 返回 add_effect_affixes 时，应转成 AffixTrigger 交给更新系统。"""
     game = _make_game(ctx)
     entity = _make_actor(ctx, "英雄", [])
     entity.add(CharacterStatsComponent, "英雄", CharacterStats(hp=20, max_hp=30))

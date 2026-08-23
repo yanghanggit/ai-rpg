@@ -51,8 +51,8 @@ def create_dungeon_combat_room_pipeline(
     from ..systems.use_gear_item_arbitration_system import (
         UseGearItemArbitrationSystem,
     )
-    from ..systems.add_status_effects_action_system import (
-        AddStatusEffectsActionSystem,
+    from ..systems.update_status_effects_action_system import (
+        UpdateStatusEffectsActionSystem,
     )
     from ..systems.inject_cards_action_system import (
         InjectCardsActionSystem,
@@ -131,9 +131,9 @@ def create_dungeon_combat_room_pipeline(
     # 死亡处理系统（ROUND_END 效果结算后标记 HP 归零的实体）
     processors.add(DeathSystem(dbg_game))
 
-    # 状态效果追加系统（统一在回合末结算与死亡标记之后落地：
-    # 仲裁阶段 + 回合末繁殖的 AddStatusEffectsAction 均在此处理，同名覆盖/异名追加）
-    processors.add(AddStatusEffectsActionSystem(dbg_game))
+    # 状态效果更新系统（统一在回合末结算与死亡标记之后落地：
+    # 仲裁阶段 + 回合末繁殖的 AddStatusEffectsAction 均在此处理，增添/繁殖 + 移除/顶掉）
+    processors.add(UpdateStatusEffectsActionSystem(dbg_game))
 
     # 检查战斗结果系统（必须在死亡标记之后，才能在同一周期内根据最终存活情况判定胜负）
     processors.add(CombatOutcomeSystem(dbg_game))

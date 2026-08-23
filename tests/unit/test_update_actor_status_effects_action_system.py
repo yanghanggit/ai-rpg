@@ -1,4 +1,4 @@
-"""AddActorStatusEffectsActionSystem 单元测试。"""
+"""UpdateStatusEffectsActionSystem 单元测试。"""
 
 from typing import List
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -18,8 +18,8 @@ from src.ai_rpg.models import (
     StatusEffectsComponent,
 )
 from src.ai_rpg.models.messages import AIMessage
-from src.ai_rpg.systems.add_status_effects_action_system import (
-    AddStatusEffectsActionSystem,
+from src.ai_rpg.systems.update_status_effects_action_system import (
+    UpdateStatusEffectsActionSystem,
 )
 
 # ---------------------------------------------------------------------------
@@ -101,13 +101,13 @@ def mock_game() -> MagicMock:
 
 
 @pytest.fixture()
-def system(mock_game: MagicMock) -> AddStatusEffectsActionSystem:
-    return AddStatusEffectsActionSystem(mock_game, use_condensed_prompt=True)
+def system(mock_game: MagicMock) -> UpdateStatusEffectsActionSystem:
+    return UpdateStatusEffectsActionSystem(mock_game, use_condensed_prompt=True)
 
 
 @pytest.fixture()
-def system_no_condense(mock_game: MagicMock) -> AddStatusEffectsActionSystem:
-    return AddStatusEffectsActionSystem(mock_game, use_condensed_prompt=False)
+def system_no_condense(mock_game: MagicMock) -> UpdateStatusEffectsActionSystem:
+    return UpdateStatusEffectsActionSystem(mock_game, use_condensed_prompt=False)
 
 
 class TestProcessStatusEffectsResponse:
@@ -115,7 +115,7 @@ class TestProcessStatusEffectsResponse:
         self,
         context: Context,
         mock_game: MagicMock,
-        system: AddStatusEffectsActionSystem,
+        system: UpdateStatusEffectsActionSystem,
     ) -> None:
         """有效响应：效果追加、source 设为实体名、affix 回填自触发词缀、human/ai message 各写入一次。"""
         entity = _make_actor_entity(context, "英雄", with_action=True)
@@ -143,7 +143,7 @@ class TestProcessStatusEffectsResponse:
         self,
         context: Context,
         mock_game: MagicMock,
-        system: AddStatusEffectsActionSystem,
+        system: UpdateStatusEffectsActionSystem,
     ) -> None:
         entity = _make_actor_entity(context, "战士", with_action=True)
         mock_game.get_entity_by_name.return_value = entity
@@ -152,11 +152,63 @@ class TestProcessStatusEffectsResponse:
         )
         assert entity.get(StatusEffectsComponent).status_effects == []
 
+    def test_remove_effects_removes_by_name_and_notifies(
+        self,
+        context: Context,
+        mock_game: MagicMock,
+        system: UpdateStatusEffectsActionSystem,
+    ) -> None:
+        """remove_effects 按名移除同名效果，并写入移除通知与状态效果通知。"""
+        entity = _make_actor_entity(context, "英雄", with_action=True)
+        entity.get(StatusEffectsComponent).status_effects = [
+            _make_effect("中毒"),
+            _make_effect("灼烧"),
+            _make_effect("中毒"),
+        ]
+        mock_game.get_entity_by_name.return_value = entity
+        system._process_status_effects_response(
+            _make_mock_chat_client(
+                "英雄", '{"add_effects": [], "remove_effects": ["中毒"]}'
+            )
+        )
+
+        names = [e.name for e in entity.get(StatusEffectsComponent).status_effects]
+        assert names == ["灼烧"]
+        # prompt + 移除通知 + 状态效果通知，共 3 条 human 消息
+        assert mock_game.add_human_message.call_count == 3
+        remove_call = mock_game.add_human_message.call_args_list[1]
+        assert "中毒" in remove_call.kwargs["human_message"].content
+
+    def test_remove_then_add_ordering(
+        self,
+        context: Context,
+        mock_game: MagicMock,
+        system: UpdateStatusEffectsActionSystem,
+    ) -> None:
+        """先移除后增添：同名效果被移除后再新增，最终仅保留新增结果。"""
+        entity = _make_actor_entity(context, "英雄", with_action=True)
+        entity.get(StatusEffectsComponent).status_effects = [
+            _make_effect("中毒", description="旧"),
+        ]
+        mock_game.get_entity_by_name.return_value = entity
+        response_json = (
+            '{"remove_effects": ["中毒"], "add_effects": ['
+            '{"name": "中毒", "description": "新", "duration": 2, "phase": "arbitration"}]}'
+        )
+        system._process_status_effects_response(
+            _make_mock_chat_client("英雄", response_json)
+        )
+
+        effects = entity.get(StatusEffectsComponent).status_effects
+        assert len(effects) == 1
+        assert effects[0].name == "中毒"
+        assert effects[0].description == "新"
+
     def test_field_validation(
         self,
         context: Context,
         mock_game: MagicMock,
-        system: AddStatusEffectsActionSystem,
+        system: UpdateStatusEffectsActionSystem,
     ) -> None:
         """speed 超范围归一化；defense 正负值保留原值，缺省为 0。"""
         entity = _make_actor_entity(context, "刺客", with_action=True)
@@ -200,7 +252,7 @@ class TestProcessStatusEffectsResponse:
         self,
         context: Context,
         mock_game: MagicMock,
-        system: AddStatusEffectsActionSystem,
+        system: UpdateStatusEffectsActionSystem,
     ) -> None:
         entity = _make_actor_entity(context, "骑士", with_action=True)
         mock_game.get_entity_by_name.return_value = entity
@@ -213,7 +265,7 @@ class TestProcessStatusEffectsResponse:
         self,
         context: Context,
         mock_game: MagicMock,
-        system: AddStatusEffectsActionSystem,
+        system: UpdateStatusEffectsActionSystem,
     ) -> None:
         """use_condensed_prompt=True 时 message_content 应为 condensed_prompt。"""
         entity = _make_actor_entity(context, "猎人", with_action=True)
@@ -231,7 +283,7 @@ class TestProcessStatusEffectsResponse:
         self,
         context: Context,
         mock_game: MagicMock,
-        system_no_condense: AddStatusEffectsActionSystem,
+        system_no_condense: UpdateStatusEffectsActionSystem,
     ) -> None:
         """use_condensed_prompt=False 时 message_content 应为 full prompt。"""
         entity = _make_actor_entity(context, "游侠", with_action=True)
@@ -254,19 +306,19 @@ class TestProcessStatusEffectsResponse:
 # ---------------------------------------------------------------------------
 
 
-class TestAddActorStatusEffectsActionSystemReact:
+class TestUpdateStatusEffectsActionSystemReact:
     @pytest.mark.asyncio
     async def test_skips_when_not_ongoing(
         self,
         context: Context,
         mock_game: MagicMock,
-        system: AddStatusEffectsActionSystem,
+        system: UpdateStatusEffectsActionSystem,
     ) -> None:
         """战斗未进行中时，batch_chat 不应被调用。"""
         mock_game.current_dungeon_combat_room.combat.is_ongoing = False
         entity = _make_actor_entity(context, "英雄", with_action=True)
         with patch(
-            "src.ai_rpg.systems.add_status_effects_action_system.batch_chat",
+            "src.ai_rpg.systems.update_status_effects_action_system.batch_chat",
             new_callable=AsyncMock,
         ) as mock_batch:
             await system.react([entity])
@@ -277,7 +329,7 @@ class TestAddActorStatusEffectsActionSystemReact:
         self,
         context: Context,
         mock_game: MagicMock,
-        system: AddStatusEffectsActionSystem,
+        system: UpdateStatusEffectsActionSystem,
     ) -> None:
         """2 个 actor → batch_chat 收到 2 个 client。"""
         mock_game.current_dungeon_combat_room.combat.is_ongoing = True
@@ -296,7 +348,7 @@ class TestAddActorStatusEffectsActionSystemReact:
 
         with (
             patch(
-                "src.ai_rpg.systems.add_status_effects_action_system.batch_chat",
+                "src.ai_rpg.systems.update_status_effects_action_system.batch_chat",
                 side_effect=_capture,
             ),
             patch.object(system, "_process_status_effects_response"),
@@ -306,13 +358,13 @@ class TestAddActorStatusEffectsActionSystemReact:
         assert len(captured) == 2
 
     def test_filter_rejects_dead_actor(
-        self, context: Context, system: AddStatusEffectsActionSystem
+        self, context: Context, system: UpdateStatusEffectsActionSystem
     ) -> None:
         entity = _make_actor_entity(context, "亡灵", with_action=True, dead=True)
         assert system.filter(entity) is False
 
     def test_filter_accepts_valid_actor(
-        self, context: Context, system: AddStatusEffectsActionSystem
+        self, context: Context, system: UpdateStatusEffectsActionSystem
     ) -> None:
         entity = _make_actor_entity(context, "勇士", with_action=True)
         assert system.filter(entity) is True

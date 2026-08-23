@@ -611,7 +611,7 @@ def generate_play_cards_affix_triggers(
 ) -> List[AffixTrigger]:
     """生成卡牌延迟词缀（card.on_hit_affixes）对应的 AffixTrigger 列表。
 
-    仅携带原始词缀文本与触发上下文，具体提示词措辞由 AddStatusEffectsActionSystem 统一拼装。
+    仅携带原始词缀文本与触发上下文，具体提示词措辞由 UpdateStatusEffectsActionSystem 统一拼装。
     伤害/HP 变化已经通过仲裁广播（combat_log）与个人 HP 更新通知同步给相关实体，此处无需重复。
     """
     if not card.on_hit_affixes:

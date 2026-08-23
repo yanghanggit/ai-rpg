@@ -1,4 +1,4 @@
-"""战斗状态效果追加系统模块"""
+"""战斗状态效果更新系统模块（增添/繁殖 + 移除/顶掉）。"""
 
 from typing import Dict, Final, List, Optional, final
 
@@ -24,10 +24,13 @@ from .arbitration_prompt_builders import fmt_duration
 
 
 #######################################################################################################################################
-class _AddStatusEffectsResponse(BaseModel):
-    """追加状态效果响应"""
+class _UpdateStatusEffectsResponse(BaseModel):
+    """状态效果更新响应"""
 
-    add_effects: List[StatusEffect] = []  # 本次追加的新效果列表
+    add_effects: List[StatusEffect] = []  # 本次增添/繁殖的新效果列表
+    remove_effects: List[str] = (
+        []
+    )  # 本次要移除/顶掉的现有效果名（按名精确匹配，同名全部移除）
 
 
 #######################################################################################################################################
@@ -43,12 +46,12 @@ def _format_affix_trigger(trigger: AffixTrigger, index: int) -> str:
 
 
 #######################################################################################################################################
-def _generate_condensed_add_status_effects_prompt(
+def _generate_condensed_update_status_effects_prompt(
     current_status_effects: List[StatusEffect],
     current_round_number: int,
     affix_triggers: List[AffixTrigger],
 ) -> str:
-    """生成精简版追加状态效果提示词（仅动态感知部分，省略静态字段说明与 JSON 示例）"""
+    """生成精简版状态效果更新提示词（仅动态感知部分，省略静态字段说明与 JSON 示例）"""
 
     if len(current_status_effects) == 0:
         effects_list = "无"
@@ -65,11 +68,11 @@ def _generate_condensed_add_status_effects_prompt(
     )
     max_effects = len(affix_triggers)
 
-    return f"""# 第 {current_round_number} 回合 — 追加状态效果
+    return f"""# 第 {current_round_number} 回合 — 更新状态效果
 
-回顾上下文历史，结合当前已有状态效果，追加本回合应有的新状态效果。
+回顾上下文历史，结合当前已有状态效果，更新本回合应有的状态效果（增添/繁殖 + 移除/顶掉）。
 
-## 任务提示（每条提示对应一个状态效果，严格 1:1）
+## 任务提示（每条提示对应一个待生成的新状态效果，严格 1:1）
 
 {hints_block}
 
@@ -77,16 +80,16 @@ def _generate_condensed_add_status_effects_prompt(
 
 {effects_list}
 
-**要求**：恰好生成 {max_effects} 个（与上方提示条数一一对应）；无新增时输出空数组。同名效果=刷新/强化（覆盖 description/duration/phase/counter/speed/defense），异名效果=新增可共存效果。"""
+**要求**：恰好生成 {max_effects} 个新增效果（与上方提示条数一一对应）；无新增时 add_effects 输出空数组。同名效果=刷新/强化（覆盖 description/duration/phase/counter/speed/defense），异名效果=新增可共存效果。若新效果与现有效果存在克制/排斥、需要顶掉现有者时，在 remove_effects 中输出要移除的现有效果名（按名精确匹配，同名全部移除），无则输出空数组。"""
 
 
 #######################################################################################################################################
-def _generate_add_status_effects_prompt(
+def _generate_update_status_effects_prompt(
     current_status_effects: List[StatusEffect],
     current_round_number: int,
     affix_triggers: List[AffixTrigger],
 ) -> str:
-    """生成追加状态效果提示词"""
+    """生成状态效果更新提示词"""
 
     if len(current_status_effects) == 0:
         effects_list = "无"
@@ -103,11 +106,11 @@ def _generate_add_status_effects_prompt(
     )
     max_effects = len(affix_triggers)
 
-    return f"""# 第 {current_round_number} 回合 — 追加状态效果
+    return f"""# 第 {current_round_number} 回合 — 更新状态效果
 
-回顾上下文历史，结合当前已有状态效果，追加本回合应有的新状态效果。
+回顾上下文历史，结合当前已有状态效果，更新本回合应有的状态效果（增添/繁殖 + 移除/顶掉）。
 
-## 任务提示（每条提示对应一个状态效果，严格 1:1）
+## 任务提示（每条提示对应一个待生成的新状态效果，严格 1:1）
 
 {hints_block}
 
@@ -120,6 +123,7 @@ def _generate_add_status_effects_prompt(
 - affix 是因，StatusEffect 是果。每条 affix 严格 1:1 落地为一条 StatusEffect，不可合并或拆分
 - 效果仅通过 duration / speed / defense / counter 四字段生效；其余影响（HP 增减、手牌调整等）写入 description 交下游消费。禁止修改 max_hp，禁止引入新数值轴
 - 同名覆盖、异名追加：若生成效果与现有效果同名，表示刷新/强化该效果（系统覆盖 description/duration/phase/counter/speed/defense，保留 uuid/source/affix）；异名则新增一个可共存效果
+- 移除/顶掉：若新效果与现有效果存在克制/排斥关系、需顶掉现有者时，在 `remove_effects` 中输出要移除的现有效果名（按名精确匹配，同名全部移除）
 
 ## 状态效果字段说明
 
@@ -145,7 +149,7 @@ def _generate_add_status_effects_prompt(
 - `description`：第三人称，静态规则说明（客观描述效果机制与数值，不随状态变化）
 - 禁止修改 `max_hp`
 
-**要求**：恰好生成 {max_effects} 个（与上方提示条数一一对应）；无新增时输出空数组。同名效果=刷新/强化（覆盖 description/duration/phase/counter/speed/defense），异名效果=新增可共存效果；只输出 JSON。
+**要求**：恰好生成 {max_effects} 个新增效果（与上方提示条数一一对应）；无新增时 add_effects 输出空数组。同名效果=刷新/强化（覆盖 description/duration/phase/counter/speed/defense），异名效果=新增可共存效果；存在克制/排斥需顶掉现有者时在 remove_effects 输出要移除的效果名，否则输出空数组；只输出 JSON。
 
 ```json
 {{
@@ -159,9 +163,19 @@ def _generate_add_status_effects_prompt(
       "defense": 0,
       "counter": 0
     }}
-  ]
+  ],
+  "remove_effects": ["<要顶掉/清除的现有效果名>"]
 }}
 ```"""
+
+
+#######################################################################################################################################
+def _make_remove_effects_message(removed: List[StatusEffect]) -> str:
+    """生成状态效果移除通知文本。"""
+    lines = ["# 状态效果更新 — 效果移除"]
+    for effect in removed:
+        lines.append(f"- {effect.name} 已被顶掉/清除")
+    return "\n".join(lines)
 
 
 #######################################################################################################################################
@@ -188,8 +202,8 @@ def _generate_status_effects_notification_prompt(
 
 #######################################################################################################################################
 @final
-class AddStatusEffectsActionSystem(ReactiveProcessor):
-    """让每个参战 Actor 根据战斗上下文评估并追加新的状态效果（增益/减益/削弱等）。"""
+class UpdateStatusEffectsActionSystem(ReactiveProcessor):
+    """让每个参战 Actor 根据战斗上下文评估并更新状态效果（增添/繁殖 + 移除/顶掉）。"""
 
     def __init__(
         self,
@@ -218,14 +232,14 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
     #######################################################################################################################################
     @override
     async def react(self, entities: List[Entity]) -> None:
-        """并发为所有实体调用 LLM 评估并追加状态效果。"""
+        """并发为所有实体调用 LLM 评估并更新状态效果。"""
 
         # 仅在战斗进行中时触发
         if not self._game.current_dungeon_combat_room.combat.is_ongoing:
             return
 
         logger.debug(
-            f"触发 AddActorStatusEffectsActionSystem，处理 {len(entities)} 个实体"
+            f"触发 UpdateStatusEffectsActionSystem，处理 {len(entities)} 个实体"
         )
 
         # 直接使用 filter() 已过滤的实体列表，避免重新查询导致对未添加 AddStatusEffectsAction 的角色 assert 失败
@@ -262,8 +276,8 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
             add_status_effects_action is not None
         ), f"角色 {entity.name} 缺少 AddStatusEffectsAction 组件！"
 
-        # 生成追加状态效果提示词
-        prompt = _generate_add_status_effects_prompt(
+        # 生成状态效果更新提示词
+        prompt = _generate_update_status_effects_prompt(
             current_status_effects=combat_status_effects.status_effects,
             current_round_number=current_round_number,
             affix_triggers=add_status_effects_action.affix_triggers,
@@ -272,7 +286,7 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
         # 如果启用了精简提示词，则生成精简后的提示词，用于在与 LLM 交互时减少上下文长度，提高效率
         condensed_message: Optional[str] = None
         if self._use_condensed_prompt:
-            condensed_message = _generate_condensed_add_status_effects_prompt(
+            condensed_message = _generate_condensed_update_status_effects_prompt(
                 current_status_effects=combat_status_effects.status_effects,
                 current_round_number=current_round_number,
                 affix_triggers=add_status_effects_action.affix_triggers,
@@ -288,7 +302,7 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
 
     #######################################################################################################################################
     def _process_status_effects_response(self, chat_client: DeepSeekClient) -> None:
-        """解析 LLM 响应并追加新状态效果；将本轮对话写入实体上下文。"""
+        """解析 LLM 响应并更新状态效果（增添/繁殖 + 移除/顶掉）；将本轮对话写入实体上下文。"""
 
         # 检查 LLM 是否返回了有效的 AI 消息，如果没有则记录错误并返回
         if chat_client.response_ai_message is None:
@@ -307,14 +321,14 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
             add_status_effects_action is not None
         ), f"角色 {entity.name} 缺少 AddStatusEffectsAction 组件！"
 
-        # 解析 LLM 响应，追加状态效果
+        # 解析 LLM 响应，更新状态效果
         try:
             json_content = extract_json(chat_client.response_content)
-            format_response = _AddStatusEffectsResponse.model_validate_json(
+            format_response = _UpdateStatusEffectsResponse.model_validate_json(
                 json_content
             )
         except Exception as e:
-            logger.error(f"[{entity.name}] 解析状态效果评估失败: {e}")
+            logger.error(f"[{entity.name}] 解析状态效果更新失败: {e}")
             logger.error(f"原始响应: {chat_client.response_content}")
             return
 
@@ -339,7 +353,27 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
             entity=entity, ai_message=chat_client.response_ai_message
         )
 
-        # 添加新效果到现有列表
+        changed = False
+
+        # 移除/顶掉：按名精确移除被顶掉/清除的效果（同名全部移除）
+        if format_response.remove_effects:
+            removed = self._remove_status_effects_by_name(
+                entity, format_response.remove_effects
+            )
+            if removed:
+                changed = True
+                logger.info(
+                    f"[{entity.name}] 更新移除 {len(removed)} 个效果: "
+                    f"{[e.name for e in removed]}"
+                )
+                self._game.add_human_message(
+                    entity=entity,
+                    human_message=HumanMessage(
+                        content=_make_remove_effects_message(removed)
+                    ),
+                )
+
+        # 增添/繁殖：同名覆盖（保留 uuid/source/affix）、异名追加
         if format_response.add_effects:
 
             # LLM 必须严格按 prompt 要求的 1:1 顺序返回，否则无法追溯 affix 来源
@@ -352,14 +386,14 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
 
             # 将新增效果的 source/affix 字段回填，便于后续追踪来源
             for trigger, effect in zip(
-                add_status_effects_action.affix_triggers, format_response.add_effects
+                add_status_effects_action.affix_triggers,
+                format_response.add_effects,
             ):
                 effect.source = entity.name
                 effect.affix = trigger.affix
 
-            # 同名覆盖（保留 uuid/source/affix）、异名追加
-            combat_status_effects = entity.get(StatusEffectsComponent)
             self._upsert_status_effects(entity, format_response.add_effects)
+            changed = True
             logger.debug(
                 f"[{entity.name}] 合并 {len(format_response.add_effects)} 个状态效果（同名覆盖/异名追加）"
             )
@@ -368,35 +402,36 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
                     f"[{entity.name}] 效果: 「{effect.name}」 phase={effect.phase} duration={effect.duration}"
                 )
 
-            # 追加提示消息：告知当前完整状态效果列表（Markdown 格式，全字段），便于后续 LLM 交互感知最新状态
-            notification_messages = self._game.filter_messages(
-                entity=entity,
-                predicate=lambda msg, index, context: (
-                    getattr(msg, "status_effects_notification", None) == entity.name
-                ),
-            )
-            if notification_messages:
-                # 如果已有通知类消息，就全部删除旧的然后添加新的
-                logger.debug(
-                    f"[{entity.name}] 删除 {len(notification_messages)} 条旧的状态效果通知消息"
-                )
-                self._game.remove_messages(
-                    entity=entity, messages=notification_messages
-                )
+        if not changed:
+            logger.debug(f"[{entity.name}] 本回合无状态效果变更")
+            return
 
-            self._game.add_human_message(
-                entity=entity,
-                human_message=HumanMessage(
-                    content=_generate_status_effects_notification_prompt(
-                        entity_name=entity.name,
-                        status_effects=combat_status_effects.status_effects,
-                    ),
-                    status_effects_notification=entity.name,  # 标记：本消息为状态效果通知类消息
-                ),
+        # 追加提示消息：告知当前完整状态效果列表（Markdown 格式，全字段），便于后续 LLM 交互感知最新状态
+        combat_status_effects = entity.get(StatusEffectsComponent)
+        assert combat_status_effects is not None
+        notification_messages = self._game.filter_messages(
+            entity=entity,
+            predicate=lambda msg, index, context: (
+                getattr(msg, "status_effects_notification", None) == entity.name
+            ),
+        )
+        if notification_messages:
+            # 如果已有通知类消息，就全部删除旧的然后添加新的
+            logger.debug(
+                f"[{entity.name}] 删除 {len(notification_messages)} 条旧的状态效果通知消息"
             )
+            self._game.remove_messages(entity=entity, messages=notification_messages)
 
-        else:
-            logger.debug(f"[{entity.name}] 本回合无新增状态效果")
+        self._game.add_human_message(
+            entity=entity,
+            human_message=HumanMessage(
+                content=_generate_status_effects_notification_prompt(
+                    entity_name=entity.name,
+                    status_effects=combat_status_effects.status_effects,
+                ),
+                status_effects_notification=entity.name,  # 标记：本消息为状态效果通知类消息
+            ),
+        )
 
     #######################################################################################################################################
     def _upsert_status_effects(
@@ -430,6 +465,23 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
             else:
                 status_comp.status_effects.append(effect)
                 logger.debug(f"[{entity.name}] 追加状态效果「{effect.name}」")
+
+    #######################################################################################################################################
+    def _remove_status_effects_by_name(
+        self, entity: Entity, names: List[str]
+    ) -> List[StatusEffect]:
+        """按名称精确移除状态效果（同名全部移除），返回被移除的效果列表。"""
+        assert entity.has(
+            StatusEffectsComponent
+        ), f"{entity.name} 缺少 StatusEffectsComponent！"
+        status_comp = entity.get(StatusEffectsComponent)
+        remove_set = set(names)
+        removed = [e for e in status_comp.status_effects if e.name in remove_set]
+        if removed:
+            status_comp.status_effects = [
+                e for e in status_comp.status_effects if e.name not in remove_set
+            ]
+        return removed
 
 
 #######################################################################################################################################

@@ -1,0 +1,45 @@
+"""死亡处理系统模块。"""
+
+from typing import Final, final, override
+
+from loguru import logger
+
+from ..entitas import ExecuteProcessor, Matcher
+from ..game.dbg_combat_processor import compute_character_stats
+from ..game.dbg_game import DBGGame
+from ..models import (
+    CharacterStatsComponent,
+    DeathComponent,
+    HumanMessage,
+)
+
+
+###############################################################################################################################################
+@final
+class DeathSystem(ExecuteProcessor):
+    """
+    死亡处理系统：将 HP 归零且尚未标记死亡的实体标记为死亡。
+
+    原 dbg_combat_processor.process_zero_health_entities 的逻辑迁移至本系统，
+    在管道中于各结算点之后多次挂载，以保持与原先调用时机一致。
+    """
+
+    ############################################################################################################
+    def __init__(self, game: DBGGame) -> None:
+        self._game: Final[DBGGame] = game
+
+    ############################################################################################################
+    @override
+    async def execute(self) -> None:
+        defeated_entities = self._game.get_group(
+            Matcher(all_of=[CharacterStatsComponent], none_of=[DeathComponent])
+        ).entities.copy()
+
+        for entity in defeated_entities:
+            entity_hp = compute_character_stats(entity).hp
+            if entity_hp <= 0:
+                logger.info(f"{entity.name} 已被击败，HP={entity_hp}")
+                self._game.add_human_message(
+                    entity, HumanMessage(content="# 你的HP已归零，失去战斗能力！")
+                )
+                entity.replace(DeathComponent, entity.name)

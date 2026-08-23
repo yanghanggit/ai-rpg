@@ -14,7 +14,6 @@ from ..game.dbg_combat_processor import (
     collect_target_character_stats,
     compute_character_stats,
     get_status_effects_by_phase,
-    process_zero_health_entities,
     set_character_hp,
 )
 from ..game.dbg_game import DBGGame
@@ -172,9 +171,6 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
 
         # 解析 LLM 的响应内容，提取 JSON 并转换为 ArbitrationResponse 对象，供后续处理使用
         self._apply_arbitration_result(chat_client, actor_entity, play_cards_action)
-
-        # 处理血量为零的实体，触发相应的游戏逻辑，例如移除实体或触发死亡事件
-        process_zero_health_entities(self._game)
 
     #######################################################################################################################################
     def _apply_arbitration_result(

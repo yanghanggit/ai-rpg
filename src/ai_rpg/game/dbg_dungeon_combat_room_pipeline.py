@@ -68,6 +68,7 @@ def create_dungeon_combat_room_pipeline(
     from ..systems.combat_round_end_settlement_system import (
         CombatRoundEndSettlementSystem,
     )
+    from ..systems.death_system import DeathSystem
     from ..systems.combat_status_effect_tick_system import CombatStatusEffectTickSystem
     from ..systems.combat_round_transition_system import (
         CombatRoundTransitionSystem,
@@ -113,6 +114,7 @@ def create_dungeon_combat_room_pipeline(
     processors.add(PlayCardsArbitrationSystem(dbg_game))
     processors.add(UseConsumableItemArbitrationSystem(dbg_game))
     processors.add(UseGearItemArbitrationSystem(dbg_game))
+    processors.add(DeathSystem(dbg_game))
     processors.add(AddStatusEffectsActionSystem(dbg_game))
 
     # 仂裁结算后，由 stage agent（地牢主视角）复用已更新的对话上下文，判断是否需要向场内角色塞入场景卡牌
@@ -121,14 +123,17 @@ def create_dungeon_combat_room_pipeline(
     # 回合完成判定系统
     processors.add(CombatRoundCompletionSystem(dbg_game))
 
-    # 检查战斗结果系统
-    processors.add(CombatOutcomeSystem(dbg_game))
-
     # 战斗回合清理系统（清除旧回合手牌状态）
     processors.add(CombatRoundCleanupSystem(dbg_game))
 
-    # 战斗回合末状态效果结算系统（并发 LLM 推理 ROUND_END 效果 HP 变化 + 处理死亡）
+    # 战斗回合末状态效果结算系统（并发 LLM 推理 ROUND_END 效果 HP 变化）
     processors.add(CombatRoundEndSettlementSystem(dbg_game))
+
+    # 死亡处理系统（ROUND_END 效果结算后标记 HP 归零的实体）
+    processors.add(DeathSystem(dbg_game))
+
+    # 检查战斗结果系统（必须在死亡标记之后，才能在同一周期内根据最终存活情况判定胜负）
+    processors.add(CombatOutcomeSystem(dbg_game))
 
     # 战斗状态效果 tick 系统（推进持续时间、移除到期效果）
     processors.add(CombatStatusEffectTickSystem(dbg_game))

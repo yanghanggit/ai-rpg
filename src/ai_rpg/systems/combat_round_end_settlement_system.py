@@ -10,7 +10,6 @@ from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.dbg_combat_processor import (
     compute_character_stats,
     get_status_effects_by_phase,
-    process_zero_health_entities,
     set_character_hp,
 )
 from ..game.dbg_game import DBGGame
@@ -127,9 +126,6 @@ class CombatRoundEndSettlementSystem(ExecuteProcessor):
         # 处理每个实体的 LLM 响应，更新 HP 并写入上下文
         for chat_client in chat_clients:
             self._apply_round_end_effect_response(chat_client)
-
-        # 结算后处理 HP 为 0 的实体（如标记死亡、触发后续效果等）
-        process_zero_health_entities(self._game)
 
     ################################################################################################################
     def _create_round_end_effect_client(

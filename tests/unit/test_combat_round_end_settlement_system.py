@@ -159,24 +159,18 @@ async def test_execute_skips_when_round_not_completed(
 
 
 @pytest.mark.asyncio
-async def test_execute_processes_zero_health_entities_when_completed(
+async def test_execute_batches_round_end_effects_when_completed(
     ctx: Context, game: MagicMock, system: CombatRoundEndSettlementSystem
 ) -> None:
-    """回合完成时应并发结算 ROUND_END 效果，并调用死亡结算。"""
+    """回合完成时应并发结算 ROUND_END 效果（死亡标记由 DeathSystem 在管道中负责）。"""
     game.current_dungeon_combat_room.combat.is_ongoing = True
     game.current_dungeon_combat_room.combat.rounds = [MagicMock()]
     game.current_dungeon_combat_room.combat.latest_round.is_completed = True
     # 无任何持有 ROUND_END 效果的实体，chat_clients 为空列表
-    with (
-        patch(
-            "src.ai_rpg.systems.combat_round_end_settlement_system.batch_chat",
-            new_callable=AsyncMock,
-        ) as mock_batch_chat,
-        patch(
-            "src.ai_rpg.systems.combat_round_end_settlement_system.process_zero_health_entities"
-        ) as mock_process_zero_health,
-    ):
+    with patch(
+        "src.ai_rpg.systems.combat_round_end_settlement_system.batch_chat",
+        new_callable=AsyncMock,
+    ) as mock_batch_chat:
         await system.execute()
 
     mock_batch_chat.assert_awaited_once_with(clients=[])
-    mock_process_zero_health.assert_called_once_with(game)

@@ -13,7 +13,6 @@ from ..game.dbg_combat_processor import (
     collect_target_arbitration_effects,
     collect_target_character_stats,
     compute_character_stats,
-    process_zero_health_entities,
     set_character_hp,
 )
 from ..game.dbg_game import DBGGame
@@ -142,9 +141,6 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
 
         # 解析 LLM 的响应内容，应用装备仲裁结果，更新游戏状态
         self._apply_gear_arbitration_result(chat_client, actor_entity, action)
-
-        # 处理血量为零的实体，确保游戏状态的一致性
-        process_zero_health_entities(self._game)
 
     #######################################################################################################################################
     def _apply_gear_arbitration_result(

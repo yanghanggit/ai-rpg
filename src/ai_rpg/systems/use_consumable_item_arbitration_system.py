@@ -13,7 +13,6 @@ from ..game.dbg_combat_processor import (
     collect_target_arbitration_effects,
     collect_target_character_stats,
     compute_character_stats,
-    process_zero_health_entities,
     set_character_hp,
 )
 from ..game.dbg_game import DBGGame
@@ -145,9 +144,6 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
 
         # 将 LLM 的仲裁结果应用到游戏中，包括解析 JSON 响应并更新游戏状态
         self._apply_item_arbitration_result(chat_client, actor_entity, action)
-
-        # 处理血量为零的实体，确保游戏状态与仲裁结果一致
-        process_zero_health_entities(self._game)
 
     #######################################################################################################################################
     def _apply_item_arbitration_result(

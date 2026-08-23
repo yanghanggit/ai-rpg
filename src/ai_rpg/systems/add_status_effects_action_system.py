@@ -77,7 +77,7 @@ def _generate_condensed_add_status_effects_prompt(
 
 {effects_list}
 
-**要求**：不重复现有效果，恰好追加 {max_effects} 个（与上方提示条数一一对应）；无新增时输出空数组。"""
+**要求**：恰好生成 {max_effects} 个（与上方提示条数一一对应）；无新增时输出空数组。同名效果=刷新/强化（覆盖 description/duration/phase/counter/speed/defense），异名效果=新增可共存效果。"""
 
 
 #######################################################################################################################################
@@ -119,6 +119,7 @@ def _generate_add_status_effects_prompt(
 
 - affix 是因，StatusEffect 是果。每条 affix 严格 1:1 落地为一条 StatusEffect，不可合并或拆分
 - 效果仅通过 duration / speed / defense / counter 四字段生效；其余影响（HP 增减、手牌调整等）写入 description 交下游消费。禁止修改 max_hp，禁止引入新数值轴
+- 同名覆盖、异名追加：若生成效果与现有效果同名，表示刷新/强化该效果（系统覆盖 description/duration/phase/counter/speed/defense，保留 uuid/source/affix）；异名则新增一个可共存效果
 
 ## 状态效果字段说明
 
@@ -144,7 +145,7 @@ def _generate_add_status_effects_prompt(
 - `description`：第三人称，静态规则说明（客观描述效果机制与数值，不随状态变化）
 - 禁止修改 `max_hp`
 
-**要求**：不重复现有效果，恰好追加 {max_effects} 个（与上方提示条数一一对应）；只输出 JSON。
+**要求**：恰好生成 {max_effects} 个（与上方提示条数一一对应）；无新增时输出空数组。同名效果=刷新/强化（覆盖 description/duration/phase/counter/speed/defense），异名效果=新增可共存效果；只输出 JSON。
 
 ```json
 {{
@@ -356,15 +357,15 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
                 effect.source = entity.name
                 effect.affix = trigger.affix
 
-            # 追加新效果到 CombatStatusEffectsComponent
+            # 同名覆盖（保留 uuid/source/affix）、异名追加
             combat_status_effects = entity.get(StatusEffectsComponent)
-            combat_status_effects.status_effects.extend(format_response.add_effects)
+            self._upsert_status_effects(entity, format_response.add_effects)
             logger.debug(
-                f"[{entity.name}] 新增 {len(format_response.add_effects)} 个状态效果"
+                f"[{entity.name}] 合并 {len(format_response.add_effects)} 个状态效果（同名覆盖/异名追加）"
             )
             for effect in format_response.add_effects:
                 logger.debug(
-                    f"[{entity.name}] 新增效果: 「{effect.name}」 phase={effect.phase} duration={effect.duration}"
+                    f"[{entity.name}] 效果: 「{effect.name}」 phase={effect.phase} duration={effect.duration}"
                 )
 
             # 追加提示消息：告知当前完整状态效果列表（Markdown 格式，全字段），便于后续 LLM 交互感知最新状态
@@ -396,6 +397,39 @@ class AddStatusEffectsActionSystem(ReactiveProcessor):
 
         else:
             logger.debug(f"[{entity.name}] 本回合无新增状态效果")
+
+    #######################################################################################################################################
+    def _upsert_status_effects(
+        self, entity: Entity, new_effects: List[StatusEffect]
+    ) -> None:
+        """同名覆盖、异名追加状态效果。
+
+        同名时保留旧效果的 uuid/source/affix，仅更新
+        description/duration/phase/counter/speed/defense。
+        """
+        assert entity.has(
+            StatusEffectsComponent
+        ), f"{entity.name} 缺少 StatusEffectsComponent！"
+        status_comp = entity.get(StatusEffectsComponent)
+        for effect in new_effects:
+            index = next(
+                (
+                    i
+                    for i, existing in enumerate(status_comp.status_effects)
+                    if existing.name == effect.name
+                ),
+                None,
+            )
+            if index is not None:
+                old = status_comp.status_effects[index]
+                effect.uuid = old.uuid
+                effect.source = old.source
+                effect.affix = old.affix
+                status_comp.status_effects[index] = effect
+                logger.debug(f"[{entity.name}] 覆盖状态效果「{effect.name}」")
+            else:
+                status_comp.status_effects.append(effect)
+                logger.debug(f"[{entity.name}] 追加状态效果「{effect.name}」")
 
 
 #######################################################################################################################################

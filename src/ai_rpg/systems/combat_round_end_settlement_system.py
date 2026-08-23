@@ -1,4 +1,4 @@
-"""战斗回合末状态效果结算系统：并发调用 LLM 推理 ROUND_END 状态效果对 HP 的影响，并处理死亡结算。"""
+"""战斗回合末状态效果结算系统：并发调用 LLM 推理 ROUND_END 效果对 HP 的影响，处理排斥移除，并将繁殖/新增效果转发给 AddStatusEffectsActionSystem。"""
 
 from typing import Final, List, Optional, final, override
 
@@ -8,12 +8,14 @@ from pydantic import BaseModel
 from ..deepseek import DeepSeekClient, batch_chat
 from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.dbg_combat_processor import (
+    accumulate_status_effects_action,
     compute_character_stats,
     get_status_effects_by_phase,
     set_character_hp,
 )
 from ..game.dbg_game import DBGGame
 from ..models import (
+    AffixTrigger,
     DeathComponent,
     HumanMessage,
     PhaseType,
@@ -28,6 +30,14 @@ def _make_round_end_hp_update_message(new_hp: int, max_hp: int) -> str:
     return f"# 回合末结算 — 生命值更新\n\n当前HP: {new_hp}/{max_hp}"
 
 
+def _make_round_end_remove_effects_message(removed: List[StatusEffect]) -> str:
+    """生成回合末状态效果移除通知文本。"""
+    lines = ["# 回合末结算 — 状态效果移除"]
+    for effect in removed:
+        lines.append(f"- {effect.name} 已被顶掉/清除")
+    return "\n".join(lines)
+
+
 ###############################################################################################################################################
 @final
 class _RoundEndEffectResponse(BaseModel):
@@ -35,6 +45,10 @@ class _RoundEndEffectResponse(BaseModel):
 
     hp: int  # 效果 tick 后的新 HP（LLM 计算；系统会 clamp 至 [0, max_hp]）
     combat_log: str  # 简短战斗记录（如"中毒发作，扣除3HP"）
+    remove_effects: List[str] = []  # 排斥/克制：按名精确移除（同名全部移除）
+    add_effect_affixes: List[str] = (
+        []
+    )  # 繁殖/新增：affix 描述文本，交由 AddStatusEffectsActionSystem 生成
 
 
 ###############################################################################################################################################
@@ -65,16 +79,22 @@ def _generate_round_end_effects_prompt(
 
 {effects_list}
 
-根据以上状态效果，推算本回合末结算后你的新 HP。
+根据以上状态效果，推算本回合末结算后你的新 HP，并判断效果之间的排斥/克制与繁殖/新增。
 
 **约束**：
 - 最终 HP 必须在 0 ～ {max_hp} 范围内
 - 仅上方列出的效果参与本次计算，不考虑其他因素
 
+**效果增删规则**：
+- `remove_effects`：要顶掉/清除的现有效果名（按名精确匹配，同名全部移除）；仅在效果间存在克制/排斥关系时输出
+- `add_effect_affixes`：本回合末应繁殖/新生的效果描述文本（每条 affix 由下游生成 1 个 StatusEffect）；需写清目标效果名与规则，同名覆盖旧效果、异名追加；无则输出空数组
+
 ```json
 {{
   "hp": <新HP整数值>,
-  "combat_log": "<简短战斗记录，如：中毒发作，扣除3HP>"
+  "combat_log": "<简短战斗记录，如：中毒发作，扣除3HP>",
+  "remove_effects": ["<被顶掉的效果名>"],
+  "add_effect_affixes": ["<繁殖/新增效果的 affix 描述>"]
 }}
 ```
 
@@ -85,7 +105,7 @@ def _generate_round_end_effects_prompt(
 @final
 class CombatRoundEndSettlementSystem(ExecuteProcessor):
     """
-    战斗回合末状态效果结算系统：并发调用 LLM 推理 ROUND_END 效果的 HP 变化，并在结算后处理 HP 归零的实体（如标记死亡）。
+    战斗回合末状态效果结算系统：并发调用 LLM 推理 ROUND_END 效果的 HP 变化并写回实体。
     """
 
     ############################################################################################################
@@ -201,5 +221,51 @@ class CombatRoundEndSettlementSystem(ExecuteProcessor):
             entity,
             HumanMessage(content=_make_round_end_hp_update_message(new_hp, max_hp)),
         )
+
+        # 排斥/克制：按名精确移除被顶掉的效果（同名全部移除）
+        if response.remove_effects:
+            removed = self._remove_status_effects_by_name(
+                entity, response.remove_effects
+            )
+            if removed:
+                logger.info(
+                    f"[{entity.name}] ROUND_END 移除 {len(removed)} 个效果: "
+                    f"{[e.name for e in removed]}"
+                )
+                self._game.add_human_message(
+                    entity,
+                    HumanMessage(
+                        content=_make_round_end_remove_effects_message(removed)
+                    ),
+                )
+
+        # 繁殖/新增：将 affix 描述转成 AffixTrigger，交由 AddStatusEffectsActionSystem 生成
+        if response.add_effect_affixes:
+            triggers = [
+                AffixTrigger(source="回合末结算", affix=affix)
+                for affix in response.add_effect_affixes
+            ]
+            accumulate_status_effects_action(entity, triggers)
+            logger.info(
+                f"[{entity.name}] ROUND_END 繁殖/新增 {len(triggers)} 条 affix，"
+                "待 AddStatusEffectsActionSystem 生成"
+            )
+
+    ################################################################################################################
+    def _remove_status_effects_by_name(
+        self, entity: Entity, names: List[str]
+    ) -> List[StatusEffect]:
+        """按名称精确移除状态效果（同名全部移除），返回被移除的效果列表。"""
+        assert entity.has(
+            StatusEffectsComponent
+        ), f"{entity.name} 缺少 StatusEffectsComponent！"
+        status_comp = entity.get(StatusEffectsComponent)
+        remove_set = set(names)
+        removed = [e for e in status_comp.status_effects if e.name in remove_set]
+        if removed:
+            status_comp.status_effects = [
+                e for e in status_comp.status_effects if e.name not in remove_set
+            ]
+        return removed
 
     ################################################################################################################

@@ -17,7 +17,7 @@ class CharacterStats(BaseModel):
     attack: int = 5
     # 防御力
     defense: int = 3
-    # 每回合行动次数（能量）；决定该角色在 action_order 中出现几次
+    # 本回合可用行动力（能量）；用于支付出牌/装备等动作费用，耗尽或过牌后本回合不再行动
     energy: int = 2
     # 速度；决定 SPEED_ORDER 策略下的出手优先级，值越大越靠前
     speed: int = 0

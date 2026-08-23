@@ -155,7 +155,7 @@ class HandComponent(MutableComponent):
 ############################################################################################################
 @final
 @register_component_type
-class RoundStatsComponent(MutableComponent):
+class RoundStatsComponent(Component):
     """本回合动态战斗属性；每回合开始由 CharacterStats 初始化，回合结束清除。"""
 
     name: str

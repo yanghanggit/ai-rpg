@@ -38,7 +38,7 @@
 | [AI 操作 CLI（run_agent_game.py）](wiki/run-agent-game.md) | 快照驱动设计的意图、AI 代理操作工具与 TUI 客户端的分工 |
 | [副本生成管道（Dungeon Generation Pipeline）](wiki/dungeon-generation.md) | 核心哲学：机制与内容分离、四步接力管道的分工意图与设计决策、与工坊合成的架构对比 |
 | [战斗管道（Combat Pipeline）](wiki/combat-pipeline.md) | ECS 处理器链的架构设计：管道心跳驱动、场景实体仲裁、词缀因果链、回合行动序列与四个生命周期阶段 |
-| [卡牌关键词（keywords）](wiki/keywords.md) | 角色牌库蓝图：风格池声明、设计原则（不写机制/不携带特化）、牌库多样性与骰值 |
+| [卡牌关键词（keywords）](wiki/keywords.md) | 角色牌库蓝图：风格池声明、设计原则（不写机制/不携带特化）、牌库多样性与质量变体 |
 | [词缀（Affix）](wiki/affix.md) | 词缀作为 StatusEffect 种子的创建、流转、落地与回述全线路 |
 | [DBG 核心概念定义与逻辑关系总结](<wiki/DBG 核心概念定义与逻辑关系总结.md>) | Modifiers（对局级规则）、Affixes（实体固有词缀）、Status Effects（临时状态）三者的定义、归属与逻辑关系：宏观-微观、因-果、生产-消费模型 |
 | [LLM 生成型游戏对象：Card 与 StatusEffect](wiki/llm-generated-objects.md) | 两类 LLM 动态产出的核心对象的生成点定位、全局约束视角、生成链与规则来源 |

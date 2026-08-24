@@ -3,7 +3,6 @@
 """
 
 import random
-from enum import IntEnum, unique
 from typing import Dict, Final, List, final, override
 
 from loguru import logger
@@ -52,53 +51,33 @@ class DeckGenerateResponse(BaseModel):
     cards: List[DeckCardEntry]
 
 
-###############################################################################################################################################
-@final
-@unique
-class DiceValue(IntEnum):
-    """骰值范围常量（0-100 均匀随机整数）"""
-
-    MIN = 0
-    MAX = 100
-
-
 #######################################################################################################################################
 @prompt_builder
 def build_design_principle_prompt(
-    keywords: List[str],
-    dice_rolls: List[int] = [],
+    num_cards: int,
+    keywords: List[str] = [],
 ) -> str:
-    """生成关键词约束段落。无关键词时输出差异化指引；有骰值时附加于各卡约束行末。"""
-    card_count = len(dice_rolls)
+    """生成关键词约束段落。无关键词时输出差异化指引。"""
     if not keywords:
-        return f"关键词约束：无（{card_count}张卡牌应有差异化，如高伤低防/高防低伤/均衡型）"
-    use_dice = len(dice_rolls) == len(keywords)
-    header = (
-        "关键词约束（按顺序对应；骰值仅在约束中明确说明用法时生效，否则忽略）："
-        if use_dice
-        else "关键词约束（按顺序对应）："
-    )
-    lines = "\n".join(
-        f"  - 卡牌{i + 1}：{keywords[i]}"
-        + (f"（骰值：{dice_rolls[i]}）" if use_dice else "")
-        for i in range(len(keywords))
-    )
-    return f"{header}\n{lines}"
+        return (
+            f"关键词约束：无（{num_cards}张卡牌应有差异化，如高伤低防/高防低伤/均衡型）"
+        )
+    lines = "\n".join(f"  - 卡牌{i + 1}：{keywords[i]}" for i in range(len(keywords)))
+    return f"关键词约束（按顺序对应）：\n{lines}"
 
 
 #######################################################################################################################################
 @prompt_builder
 def build_deck_prompt(
     actor_stats: CharacterStats,
+    num_cards: int,
     keywords: List[str] = [],
-    dice_rolls: List[int] = [],
 ) -> str:
     """生成战斗开始牌库生成 prompt（含字段说明与 JSON 示例）。"""
 
-    card_count = len(dice_rolls)
-    design_principle = build_design_principle_prompt(keywords, dice_rolls)
+    design_principle = build_design_principle_prompt(num_cards, keywords)
 
-    return f"""# 战斗开始：生成 {card_count} 张初始牌库卡牌
+    return f"""# 战斗开始：生成 {num_cards} 张初始牌库卡牌
 
 ## 角色属性
 
@@ -121,7 +100,7 @@ def build_deck_prompt(
 
 - `description` 禁止提及任何场景地物（如断柱、沙地）、地名或即时情境细节
 - `on_play_affixes`/`on_hit_affixes` 禁止重述数值字段已确定性表达的效果：不得重复量化 `damage`/`hit_count` 已决定的伤害量级
-- `cards` 数组长度必须恰好为 {card_count}
+- `cards` 数组长度必须恰好为 {num_cards}
 - 只输出 JSON，不附加任何说明文字
 
 ```json
@@ -148,13 +127,12 @@ def build_deck_prompt(
 @prompt_builder
 def build_condensed_deck_prompt(
     actor_stats: CharacterStats,
+    num_cards: int,
     keywords: List[str] = [],
-    dice_rolls: List[int] = [],
 ) -> str:
     """生成牌库生成 prompt 的精简版（写入对话历史，减少 token 消耗）。"""
-    card_count = len(dice_rolls)
-    design_principle = build_design_principle_prompt(keywords, dice_rolls)
-    return f"""# 战斗牌库生成（{card_count} 张）
+    design_principle = build_design_principle_prompt(num_cards, keywords)
+    return f"""# 战斗牌库生成（{num_cards} 张）
 
 HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense} | 行动次数:{actor_stats.energy}
 
@@ -221,27 +199,21 @@ class GenerateDeckActionSystem(ReactiveProcessor):
         else:
             sampled_keywords = random.choices(keywords_pool, k=num_cards)
 
-        # 生成随机骰值列表，长度为 num_cards，每个骰值在 DiceValue.MIN 和 DiceValue.MAX 之间
-        dice_rolls = [
-            random.randint(DiceValue.MIN, DiceValue.MAX) for _ in range(num_cards)
-        ]
-        logger.debug(
-            f"[{entity.name}] 关键词: {[k[:20] for k in sampled_keywords]}  骰值: {dice_rolls}"
-        )
+        logger.debug(f"[{entity.name}] 关键词: {[k[:20] for k in sampled_keywords]}")
 
         # 生成完整提示词，供 LLM 生成卡牌
         combat_stats = compute_character_stats(entity)
         prompt = build_deck_prompt(
             actor_stats=combat_stats,
+            num_cards=num_cards,
             keywords=sampled_keywords,
-            dice_rolls=dice_rolls,
         )
 
         # 生成精简提示词，减少 LLM token 消耗
         condensed_prompt = build_condensed_deck_prompt(
             actor_stats=combat_stats,
+            num_cards=num_cards,
             keywords=sampled_keywords,
-            dice_rolls=dice_rolls,
         )
 
         # 构建 DeepSeekClient，传入完整提示词、精简提示词和上下文

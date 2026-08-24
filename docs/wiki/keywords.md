@@ -20,7 +20,7 @@ keywords 存于 `DeckComponent`，是运行时不可变的约束，随角色实�
 
 ## 流转
 
-每场战斗，`GenerateDeckActionSystem` 从 `DeckComponent.keywords` 池中采样与生成数量相等的条目，逐条配以 0–100 骰值，交由角色 LLM 创作卡牌。keywords 数量可大于单场生成数，未被采样的风格本场不出现——这是"固定风格池 + 每场抽样式变数"的牌库多样性机制；骰值仅在 keyword 声明使用骰值时叠加质量变体（失败 / 正常 / 优质）。
+每场战斗，`GenerateDeckActionSystem` 从 `DeckComponent.keywords` 池中采样与生成数量相等的条目，交由角色 LLM 创作卡牌。keywords 数量可大于单场生成数，未被采样的风格本场不出现——这是"固定风格池 + 每场抽样式变数"的牌库多样性机制；同一效果的不同质量档位（普通 / 优质）作为独立的 keyword 条目并列放入池中，由采样本身决定本场命中哪一档（也可能两档都被抽中）。
 
 → 参见：[战斗管道（Combat Pipeline）](combat-pipeline.md)
 

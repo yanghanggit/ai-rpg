@@ -1,7 +1,7 @@
 """卡牌与状态效果模型定义
 
 包含战斗中使用的状态效果（StatusEffect）与卡牌（Card）相关核心模型：
-CombatPhase、StatusEffect、Card、DiceValue、Keyword
+CombatPhase、StatusEffect、Card、Keyword
 """
 
 from typing import List, Optional, final

@@ -30,7 +30,7 @@ from .arbitration_prompt_builders import (
     generate_consumable_affix_triggers,
     build_consumable_arbitration_broadcast,
     build_consumable_arbitration_prompt,
-    stats_update_notification,
+    build_stats_update_notification,
 )
 
 
@@ -248,7 +248,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             self._game.add_human_message(
                 entity=entity,
                 human_message=HumanMessage(
-                    content=stats_update_notification(new_hp, max_hp)
+                    content=build_stats_update_notification(new_hp, max_hp)
                 ),
             )
 

@@ -19,7 +19,7 @@ from ..models import (
     StatusEffect,
     StatusEffectsComponent,
 )
-from ..utils import extract_json
+from ..utils import extract_json, prompt_builder
 from .arbitration_prompt_builders import fmt_duration
 
 
@@ -34,6 +34,7 @@ class _UpdateStatusEffectsResponse(BaseModel):
 
 
 #######################################################################################################################################
+@prompt_builder
 def _build_affix_trigger(trigger: AffixTrigger, index: int) -> str:
     """将一条 AffixTrigger 转化为一行任务提示文本；这是 affixes → 生成状态效果任务 唯一的转化点。
 
@@ -46,6 +47,7 @@ def _build_affix_trigger(trigger: AffixTrigger, index: int) -> str:
 
 
 #######################################################################################################################################
+@prompt_builder
 def _build_condensed_update_status_effects_prompt(
     current_status_effects: List[StatusEffect],
     current_round_number: int,
@@ -84,6 +86,7 @@ def _build_condensed_update_status_effects_prompt(
 
 
 #######################################################################################################################################
+@prompt_builder
 def _build_update_status_effects_prompt(
     current_status_effects: List[StatusEffect],
     current_round_number: int,
@@ -170,6 +173,7 @@ def _build_update_status_effects_prompt(
 
 
 #######################################################################################################################################
+@prompt_builder
 def _build_remove_effects_message(removed: List[StatusEffect]) -> str:
     """生成状态效果移除通知文本。"""
     lines = ["# 状态效果更新 — 效果移除"]
@@ -179,6 +183,7 @@ def _build_remove_effects_message(removed: List[StatusEffect]) -> str:
 
 
 #######################################################################################################################################
+@prompt_builder
 def _build_status_effects_notification_prompt(
     entity_name: str, status_effects: List[StatusEffect]
 ) -> str:

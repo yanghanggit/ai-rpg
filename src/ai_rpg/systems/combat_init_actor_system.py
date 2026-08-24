@@ -6,6 +6,7 @@ from ..models.messages import AIMessage, HumanMessage
 from loguru import logger
 from ..entitas import ExecuteProcessor, Entity
 from ..game.dbg_game import DBGGame
+from ..utils import prompt_builder
 from ..game.dbg_combat_processor import (
     compute_character_stats,
     get_alive_actors_in_stage,
@@ -35,6 +36,7 @@ class OtherActorInfo:
 
 
 ###################################################################################################################################################################
+@prompt_builder
 def _build_other_actors_info(other_actors_info: List[OtherActorInfo]) -> str:
     """格式化其他角色信息为 Markdown 列表"""
     if not other_actors_info:
@@ -48,6 +50,7 @@ def _build_other_actors_info(other_actors_info: List[OtherActorInfo]) -> str:
 
 
 ###################################################################################################################################################################
+@prompt_builder
 def _build_combat_init_prompt(
     stage_name: str,
     stage_description: str,

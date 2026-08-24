@@ -23,9 +23,11 @@ from ..models import (
     CombatState,
 )
 from ..entitas import Matcher
+from ..utils import prompt_builder
 
 
 ###################################################################################################################################################################
+@prompt_builder
 def _build_dungeon_advance_message(dungeon_name: str, next_stage_name: str) -> str:
     """生成副本推进到下一关卡的传送提示消息。"""
     return (

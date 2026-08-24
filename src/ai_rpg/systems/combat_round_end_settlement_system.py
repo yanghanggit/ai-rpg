@@ -22,9 +22,10 @@ from ..models import (
     StatusEffect,
     StatusEffectsComponent,
 )
-from ..utils import extract_json
+from ..utils import extract_json, prompt_builder
 
 
+@prompt_builder
 def _build_round_end_hp_update_message(new_hp: int, max_hp: int) -> str:
     """生成回合末生命值更新的 LLM 通知文本。"""
     return f"# 回合末结算 — 生命值更新\n\n当前HP: {new_hp}/{max_hp}"
@@ -43,6 +44,7 @@ class _RoundEndEffectResponse(BaseModel):
 
 
 ###############################################################################################################################################
+@prompt_builder
 def _build_round_end_effects_prompt(
     entity_name: str,
     current_hp: int,

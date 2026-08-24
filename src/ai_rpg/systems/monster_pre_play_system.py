@@ -25,7 +25,7 @@ from ..models import (
     StatusEffect,
     StatusEffectsComponent,
 )
-from ..utils import extract_json
+from ..utils import extract_json, prompt_builder
 from .arbitration_prompt_builders import fmt_effects
 
 
@@ -40,6 +40,7 @@ class MonsterDecisionResponse(BaseModel):
 
 
 #######################################################################################################################################
+@prompt_builder
 def _build_monster_decision_prompt(
     monster_name: str,
     monster_stats: CharacterStats,
@@ -132,6 +133,7 @@ pass_turn 为 true 时表示跳过出牌，其他字段可省略"""
 
 
 #######################################################################################################################################
+@prompt_builder
 def _build_condensed_monster_decision_prompt(
     monster_name: str,
     monster_stats: CharacterStats,

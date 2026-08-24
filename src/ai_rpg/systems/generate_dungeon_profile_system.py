@@ -7,6 +7,7 @@ from loguru import logger
 from ..deepseek import agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
+from ..utils import prompt_builder
 from ..models import (
     GenerateDungeonDirectiveAction,
     GenerateDungeonRoomsAction,
@@ -67,6 +68,7 @@ def _handle_record_dungeon_profile(
 
 
 ####################################################################################################################################
+@prompt_builder
 def _build_dungeon_profile_prompt(directive: str = "") -> str:
     """构建副本设定生成提示词。"""
     directive = directive.strip()

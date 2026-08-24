@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from ..deepseek import agent_loop, ToolDefinition, ToolFunction
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
+from ..utils import prompt_builder
 from ..models import (
     GenerateDungeonActorsAction,
     GenerateDungeonRoomsAction,
@@ -81,6 +82,7 @@ def _build_rooms_tool(dungeon_room_count: int) -> ToolDefinition:
 
 
 ####################################################################################################################################
+@prompt_builder
 def _build_dungeon_rooms_prompt(
     dungeon_name: str, profile: str, dungeon_room_count: int
 ) -> str:

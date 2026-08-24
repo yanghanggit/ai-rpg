@@ -14,7 +14,7 @@ from ..models import (
     StorageComponent,
 )
 from ..models.items import AnyItem, CostumeItem, ItemType, MaterialItem
-from ..utils import extract_json
+from ..utils import extract_json, prompt_builder
 
 
 #######################################################################################################################################
@@ -27,6 +27,7 @@ class _CraftCostumeItemResponse(BaseModel):
 
 
 #######################################################################################################################################
+@prompt_builder
 def _build_craft_costume_prompt(materials: List[MaterialItem]) -> str:
     """构建制作时装的 LLM 提示词。
 

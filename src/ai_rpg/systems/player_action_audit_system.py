@@ -15,7 +15,7 @@ from ..models import (
     WorldComponent,
 )
 from ..models.messages import SystemMessage
-from ..utils import extract_json
+from ..utils import extract_json, prompt_builder
 
 
 ####################################################################################################################################
@@ -33,6 +33,7 @@ class ContentAuditResponse(BaseModel):
 
 
 ####################################################################################################################################
+@prompt_builder
 def _build_audit_prompt(content: str) -> str:
     """构建内容审核提示词。"""
     return f"""# 内容审核，以JSON格式返回结果

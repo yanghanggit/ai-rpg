@@ -5,9 +5,11 @@ from loguru import logger
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import HumanMessage, RetreatAction, PartyMemberComponent, DeathComponent
 from ..game.dbg_game import DBGGame
+from ..utils import prompt_builder
 
 
 ###################################################################################################################################################################
+@prompt_builder
 def _build_retreat_message(dungeon_name: str, stage_name: str) -> str:
     """生成撤退提示消息"""
     return f"""# 提示！战斗撤退：从副本 {dungeon_name} 的关卡 {stage_name} 撤退

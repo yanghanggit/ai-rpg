@@ -15,6 +15,7 @@ from ..models import (
 from ..models.messages import HumanMessage
 from ..utils import (
     extract_json,
+    prompt_builder,
 )
 
 
@@ -27,6 +28,7 @@ class StageDescriptionResponse(BaseModel):
 
 
 #######################################################################################################################################
+@prompt_builder
 def _build_condensed_stage_description_prompt(
     actor_appearances_in_stage: Dict[str, str],
 ) -> str:
@@ -49,6 +51,7 @@ def _build_condensed_stage_description_prompt(
 
 
 #######################################################################################################################################
+@prompt_builder
 def _build_stage_description_prompt(
     actor_appearances_in_stage: Dict[str, str],
 ) -> str:

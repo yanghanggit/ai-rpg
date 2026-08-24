@@ -15,7 +15,7 @@ from ..models import (
 )
 from ..models.items import AnyItem, GearItem, ItemType, MaterialItem
 from ..models.stats import CharacterStats
-from ..utils import extract_json
+from ..utils import extract_json, prompt_builder
 
 
 #######################################################################################################################################
@@ -32,6 +32,7 @@ class _CraftGearItemResponse(BaseModel):
 
 
 #######################################################################################################################################
+@prompt_builder
 def _build_craft_gear_prompt(materials: List[MaterialItem]) -> str:
     """构建合成装备的 LLM 提示词。
 

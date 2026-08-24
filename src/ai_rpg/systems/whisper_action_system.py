@@ -3,10 +3,12 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.rpg_actor_interaction import InteractionError, validate_actor_interaction
 from ..models import HumanMessage, WhisperAction, WhisperEvent
 from ..game.dbg_game import DBGGame
+from ..utils import prompt_builder
 from .interaction_prompt_builders import build_invalid_target_error_message
 
 
 ####################################################################################################################################
+@prompt_builder
 def _build_whisper_notification(
     speaker_name: str, target_name: str, content: str
 ) -> str:

@@ -7,6 +7,7 @@ from loguru import logger
 from ..deepseek import MODEL_FLASH, DeepSeekClient
 from ..entitas import Entity, Matcher
 from ..game.dbg_game import DBGGame
+from ..utils import prompt_builder
 from ..models import (
     BaseMessage,
     Dungeon,
@@ -101,6 +102,7 @@ def _notify_world_director(
 
 
 ###################################################################################################################################################################
+@prompt_builder
 def _build_dungeon_setting_block(dungeon: Dungeon) -> str:
     """构建副本初始设定文本块（不含 Round/Combat 等运行时战斗细节）。"""
 
@@ -125,6 +127,7 @@ def _build_dungeon_setting_block(dungeon: Dungeon) -> str:
 
 
 ###################################################################################################################################################################
+@prompt_builder
 def _build_entity_fact_block(
     label: str,
     entity_name: str,
@@ -154,6 +157,7 @@ def _build_entity_fact_block(
 
 
 ###################################################################################################################################################################
+@prompt_builder
 def _build_archive_prompt(dungeon: Dungeon, facts_block: str) -> str:
     """构建副本本体归档总结提示词（副本初始设定 + 运行时事实记忆）。"""
 

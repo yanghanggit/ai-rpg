@@ -6,6 +6,7 @@ from overrides import override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import consume_energy, get_energy
+from ..utils import prompt_builder
 from ..models import (
     AgentEvent,
     EquippedGearComponent,
@@ -16,6 +17,7 @@ from ..models import (
 
 
 #######################################################################################################################################
+@prompt_builder
 def _build_gear_notice(
     target_name: str,
     item_name: str,

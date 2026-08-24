@@ -12,9 +12,11 @@ from ..embedding_model import (
 )
 from ..rag import search_documents
 from ..game.dbg_game import DBGGame
+from ..utils import prompt_builder
 
 
 #############################################################################################################################
+@prompt_builder
 def _build_query_result_message(
     actor: str, question: str, related_info: Optional[str] = None
 ) -> str:

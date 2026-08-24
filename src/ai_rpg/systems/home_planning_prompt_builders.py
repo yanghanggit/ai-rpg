@@ -7,10 +7,12 @@ from pydantic import BaseModel, field_validator
 from ..entitas import Entity, Matcher
 from ..game import DBGGame
 from ..game.rpg_actor_appearances import get_actor_appearances_in_stage
+from ..utils import prompt_builder
 from ..models import HomeComponent
 
 
 #######################################################################################################################################
+@prompt_builder
 def build_mind_notification(actor_name: str, mind_content: str) -> str:
     """格式化内心活动通知消息。"""
     return f"# {actor_name} 内心活动: {mind_content}"
@@ -39,6 +41,7 @@ class ActionPlanResponse(BaseModel):
 
 
 #######################################################################################################################################
+@prompt_builder
 def build_action_planning_prompt(
     current_stage: str,
     current_stage_narration: str,
@@ -92,6 +95,7 @@ def build_action_planning_prompt(
 
 
 #######################################################################################################################################
+@prompt_builder
 def build_condensed_planning_prompt(
     current_stage: str,
     current_stage_narration: str,

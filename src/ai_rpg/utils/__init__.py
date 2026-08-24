@@ -8,6 +8,10 @@ from .debug_cache import (
     load_debug_cache,
     save_debug_cache,
 )
+from .prompt_registry import (
+    prompt_builder,
+    get_prompt_builders,
+)
 
 # 公开的API
 __all__ = [
@@ -15,4 +19,6 @@ __all__ = [
     "compute_cache_key",
     "load_debug_cache",
     "save_debug_cache",
+    "prompt_builder",
+    "get_prompt_builders",
 ]

@@ -26,7 +26,7 @@ from ..models import (
     UseConsumableItemAction,
     UseGearItemAction,
 )
-from ..utils import extract_json
+from ..utils import extract_json, prompt_builder
 from .arbitration_prompt_builders import fmt_duration
 from .card_prompt_builders import BUILD_CARD_FIELD_DESCRIPTION
 
@@ -91,6 +91,7 @@ def _collect_actor_status_summaries(
 
 
 #######################################################################################################################################
+@prompt_builder
 def _build_actors_summary(actor_summaries: List[ActorStatusSummary]) -> str:
     """格式化场内存活角色状态摘要，供 prompt 函数复用。"""
     actor_lines: List[str] = []
@@ -116,6 +117,7 @@ def _build_actors_summary(actor_summaries: List[ActorStatusSummary]) -> str:
 
 
 #######################################################################################################################################
+@prompt_builder
 def _build_condensed_inject_cards_prompt(
     actor_summaries: List[ActorStatusSummary],
     current_round_number: int,
@@ -134,6 +136,7 @@ def _build_condensed_inject_cards_prompt(
 
 
 #######################################################################################################################################
+@prompt_builder
 def _build_inject_cards_prompt(
     actor_summaries: List[ActorStatusSummary],
     current_round_number: int,

@@ -8,6 +8,7 @@ from overrides import override
 from ..deepseek import DeepSeekClient, batch_chat
 from ..entitas import Entity, ExecuteProcessor
 from ..game.dbg_game import DBGGame
+from ..utils import prompt_builder
 from ..models import (
     AIMessage,
     HumanMessage,
@@ -19,6 +20,7 @@ from ..models import (
 
 
 #######################################################################################################################################
+@prompt_builder
 def _build_combat_summary_prompt(stage_name: str, total_rounds: int) -> str:
     """返回用于生成第一人称战斗摘要的 LLM prompt。"""
     return f"""# 战斗结束，归档这段记忆。

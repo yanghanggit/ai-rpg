@@ -14,7 +14,7 @@ from ..game.dbg_combat_processor import (
 from ..game.dbg_game import DBGGame
 from ..models import AffixTrigger, StageDescriptionComponent
 from ..models.messages import HumanMessage
-from ..utils import extract_json
+from ..utils import extract_json, prompt_builder
 
 
 ###################################################################################################################################################################
@@ -28,6 +28,7 @@ class CombatInitAffixesResponse(BaseModel):
 
 
 ###################################################################################################################################################################
+@prompt_builder
 def _build_combat_init_interaction_prompt(
     stage_name: str,
     stage_description: str,
@@ -71,6 +72,7 @@ def _build_combat_init_interaction_prompt(
 
 
 ###################################################################################################################################################################
+@prompt_builder
 def _build_condensed_combat_init_interaction_prompt(
     stage_name: str,
     stage_description: str,

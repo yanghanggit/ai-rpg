@@ -21,9 +21,11 @@ from ..models import (
     CombatState,
 )
 from ..entitas import Entity, Matcher
+from ..utils import prompt_builder
 
 
 ###################################################################################################################################################################
+@prompt_builder
 def _build_dungeon_enter_message(dungeon_name: str, stage_name: str) -> str:
     """生成进入副本第一关的传送提示消息。"""
     return (

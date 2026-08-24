@@ -30,7 +30,7 @@ from .arbitration_prompt_builders import (
     build_gear_arbitration_broadcast,
     build_gear_arbitration_prompt,
     generate_gear_equip_affix_triggers,
-    stats_update_notification,
+    build_stats_update_notification,
 )
 
 
@@ -246,7 +246,7 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
             self._game.add_human_message(
                 entity=entity,
                 human_message=HumanMessage(
-                    content=stats_update_notification(new_hp, max_hp)
+                    content=build_stats_update_notification(new_hp, max_hp)
                 ),
             )
 

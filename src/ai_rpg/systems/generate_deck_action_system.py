@@ -25,7 +25,7 @@ from ..models import (
     HumanMessage,
     TargetType,
 )
-from ..utils import extract_json
+from ..utils import extract_json, prompt_builder
 from .card_prompt_builders import BUILD_CARD_FIELD_DESCRIPTION
 
 
@@ -63,6 +63,7 @@ class DiceValue(IntEnum):
 
 
 #######################################################################################################################################
+@prompt_builder
 def build_design_principle_prompt(
     keywords: List[str],
     dice_rolls: List[int] = [],
@@ -86,6 +87,7 @@ def build_design_principle_prompt(
 
 
 #######################################################################################################################################
+@prompt_builder
 def build_deck_prompt(
     actor_stats: CharacterStats,
     keywords: List[str] = [],
@@ -143,6 +145,7 @@ def build_deck_prompt(
 
 
 #######################################################################################################################################
+@prompt_builder
 def build_condensed_deck_prompt(
     actor_stats: CharacterStats,
     keywords: List[str] = [],

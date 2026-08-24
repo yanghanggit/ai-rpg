@@ -22,9 +22,11 @@ from ..models import (
     CombatRoom,
 )
 from ..entitas import Matcher
+from ..utils import prompt_builder
 
 
 ###################################################################################################################################################################
+@prompt_builder
 def _build_dungeon_exit_message(dungeon_name: str, home_stage_name: str) -> str:
     """生成退出副本返回家园场景的提示消息。"""
     return (

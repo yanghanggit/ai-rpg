@@ -6,15 +6,18 @@ from ..models import HumanMessage, TransStageAction, HomeComponent
 from loguru import logger
 from ..game.dbg_game import DBGGame
 from ..game.rpg_stage_transition import stage_transition
+from ..utils import prompt_builder
 
 
 ####################################################################################################################################
+@prompt_builder
 def _build_stage_not_found_error(actor_name: str, target_stage_name: str) -> str:
     """生成目标场景不存在的错误提示。"""
     return f"# 提示！{actor_name} 触发场景转换动作失败, 找不到目标场景 {target_stage_name}."
 
 
 ####################################################################################################################################
+@prompt_builder
 def _build_stage_transition_noop_error(
     actor_name: str, target_stage_name: str, current_stage_name: str
 ) -> str:

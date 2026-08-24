@@ -7,6 +7,7 @@ from loguru import logger
 from ..entitas import ExecuteProcessor, Matcher
 from ..game.dbg_combat_processor import compute_character_stats
 from ..game.dbg_game import DBGGame
+from ..utils import prompt_builder
 from ..models import (
     CharacterStatsComponent,
     DeathComponent,
@@ -15,6 +16,7 @@ from ..models import (
 
 
 ###############################################################################################################################################
+@prompt_builder
 def _build_death_notification() -> str:
     """生成角色 HP 归零失去战斗能力的通知文本。"""
     return "# 你的HP已归零，失去战斗能力！"

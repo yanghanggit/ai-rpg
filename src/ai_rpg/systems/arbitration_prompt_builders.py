@@ -5,6 +5,7 @@ from typing import Dict, Final, List, final
 
 from pydantic import BaseModel
 
+from ..utils import prompt_builder
 from ..models import (
     AffixTrigger,
     Card,
@@ -66,7 +67,8 @@ def fmt_stat_bonuses(stats: CharacterStats) -> str:
     )
 
 
-def stats_update_notification(final_hp: int, max_hp: int) -> str:
+@prompt_builder
+def build_stats_update_notification(final_hp: int, max_hp: int) -> str:
     return f"""# 你的生命值已更新
 
 当前HP: {final_hp}/{max_hp}"""
@@ -95,6 +97,7 @@ def fmt_stat_bonuses_compact(stats: CharacterStats) -> str:
 #######################################################################################################################################
 
 
+@prompt_builder
 def build_target_stats_lines(
     target_stats: Dict[str, CharacterStats],
     show_defense: bool = False,
@@ -112,6 +115,7 @@ def build_target_stats_lines(
     return "\n".join(target_line_parts)
 
 
+@prompt_builder
 def build_arbitration_effects_lines(
     target_arbitration_effects: Dict[str, List[StatusEffect]],
 ) -> str:
@@ -124,6 +128,7 @@ def build_arbitration_effects_lines(
     return "\n\n".join(lines_parts)
 
 
+@prompt_builder
 def build_combat_arbitration_effects_lines(
     actor_name: str,
     actor_arbitration_effects: List[StatusEffect],
@@ -136,6 +141,7 @@ def build_combat_arbitration_effects_lines(
     return lines
 
 
+@prompt_builder
 def build_instant_affix_section(title: str, affixes: List[str]) -> str:
     """构建「即时词缀」段落（卡牌/消耗品仲裁专用）；affixes 为空时返回空字符串。"""
     if not affixes:
@@ -224,6 +230,7 @@ def build_spread_sections(
 #######################################################################################################################################
 
 
+@prompt_builder
 def build_combat_arbitration_prompt(
     actor_name: str,
     actor_stats: CharacterStats,
@@ -292,6 +299,7 @@ def build_combat_arbitration_prompt(
 {STAGE_DESCRIPTION_DESCRIPTION}"""
 
 
+@prompt_builder
 def build_condensed_combat_arbitration_prompt(
     actor_name: str,
     actor_stats: CharacterStats,
@@ -336,6 +344,7 @@ def build_condensed_combat_arbitration_prompt(
 {current_stage_description}"""
 
 
+@prompt_builder
 def build_arbitration_broadcast(
     combat_log: str, narrative: str, current_round_number: int, title: str
 ) -> str:
@@ -351,6 +360,7 @@ def build_arbitration_broadcast(
 {combat_log}"""
 
 
+@prompt_builder
 def build_combat_arbitration_broadcast(
     combat_log: str, narrative: str, current_round_number: int, actor_name: str
 ) -> str:
@@ -367,6 +377,7 @@ def build_combat_arbitration_broadcast(
 #######################################################################################################################################
 
 
+@prompt_builder
 def build_gear_arbitration_prompt(
     item: GearItem,
     target_stats: Dict[str, CharacterStats],
@@ -424,6 +435,7 @@ def build_gear_arbitration_prompt(
 {STAGE_DESCRIPTION_DESCRIPTION}"""
 
 
+@prompt_builder
 def build_condensed_gear_arbitration_prompt(
     item: GearItem,
     target_stats: Dict[str, CharacterStats],
@@ -458,6 +470,7 @@ def build_condensed_gear_arbitration_prompt(
 {current_stage_description}"""
 
 
+@prompt_builder
 def build_gear_arbitration_broadcast(
     combat_log: str,
     narrative: str,
@@ -477,6 +490,7 @@ def build_gear_arbitration_broadcast(
 #######################################################################################################################################
 
 
+@prompt_builder
 def build_consumable_arbitration_prompt(
     actor_name: str,
     actor_stats: CharacterStats,
@@ -544,6 +558,7 @@ def build_consumable_arbitration_prompt(
 {STAGE_DESCRIPTION_DESCRIPTION}"""
 
 
+@prompt_builder
 def build_condensed_consumable_arbitration_prompt(
     actor_name: str,
     actor_stats: CharacterStats,
@@ -585,6 +600,7 @@ def build_condensed_consumable_arbitration_prompt(
 {current_stage_description}"""
 
 
+@prompt_builder
 def build_consumable_arbitration_broadcast(
     combat_log: str,
     narrative: str,

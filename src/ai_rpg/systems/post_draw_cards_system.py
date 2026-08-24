@@ -28,7 +28,7 @@ from ..models import (
     StatusEffect,
     TargetType,
 )
-from ..utils import extract_json
+from ..utils import extract_json, prompt_builder
 
 
 #######################################################################################################################################
@@ -57,6 +57,7 @@ class DrawAdjustResponse(BaseModel):
 
 
 #######################################################################################################################################
+@prompt_builder
 def _build_adjust_prompt(
     actor_stats: CharacterStats,
     current_round_number: int,

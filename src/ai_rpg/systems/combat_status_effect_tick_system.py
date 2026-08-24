@@ -4,6 +4,7 @@ from typing import Final, List, final, override
 from loguru import logger
 from ..entitas import ExecuteProcessor, Matcher
 from ..game.dbg_game import DBGGame
+from ..utils import prompt_builder
 from ..models import (
     DeathComponent,
     HumanMessage,
@@ -12,6 +13,7 @@ from ..models import (
 )
 
 
+@prompt_builder
 def _build_status_effects_tick_message(
     ticked: List[StatusEffect],
     expired: List[StatusEffect],

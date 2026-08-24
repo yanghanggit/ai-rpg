@@ -7,6 +7,7 @@ from loguru import logger
 from ..deepseek import MODEL_FLASH, DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
+from ..utils import prompt_builder
 from ..models import (
     AIMessage,
     GenerateDungeonAction,
@@ -17,6 +18,7 @@ from ..models import (
 
 
 ####################################################################################################################################
+@prompt_builder
 def _build_directive_prompt() -> str:
     """构建世界导演的副本创作指令提示词。"""
 

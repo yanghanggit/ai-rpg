@@ -2,15 +2,18 @@ from typing import final, override, Dict, List, Final
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..models import AnnounceAction, AnnounceEvent, HomeComponent
 from ..game.dbg_game import DBGGame
+from ..utils import prompt_builder
 
 
 ####################################################################################################################################
+@prompt_builder
 def _build_local_announce(announcer_name: str, content: str) -> str:
     """公告者所在场景内的公告提示词格式。"""
     return f"# {announcer_name} 发布公告\n{content}"
 
 
 ####################################################################################################################################
+@prompt_builder
 def _build_remote_announce(source_stage_name: str, content: str) -> str:
     """其他场景收到的远端公告提示词格式。"""
     return f"# 来自「{source_stage_name}」的公告\n{content}"

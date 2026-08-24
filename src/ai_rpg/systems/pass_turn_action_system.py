@@ -14,9 +14,11 @@ from ..models import (
 from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import consume_energy, get_energy
 from ..game.dbg_combat_processor import get_current_turn_actor
+from ..utils import prompt_builder
 
 
 #######################################################################################################################################
+@prompt_builder
 def _build_pass_turn_notice(actor_name: str, round_number: int) -> str:
     """生成过牌通知，广播给场景内所有角色（含过牌者本人）。"""
     return f"【第 {round_number} 回合】{actor_name} 选择跳过出牌。"

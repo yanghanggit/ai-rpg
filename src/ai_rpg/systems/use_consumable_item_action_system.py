@@ -5,6 +5,7 @@ from loguru import logger
 from overrides import override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
+from ..utils import prompt_builder
 from ..models import (
     AgentEvent,
     InventoryComponent,
@@ -13,6 +14,7 @@ from ..models import (
 
 
 #######################################################################################################################################
+@prompt_builder
 def _build_consumable_notice(
     actor_name: str,
     action: UseConsumableItemAction,

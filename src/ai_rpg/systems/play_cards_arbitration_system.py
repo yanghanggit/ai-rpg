@@ -37,7 +37,7 @@ from .arbitration_prompt_builders import (
     build_condensed_combat_arbitration_prompt,
     generate_gear_on_hit_affix_triggers,
     generate_play_cards_affix_triggers,
-    stats_update_notification,
+    build_stats_update_notification,
 )
 
 
@@ -281,7 +281,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             self._game.add_human_message(
                 entity=entity,
                 human_message=HumanMessage(
-                    content=stats_update_notification(new_hp, max_hp)
+                    content=build_stats_update_notification(new_hp, max_hp)
                 ),
             )
 

@@ -15,7 +15,7 @@ from ..models import (
 )
 from ..models.items import AnyItem, ConsumableItem, ItemType, MaterialItem
 from ..models.target_type import TargetType
-from ..utils import extract_json
+from ..utils import extract_json, prompt_builder
 
 
 #######################################################################################################################################
@@ -31,6 +31,7 @@ class _CraftConsumableResponse(BaseModel):
 
 
 #######################################################################################################################################
+@prompt_builder
 def _build_craft_prompt(materials: List[MaterialItem]) -> str:
     """构建合成消耗品的 LLM 提示词。"""
     material_lines = "\n".join(

@@ -13,21 +13,25 @@ from ..models import (
     TransStageEvent,
 )
 from .rpg_game import RPGGame
+from ..utils import prompt_builder
 
 
 #################################################################################################################################################
+@prompt_builder
 def _build_stage_departure_message(actor_name: str, stage_name: str) -> str:
     """生成角色离开场景的通知消息"""
     return f"# {actor_name} 离开了场景: {stage_name}"
 
 
 #################################################################################################################################################
+@prompt_builder
 def _build_stage_arrival_message(actor_name: str, stage_name: str) -> str:
     """生成角色进入场景的通知消息"""
     return f"# {actor_name} 进入了 场景: {stage_name}"
 
 
 #################################################################################################################################################
+@prompt_builder
 def _build_stage_transition_message(from_stage_name: str, to_stage_name: str) -> str:
     """生成角色自身场景转换的通知消息"""
     return f"# 你从 场景: {from_stage_name} 离开，然后进入了 场景: {to_stage_name}"

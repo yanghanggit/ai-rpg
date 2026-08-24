@@ -14,9 +14,11 @@ from ..models import (
 from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import consume_energy
 from ..game.dbg_combat_processor import get_current_turn_actor
+from ..utils import prompt_builder
 
 
 #######################################################################################################################################
+@prompt_builder
 def _build_play_card_context_prompt(
     play_cards_action: PlayCardsAction,
     round_number: int,
@@ -41,6 +43,7 @@ def _build_play_card_context_prompt(
 
 
 #######################################################################################################################################
+@prompt_builder
 def _build_action_notice_for_others(actor_name: str, round_number: int) -> str:
     """生成出牌行动预告，广播给场景内其他角色，维护观察者视角的上下文连贯性。"""
     return f"【第 {round_number} 回合】{actor_name} 正在出牌。"

@@ -16,7 +16,7 @@ from ..models import (
     PartyMemberComponent,
 )
 from ..models.items import AnyItem, MaterialItem
-from ..utils import extract_json
+from ..utils import extract_json, prompt_builder
 
 
 #######################################################################################################################################
@@ -46,6 +46,7 @@ class _MonsterLootResponse(BaseModel):
 
 
 #######################################################################################################################################
+@prompt_builder
 def _build_loot_prompt(
     monster_name: str, appearance: str, stage_name: str, total_rounds: int
 ) -> str:

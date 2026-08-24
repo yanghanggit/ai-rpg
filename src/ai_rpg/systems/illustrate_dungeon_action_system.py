@@ -6,6 +6,7 @@ from ..models import IllustrateDungeonAction, Dungeon, DungeonRoom
 from ..game.dbg_game import DBGGame
 from ..game.config import DUNGEONS_DIR
 from ..replicate import ReplicateImageClient
+from ..utils import prompt_builder
 
 
 ####################################################################################################################################
@@ -50,6 +51,7 @@ def _detect_scene_type(profile: str) -> str:
 
 
 ####################################################################################################################################
+@prompt_builder
 def _build_dungeon_cover_image_prompt(dungeon_name: str, profile: str) -> str:
     """构建副本封面图片生成提示词（7+1段式，无怪物）。
 
@@ -72,6 +74,7 @@ def _build_dungeon_cover_image_prompt(dungeon_name: str, profile: str) -> str:
 
 
 ####################################################################################################################################
+@prompt_builder
 def _build_room_image_prompt(dungeon_name: str, profile: str, room: DungeonRoom) -> str:
     """构建副本房间战斗插图生成提示词（7+1段式，第5段插入怪物外观）。
 

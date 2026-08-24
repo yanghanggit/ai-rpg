@@ -48,10 +48,12 @@ class ArbitrationResponse(BaseModel):
 #######################################################################################################################################
 
 
+@prompt_builder
 def fmt_duration(duration: int) -> str:
     return "永久" if duration == -1 else f"剩余{duration}回合"
 
 
+@prompt_builder
 def fmt_effects(effects: List[StatusEffect]) -> str:
     if not effects:
         return "  无"
@@ -60,6 +62,7 @@ def fmt_effects(effects: List[StatusEffect]) -> str:
     )
 
 
+@prompt_builder
 def fmt_stat_bonuses(stats: CharacterStats) -> str:
     return (
         f"HP {stats.hp:+d} | MAX_HP {stats.max_hp:+d} | ATK {stats.attack:+d} | "
@@ -74,6 +77,7 @@ def build_stats_update_notification(final_hp: int, max_hp: int) -> str:
 当前HP: {final_hp}/{max_hp}"""
 
 
+@prompt_builder
 def fmt_stat_bonuses_compact(stats: CharacterStats) -> str:
     """仅显示非零属性的精简格式，用于 AffixTrigger 单行上下文。"""
     parts: List[str] = []

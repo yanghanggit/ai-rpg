@@ -80,8 +80,20 @@ async def next_dungeon_game(
         logger.error(f"advance_dungeon 失败: {msg}")
         return terminal_game
 
-    # 进入下一关卡后，驱动战斗流水线处理新关卡的初始化，包括场景描述、初始状态效果、创建新回合等
-    await terminal_game._dungeon_combat_room_pipeline.process()
+    # 进入下一关卡后，根据新房间类型驱动对应流水线：
+    # 战斗房间走战斗初始化，入口房间走入口初始化（叙事 + 牌库生成，内部带状态守护）
+    if terminal_game.is_current_room_dungeon_combat:
+        await terminal_game._dungeon_combat_room_pipeline.process()
+    elif terminal_game.is_current_room_dungeon_entry:
+        await terminal_game._dungeon_entry_room_pipeline.process()
+    else:
+        assert (
+            terminal_game.current_dungeon.current_room is not None
+        ), f"当前房间为 {terminal_game.current_dungeon.current_room!r}，无法处理"
+        logger.error(
+            f"未知房间类型 {terminal_game.current_dungeon.current_room.type!r}，无法处理"
+        )
+        return terminal_game
 
     # 最后归档
     store_game(terminal_game, save_dir)

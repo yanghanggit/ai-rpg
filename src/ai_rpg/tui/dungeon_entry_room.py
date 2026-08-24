@@ -1,6 +1,13 @@
-"""入口房间 Screen"""
+"""入口房间 Screen
 
-from typing import List, Tuple, final
+布局（从上到下，固定区域 + 可追加区域）：
+  1) title        —— 固定标题
+  2) base 信息区   —— 固定显示位置，展示场景环境描述（StageDescriptionComponent.narrative），可被重置
+  3) 命令列表区    —— 固定显示位置
+  4) 输出信息区    —— 可追加日志（RichLog）
+"""
+
+from typing import List, Optional, Tuple, final
 
 from loguru import logger
 from textual import on, work
@@ -8,11 +15,15 @@ from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.widgets import Input, RichLog, Static
 
-from ..models import EntryRoom
+from ..models import (
+    EntitiesDetailsResponse,
+    EntryRoom,
+    StageDescriptionComponent,
+)
 from .base import BaseGameScreen
 from .combat_common import (
+    find_component_data,
     find_stage_of_actor,
-    render_stage_actors,
 )
 from .combat_data_access import (
     get_dungeon_room,
@@ -26,19 +37,22 @@ from .combat_entity_inspect import CombatEntityInspectScreen
 from .combat_inventory_view import CombatInventoryViewScreen
 from .server_client import (
     TaskFailedError,
-    dungeon_entry_init,
     dungeon_advance_stage,
+    dungeon_entry_init,
     watch_task_until_done,
 )
 
-BASE_INFO_HEADER = """\
+TITLE_TEXT = """\
 [bold cyan]── 入口房间 ──────────────────────────────────────[/]
 
 [dim]非战斗叙事场景，用于副本开场铺垫与牌库生成。[/]
 """
 
+BASE_INFO_EMPTY = "[dim]（暂无场景描述）[/]"
+
 COMMANDS_MENU = """\
 [bold yellow]── 可用操作 ─────────────────────────────────[/]
+  [bold green]0[/]  刷新本页
   [bold green]1[/]  创建牌组
   [bold green]2[/]  查阅牌组（我方）
   [bold green]3[/]  查阅我方背包
@@ -49,17 +63,34 @@ COMMANDS_MENU = """\
 
 @final
 class DungeonEntryRoomScreen(BaseGameScreen):
-    """入口房间 Screen：进入即自动加载场景描述与角色属性，提供牌组生成等命令。"""
+    """入口房间 Screen：title / base 信息区 / 命令列表区固定显示，输出信息区可追加。"""
 
     CSS = """
     DungeonEntryRoomScreen {
-        align: center middle;
+        align-horizontal: center;
     }
 
-    #entry-room-log {
+    #entry-room-title {
+        width: 100%;
+        padding: 0 1;
+    }
+
+    #entry-room-base-info {
+        width: 100%;
+        padding: 0 1;
+        border: solid $primary;
+    }
+
+    #entry-room-commands {
+        width: 100%;
+        padding: 0 1;
+    }
+
+    #entry-room-output {
+        width: 100%;
+        height: 1fr;
         border: solid $primary;
         padding: 0 1;
-        height: 1fr;
     }
 
     #entry-room-input-row {
@@ -84,61 +115,66 @@ class DungeonEntryRoomScreen(BaseGameScreen):
     ]
 
     def compose(self) -> ComposeResult:
-        yield RichLog(id="entry-room-log", highlight=True, markup=True, wrap=True)
+        yield Static(TITLE_TEXT, id="entry-room-title")
+        yield Static(BASE_INFO_EMPTY, id="entry-room-base-info")
+        yield Static(COMMANDS_MENU, id="entry-room-commands")
+        yield RichLog(id="entry-room-output", highlight=True, markup=True, wrap=True)
         with Horizontal(id="entry-room-input-row"):
             yield Static("> ", id="entry-room-prompt")
             yield Input(placeholder="输入指令编号...", id="entry-room-input")
 
     def on_mount(self) -> None:
-        log = self.query_one(RichLog)
-        log.write(BASE_INFO_HEADER)
-        self._load_base_info()
         self.query_one(Input).focus()
 
     ########################################################################################################################
-    @work
-    async def _load_base_info(self) -> None:
-        """加载并渲染入口房间场景描述 + 场景内角色有效属性。"""
-        log = self.query_one(RichLog)
-        logger.info("EntryRoomScreen._load_base_info: 开始加载")
+    def _output(self) -> RichLog:
+        """返回输出信息区（可追加日志的 RichLog）。"""
+        return self.query_one("#entry-room-output", RichLog)
 
+    ########################################################################################################################
+    def _set_base_info(self, text: str) -> None:
+        """重置 base 信息区显示内容。"""
+        self.query_one("#entry-room-base-info", Static).update(text)
+
+    ########################################################################################################################
+    @staticmethod
+    def _extract_stage_narrative(
+        entities_resp: EntitiesDetailsResponse, stage_name: str
+    ) -> Optional[str]:
+        """从实体详情响应中提取场景实体的 StageDescriptionComponent.narrative。"""
+        for entity in entities_resp.entities:
+            if entity.name != stage_name:
+                continue
+            data = find_component_data(entity, StageDescriptionComponent.__name__)
+            if data is not None:
+                return StageDescriptionComponent(**data).narrative
+        return None
+
+    ########################################################################################################################
+    async def _refresh_base_info(self) -> None:
+        """刷新 base 信息区：重新拉取场景 narrative 并重置显示。"""
+        output = self._output()
+        logger.info("EntryRoomScreen._refresh_base_info: 刷新基础信息")
         try:
             _, _, actor_name = resolve_identity(self.game_client)
-
-            room_resp = await get_dungeon_room(self.game_client)
             stages_resp = await get_stages_state(self.game_client)
-
-            room = room_resp.room
-            assert isinstance(
-                room, EntryRoom
-            ), f"当前房间不是入口房间：type={room.type}"
-
             stage_name = find_stage_of_actor(stages_resp.mapping, actor_name)
-            assert (
-                stage_name is not None
-            ), f"未能在场景映射中找到玩家角色所在场景：actor={actor_name}"
-            actor_names = stages_resp.mapping[stage_name]
-            entity_names = [stage_name, *actor_names]
+            assert stage_name is not None, "无法确定玩家所在场景"
 
-            entities_resp = await get_entities_details(self.game_client, entity_names)
+            entities_resp = await get_entities_details(self.game_client, [stage_name])
+            narrative = self._extract_stage_narrative(entities_resp, stage_name)
 
+            description = (
+                f"  {narrative}" if narrative else "  [dim]（场景环境描述未生成）[/]"
+            )
+            self._set_base_info(
+                f"[bold yellow]── 场景：{stage_name} ─────────────────────────────[/]\n\n"
+                f"{description}"
+            )
+            output.write("[dim]已刷新基础信息。[/]")
         except Exception as e:
-            logger.error(f"EntryRoomScreen._load_base_info: 加载失败 error={e}")
-            log.write(f"[bold red]❌ 加载入口房间信息失败：{e}[/]")
-            return
-
-        # 渲染场景名 + 场景描述
-        log.write(
-            f"[bold yellow]── 场景：{stage_name} ─────────────────────────────[/]"
-        )
-        log.write(f"  {room.stage.profile}")
-        log.write("")
-
-        # 渲染场景内角色有效属性
-        render_stage_actors(log, stage_name, entities_resp.entities)
-
-        # 始终显示命令菜单（入口房间无战斗状态机）
-        log.write(COMMANDS_MENU)
+            logger.error(f"EntryRoomScreen._refresh_base_info: 刷新失败 error={e}")
+            output.write(f"[bold red]❌ 刷新基础信息失败：{e}[/]")
 
     ########################################################################################################################
     @on(Input.Submitted, "#entry-room-input")
@@ -153,10 +189,15 @@ class DungeonEntryRoomScreen(BaseGameScreen):
     @work
     async def _dispatch_command(self, raw: str) -> None:
         """指令分发。每次都重新 GET 校验房间类型与场景花名册，避免使用过期快照。"""
-        log = self.query_one(RichLog)
+        output = self._output()
 
-        if raw not in ("1", "2", "3", "4", "5"):
-            log.write("[red]无效指令，请输入 1-5[/]")
+        if raw not in ("0", "1", "2", "3", "4", "5"):
+            output.write("[red]无效指令，请输入 0-5[/]")
+            return
+
+        # 命令 0：刷新本页（重置 base 信息区）
+        if raw == "0":
+            await self._refresh_base_info()
             return
 
         try:
@@ -170,7 +211,7 @@ class DungeonEntryRoomScreen(BaseGameScreen):
             logger.error(
                 f"EntryRoomScreen._dispatch_command: 校验房间状态失败 error={e}"
             )
-            log.write(f"[bold red]❌ 校验房间状态失败：{e}[/]")
+            output.write(f"[bold red]❌ 校验房间状态失败：{e}[/]")
             return
 
         # 命令 1：创建牌组（后台任务），无需场景花名册
@@ -190,7 +231,7 @@ class DungeonEntryRoomScreen(BaseGameScreen):
             logger.error(
                 f"EntryRoomScreen._dispatch_command: 获取场景花名册失败 error={e}"
             )
-            log.write(f"[bold red]❌ 获取场景花名册失败：{e}[/]")
+            output.write(f"[bold red]❌ 获取场景花名册失败：{e}[/]")
             return
 
         if raw == "2":
@@ -210,31 +251,32 @@ class DungeonEntryRoomScreen(BaseGameScreen):
     @work
     async def _init_entry_room(self) -> None:
         """触发入口房间初始化（创建牌组）并等待完成。"""
-        log = self.query_one(RichLog)
+        output = self._output()
         logger.info("EntryRoomScreen._init_entry_room: 触发入口房间初始化")
-        log.write("[dim]正在触发入口房间初始化（叙事 + 牌库生成），请稍候...[/]")
+        output.write("[dim]正在触发入口房间初始化（叙事 + 牌库生成），请稍候...[/]")
 
         try:
             user_name, game_name, _ = resolve_identity(self.game_client)
             resp = await dungeon_entry_init(user_name, game_name)
-            log.write(f"[dim]任务已提交：{resp.task_id}，等待完成...[/]")
+            output.write(f"[dim]任务已提交：{resp.task_id}，等待完成...[/]")
             record = await watch_task_until_done(resp.task_id)
-            log.write(f"[bold green]✅ 入口房间初始化完成：{record.status}[/]")
-            log.write("[dim]牌组已生成，可使用命令 2 查阅牌组。[/]")
+            output.write(f"[bold green]✅ 入口房间初始化完成：{record.status}[/]")
+            output.write("[dim]牌组已生成，可使用命令 2 查阅牌组。[/]")
+            await self._refresh_base_info()
         except TaskFailedError as e:
             logger.error(f"EntryRoomScreen._init_entry_room: 任务失败 error={e}")
-            log.write(f"[bold red]❌ 入口房间初始化失败：{e}[/]")
+            output.write(f"[bold red]❌ 入口房间初始化失败：{e}[/]")
         except Exception as e:
             logger.error(f"EntryRoomScreen._init_entry_room: 请求失败 error={e}")
-            log.write(f"[bold red]❌ 请求失败：{e}[/]")
+            output.write(f"[bold red]❌ 请求失败：{e}[/]")
 
     ########################################################################################################################
     @work
     async def _advance_stage(self) -> None:
         """进入下一关。先校验是否存在下一房间，再调用推进接口，最后回到副本总览。"""
-        log = self.query_one(RichLog)
+        output = self._output()
         logger.info("EntryRoomScreen._advance_stage: 进入下一关")
-        log.write("[dim]正在进入下一关...[/]")
+        output.write("[dim]正在进入下一关...[/]")
 
         try:
             user_name, game_name, _ = resolve_identity(self.game_client)
@@ -244,13 +286,13 @@ class DungeonEntryRoomScreen(BaseGameScreen):
             dungeon = dungeon_resp.dungeon
             next_index = dungeon.current_room_index + 1
             if next_index >= len(dungeon.rooms):
-                log.write("[bold red]❌ 已是最后一关，无法继续推进。[/]")
+                output.write("[bold red]❌ 已是最后一关，无法继续推进。[/]")
                 return
 
             # 调用推进接口
             resp = await dungeon_advance_stage(user_name, game_name)
-            log.write(f"[bold green]✅ {resp.message}[/]")
-            log.write("[dim]返回副本总览...[/]")
+            output.write(f"[bold green]✅ {resp.message}[/]")
+            output.write("[dim]返回副本总览...[/]")
 
             # 回到副本房间路由，让其重新根据当前房间类型分发到对应 Screen
             # 注：延迟导入避免循环引用（dungeon_room_router_room → entry_room）
@@ -259,4 +301,4 @@ class DungeonEntryRoomScreen(BaseGameScreen):
             self.app.switch_screen(DungeonRoomRouterRoom())
         except Exception as e:
             logger.error(f"EntryRoomScreen._advance_stage: 推进失败 error={e}")
-            log.write(f"[bold red]❌ 进入下一关失败：{e}[/]")
+            output.write(f"[bold red]❌ 进入下一关失败：{e}[/]")

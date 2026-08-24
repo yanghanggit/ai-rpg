@@ -68,6 +68,16 @@ async def dungeon_entry_init(
                 detail="当前副本房间不是入口房间",
             )
 
+        # 状态守护：入口房间已初始化则拒绝重复初始化
+        if rpg_game.current_dungeon_entry_room.initialized:
+            logger.error(
+                f"玩家 {payload.user_name} 入口房间初始化失败: 入口房间已初始化"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="入口房间已初始化",
+            )
+
     # 创建入口房间初始化后台任务（在锁外创建，让任务在后台独立持锁执行）
     entry_init_task = game_server.create_task()
     asyncio.create_task(

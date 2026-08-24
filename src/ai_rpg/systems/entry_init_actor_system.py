@@ -90,6 +90,11 @@ class EntryInitActorSystem(ExecuteProcessor):
             logger.debug("当前副本房间非入口房间，跳过入口初始化（角色侧）")
             return
 
+        entry_room = self._game.current_dungeon_entry_room
+        if entry_room.initialized:
+            logger.debug("当前入口房间已完成初始化，跳过入口初始化（角色侧）")
+            return
+
         logger.info(
             "入口初始化（角色侧）开始：注入入口场景上下文 + 为远征队成员触发牌库生成..."
         )
@@ -121,6 +126,9 @@ class EntryInitActorSystem(ExecuteProcessor):
 
         # 为远征队成员添加 GenerateDeckAction，触发初始牌库生成（怪物牌库在各自战斗房间生成）
         self._add_generate_deck_actions()
+
+        # 状态守护：标记入口房间已完成初始化，避免重复触发
+        entry_room.initialized = True
 
     ###################################################################################################################################################################
     def _add_context(

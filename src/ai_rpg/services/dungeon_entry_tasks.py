@@ -38,6 +38,10 @@ async def execute_entry_room_init_task(
             if not rpg_game.is_current_room_dungeon_entry:
                 raise ValueError("当前副本房间不是入口房间")
 
+            # 状态守护：入口房间已初始化则拒绝重复初始化
+            if rpg_game.current_dungeon_entry_room.initialized:
+                raise ValueError("入口房间已初始化")
+
             # 推进入口房间流程（叙事 + 牌库生成，无战斗）
             await rpg_game._dungeon_entry_room_pipeline.process()
 

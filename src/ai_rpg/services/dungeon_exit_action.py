@@ -23,6 +23,7 @@ from ..models import (
 )
 from ..entitas import Matcher
 from ..utils import prompt_builder
+from .dungeon_archive_action import notify_dungeon_director_room_ended
 
 
 ###################################################################################################################################################################
@@ -71,7 +72,8 @@ def exit_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, str]:
     # =========================================================================
     # 阶段 2：执行（不可中断，不回退）
     # =========================================================================
-
+    # 当前房间已结束（退出副本）：向副本导演追加该房间的事实记忆
+    notify_dungeon_director_room_ended(dbg_game, dungeon, current_room)
     # 传送远征队成员回家
     for party_member_entity in party_member_entities:
         dbg_game.add_human_message(

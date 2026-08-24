@@ -75,7 +75,7 @@ async def next_dungeon_game(
         return terminal_game
 
     # 推进副本到下一房间，更新当前房间索引和状态
-    success, msg = advance_dungeon(terminal_game, terminal_game.current_dungeon)
+    success, msg = await advance_dungeon(terminal_game, terminal_game.current_dungeon)
     if not success:
         logger.error(f"advance_dungeon 失败: {msg}")
         return terminal_game
@@ -161,8 +161,8 @@ async def exit_dungeon_and_return_home_game(
         logger.error(f"exit_dungeon 失败: {msg}")
         return terminal_game
 
-    # 副本本体归档：以拟人化副本视角总结本次所有场景/角色的记忆
-    # （best-effort，失败不阻断退出，且不写入任何状态）
+    # 副本导演归档：基于其已积累的记忆总结本次副本，并重置该记忆
+    # （best-effort，失败不阻断退出）
     await archive_dungeon(terminal_game, terminal_game._world.dungeon)
 
     # 销毁副本实体并重置副本数据

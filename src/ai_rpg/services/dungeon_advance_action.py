@@ -24,6 +24,10 @@ from ..models import (
 )
 from ..entitas import Matcher
 from ..utils import prompt_builder
+from .dungeon_archive_action import (
+    notify_dungeon_director_room_ended,
+    debug_probe_dungeon_director_reasoning,
+)
 
 
 ###################################################################################################################################################################
@@ -37,7 +41,7 @@ def _build_dungeon_advance_message(dungeon_name: str, next_stage_name: str) -> s
 
 
 ###################################################################################################################################################################
-def advance_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, str]:
+async def advance_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, str]:
     """
     推进到副本的下一个关卡。
 
@@ -90,6 +94,11 @@ def advance_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, str]:
     # =========================================================================
     # 阶段 2：执行（不可中断，不回退）
     # =========================================================================
+    # 当前房间已结束：向副本导演追加该房间的事实记忆
+    notify_dungeon_director_room_ended(dbg_game, dungeon, current_room)
+
+    # 调试探针：让副本导演基于刚累积的记忆推理一次，人工核对上下文管理是否符合预期
+    await debug_probe_dungeon_director_reasoning(dbg_game, dungeon)
 
     # 推进索引
     dungeon.current_room_index = next_room_index

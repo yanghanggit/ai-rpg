@@ -25,7 +25,7 @@ async def execute_exit_dungeon_task(
     user_name: str,
     game_server: GameServer,
 ) -> None:
-    """后台执行退出副本任务（返回家园 + 副本本体归档 + 实体销毁）。"""
+    """后台执行退出副本任务（返回家园 + 副本导演归档 + 实体销毁）。"""
     try:
 
         logger.info(f"🚀 退出副本任务开始: task_id={task_id}, user={user_name}")
@@ -46,8 +46,8 @@ async def execute_exit_dungeon_task(
             if not success:
                 raise ValueError(f"退出副本失败: {msg}")
 
-            # 副本本体归档：以拟人化副本视角总结本次所有场景/角色的记忆
-            # （异步 LLM，best-effort，失败不阻断退出，且不写入任何状态）
+            # 副本导演归档：基于其已积累的记忆总结本次副本，并重置该记忆
+            # （异步 LLM，best-effort，失败不阻断退出）
             await archive_dungeon(rpg_game, rpg_game._world.dungeon)
 
             # 销毁副本实体并重置副本数据（同步）

@@ -223,8 +223,8 @@ class WorkshopComponent(Component):
 ############################################################################################################
 @final
 @register_component_type
-class DungeonPersonaComponent(Component):
-    """标记世界实体为副本本体（地下城拟人化人格），负责副本记忆总结压缩。"""
+class DungeonDirectorComponent(Component):
+    """标记世界实体为副本导演，扮演当前正在游玩的副本，随房间进程积累记忆，副本结束时总结移交世界导演。"""
 
     name: str
 

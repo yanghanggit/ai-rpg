@@ -1,4 +1,4 @@
-"""副本本体记忆归档模块"""
+"""副本导演记忆模块 —— 副本导演（DungeonDirectorComponent）的记忆积累与归档"""
 
 from typing import Final, List, Optional, Sequence, Set, Tuple
 
@@ -9,9 +9,10 @@ from ..entitas import Entity, Matcher
 from ..game.dbg_game import DBGGame
 from ..utils import prompt_builder
 from ..models import (
+    AnyDungeonRoom,
     BaseMessage,
     Dungeon,
-    DungeonPersonaComponent,
+    DungeonDirectorComponent,
     HumanMessage,
     SystemMessage,
     WorldDirectorComponent,
@@ -23,24 +24,24 @@ _SEP: Final[str] = "-" * 100
 
 
 ###################################################################################################################################################################
-def _get_dungeon_persona_entity(
+def _get_dungeon_director_entity(
     dbg_game: DBGGame,
 ) -> Optional[Entity]:
-    """获取副本本体 world system 实体（首个符合条件的实体）。
+    """获取副本导演 world system 实体（首个符合条件的实体）。
 
-    找不到实体（或缺少 DungeonPersonaComponent）时返回 None，表示应跳过归档。
+    找不到实体（或缺少 DungeonDirectorComponent）时返回 None，表示应跳过记录/归档。
     """
 
     entities = dbg_game.get_group(
-        Matcher(all_of=[DungeonPersonaComponent])
+        Matcher(all_of=[DungeonDirectorComponent])
     ).entities.copy()
 
     if not entities:
         return None
 
-    # 取第一个符合条件的实体作为副本本体实体
+    # 取第一个符合条件的实体作为副本导演实体
     entity = next(iter(entities))
-    logger.debug(f"[archive_dungeon] 找到副本本体实体：{entity.name!r}")
+    logger.debug(f"[dungeon_director] 找到副本导演实体：{entity.name!r}")
     return entity
 
 
@@ -86,7 +87,7 @@ def _notify_world_director(
             f"副本「{dungeon.name}」已结束。\n"
             f"设定（profile）：{dungeon.profile or '（无）'}\n"
             f"\n"
-            f"副本本体归档总结：\n"
+            f"副本导演归档总结：\n"
             f"{summary}\n"
             f"\n"
             f"请据此思考：这次副本的结束让世界状态发生了怎样的变化？后续走向应如何推进与演变？"
@@ -103,25 +104,32 @@ def _notify_world_director(
 
 ###################################################################################################################################################################
 @prompt_builder
-def _build_dungeon_setting_block(dungeon: Dungeon) -> str:
-    """构建副本初始设定文本块（不含 Round/Combat 等运行时战斗细节）。"""
+def _build_room_setting_block(room: AnyDungeonRoom) -> str:
+    """构建单个房间的设定文本块（场景 + 角色，不含 Round/Combat 等运行时战斗细节）。"""
 
+    stage = room.stage
     lines: List[str] = [
-        "### 副本",
-        f"- 名称：{dungeon.name}",
-        f"- 设定（profile）：{dungeon.profile or '（无）'}",
+        f"### 房间（类型：{room.type}）",
+        f"- 场景：{stage.name}（类型：{stage.type}）",
+        f"- 场景设定：{stage.profile}",
     ]
 
-    for index, room in enumerate(dungeon.rooms, start=1):
-        stage = room.stage
-        lines.append(f"### 房间 {index}（类型：{room.type}）")
-        lines.append(f"- 场景：{stage.name}（类型：{stage.type}）")
-        lines.append(f"- 场景设定：{stage.profile}")
+    for actor in stage.actors:
+        lines.append(f"- 角色：{actor.name}（类型：{actor.type}）")
+        lines.append(f"  - 角色设定：{actor.profile}")
+        lines.append(f"  - 外观：{actor.base_body}")
 
-        for actor in stage.actors:
-            lines.append(f"- 角色：{actor.name}（类型：{actor.type}）")
-            lines.append(f"  - 角色设定：{actor.profile}")
-            lines.append(f"  - 外观：{actor.base_body}")
+    return "\n".join(lines)
+
+
+###################################################################################################################################################################
+@prompt_builder
+def _build_room_sequence_block(dungeon: Dungeon) -> str:
+    """构建副本房间序列骨架（仅序号/类型/场景名，不含 profile 与角色细节，细节随各房间结束逐步揭露）。"""
+
+    lines: List[str] = [f"### 房间序列（共 {len(dungeon.rooms)} 个）"]
+    for index, room in enumerate(dungeon.rooms, start=1):
+        lines.append(f"{index}. [{room.type}] {room.stage.name}")
 
     return "\n".join(lines)
 
@@ -145,7 +153,7 @@ def _build_entity_fact_block(
     header = f"{label}：{entity_name}（事实记忆）"
 
     if not facts:
-        return f"{header}\n（本次副本中无事实记忆）"
+        return f"{header}\n（本次房间中无事实记忆）"
 
     buffer = get_buffer_string(
         facts,
@@ -157,35 +165,11 @@ def _build_entity_fact_block(
 
 
 ###################################################################################################################################################################
-@prompt_builder
-def _build_archive_prompt(dungeon: Dungeon, facts_block: str) -> str:
-    """构建副本本体归档总结提示词（副本初始设定 + 运行时事实记忆）。"""
-
-    setting_block = _build_dungeon_setting_block(dungeon)
-
-    return f"""# 任务：以副本本体的视角，总结并压缩本次副本的全部事实记忆。
-
-## 副本初始设定
-
-{setting_block}
-
-## 运行时事实记忆
-
-{facts_block}
-
-{_SEP}
-
-## 要求
-
-站在副本「{dungeon.name}」这一拟人化本体的第一人称视角，输出一段连贯的中文总结正文。整段不分段不空行，纯文本输出。"""
-
-
-###################################################################################################################################################################
-def _collect_dungeon_entities(
+def _collect_room_entities(
     dbg_game: DBGGame,
-    dungeon: Dungeon,
+    room: AnyDungeonRoom,
 ) -> List[Tuple[str, Entity]]:
-    """按（场景、其角色）的顺序收集副本实体，去重并保持稳定顺序。
+    """收集单个房间内的场景与角色实体，去重并保持稳定顺序。
 
     返回 (label, entity) 列表，label 用于提示词中的分组标题。
     """
@@ -193,22 +177,116 @@ def _collect_dungeon_entities(
     entities: List[Tuple[str, Entity]] = []
     seen: Set[str] = set()
 
-    for room in dungeon.rooms:
+    stage_entity = dbg_game.get_stage_entity(room.stage.name)
+    if stage_entity is not None and stage_entity.name not in seen:
+        seen.add(stage_entity.name)
+        entities.append(("场景", stage_entity))
 
-        # 场景实体
-        stage_entity = dbg_game.get_stage_entity(room.stage.name)
-        if stage_entity is not None and stage_entity.name not in seen:
-            seen.add(stage_entity.name)
-            entities.append(("场景", stage_entity))
-
-        # 角色实体
-        for actor in room.stage.actors:
-            actor_entity = dbg_game.get_actor_entity(actor.name)
-            if actor_entity is not None and actor_entity.name not in seen:
-                seen.add(actor_entity.name)
-                entities.append(("角色", actor_entity))
+    for actor in room.stage.actors:
+        actor_entity = dbg_game.get_actor_entity(actor.name)
+        if actor_entity is not None and actor_entity.name not in seen:
+            seen.add(actor_entity.name)
+            entities.append(("角色", actor_entity))
 
     return entities
+
+
+###################################################################################################################################################################
+def notify_dungeon_director_entered(
+    dbg_game: DBGGame,
+    dungeon: Dungeon,
+    room: AnyDungeonRoom,
+) -> None:
+    """副本开局进入首个房间时，向副本导演记录起始设定，作为其记忆的第一条事实。
+
+    找不到副本导演实体时静默跳过，不阻断副本进入流程。
+    """
+
+    director_entity = _get_dungeon_director_entity(dbg_game)
+    if director_entity is None:
+        logger.warning("[dungeon_director] 未找到副本导演实体，跳过开局记录")
+        return
+
+    message = HumanMessage(
+        content=(
+            f"# 副本开始\n"
+            f"\n"
+            f"副本「{dungeon.name}」启动。设定（profile）：{dungeon.profile or '（无）'}\n"
+            f"\n"
+            f"{_build_room_sequence_block(dungeon)}\n"
+            f"\n"
+            f"## 首个房间详情\n"
+            f"{_build_room_setting_block(room)}"
+        )
+    )
+    dbg_game.add_human_message(director_entity, message)
+    logger.debug(f"[dungeon_director] 已记录副本开局：{dungeon.name!r}")
+
+
+###################################################################################################################################################################
+def notify_dungeon_director_room_ended(
+    dbg_game: DBGGame,
+    dungeon: Dungeon,
+    room: AnyDungeonRoom,
+) -> None:
+    """房间结束时（任意房间类型，含入口房间），向副本导演追加该房间的事实记忆。
+
+    找不到副本导演实体、或房间没有可记录实体时静默跳过，不阻断副本推进/退出流程。
+    """
+
+    director_entity = _get_dungeon_director_entity(dbg_game)
+    if director_entity is None:
+        logger.warning("[dungeon_director] 未找到副本导演实体，跳过房间结束记录")
+        return
+
+    room_entities = _collect_room_entities(dbg_game, room)
+    if not room_entities:
+        logger.warning(f"[dungeon_director] 房间 {room.stage.name!r} 没有可记录的实体")
+        return
+
+    facts_block = ("\n" + _SEP + "\n").join(
+        _build_entity_fact_block(
+            label,
+            entity.name,
+            dbg_game.get_agent_context(entity).context,
+        )
+        for label, entity in room_entities
+    )
+
+    message = HumanMessage(
+        content=f"# 房间结束：{room.stage.name}（类型：{room.type}）\n\n{facts_block}"
+    )
+    dbg_game.add_human_message(director_entity, message)
+    logger.debug(f"[dungeon_director] 已记录房间结束：{room.stage.name!r}")
+
+
+###################################################################################################################################################################
+async def debug_probe_dungeon_director_reasoning(
+    dbg_game: DBGGame,
+    dungeon: Dungeon,
+) -> None:
+    """调试探针：让副本导演基于当前已积累的记忆做一次通用推理问答。
+
+    仅用于人工核对上下文管理是否符合预期（结果打印在 DeepSeekClient 的日志中），
+    只读取 context 不追加消息，不影响副本导演的正式记忆。
+    """
+
+    director_entity = _get_dungeon_director_entity(dbg_game)
+    if director_entity is None:
+        logger.warning("[dungeon_director] 未找到副本导演实体，跳过调试探针")
+        return
+
+    agent_context = dbg_game.get_agent_context(director_entity)
+
+    prompt = "调试探针：到目前为止都发生了什么？你后续希望发生什么？"
+
+    client = DeepSeekClient(
+        name=f"debug_probe:{dungeon.name}",
+        full_prompt=prompt,
+        context=agent_context.context,
+        model=MODEL_FLASH,
+    )
+    await client.chat()
 
 
 ###################################################################################################################################################################
@@ -216,62 +294,60 @@ async def archive_dungeon(
     dbg_game: DBGGame,
     dungeon: Dungeon,
 ) -> None:
-    """以副本本体的拟人化视角，对本次副本所有场景/角色的事实记忆做总结压缩。
+    """副本结束时，让副本导演基于其已积累的记忆输出总结，转交世界导演；随后重置其记忆。
 
-    只读取实体上下文，不写入任何状态；结果仅通过日志输出并返回给调用方。
+    副本导演的记忆生命周期限定于当前副本：无论总结是否成功，归档流程结束后都会重置回
+    仅剩 system prompt 的初始状态，供下一个副本从零开始积累。
     任何异常都会被捕获并记录，绝不向上抛出以阻断副本退出流程。
     """
 
+    director_entity = _get_dungeon_director_entity(dbg_game)
+    if director_entity is None:
+        logger.warning("[archive_dungeon] 未找到副本导演实体，归档跳过")
+        return None
+
+    agent_context = dbg_game.get_agent_context(director_entity)
+
     try:
 
-        # 1. 获取副本本体 world system 实体；缺失则跳过归档
-        dungeon_persona_entity = _get_dungeon_persona_entity(dbg_game)
-        if dungeon_persona_entity is None:
-            logger.warning(f"[archive_dungeon] 未找到副本本体实体，归档跳过")
-            return None
-
-        # 2. 检索副本中所有 actor/stage 实体（与 teardown 相同的数据来源）
-        entities = _collect_dungeon_entities(dbg_game, dungeon)
-        if not entities:
-            logger.warning(f"[archive_dungeon] 副本 {dungeon.name!r} 没有可归档的实体")
-            return None
-
-        # 3. 取出每个实体的 agent context，过滤出事实记忆，用长分割线拼接各实体模块
-        facts_block = ("\n" + _SEP + "\n").join(
-            _build_entity_fact_block(
-                label,
-                entity.name,
-                dbg_game.get_agent_context(entity).context,
-            )
-            for label, entity in entities
+        # 基于副本导演已积累的记忆（开局记录 + 各房间结束记录），驱动其输出总结
+        prompt = (
+            f"# 任务：基于你已积累的记忆，总结并压缩本次副本「{dungeon.name}」的全部经历。\n"
+            f"\n"
+            f"站在你（副本导演）亲历本次副本的第一人称视角，输出一段连贯的中文总结正文。"
+            f"整段不分段不空行，纯文本输出。"
         )
 
-        # 4. 以副本本体人设 + 副本初始设定 + 运行时事实，驱动额外 agent 做总结压缩
-        prompt = _build_archive_prompt(dungeon, facts_block)
-
-        # 5. 调用 DeepSeekClient 进行归档总结
         client = DeepSeekClient(
             name=f"dungeon:{dungeon.name}",
             full_prompt=prompt,
-            context=dbg_game.get_agent_context(dungeon_persona_entity).context,
+            context=agent_context.context,
             model=MODEL_FLASH,
-            thinking=False,
         )
         await client.chat()
 
-        # 6. 获取归档总结结果
         summary = client.response_content
         if not summary:
             logger.warning(f"[archive_dungeon] 副本 {dungeon.name!r} 归档结果为空")
             return None
 
-        logger.info(f"[archive_dungeon] 副本「{dungeon.name}」本体总结:\n{summary}")
+        logger.info(f"[archive_dungeon] 副本「{dungeon.name}」导演总结:\n{summary}")
 
-        # 7. 将总结作为「世界变化通知」写入世界导演（GM）的上下文
+        # 将总结作为「世界变化通知」写入世界导演（GM）的上下文
         _notify_world_director(dbg_game, dungeon, summary)
 
     except Exception as e:
         logger.error(
             f"[archive_dungeon] 副本 {dungeon.name!r} 归档失败: "
             f"{type(e).__name__}: {e}"
+        )
+    finally:
+
+        # 副本导演记忆生命周期限定于当前副本：归档后重置，仅保留首条 system prompt
+        assert isinstance(
+            agent_context.context[0], SystemMessage
+        ), "副本导演 agent context 首条消息必须是 SystemMessage"
+        del agent_context.context[1:]
+        logger.info(
+            f"[archive_dungeon] 已重置副本导演记忆，保留 {len(agent_context.context)} 条消息"
         )

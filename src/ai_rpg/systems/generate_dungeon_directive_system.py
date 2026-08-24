@@ -75,7 +75,7 @@ class GenerateDungeonDirectiveSystem(ReactiveProcessor):
             full_prompt=prompt,
             context=self._game.get_agent_context(director_entity).context,
             model=MODEL_FLASH,
-            thinking=False,
+            # thinking=False,
         )
         await client.chat()
 

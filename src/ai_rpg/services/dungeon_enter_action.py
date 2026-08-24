@@ -22,6 +22,7 @@ from ..models import (
 )
 from ..entitas import Entity, Matcher
 from ..utils import prompt_builder
+from .dungeon_archive_action import notify_dungeon_director_entered
 
 
 ###################################################################################################################################################################
@@ -153,6 +154,9 @@ def enter_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, str]:
         logger.info(
             f"enter_dungeon: 首间为 {current_room.type!r} 房间，跳过战斗初始化，等待玩家手动推进"
         )
+
+    # 副本导演开局记录：以首个房间的起始设定作为其记忆的第一条事实
+    notify_dungeon_director_entered(dbg_game, dungeon, current_room)
 
     logger.info(f"enter_dungeon 完成: {dungeon.name}")
     return True, f"成功进入副本: {dungeon.name}"

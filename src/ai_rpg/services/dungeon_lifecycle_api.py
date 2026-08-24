@@ -153,7 +153,7 @@ async def dungeon_advance_stage(
             )
 
         # 推进副本到下一房间
-        success, msg = advance_dungeon(rpg_game, rpg_game.current_dungeon)
+        success, msg = await advance_dungeon(rpg_game, rpg_game.current_dungeon)
         if not success:
             logger.error(f"玩家 {payload.user_name} 副本前进失败: {msg}")
             raise HTTPException(

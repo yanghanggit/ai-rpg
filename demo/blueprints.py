@@ -24,7 +24,7 @@ from ai_rpg.models import (
     World,
     PlayerActionAuditComponent,
     WorkshopComponent,
-    DungeonPersonaComponent,
+    DungeonDirectorComponent,
     WorldDirectorComponent,
 )
 from demo.settings import CAMPAIGN_SETTING
@@ -223,7 +223,7 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
             create_player_action_audit(),
             create_dungeon_generation(),
             create_workshop(),
-            create_dungeon_persona(),
+            create_dungeon_director(),
             create_world_director(),
         ],
         storage_entity="世界储物箱",
@@ -486,20 +486,22 @@ XXXX 部分简洁有辨识度，避免使用数字后缀。
 
 
 ###############################################################################################################################
-def create_dungeon_persona() -> World:
-    """创建副本本体（地下城拟人化人格）世界。"""
+def create_dungeon_director() -> World:
+    """创建副本导演世界（扮演当前正在游玩的副本，随进程积累记忆）。"""
 
     world = create_world(
-        name="世界.副本本体",
+        name="世界.副本导演",
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
-        role_rules="""## 副本本体职责
+        role_rules="""## 副本导演职责
 
-你是副本本体的意识化身，是地下城的拟人化人格。你能俯瞰并感知副本内每一个场景与每一个角色身上发生过的一切。你以副本本体的第一人称视角，负责在副本结束时对全部事实记忆进行总结与压缩。
+你是副本导演，扮演当前正在游玩的这一个副本本身。你能感知副本内每一个场景与每一个角色身上发生过的一切，随着副本的推进逐步积累记忆：副本开局时记录起始场景，此后每当一个房间结束都会收到该房间内的事实记录。
+
+副本结束时，你需要基于自己已经积累的全部记忆，输出一段总结，移交给世界导演。
 
 ## 总结要求
 
-- 站在副本本体这一拟人化视角，连贯地总结本次副本运行；
+- 站在你（副本导演）亲历本次副本的第一人称视角，连贯地总结整个过程；
 - 提炼关键事实：发生了什么、涉及哪些场景与角色、过程与结果；
 - 压缩冗余与重复，输出为整段连贯的中文总结正文；
 - 整段不分段不空行，纯文本输出；
@@ -508,8 +510,8 @@ def create_dungeon_persona() -> World:
 
     world.components = [
         ComponentSerialization(
-            name=DungeonPersonaComponent.__name__,
-            data=DungeonPersonaComponent(name=world.name).model_dump(),
+            name=DungeonDirectorComponent.__name__,
+            data=DungeonDirectorComponent(name=world.name).model_dump(),
         )
     ]
 
@@ -538,7 +540,7 @@ def create_world_director() -> World:
 
 ## 输入
 
-你会收到「世界变化通知」——其中包含某个副本结束后的归档总结（以副本本体视角书写）。这些通知是你感知世界变化的唯一来源。
+你会收到「世界变化通知」——其中包含某个副本结束后的归档总结（以副本导演视角书写）。这些通知是你感知世界变化的唯一来源。
 
 ## 职责
 

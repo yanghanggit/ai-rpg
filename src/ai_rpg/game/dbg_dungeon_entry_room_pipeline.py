@@ -1,6 +1,7 @@
 """副本入口场景流程管道工厂模块。"""
 
 from typing import cast
+
 from .game_session import GameSession
 from .rpg_game_pipeline_manager import RPGGameProcessPipeline
 
@@ -11,19 +12,20 @@ def create_dungeon_entry_room_pipeline(
     """创建副本入口场景的流程管道（叙事 + 牌库生成，无战斗）"""
 
     ### 不这样就循环引用
-    from .dbg_game import DBGGame
-    from ..systems.dungeon_entry_init_system import DungeonEntryInitSystem
-    from ..systems.generate_deck_action_system import GenerateDeckActionSystem
+    from ..systems.action_cleanup_system import ActionCleanupSystem
     from ..systems.appearance_initialization_system import (
         AppearanceInitializationSystem,
     )
+    from ..systems.destroy_entity_system import DestroyEntitySystem
+    from ..systems.dungeon_entry_init_system import DungeonEntryInitSystem
+    from ..systems.entry_init_actor_system import EntryInitActorSystem
+    from ..systems.epilogue_system import EpilogueSystem
+    from ..systems.generate_deck_action_system import GenerateDeckActionSystem
+    from ..systems.prologue_system import PrologueSystem
     from ..systems.stage_description_system import (
         StageDescriptionSystem,
     )
-    from ..systems.epilogue_system import EpilogueSystem
-    from ..systems.prologue_system import PrologueSystem
-    from ..systems.action_cleanup_system import ActionCleanupSystem
-    from ..systems.destroy_entity_system import DestroyEntitySystem
+    from .dbg_game import DBGGame
 
     dbg_game = cast(DBGGame, game)
     processors = RPGGameProcessPipeline()
@@ -37,7 +39,10 @@ def create_dungeon_entry_room_pipeline(
     # 入口场景描述系统
     processors.add(StageDescriptionSystem(dbg_game))
 
-    # 入口初始化系统：建 piles + 添加 GenerateDeckAction
+    # 入口初始化系统（角色侧）：为入口场景内的远征队成员注入场景环境上下文
+    processors.add(EntryInitActorSystem(dbg_game))
+
+    # 入口初始化系统：为副本全部角色添加 GenerateDeckAction
     processors.add(DungeonEntryInitSystem(dbg_game))
 
     # 牌库生成系统：LLM 生成初始卡牌 → DeckComponent + DrawPileComponent

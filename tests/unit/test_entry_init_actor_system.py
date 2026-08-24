@@ -6,11 +6,13 @@ import pytest
 
 from src.ai_rpg.entitas.context import Context
 from src.ai_rpg.entitas.entity import Entity
+from src.ai_rpg.entitas.matcher import Matcher
 from src.ai_rpg.game.dbg_game import DBGGame
 from src.ai_rpg.models import (
     ActorComponent,
     AppearanceComponent,
     CharacterStatsComponent,
+    GenerateDeckAction,
     MonsterComponent,
     PartyMemberComponent,
 )
@@ -149,3 +151,34 @@ def test_add_context_skips_already_injected_actor(
 
     mock_game.add_human_message.assert_not_called()
     mock_game.add_ai_message.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# _add_generate_deck_actions
+# ---------------------------------------------------------------------------
+
+
+def test_add_generate_deck_actions_adds_action_to_party_and_monsters(
+    context: Context, mock_game: MagicMock, system: EntryInitActorSystem
+) -> None:
+    ally = _make_actor(context, "勇者", is_ally=True)
+    monster = _make_actor(context, "哥布林", is_monster=True)
+
+    party_group = MagicMock()
+    party_group.entities = {ally}
+    monster_group = MagicMock()
+    monster_group.entities = {monster}
+
+    def fake_get_group(matcher: Matcher) -> MagicMock:
+        if matcher.all_of == (PartyMemberComponent,):
+            return party_group
+        if matcher.all_of == (MonsterComponent,):
+            return monster_group
+        raise AssertionError(f"unexpected matcher: {matcher}")
+
+    mock_game.get_group.side_effect = fake_get_group
+
+    system._add_generate_deck_actions()
+
+    assert ally.has(GenerateDeckAction)
+    assert monster.has(GenerateDeckAction)

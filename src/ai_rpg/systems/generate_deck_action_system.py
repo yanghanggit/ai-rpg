@@ -141,7 +141,7 @@ HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:
 
 @final
 class GenerateDeckActionSystem(ReactiveProcessor):
-    """#generate_deck_action_system
+    """
     响应 GenerateDeckAction，为每个触发角色并行调用 LLM 生成初始牌库卡牌，
     """
 

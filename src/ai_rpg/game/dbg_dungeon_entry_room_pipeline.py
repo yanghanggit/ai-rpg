@@ -17,7 +17,6 @@ def create_dungeon_entry_room_pipeline(
         AppearanceInitializationSystem,
     )
     from ..systems.destroy_entity_system import DestroyEntitySystem
-    from ..systems.dungeon_entry_init_system import DungeonEntryInitSystem
     from ..systems.entry_init_actor_system import EntryInitActorSystem
     from ..systems.epilogue_system import EpilogueSystem
     from ..systems.generate_deck_action_system import GenerateDeckActionSystem
@@ -39,11 +38,8 @@ def create_dungeon_entry_room_pipeline(
     # 入口场景描述系统
     processors.add(StageDescriptionSystem(dbg_game))
 
-    # 入口初始化系统（角色侧）：为入口场景内的远征队成员注入场景环境上下文
+    # 入口初始化系统（角色侧）：为入口场景内的远征队成员注入场景环境上下文 + 为副本全部角色添加 GenerateDeckAction
     processors.add(EntryInitActorSystem(dbg_game))
-
-    # 入口初始化系统：为副本全部角色添加 GenerateDeckAction
-    processors.add(DungeonEntryInitSystem(dbg_game))
 
     # 牌库生成系统：LLM 生成初始卡牌 → DeckComponent + DrawPileComponent
     processors.add(GenerateDeckActionSystem(dbg_game))

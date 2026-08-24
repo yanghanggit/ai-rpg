@@ -12,6 +12,8 @@ from ..game.dbg_combat_processor import (
     get_alive_actors_in_stage,
 )
 from ..models import (
+    DeckComponent,
+    FillDrawPileAction,
     GenerateDeckAction,
     StageDescriptionComponent,
     StatusEffectsComponent,
@@ -128,10 +130,30 @@ class CombatInitActorSystem(ExecuteProcessor):
             stage_description=stage_description_comp.narrative,
         )
 
-        # 为所有参战角色添加 GenerateDeckAction，触发初始牌库生成
+        # 所有参战角色都需要填充抽牌堆（从 DeckComponent 洗牌填入 DrawPileComponent）
         for actor_entity in actor_entities:
+            actor_entity.replace(FillDrawPileAction, actor_entity.name)
+            logger.debug(f"[{actor_entity.name}] 已添加 FillDrawPileAction")
+
+        # 仅怪物需要在此处生成初始牌库；远征队牌库已在入口房间生成完毕
+        for actor_entity in actor_entities:
+            if not actor_entity.has(MonsterComponent):
+                continue
+
+            assert not actor_entity.has(
+                PartyMemberComponent
+            ), f"角色 {actor_entity.name} 同时具有 MonsterComponent 与 PartyMemberComponent，阵营异常！"
+
+            deck_comp = actor_entity.get(DeckComponent)
+            assert (
+                deck_comp is not None
+            ), f"怪物 {actor_entity.name} 缺少 DeckComponent！"
+            assert (
+                len(deck_comp.cards) == 0
+            ), f"怪物 {actor_entity.name} 的牌库非空，不应在战斗前已被生成！"
+
             actor_entity.replace(GenerateDeckAction, actor_entity.name)
-            logger.debug(f"[{actor_entity.name}] 已添加 GenerateDeckAction")
+            logger.debug(f"[{actor_entity.name}] 已添加 GenerateDeckAction（怪物）")
 
     ###################################################################################################################################################################
     def _initialize_piles_and_status_effects(self, actor_entities: Set[Entity]) -> None:

@@ -300,10 +300,13 @@ class GenerateDeckActionSystem(ReactiveProcessor):
         assert deck_comp is not None, f"{entity.name} 缺少 DeckComponent"
         deck_comp.cards.extend(cards)
 
-        # GenerateDeckActionSystem 仅写 DeckComponent；DrawPileComponent 是战斗管道职责
-        assert not entity.has(
-            DrawPileComponent
-        ), f"{entity.name} 不应存在 DrawPileComponent，牌库生成阶段不应有临时牌堆"
+        # GenerateDeckActionSystem 仅写 DeckComponent；DrawPileComponent 是战斗管道职责。
+        # 战斗管道中，怪物在 CombatInitActorSystem 初始化空牌堆后才生成牌库，
+        # 因此此处允许存在“空的” DrawPileComponent。
+        draw_pile_comp = entity.get(DrawPileComponent)
+        assert (
+            draw_pile_comp is None or len(draw_pile_comp.cards) == 0
+        ), f"{entity.name} 的 DrawPileComponent 非空，牌库生成阶段不应已填充临时牌堆"
 
         # 将本轮任务提示词与 LLM 回复写入 agent 对话历史
         self._game.add_human_message(

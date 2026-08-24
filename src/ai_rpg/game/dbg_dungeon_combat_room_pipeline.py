@@ -60,6 +60,7 @@ def create_dungeon_combat_room_pipeline(
     from ..systems.combat_archive_system import CombatArchiveSystem
     from ..systems.combat_loot_system import CombatLootSystem
     from ..systems.fill_draw_pile_system import FillDrawPileSystem
+    from ..systems.generate_deck_action_system import GenerateDeckActionSystem
     from ..systems.combat_pile_teardown_system import CombatPileTeardownSystem
     from ..systems.stage_description_system import (
         StageDescriptionSystem,
@@ -90,11 +91,15 @@ def create_dungeon_combat_room_pipeline(
     # 战斗场景描述系统
     processors.add(StageDescriptionSystem(dbg_game))
 
-    # 战斗初始化系统（角色侧）：初始化战斗临时牌堆/状态效果组件，为参战角色注入战场上下文，触发初始牌库生成
+    # 战斗初始化系统（角色侧）：初始化战斗临时牌堆/状态效果组件，为参战角色注入战场上下文，添加 GenerateDeckAction
     processors.add(CombatInitActorSystem(dbg_game))
 
     # 战斗初始化系统（场景侧）：注入战斗专用规则、转换战斗状态为进行中、推理场景状态效果依据
     processors.add(CombatInitStageSystem(dbg_game))
+
+    # 怪物牌库生成系统：响应 GenerateDeckAction，为当前战斗房间的怪物生成初始牌库；
+    # 远征队牌库已在入口房间生成，此处因牌库非空被 filter 跳过
+    processors.add(GenerateDeckActionSystem(dbg_game))
 
     # 抽牌堆填充系统（从 DeckComponent 填 DrawPileComponent，零 LLM）
     processors.add(FillDrawPileSystem(dbg_game))

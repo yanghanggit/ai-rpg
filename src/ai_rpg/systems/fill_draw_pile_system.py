@@ -2,22 +2,24 @@
 
 import random
 from typing import Dict, Final, List, final, override
+
 from loguru import logger
+
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..models import (
     ActorComponent,
+    DeathComponent,
     DeckComponent,
     DrawPileComponent,
-    GenerateDeckAction,
-    DeathComponent,
+    FillDrawPileAction,
 )
 
 
 #######################################################################################################################################
 @final
 class FillDrawPileSystem(ReactiveProcessor):
-    """响应 GenerateDeckAction，从 DeckComponent 填充 DrawPileComponent。"""
+    """响应 FillDrawPileAction，从 DeckComponent 填充 DrawPileComponent。"""
 
     def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
@@ -26,13 +28,13 @@ class FillDrawPileSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def get_trigger(self) -> Dict[Matcher, GroupEvent]:
-        return {Matcher(GenerateDeckAction): GroupEvent.ADDED}
+        return {Matcher(FillDrawPileAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
         return (
-            entity.has(GenerateDeckAction)
+            entity.has(FillDrawPileAction)
             and entity.has(ActorComponent)
             and entity.has(DeckComponent)
             and entity.has(DrawPileComponent)

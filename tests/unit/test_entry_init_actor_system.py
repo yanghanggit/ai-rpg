@@ -6,12 +6,12 @@ import pytest
 
 from src.ai_rpg.entitas.context import Context
 from src.ai_rpg.entitas.entity import Entity
-from src.ai_rpg.entitas.matcher import Matcher
 from src.ai_rpg.game.dbg_game import DBGGame
 from src.ai_rpg.models import (
     ActorComponent,
     AppearanceComponent,
     CharacterStatsComponent,
+    DeckComponent,
     GenerateDeckAction,
     MonsterComponent,
     PartyMemberComponent,
@@ -42,6 +42,7 @@ def _make_actor(
     entity.add(ActorComponent, name, "")
     entity.add(CharacterStatsComponent, name, CharacterStats())
     entity.add(AppearanceComponent, name, "base_body", appearance)
+    entity.add(DeckComponent, name, [], [])
     if is_ally:
         entity.add(PartyMemberComponent, name)
     if is_monster:
@@ -158,7 +159,7 @@ def test_add_context_skips_already_injected_actor(
 # ---------------------------------------------------------------------------
 
 
-def test_add_generate_deck_actions_adds_action_to_party_and_monsters(
+def test_add_generate_deck_actions_adds_action_to_party_only(
     context: Context, mock_game: MagicMock, system: EntryInitActorSystem
 ) -> None:
     ally = _make_actor(context, "勇者", is_ally=True)
@@ -166,19 +167,12 @@ def test_add_generate_deck_actions_adds_action_to_party_and_monsters(
 
     party_group = MagicMock()
     party_group.entities = {ally}
-    monster_group = MagicMock()
-    monster_group.entities = {monster}
 
-    def fake_get_group(matcher: Matcher) -> MagicMock:
-        if matcher.all_of == (PartyMemberComponent,):
-            return party_group
-        if matcher.all_of == (MonsterComponent,):
-            return monster_group
-        raise AssertionError(f"unexpected matcher: {matcher}")
-
-    mock_game.get_group.side_effect = fake_get_group
+    mock_game.get_group.return_value = party_group
 
     system._add_generate_deck_actions()
 
+    # 只为远征队添加；怪物牌库改由战斗管道生成
     assert ally.has(GenerateDeckAction)
-    assert monster.has(GenerateDeckAction)
+    assert not monster.has(GenerateDeckAction)
+    mock_game.get_group.assert_called_once()

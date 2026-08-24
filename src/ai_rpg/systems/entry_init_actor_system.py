@@ -1,4 +1,4 @@
-"""副本入口初始化系统（角色侧）：为入口场景内的远征队成员注入场景环境上下文，并为副本全部角色触发初始牌库生成。"""
+"""副本入口初始化系统（角色侧）：为入口场景内的远征队成员注入场景环境上下文，并为远征队成员触发初始牌库生成（怪物牌库在各自战斗房间生成）。"""
 
 from dataclasses import dataclass
 from typing import Final, List, Set, final, override
@@ -14,6 +14,7 @@ from ..game.dbg_game import DBGGame
 from ..models import (
     AppearanceComponent,
     CharacterStats,
+    DeckComponent,
     GenerateDeckAction,
     MonsterComponent,
     PartyMemberComponent,
@@ -76,7 +77,7 @@ def _build_entry_init_prompt(
 ###################################################################################################################################################################
 @final
 class EntryInitActorSystem(ExecuteProcessor):
-    """副本入口初始化系统（角色侧）：为入口场景内的远征队成员注入场景环境上下文（无 LLM），并为副本全部角色添加 GenerateDeckAction 触发初始牌库生成。"""
+    """副本入口初始化系统（角色侧）：为入口场景内的远征队成员注入场景环境上下文（无 LLM），并为远征队成员添加 GenerateDeckAction 触发初始牌库生成。"""
 
     def __init__(self, game: DBGGame) -> None:
         self._game: Final[DBGGame] = game
@@ -90,7 +91,7 @@ class EntryInitActorSystem(ExecuteProcessor):
             return
 
         logger.info(
-            "入口初始化（角色侧）开始：注入入口场景上下文 + 为副本全部角色触发牌库生成..."
+            "入口初始化（角色侧）开始：注入入口场景上下文 + 为远征队成员触发牌库生成..."
         )
 
         # 获取玩家实体，player 所在场景即入口场景
@@ -118,7 +119,7 @@ class EntryInitActorSystem(ExecuteProcessor):
             stage_description=stage_description_comp.narrative,
         )
 
-        # 为副本全部角色（远征队 + 全部怪物）添加 GenerateDeckAction，触发初始牌库生成
+        # 为远征队成员添加 GenerateDeckAction，触发初始牌库生成（怪物牌库在各自战斗房间生成）
         self._add_generate_deck_actions()
 
     ###################################################################################################################################################################
@@ -207,27 +208,29 @@ class EntryInitActorSystem(ExecuteProcessor):
 
     ###################################################################################################################################################################
     def _add_generate_deck_actions(self) -> None:
-        """为副本全部角色（远征队成员 + 全部怪物）添加 GenerateDeckAction。"""
+        """为远征队成员（玩家及其队友）添加 GenerateDeckAction。"""
         count = 0
 
-        # 远征队成员（玩家及其队友）
         party_entities = self._game.get_group(
             Matcher(all_of=[PartyMemberComponent])
         ).entities.copy()
         for entity in party_entities:
+            assert entity.has(
+                PartyMemberComponent
+            ), f"角色 {entity.name} 缺少 PartyMemberComponent，不应被入口初始化选中！"
+
+            deck_comp = entity.get(DeckComponent)
+            assert (
+                deck_comp is not None
+            ), f"远征队成员 {entity.name} 缺少 DeckComponent！"
+            assert (
+                len(deck_comp.cards) == 0
+            ), f"远征队成员 {entity.name} 的牌库非空，不应重复生成！"
+
             entity.replace(GenerateDeckAction, entity.name)
             logger.debug(f"[{entity.name}] 已添加 GenerateDeckAction（远征队）")
             count += 1
 
-        # 全部怪物
-        monster_entities = self._game.get_group(
-            Matcher(all_of=[MonsterComponent])
-        ).entities.copy()
-        for entity in monster_entities:
-            entity.replace(GenerateDeckAction, entity.name)
-            logger.debug(f"[{entity.name}] 已添加 GenerateDeckAction（怪物）")
-            count += 1
-
         logger.info(
-            f"[EntryInitActorSystem] 完成，已为 {count} 个角色添加 GenerateDeckAction"
+            f"[EntryInitActorSystem] 完成，已为 {count} 个远征队成员添加 GenerateDeckAction"
         )

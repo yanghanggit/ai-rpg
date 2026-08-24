@@ -8,8 +8,13 @@ from src.ai_rpg.entitas.entity import Entity
 from src.ai_rpg.game.dbg_game import DBGGame
 from src.ai_rpg.models import (
     ActorComponent,
+    Card,
     CombatResult,
     DeathComponent,
+    DiscardPileComponent,
+    DrawPileComponent,
+    ExhaustPileComponent,
+    HandComponent,
     MonsterComponent,
     PartyMemberComponent,
     StageComponent,
@@ -51,6 +56,34 @@ def _make_stage(context: Context, name: str) -> Entity:
     entity._name = name
     entity.add(StageComponent, name)
     return entity
+
+
+def _make_card(name: str = "测试卡牌") -> Card:
+    """创建一张占位卡牌。"""
+    return Card(name=name, description="测试描述")
+
+
+def _add_cards(
+    entity: Entity,
+    *,
+    draw: int = 0,
+    hand: int = 0,
+    discard: int = 0,
+    exhaust: int = 0,
+) -> None:
+    """为实体挂载牌堆组件并填入指定数量的占位卡牌。"""
+    if draw:
+        entity.add(DrawPileComponent, entity.name, [_make_card() for _ in range(draw)])
+    if hand:
+        entity.add(HandComponent, entity.name, [_make_card() for _ in range(hand)])
+    if discard:
+        entity.add(
+            DiscardPileComponent, entity.name, [_make_card() for _ in range(discard)]
+        )
+    if exhaust:
+        entity.add(
+            ExhaustPileComponent, entity.name, [_make_card() for _ in range(exhaust)]
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -96,6 +129,30 @@ class TestGetCombatResultNotification:
     def test_stage_name_in_output(self) -> None:
         result = _get_combat_result_notification("血色竞技场", True)
         assert "血色竞技场" in result
+
+
+class TestCountAvailableCards:
+    """_count_available_cards 的单元测试。"""
+
+    def test_empty_entity_returns_zero(
+        self, context: Context, system: CombatOutcomeSystem
+    ) -> None:
+        entity = context.create_entity()
+        assert system._count_available_cards(entity) == 0
+
+    def test_counts_draw_hand_discard(
+        self, context: Context, system: CombatOutcomeSystem
+    ) -> None:
+        entity = context.create_entity()
+        _add_cards(entity, draw=1, hand=2, discard=3)
+        assert system._count_available_cards(entity) == 6
+
+    def test_exhaust_pile_not_counted(
+        self, context: Context, system: CombatOutcomeSystem
+    ) -> None:
+        entity = context.create_entity()
+        _add_cards(entity, exhaust=5)
+        assert system._count_available_cards(entity) == 0
 
 
 # ---------------------------------------------------------------------------
@@ -206,6 +263,58 @@ class TestIsPlayerSideEliminated:
 # ---------------------------------------------------------------------------
 
 
+class TestBothSidesCardless:
+    """_is_both_sides_cardless 的单元测试。"""
+
+    def _setup(
+        self, mock_game: MagicMock, context: Context, actors: set[Entity]
+    ) -> None:
+        player = context.create_entity()
+        player._name = "player"
+        mock_game.get_player_entity.return_value = player
+        mock_game.get_actors_in_stage.return_value = actors
+
+    def test_both_alive_cardless_returns_true(
+        self, context: Context, mock_game: MagicMock, system: CombatOutcomeSystem
+    ) -> None:
+        """双方存活且均无可用卡牌时应返回 True。"""
+        ally = _make_actor(context, "英雄", is_ally=True)
+        monster = _make_actor(context, "哥布林", is_monster=True)
+        self._setup(mock_game, context, {ally, monster})
+        assert system._is_both_sides_cardless() is True
+
+    def test_ally_has_cards_returns_false(
+        self, context: Context, mock_game: MagicMock, system: CombatOutcomeSystem
+    ) -> None:
+        """仅友方有卡牌时应返回 False。"""
+        ally = _make_actor(context, "英雄", is_ally=True)
+        _add_cards(ally, discard=1)
+        monster = _make_actor(context, "哥布林", is_monster=True)
+        self._setup(mock_game, context, {ally, monster})
+        assert system._is_both_sides_cardless() is False
+
+    def test_enemy_has_cards_returns_false(
+        self, context: Context, mock_game: MagicMock, system: CombatOutcomeSystem
+    ) -> None:
+        """仅敌方有卡牌时应返回 False。"""
+        ally = _make_actor(context, "英雄", is_ally=True)
+        monster = _make_actor(context, "哥布林", is_monster=True)
+        _add_cards(monster, draw=1)
+        self._setup(mock_game, context, {ally, monster})
+        assert system._is_both_sides_cardless() is False
+
+    def test_dead_member_cards_ignored(
+        self, context: Context, mock_game: MagicMock, system: CombatOutcomeSystem
+    ) -> None:
+        """死亡成员的牌堆不计入可用卡牌：死亡友方仍有牌，但存活双方均无牌时应返回 True。"""
+        dead_ally = _make_actor(context, "英雄", is_ally=True, is_dead=True)
+        _add_cards(dead_ally, hand=3)
+        alive_ally = _make_actor(context, "同伴", is_ally=True)
+        monster = _make_actor(context, "哥布林", is_monster=True)
+        self._setup(mock_game, context, {dead_ally, alive_ally, monster})
+        assert system._is_both_sides_cardless() is True
+
+
 class TestExecute:
     """CombatOutcomeSystem.execute() 的单元测试。"""
 
@@ -239,13 +348,40 @@ class TestExecute:
     async def test_no_result_when_both_sides_alive(
         self, context: Context, mock_game: MagicMock, system: CombatOutcomeSystem
     ) -> None:
-        """双方均有存活时，不应结束战斗。"""
+        """双方均有存活且至少一方还有可用卡牌时，不应结束战斗。"""
         ally = _make_actor(context, "英雄", is_ally=True)
+        _add_cards(ally, hand=1)
         monster = _make_actor(context, "哥布林", is_monster=True)
         self._setup(mock_game, context, {ally, monster})
         await system.execute()
         mock_game.current_dungeon_combat_room.combat.complete_combat.assert_not_called()
         # mock_game.clear_round_state.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_both_sides_cardless_triggers_lose(
+        self, context: Context, mock_game: MagicMock, system: CombatOutcomeSystem
+    ) -> None:
+        """双方均无可用卡牌时，应调用 complete_combat(LOSE)。"""
+        ally = _make_actor(context, "英雄", is_ally=True)
+        monster = _make_actor(context, "哥布林", is_monster=True)
+        self._setup(mock_game, context, {ally, monster})
+        await system.execute()
+        mock_game.current_dungeon_combat_room.combat.complete_combat.assert_called_once_with(
+            CombatResult.LOSE
+        )
+
+    @pytest.mark.asyncio
+    async def test_enemy_eliminated_takes_priority_over_cardless(
+        self, context: Context, mock_game: MagicMock, system: CombatOutcomeSystem
+    ) -> None:
+        """敌方全灭优先于卡牌耗尽：即使双方均无牌，敌方全灭仍应 WIN。"""
+        ally = _make_actor(context, "英雄", is_ally=True)
+        dead_monster = _make_actor(context, "哥布林", is_monster=True, is_dead=True)
+        self._setup(mock_game, context, {ally, dead_monster})
+        await system.execute()
+        mock_game.current_dungeon_combat_room.combat.complete_combat.assert_called_once_with(
+            CombatResult.WIN
+        )
 
     @pytest.mark.asyncio
     async def test_enemy_eliminated_triggers_win(

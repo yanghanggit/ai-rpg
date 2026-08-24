@@ -1,7 +1,7 @@
 """战斗结果判定系统：检测阵营全灭条件，结束战斗并广播结果。"""
 
-from typing import Final, final, override, Set
-from ..entitas import ExecuteProcessor, Entity
+from typing import Final, final, override, Set, Type
+from ..entitas import Component, ExecuteProcessor, Entity
 from ..game.dbg_game import DBGGame
 from ..models import (
     DeathComponent,
@@ -9,6 +9,9 @@ from ..models import (
     HumanMessage,
     PartyMemberComponent,
     MonsterComponent,
+    DrawPileComponent,
+    DiscardPileComponent,
+    HandComponent,
 )
 from loguru import logger
 from ..game.dbg_combat_processor import clear_round_state
@@ -63,63 +66,88 @@ class CombatOutcomeSystem(ExecuteProcessor):
             clear_round_state(self._game)
             self._broadcast_result_to_party_members(CombatResult.WIN)
 
+        elif self._is_both_sides_cardless():
+
+            # 双方均无可用卡牌（DrawPile / Hand / DiscardPile 均为空）时，判定敌人获胜
+            logger.info("both sides out of cards!!! enemy wins")
+            self._game.current_dungeon_combat_room.combat.complete_combat(
+                CombatResult.LOSE
+            )
+            clear_round_state(self._game)
+            self._broadcast_result_to_party_members(CombatResult.LOSE)
+
         else:
             logger.debug("双方均未全灭，战斗继续进行")
 
     ########################################################################################################################################################################
-    def _is_enemy_side_eliminated(self) -> bool:
-        """返回敌方阵营（MonsterComponent）是否已全员带有 DeathComponent。"""
+    def _get_actors_in_stage(self) -> Set[Entity]:
+        """返回当前场景内所有参战角色实体（含已死亡角色）。"""
         player_entity = self._game.get_player_entity()
         assert player_entity is not None, "Player entity should not be None."
 
         actors_in_stage = self._game.get_actors_in_stage(player_entity)
         assert len(actors_in_stage) > 0, f"entities with actions: {actors_in_stage}"
+        return actors_in_stage
 
-        active_enemies: Set[Entity] = set()
-        defeated_enemies: Set[Entity] = set()
+    ########################################################################################################################################################################
+    def _is_side_eliminated(self, component_cls: Type[Component]) -> bool:
+        """返回指定阵营（由 component_cls 标记）是否已全员带有 DeathComponent。"""
+        actors_in_stage = self._get_actors_in_stage()
+
+        members: Set[Entity] = set()
+        defeated_members: Set[Entity] = set()
 
         for entity in actors_in_stage:
 
-            if not entity.has(MonsterComponent):
+            if not entity.has(component_cls):
                 continue
 
-            # 激活的敌人
-            active_enemies.add(entity)
+            members.add(entity)
 
             if entity.has(DeathComponent):
-                # 已被击败的敌人
-                defeated_enemies.add(entity)
+                defeated_members.add(entity)
 
-        # 判断是否所有敌人都已被击败
-        return len(active_enemies) > 0 and len(defeated_enemies) >= len(active_enemies)
+        # 判断该阵营是否所有成员都已被击败（无成员时返回 False）
+        return len(members) > 0 and len(defeated_members) >= len(members)
 
     ########################################################################################################################################################################
     def _is_player_side_eliminated(self) -> bool:
         """返回友方阵营（PartyMemberComponent）是否已全员带有 DeathComponent。"""
+        return self._is_side_eliminated(PartyMemberComponent)
 
-        player_entity = self._game.get_player_entity()
-        assert player_entity is not None, "Player entity should not be None."
+    ########################################################################################################################################################################
+    def _is_enemy_side_eliminated(self) -> bool:
+        """返回敌方阵营（MonsterComponent）是否已全员带有 DeathComponent。"""
+        return self._is_side_eliminated(MonsterComponent)
 
-        actors_in_stage = self._game.get_actors_in_stage(player_entity)
-        assert len(actors_in_stage) > 0, f"entities with actions: {actors_in_stage}"
+    ########################################################################################################################################################################
+    def _is_side_cardless(self, members: Set[Entity]) -> bool:
+        """返回指定成员集合是否均无可用卡牌（DrawPile / Hand / DiscardPile 均为空）。"""
+        if not members:
+            return False
+        return all(self._count_available_cards(entity) == 0 for entity in members)
 
-        current_allies: Set[Entity] = set()
-        defeated_allies: Set[Entity] = set()
+    ########################################################################################################################################################################
+    def _is_both_sides_cardless(self) -> bool:
+        """返回双方阵营存活成员是否均无可用卡牌（平局破局条件）。"""
+        actors_in_stage = self._get_actors_in_stage()
+
+        alive_allies: Set[Entity] = set()
+        alive_enemies: Set[Entity] = set()
 
         for entity in actors_in_stage:
 
-            if not entity.has(PartyMemberComponent):
+            if entity.has(DeathComponent):
                 continue
 
-            # 当前存活的友方单位
-            current_allies.add(entity)
+            if entity.has(PartyMemberComponent):
+                alive_allies.add(entity)
+            elif entity.has(MonsterComponent):
+                alive_enemies.add(entity)
 
-            if entity.has(DeathComponent):
-                # 已被击败的友方单位
-                defeated_allies.add(entity)
-
-        # 判断是否所有友方单位都已被击败
-        return len(current_allies) > 0 and len(defeated_allies) >= len(current_allies)
+        return self._is_side_cardless(alive_allies) and self._is_side_cardless(
+            alive_enemies
+        )
 
     ########################################################################################################################################################################
     def _broadcast_result_to_party_members(self, result: CombatResult) -> None:
@@ -163,5 +191,17 @@ class CombatOutcomeSystem(ExecuteProcessor):
                         combat_outcome=combat_stage_entity.name,
                     ),
                 )
+
+    ########################################################################################################################################################################
+    def _count_available_cards(self, entity: Entity) -> int:
+        """统计实体 DrawPile + Hand + DiscardPile 三堆卡牌总数（不含 ExhaustPile）。"""
+        total = 0
+        if entity.has(DrawPileComponent):
+            total += len(entity.get(DrawPileComponent).cards)
+        if entity.has(HandComponent):
+            total += len(entity.get(HandComponent).cards)
+        if entity.has(DiscardPileComponent):
+            total += len(entity.get(DiscardPileComponent).cards)
+        return total
 
     ########################################################################################################################################################################

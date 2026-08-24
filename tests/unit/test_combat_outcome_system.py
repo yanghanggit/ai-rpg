@@ -21,7 +21,7 @@ from src.ai_rpg.models import (
 )
 from src.ai_rpg.systems.combat_outcome_system import (
     CombatOutcomeSystem,
-    _get_combat_result_notification,
+    _build_combat_result_notification,
 )
 
 
@@ -119,15 +119,15 @@ class TestGetCombatResultNotification:
     """_get_combat_result_notification 的单元测试。"""
 
     def test_victory_contains_victory_text(self) -> None:
-        result = _get_combat_result_notification("黑暗副本", True)
+        result = _build_combat_result_notification("黑暗副本", True)
         assert "胜利" in result
 
     def test_defeat_contains_defeat_text(self) -> None:
-        result = _get_combat_result_notification("黑暗副本", False)
+        result = _build_combat_result_notification("黑暗副本", False)
         assert "失败" in result
 
     def test_stage_name_in_output(self) -> None:
-        result = _get_combat_result_notification("血色竞技场", True)
+        result = _build_combat_result_notification("血色竞技场", True)
         assert "血色竞技场" in result
 
 

@@ -26,9 +26,9 @@ from ..models import (
 from ..utils import extract_json
 from .arbitration_prompt_builders import (
     ArbitrationResponse,
-    generate_condensed_gear_arbitration_prompt,
-    generate_gear_arbitration_broadcast,
-    generate_gear_arbitration_prompt,
+    build_condensed_gear_arbitration_prompt,
+    build_gear_arbitration_broadcast,
+    build_gear_arbitration_prompt,
     generate_gear_equip_affix_triggers,
     stats_update_notification,
 )
@@ -98,7 +98,7 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
         ).narrative
 
         # 生成装备仲裁提示消息，包括使用装备动作、目标实体的状态效果、当前回合数等信息
-        message = generate_gear_arbitration_prompt(
+        message = build_gear_arbitration_prompt(
             item=action.item,
             target_stats=target_stats,
             current_round_number=current_round_number,
@@ -108,7 +108,7 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
 
         # 生成精简后的装备仲裁提示消息，用于在需要时向 LLM 提供更简洁的上下文信息
         condensed_message = (
-            generate_condensed_gear_arbitration_prompt(
+            build_condensed_gear_arbitration_prompt(
                 item=action.item,
                 target_stats=target_stats,
                 current_round_number=current_round_number,
@@ -215,7 +215,7 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
         self._game.broadcast_to_stage(
             entity=stage_entity,
             agent_event=CombatArbitrationEvent(
-                message=generate_gear_arbitration_broadcast(
+                message=build_gear_arbitration_broadcast(
                     response.combat_log,
                     response.narrative,
                     current_round_number,

@@ -32,9 +32,9 @@ from ..models import (
 from ..utils import extract_json
 from .arbitration_prompt_builders import (
     ArbitrationResponse,
-    generate_combat_arbitration_broadcast,
-    generate_combat_arbitration_prompt,
-    generate_condensed_combat_arbitration_prompt,
+    build_combat_arbitration_broadcast,
+    build_combat_arbitration_prompt,
+    build_condensed_combat_arbitration_prompt,
     generate_gear_on_hit_affix_triggers,
     generate_play_cards_affix_triggers,
     stats_update_notification,
@@ -119,7 +119,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
         ).narrative
 
         # 生成仲裁提示消息，包括出牌实体、目标实体的状态效果和装备附加属性等信息
-        message = generate_combat_arbitration_prompt(
+        message = build_combat_arbitration_prompt(
             actor_entity.name,
             compute_character_stats(actor_entity),
             play_cards_action.card,
@@ -133,7 +133,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
 
         # 生成精简后的仲裁提示消息，用于在需要时向 LLM 提供更简洁的上下文信息
         condensed_message = (
-            generate_condensed_combat_arbitration_prompt(
+            build_condensed_combat_arbitration_prompt(
                 actor_entity.name,
                 compute_character_stats(actor_entity),
                 play_cards_action.card,
@@ -245,7 +245,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
         self._game.broadcast_to_stage(
             entity=stage_entity,
             agent_event=CombatArbitrationEvent(
-                message=generate_combat_arbitration_broadcast(
+                message=build_combat_arbitration_broadcast(
                     format_response.combat_log,
                     format_response.narrative,
                     current_round_number,

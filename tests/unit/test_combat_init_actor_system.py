@@ -21,8 +21,8 @@ from src.ai_rpg.models.stats import CharacterStats
 from src.ai_rpg.systems.combat_init_actor_system import (
     CombatInitActorSystem,
     OtherActorInfo,
-    _format_other_actors_info,
-    _generate_combat_init_prompt,
+    _build_other_actors_info,
+    _build_combat_init_prompt,
 )
 
 
@@ -77,12 +77,12 @@ def system(mock_game: MagicMock) -> CombatInitActorSystem:
 
 
 def test_format_other_actors_info_empty() -> None:
-    assert _format_other_actors_info([]) == "无"
+    assert _build_other_actors_info([]) == "无"
 
 
 def test_format_other_actors_info_contains_name_camp_appearance() -> None:
     info = OtherActorInfo(other_name="骷髅战士", appearance="披着破烂盔甲", camp="敌方")
-    result = _format_other_actors_info([info])
+    result = _build_other_actors_info([info])
     assert "骷髅战士" in result
     assert "敌方" in result
     assert "披着破烂盔甲" in result
@@ -95,7 +95,7 @@ def test_format_other_actors_info_contains_name_camp_appearance() -> None:
 
 def test_generate_combat_init_prompt_contains_key_fields() -> None:
     stats = CharacterStats(hp=8, max_hp=20, attack=6, defense=4)
-    result = _generate_combat_init_prompt(
+    result = _build_combat_init_prompt(
         stage_name="副本一层",
         stage_description="阴暗潮湿的石室",
         other_actors_info=[],

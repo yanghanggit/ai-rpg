@@ -25,6 +25,15 @@ from ..entitas import Matcher
 
 
 ###################################################################################################################################################################
+def _build_dungeon_exit_message(dungeon_name: str, home_stage_name: str) -> str:
+    """生成退出副本返回家园场景的提示消息。"""
+    return (
+        f"# 提示！副本：{dungeon_name} 结束，返回家园场景：{home_stage_name}\n"
+        f"（关于「副本」及进出副本的具体设定，见你的「游戏设定」与「全局规则」。）"
+    )
+
+
+###################################################################################################################################################################
 def exit_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, str]:
     """
     退出副本并将角色传送回家园。
@@ -66,10 +75,7 @@ def exit_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, str]:
         dbg_game.add_human_message(
             party_member_entity,
             HumanMessage(
-                content=(
-                    f"# 提示！副本：{dungeon.name} 结束，返回家园场景：{dest_stage.name}\n"
-                    f"（关于「副本」及进出副本的具体设定，见你的「游戏设定」与「全局规则」。）"
-                ),
+                content=_build_dungeon_exit_message(dungeon.name, dest_stage.name),
                 dungeon_lifecycle_completion=dungeon.name,
             ),
         )

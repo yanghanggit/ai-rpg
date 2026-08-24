@@ -26,6 +26,15 @@ from ..entitas import Matcher
 
 
 ###################################################################################################################################################################
+def _build_dungeon_advance_message(dungeon_name: str, next_stage_name: str) -> str:
+    """生成副本推进到下一关卡的传送提示消息。"""
+    return (
+        f"# 副本：{dungeon_name}，进入下一关卡场景：{next_stage_name}\n"
+        f"（关于「副本」及进出副本的具体设定，见你的「游戏设定」与「全局规则」。）"
+    )
+
+
+###################################################################################################################################################################
 def advance_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, str]:
     """
     推进到副本的下一个关卡。
@@ -84,10 +93,7 @@ def advance_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, str]:
     dungeon.current_room_index = next_room_index
 
     # 生成并发送传送提示消息
-    trans_message = (
-        f"# 副本：{dungeon.name}，进入下一关卡场景：{next_stage_entity.name}\n"
-        f"（关于「副本」及进出副本的具体设定，见你的「游戏设定」与「全局规则」。）"
-    )
+    trans_message = _build_dungeon_advance_message(dungeon.name, next_stage_entity.name)
     for party_member in party_member_entities:
         dbg_game.add_human_message(
             party_member,

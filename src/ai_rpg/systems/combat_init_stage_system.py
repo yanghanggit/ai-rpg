@@ -1,12 +1,12 @@
 """战斗初始化系统（场景侧）：为战斗场景注入战斗专用规则，将战斗状态转换为进行中，并设计场景词缀。"""
 
-from typing import Dict, Final, List, Optional, Set, final, override
+from typing import Dict, Final, List, Optional, final, override
 
 from loguru import logger
 from pydantic import BaseModel
 
 from ..deepseek import DeepSeekClient
-from ..entitas import Entity, ExecuteProcessor
+from ..entitas import ExecuteProcessor
 from ..game.dbg_combat_processor import (
     accumulate_status_effects_action,
     get_alive_actors_in_stage,
@@ -28,14 +28,14 @@ class CombatInitAffixesResponse(BaseModel):
 
 
 ###################################################################################################################################################################
-def _generate_combat_init_interaction_prompt(
+def _build_combat_init_interaction_prompt(
     stage_name: str,
     stage_description: str,
-    actor_entities: Set[Entity],
+    actor_names: List[str],
 ) -> str:
     """生成战斗初始化阶段场景词缀设计提示词"""
 
-    actor_lines = "\n".join(f"- {actor.name}" for actor in actor_entities)
+    actor_lines = "\n".join(f"- {name}" for name in actor_names)
 
     return f"""# 战斗初始化 — 场景词缀设计
 
@@ -71,14 +71,14 @@ def _generate_combat_init_interaction_prompt(
 
 
 ###################################################################################################################################################################
-def _generate_condensed_combat_init_interaction_prompt(
+def _build_condensed_combat_init_interaction_prompt(
     stage_name: str,
     stage_description: str,
-    actor_entities: Set[Entity],
+    actor_names: List[str],
 ) -> str:
     """生成精简版战斗初始化阶段场景词缀设计提示词（仅动态感知部分，省略静态规则/格式说明）"""
 
-    actor_lines = "\n".join(f"- {actor.name}" for actor in actor_entities)
+    actor_lines = "\n".join(f"- {name}" for name in actor_names)
 
     return f"""# 战斗初始化 — 场景词缀设计
 
@@ -133,22 +133,23 @@ class CombatInitStageSystem(ExecuteProcessor):
         # 参与战斗的角色实体列表
         actor_entities = get_alive_actors_in_stage(self._game, player_entity)
         assert len(actor_entities) > 0, "不可能出现没人参与战斗的情况！"
+        actor_names = [actor.name for actor in actor_entities]
 
         # 让 stage agent 扮演策划，设计一次战斗开始时的场景词缀；
         # 若有，则直接为受影响角色追加 AddStatusEffectsAction，交由 UpdateStatusEffectsActionSystem 生成具体状态效果；
         # 本阶段不产生任何塞牌可能性。
-        prompt = _generate_combat_init_interaction_prompt(
+        prompt = _build_combat_init_interaction_prompt(
             stage_name=current_stage_entity.name,
             stage_description=stage_description_comp.narrative,
-            actor_entities=actor_entities,
+            actor_names=actor_names,
         )
 
         condensed_message: Optional[str] = None
         if self._use_condensed_prompt:
-            condensed_message = _generate_condensed_combat_init_interaction_prompt(
+            condensed_message = _build_condensed_combat_init_interaction_prompt(
                 stage_name=current_stage_entity.name,
                 stage_description=stage_description_comp.narrative,
-                actor_entities=actor_entities,
+                actor_names=actor_names,
             )
 
         chat_client = DeepSeekClient(

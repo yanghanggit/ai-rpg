@@ -17,9 +17,9 @@ from src.ai_rpg.models import (
     StageComponent,
 )
 from src.ai_rpg.game.rpg_stage_transition import (
-    _format_stage_arrival_message,
-    _format_stage_departure_message,
-    _format_stage_transition_message,
+    _build_stage_arrival_message,
+    _build_stage_departure_message,
+    _build_stage_transition_message,
     _validate_stage_transition_prerequisites,
     stage_transition,
 )
@@ -58,24 +58,24 @@ def _make_player_actor(game: Any, actor_name: str, current_stage_name: str) -> E
 
 class TestFormatFunctions:
     def test_departure_message(self) -> None:
-        msg = _format_stage_departure_message("英雄", "起点")
+        msg = _build_stage_departure_message("英雄", "起点")
         assert msg == "# 英雄 离开了场景: 起点"
 
     def test_arrival_message(self) -> None:
-        msg = _format_stage_arrival_message("英雄", "终点")
+        msg = _build_stage_arrival_message("英雄", "终点")
         assert msg == "# 英雄 进入了 场景: 终点"
 
     def test_transition_message(self) -> None:
-        msg = _format_stage_transition_message("起点", "终点")
+        msg = _build_stage_transition_message("起点", "终点")
         assert msg == "# 你从 场景: 起点 离开，然后进入了 场景: 终点"
 
     def test_departure_message_special_chars(self) -> None:
-        msg = _format_stage_departure_message("勇者·甲", "副本-1F")
+        msg = _build_stage_departure_message("勇者·甲", "副本-1F")
         assert "勇者·甲" in msg
         assert "副本-1F" in msg
 
     def test_transition_message_includes_both_stages(self) -> None:
-        msg = _format_stage_transition_message("A", "B")
+        msg = _build_stage_transition_message("A", "B")
         assert "A" in msg
         assert "B" in msg
 

@@ -20,7 +20,7 @@ from src.ai_rpg.models.messages import AIMessage
 from src.ai_rpg.models.stats import CharacterStats
 from src.ai_rpg.systems.combat_round_end_settlement_system import (
     CombatRoundEndSettlementSystem,
-    _make_round_end_hp_update_message,
+    _build_round_end_hp_update_message,
 )
 
 # ---------------------------------------------------------------------------
@@ -83,7 +83,7 @@ def system(game: MagicMock) -> CombatRoundEndSettlementSystem:
 
 
 def test_round_end_hp_message_contains_values() -> None:
-    result = _make_round_end_hp_update_message(17, 30)
+    result = _build_round_end_hp_update_message(17, 30)
     assert "17" in result and "30" in result
 
 

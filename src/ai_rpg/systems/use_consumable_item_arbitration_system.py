@@ -26,10 +26,10 @@ from ..models import (
 from ..utils import extract_json
 from .arbitration_prompt_builders import (
     ArbitrationResponse,
-    generate_condensed_consumable_arbitration_prompt,
+    build_condensed_consumable_arbitration_prompt,
     generate_consumable_affix_triggers,
-    generate_consumable_arbitration_broadcast,
-    generate_consumable_arbitration_prompt,
+    build_consumable_arbitration_broadcast,
+    build_consumable_arbitration_prompt,
     stats_update_notification,
 )
 
@@ -96,7 +96,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
         ).narrative
 
         # 生成仲裁提示信息，包括当前行动、目标属性、回合数、目标状态效果和装备附加属性
-        message = generate_consumable_arbitration_prompt(
+        message = build_consumable_arbitration_prompt(
             actor_name=actor_entity.name,
             actor_stats=compute_character_stats(actor_entity),
             item=action.item,
@@ -108,7 +108,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
 
         # 生成精简后的仲裁提示信息，用于在需要时向 LLM 提供更简洁的上下文
         condensed_message = (
-            generate_condensed_consumable_arbitration_prompt(
+            build_condensed_consumable_arbitration_prompt(
                 actor_name=actor_entity.name,
                 actor_stats=compute_character_stats(actor_entity),
                 item=action.item,
@@ -217,7 +217,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
         self._game.broadcast_to_stage(
             entity=stage_entity,
             agent_event=CombatArbitrationEvent(
-                message=generate_consumable_arbitration_broadcast(
+                message=build_consumable_arbitration_broadcast(
                     response.combat_log,
                     response.narrative,
                     current_round_number,

@@ -35,7 +35,7 @@ class OtherActorInfo:
 
 
 ###################################################################################################################################################################
-def _format_other_actors_info(other_actors_info: List[OtherActorInfo]) -> str:
+def _build_other_actors_info(other_actors_info: List[OtherActorInfo]) -> str:
     """格式化其他角色信息为 Markdown 列表"""
     if not other_actors_info:
         return "无"
@@ -48,7 +48,7 @@ def _format_other_actors_info(other_actors_info: List[OtherActorInfo]) -> str:
 
 
 ###################################################################################################################################################################
-def _generate_combat_init_prompt(
+def _build_combat_init_prompt(
     stage_name: str,
     stage_description: str,
     other_actors_info: List[OtherActorInfo],
@@ -65,7 +65,7 @@ def _generate_combat_init_prompt(
 
 ## 其余角色
 
-{_format_other_actors_info(other_actors_info)}
+{_build_other_actors_info(other_actors_info)}
 
 ## 你的属性
 
@@ -213,7 +213,7 @@ class CombatInitActorSystem(ExecuteProcessor):
             actor_stats = compute_character_stats(actor_entity)
 
             # 生成战场上下文提示词
-            combat_init_prompt = _generate_combat_init_prompt(
+            combat_init_prompt = _build_combat_init_prompt(
                 stage_name=stage_name,
                 stage_description=stage_description,
                 other_actors_info=other_actors_info,

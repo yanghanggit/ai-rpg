@@ -17,7 +17,7 @@ from ..game.dbg_combat_processor import get_current_turn_actor
 
 
 #######################################################################################################################################
-def _generate_play_card_context_prompt(
+def _build_play_card_context_prompt(
     play_cards_action: PlayCardsAction,
     round_number: int,
 ) -> str:
@@ -41,7 +41,7 @@ def _generate_play_card_context_prompt(
 
 
 #######################################################################################################################################
-def _generate_action_notice_for_others(actor_name: str, round_number: int) -> str:
+def _build_action_notice_for_others(actor_name: str, round_number: int) -> str:
     """生成出牌行动预告，广播给场景内其他角色，维护观察者视角的上下文连贯性。"""
     return f"【第 {round_number} 回合】{actor_name} 正在出牌。"
 
@@ -125,7 +125,7 @@ class PlayCardsActionSystem(ReactiveProcessor):
             self._game.add_human_message(
                 entity=entity,
                 human_message=HumanMessage(
-                    content=_generate_play_card_context_prompt(
+                    content=_build_play_card_context_prompt(
                         play_cards_action=play_cards_action,
                         round_number=len(current_rounds),
                     ),
@@ -142,7 +142,7 @@ class PlayCardsActionSystem(ReactiveProcessor):
             self._game.broadcast_to_stage(
                 entity=entity,
                 agent_event=AgentEvent(
-                    message=_generate_action_notice_for_others(
+                    message=_build_action_notice_for_others(
                         actor_name=play_cards_action.name,
                         round_number=len(current_rounds),
                     )

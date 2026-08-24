@@ -19,7 +19,7 @@ from ..models import (
 
 
 #######################################################################################################################################
-def _generate_combat_summary_prompt(stage_name: str, total_rounds: int) -> str:
+def _build_combat_summary_prompt(stage_name: str, total_rounds: int) -> str:
     """返回用于生成第一人称战斗摘要的 LLM prompt。"""
     return f"""# 战斗结束，归档这段记忆。
 
@@ -67,7 +67,7 @@ class CombatArchiveSystem(ExecuteProcessor):
 
         return DeepSeekClient(
             name=combat_actor.name,
-            full_prompt=_generate_combat_summary_prompt(
+            full_prompt=_build_combat_summary_prompt(
                 combat_stage_entity.name, total_rounds
             ),
             context=self._game.get_agent_context(combat_actor).context,

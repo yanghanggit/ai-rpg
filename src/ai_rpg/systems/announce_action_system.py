@@ -5,13 +5,13 @@ from ..game.dbg_game import DBGGame
 
 
 ####################################################################################################################################
-def _format_local_announce(announcer_name: str, content: str) -> str:
+def _build_local_announce(announcer_name: str, content: str) -> str:
     """公告者所在场景内的公告提示词格式。"""
     return f"# {announcer_name} 发布公告\n{content}"
 
 
 ####################################################################################################################################
-def _format_remote_announce(source_stage_name: str, content: str) -> str:
+def _build_remote_announce(source_stage_name: str, content: str) -> str:
     """其他场景收到的远端公告提示词格式。"""
     return f"# 来自「{source_stage_name}」的公告\n{content}"
 
@@ -78,12 +78,12 @@ class AnnounceActionSystem(ReactiveProcessor):
             is_local = stage_entity is current_stage_entity
             if is_local:
                 # 公告者所在场景：显示角色名 + 公告内容
-                formatted_message = _format_local_announce(
+                formatted_message = _build_local_announce(
                     entity.name, announce_action.message
                 )
             else:
                 # 其他场景：显示公告来源场景名 + 公告内容
-                formatted_message = _format_remote_announce(
+                formatted_message = _build_remote_announce(
                     current_stage_entity.name, announce_action.message
                 )
 

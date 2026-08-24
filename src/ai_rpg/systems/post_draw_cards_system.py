@@ -57,7 +57,7 @@ class DrawAdjustResponse(BaseModel):
 
 
 #######################################################################################################################################
-def _generate_adjust_prompt(
+def _build_adjust_prompt(
     actor_stats: CharacterStats,
     current_round_number: int,
     drawn_cards: List[Card],
@@ -197,7 +197,7 @@ class PostDrawCardsSystem(ReactiveProcessor):
             ), f"[{entity.name}] HandComponent 不存在，无法进行 DRAW 效果调整"
 
             # 生成 LLM 调整 prompt
-            prompt = _generate_adjust_prompt(
+            prompt = _build_adjust_prompt(
                 actor_stats=combat_stats,
                 current_round_number=current_round_number,
                 drawn_cards=hand.cards,

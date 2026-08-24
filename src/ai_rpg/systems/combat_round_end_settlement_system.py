@@ -25,7 +25,7 @@ from ..models import (
 from ..utils import extract_json
 
 
-def _make_round_end_hp_update_message(new_hp: int, max_hp: int) -> str:
+def _build_round_end_hp_update_message(new_hp: int, max_hp: int) -> str:
     """生成回合末生命值更新的 LLM 通知文本。"""
     return f"# 回合末结算 — 生命值更新\n\n当前HP: {new_hp}/{max_hp}"
 
@@ -43,7 +43,7 @@ class _RoundEndEffectResponse(BaseModel):
 
 
 ###############################################################################################################################################
-def _generate_round_end_effects_prompt(
+def _build_round_end_effects_prompt(
     entity_name: str,
     current_hp: int,
     max_hp: int,
@@ -152,7 +152,7 @@ class CombatRoundEndSettlementSystem(ExecuteProcessor):
         )
         current_stats = compute_character_stats(entity)
 
-        prompt = _generate_round_end_effects_prompt(
+        prompt = _build_round_end_effects_prompt(
             entity_name=entity.name,
             current_hp=current_stats.hp,
             max_hp=current_stats.max_hp,
@@ -208,7 +208,7 @@ class CombatRoundEndSettlementSystem(ExecuteProcessor):
         # 将本轮 HP 更新写入 agent 上下文，通知 AI 本轮的 HP 变化
         self._game.add_human_message(
             entity,
-            HumanMessage(content=_make_round_end_hp_update_message(new_hp, max_hp)),
+            HumanMessage(content=_build_round_end_hp_update_message(new_hp, max_hp)),
         )
 
         # 繁殖/新增：将 affix 描述转成 AffixTrigger，交由 UpdateStatusEffectsActionSystem 生成/移除

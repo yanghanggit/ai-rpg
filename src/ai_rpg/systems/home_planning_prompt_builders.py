@@ -11,7 +11,7 @@ from ..models import HomeComponent
 
 
 #######################################################################################################################################
-def format_mind_notification(actor_name: str, mind_content: str) -> str:
+def build_mind_notification(actor_name: str, mind_content: str) -> str:
     """格式化内心活动通知消息。"""
     return f"# {actor_name} 内心活动: {mind_content}"
 

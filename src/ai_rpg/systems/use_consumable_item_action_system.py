@@ -13,7 +13,7 @@ from ..models import (
 
 
 #######################################################################################################################################
-def _generate_consumable_notice(
+def _build_consumable_notice(
     actor_name: str,
     action: UseConsumableItemAction,
     round_number: int,
@@ -107,7 +107,7 @@ class UseConsumableItemActionSystem(ReactiveProcessor):
         self._game.broadcast_to_stage(
             entity=entity,
             agent_event=AgentEvent(
-                message=_generate_consumable_notice(
+                message=_build_consumable_notice(
                     entity.name,
                     action,
                     len(self._game.current_dungeon_combat_room.combat.rounds),

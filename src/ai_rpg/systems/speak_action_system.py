@@ -3,20 +3,12 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.rpg_actor_interaction import InteractionError, validate_actor_interaction
 from ..models import HumanMessage, SpeakAction, SpeakEvent
 from ..game.dbg_game import DBGGame
+from .interaction_prompt_builders import build_invalid_target_error_message
 
 
 ####################################################################################################################################
-def _format_speak_notification(
-    speaker_name: str, target_name: str, content: str
-) -> str:
+def _build_speak_notification(speaker_name: str, target_name: str, content: str) -> str:
     return f"""# {speaker_name} 对 {target_name} 说: {content}"""
-
-
-####################################################################################################################################
-def _format_invalid_target_error(speaker_name: str, target_name: str) -> str:
-    return f"""# 提示！{speaker_name} 试图对话，但 {target_name} 不在此处。
-
-**提示：** 检查目标名称是否正确，或确认目标是否在当前场景中。"""
 
 
 ####################################################################################################################################
@@ -64,7 +56,7 @@ class SpeakActionSystem(ReactiveProcessor):
                     self._game.add_human_message(
                         entity=entity,
                         human_message=HumanMessage(
-                            content=_format_invalid_target_error(
+                            content=build_invalid_target_error_message(
                                 speak_action.name, target_name
                             )
                         ),
@@ -80,7 +72,7 @@ class SpeakActionSystem(ReactiveProcessor):
             self._game.broadcast_to_stage(
                 entity,
                 SpeakEvent(
-                    message=_format_speak_notification(
+                    message=_build_speak_notification(
                         speak_action.name, target_name, speak_content
                     ),
                     actor=speak_action.name,

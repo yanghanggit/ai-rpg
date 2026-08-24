@@ -40,7 +40,7 @@ class MonsterDecisionResponse(BaseModel):
 
 
 #######################################################################################################################################
-def _generate_monster_decision_prompt(
+def _build_monster_decision_prompt(
     monster_name: str,
     monster_stats: CharacterStats,
     monster_status_effects: List[StatusEffect],
@@ -132,7 +132,7 @@ pass_turn 为 true 时表示跳过出牌，其他字段可省略"""
 
 
 #######################################################################################################################################
-def _generate_condensed_monster_decision_prompt(
+def _build_condensed_monster_decision_prompt(
     monster_name: str,
     monster_stats: CharacterStats,
     monster_status_effects: List[StatusEffect],
@@ -296,7 +296,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
             self._game.current_dungeon_combat_room.combat.rounds or []
         )
 
-        prompt = _generate_monster_decision_prompt(
+        prompt = _build_monster_decision_prompt(
             monster_name=entity.name,
             monster_stats=monster_stats,
             monster_status_effects=monster_status_effects,
@@ -307,7 +307,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
             current_round_number=current_round_number,
         )
 
-        condensed_prompt = _generate_condensed_monster_decision_prompt(
+        condensed_prompt = _build_condensed_monster_decision_prompt(
             monster_name=entity.name,
             monster_stats=monster_stats,
             monster_status_effects=monster_status_effects,

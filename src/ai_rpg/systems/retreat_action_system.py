@@ -8,7 +8,7 @@ from ..game.dbg_game import DBGGame
 
 
 ###################################################################################################################################################################
-def _generate_retreat_message(dungeon_name: str, stage_name: str) -> str:
+def _build_retreat_message(dungeon_name: str, stage_name: str) -> str:
     """生成撤退提示消息"""
     return f"""# 提示！战斗撤退：从副本 {dungeon_name} 的关卡 {stage_name} 撤退
 
@@ -75,7 +75,7 @@ class RetreatActionSystem(ReactiveProcessor):
         assert stage_entity is not None, f"Entity {entity.name} must be in a stage"
 
         # 生成撤退消息并写入上下文
-        retreat_message = _generate_retreat_message(dungeon_name, stage_entity.name)
+        retreat_message = _build_retreat_message(dungeon_name, stage_entity.name)
         self._game.add_human_message(
             entity,
             HumanMessage(

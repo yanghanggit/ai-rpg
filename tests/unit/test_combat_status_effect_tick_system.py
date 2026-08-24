@@ -16,7 +16,7 @@ from src.ai_rpg.models import (
 )
 from src.ai_rpg.systems.combat_status_effect_tick_system import (
     CombatStatusEffectTickSystem,
-    _make_status_effects_tick_message,
+    _build_status_effects_tick_message,
 )
 
 
@@ -78,12 +78,12 @@ def system(game: MagicMock) -> CombatStatusEffectTickSystem:
 
 
 def test_tick_message_ticked_shows_remaining() -> None:
-    result = _make_status_effects_tick_message([_effect("中毒", 2)], [])
+    result = _build_status_effects_tick_message([_effect("中毒", 2)], [])
     assert "中毒" in result and "2" in result
 
 
 def test_tick_message_expired_shows_text() -> None:
-    result = _make_status_effects_tick_message([], [_effect("燃烧", 0)])
+    result = _build_status_effects_tick_message([], [_effect("燃烧", 0)])
     assert "燃烧" in result and "已过期" in result
 
 

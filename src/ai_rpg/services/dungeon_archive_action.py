@@ -127,7 +127,7 @@ def _build_dungeon_setting_block(dungeon: Dungeon) -> str:
 ###################################################################################################################################################################
 def _build_entity_fact_block(
     label: str,
-    entity: Entity,
+    entity_name: str,
     messages: Sequence[BaseMessage],
 ) -> str:
     """将单个实体的上下文（跳过 SystemMessage）整理为一段事实记忆文本。
@@ -139,7 +139,7 @@ def _build_entity_fact_block(
     # 只保留 Human/AI/Tool 的事件内容，跳过首条 SystemMessage（人设/规则）
     facts = [msg for msg in messages if not isinstance(msg, SystemMessage)]
 
-    header = f"{label}：{entity.name}（事实记忆）"
+    header = f"{label}：{entity_name}（事实记忆）"
 
     if not facts:
         return f"{header}\n（本次副本中无事实记忆）"
@@ -147,8 +147,8 @@ def _build_entity_fact_block(
     buffer = get_buffer_string(
         facts,
         human_prefix="Human",
-        ai_prefix=f"AI({entity.name})",
-        tool_prefix=f"Tool({entity.name})",
+        ai_prefix=f"AI({entity_name})",
+        tool_prefix=f"Tool({entity_name})",
     )
     return f"{header}\n{buffer}"
 
@@ -236,7 +236,7 @@ async def archive_dungeon(
         facts_block = ("\n" + _SEP + "\n").join(
             _build_entity_fact_block(
                 label,
-                entity,
+                entity.name,
                 dbg_game.get_agent_context(entity).context,
             )
             for label, entity in entities

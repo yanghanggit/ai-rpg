@@ -224,7 +224,7 @@ def build_spread_sections(
 #######################################################################################################################################
 
 
-def generate_combat_arbitration_prompt(
+def build_combat_arbitration_prompt(
     actor_name: str,
     actor_stats: CharacterStats,
     card: Card,
@@ -292,7 +292,7 @@ def generate_combat_arbitration_prompt(
 {STAGE_DESCRIPTION_DESCRIPTION}"""
 
 
-def generate_condensed_combat_arbitration_prompt(
+def build_condensed_combat_arbitration_prompt(
     actor_name: str,
     actor_stats: CharacterStats,
     card: Card,
@@ -336,7 +336,7 @@ def generate_condensed_combat_arbitration_prompt(
 {current_stage_description}"""
 
 
-def generate_arbitration_broadcast(
+def build_arbitration_broadcast(
     combat_log: str, narrative: str, current_round_number: int, title: str
 ) -> str:
     """仲裁广播消息生成器（三类仲裁共用）。"""
@@ -351,10 +351,10 @@ def generate_arbitration_broadcast(
 {combat_log}"""
 
 
-def generate_combat_arbitration_broadcast(
+def build_combat_arbitration_broadcast(
     combat_log: str, narrative: str, current_round_number: int, actor_name: str
 ) -> str:
-    return generate_arbitration_broadcast(
+    return build_arbitration_broadcast(
         combat_log,
         narrative,
         current_round_number,
@@ -367,7 +367,7 @@ def generate_combat_arbitration_broadcast(
 #######################################################################################################################################
 
 
-def generate_gear_arbitration_prompt(
+def build_gear_arbitration_prompt(
     item: GearItem,
     target_stats: Dict[str, CharacterStats],
     current_round_number: int,
@@ -424,7 +424,7 @@ def generate_gear_arbitration_prompt(
 {STAGE_DESCRIPTION_DESCRIPTION}"""
 
 
-def generate_condensed_gear_arbitration_prompt(
+def build_condensed_gear_arbitration_prompt(
     item: GearItem,
     target_stats: Dict[str, CharacterStats],
     current_round_number: int,
@@ -458,13 +458,13 @@ def generate_condensed_gear_arbitration_prompt(
 {current_stage_description}"""
 
 
-def generate_gear_arbitration_broadcast(
+def build_gear_arbitration_broadcast(
     combat_log: str,
     narrative: str,
     current_round_number: int,
     item_name: str,
 ) -> str:
-    return generate_arbitration_broadcast(
+    return build_arbitration_broadcast(
         combat_log,
         narrative,
         current_round_number,
@@ -477,7 +477,7 @@ def generate_gear_arbitration_broadcast(
 #######################################################################################################################################
 
 
-def generate_consumable_arbitration_prompt(
+def build_consumable_arbitration_prompt(
     actor_name: str,
     actor_stats: CharacterStats,
     item: ConsumableItem,
@@ -544,7 +544,7 @@ def generate_consumable_arbitration_prompt(
 {STAGE_DESCRIPTION_DESCRIPTION}"""
 
 
-def generate_condensed_consumable_arbitration_prompt(
+def build_condensed_consumable_arbitration_prompt(
     actor_name: str,
     actor_stats: CharacterStats,
     item: ConsumableItem,
@@ -585,13 +585,13 @@ def generate_condensed_consumable_arbitration_prompt(
 {current_stage_description}"""
 
 
-def generate_consumable_arbitration_broadcast(
+def build_consumable_arbitration_broadcast(
     combat_log: str,
     narrative: str,
     current_round_number: int,
     item_name: str,
 ) -> str:
-    return generate_arbitration_broadcast(
+    return build_arbitration_broadcast(
         combat_log,
         narrative,
         current_round_number,

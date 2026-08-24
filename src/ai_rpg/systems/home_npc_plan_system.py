@@ -25,7 +25,7 @@ from .home_planning_prompt_builders import (
     ActionPlanResponse,
     build_action_planning_prompt,
     build_condensed_planning_prompt,
-    format_mind_notification,
+    build_mind_notification,
     get_available_home_stages,
     get_other_actors_appearances,
 )
@@ -137,7 +137,7 @@ class HomeNpcPlanSystem(ReactiveProcessor):
             self._game.notify_entities(
                 set({actor_entity}),
                 MindEvent(
-                    message=format_mind_notification(
+                    message=build_mind_notification(
                         actor_entity.name, validated_response.mind
                     ),
                     actor=actor_entity.name,

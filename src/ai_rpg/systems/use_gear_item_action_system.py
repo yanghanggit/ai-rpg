@@ -16,7 +16,7 @@ from ..models import (
 
 
 #######################################################################################################################################
-def _generate_gear_notice(
+def _build_gear_notice(
     target_name: str,
     item_name: str,
     round_number: int,
@@ -159,7 +159,7 @@ class UseGearItemActionSystem(ReactiveProcessor):
         self._game.broadcast_to_stage(
             entity=entity,
             agent_event=AgentEvent(
-                message=_generate_gear_notice(
+                message=_build_gear_notice(
                     target_entity.name,
                     item.name,
                     round_number,

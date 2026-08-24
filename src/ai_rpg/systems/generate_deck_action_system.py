@@ -86,7 +86,7 @@ def build_design_principle_prompt(
 
 
 #######################################################################################################################################
-def generate_deck_prompt(
+def build_deck_prompt(
     actor_stats: CharacterStats,
     keywords: List[str] = [],
     dice_rolls: List[int] = [],
@@ -143,7 +143,7 @@ def generate_deck_prompt(
 
 
 #######################################################################################################################################
-def generate_condensed_deck_prompt(
+def build_condensed_deck_prompt(
     actor_stats: CharacterStats,
     keywords: List[str] = [],
     dice_rolls: List[int] = [],
@@ -228,14 +228,14 @@ class GenerateDeckActionSystem(ReactiveProcessor):
 
         # 生成完整提示词，供 LLM 生成卡牌
         combat_stats = compute_character_stats(entity)
-        prompt = generate_deck_prompt(
+        prompt = build_deck_prompt(
             actor_stats=combat_stats,
             keywords=sampled_keywords,
             dice_rolls=dice_rolls,
         )
 
         # 生成精简提示词，减少 LLM token 消耗
-        condensed_prompt = generate_condensed_deck_prompt(
+        condensed_prompt = build_condensed_deck_prompt(
             actor_stats=combat_stats,
             keywords=sampled_keywords,
             dice_rolls=dice_rolls,

@@ -15,13 +15,16 @@ from ..models import (
 
 
 ###############################################################################################################################################
+def _build_death_notification() -> str:
+    """生成角色 HP 归零失去战斗能力的通知文本。"""
+    return "# 你的HP已归零，失去战斗能力！"
+
+
+###############################################################################################################################################
 @final
 class DeathSystem(ExecuteProcessor):
     """
     死亡处理系统：将 HP 归零且尚未标记死亡的实体标记为死亡。
-
-    原 dbg_combat_processor.process_zero_health_entities 的逻辑迁移至本系统，
-    在管道中于各结算点之后多次挂载，以保持与原先调用时机一致。
     """
 
     ############################################################################################################
@@ -40,6 +43,6 @@ class DeathSystem(ExecuteProcessor):
             if entity_hp <= 0:
                 logger.info(f"{entity.name} 已被击败，HP={entity_hp}")
                 self._game.add_human_message(
-                    entity, HumanMessage(content="# 你的HP已归零，失去战斗能力！")
+                    entity, HumanMessage(content=_build_death_notification())
                 )
                 entity.replace(DeathComponent, entity.name)

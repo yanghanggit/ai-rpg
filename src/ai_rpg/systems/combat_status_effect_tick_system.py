@@ -12,7 +12,7 @@ from ..models import (
 )
 
 
-def _make_status_effects_tick_message(
+def _build_status_effects_tick_message(
     ticked: List[StatusEffect],
     expired: List[StatusEffect],
 ) -> str:
@@ -96,7 +96,7 @@ class CombatStatusEffectTickSystem(ExecuteProcessor):
             self._game.add_human_message(
                 entity,
                 HumanMessage(
-                    content=_make_status_effects_tick_message(ticked, expired)
+                    content=_build_status_effects_tick_message(ticked, expired)
                 ),
             )
 

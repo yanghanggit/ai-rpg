@@ -34,7 +34,7 @@ class _UpdateStatusEffectsResponse(BaseModel):
 
 
 #######################################################################################################################################
-def _format_affix_trigger(trigger: AffixTrigger, index: int) -> str:
+def _build_affix_trigger(trigger: AffixTrigger, index: int) -> str:
     """将一条 AffixTrigger 转化为一行任务提示文本；这是 affixes → 生成状态效果任务 唯一的转化点。
 
     有 context（卡牌/装备/消耗品等结构化来源）时拼装为「[来源] 上下文；词缀 → 词缀文本」；
@@ -46,7 +46,7 @@ def _format_affix_trigger(trigger: AffixTrigger, index: int) -> str:
 
 
 #######################################################################################################################################
-def _generate_condensed_update_status_effects_prompt(
+def _build_condensed_update_status_effects_prompt(
     current_status_effects: List[StatusEffect],
     current_round_number: int,
     affix_triggers: List[AffixTrigger],
@@ -64,7 +64,7 @@ def _generate_condensed_update_status_effects_prompt(
         )
 
     hints_block = "\n".join(
-        _format_affix_trigger(t, i + 1) for i, t in enumerate(affix_triggers)
+        _build_affix_trigger(t, i + 1) for i, t in enumerate(affix_triggers)
     )
     max_effects = len(affix_triggers)
 
@@ -84,7 +84,7 @@ def _generate_condensed_update_status_effects_prompt(
 
 
 #######################################################################################################################################
-def _generate_update_status_effects_prompt(
+def _build_update_status_effects_prompt(
     current_status_effects: List[StatusEffect],
     current_round_number: int,
     affix_triggers: List[AffixTrigger],
@@ -102,7 +102,7 @@ def _generate_update_status_effects_prompt(
         )
 
     hints_block = "\n".join(
-        _format_affix_trigger(t, i + 1) for i, t in enumerate(affix_triggers)
+        _build_affix_trigger(t, i + 1) for i, t in enumerate(affix_triggers)
     )
     max_effects = len(affix_triggers)
 
@@ -170,7 +170,7 @@ def _generate_update_status_effects_prompt(
 
 
 #######################################################################################################################################
-def _make_remove_effects_message(removed: List[StatusEffect]) -> str:
+def _build_remove_effects_message(removed: List[StatusEffect]) -> str:
     """生成状态效果移除通知文本。"""
     lines = ["# 状态效果更新 — 效果移除"]
     for effect in removed:
@@ -179,7 +179,7 @@ def _make_remove_effects_message(removed: List[StatusEffect]) -> str:
 
 
 #######################################################################################################################################
-def _generate_status_effects_notification_prompt(
+def _build_status_effects_notification_prompt(
     entity_name: str, status_effects: List[StatusEffect]
 ) -> str:
     """将角色当前状态效果列表构建为 Markdown 格式提示词（含全部字段），用于通知类 HumanMessage 内容。"""
@@ -277,7 +277,7 @@ class UpdateStatusEffectsActionSystem(ReactiveProcessor):
         ), f"角色 {entity.name} 缺少 AddStatusEffectsAction 组件！"
 
         # 生成状态效果更新提示词
-        prompt = _generate_update_status_effects_prompt(
+        prompt = _build_update_status_effects_prompt(
             current_status_effects=combat_status_effects.status_effects,
             current_round_number=current_round_number,
             affix_triggers=add_status_effects_action.affix_triggers,
@@ -286,7 +286,7 @@ class UpdateStatusEffectsActionSystem(ReactiveProcessor):
         # 如果启用了精简提示词，则生成精简后的提示词，用于在与 LLM 交互时减少上下文长度，提高效率
         condensed_message: Optional[str] = None
         if self._use_condensed_prompt:
-            condensed_message = _generate_condensed_update_status_effects_prompt(
+            condensed_message = _build_condensed_update_status_effects_prompt(
                 current_status_effects=combat_status_effects.status_effects,
                 current_round_number=current_round_number,
                 affix_triggers=add_status_effects_action.affix_triggers,
@@ -369,7 +369,7 @@ class UpdateStatusEffectsActionSystem(ReactiveProcessor):
                 self._game.add_human_message(
                     entity=entity,
                     human_message=HumanMessage(
-                        content=_make_remove_effects_message(removed)
+                        content=_build_remove_effects_message(removed)
                     ),
                 )
 
@@ -425,7 +425,7 @@ class UpdateStatusEffectsActionSystem(ReactiveProcessor):
         self._game.add_human_message(
             entity=entity,
             human_message=HumanMessage(
-                content=_generate_status_effects_notification_prompt(
+                content=_build_status_effects_notification_prompt(
                     entity_name=entity.name,
                     status_effects=combat_status_effects.status_effects,
                 ),

@@ -1,5 +1,6 @@
 """场景塞牌系统模块"""
 
+from dataclasses import dataclass
 from typing import Dict, Final, List, Optional, Set, final
 
 from loguru import logger
@@ -19,6 +20,7 @@ from ..models import (
     DiscardPileComponent,
     HumanMessage,
     PlayCardsAction,
+    StatusEffect,
     StatusEffectsComponent,
     TargetType,
     UseConsumableItemAction,
@@ -47,9 +49,22 @@ class StagePostArbitrationResponse(BaseModel):
 
 
 #######################################################################################################################################
-def _build_actors_summary(actor_entities: Set[Entity]) -> str:
-    """格式化场内存活角色状态摘要，供 prompt 函数复用。"""
-    actor_lines: List[str] = []
+@dataclass
+class ActorStatusSummary:
+    """场内角色状态摘要条目（供塞牌评估 prompt 复用，字段均为基础类型/models 数据）。"""
+
+    name: str
+    hp: int
+    max_hp: int
+    status_effects: List[StatusEffect]
+
+
+#######################################################################################################################################
+def _collect_actor_status_summaries(
+    actor_entities: Set[Entity],
+) -> List[ActorStatusSummary]:
+    """从 ECS 实体收集角色状态摘要（唯一的 Entity 访问点，prompt 构造函数本身不依赖 Entity）。"""
+    summaries: List[ActorStatusSummary] = []
 
     for entity in actor_entities:
 
@@ -61,21 +76,39 @@ def _build_actors_summary(actor_entities: Set[Entity]) -> str:
         ), f"角色 {entity.name} 缺少 StatusEffectsComponent"
 
         final_stats = compute_character_stats(entity)
-
         effects_comp = entity.get(StatusEffectsComponent)
 
-        hp_str = f"HP: {final_stats.hp}/{final_stats.max_hp}"
+        summaries.append(
+            ActorStatusSummary(
+                name=entity.name,
+                hp=final_stats.hp,
+                max_hp=final_stats.max_hp,
+                status_effects=effects_comp.status_effects,
+            )
+        )
 
-        if len(effects_comp.status_effects) > 0:
+    return summaries
+
+
+#######################################################################################################################################
+def _build_actors_summary(actor_summaries: List[ActorStatusSummary]) -> str:
+    """格式化场内存活角色状态摘要，供 prompt 函数复用。"""
+    actor_lines: List[str] = []
+
+    for summary in actor_summaries:
+
+        hp_str = f"HP: {summary.hp}/{summary.max_hp}"
+
+        if len(summary.status_effects) > 0:
             effects_str = "、".join(
                 f"{e.name}（{fmt_duration(e.duration)}）"
-                for e in effects_comp.status_effects
+                for e in summary.status_effects
             )
         else:
             effects_str = "无"
 
         actor_lines.append(
-            f"- **{entity.name}**  {hp_str}  " f"状态效果: {effects_str}"
+            f"- **{summary.name}**  {hp_str}  " f"状态效果: {effects_str}"
         )
 
     #
@@ -83,13 +116,13 @@ def _build_actors_summary(actor_entities: Set[Entity]) -> str:
 
 
 #######################################################################################################################################
-def _generate_condensed_inject_cards_prompt(
-    actor_entities: Set[Entity],
+def _build_condensed_inject_cards_prompt(
+    actor_summaries: List[ActorStatusSummary],
     current_round_number: int,
 ) -> str:
     """生成精简版塞牌评估提示词（仅动态感知部分，省略静态规则/格式说明）"""
 
-    actors_summary = _build_actors_summary(actor_entities)
+    actors_summary = _build_actors_summary(actor_summaries)
 
     return f"""# 第 {current_round_number} 回合 — 场景塞牌评估
 
@@ -101,13 +134,13 @@ def _generate_condensed_inject_cards_prompt(
 
 
 #######################################################################################################################################
-def _generate_inject_cards_prompt(
-    actor_entities: Set[Entity],
+def _build_inject_cards_prompt(
+    actor_summaries: List[ActorStatusSummary],
     current_round_number: int,
 ) -> str:
     """生成塞牌评估提示词"""
 
-    actors_summary = _build_actors_summary(actor_entities)
+    actors_summary = _build_actors_summary(actor_summaries)
 
     return f"""# 第 {current_round_number} 回合 — 场景塞牌评估
 
@@ -219,19 +252,21 @@ class InjectCardsActionSystem(ReactiveProcessor):
             logger.debug("InjectCardsActionSystem: 无存活角色，跳过")
             return
 
+        actor_summaries = _collect_actor_status_summaries(actor_entities)
+
         current_round_number = len(
             self._game.current_dungeon_combat_room.combat.rounds or []
         )
 
-        prompt = _generate_inject_cards_prompt(
-            actor_entities=actor_entities,
+        prompt = _build_inject_cards_prompt(
+            actor_summaries=actor_summaries,
             current_round_number=current_round_number,
         )
 
         condensed_message: Optional[str] = None
         if self._use_condensed_prompt:
-            condensed_message = _generate_condensed_inject_cards_prompt(
-                actor_entities=actor_entities,
+            condensed_message = _build_condensed_inject_cards_prompt(
+                actor_summaries=actor_summaries,
                 current_round_number=current_round_number,
             )
 

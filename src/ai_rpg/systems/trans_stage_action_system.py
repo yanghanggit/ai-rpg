@@ -8,6 +8,24 @@ from ..game.dbg_game import DBGGame
 from ..game.rpg_stage_transition import stage_transition
 
 
+####################################################################################################################################
+def _build_stage_not_found_error(actor_name: str, target_stage_name: str) -> str:
+    """生成目标场景不存在的错误提示。"""
+    return f"# 提示！{actor_name} 触发场景转换动作失败, 找不到目标场景 {target_stage_name}."
+
+
+####################################################################################################################################
+def _build_stage_transition_noop_error(
+    actor_name: str, target_stage_name: str, current_stage_name: str
+) -> str:
+    """生成目标场景与当前场景相同的错误提示。"""
+    return (
+        f"# 提示！{actor_name} 触发场景转换动作失败, "
+        f"目标场景 {target_stage_name} 与当前场景 {current_stage_name} 相同."
+    )
+
+
+####################################################################################################################################
 @final
 class TransStageActionSystem(ReactiveProcessor):
 
@@ -53,7 +71,9 @@ class TransStageActionSystem(ReactiveProcessor):
             self._game.add_human_message(
                 entity=entity,
                 human_message=HumanMessage(
-                    content=f"# 提示！{entity.name} 触发场景转换动作失败, 找不到目标场景 {trans_stage_action.target_stage_name}."
+                    content=_build_stage_not_found_error(
+                        entity.name, trans_stage_action.target_stage_name
+                    )
                 ),
             )
             return
@@ -70,7 +90,11 @@ class TransStageActionSystem(ReactiveProcessor):
             self._game.add_human_message(
                 entity=entity,
                 human_message=HumanMessage(
-                    content=f"# 提示！{entity.name} 触发场景转换动作失败, 目标场景 {trans_stage_action.target_stage_name} 与当前场景 {current_stage_entity.name} 相同."
+                    content=_build_stage_transition_noop_error(
+                        entity.name,
+                        trans_stage_action.target_stage_name,
+                        current_stage_entity.name,
+                    )
                 ),
             )
             return

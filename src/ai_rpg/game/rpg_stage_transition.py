@@ -16,19 +16,19 @@ from .rpg_game import RPGGame
 
 
 #################################################################################################################################################
-def _format_stage_departure_message(actor_name: str, stage_name: str) -> str:
+def _build_stage_departure_message(actor_name: str, stage_name: str) -> str:
     """生成角色离开场景的通知消息"""
     return f"# {actor_name} 离开了场景: {stage_name}"
 
 
 #################################################################################################################################################
-def _format_stage_arrival_message(actor_name: str, stage_name: str) -> str:
+def _build_stage_arrival_message(actor_name: str, stage_name: str) -> str:
     """生成角色进入场景的通知消息"""
     return f"# {actor_name} 进入了 场景: {stage_name}"
 
 
 #################################################################################################################################################
-def _format_stage_transition_message(from_stage_name: str, to_stage_name: str) -> str:
+def _build_stage_transition_message(from_stage_name: str, to_stage_name: str) -> str:
     """生成角色自身场景转换的通知消息"""
     return f"# 你从 场景: {from_stage_name} 离开，然后进入了 场景: {to_stage_name}"
 
@@ -68,7 +68,7 @@ def _broadcast_departure_notifications(game: RPGGame, actors: Set[Entity]) -> No
         game.broadcast_to_stage(
             entity=current_stage,
             agent_event=AgentEvent(
-                message=_format_stage_departure_message(
+                message=_build_stage_departure_message(
                     actor_entity.name, current_stage.name
                 ),
             ),
@@ -100,7 +100,7 @@ def _update_actors_stage_membership(
         game.notify_entities(
             entities={actor_entity},
             agent_event=TransStageEvent(
-                message=_format_stage_transition_message(
+                message=_build_stage_transition_message(
                     current_stage.name, stage_destination.name
                 ),
                 actor=actor_entity.name,
@@ -120,7 +120,7 @@ def _broadcast_arrival_notifications(
         game.broadcast_to_stage(
             entity=stage_destination,
             agent_event=AgentEvent(
-                message=_format_stage_arrival_message(
+                message=_build_stage_arrival_message(
                     actor_entity.name, stage_destination.name
                 ),
             ),

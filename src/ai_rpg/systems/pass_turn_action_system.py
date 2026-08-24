@@ -17,7 +17,7 @@ from ..game.dbg_combat_processor import get_current_turn_actor
 
 
 #######################################################################################################################################
-def _generate_pass_turn_notice(actor_name: str, round_number: int) -> str:
+def _build_pass_turn_notice(actor_name: str, round_number: int) -> str:
     """生成过牌通知，广播给场景内所有角色（含过牌者本人）。"""
     return f"【第 {round_number} 回合】{actor_name} 选择跳过出牌。"
 
@@ -105,7 +105,7 @@ class PassTurnActionSystem(ReactiveProcessor):
         self._game.broadcast_to_stage(
             entity=entity,
             agent_event=AgentEvent(
-                message=_generate_pass_turn_notice(
+                message=_build_pass_turn_notice(
                     actor_name=pass_turn_action.name,
                     round_number=len(current_rounds),
                 )

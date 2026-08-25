@@ -4,7 +4,7 @@
 
 ## 定位
 
-战斗管道中有两类核心游戏对象完全由 LLM 在运行时动态产出：`Card`（一次性动作载体）和 `StatusEffect`（持续性状态载体）。它们不是静态配置数据，而是由不同 Agent 在不同阶段生成，受同一套全局规则约束。理解它们的生成点与约束链，是理解战斗如何被「创作」而非「计算」的关键。
+战斗管道中有两类核心游戏对象完全由 LLM 在运行时动态产出：`Card`（战斗行动单元）和 `StatusEffect`（持续性状态载体）。它们不是静态配置数据，而是由不同 Agent 在不同阶段生成，受同一套全局规则约束。理解它们的生成点与约束链，是理解战斗如何被「创作」而非「计算」的关键。
 
 → 参见：[战斗管道（Combat Pipeline）](combat-pipeline.md)（完整管道结构与各阶段职责）
 
@@ -17,7 +17,7 @@
 **系统级**：`RPG_SYSTEM_RULES` 的战斗专用规则节，通过 entity factory 烤入每个实体的 system message。这是 Agent 的「世界观宪法」——从对话首条消息就携带，无需运行时注入。核心条款：
 
 - 词缀（affix）：affix 是不含可直接量化数值的触发信号，按时效分两类——即时 affix（`on_play_affixes`/`on_use_affixes`）参与本次仲裁、不落地 StatusEffect；延迟 affix（`on_hit_affixes`）后续独立推理落地为 StatusEffect。
-- 载体二分：Card 是动作，StatusEffect 是持续影响。一切跨回合效果必须落地为 StatusEffect。
+- 载体二分：Card 是一次性效果载体，StatusEffect 是持续影响。一切跨回合效果必须落地为 StatusEffect。
 - 延迟 affix → StatusEffect 因果：延迟 affix 是因，StatusEffect 是果，不可跳过落地步骤；即时 affix 只在本次仲裁套用。
 - 禁止项：命中率、闪避、位置、移动、新数值轴。
 
@@ -31,15 +31,17 @@
 
 **生成者**：角色自身 LLM。设计意图：每个角色的牌库由角色自己「想」出来，牌名和描述反映该角色的战斗风格与个性。
 
-**驱动因子**：关键词（`DeckComponent.keywords`）。
+**驱动因子**：关键词（`ArchetypeComponent.keywords`）+ 叙事主题（从角色设定 profile 提炼）。
 
-`DeckComponent.keywords` 是角色的**完整牌库蓝图**——设计者在此声明该角色可能拥有的全部卡牌风格（如 3 张攻击、2 张防御、1 张破甲）。同一效果的不同质量档位（如普通穿甲 / 优质穿甲）直接写为两条独立的 keyword 文本，一并存入池中。每场战斗实际生成几张牌，由 `get_cards_per_combat(entity)` 根据角色类型（PartyMember / Monster）决定；系统从 keywords 池中随机采样对应数量后交由 LLM 创作具体卡牌。
+`ArchetypeComponent.keywords` 是角色的**完整牌库蓝图**（规则层）——设计者在此声明该角色可能拥有的全部卡牌风格（如 3 张攻击、2 张防御、1 张破甲）。同一效果的不同质量档位（如普通穿甲 / 优质穿甲）直接写为两条独立的 keyword 文本，一并存入池中。每场战斗实际生成几张牌，由 `get_cards_per_combat(entity)` 根据角色类型（PartyMember / Monster）决定；系统从 keywords 池中随机采样对应数量后交由 LLM 创作具体卡牌。
 
 这意味着：keywords 数量可以大于单场战斗生成数，未被采样的 keyword 在本场不会出现——这是设计层面的「牌库多样性」机制：角色有固定风格池，但每场战斗抽到哪些风格存在变数。同一效果的质量变体也作为独立条目存在于池中，因此同一场战斗有可能同时抽中多个质量档位。
 
 这是「机制与内容分离」的体现——角色设计者只需写关键词（纯攻击型 / 破甲型），具体卡牌名称、描述、数值由 LLM 按关键词创作。
 
-**消费方**：产出直接写入 `DeckComponent` 和 `DrawPileComponent`，被 `DrawCardsActionSystem` 抽入手中。
+**Card 的三层结构**：规则（affixes）、数值（damage / hit_count / cost / target_type）、叙事（description）。三者职责正交——keywords 约束规则层，数值由字段 schema 决定，description 是叙事锚点，可自由采用动作、物件、意象、氛围、典故等任意形态，不限于动作句。叙事主题由角色 LLM 在生成时从自身「角色设定」（profile）提炼，profile 是叙事意象的唯一权威来源。
+
+**消费方**：产出直接写入 `DeckComponent` 和 `DrawPileComponent`，被 `DrawCardsActionSystem` 抽入手中。description 的下游消费方是出牌仲裁（`PlayCardsArbitrationSystem`）：仲裁 prompt 读入 description，结合场景环境、目标状态与即时词缀做「故事泛化」生成 narrative——description 只影响叙事演出，不改变确定性数值结算。
 
 ### 场景塞牌（InjectCardsActionSystem）
 

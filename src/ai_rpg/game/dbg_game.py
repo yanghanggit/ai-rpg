@@ -361,11 +361,7 @@ class DBGGame(RPGGame):
                 len(actor_model.keywords) > 0
             ), f"DBG 游戏要求每个角色至少有一个关键词约束: {actor_model.name}"
             actor_entity.replace(
-                DeckComponent,
-                actor_entity.name,
-                [],
-                actor_model.keywords.copy(),
-                actor_model.theme,
+                DeckComponent, actor_entity.name, [], actor_model.keywords.copy()
             )
             logger.debug(
                 f"为 Actor 实体 {actor_entity.name} 挂载空牌组（DeckComponent，{len(actor_model.keywords)} 条关键词）"

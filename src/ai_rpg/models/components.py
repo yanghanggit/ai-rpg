@@ -272,14 +272,11 @@ class DiscardPileComponent(Component):
 @final
 @register_component_type
 class DeckComponent(Component):
-    """跨战斗持久牌库；战斗外唯一权威来源。战斗开始时由 DeckGenerationSystem 生成并锁定原始牌，战斗期间只读；战斗子堆流转的均为 model_copy() 副本。keywords 为卡牌生成关键词约束（规则层），theme 为卡牌叙事主题（叙事层），二者共同指导 LLM 生成手牌，运行时不可变。"""
+    """跨战斗持久牌库；战斗外唯一权威来源。战斗开始时由 DeckGenerationSystem 生成并锁定原始牌，战斗期间只读；战斗子堆流转的均为 model_copy() 副本。keywords 为卡牌生成关键词约束（规则层），指导 LLM 生成手牌，运行时不可变；叙事主题由角色设定（profile）在生成时提炼。"""
 
     name: str
     cards: List[Card]  # 跨战斗累积；每次触发 GenerateDeckAction 追加新生成的牌
     keywords: List[str]  # 卡牌生成关键词约束（规则层），运行时不可变
-    theme: str = (
-        ""  # 卡牌叙事主题（叙事锚点），指导 LLM 生成卡牌 description 的意象域；运行时不可变
-    )
 
 
 ############################################################################################################

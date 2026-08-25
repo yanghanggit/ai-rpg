@@ -72,24 +72,10 @@ def build_deck_prompt(
     actor_stats: CharacterStats,
     num_cards: int,
     keywords: List[str] = [],
-    theme: str = "",
 ) -> str:
     """生成战斗开始牌库生成 prompt（含字段说明与 JSON 示例）。"""
 
     design_principle = build_design_principle_prompt(num_cards, keywords)
-
-    if theme:
-        theme_section = f"""
-## 叙事主题
-
-{theme}
-
-本牌库所有卡牌的 `name` 与 `description` 都应围绕此主题展开——主题是叙事意象的来源，不约束功能（功能由上方关键词约束决定）。"""
-    else:
-        theme_section = """
-## 叙事主题
-
-无指定主题，`name` 与 `description` 可自由创作。"""
 
     return f"""# 战斗开始：生成 {num_cards} 张初始牌库卡牌
 
@@ -101,7 +87,11 @@ def build_deck_prompt(
 
 ## 设计约束
 
-{design_principle}{theme_section}
+{design_principle}
+
+## 叙事主题
+
+请从你的「角色设定」（历史、性格、习惯、随身之物、身体特征等）中提炼一个叙事主题，本牌库所有卡牌的 `name` 与 `description` 都应围绕该主题展开——主题是叙事意象的来源，不约束功能（功能由上方关键词约束决定）。
 
 {BUILD_CARD_FIELD_DESCRIPTION}
 
@@ -144,18 +134,16 @@ def build_condensed_deck_prompt(
     actor_stats: CharacterStats,
     num_cards: int,
     keywords: List[str] = [],
-    theme: str = "",
 ) -> str:
     """生成牌库生成 prompt 的精简版（写入对话历史，减少 token 消耗）。"""
     design_principle = build_design_principle_prompt(num_cards, keywords)
-    theme_line = f"叙事主题:{theme}" if theme else "叙事主题:无"
     return f"""# 战斗牌库生成（{num_cards} 张）
 
 HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense} | 行动次数:{actor_stats.energy}
 
 {design_principle}
 
-{theme_line}"""
+叙事主题：从你的角色设定中提炼"""
 
 
 @final
@@ -222,12 +210,10 @@ class GenerateDeckActionSystem(ReactiveProcessor):
 
         # 生成完整提示词，供 LLM 生成卡牌
         combat_stats = compute_character_stats(entity)
-        theme = deck_comp_for_keywords.theme
         prompt = build_deck_prompt(
             actor_stats=combat_stats,
             num_cards=num_cards,
             keywords=sampled_keywords,
-            theme=theme,
         )
 
         # 生成精简提示词，减少 LLM token 消耗
@@ -235,7 +221,6 @@ class GenerateDeckActionSystem(ReactiveProcessor):
             actor_stats=combat_stats,
             num_cards=num_cards,
             keywords=sampled_keywords,
-            theme=theme,
         )
 
         # 构建 DeepSeekClient，传入完整提示词、精简提示词和上下文

@@ -72,10 +72,24 @@ def build_deck_prompt(
     actor_stats: CharacterStats,
     num_cards: int,
     keywords: List[str] = [],
+    theme: str = "",
 ) -> str:
     """生成战斗开始牌库生成 prompt（含字段说明与 JSON 示例）。"""
 
     design_principle = build_design_principle_prompt(num_cards, keywords)
+
+    if theme:
+        theme_section = f"""
+## 叙事主题
+
+{theme}
+
+本牌库所有卡牌的 `name` 与 `description` 都应围绕此主题展开——主题是叙事意象的来源，不约束功能（功能由上方关键词约束决定）。"""
+    else:
+        theme_section = """
+## 叙事主题
+
+无指定主题，`name` 与 `description` 可自由创作。"""
 
     return f"""# 战斗开始：生成 {num_cards} 张初始牌库卡牌
 
@@ -87,7 +101,7 @@ def build_deck_prompt(
 
 ## 设计约束
 
-{design_principle}
+{design_principle}{theme_section}
 
 {BUILD_CARD_FIELD_DESCRIPTION}
 
@@ -95,10 +109,11 @@ def build_deck_prompt(
 
 - keywords 即边界，不是风格建议：要求的效果在对应字段体现；未提及即禁止
 - 即时词缀（on_play_affixes）与延迟词缀（on_hit_affixes）仅限 keywords 授权时填充
+- 叙事主题是 description 的意象来源，keywords 是 description 的功能边界，二者各自独立
 
 ## 约束
 
-- `description` 禁止提及任何场景地物（如断柱、沙地）、地名或即时情境细节
+- `description` 须围绕上方「叙事主题」展开，可自由采用动作、物件、意象、氛围、典故等任意形态；禁止提及具体地名与某一具体战斗场景的即时情境
 - `on_play_affixes`/`on_hit_affixes` 禁止重述数值字段已确定性表达的效果：不得重复量化 `damage`/`hit_count` 已决定的伤害量级
 - `cards` 数组长度必须恰好为 {num_cards}
 - 只输出 JSON，不附加任何说明文字
@@ -129,14 +144,18 @@ def build_condensed_deck_prompt(
     actor_stats: CharacterStats,
     num_cards: int,
     keywords: List[str] = [],
+    theme: str = "",
 ) -> str:
     """生成牌库生成 prompt 的精简版（写入对话历史，减少 token 消耗）。"""
     design_principle = build_design_principle_prompt(num_cards, keywords)
+    theme_line = f"叙事主题:{theme}" if theme else "叙事主题:无"
     return f"""# 战斗牌库生成（{num_cards} 张）
 
 HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense} | 行动次数:{actor_stats.energy}
 
-{design_principle}"""
+{design_principle}
+
+{theme_line}"""
 
 
 @final
@@ -203,10 +222,12 @@ class GenerateDeckActionSystem(ReactiveProcessor):
 
         # 生成完整提示词，供 LLM 生成卡牌
         combat_stats = compute_character_stats(entity)
+        theme = deck_comp_for_keywords.theme
         prompt = build_deck_prompt(
             actor_stats=combat_stats,
             num_cards=num_cards,
             keywords=sampled_keywords,
+            theme=theme,
         )
 
         # 生成精简提示词，减少 LLM token 消耗
@@ -214,6 +235,7 @@ class GenerateDeckActionSystem(ReactiveProcessor):
             actor_stats=combat_stats,
             num_cards=num_cards,
             keywords=sampled_keywords,
+            theme=theme,
         )
 
         # 构建 DeepSeekClient，传入完整提示词、精简提示词和上下文

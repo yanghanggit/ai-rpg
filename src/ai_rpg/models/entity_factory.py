@@ -23,6 +23,7 @@ def create_actor(
     campaign_setting: str,
     system_rules: str,
     keywords: List[str] = [],
+    theme: str = "",
 ) -> Actor:
     """
     创建一个游戏角色(Actor)实例。
@@ -45,6 +46,7 @@ def create_actor(
         system_message="",
         character_stats=character_stats,
         keywords=keywords,
+        theme=theme,
     )
 
     # 血量加满!!!!

@@ -281,7 +281,7 @@ async def debug_probe_dungeon_director_reasoning(
     prompt = "调试探针：到目前为止都发生了什么？你后续希望发生什么？"
 
     client = DeepSeekClient(
-        name=f"debug_probe:{dungeon.name}",
+        name=dungeon.name,
         full_prompt=prompt,
         context=agent_context.context,
         model=MODEL_FLASH,

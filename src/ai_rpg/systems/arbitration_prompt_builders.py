@@ -173,6 +173,7 @@ NARRATIVE_DESCRIPTION: Final[
 ] = """### narrative
 
 60-120 字，第三人称外部视角，纯感官描写，无数字/术语/内心。
+应结合本次行动「描述/叙事」中的意象进行故事化展开（如卡牌的叙事锚点、消耗品/装备的感官描述），使演出与该行动的气质一致。
 若本次行动涉及与场景对象的交互（取用、触发、破坏、移动、部分使用等），叙述中须体现该对象在交互后的**物理状态变化**（如"碎石散落殆尽"、"机关齿轮转动一格发出咔哒声"、"绳索断裂后仍有一截悬挂在梁上"），使后续上下文能推断其当前可用性与剩余状态。"""
 
 
@@ -191,6 +192,7 @@ CALC_RULES_SECTION: Final[
 **装备穿戴**：stat_bonuses 已由系统确定性写入，无需重复计算。
 **消耗品使用**：依物品描述中明确写明的数值计算；描述模糊时给出合理推断并体现在 narrative 中。
 **即时词缀**：若本次结算列出即时词缀，以上方结算规则为基础逻辑，结合即时词缀共同考量，务必保证即时词缀被实际执行、不被遗漏；两者如何结合由你发挥判断力自行泛化，不引入词缀未提及的新机制。
+**叙事泛化**：本次行动的「描述/叙事」是生成 narrative 与 stage_description 的故事素材——把它与当前场景环境、状态效果、即时词缀结合起来自由泛化（动作、物件、意象、氛围均可），但不得改变上方各结算规则确定的数值结果。
 
 目标 HP = max(0, min(计算后 HP, 最大 HP))"""
 
@@ -261,6 +263,7 @@ def build_combat_arbitration_prompt(
 ## 出牌
 
 - 卡牌：{card.name}
+- 叙事（description）：{card.description}
 - damage：{card.damage}（单次伤害）
 - hit_count：{card.hit_count}（攻击次数）
 {spread.hit_assignment}{build_instant_affix_section("本卡即时词缀", card.on_play_affixes)}
@@ -331,6 +334,7 @@ def build_condensed_combat_arbitration_prompt(
 ## 出牌
 
 - 卡牌：{card.name}
+- 叙事（description）：{card.description}
 - damage：{card.damage}（单次伤害）
 - hit_count：{card.hit_count}（攻击次数）
 {spread.hit_assignment}{build_instant_affix_section("本卡即时词缀", card.on_play_affixes)}

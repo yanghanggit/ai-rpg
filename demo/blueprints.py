@@ -94,28 +94,19 @@ def create_corridor_hall() -> Stage:
 
 # ── 卡牌关键词常量（避免重复字符串，方便统一修改） ──────────────────────────────────────────────
 
-_KW_ATTACK: Final[str] = (
-    "攻击型：造成直接伤害的基础攻击卡牌，不携带特殊效果，伤害值适中稳定。"
-)
-_KW_DEFENSE: Final[str] = (
-    "防御型：以提升自身防御、减少受到的伤害为核心的基础卡牌。"
-    "为自身添加一个防御的增益状态，持续一回合。"
-)
+_KW_ATTACK: Final[str] = "攻击型：对单个目标造成适中数值的直接伤害，不携带词缀。"
+_KW_DEFENSE: Final[str] = "防御型：为自身添加一个持续一回合的防御增益。"
 _KW_ARMOR_BREAK_NORMAL: Final[str] = (
-    "穿甲型：卡牌必须携带至少一个即时词缀，令本次出牌的伤害无视目标防御（如[穿透]:本次伤害无视目标防御），"
-    "即时词缀参与本次出牌仲裁、只对本次结算生效，不落地持续状态效果；攻击造成直接伤害，稳定无视目标防御。"
+    "穿甲型：携带即时词缀，令本次出牌伤害无视目标防御（如[穿透]:本次伤害无视目标防御）。"
 )
 _KW_ARMOR_BREAK_PREMIUM: Final[str] = (
-    "穿甲型（优质）：卡牌必须携带至少一个即时词缀，令本次出牌的伤害无视目标防御（如[穿透]:本次伤害无视目标防御），"
-    "即时词缀参与本次出牌仲裁、只对本次结算生效，不落地持续状态效果；攻击造成直接伤害，无视防御的同时附加额外伤害倾向。"
+    "穿甲型（优质）：携带即时词缀，令本次出牌伤害无视目标防御，并附加额外伤害倾向。"
 )
 _KW_CONTROL_NORMAL: Final[str] = (
-    "控制型：卡牌必须携带至少一个持续负面状态效果，直接伤害可以较低乃至为零。"
-    "可附加效果：易伤（目标受击时防御减半）或 减速（目标速度降低），稳定施加二者之一。"
+    "控制型：携带持续负面状态效果（易伤：目标受击时防御减半，或减速：目标速度降低），直接伤害可较低乃至为零。"
 )
 _KW_CONTROL_PREMIUM: Final[str] = (
-    "控制型（优质）：卡牌必须携带至少一个持续负面状态效果，直接伤害可以较低乃至为零。"
-    "可同时叠加易伤（目标受击时防御减半）与减速（目标速度降低），或状态效果显著增强。"
+    "控制型（优质）：携带持续负面状态效果，可同时叠加易伤与减速，或效果显著增强。"
 )
 
 
@@ -146,6 +137,7 @@ def create_wuming() -> Actor:
             _KW_ARMOR_BREAK_NORMAL,
             _KW_ARMOR_BREAK_PREMIUM,
         ],
+        theme="无名者的身体记忆：旧日武艺裹在灰白病号服之下",
     )
 
     return actor
@@ -178,6 +170,7 @@ def create_guzhiqiu() -> Actor:
             _KW_CONTROL_NORMAL,
             _KW_CONTROL_PREMIUM,
         ],
+        theme="以纸笔丈量世界：档案簿、朱砂、批注与定论",
     )
 
     return actor
@@ -196,7 +189,7 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
 
     # 故意让无名的 character_stats 里有一些数值，方便演示战斗初始化时的属性展示
     actor_wuming.character_stats.speed = 2
-    actor_wuming.character_stats.attack = 100
+    #actor_wuming.character_stats.attack = 100
 
     actor_guzhiqiu = create_guzhiqiu()
     actor_guzhiqiu.custom_item = CostumeItem(

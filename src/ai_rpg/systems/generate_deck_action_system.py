@@ -14,6 +14,7 @@ from ..game.dbg_combat_processor import compute_character_stats, get_cards_per_c
 from ..game.dbg_game import DBGGame
 from ..models import (
     ActorComponent,
+    ArchetypeComponent,
     Card,
     CharacterStats,
     CharacterStatsComponent,
@@ -167,6 +168,7 @@ class GenerateDeckActionSystem(ReactiveProcessor):
         return (
             entity.has(GenerateDeckAction)
             and entity.has(ActorComponent)
+            and entity.has(ArchetypeComponent)
             and entity.has(DeckComponent)
             and entity.has(CharacterStatsComponent)
             and not entity.has(DeathComponent)
@@ -195,10 +197,10 @@ class GenerateDeckActionSystem(ReactiveProcessor):
 
         num_cards = get_cards_per_combat(entity)
 
-        deck_comp_for_keywords = entity.get(DeckComponent)
-        assert deck_comp_for_keywords is not None, f"{entity.name} 缺少 DeckComponent"
+        archetype_comp = entity.get(ArchetypeComponent)
+        assert archetype_comp is not None, f"{entity.name} 缺少 ArchetypeComponent"
 
-        keywords_pool = deck_comp_for_keywords.keywords
+        keywords_pool = archetype_comp.keywords
         if not keywords_pool:
             sampled_keywords: List[str] = []
         elif len(keywords_pool) >= num_cards:

@@ -42,7 +42,7 @@ def _make_actor(
     entity.add(ActorComponent, name, "")
     entity.add(CharacterStatsComponent, name, CharacterStats())
     entity.add(AppearanceComponent, name, "base_body", appearance)
-    entity.add(DeckComponent, name, [], [])
+    entity.add(DeckComponent, name, [])
     if is_ally:
         entity.add(PartyMemberComponent, name)
     if is_monster:

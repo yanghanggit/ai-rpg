@@ -99,8 +99,6 @@ class CombatDeckViewScreen(BaseGameScreen):
                 continue
 
             deck = DeckComponent(**deck_data)
-            if deck.keywords:
-                log.write(f"  关键词：[dim]{'、'.join(deck.keywords)}[/]")
             if not deck.cards:
                 log.write("  [dim]（牌组为空）[/]")
             else:

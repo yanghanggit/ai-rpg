@@ -49,7 +49,7 @@ def _response_json(cards: List[Dict[str, Any]]) -> str:
 def _make_entity(ctx: Context, name: str = "英雄") -> Entity:
     entity = ctx.create_entity()
     entity._name = name
-    entity.add(DeckComponent, name, [], [])
+    entity.add(DeckComponent, name, [])
     entity.add(DrawPileComponent, name, [])
     entity.add(GenerateDeckAction, name)
     entity.add(PartyMemberComponent, name)

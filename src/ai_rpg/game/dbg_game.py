@@ -21,6 +21,7 @@ from ..models import (
     AppearanceComponent,
     CharacterStatsComponent,
     COMPONENT_TYPES,
+    ArchetypeComponent,
     DeckComponent,
     Dungeon,
     DungeonComponent,
@@ -356,15 +357,21 @@ class DBGGame(RPGGame):
                 case _:
                     assert False, f"未知的 ActorType: {actor_model.type}"
 
-            # DBG 组件：牌组 + 关键词约束
+            # DBG 组件：牌组（DeckComponent）
+            actor_entity.replace(DeckComponent, actor_entity.name, [])
+            logger.debug(
+                f"为 Actor 实体 {actor_entity.name} 挂载空牌组（DeckComponent）"
+            )
+
+            # DBG 组件：卡牌流派（ArchetypeComponent）+ 关键词约束
             assert (
                 len(actor_model.keywords) > 0
             ), f"DBG 游戏要求每个角色至少有一个关键词约束: {actor_model.name}"
             actor_entity.replace(
-                DeckComponent, actor_entity.name, [], actor_model.keywords.copy()
+                ArchetypeComponent, actor_entity.name, actor_model.keywords.copy()
             )
             logger.debug(
-                f"为 Actor 实体 {actor_entity.name} 挂载空牌组（DeckComponent，{len(actor_model.keywords)} 条关键词）"
+                f"为 Actor 实体 {actor_entity.name} 挂载卡牌流派（ArchetypeComponent，{len(actor_model.keywords)} 条关键词）"
             )
 
             # DBG 组件：初始时装（CostumeComponent），如果 actor_model.custom_item 不为 None，则挂载 CostumeComponent，初始时装来源于 actor_model.custom_item

@@ -25,6 +25,7 @@ from ..models import (
     ConsumableItem,
     WornCostumeComponent,
     CostumeItem,
+    ArchetypeComponent,
     DeckComponent,
     DiscardPileComponent,
     DrawPileComponent,
@@ -304,12 +305,18 @@ def _identity_components(name: str, order: int) -> List[ComponentSerialization]:
 ###############################################################################################################################################
 def _deck_component_serialization(
     name: str, cards: List[Card], keywords: List[str]
-) -> ComponentSerialization:
-    """构造 DeckComponent 序列化数据（战斗双方均持有牌库，用于「查阅牌组」命令）。"""
-    return ComponentSerialization(
-        name=DeckComponent.__name__,
-        data=DeckComponent(name=name, cards=cards, keywords=keywords).model_dump(),
-    )
+) -> List[ComponentSerialization]:
+    """构造 DeckComponent + ArchetypeComponent 序列化数据（战斗双方均持有牌库，用于「查阅牌组」命令）。"""
+    return [
+        ComponentSerialization(
+            name=DeckComponent.__name__,
+            data=DeckComponent(name=name, cards=cards).model_dump(),
+        ),
+        ComponentSerialization(
+            name=ArchetypeComponent.__name__,
+            data=ArchetypeComponent(name=name, keywords=keywords).model_dump(),
+        ),
+    ]
 
 
 ###############################################################################################################################################
@@ -488,7 +495,7 @@ def build_mock_entities_details_response(
                 MOCK_ACTOR_NAME,
                 base_body="体型精瘦的青年男性，动作敏捷。",
             ),
-            _deck_component_serialization(
+            *_deck_component_serialization(
                 MOCK_ACTOR_NAME,
                 [
                     Card(
@@ -601,7 +608,7 @@ def build_mock_entities_details_response(
                 MOCK_TEAMMATE_NAME,
                 base_body="身形高挑的女性法师，气质沉静。",
             ),
-            _deck_component_serialization(
+            *_deck_component_serialization(
                 MOCK_TEAMMATE_NAME,
                 [
                     Card(
@@ -657,7 +664,7 @@ def build_mock_entities_details_response(
                 name=MonsterComponent.__name__,
                 data=MonsterComponent(name=MOCK_MONSTER_1_NAME).model_dump(),
             ),
-            _deck_component_serialization(
+            *_deck_component_serialization(
                 MOCK_MONSTER_1_NAME,
                 [
                     Card(
@@ -708,7 +715,7 @@ def build_mock_entities_details_response(
                 name=MonsterComponent.__name__,
                 data=MonsterComponent(name=MOCK_MONSTER_2_NAME).model_dump(),
             ),
-            _deck_component_serialization(
+            *_deck_component_serialization(
                 MOCK_MONSTER_2_NAME,
                 [
                     Card(

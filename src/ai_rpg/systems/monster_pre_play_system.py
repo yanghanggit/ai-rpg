@@ -31,7 +31,7 @@ from .arbitration_prompt_builders import fmt_effects
 
 #######################################################################################################################################
 @final
-class MonsterDecisionResponse(BaseModel):
+class _MonsterDecisionResponse(BaseModel):
     """LLM 返回的怪物出牌决策"""
 
     pass_turn: bool = False
@@ -294,10 +294,12 @@ class MonsterPrePlaySystem(ReactiveProcessor):
             latest_round.completed_actors if latest_round else []
         )
 
+        # 获取当前回合数（用于提示信息）
         current_round_number = len(
             self._game.current_dungeon_combat_room.combat.rounds or []
         )
 
+        # 构建怪物出牌决策的提示信息（Prompt）
         prompt = _build_monster_decision_prompt(
             monster_name=entity.name,
             monster_stats=monster_stats,
@@ -309,6 +311,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
             current_round_number=current_round_number,
         )
 
+        # 构建怪物出牌决策的精简提示信息（Condensed Prompt）
         condensed_prompt = _build_condensed_monster_decision_prompt(
             monster_name=entity.name,
             monster_stats=monster_stats,
@@ -343,7 +346,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
             return
 
         try:
-            decision = MonsterDecisionResponse.model_validate_json(
+            decision = _MonsterDecisionResponse.model_validate_json(
                 extract_json(client.response_content)
             )
         except Exception as e:

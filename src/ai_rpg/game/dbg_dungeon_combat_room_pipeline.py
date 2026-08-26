@@ -77,6 +77,7 @@ def create_dungeon_combat_room_pipeline(
     )
     from ..systems.combat_round_completion_system import CombatRoundCompletionSystem
     from ..systems.monster_pre_play_system import MonsterPrePlaySystem
+    #from ..systems.monster_context_probe_system import MonsterContextProbeSystem
     from ..systems.party_pre_play_system import PartyPrePlaySystem
 
     dbg_game = cast(DBGGame, game)
@@ -107,6 +108,9 @@ def create_dungeon_combat_room_pipeline(
     # 战斗核心动作处理相关的系统
     processors.add(DrawCardsActionSystem(dbg_game))
     processors.add(PostDrawCardsSystem(dbg_game))
+    # processors.add(
+    #     MonsterContextProbeSystem(dbg_game)
+    # )  # 纯调试系统：在怪物出牌决策前探测其上下文同步是否正确，问题/回答不写入 LLM 上下文。
     processors.add(MonsterPrePlaySystem(dbg_game))
     processors.add(PartyPrePlaySystem(dbg_game))
     processors.add(PlayCardsActionSystem(dbg_game))

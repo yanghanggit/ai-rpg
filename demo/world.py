@@ -1,36 +1,88 @@
-"""演示世界创建模块
+"""演示世界定义模块
 
-提供工厂函数创建预配置的游戏世界。
+整合演示世界的全局设定、副本、蓝图与各世界实体工厂函数。
 """
 
+from typing import Dict, Final, List
+
 from ai_rpg.models import (
-    Blueprint,
-    CostumeItem,
-    GearItem,
-    ConsumableItem,
-    MaterialItem,
-    TargetType,
-    CharacterStats,
-    create_stage,
-    StageType,
-    Stage,
-    RPG_SYSTEM_RULES,
-    create_actor,
-    ActorType,
     Actor,
+    ActorType,
+    Blueprint,
+    CharacterStats,
+    CombatRoom,
     ComponentSerialization,
-    DungeonGenerationComponent,
-    create_world,
-    World,
-    PlayerActionAuditComponent,
-    GearWorkshopComponent,
+    ConsumableItem,
     ConsumableWorkshopComponent,
+    CostumeItem,
     CostumeWorkshopComponent,
+    create_actor,
+    create_stage,
+    create_world,
+    Dungeon,
     DungeonDirectorComponent,
+    DungeonGenerationComponent,
+    EntryRoom,
+    GearItem,
+    GearWorkshopComponent,
+    MaterialItem,
+    PlayerActionAuditComponent,
+    RPG_SYSTEM_RULES,
+    Stage,
+    StageType,
+    TargetType,
+    World,
     WorldDirectorComponent,
 )
-from demo.settings import CAMPAIGN_SETTING
-from typing import Dict, Final, List
+
+
+# ---------------------------------------------------------------------------
+# CAMPAIGN_SETTING 编写原则
+# ---------------------------------------------------------------------------
+# 定位：注入到每个实体（actor / stage / world system）system prompt 的
+#       「游戏设定」段，是全部实体的最低公共知识。
+#
+# 应包含：
+#   - 类型标签（中式民俗志怪），决定 LLM 的语体与意象库
+#   - 时代锚点（民国黄金十年后期），约束所有实体对"当下世界"的默认感知
+#   - 双层面存在（寻常 / 诡谲），使 LLM 在 Home↔Dungeon 穿梭时不会因
+#     环境剧变而认知断裂——不暴露具体地名与真假关系，仅告知"这是正常的"
+#   - 副本的梦境本质（进入副本 = 进入梦境）：这是本故事对通用规则
+#     「场景移动」的故事化呼应——移动不是赶路，而是入梦与醒来
+#   - 核心玩法支柱（探索 / 狩猎 / 制造），让实体理解玩家行为的基本范式
+#
+# 不应包含：
+#   - 具体地名（济世疗养院）——由各自 profile 赋予；「大傩」为世界专属认知，不注入 actor/stage/item
+#   - 双世界架构（表/里）——单只实体不应拥有跨世界天眼
+#   - 阵营信息、核心矛盾、结局方向——属于叙事层，非公共知识
+#   - 任何"这个世界的真相是……"式的解释性陈述（副本=梦境 属公共设定，
+#     不在此列，但不得延伸出"哪边是梦、哪边是真"的判别）
+#
+# 隔离性与呼应：
+#   - RPG_SYSTEM_RULES（src/ai_rpg/models/rules.py）是跨故事通用规则，
+#     尤其是其中的「场景移动」；本文件不改动它，只在故事层面延伸呼应。
+#   - 本文件内容仅作用于《大渊》这一目标故事。
+#   - "黄金十年后期"为系统层时间锚点，供 LLM 校准时代氛围，不进入角色
+#     台词——角色不得自称身处"黄金十年"（见 rules.py 角色扮演契约）。
+#   - 文末「适配指令」要求：后续的「副本」定义与「场景移动」等全局规则
+#     须适配本全局设定（副本=梦境）。这是纯 LLM 上下文能力的依赖点——
+#     不修改 rules.py，而是要求 LLM 在读取规则时用本设定重新诠释。
+#
+# 原则：一个刚苏醒的失忆角色读了这段，只知道自己所处的时代和氛围，
+#       不会知道任何具体地点、阵营或世界结构。
+# ---------------------------------------------------------------------------
+
+
+#######################################################################################################################################
+CAMPAIGN_SETTING: Final[str] = (
+    "这是一个架空的、融合狩猎玩法的中式民俗志怪游戏世界，以民国的黄金十年后期（1930年代）为背景。"
+    "这是中西碰撞、新旧交替的年份：洋楼与道观并立，西医手术台与符水药方同处一室，表面的热闹底下压着旧秩序松动的裂痕。"
+    "世界存在寻常与诡谲两个层面，狩猎与战斗发生在诡谲层面之中。"
+    "进入副本即进入梦境：副本不是地理上的远方，而是一段坠入的梦。"
+    "因此「场景移动」在本故事中承载梦的语义——进出副本即入梦与醒来，旅途本身不被呈现，只是其性质由现实赶路变为梦境的切换。"
+    "所有游戏内实体的存在逻辑、决策与交互，都必须严格植根于此框架，并通过探索、狩猎与制造等核心玩法来展开与演进。"
+    "注意：后续出现的「副本」定义与「场景移动」等全局规则，须适配本全局设定——在理解与扮演中，凡涉及副本、场景切换之处，一律按「进入副本即进入梦境」诠释，不得当作现实中的地理移动。"
+)
 
 
 # ---------------------------------------------------------------------------
@@ -64,6 +116,97 @@ KNOWLEDGE_BASE: Final[Dict[str, List[str]]] = {
 }
 
 
+# ── 卡牌关键词常量（避免重复字符串，方便统一修改） ──────────────────────────────────────────────
+
+_KW_ATTACK: Final[str] = "攻击型：对单个目标造成适中数值的直接伤害，不携带词缀。"
+_KW_DEFENSE: Final[str] = "防御型：为自身添加一个持续一回合的防御增益。"
+_KW_EROSION_NORMAL: Final[str] = (
+    "持续侵蚀型：携带持续负面状态效果（毒性侵蚀：目标每回合末 HP -1），直接伤害适中。"
+)
+_KW_EROSION_PREMIUM: Final[str] = (
+    "持续侵蚀型（优质）：携带持续负面状态效果（毒性侵蚀），持续回合翻倍或每回合伤害提高。"
+)
+_KW_ARMOR_BREAK_NORMAL: Final[str] = (
+    "穿甲型：携带即时词缀，令本次出牌伤害无视目标防御（如[穿透]:本次伤害无视目标防御）。"
+)
+_KW_ARMOR_BREAK_PREMIUM: Final[str] = (
+    "穿甲型（优质）：携带即时词缀，令本次出牌伤害无视目标防御，并附加额外伤害倾向。"
+)
+_KW_CONTROL_NORMAL: Final[str] = (
+    "控制型：携带持续负面状态效果（易伤：目标受击时防御减半，或减速：目标速度降低），直接伤害可较低乃至为零。"
+)
+_KW_CONTROL_PREMIUM: Final[str] = (
+    "控制型（优质）：携带持续负面状态效果，可同时叠加易伤与减速，或效果显著增强。"
+)
+
+
+########################################################################################################################
+def create_actor_paper_doll() -> Actor:
+    """创建纸人怪物实例。"""
+
+    paper_doll = create_actor(
+        name="怪物.纸人",
+        actor_type=ActorType.MONSTER,
+        profile="""你是被遗弃在坍塌庙祠中的纸扎人偶，不知在此站了多久。你的身体是竹骨与白纸糊成，关节僵硬地弯曲，头微侧，面上用朱砂画着固定不变的笑容。你不奔跑，不吼叫，只是站着——直到视线从你身上移开的那一刻。你不关心闯入者是谁，但任何活人的体温靠得太近时，你体内干涸的朱砂会重新流动起来。你的一切——攻击、防御、存在——都只是纸、竹与朱砂的响动。""",
+        base_body="一具等人高的纸扎人偶，竹条骨架上糊着泛黄的白纸。面部用朱砂绘出简易五官——眉、眼、鼻、嘴皆为寥寥数笔，笑容弧度固定。身穿纸制的深蓝长衫，襟口与袖缘裱着褪色的金边纸。手指为五根细竹签，尖端微弯。整体极轻，静止时像被遗忘的摆设。",
+        character_stats=CharacterStats(),
+        campaign_setting=CAMPAIGN_SETTING,
+        system_rules=RPG_SYSTEM_RULES,
+        keywords=[
+            # 2 张基础攻击
+            _KW_ATTACK,
+            _KW_ATTACK,
+            # 1 张基础防御
+            _KW_DEFENSE,
+            # 持续侵蚀普通/优质两个变体，采样时随机取舍
+            _KW_EROSION_NORMAL,
+            _KW_EROSION_PREMIUM,
+        ],
+    )
+
+    return paper_doll
+
+
+########################################################################################################################
+def create_shrine_ruins_dungeon() -> Dungeon:
+    """创建坍塌庙祠副本。"""
+
+    # ── 入口叙事房间 ──
+    stage_shrine_entrance = create_stage(
+        name="场景.庙祠入口",
+        stage_type=StageType.DUNGEON,
+        profile="""你是一条被荒草半掩的碎石小径，尽头立着一座坍塌过半的庙祠。
+天色是介于黄昏与夜晚之间的那种灰蓝，四下无风，但路旁的枯草丛偶尔簌簌作响，像有什么极轻的东西从其间穿行。
+庙祠的山门已经完全倒塌，只剩两根石柱歪斜地插在瓦砾堆里。门后的前院在暮色中只是一个模糊的轮廓——隐约能看到倾倒的香炉和地面散落的圆形纸钱。
+空气中有一股陈旧纸张与干燥竹骨的气味，淡得像记忆一样不真实。小径在距山门废墟三步之处戛然而止，仿佛连脚下的路也不愿再靠近。""",
+        campaign_setting=CAMPAIGN_SETTING,
+        system_rules=RPG_SYSTEM_RULES,
+    )
+
+    # ── 战斗房间 ──
+    stage_shrine_courtyard = create_stage(
+        name="场景.破败殿前",
+        stage_type=StageType.DUNGEON,
+        profile="""你是一座坍塌庙祠的前院。青石地面已大面积龟裂，裂缝中长出灰白色的干枯苔藓，踩上去发出细碎的脆响。
+正前方是殿门，门扇只剩一扇半掩着，门楣上的匾额歪斜悬挂，字迹已模糊不可辨。殿内隐约可见一尊神像的背影——它面向后墙，而非殿门。
+院中一座三足铜香炉倾倒在地，香灰洒成扇形，灰堆表面留有细长的拖痕。院角散落着几件纸扎残件——半只纸马、一朵褪色的纸花、一只纸人的断手。地面随处可见圆形纸钱，但无论站在哪个位置，纸钱上的方孔都似乎正对着你。""",
+        campaign_setting=CAMPAIGN_SETTING,
+        system_rules=RPG_SYSTEM_RULES,
+    )
+
+    actor_paper_doll = create_actor_paper_doll()
+    stage_shrine_courtyard.actors = [actor_paper_doll]
+
+    return Dungeon(
+        name="副本.坍塌庙祠",
+        profile="庙祠前院静得异常。碎裂的青石地面上散落着纸钱，纸钱的方孔在视线扫过时似乎都在微微调整方向。院角的纸扎残件与倾覆的香炉让这地方像一场进行到一半就被打断的仪式。殿内，神像正背对着你。",
+        rooms=[
+            EntryRoom(stage=stage_shrine_entrance),
+            CombatRoom(stage=stage_shrine_courtyard),
+        ],
+    )
+
+
 #######################################################################################################################
 def create_isolation_ward() -> Stage:
     """创建隔离病房场景实例。"""
@@ -92,24 +235,6 @@ def create_corridor_hall() -> Stage:
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
     )
-
-
-# ── 卡牌关键词常量（避免重复字符串，方便统一修改） ──────────────────────────────────────────────
-
-_KW_ATTACK: Final[str] = "攻击型：对单个目标造成适中数值的直接伤害，不携带词缀。"
-_KW_DEFENSE: Final[str] = "防御型：为自身添加一个持续一回合的防御增益。"
-_KW_ARMOR_BREAK_NORMAL: Final[str] = (
-    "穿甲型：携带即时词缀，令本次出牌伤害无视目标防御（如[穿透]:本次伤害无视目标防御）。"
-)
-_KW_ARMOR_BREAK_PREMIUM: Final[str] = (
-    "穿甲型（优质）：携带即时词缀，令本次出牌伤害无视目标防御，并附加额外伤害倾向。"
-)
-_KW_CONTROL_NORMAL: Final[str] = (
-    "控制型：携带持续负面状态效果（易伤：目标受击时防御减半，或减速：目标速度降低），直接伤害可较低乃至为零。"
-)
-_KW_CONTROL_PREMIUM: Final[str] = (
-    "控制型（优质）：携带持续负面状态效果，可同时叠加易伤与减速，或效果显著增强。"
-)
 
 
 #######################################################################################################################

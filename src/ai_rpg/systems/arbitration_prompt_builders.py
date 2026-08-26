@@ -153,6 +153,21 @@ def build_instant_affix_section(title: str, affixes: List[str]) -> str:
     return f"\n\n## {title}\n\n" + "\n".join(f"- {a}" for a in affixes)
 
 
+@prompt_builder
+def build_gear_play_section(gear_item: GearItem | None) -> str:
+    """构建出牌者装备段落（含装备即时词缀）；无装备时返回空字符串。"""
+    if gear_item is None:
+        return ""
+    section = (
+        f"\n\n## 出牌者装备\n\n"
+        f"- 名称：{gear_item.name}\n"
+        f"- 描述：{gear_item.description}"
+    )
+    return section + build_instant_affix_section(
+        "装备即时词缀", gear_item.on_play_affixes
+    )
+
+
 FINAL_STATS_DESCRIPTION: Final[
     str
 ] = """### final_stats
@@ -247,6 +262,7 @@ def build_combat_arbitration_prompt(
     actor_arbitration_effects: List[StatusEffect],
     target_arbitration_effects: Dict[str, List[StatusEffect]],
     current_stage_description: str,
+    gear_item: GearItem | None = None,
 ) -> str:
     target_lines = build_target_stats_lines(target_stats, show_defense=True)
     arbitration_effects_lines = build_combat_arbitration_effects_lines(
@@ -266,7 +282,7 @@ def build_combat_arbitration_prompt(
 - 叙事（description）：{card.description}
 - damage：{card.damage}（单次伤害）
 - hit_count：{card.hit_count}（攻击次数）
-{spread.hit_assignment}{build_instant_affix_section("本卡即时词缀", card.on_play_affixes)}
+{spread.hit_assignment}{build_instant_affix_section("本卡即时词缀", card.on_play_affixes)}{build_gear_play_section(gear_item)}
 
 ## 目标
 
@@ -317,6 +333,7 @@ def build_condensed_combat_arbitration_prompt(
     actor_arbitration_effects: List[StatusEffect],
     target_arbitration_effects: Dict[str, List[StatusEffect]],
     current_stage_description: str,
+    gear_item: GearItem | None = None,
 ) -> str:
     """精简版仲裁提示词，省略静态规则与格式说明，用于写入对话历史减少重复 token。"""
     target_lines = build_target_stats_lines(target_stats, show_defense=True)
@@ -337,7 +354,7 @@ def build_condensed_combat_arbitration_prompt(
 - 叙事（description）：{card.description}
 - damage：{card.damage}（单次伤害）
 - hit_count：{card.hit_count}（攻击次数）
-{spread.hit_assignment}{build_instant_affix_section("本卡即时词缀", card.on_play_affixes)}
+{spread.hit_assignment}{build_instant_affix_section("本卡即时词缀", card.on_play_affixes)}{build_gear_play_section(gear_item)}
 
 ## 目标
 

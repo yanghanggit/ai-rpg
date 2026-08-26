@@ -46,6 +46,9 @@ class GearItem(Item):
     equip_affixes: List[str] = (
         []
     )  # 装备时对装备者触发的延迟词缀；格式同 Card.on_hit_affixes；由 EquipGearItemArbitrationSystem 评估
+    on_play_affixes: List[str] = (
+        []
+    )  # 即时词缀列表；格式同 Card.on_play_affixes；参与本次出牌仲裁，由仲裁 LLM 直接套用，不落地 StatusEffect；无即时效果时输出 []
     on_hit_affixes: List[str] = (
         []
     )  # 出牌命中目标时触发的延迟词缀；格式同 Card.on_hit_affixes；由 PlayCardsArbitrationSystem 评估

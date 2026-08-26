@@ -128,6 +128,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             actor_arbitration_effects,
             target_arbitration_effects,
             current_stage_description,
+            play_cards_action.gear_item,
         )
 
         # 生成精简后的仲裁提示消息，用于在需要时向 LLM 提供更简洁的上下文信息
@@ -142,6 +143,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                 actor_arbitration_effects,
                 target_arbitration_effects,
                 current_stage_description,
+                play_cards_action.gear_item,
             )
             if self._use_condensed_prompt
             else None

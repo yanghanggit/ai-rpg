@@ -21,7 +21,6 @@ from ..models import (
     AffixTrigger,
     CharacterStatsComponent,
     CombatArbitrationEvent,
-    EquippedGearComponent,
     HumanMessage,
     PhaseType,
     PlayCardsAction,
@@ -289,11 +288,8 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
         # 确保状态效果在游戏中正确生效；只按出牌目标挂载，不依赖 final_stats 的实体范围。
         # card.on_hit_affixes 与装备 on_hit_affixes 均为空时，本次出牌无延迟状态效果，直接跳过。
         card_affixes = action.card.on_hit_affixes
-        gear_on_hit_affixes = (
-            actor_entity.get(EquippedGearComponent).item.on_hit_affixes
-            if actor_entity.has(EquippedGearComponent)
-            else []
-        )
+        gear_item = action.gear_item
+        gear_on_hit_affixes = gear_item.on_hit_affixes if gear_item is not None else []
         if not card_affixes and not gear_on_hit_affixes:
             logger.debug(
                 f"[{actor_entity.name}] 出牌卡牌无延迟词缀且装备无 on_hit_affixes，跳过 AddStatusEffectsAction"
@@ -316,10 +312,13 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
 
                 # on_hit_affixes 仅作用于命中目标（非出牌者自身）
                 if gear_on_hit_affixes and entity_name != actor_entity.name:
+                    assert (
+                        gear_item is not None
+                    ), "gear_on_hit_affixes 非空时 gear_item 不应为 None"
                     affix_triggers += generate_gear_on_hit_affix_triggers(
                         actor_name=actor_entity.name,
                         card_name=action.card.name,
-                        gear_item=actor_entity.get(EquippedGearComponent).item,
+                        gear_item=gear_item,
                     )
 
                 if affix_triggers:

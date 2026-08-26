@@ -86,7 +86,7 @@ class TestMoveToDiscardPileSystemSkip:
         entity = _make_entity(context, "英雄")
         card = _make_card("闪击", source="英雄")
         entity.get(HandComponent).cards.append(card)
-        entity.add(PlayCardsAction, "英雄", card, [])
+        entity.add(PlayCardsAction, "英雄", card, [], None)
 
         await system.react([entity])
 
@@ -107,7 +107,7 @@ class TestMoveToDiscardPileSystemOwnCard:
         entity = _make_entity(context, "英雄")
         card = _make_card("斩击", source="英雄")
         entity.get(HandComponent).cards.append(card)
-        entity.add(PlayCardsAction, "英雄", card, [])
+        entity.add(PlayCardsAction, "英雄", card, [], None)
 
         await system.react([entity])
 
@@ -123,7 +123,7 @@ class TestMoveToDiscardPileSystemOwnCard:
         entity = _make_entity(context, "英雄")
         card = _make_card("斩击", source="英雄")
         entity.get(HandComponent).cards.append(card)
-        entity.add(PlayCardsAction, "英雄", card, [])
+        entity.add(PlayCardsAction, "英雄", card, [], None)
 
         await system.react([entity])
 
@@ -143,7 +143,7 @@ class TestMoveToDiscardPileSystemForeignCard:
         entity = _make_entity(context, "英雄")
         foreign_card = _make_card("外来秘术", source="他人")
         entity.get(HandComponent).cards.append(foreign_card)
-        entity.add(PlayCardsAction, "英雄", foreign_card, [])
+        entity.add(PlayCardsAction, "英雄", foreign_card, [], None)
 
         await system.react([entity])
 

@@ -204,6 +204,7 @@ async def activate_play_cards_specified(
         entity.name,
         selected_card,
         resolved_targets,
+        None,  # gear_item 由 PlayCardsActionSystem 组装填充
     )
 
     # 返回成功信息，表示已经成功为角色激活了出牌动作。

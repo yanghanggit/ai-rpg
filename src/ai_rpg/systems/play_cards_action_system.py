@@ -10,6 +10,7 @@ from ..models import (
     PlayCardsAction,
     ActorComponent,
     AgentEvent,
+    EquippedGearComponent,
 )
 from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import consume_energy
@@ -103,6 +104,14 @@ class PlayCardsActionSystem(ReactiveProcessor):
 
             # 输出出牌信息日志，包含角色名、卡牌名、卡牌属性（治疗/攻击/防御）和目标
             play_cards_action = entity.get(PlayCardsAction)
+
+            # 组装填充 gear_item：从出牌者当前装备组件读取，供 PlayCardsArbitrationSystem 直接使用
+            play_cards_action.gear_item = (
+                entity.get(EquippedGearComponent).item
+                if entity.has(EquippedGearComponent)
+                else None
+            )
+
             logger.debug(
                 f"  [{play_cards_action.name}] 出牌 → 卡牌: {play_cards_action.card.name}"
                 f" | damage={play_cards_action.card.damage}"

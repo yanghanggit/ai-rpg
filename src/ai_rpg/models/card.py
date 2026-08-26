@@ -1,5 +1,4 @@
-"""卡牌与状态效果模型定义
-"""
+"""卡牌与状态效果模型定义"""
 
 from typing import List, Optional, final
 from uuid import uuid4

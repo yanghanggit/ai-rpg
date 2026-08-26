@@ -40,6 +40,7 @@
 | [副本导演（Dungeon Director）](wiki/dungeon-director.md) | 全局单例、俯瞰当前副本的有状态记忆积累设计：入口身份锁定、逐房间事实追加、副本结束总结移交世界导演并重置 |
 | [战斗管道（Combat Pipeline）](wiki/combat-pipeline.md) | ECS 处理器链的架构设计：管道心跳驱动、场景实体仲裁、词缀因果链、回合行动序列与四个生命周期阶段 |
 | [卡牌关键词（keywords）](wiki/keywords.md) | 角色牌库蓝图（存于 ArchetypeComponent）：风格池声明、规则/叙事分层、牌库多样性与质量变体 |
+| [卡牌流派（Archetype）生成规则](wiki/archetype-generation.md) | archetype 的生成规则：跨内容逻辑层、效果是给仲裁 LLM 的规则文本、机制根部与可结算边界、衔接与内建弱点 |
 | [词缀（Affix）](wiki/affix.md) | 词缀作为 StatusEffect 种子的创建、流转、落地与回述全线路 |
 | [DBG 核心概念定义与逻辑关系总结](<wiki/DBG 核心概念定义与逻辑关系总结.md>) | Modifiers（对局级规则）、Affixes（实体固有词缀）、Status Effects（临时状态）三者的定义、归属与逻辑关系：宏观-微观、因-果、生产-消费模型 |
 | [LLM 生成型游戏对象：Card 与 StatusEffect](wiki/llm-generated-objects.md) | 两类 LLM 动态产出的核心对象的生成点定位、全局约束视角、生成链与规则来源 |

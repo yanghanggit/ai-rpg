@@ -34,13 +34,13 @@
 
 ## 三类合成产物
 
-工坊支持三种合成方向，由发起合成时选定的产物类型决定走哪条管道：
+工坊系统支持三种合成方向，由发起合成时选定的产物类型决定走哪条管道：
 
 - `ConsumableItem`：一次性战斗道具，携带目标类型与延迟词缀。
 - `GearItem`：持久装备道具，携带属性加成、cost、以及按触发时机区分的两类延迟词缀。
 - `CostumeItem`：纯外观道具，仅包含名称与描述，不参与任何战斗计算。
 
-三条管道共用同一工坊 agent 上下文与同一材料池，仅 prompt 模板与产物 schema 不同。
+三者共用同一材料池，但 agent 已按职责拆分为两个世界实体：消耗品与装备由「世界.制造工坊」（`WorkshopComponent`）负责，时装由独立的「世界.时装工坊」（`CostumeWorkshopComponent`）负责，仅 prompt 模板与产物 schema 因目标类型而异。各工坊的具体审美与内容约束由其蓝图 `role_rules` 注入，不在此处展开。
 
 → 参见：[消耗品系统（ConsumableItem）](consumable-item.md)
 → 参见：[装备系统（GearItem）](gear-item.md)

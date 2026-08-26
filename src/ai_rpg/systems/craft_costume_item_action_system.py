@@ -1,11 +1,9 @@
 """工坊制作时装系统模块。"""
 
 from typing import Dict, Final, List, Optional, final
-
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
-
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
@@ -29,14 +27,7 @@ class _CraftCostumeItemResponse(BaseModel):
 #######################################################################################################################################
 @prompt_builder
 def _build_craft_costume_prompt(materials: List[MaterialItem]) -> str:
-    """构建制作时装的 LLM 提示词。
-
-    Args:
-        materials: 参与制作的材料列表（已去重计数）
-
-    Returns:
-        完整提示词字符串
-    """
+    """构建制作时装的 LLM 提示词。"""
     material_lines = "\n".join(
         f"- **{m.name}**（数量 {m.count}）：{m.description}" for m in materials
     )
@@ -55,7 +46,7 @@ def _build_craft_costume_prompt(materials: List[MaterialItem]) -> str:
 ## 注意
 
 - 时装**不改变任何战斗属性**，仅作为外观道具
-- 命名和描述应贴合游戏世界观（沙漠废墟冒险风格）
+- 命名和描述请复核「游戏设定」与你的自身设定，保持约束与风格一致
 
 ## 输出格式
 
@@ -97,11 +88,7 @@ class CraftCostumeItemActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     async def _craft(self, entity: Entity) -> None:
-        """执行完整制作流程。
-
-        Args:
-            entity: 携带 CraftCostumeItemAction 的工坊世界实体
-        """
+        """执行完整制作流程。"""
         action = entity.get(CraftCostumeItemAction)
 
         storage_entity = self._game.get_storage_entity()
@@ -186,13 +173,7 @@ class CraftCostumeItemActionSystem(ReactiveProcessor):
         material_names: List[str],
         new_item: CostumeItem,
     ) -> None:
-        """扣减已用材料（count 递减，归零则移除），追加制作品到 StorageComponent。
-
-        Args:
-            storage_entity: 全局储物箱实体
-            material_names: action 中记录的材料名称列表（允许重复）
-            new_item: 制作成功的 CostumeItem 实例
-        """
+        """扣减已用材料（count 递减，归零则移除），追加制作品到 StorageComponent。"""
         storage = storage_entity.get(StorageComponent)
 
         # 统计需要扣减的数量

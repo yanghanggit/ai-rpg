@@ -215,7 +215,15 @@ class DungeonGenerationComponent(Component):
 @final
 @register_component_type
 class WorkshopComponent(Component):
-    """标记世界实体具有制造工坊职责（LLM 驱动，根据材料创意生成物品）。"""
+    """标记世界实体具有制造工坊职责（LLM 驱动，根据材料创意合成消耗品与装备）。"""
+
+    name: str
+
+
+@final
+@register_component_type
+class CostumeWorkshopComponent(Component):
+    """标记世界实体具有时装工坊职责（LLM 驱动，仅制作符合表世界审美的时装）。"""
 
     name: str
 

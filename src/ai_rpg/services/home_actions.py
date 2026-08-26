@@ -21,6 +21,7 @@ from ..models import (
     DungeonGenerationComponent,
     WorldComponent,
     WorkshopComponent,
+    CostumeWorkshopComponent,
     CraftConsumableItemAction,
     CraftGearItemAction,
     CraftCostumeItemAction,
@@ -773,28 +774,28 @@ def activate_craft_costume_item(
         copied.count = used
         material_items.append(copied)
 
-    # 获取工坊世界实体，用于激活制作动作。
+    # 获取时装工坊世界实体，用于激活制作动作。
     workshop_entities = dbg_game.get_group(
-        Matcher(all_of=[WorldComponent, WorkshopComponent])
+        Matcher(all_of=[WorldComponent, CostumeWorkshopComponent])
     ).entities.copy()
 
-    # 如果没有找到工坊世界实体，则无法激活制作动作。
+    # 如果没有找到时装工坊世界实体，则无法激活制作动作。
     if not workshop_entities:
-        error_detail = "未找到工坊世界实体，无法激活制作动作"
+        error_detail = "未找到时装工坊世界实体，无法激活制作动作"
         logger.error(f"激活制作时装失败: {error_detail}")
         return False, error_detail
 
-    # 确保只存在一个工坊世界实体，否则数据异常。
-    assert len(workshop_entities) == 1, "存在多个工坊世界实体，数据异常"
+    # 确保只存在一个时装工坊世界实体，否则数据异常。
+    assert len(workshop_entities) == 1, "存在多个时装工坊世界实体，数据异常"
     workshop_entity = next(iter(workshop_entities))
 
-    # 检查工坊世界实体是否已经存在制作动作，如果存在则无法重复激活。
+    # 检查时装工坊世界实体是否已经存在制作动作，如果存在则无法重复激活。
     if workshop_entity.has(CraftCostumeItemAction):
         error_detail = "制作动作已存在，请勿重复激活"
         logger.warning(f"激活制作时装失败: {error_detail}")
         return False, error_detail
 
-    # 激活制作动作，将材料信息填入工坊世界实体的 CraftCostumeItemAction 中。
+    # 激活制作动作，将材料信息填入时装工坊世界实体的 CraftCostumeItemAction 中。
     logger.debug(f"激活制作时装: {workshop_entity.name}, 材料={material_names}")
     workshop_entity.replace(
         CraftCostumeItemAction,

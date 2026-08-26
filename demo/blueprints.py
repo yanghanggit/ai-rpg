@@ -24,6 +24,7 @@ from ai_rpg.models import (
     World,
     PlayerActionAuditComponent,
     WorkshopComponent,
+    CostumeWorkshopComponent,
     DungeonDirectorComponent,
     WorldDirectorComponent,
 )
@@ -214,6 +215,7 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
             create_player_action_audit(),
             create_dungeon_generation(),
             create_workshop(),
+            create_costume_workshop(),
             create_dungeon_director(),
             create_world_director(),
         ],
@@ -442,14 +444,13 @@ def create_workshop() -> World:
         system_rules=RPG_SYSTEM_RULES,
         role_rules="""## 制造工坊职责
 
-你是游戏世界的制造工坊系统，负责根据玩家提交的材料，创意合成消耗品、装备或时装。
+你是游戏世界的制造工坊系统，负责根据玩家提交的材料，创意合成消耗品或装备。
 所有生成物品须植根于游戏世界设定，其感官描述、命名风格与材料来源须相互呼应。
 
 ## 命名规范
 
 - **消耗品**：采用「消耗品.XXXX」格式，名称体现材料特性与主要用途
 - **装备**：采用「装备.XXXX」格式，名称体现材料质地与器械类型
-- **时装**：采用「时装.XXXX」格式，名称体现外观风格与材料来源
 
 XXXX 部分简洁有辨识度，避免使用数字后缀。
 
@@ -460,14 +461,14 @@ XXXX 部分简洁有辨识度，避免使用数字后缀。
 - 通过描述隐含材料来源（如香灰的冷灰色、束缚带的泛黄棉布、司命甲片的深红光泽）
 - 禁止出现战斗数值、技能名称、属性词语等游戏机制词汇
 - 禁止直接指涉游戏逻辑
-- 物品名称与描述中禁止出现「大傩」等全局宏观概念词，仅以感官特质间接呈现其来源
+- 物品名称与描述中禁止出现全局宏观概念词，仅以感官特质间接呈现其来源
 
 ## 世界根植性
 
 合成物品的感官风格应与其核心材料的来源呼应：
 
-- **大傩猎获物**（香灰、符纸、司命甲片、逆流晶砂等）：诡谲、反常、民俗仪式感
-- **疗养院日常物**（束身带、旧纱布、锈蚀器械、靛蓝布料等）：陈旧、实用、民国医疗气息
+- **诡谲层面材料**（香灰、符纸、司命甲片、逆流晶砂等）：诡谲、反常、民俗仪式感
+- **寻常层面材料**（束身带、旧纱布、锈蚀器械、靛蓝布料等）：陈旧、实用、民国气息
 
 两类材料的混合使用应产生合理的化学反应——不是量变，而是质变：旧纱布浸泡香灰后不再是"纱布加香灰"，而是一件具有驱邪倾向的消耗品。""",
     )
@@ -476,6 +477,43 @@ XXXX 部分简洁有辨识度，避免使用数字后缀。
         ComponentSerialization(
             name=WorkshopComponent.__name__,
             data=WorkshopComponent(name=world.name).model_dump(),
+        )
+    ]
+
+    return world
+
+
+###############################################################################################################################
+def create_costume_workshop() -> World:
+    """创建时装工坊世界。"""
+
+    world = create_world(
+        name="世界.时装工坊",
+        campaign_setting=CAMPAIGN_SETTING,
+        system_rules=RPG_SYSTEM_RULES,
+        role_rules="""## 时装工坊职责
+
+你是游戏世界的时装工坊系统，只制作时装，不合成消耗品或装备。
+
+## 寻常层面审美边界（重要）
+
+所有时装必须严格符合「游戏设定」中「寻常层面」的时代审美——1930年代民国日常着装：
+长衫、旗袍、中山装、学生装、马褂、布鞋、盘扣、镶边、针织等；面料以棉、麻、丝、毛为主，
+工艺以染色、缝纫、刺绣、做旧、盘扣、镶滚等民国成衣手法为准。
+禁止出现古装、汉服、仙侠、宫廷、上古铠甲、道袍、戏服等不属于1930年代民国日常着装的形制；
+禁止让「诡谲层面」的超自然特质在成品外观上直接外显（如符纸浮空、晶砂逆流、妖异光泽裸露）。
+
+## 诡谲层面材料的转译
+
+投入材料若来自「游戏设定」中的「诡谲层面」，必须转译为寻常层面能理解并接受的工艺与外观：
+香灰可作染料或做旧剂，符纸纹样可化为刺绣暗纹，司命甲片可打磨为暗红纽扣或嵌片，逆流晶砂可缀为不显眼的暗色装饰。
+成品在民国街头必须看起来自然、合理；其诡谲来源只能以极克制的感官细节暗示，不得点名来源、不得破坏寻常层面的审美。""",
+    )
+
+    world.components = [
+        ComponentSerialization(
+            name=CostumeWorkshopComponent.__name__,
+            data=CostumeWorkshopComponent(name=world.name).model_dump(),
         )
     ]
 

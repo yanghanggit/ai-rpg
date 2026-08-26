@@ -120,6 +120,41 @@ def build_target_stats_lines(
 
 
 @prompt_builder
+def build_target_full_stats_lines(
+    target_stats: Dict[str, CharacterStats],
+) -> str:
+    """构建目标完整有效属性段落（卡牌仲裁专用）。
+
+    数据来源必须为 compute_effective_stats 的聚合结果（即 collect_target_character_stats
+    的返回值），不使用 CharacterStatsComponent.stats 原始值。
+    """
+    if not target_stats:
+        return "- 无目标"
+    return "\n".join(
+        f"- {name}（HP {stats.hp}/{stats.max_hp} | ATK {stats.attack} | "
+        f"DEF {stats.defense} | ENERGY {stats.energy} | SPD {stats.speed}）"
+        for name, stats in target_stats.items()
+    )
+
+
+@prompt_builder
+def build_round_action_info_lines(
+    action_order: List[str] | None,
+    completed_actors: List[str] | None,
+    current_actor: str | None,
+) -> str:
+    """构建回合行动信息段落（卡牌仲裁专用，仅作背景信息，不改变结算规则）。"""
+    order_text = " → ".join(action_order) if action_order else "无"
+    completed_text = "、".join(completed_actors) if completed_actors else "无"
+    current_text = current_actor if current_actor else "无"
+    return (
+        f"- 行动顺序：{order_text}\n"
+        f"- 已完成行动者：{completed_text}\n"
+        f"- 当前行动者：{current_text}"
+    )
+
+
+@prompt_builder
 def build_arbitration_effects_lines(
     target_arbitration_effects: Dict[str, List[StatusEffect]],
 ) -> str:
@@ -263,8 +298,15 @@ def build_combat_arbitration_prompt(
     target_arbitration_effects: Dict[str, List[StatusEffect]],
     current_stage_description: str,
     gear_item: GearItem | None = None,
+    action_order: List[str] | None = None,
+    completed_actors: List[str] | None = None,
+    current_actor: str | None = None,
 ) -> str:
     target_lines = build_target_stats_lines(target_stats, show_defense=True)
+    target_full_stats_lines = build_target_full_stats_lines(target_stats)
+    round_action_info = build_round_action_info_lines(
+        action_order, completed_actors, current_actor
+    )
     arbitration_effects_lines = build_combat_arbitration_effects_lines(
         actor_name, actor_arbitration_effects, target_arbitration_effects
     )
@@ -288,6 +330,10 @@ def build_combat_arbitration_prompt(
 
 {target_lines}
 
+## 目标有效属性（完整）
+
+{target_full_stats_lines}
+
 ## 仲裁状态效果
 
 {arbitration_effects_lines}
@@ -295,6 +341,10 @@ def build_combat_arbitration_prompt(
 ## 当前场景环境
 
 {current_stage_description}
+
+## 回合行动信息（背景信息，不改变结算规则）
+
+{round_action_info}
 
 {CALC_RULES_SECTION}
 
@@ -334,9 +384,16 @@ def build_condensed_combat_arbitration_prompt(
     target_arbitration_effects: Dict[str, List[StatusEffect]],
     current_stage_description: str,
     gear_item: GearItem | None = None,
+    action_order: List[str] | None = None,
+    completed_actors: List[str] | None = None,
+    current_actor: str | None = None,
 ) -> str:
     """精简版仲裁提示词，省略静态规则与格式说明，用于写入对话历史减少重复 token。"""
     target_lines = build_target_stats_lines(target_stats, show_defense=True)
+    target_full_stats_lines = build_target_full_stats_lines(target_stats)
+    round_action_info = build_round_action_info_lines(
+        action_order, completed_actors, current_actor
+    )
     arbitration_effects_lines = build_combat_arbitration_effects_lines(
         actor_name, actor_arbitration_effects, target_arbitration_effects
     )
@@ -360,13 +417,21 @@ def build_condensed_combat_arbitration_prompt(
 
 {target_lines}
 
+## 目标有效属性（完整）
+
+{target_full_stats_lines}
+
 ## 仲裁状态效果
 
 {arbitration_effects_lines}
 
 ## 当前场景环境
 
-{current_stage_description}"""
+{current_stage_description}
+
+## 回合行动信息（背景信息，不改变结算规则）
+
+{round_action_info}"""
 
 
 @prompt_builder

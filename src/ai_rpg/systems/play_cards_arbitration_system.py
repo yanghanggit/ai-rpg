@@ -110,6 +110,13 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             self._game.current_dungeon_combat_room.combat.rounds or []
         )
 
+        # 获取最新回合的行动信息，供仲裁提示词扩展使用
+        latest_round = self._game.current_dungeon_combat_room.combat.latest_round
+        assert latest_round is not None, "仲裁阶段最新回合不应为 None"
+        round_action_order = latest_round.action_order
+        round_completed_actors = latest_round.completed_actors
+        round_current_actor = latest_round.current_actor
+
         assert stage_entity.has(
             StageDescriptionComponent
         ), "当前场景实体缺少 StageDescriptionComponent 组件！"
@@ -129,6 +136,9 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             target_arbitration_effects,
             current_stage_description,
             play_cards_action.gear_item,
+            round_action_order,
+            round_completed_actors,
+            round_current_actor,
         )
 
         # 生成精简后的仲裁提示消息，用于在需要时向 LLM 提供更简洁的上下文信息
@@ -144,6 +154,9 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                 target_arbitration_effects,
                 current_stage_description,
                 play_cards_action.gear_item,
+                round_action_order,
+                round_completed_actors,
+                round_current_actor,
             )
             if self._use_condensed_prompt
             else None

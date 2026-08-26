@@ -30,7 +30,7 @@
 
 ### 词缀因果链
 
-affix 是信号，StatusEffect 是落地的果。延迟 affix 这条链横跨多个系统：Card/Consumable 生成时写入 `on_hit_affixes` → 仲裁时转为 `AffixTrigger` → `AddStatusEffectsActionSystem` 独立推理生成 StatusEffect。三类来源（卡牌 on_hit_affix、装备 on_hit_affix、场景交互）在同一 tick 内合并，统一落地；即时 affix（`on_play_affixes`/`on_use_affixes`）则由各自仲裁系统在本次结算时直接套用。
+affix 是信号，StatusEffect 是落地的果。延迟 affix 这条链横跨多个系统：Card/Consumable 生成时写入 `on_hit_affixes` → 仲裁时转为 `AffixTrigger` → `UpdateStatusEffectsActionSystem` 独立推理生成 StatusEffect。三类来源（卡牌 on_hit_affix、装备 on_hit_affix、场景交互）的触发在同一回合内合并，统一在回合末由 `UpdateStatusEffectsActionSystem` 一处落地：同名覆盖（保留溯源）、异名追加，并可输出 `remove_effects` 顶掉被克制/排斥的现有效果；即时 affix（`on_play_affixes`/`on_use_affixes`）则由各自仲裁系统在本次结算时直接套用。
 
 ### 回合行动序列
 
@@ -46,11 +46,11 @@ affix 是信号，StatusEffect 是落地的果。延迟 affix 这条链横跨多
 
 ### 回合循环
 
-抽牌 → DRAW 效果调整 → AI 做出牌决策 → 动作执行 → 场景实体仲裁结算 → affix 落地为 StatusEffect → 场景塞牌评估。循环的每一轮即一次 `process()` 心跳。
+抽牌 → DRAW 效果调整 → AI 做出牌决策 → 动作执行 → 场景实体仲裁结算 → 场景塞牌评估。循环的每一轮即一次 `process()` 心跳。
 
 ### 回合末
 
-回合完成判定 → 胜负判定 → 清理旧手牌 → ROUND_END 效果结算（DOT/HOT）→ 状态 tick（推进 duration）→ 新回合创建（按 speed 排序）。胜负判定为终局分支点：一旦分出胜负，直接跳至战斗后处理。
+回合完成判定 → 清理旧手牌 → ROUND_END 效果结算（DOT/HOT）→ 死亡处理（标记 ROUND_END 结算后 HP 归零者）→ 状态效果落地（增添/繁殖 + 移除/顶掉）→ 胜负判定 → 状态 tick（推进 duration）→ 新回合创建（按 speed 排序）。胜负判定为终局分支点：一旦分出胜负，直接跳至战斗后处理。
 
 ### 战斗后
 

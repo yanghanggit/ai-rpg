@@ -4,7 +4,7 @@
 
 ## 定位
 
-affix 是设计者产出的文本触发信号，按时效分两类：**即时 affix** 参与本次动作的仲裁结算、不落地状态效果；**延迟 affix** 是 `StatusEffect` 的种子与触发源，先由设计者产出，再经计算端搬运，最终由目标角色推理落地为状态效果。它横跨卡牌、装备、消耗品、场景四类来源。延迟 affix 共享同一条“创建 → 流转 → 使用”的单向管道：设计者只写种子，代码只搬运，LLM 只落地，全管道唯一的 LLM 出口是 `AddStatusEffectsActionSystem`；即时 affix 由各自仲裁系统在结算时直接套用。
+affix 是设计者产出的文本触发信号，按时效分两类：**即时 affix** 参与本次动作的仲裁结算、不落地状态效果；**延迟 affix** 是 `StatusEffect` 的种子与触发源，先由设计者产出，再经计算端搬运，最终由目标角色推理落地为状态效果。它横跨卡牌、装备、消耗品、场景四类来源。延迟 affix 共享同一条“创建 → 流转 → 使用”的单向管道：设计者只写种子，代码只搬运，LLM 只落地，全管道唯一的 LLM 出口是 `UpdateStatusEffectsActionSystem`；即时 affix 由各自仲裁系统在结算时直接套用。
 
 ---
 
@@ -13,7 +13,7 @@ affix 是设计者产出的文本触发信号，按时效分两类：**即时 af
 | 类别 | 字段落点 | 消费方 | 产物 | 典型 |
 | --- | --- | --- | --- | --- |
 | 即时 affix | Card.`on_play_affixes`、ConsumableItem.`on_use_affixes` | 出牌/消耗品仲裁 LLM | 无（直接改变本次结算） | `[穿透]:本次伤害无视目标防御` |
-| 延迟 affix | Card.`on_hit_affixes`、ConsumableItem.`on_hit_affixes`、GearItem.`equip_affixes`/`on_hit_affixes`、场景 | `AddStatusEffectsActionSystem` | 1:1 落地为 `StatusEffect` | `[燃烧]:可能引发持续扣血` |
+| 延迟 affix | Card.`on_hit_affixes`、ConsumableItem.`on_hit_affixes`、GearItem.`equip_affixes`/`on_hit_affixes`、场景 | `UpdateStatusEffectsActionSystem` | 1:1 落地为 `StatusEffect` | `[燃烧]:可能引发持续扣血` |
 
 即时 affix 与延迟 affix 共用同一格式 `[名称]:触发倾向描述`，均不写可直接量化的数值；区别只在时效：即时只影响本次结算，延迟跨回合生效。
 
@@ -45,7 +45,7 @@ affix 只能由设计者产出，运行时仲裁者不得现编。两类设计�
 
 即时 affix 在出牌/使用/装备仲裁时由仲裁 LLM 直接套用，不经过本管道。延迟 affix 才进入落地管道：
 
-`AddStatusEffectsActionSystem` 是延迟 affix 全管道唯一的 LLM 出口。每条 `AffixTrigger` 严格一对一落地为一个 `StatusEffect`，由受影响角色自身推理——同一根毒刺扎在不同角色身上，落地形态由目标体质决定。落地时回填两个溯源要素：种子原文（`affix`）与创造者（`source`）。
+`UpdateStatusEffectsActionSystem` 是延迟 affix 全管道唯一的 LLM 出口。每条 `AffixTrigger` 严格一对一落地为一个 `StatusEffect`，由受影响角色自身推理——同一根毒刺扎在不同角色身上，落地形态由目标体质决定。落地时回填两个溯源要素：种子原文（`affix`）与创造者（`source`）。
 
 → 参见：[战斗管道（Combat Pipeline）](combat-pipeline.md)
 

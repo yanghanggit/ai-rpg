@@ -61,9 +61,9 @@
 
 **生成者**：场景实体 LLM。设计意图：战斗场景本身可以有「地形效果」——浓烟、灼热地面、冰水——在战斗开始时就对角色产生持续影响。
 
-**输出形式**：`[场景]` 词缀文本，作为 `AffixTrigger` 交由 `AddStatusEffectsActionSystem` 落地。本阶段只产信号不产生效果，保持与仲裁后词缀链的统一。
+**输出形式**：`[场景]` 词缀文本，作为 `AffixTrigger` 交由 `UpdateStatusEffectsActionSystem` 落地。本阶段只产信号不产生效果，保持与仲裁后词缀链的统一。
 
-### 词缀落地（AddStatusEffectsActionSystem）
+### 词缀落地（UpdateStatusEffectsActionSystem）
 
 **生成者**：受影响角色自身 LLM。设计意图：延迟 affix 是外源触发（来自卡牌 / 装备 / 场景），但最终以什么形态影响该角色，由角色自己推理——同一根毒刺扎在不同角色身上，落地效果应由目标体质决定。
 
@@ -71,7 +71,7 @@
 
 - `DRAW`：消费方 `PostDrawCardsSystem`，按 description 调整刚抽到的手牌
 - `ARBITRATION`：消费方 `PlayCardsArbitrationSystem`，在仲裁结算中生效。可用 `counter` 实现条件计数
-- `ROUND_END`：消费方 `CombatRoundEndEffectSettlementSystem`，每回合末 tick HP
+- `ROUND_END`：消费方 `CombatRoundEndSettlementSystem`，每回合末 tick HP
 
 **通用字段**：`duration` / `speed` / `defense` 持续影响角色数值。禁止修改 `max_hp`。
 
@@ -81,6 +81,6 @@
 
 完整链路展示两类对象如何衔接——也揭示了为什么全局约束必须一致：
 
-> Card 生成者写入即时词缀（`on_play_affixes`，本次仲裁套用）与延迟词缀（`on_hit_affixes`，信号）→ 延迟词缀仲裁时转为 `AffixTrigger` → `AddStatusEffectsActionSystem` 推理落地 StatusEffect（持续效果）→ 按 phase 分发消费者（`PostDrawCardsSystem` / `PlayCardsArbitrationSystem` / `CombatRoundEndEffectSettlementSystem`）
+> Card 生成者写入即时词缀（`on_play_affixes`，本次仲裁套用）与延迟词缀（`on_hit_affixes`，信号）→ 延迟词缀仲裁时转为 `AffixTrigger` → `UpdateStatusEffectsActionSystem` 推理落地 StatusEffect（持续效果）→ 按 phase 分发消费者（`PostDrawCardsSystem` / `PlayCardsArbitrationSystem` / `CombatRoundEndSettlementSystem`）
 
 链上三个 Agent 使用不同的上下文（角色自身 vs 场景实体）、在不同阶段工作，但必须共享同一套语义约定——这就是全局约束体系存在的根本原因。

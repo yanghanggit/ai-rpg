@@ -23,7 +23,8 @@ from ai_rpg.models import (
     create_world,
     World,
     PlayerActionAuditComponent,
-    WorkshopComponent,
+    GearWorkshopComponent,
+    ConsumableWorkshopComponent,
     CostumeWorkshopComponent,
     DungeonDirectorComponent,
     WorldDirectorComponent,
@@ -214,7 +215,8 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
         world_entities=[
             create_player_action_audit(),
             create_dungeon_generation(),
-            create_workshop(),
+            create_gear_workshop(),
+            create_consumable_workshop(),
             create_costume_workshop(),
             create_dungeon_director(),
             create_world_director(),
@@ -435,21 +437,20 @@ def create_player_action_audit() -> World:
 
 
 ###############################################################################################################################
-def create_workshop() -> World:
-    """创建制造工坊世界。"""
+def create_gear_workshop() -> World:
+    """创建装备工坊世界。"""
 
     world = create_world(
-        name="世界.制造工坊",
+        name="世界.装备工坊",
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
-        role_rules="""## 制造工坊职责
+        role_rules="""## 装备工坊职责
 
-你是游戏世界的制造工坊系统，负责根据玩家提交的材料，创意合成消耗品或装备。
+你是游戏世界的装备工坊系统，负责根据玩家提交的材料，创意合成装备。
 所有生成物品须植根于游戏世界设定，其感官描述、命名风格与材料来源须相互呼应。
 
 ## 命名规范
 
-- **消耗品**：采用「消耗品.XXXX」格式，名称体现材料特性与主要用途
 - **装备**：采用「装备.XXXX」格式，名称体现材料质地与器械类型
 
 XXXX 部分简洁有辨识度，避免使用数字后缀。
@@ -470,13 +471,48 @@ XXXX 部分简洁有辨识度，避免使用数字后缀。
 - **诡谲层面材料**（香灰、符纸、司命甲片、逆流晶砂等）：诡谲、反常、民俗仪式感
 - **寻常层面材料**（束身带、旧纱布、锈蚀器械、靛蓝布料等）：陈旧、实用、民国气息
 
-两类材料的混合使用应产生合理的化学反应——不是量变，而是质变：旧纱布浸泡香灰后不再是"纱布加香灰"，而是一件具有驱邪倾向的消耗品。""",
+两类材料的混合使用应产生合理的化学反应——不是量变，而是质变：锈蚀手术剪裹上浸过香灰的束身带后，不再是"剪子加布条"，而是一件带诡谲锋芒的装备。""",
     )
 
     world.components = [
         ComponentSerialization(
-            name=WorkshopComponent.__name__,
-            data=WorkshopComponent(name=world.name).model_dump(),
+            name=GearWorkshopComponent.__name__,
+            data=GearWorkshopComponent(name=world.name).model_dump(),
+        )
+    ]
+
+    return world
+
+
+###############################################################################################################################
+def create_consumable_workshop() -> World:
+    """创建消耗品工坊世界。"""
+
+    world = create_world(
+        name="世界.消耗品工坊",
+        campaign_setting=CAMPAIGN_SETTING,
+        system_rules=RPG_SYSTEM_RULES,
+        role_rules="""## 消耗品工坊职责
+
+你是游戏世界的消耗品工坊系统，只制作消耗品，不合成装备或时装。
+
+## 诡谲层面根植性（重要）
+
+所有消耗品必须严格植根于「游戏设定」中的「诡谲层面」——中式民俗志怪、诡异反常的里世界表象。
+可用意象：坍塌道观、流泪神像、倒流河水、暗红深紫天空、唢呐锣鼓、朱砂符纸、纸钱纸扎、香炉香灰、经幡、八卦镜、桃木、旧戏台、祠堂、枯井、石磨、裹尸布等。
+禁止出现西洋恐怖、现代科幻或任何非中国民俗传统的超自然概念；禁止以寻常层面的现代/民国日常物形态直接呈现，消耗品应始终带有诡谲层面的印记。
+
+## 寻常层面材料的转译
+
+投入材料若来自「游戏设定」中的「寻常层面」，必须转译为诡谲层面能理解并接受的形态：
+束身带可浸作裹尸布或缚邪索，旧纱布可染作招魂幡条，锈蚀手术剪可磨作剜心小刃，靛蓝布料可裁作纸扎衣料。
+成品须呈现诡谲、反常、民俗仪式感，其寻常来源只能以极克制的感官细节暗示，不得破坏诡谲层面的氛围。""",
+    )
+
+    world.components = [
+        ComponentSerialization(
+            name=ConsumableWorkshopComponent.__name__,
+            data=ConsumableWorkshopComponent(name=world.name).model_dump(),
         )
     ]
 

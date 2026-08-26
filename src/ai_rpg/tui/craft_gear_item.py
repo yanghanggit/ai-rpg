@@ -1,4 +1,4 @@
-"""工坊锻造 Screen：从储物箱材料锻造装备。"""
+"""装备工坊 Screen：从储物箱材料锻造装备。"""
 
 from typing import Dict, List, Literal, Set
 
@@ -19,15 +19,15 @@ from .utils import display_name
 from ..models import StorageComponent
 
 CRAFT_GEAR_HEADER = """\
-[bold cyan]── 工坊锻造 ──────────────────────────────────────[/]
+[bold cyan]── 装备工坊 ──────────────────────────────────────[/]
 
-在工坊中将储物箱内的材料锻造成装备。[bold]Escape[/] 返回。
+在装备工坊中将储物箱内的材料锻造成装备。[bold]Escape[/] 返回。
   • 输入材料编号逐一添加，输入 [bold green]0[/] 提交锻造，输入 [bold red]r[/] 清空已选。
 """
 
 
 class CraftGearItemScreen(BaseGameScreen):
-    """工坊锻造 Screen：多选材料后提交锻造装备。"""
+    """装备工坊 Screen：多选材料后提交锻造装备。"""
 
     CSS = """
     CraftGearItemScreen {
@@ -252,7 +252,7 @@ class CraftGearItemScreen(BaseGameScreen):
 
         counts = Counter(materials)
         parts = [f"{display_name(n)} ×{c}" for n, c in counts.items()]
-        log.write("[bold yellow]── 工坊锻造 ───────────────────────────────────────[/]")
+        log.write("[bold yellow]── 装备工坊 ───────────────────────────────────────[/]")
         log.write(f"[dim]▶ 锻造中（材料：{', '.join(parts)}）...[/]")
         logger.info(
             f"CraftGearItemScreen._do_craft: user={user_name} materials={materials}"

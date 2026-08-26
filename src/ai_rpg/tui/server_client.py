@@ -689,7 +689,7 @@ async def home_craft_item(
 async def home_craft_gear_item(
     user_name: str, game_name: str, materials: List[str]
 ) -> HomeCraftItemResponse:
-    """从储物箱材料在工坊锻造一件装备，返回后台任务ID。"""
+    """从储物箱材料在装备工坊锻造一件装备，返回后台任务ID。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
             server_config.base_url + "/api/home/craft/gear/v1/",

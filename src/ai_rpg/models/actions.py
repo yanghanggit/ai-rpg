@@ -267,7 +267,7 @@ class IllustrateDungeonAction(Component):
 @register_action_component_type
 @register_component_type
 class CraftConsumableItemAction(Component):
-    """触发玩家在工坊用储物箱内的材料合成消耗品，由 LLM（WorkshopComponent agent）推理生成结果。"""
+    """触发玩家在消耗品工坊用储物箱内的材料合成消耗品，由 LLM（ConsumableWorkshopComponent agent）推理生成结果。"""
 
     name: str
     material_names: List[
@@ -283,7 +283,7 @@ class CraftConsumableItemAction(Component):
 @register_action_component_type
 @register_component_type
 class CraftGearItemAction(Component):
-    """触发玩家在工坊用储物箱内的材料合成装备，由 LLM（WorkshopComponent agent）推理生成结果。"""
+    """触发玩家在装备工坊用储物箱内的材料合成装备，由 LLM（GearWorkshopComponent agent）推理生成结果。"""
 
     name: str
     material_names: List[
@@ -299,7 +299,7 @@ class CraftGearItemAction(Component):
 @register_action_component_type
 @register_component_type
 class CraftCostumeItemAction(Component):
-    """触发玩家在工坊用储物箱内的材料制作时装，由 LLM（WorkshopComponent agent）推理生成结果。"""
+    """触发玩家在时装工坊用储物箱内的材料制作时装，由 LLM（CostumeWorkshopComponent agent）推理生成结果。"""
 
     name: str
     material_names: List[

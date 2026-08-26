@@ -494,7 +494,7 @@ async def home_craft_item(
     payload: HomeCraftItemRequest,
     game_server: CurrentGameServer,
 ) -> HomeCraftItemResponse:
-    """制造工坊合成接口：使用储物箱中的材料合成道具（当前支持消耗品，未来可扩展至装备等）。"""
+    """消耗品工坊合成接口：使用储物箱中的材料合成消耗品。"""
     logger.info(
         f"/api/home/craft/item/v1/: user={payload.user_name} materials={payload.materials}"
     )
@@ -526,12 +526,12 @@ async def home_craft_item(
         )
     )
     logger.info(
-        f"📝 创建制造工坊任务: task_id={craft_task.task_id}, user={payload.user_name}"
+        f"📝 创建消耗品工坊任务: task_id={craft_task.task_id}, user={payload.user_name}"
     )
     return HomeCraftItemResponse(
         task_id=craft_task.task_id,
         status=TaskStatus.RUNNING.value,
-        message="制造工坊任务已启动，请通过会话消息查询结果",
+        message="消耗品工坊任务已启动，请通过会话消息查询结果",
     )
 
 
@@ -544,7 +544,7 @@ async def home_craft_gear_item(
     payload: HomeCraftItemRequest,
     game_server: CurrentGameServer,
 ) -> HomeCraftItemResponse:
-    """工坊锻造接口：使用储物箱中的材料合成装备。"""
+    """装备工坊锻造接口：使用储物箱中的材料合成装备。"""
     logger.info(
         f"/api/home/craft/gear/v1/: user={payload.user_name} materials={payload.materials}"
     )
@@ -576,12 +576,12 @@ async def home_craft_gear_item(
         )
     )
     logger.info(
-        f"📝 创建工坊锻造任务: task_id={craft_task.task_id}, user={payload.user_name}"
+        f"📝 创建装备工坊任务: task_id={craft_task.task_id}, user={payload.user_name}"
     )
     return HomeCraftItemResponse(
         task_id=craft_task.task_id,
         status=TaskStatus.RUNNING.value,
-        message="工坊锻造任务已启动，请通过会话消息查询结果",
+        message="装备工坊任务已启动，请通过会话消息查询结果",
     )
 
 
@@ -594,7 +594,7 @@ async def home_craft_costume_item(
     payload: HomeCraftItemRequest,
     game_server: CurrentGameServer,
 ) -> HomeCraftItemResponse:
-    """工坊制衣接口：使用储物箱中的材料制作时装。"""
+    """时装工坊制衣接口：使用储物箱中的材料制作时装。"""
     logger.info(
         f"/api/home/craft/costume/v1/: user={payload.user_name} materials={payload.materials}"
     )
@@ -626,12 +626,12 @@ async def home_craft_costume_item(
         )
     )
     logger.info(
-        f"📝 创建工坊制衣任务: task_id={craft_task.task_id}, user={payload.user_name}"
+        f"📝 创建时装工坊任务: task_id={craft_task.task_id}, user={payload.user_name}"
     )
     return HomeCraftItemResponse(
         task_id=craft_task.task_id,
         status=TaskStatus.RUNNING.value,
-        message="工坊制衣任务已启动，请通过会话消息查询结果",
+        message="时装工坊任务已启动，请通过会话消息查询结果",
     )
 
 

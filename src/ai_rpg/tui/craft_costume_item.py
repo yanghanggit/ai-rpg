@@ -1,4 +1,4 @@
-"""工坊制衣 Screen：从储物箱材料制作时装。"""
+"""时装工坊 Screen：从储物箱材料制作时装。"""
 
 from typing import Dict, List, Literal, Set
 
@@ -19,15 +19,15 @@ from .utils import display_name
 from ..models import StorageComponent
 
 CRAFT_COSTUME_HEADER = """\
-[bold cyan]── 工坊制衣 ──────────────────────────────────────[/]
+[bold cyan]── 时装工坊 ──────────────────────────────────────[/]
 
-在工坊中将储物箱内的材料制作成时装。[bold]Escape[/] 返回。
+在时装工坊中将储物箱内的材料制作成时装。[bold]Escape[/] 返回。
   • 输入材料编号逐一添加，输入 [bold green]0[/] 提交制作，输入 [bold red]r[/] 清空已选。
 """
 
 
 class CraftCostumeItemScreen(BaseGameScreen):
-    """工坊制衣 Screen：多选材料后提交制作时装。"""
+    """时装工坊 Screen：多选材料后提交制作时装。"""
 
     CSS = """
     CraftCostumeItemScreen {
@@ -254,7 +254,7 @@ class CraftCostumeItemScreen(BaseGameScreen):
 
         counts = Counter(materials)
         parts = [f"{display_name(n)} ×{c}" for n, c in counts.items()]
-        log.write("[bold yellow]── 工坊制衣 ───────────────────────────────────────[/]")
+        log.write("[bold yellow]── 时装工坊 ───────────────────────────────────────[/]")
         log.write(f"[dim]▶ 制作中（材料：{', '.join(parts)}）...[/]")
         logger.info(
             f"CraftCostumeItemScreen._do_craft: user={user_name} materials={materials}"

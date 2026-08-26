@@ -1,4 +1,4 @@
-"""制造工坊 Screen：从储物箱材料合成消耗品。"""
+"""消耗品工坊 Screen：从储物箱材料合成消耗品。"""
 
 from typing import Dict, List, Literal, Set
 
@@ -19,15 +19,15 @@ from .utils import display_name
 from ..models import StorageComponent
 
 CRAFT_CONSUMABLE_HEADER = """\
-[bold cyan]── 制造工坊 ──────────────────────────────────────[/]
+[bold cyan]── 消耗品工坊 ──────────────────────────────────────[/]
 
-在工坊中将储物箱内的材料合成消耗品。[bold]Escape[/] 返回。
+在消耗品工坊中将储物箱内的材料合成消耗品。[bold]Escape[/] 返回。
   • 输入材料编号逐一添加，输入 [bold green]0[/] 提交合成，输入 [bold red]r[/] 清空已选。
 """
 
 
 class CraftConsumableItemScreen(BaseGameScreen):
-    """制造工坊 Screen：多选材料后提交合成消耗品。"""
+    """消耗品工坊 Screen：多选材料后提交合成消耗品。"""
 
     CSS = """
     CraftConsumableItemScreen {
@@ -256,7 +256,9 @@ class CraftConsumableItemScreen(BaseGameScreen):
 
         counts = Counter(materials)
         parts = [f"{display_name(n)} ×{c}" for n, c in counts.items()]
-        log.write("[bold yellow]── 制造工坊合成 ───────────────────────────────────[/]")
+        log.write(
+            "[bold yellow]── 消耗品工坊合成 ───────────────────────────────────[/]"
+        )
         log.write(f"[dim]▶ 合成中（材料：{', '.join(parts)}）...[/]")
         logger.info(
             f"CraftConsumableItemScreen._do_craft: user={user_name} materials={materials}"

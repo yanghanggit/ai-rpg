@@ -27,7 +27,7 @@
 要将工坊适配到新的游戏世界观，需修改以下配置文件，合成系统代码无需变动：
 
 - **战役设定**：`settings.py` 中的 `CAMPAIGN_SETTING` 与 `KNOWLEDGE_BASE`，定义世界的生态区域、历史背景、环境联动关系。该内容通过 `create_world` 注入工坊 agent 的系统消息。
-- **工坊角色规范**：蓝图中的 `create_workshop` 函数传入的 `role_rules`，定义工坊的命名格式、描述约束、以及各生态区域对应的感官风格指引。该内容同样通过系统消息注入。
+- **工坊角色规范**：蓝图中的各工坊函数（`create_gear_workshop` / `create_consumable_workshop` / `create_costume_workshop`）传入的 `role_rules`，定义对应工坊的命名格式、描述约束、以及各自层面的感官风格指引。该内容同样通过系统消息注入。
 - **初始材料池**：蓝图中预设的 `MaterialItem` 列表，决定工坊的原料语义空间。材料的名称与描述是 LLM 推断合成产物的唯一内容线索，更换材料即更换产出风味。
 
 ---
@@ -40,7 +40,7 @@
 - `GearItem`：持久装备道具，携带属性加成、cost、以及按触发时机区分的两类延迟词缀。
 - `CostumeItem`：纯外观道具，仅包含名称与描述，不参与任何战斗计算。
 
-三者共用同一材料池，但 agent 已按职责拆分为两个世界实体：消耗品与装备由「世界.制造工坊」（`WorkshopComponent`）负责，时装由独立的「世界.时装工坊」（`CostumeWorkshopComponent`）负责，仅 prompt 模板与产物 schema 因目标类型而异。各工坊的具体审美与内容约束由其蓝图 `role_rules` 注入，不在此处展开。
+三者共用同一材料池，但 agent 已按职责拆分为三个世界实体：消耗品由「世界.消耗品工坊」（`ConsumableWorkshopComponent`）负责，装备由「世界.装备工坊」（`GearWorkshopComponent`）负责，时装由「世界.时装工坊」（`CostumeWorkshopComponent`）负责，仅 prompt 模板与产物 schema 因目标类型而异。各工坊的具体审美与内容约束由其蓝图 `role_rules` 注入，不在此处展开。
 
 → 参见：[消耗品系统（ConsumableItem）](consumable-item.md)
 → 参见：[装备系统（GearItem）](gear-item.md)

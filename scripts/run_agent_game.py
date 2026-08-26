@@ -29,7 +29,7 @@
   play-cards-specified --snapshot PATH --actor A --card C [--targets T...]  指定角色出牌（怪物 AI 自动出牌）
   pass-turn       --snapshot PATH --actor A                     跳过出牌
   use-consumable  --snapshot PATH --actor A --item I [--targets T...]  使用消耗品
-  use-gear        --snapshot PATH --actor A --item I [--targets T...]  装备 GearItem
+  equip-gear      --snapshot PATH --actor A --item I [--targets T...]  装备 GearItem
   retreat         --snapshot PATH                               主动撤退（失败） → 家园模式
   collect-loot    --snapshot PATH                               收战利品（胜利后）
   next-dungeon    --snapshot PATH                               下一关（胜利后，需存在下一关）
@@ -100,7 +100,7 @@ from agent_game_combat import (
     play_cards_specified_game,
     pass_turn_game,
     use_consumable_game,
-    use_gear_game,
+    equip_gear_game,
     retreat_game,
     collect_loot_game,
 )
@@ -526,7 +526,7 @@ def use_consumable(
 
 
 ###############################################################################################################################################
-@main.command("use-gear")
+@main.command("equip-gear")
 @click.option(
     "--snapshot",
     required=True,
@@ -535,7 +535,7 @@ def use_consumable(
 @click.option(
     "--actor",
     required=True,
-    help="使用装备的角色全名（如 角色.某某）",
+    help="装备道具的角色全名（如 角色.某某）",
 )
 @click.option(
     "--item",
@@ -548,7 +548,7 @@ def use_consumable(
     default=(),
     help="目标角色名，可重复使用（如 --targets 盟友.某某）；SINGLE 时指定一个目标，敌我皆可",
 )
-def use_gear(snapshot: str, actor: str, item: str, targets: tuple[str, ...]) -> None:
+def equip_gear(snapshot: str, actor: str, item: str, targets: tuple[str, ...]) -> None:
     """指定角色装备 GearItem 并归档。需战斗进行中。"""
 
     snapshot_path = Path(snapshot)
@@ -571,7 +571,7 @@ def use_gear(snapshot: str, actor: str, item: str, targets: tuple[str, ...]) -> 
     logger.info(f"本次存档目录：{_save_dir}")
 
     asyncio.run(
-        use_gear_game(world, player_session, actor, item, list(targets), _save_dir)
+        equip_gear_game(world, player_session, actor, item, list(targets), _save_dir)
     )
 
 

@@ -375,7 +375,7 @@ class DungeonCombatUseConsumableItemResponse(BaseModel):
 
 
 @final
-class DungeonCombatUseGearItemRequest(BaseModel):
+class DungeonCombatEquipGearItemRequest(BaseModel):
     user_name: str
     game_name: str
     item_name: str
@@ -383,7 +383,7 @@ class DungeonCombatUseGearItemRequest(BaseModel):
 
 
 @final
-class DungeonCombatUseGearItemResponse(BaseModel):
+class DungeonCombatEquipGearItemResponse(BaseModel):
     task_id: str
     status: str
     message: str

@@ -323,7 +323,7 @@ class UseConsumableItemAction(Component):
 @final
 @register_action_component_type
 @register_component_type
-class UseGearItemAction(Component):
+class EquipGearItemAction(Component):
     """触发角色在战斗中使用背包内装备，由系统替换目标已装备 GearItem 并由 LLM 仲裁附加效果。"""
 
     name: str

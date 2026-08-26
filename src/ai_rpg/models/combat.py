@@ -50,9 +50,9 @@ class Round(BaseModel):
         []
     )  # 消耗品叙事文本，每次 UseConsumableItemAction 追加一条
     consumable_use_count: int = 0  # 本回合消耗品使用次数
-    gear_combat_log: List[str] = []  # 装备战斗日志，每次 UseGearItemAction 追加一条
-    gear_narrative: List[str] = []  # 装备叙事文本，每次 UseGearItemAction 追加一条
-    gear_use_count: int = 0  # 本回合装备使用次数
+    gear_combat_log: List[str] = []  # 装备战斗日志，每次 EquipGearItemAction 追加一条
+    gear_narrative: List[str] = []  # 装备叙事文本，每次 EquipGearItemAction 追加一条
+    gear_equip_count: int = 0  # 本回合装备使用次数
 
 
 ###############################################################################################################################################

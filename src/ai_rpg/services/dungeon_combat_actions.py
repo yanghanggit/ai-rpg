@@ -24,7 +24,7 @@ from ..models import (
     HandComponent,
     InventoryComponent,
     CombatLootComponent,
-    UseGearItemAction,
+    EquipGearItemAction,
     UseConsumableItemAction,
     GearItem,
     ConsumableItem,
@@ -399,7 +399,7 @@ def activate_use_consumable(
 
 
 ###################################################################################################################################################################
-def activate_use_gear(
+def activate_equip_gear(
     dbg_game: DBGGame,
     item_name: str,
     targets: List[str],
@@ -446,7 +446,7 @@ def activate_use_gear(
 
     # 获取玩家实体，并确保其具有必要的组件（PartyMemberComponent 和 InventoryComponent），以便使用装备。
     player_entity = dbg_game.get_player_entity()
-    assert player_entity is not None, "activate_use_gear: player_entity is None"
+    assert player_entity is not None, "activate_equip_gear: player_entity is None"
     assert player_entity.has(PartyMemberComponent), "玩家实体缺少 PartyMemberComponent"
     assert player_entity.has(InventoryComponent), "玩家实体缺少 InventoryComponent"
 
@@ -478,7 +478,7 @@ def activate_use_gear(
         TargetType.SINGLE, 1, player_entity, targets, dbg_game
     )
     if resolve_err:
-        logger.error(f"activate_use_gear: {resolve_err}")
+        logger.error(f"activate_equip_gear: {resolve_err}")
         return False, resolve_err
 
     # 检查解析后的目标数量是否符合装备的要求，如果不是单目标装备则返回错误。
@@ -491,7 +491,7 @@ def activate_use_gear(
     target_entity = dbg_game.get_entity_by_name(resolved_targets[0])
     assert (
         target_entity is not None
-    ), f"activate_use_gear: 无法找到目标实体 {resolved_targets[0]}"
+    ), f"activate_equip_gear: 无法找到目标实体 {resolved_targets[0]}"
 
     # 装备只能作用于友方目标，resolve_targets 不再限制阵营，此处显式校验。
     if not target_entity.has(PartyMemberComponent):
@@ -512,7 +512,7 @@ def activate_use_gear(
 
     # 将装备使用动作挂载到玩家实体上，以便在游戏逻辑中处理该动作。
     player_entity.replace(
-        UseGearItemAction,
+        EquipGearItemAction,
         player_entity.name,
         selected_item,
         resolved_targets,

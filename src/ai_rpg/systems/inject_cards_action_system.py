@@ -24,7 +24,7 @@ from ..models import (
     StatusEffectsComponent,
     TargetType,
     UseConsumableItemAction,
-    UseGearItemAction,
+    EquipGearItemAction,
 )
 from ..utils import extract_json, prompt_builder
 from .arbitration_prompt_builders import fmt_duration
@@ -197,7 +197,7 @@ def _build_inject_cards_prompt(
 #######################################################################################################################################
 @final
 class InjectCardsActionSystem(ReactiveProcessor):
-    """场景塞牌系统：响应 PlayCardsAction / UseConsumableItemAction / UseGearItemAction 事件，
+    """场景塞牌系统：响应 PlayCardsAction / UseConsumableItemAction / EquipGearItemAction 事件，
 
     在对应的仲裁系统结算完毕后（同一帧内，依赖流水线中的注册顺序），复用 stage 已被更新的对话
     上下文（其中已包含本次行动的仲裁叙事），由 stage agent 判断是否需要向场内角色塞入场景卡牌。
@@ -218,7 +218,7 @@ class InjectCardsActionSystem(ReactiveProcessor):
         return {
             Matcher(PlayCardsAction): GroupEvent.ADDED,
             Matcher(UseConsumableItemAction): GroupEvent.ADDED,
-            Matcher(UseGearItemAction): GroupEvent.ADDED,
+            Matcher(EquipGearItemAction): GroupEvent.ADDED,
         }
 
     #######################################################################################################################################
@@ -227,7 +227,7 @@ class InjectCardsActionSystem(ReactiveProcessor):
         return (
             entity.has(PlayCardsAction)
             or entity.has(UseConsumableItemAction)
-            or entity.has(UseGearItemAction)
+            or entity.has(EquipGearItemAction)
         )
 
     #######################################################################################################################################

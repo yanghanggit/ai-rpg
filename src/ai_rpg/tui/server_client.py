@@ -19,8 +19,8 @@ from ..models import (
     DungeonCombatPassTurnResponse,
     DungeonCombatUseConsumableItemRequest,
     DungeonCombatUseConsumableItemResponse,
-    DungeonCombatUseGearItemRequest,
-    DungeonCombatUseGearItemResponse,
+    DungeonCombatEquipGearItemRequest,
+    DungeonCombatEquipGearItemResponse,
     DungeonCombatRetreatRequest,
     DungeonCombatRetreatResponse,
     DungeonExitRequest,
@@ -508,17 +508,17 @@ async def dungeon_combat_use_consumable(
         return DungeonCombatUseConsumableItemResponse.model_validate(response.json())
 
 
-async def dungeon_combat_use_gear(
+async def dungeon_combat_equip_gear(
     user_name: str,
     game_name: str,
     item_name: str,
     targets: List[str],
-) -> DungeonCombatUseGearItemResponse:
+) -> DungeonCombatEquipGearItemResponse:
     """使用玩家背包内装备，返回后台任务信息。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
-            server_config.base_url + "/api/dungeon/combat/use_gear/v1/",
-            json=DungeonCombatUseGearItemRequest(
+            server_config.base_url + "/api/dungeon/combat/equip_gear/v1/",
+            json=DungeonCombatEquipGearItemRequest(
                 user_name=user_name,
                 game_name=game_name,
                 item_name=item_name,
@@ -526,7 +526,7 @@ async def dungeon_combat_use_gear(
             ).model_dump(),
         )
         response.raise_for_status()
-        return DungeonCombatUseGearItemResponse.model_validate(response.json())
+        return DungeonCombatEquipGearItemResponse.model_validate(response.json())
 
 
 async def home_generate_dungeon(

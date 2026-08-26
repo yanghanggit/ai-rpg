@@ -47,7 +47,7 @@ def _render_round(log: RichLog, index: int, round_: Round, is_latest: bool) -> N
         )
     log.write(f"    抽牌已完成： {draw_mark}")
     log.write(f"    消耗品使用次数： [bold]{round_.consumable_use_count}[/]")
-    log.write(f"    装备使用次数：   [bold]{round_.gear_use_count}[/]")
+    log.write(f"    装备使用次数：   [bold]{round_.gear_equip_count}[/]")
 
     if round_.cards_combat_log or round_.cards_narrative:
         log.write("    [bold]出牌记录：[/]")

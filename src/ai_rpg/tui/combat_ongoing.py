@@ -34,7 +34,7 @@ from .combat_play_cards import CombatPlayCardsScreen
 from .combat_post_combat import CombatPostCombatScreen
 from .combat_round_history import CombatRoundHistoryScreen
 from .combat_use_consumable import CombatUseConsumableScreen
-from .combat_use_gear import CombatUseGearScreen
+from .combat_equip_gear import CombatEquipGearScreen
 from .home_main import HomeMainScreen
 from .server_client import (
     TaskFailedError,
@@ -63,7 +63,7 @@ DRAW_CARDS_COMMAND_LINE = "\n  [bold green]7[/]  抽牌"
 PLAY_CARDS_COMMAND_LINE = "\n  [bold green]7[/]  出牌"
 MONSTER_TURN_COMMAND_LINE = "\n  [bold green]7[/]  推进怪物回合"
 USE_CONSUMABLE_COMMAND_LINE = "\n  [bold green]8[/]  使用消耗品"
-USE_GEAR_COMMAND_LINE = "\n  [bold green]9[/]  使用装备"
+EQUIP_GEAR_COMMAND_LINE = "\n  [bold green]9[/]  装备道具"
 PASS_TURN_COMMAND_LINE = "\n  [bold green]10[/] 过牌"
 
 
@@ -206,7 +206,7 @@ class CombatOngoingScreen(BaseGameScreen):
 
             # 8/9（使用消耗品 / 使用装备）仅在 ONGOING 阶段出现，具体前置条件交由各自 Screen 自身校验并提示，本页不做过滤
             menu += USE_CONSUMABLE_COMMAND_LINE
-            menu += USE_GEAR_COMMAND_LINE
+            menu += EQUIP_GEAR_COMMAND_LINE
 
             # 10（过牌）仅在 ONGOING 阶段出现
             menu += PASS_TURN_COMMAND_LINE
@@ -357,7 +357,7 @@ class CombatOngoingScreen(BaseGameScreen):
             self.app.push_screen(CombatUseConsumableScreen())
 
         elif raw == "9":
-            self.app.push_screen(CombatUseGearScreen())
+            self.app.push_screen(CombatEquipGearScreen())
 
     ########################################################################################################################
     @work

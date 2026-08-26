@@ -19,8 +19,8 @@ from ..models import (
     DungeonCombatPassTurnResponse,
     DungeonCombatUseConsumableItemRequest,
     DungeonCombatUseConsumableItemResponse,
-    DungeonCombatUseGearItemRequest,
-    DungeonCombatUseGearItemResponse,
+    DungeonCombatEquipGearItemRequest,
+    DungeonCombatEquipGearItemResponse,
     DungeonCombatCollectLootRequest,
     DungeonCombatCollectLootResponse,
     TaskStatus,
@@ -37,7 +37,7 @@ from .dungeon_combat_tasks import (
     execute_draw_cards_task,
     execute_play_cards_task,
     execute_pass_turn_task,
-    execute_use_gear_task,
+    execute_equip_gear_task,
     execute_use_consumable_task,
 )
 
@@ -585,19 +585,19 @@ async def dungeon_combat_use_consumable(
 
 ###################################################################################################################################################################
 @dungeon_combat_api_router.post(
-    path="/api/dungeon/combat/use_gear/v1/",
-    response_model=DungeonCombatUseGearItemResponse,
+    path="/api/dungeon/combat/equip_gear/v1/",
+    response_model=DungeonCombatEquipGearItemResponse,
 )
-async def dungeon_combat_use_gear(
-    payload: DungeonCombatUseGearItemRequest,
+async def dungeon_combat_equip_gear(
+    payload: DungeonCombatEquipGearItemRequest,
     game_server: CurrentGameServer,
-) -> DungeonCombatUseGearItemResponse:
+) -> DungeonCombatEquipGearItemResponse:
     """副本战斗使用装备接口。
     触发玩家在战斗中使用背包内装备的后台任务，立即返回任务ID。
     """
 
     logger.info(
-        f"/api/dungeon/combat/use_gear/v1/: user={payload.user_name} "
+        f"/api/dungeon/combat/equip_gear/v1/: user={payload.user_name} "
         f"item={payload.item_name}"
     )
 
@@ -645,10 +645,10 @@ async def dungeon_combat_use_gear(
             )
 
     # 在锁外创建后台 task，让任务在后台独立持锁执行
-    use_gear_task = game_server.create_task()
+    equip_gear_task = game_server.create_task()
     asyncio.create_task(
-        execute_use_gear_task(
-            use_gear_task.task_id,
+        execute_equip_gear_task(
+            equip_gear_task.task_id,
             payload.user_name,
             payload.item_name,
             payload.targets,
@@ -657,12 +657,12 @@ async def dungeon_combat_use_gear(
     )
 
     logger.info(
-        f"📝 创建使用装备后台任务: task_id={use_gear_task.task_id}, user={payload.user_name}"
+        f"📝 创建使用装备后台任务: task_id={equip_gear_task.task_id}, user={payload.user_name}"
     )
 
     # 返回使用装备任务启动成功的响应
-    return DungeonCombatUseGearItemResponse(
-        task_id=use_gear_task.task_id,
+    return DungeonCombatEquipGearItemResponse(
+        task_id=equip_gear_task.task_id,
         status=TaskStatus.RUNNING.value,
         message="使用装备任务已启动，请通过会话消息查询结果",
     )

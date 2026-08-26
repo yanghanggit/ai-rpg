@@ -32,8 +32,8 @@ def create_dungeon_combat_room_pipeline(
     from ..systems.use_consumable_item_action_system import (
         UseConsumableItemActionSystem,
     )
-    from ..systems.use_gear_item_action_system import (
-        UseGearItemActionSystem,
+    from ..systems.equip_gear_item_action_system import (
+        EquipGearItemActionSystem,
     )
 
     from ..systems.exhaust_cards_action_system import ExhaustCardsActionSystem
@@ -48,8 +48,8 @@ def create_dungeon_combat_room_pipeline(
     from ..systems.use_consumable_item_arbitration_system import (
         UseConsumableItemArbitrationSystem,
     )
-    from ..systems.use_gear_item_arbitration_system import (
-        UseGearItemArbitrationSystem,
+    from ..systems.equip_gear_item_arbitration_system import (
+        EquipGearItemArbitrationSystem,
     )
     from ..systems.update_status_effects_action_system import (
         UpdateStatusEffectsActionSystem,
@@ -111,14 +111,14 @@ def create_dungeon_combat_room_pipeline(
     processors.add(PartyPrePlaySystem(dbg_game))
     processors.add(PlayCardsActionSystem(dbg_game))
     processors.add(UseConsumableItemActionSystem(dbg_game))
-    processors.add(UseGearItemActionSystem(dbg_game))
+    processors.add(EquipGearItemActionSystem(dbg_game))
     processors.add(MoveToDiscardPileSystem(dbg_game))
     processors.add(ExhaustCardsActionSystem(dbg_game))
     processors.add(PassTurnActionSystem(dbg_game))
     processors.add(RetreatActionSystem(dbg_game))
     processors.add(PlayCardsArbitrationSystem(dbg_game))
     processors.add(UseConsumableItemArbitrationSystem(dbg_game))
-    processors.add(UseGearItemArbitrationSystem(dbg_game))
+    processors.add(EquipGearItemArbitrationSystem(dbg_game))
     processors.add(DeathSystem(dbg_game))
 
     # 仂裁结算后，由 stage agent（地牢主视角）复用已更新的对话上下文，判断是否需要向场内角色塞入场景卡牌

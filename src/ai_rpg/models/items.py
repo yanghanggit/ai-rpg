@@ -45,7 +45,7 @@ class GearItem(Item):
     )  # 装备费用；消耗被装备目标当前 energy 的点数；energy 不足时无法装备
     equip_affixes: List[str] = (
         []
-    )  # 装备时对装备者触发的延迟词缀；格式同 Card.on_hit_affixes；由 UseGearItemArbitrationSystem 评估
+    )  # 装备时对装备者触发的延迟词缀；格式同 Card.on_hit_affixes；由 EquipGearItemArbitrationSystem 评估
     on_hit_affixes: List[str] = (
         []
     )  # 出牌命中目标时触发的延迟词缀；格式同 Card.on_hit_affixes；由 PlayCardsArbitrationSystem 评估

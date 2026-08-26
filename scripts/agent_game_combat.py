@@ -25,7 +25,7 @@ from ai_rpg.services.dungeon_combat_actions import (
     activate_monster_play_trigger,
     activate_retreat,
     activate_use_consumable,
-    activate_use_gear,
+    activate_equip_gear,
     collect_combat_loot,
 )
 from pathlib import Path
@@ -146,7 +146,7 @@ async def use_consumable_game(
 
 
 ###############################################################################
-async def use_gear_game(
+async def equip_gear_game(
     world: WorldState,
     player_session: PlayerSession,
     actor: str,
@@ -158,21 +158,21 @@ async def use_gear_game(
     terminal_game = await restore_game(world, player_session)
 
     if not terminal_game.is_current_room_dungeon_combat:
-        logger.error("use-gear 只能在战斗房间中使用")
+        logger.error("equip-gear 只能在战斗房间中使用")
         return terminal_game
 
     if not terminal_game.current_dungeon_combat_room.combat.is_ongoing:
-        logger.error("use-gear 只能在战斗进行中使用")
+        logger.error("equip-gear 只能在战斗进行中使用")
         return terminal_game
 
     last_round = terminal_game.current_dungeon_combat_room.combat.latest_round
     if last_round is None or last_round.is_completed:
-        logger.error("use-gear 当前没有未完成的回合可供使用装备")
+        logger.error("equip-gear 当前没有未完成的回合可供装备")
         return terminal_game
 
-    success, message = activate_use_gear(terminal_game, item, list(targets))
+    success, message = activate_equip_gear(terminal_game, item, list(targets))
     if not success:
-        logger.error(f"use-gear 失败: {message}")
+        logger.error(f"equip-gear 失败: {message}")
         return terminal_game
 
     await terminal_game._dungeon_combat_room_pipeline.process()

@@ -244,7 +244,7 @@ def render_round_info(log: RichLog, combat: Combat) -> None:
         f"  抽牌已完成： {'[green]是[/]' if latest.draw_completed else '[yellow]否[/]'}"
     )
     log.write(f"  消耗品使用次数： [bold]{latest.consumable_use_count}[/]")
-    log.write(f"  装备使用次数：   [bold]{latest.gear_use_count}[/]")
+    log.write(f"  装备使用次数：   [bold]{latest.gear_equip_count}[/]")
     log.write("")
 
 

@@ -1,4 +1,4 @@
-"""UseGearItemActionSystem 单元测试：验证以 energy 消耗替代耐久约束的装备机制。"""
+"""EquipGearItemActionSystem 单元测试：验证以 energy 消耗替代耐久约束的装备机制。"""
 
 from typing import List
 from unittest.mock import MagicMock
@@ -14,10 +14,10 @@ from src.ai_rpg.models import (
     InventoryComponent,
     PartyMemberComponent,
     RoundStatsComponent,
-    UseGearItemAction,
+    EquipGearItemAction,
 )
 from src.ai_rpg.models.items import GearItem
-from src.ai_rpg.systems.use_gear_item_action_system import UseGearItemActionSystem
+from src.ai_rpg.systems.equip_gear_item_action_system import EquipGearItemActionSystem
 
 
 # ---------------------------------------------------------------------------
@@ -40,11 +40,11 @@ def _make_player_entity(
     action_item: GearItem,
     targets: List[str],
 ) -> Entity:
-    """创建持有 InventoryComponent + UseGearItemAction 的 player 实体。"""
+    """创建持有 InventoryComponent + EquipGearItemAction 的 player 实体。"""
     entity = context.create_entity()
     entity._name = name
     entity.add(InventoryComponent, name, list(items))
-    entity.add(UseGearItemAction, name, action_item, targets)
+    entity.add(EquipGearItemAction, name, action_item, targets)
     return entity
 
 
@@ -78,8 +78,8 @@ def mock_game() -> MagicMock:
 
 
 @pytest.fixture()
-def system(mock_game: MagicMock) -> UseGearItemActionSystem:
-    return UseGearItemActionSystem(mock_game)
+def system(mock_game: MagicMock) -> EquipGearItemActionSystem:
+    return EquipGearItemActionSystem(mock_game)
 
 
 # ---------------------------------------------------------------------------
@@ -93,7 +93,7 @@ class TestReact:
         self,
         context: Context,
         mock_game: MagicMock,
-        system: UseGearItemActionSystem,
+        system: EquipGearItemActionSystem,
     ) -> None:
         mock_game.current_dungeon_combat_room.combat.is_ongoing = False
         gear = _make_gear("装备.测试")
@@ -108,7 +108,7 @@ class TestReact:
         self,
         context: Context,
         mock_game: MagicMock,
-        system: UseGearItemActionSystem,
+        system: EquipGearItemActionSystem,
     ) -> None:
         _setup_mock_dungeon(mock_game)
         gear = _make_gear("装备.测试", cost=2)
@@ -139,7 +139,7 @@ class TestReact:
         self,
         context: Context,
         mock_game: MagicMock,
-        system: UseGearItemActionSystem,
+        system: EquipGearItemActionSystem,
     ) -> None:
         """目标已装备旧装备时，再次为其装备新装备应将旧装备归还背包持有者
         （移动语义下的换装场景，对齐 WornCostumeComponent 的换装行为）。"""
@@ -165,7 +165,7 @@ class TestReact:
         self,
         context: Context,
         mock_game: MagicMock,
-        system: UseGearItemActionSystem,
+        system: EquipGearItemActionSystem,
     ) -> None:
         """为一个目标装备新装备，不应影响其它已装备角色的 EquippedGearComponent。"""
         _setup_mock_dungeon(mock_game)
@@ -193,9 +193,9 @@ class TestReact:
         self,
         context: Context,
         mock_game: MagicMock,
-        system: UseGearItemActionSystem,
+        system: EquipGearItemActionSystem,
     ) -> None:
-        """系统信任调用方（activate_use_gear）已校验目标 energy>=cost；
+        """系统信任调用方（activate_equip_gear）已校验目标 energy>=cost；
         若目标 energy 不足仍被调用，系统层断言应失败。"""
         _setup_mock_dungeon(mock_game)
         gear = _make_gear("装备.测试", cost=2)

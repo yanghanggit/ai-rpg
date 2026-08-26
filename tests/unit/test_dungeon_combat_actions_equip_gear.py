@@ -6,7 +6,7 @@ from src.ai_rpg.models import (
     PartyMemberComponent,
 )
 from src.ai_rpg.models.items import GearItem
-from src.ai_rpg.services.dungeon_combat_actions import activate_use_gear
+from src.ai_rpg.services.dungeon_combat_actions import activate_equip_gear
 
 
 def _make_game(*, current_actor: str, player_name: str = "player") -> MagicMock:
@@ -28,16 +28,16 @@ def _make_game(*, current_actor: str, player_name: str = "player") -> MagicMock:
     return game
 
 
-def test_activate_use_gear_requires_inventory_holder_turn() -> None:
+def test_activate_equip_gear_requires_inventory_holder_turn() -> None:
     game = _make_game(current_actor="ally", player_name="player")
 
-    ok, msg = activate_use_gear(game, "装备.测试", ["player"])
+    ok, msg = activate_equip_gear(game, "装备.测试", ["player"])
 
     assert ok is False
     assert "不是背包持有者" in msg
 
 
-def test_activate_use_gear_rejects_when_target_energy_less_than_cost() -> None:
+def test_activate_equip_gear_rejects_when_target_energy_less_than_cost() -> None:
     game = _make_game(current_actor="player", player_name="player")
     gear = GearItem(name="装备.测试", description="测试装备", cost=2)
     player = game.get_player_entity.return_value
@@ -53,14 +53,14 @@ def test_activate_use_gear_rejects_when_target_energy_less_than_cost() -> None:
         ),
         patch("src.ai_rpg.services.dungeon_combat_actions.get_energy", return_value=1),
     ):
-        ok, msg = activate_use_gear(game, "装备.测试", ["队友A"])
+        ok, msg = activate_equip_gear(game, "装备.测试", ["队友A"])
 
     assert ok is False
     assert "需要2点" in msg
     player.replace.assert_not_called()
 
 
-def test_activate_use_gear_rejects_non_ally_target() -> None:
+def test_activate_equip_gear_rejects_non_ally_target() -> None:
     game = _make_game(current_actor="player", player_name="player")
     gear = GearItem(name="装备.测试", description="测试装备", cost=1)
     player = game.get_player_entity.return_value
@@ -74,14 +74,14 @@ def test_activate_use_gear_rejects_non_ally_target() -> None:
         "src.ai_rpg.services.dungeon_combat_actions.resolve_targets",
         return_value=(["怪物.测试"], ""),
     ):
-        ok, msg = activate_use_gear(game, "装备.测试", ["怪物.测试"])
+        ok, msg = activate_equip_gear(game, "装备.测试", ["怪物.测试"])
 
     assert ok is False
     assert "只能用于友方目标" in msg
     player.replace.assert_not_called()
 
 
-def test_activate_use_gear_activates_action_when_target_energy_covers_cost() -> None:
+def test_activate_equip_gear_activates_action_when_target_energy_covers_cost() -> None:
     game = _make_game(current_actor="player", player_name="player")
     gear = GearItem(name="装备.测试", description="测试装备", cost=2)
     player = game.get_player_entity.return_value
@@ -97,7 +97,7 @@ def test_activate_use_gear_activates_action_when_target_energy_covers_cost() -> 
         ),
         patch("src.ai_rpg.services.dungeon_combat_actions.get_energy", return_value=2),
     ):
-        ok, msg = activate_use_gear(game, "装备.测试", ["队友A"])
+        ok, msg = activate_equip_gear(game, "装备.测试", ["队友A"])
 
     assert ok is True
     assert "成功激活装备使用" in msg

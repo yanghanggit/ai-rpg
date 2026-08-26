@@ -13,7 +13,7 @@ from .dungeon_combat_actions import (
     activate_monster_play_trigger,
     activate_play_cards_specified,
     activate_pass_turn,
-    activate_use_gear,
+    activate_equip_gear,
     activate_use_consumable,
 )
 
@@ -402,7 +402,7 @@ async def execute_use_consumable_task(
 
 ###################################################################################################################################################################
 ###################################################################################################################################################################
-async def execute_use_gear_task(
+async def execute_equip_gear_task(
     task_id: str,
     user_name: str,
     item_name: str,
@@ -434,7 +434,7 @@ async def execute_use_gear_task(
                 raise ValueError("战斗未在进行中")
 
             # 执行使用装备逻辑
-            success, message = activate_use_gear(rpg_game, item_name, targets)
+            success, message = activate_equip_gear(rpg_game, item_name, targets)
             if not success:
                 raise ValueError(f"使用装备失败: {message}")
 

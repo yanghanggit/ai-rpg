@@ -1,4 +1,4 @@
-"""使用装备仲裁系统模块。"""
+"""装备仲裁系统模块。"""
 
 from typing import Dict, Final, List, final
 
@@ -21,7 +21,7 @@ from ..models import (
     CombatArbitrationEvent,
     HumanMessage,
     StageDescriptionComponent,
-    UseGearItemAction,
+    EquipGearItemAction,
 )
 from ..utils import extract_json
 from .arbitration_prompt_builders import (
@@ -36,8 +36,8 @@ from .arbitration_prompt_builders import (
 
 #######################################################################################################################################
 @final
-class UseGearItemArbitrationSystem(ReactiveProcessor):
-    """响应 UseGearItemAction 事件，LLM 结算装备穿戴效果（HP/状态效果），生成叙事并广播。"""
+class EquipGearItemArbitrationSystem(ReactiveProcessor):
+    """响应 EquipGearItemAction 事件，LLM 结算装备穿戴效果（HP/状态效果），生成叙事并广播。"""
 
     def __init__(self, game: DBGGame, use_condensed_prompt: bool = True) -> None:
         super().__init__(game)
@@ -47,31 +47,31 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
     #######################################################################################################################################
     @override
     def get_trigger(self) -> Dict[Matcher, GroupEvent]:
-        return {Matcher(UseGearItemAction): GroupEvent.ADDED}
+        return {Matcher(EquipGearItemAction): GroupEvent.ADDED}
 
     #######################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(UseGearItemAction)
+        return entity.has(EquipGearItemAction)
 
     #######################################################################################################################################
     @override
     async def react(self, entities: List[Entity]) -> None:
 
         if not self._game.current_dungeon_combat_room.combat.is_ongoing:
-            logger.debug("UseGearItemArbitrationSystem: 战斗未进行中，跳过仲裁")
+            logger.debug("EquipGearItemArbitrationSystem: 战斗未进行中，跳过仲裁")
             return
 
         assert (
             len(entities) == 1
-        ), "UseGearItemArbitrationSystem 期望每次仅处理一个 UseGearItemAction 实体"
+        ), "EquipGearItemArbitrationSystem 期望每次仅处理一个 EquipGearItemAction 实体"
         await self._request_gear_arbitration(entities[0])
 
     #######################################################################################################################################
     async def _request_gear_arbitration(self, actor_entity: Entity) -> None:
 
         # 获取当前行动者的使用装备动作，用于生成仲裁提示和与 LLM 交互
-        action = actor_entity.get(UseGearItemAction)
+        action = actor_entity.get(EquipGearItemAction)
 
         # 获取目标实体的属性和仲裁阶段状态效果，用于生成仲裁提示和与 LLM 交互
         target_stats = collect_target_character_stats(self._game, action.targets)
@@ -88,7 +88,7 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
         stage_entity = self._game.resolve_stage_entity(actor_entity)
         assert (
             stage_entity is not None
-        ), f"UseGearItemArbitrationSystem: 无法获取 {actor_entity.name} 所在场景实体！"
+        ), f"EquipGearItemArbitrationSystem: 无法获取 {actor_entity.name} 所在场景实体！"
 
         assert stage_entity.has(
             StageDescriptionComponent
@@ -132,11 +132,11 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
         try:
             await chat_client.chat()
         except Exception as e:
-            logger.error(f"[UseGearItemArbitrationSystem] LLM 请求失败: {e}")
+            logger.error(f"[EquipGearItemArbitrationSystem] LLM 请求失败: {e}")
             return
 
         if chat_client.response_ai_message is None:
-            logger.error("[UseGearItemArbitrationSystem] LLM 返回空响应")
+            logger.error("[EquipGearItemArbitrationSystem] LLM 返回空响应")
             return
 
         # 解析 LLM 的响应内容，应用装备仲裁结果，更新游戏状态
@@ -147,18 +147,18 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
         self,
         chat_client: DeepSeekClient,
         actor_entity: Entity,
-        action: UseGearItemAction,
+        action: EquipGearItemAction,
     ) -> None:
 
         if chat_client.response_ai_message is None:
-            logger.error("[UseGearItemArbitrationSystem] LLM 返回空响应")
+            logger.error("[EquipGearItemArbitrationSystem] LLM 返回空响应")
             return
 
         # 获取当前行动者所在的场景实体，确保后续的仲裁结果能够正确应用到对应的场景上下文
         stage_entity = self._game.resolve_stage_entity(actor_entity)
         assert (
             stage_entity is not None
-        ), f"UseGearItemArbitrationSystem: 无法获取 {actor_entity.name} 所在场景实体！"
+        ), f"EquipGearItemArbitrationSystem: 无法获取 {actor_entity.name} 所在场景实体！"
 
         try:
 
@@ -258,7 +258,7 @@ class UseGearItemArbitrationSystem(ReactiveProcessor):
         assert latest_round is not None, "latest_round 不应为 None"
         latest_round.gear_combat_log.append(response.combat_log)
         latest_round.gear_narrative.append(response.narrative)
-        latest_round.gear_use_count += 1
+        latest_round.gear_equip_count += 1
 
         # 如果装备有装备时触发的延迟词缀，则为每个目标实体生成任务提示，并将这些任务提示应用为状态效果
         if action.item.equip_affixes:

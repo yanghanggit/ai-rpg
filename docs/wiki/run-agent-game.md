@@ -35,7 +35,7 @@
 脚本的命令集对应游戏的**两种模式**，命令本身即是状态机的边界声明：
 
 - **家园模式**：`advance` / `speak` / `switch-stage` / `enter-dungeon` 等
-- **副本模式**：`draw-cards` / `play-cards-specified` / `use-consumable` / `use-gear` / `exit-dungeon` 等
+- **副本模式**：`draw-cards` / `play-cards-specified` / `use-consumable` / `equip-gear` / `exit-dungeon` 等
 
 AI 代理无需感知内部游戏对象，只需根据当前存档的模式选择合法命令；`services` 层的前置条件校验失败时直接返回错误，动作模块据此提前 return，不会调用归档、不产出损坏存档。
 

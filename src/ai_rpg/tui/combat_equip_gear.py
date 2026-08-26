@@ -1,4 +1,4 @@
-"""战斗使用装备 Screen（CombatUseGearScreen）"""
+"""战斗装备 Screen（CombatEquipGearScreen）"""
 
 from dataclasses import dataclass, field
 from itertools import zip_longest
@@ -39,7 +39,7 @@ from .combat_data_access import (
 )
 from .server_client import (
     TaskFailedError,
-    dungeon_combat_use_gear,
+    dungeon_combat_equip_gear,
     watch_task_until_done,
 )
 from .utils import display_name, render_item, render_status_effect
@@ -71,7 +71,7 @@ class _GearSnapshot:
     gear_use_count: int = 0
     gear_items: List[GearItem] = field(default_factory=list)
     # 当前已被任意实体装备中的装备 uuid 集合；命中的道具服务端会拒绝再次使用
-    # （见 activate_use_gear 的“已被装备”前置校验），本页据此提前过滤/提示。
+    # （见 activate_equip_gear 的“已被装备”前置校验），本页据此提前过滤/提示。
     equipped_uuids: Set[str] = field(default_factory=set)
 
 
@@ -105,7 +105,7 @@ def _write_indexed_gear(
 
 
 @final
-class CombatUseGearScreen(BaseGameScreen):
+class CombatEquipGearScreen(BaseGameScreen):
     """战斗 ONGOING 阶段的使用装备页面：展示装备使用状态 + 场景内角色有效属性 +
     我方装备列表，并提供使用装备 / 清屏指令入口。
 
@@ -123,29 +123,29 @@ class CombatUseGearScreen(BaseGameScreen):
     """
 
     CSS = """
-    CombatUseGearScreen {
+    CombatEquipGearScreen {
         align: center middle;
     }
 
-    #combat-use-gear-log {
+    #combat-equip-gear-log {
         border: solid $primary;
         padding: 0 1;
         height: 1fr;
     }
 
-    #combat-use-gear-input-row {
+    #combat-equip-gear-input-row {
         height: 3;
         dock: bottom;
     }
 
-    #combat-use-gear-prompt {
+    #combat-equip-gear-prompt {
         width: 6;
         height: 3;
         content-align: left middle;
         color: $success;
     }
 
-    #combat-use-gear-input {
+    #combat-equip-gear-input {
         width: 1fr;
     }
     """
@@ -160,10 +160,12 @@ class CombatUseGearScreen(BaseGameScreen):
         self._flow = _GearFlowState()
 
     def compose(self) -> ComposeResult:
-        yield RichLog(id="combat-use-gear-log", highlight=True, markup=True, wrap=True)
-        with Horizontal(id="combat-use-gear-input-row"):
-            yield Static("> ", id="combat-use-gear-prompt")
-            yield Input(placeholder="输入指令编号...", id="combat-use-gear-input")
+        yield RichLog(
+            id="combat-equip-gear-log", highlight=True, markup=True, wrap=True
+        )
+        with Horizontal(id="combat-equip-gear-input-row"):
+            yield Static("> ", id="combat-equip-gear-prompt")
+            yield Input(placeholder="输入指令编号...", id="combat-equip-gear-input")
 
     def on_mount(self) -> None:
         self._load_base_info()
@@ -253,7 +255,7 @@ class CombatUseGearScreen(BaseGameScreen):
             entities_resp = await get_entities_details(self.game_client, entity_names)
         except Exception as e:
             msg = f"加载装备基础信息失败：{e}"
-            logger.error(f"CombatUseGearScreen._fetch_state: {msg}")
+            logger.error(f"CombatEquipGearScreen._fetch_state: {msg}")
             return False, msg
 
         entities_map = {
@@ -266,7 +268,9 @@ class CombatUseGearScreen(BaseGameScreen):
         draw_completed = (
             latest_round.draw_completed if latest_round is not None else False
         )
-        gear_use_count = latest_round.gear_use_count if latest_round is not None else 0
+        gear_use_count = (
+            latest_round.gear_equip_count if latest_round is not None else 0
+        )
 
         player_entity = entities_map.get(actor_name)
         inventory_data = (
@@ -316,7 +320,9 @@ class CombatUseGearScreen(BaseGameScreen):
         if clear:
             log.clear()
             log.write(BASE_INFO_HEADER)
-        logger.info(f"CombatUseGearScreen._load_base_info_impl: 开始加载 clear={clear}")
+        logger.info(
+            f"CombatEquipGearScreen._load_base_info_impl: 开始加载 clear={clear}"
+        )
 
         ok, err = await self._fetch_state()
         if not ok:
@@ -361,7 +367,7 @@ class CombatUseGearScreen(BaseGameScreen):
         log.write(COMMANDS_MENU_TEMPLATE)
 
     ########################################################################################################################
-    @on(Input.Submitted, "#combat-use-gear-input")
+    @on(Input.Submitted, "#combat-equip-gear-input")
     def handle_input(self, event: Input.Submitted) -> None:
         raw = event.value.strip()
         event.input.clear()
@@ -540,17 +546,17 @@ class CombatUseGearScreen(BaseGameScreen):
             log.write("[red]请输入 1 确认使用，或输入 0 取消。[/]")
             return
 
-        self._confirm_and_use_gear()
+        self._confirm_and_equip_gear()
 
     ########################################################################################################################
-    async def _finish_use_flow(self, inp: Input) -> None:
+    async def _finish_equip_flow(self, inp: Input) -> None:
         """使用流程结束（成功 / 失败 / 中途异常）后的收尾：静默重新拉取最新数据
         替换 `self._snapshot`（不写日志、不追加任何信息），重置 `self._flow` 并重新
         启用输入框，交由玩家自行按 Escape 返回或输入 2 清屏刷新。"""
         ok, err = await self._fetch_state()
         if not ok:
             logger.warning(
-                f"CombatUseGearScreen._finish_use_flow: 静默刷新缓存失败（{err}），"
+                f"CombatEquipGearScreen._finish_equip_flow: 静默刷新缓存失败（{err}），"
                 "建议手动输入 2 清屏重试"
             )
         self._flow = _GearFlowState()
@@ -559,16 +565,16 @@ class CombatUseGearScreen(BaseGameScreen):
 
     ########################################################################################################################
     @work
-    async def _confirm_and_use_gear(self) -> None:
+    async def _confirm_and_equip_gear(self) -> None:
         """提交使用装备请求并等待后台任务完成，展示本回合新增的 gear_combat_log /
         gear_narrative 作为使用结果。结果展示完毕后不再自动刷新，交由玩家自行按
         Escape 返回或输入 2 清屏。"""
         log = self.query_one(RichLog)
         item = self._flow.selected_item
-        assert item is not None, "_confirm_and_use_gear: 未选择装备"
+        assert item is not None, "_confirm_and_equip_gear: 未选择装备"
         assert (
             len(self._flow.pending_targets) == 1
-        ), "_confirm_and_use_gear: 目标数量应恰为 1"
+        ), "_confirm_and_equip_gear: 目标数量应恰为 1"
         targets = list(self._flow.pending_targets)
         target_label = display_name(targets[0])
 
@@ -579,7 +585,7 @@ class CombatUseGearScreen(BaseGameScreen):
 
         if is_mock_mode(self.game_client):
             logger.info(
-                "CombatUseGearScreen._confirm_and_use_gear: mock 模式，模拟使用结果"
+                "CombatEquipGearScreen._confirm_and_equip_gear: mock 模式，模拟使用结果"
             )
             log.write(
                 "[bold yellow]\\[mock][/] 已模拟提交使用装备请求（未调用真实接口）。"
@@ -591,7 +597,7 @@ class CombatUseGearScreen(BaseGameScreen):
                 f"  [dim]叙事：[/] {target_label}握紧『{item.name}』，感受到一股全新的力量。"
             )
             log.write("")
-            await self._finish_use_flow(inp)
+            await self._finish_equip_flow(inp)
             return
 
         try:
@@ -610,26 +616,26 @@ class CombatUseGearScreen(BaseGameScreen):
                 len(baseline_round.gear_narrative) if baseline_round else 0
             )
 
-            resp = await dungeon_combat_use_gear(
+            resp = await dungeon_combat_equip_gear(
                 user_name, game_name, item.name, targets
             )
             log.write(f"[dim]任务已提交：{resp.task_id}，等待完成...[/]")
             await watch_task_until_done(resp.task_id)
         except TaskFailedError as e:
             logger.error(
-                f"CombatUseGearScreen._confirm_and_use_gear: 使用任务失败 error={e}"
+                f"CombatEquipGearScreen._confirm_and_equip_gear: 使用任务失败 error={e}"
             )
             log.write(f"[bold red]❌ 使用失败：{e}[/]")
             log.write("")
-            await self._finish_use_flow(inp)
+            await self._finish_equip_flow(inp)
             return
         except Exception as e:
             logger.error(
-                f"CombatUseGearScreen._confirm_and_use_gear: 使用请求失败 error={e}"
+                f"CombatEquipGearScreen._confirm_and_equip_gear: 使用请求失败 error={e}"
             )
             log.write(f"[bold red]❌ 使用请求失败：{e}[/]")
             log.write("")
-            await self._finish_use_flow(inp)
+            await self._finish_equip_flow(inp)
             return
 
         log.write("[bold green]✅ 使用完成[/]")
@@ -641,11 +647,11 @@ class CombatUseGearScreen(BaseGameScreen):
             latest_round = result_room.combat.latest_round
         except Exception as e:
             logger.error(
-                f"CombatUseGearScreen._confirm_and_use_gear: 加载使用结果失败 error={e}"
+                f"CombatEquipGearScreen._confirm_and_equip_gear: 加载使用结果失败 error={e}"
             )
             log.write(f"[bold red]❌ 加载使用结果失败：{e}[/]")
             log.write("")
-            await self._finish_use_flow(inp)
+            await self._finish_equip_flow(inp)
             return
 
         if latest_round is not None:
@@ -660,4 +666,4 @@ class CombatUseGearScreen(BaseGameScreen):
                     log.write(f"  [dim]叙事：[/] {narrative or '[dim]（无）[/]'}")
         log.write("")
 
-        await self._finish_use_flow(inp)
+        await self._finish_equip_flow(inp)

@@ -396,7 +396,7 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
                 name="装备.束缚短刃",
                 description="一柄由锈蚀手术剪反复磨砺而成的短刃，刃身仍留着暗红锈斑，握柄裹着泛黄的束身带。挥动时刃口会拖出一道若有若无的暗红残影，仿佛把周遭的光都裁开一线；贴近刃脊处有极轻的嗡鸣，像每一次出鞘都藏着比伤口更深的念想。",
                 stat_bonuses=CharacterStats(
-                    hp=0, max_hp=0, attack=2, defense=0, energy=0, speed=0
+                    hp=0, max_hp=0, attack=2, defense=0, speed=0
                 ),
                 on_play_affixes=[
                     "[血锈游丝]:出牌时，刃身锈迹化为一缕暗红游丝先一步缠向目标，令本次攻击的创口更诡谲、痛感更绵长"
@@ -406,7 +406,7 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
                 name="装备.束身护具",
                 description="由多层泛黄束身带与旧纱布反复衬叠而成的护具，表面缝着几道几近褪尽的暗红符痕，像被谁以禁制之法重新绞合过。穿上后衣料之间会发出极轻的窸窣声，仿佛有看不见的丝线贴着躯干缓缓游走，将迫近的寒意都缓去半拍。",
                 stat_bonuses=CharacterStats(
-                    hp=0, max_hp=0, attack=0, defense=2, energy=0, speed=0
+                    hp=0, max_hp=0, attack=0, defense=2, speed=0
                 ),
                 on_play_affixes=[
                     "[束身回护]:出牌时，护具上的旧纱如活物般自行收紧，暗红符痕微微发亮，将佩戴者的动作稳稳托住并透出一股绵韧回护之力"

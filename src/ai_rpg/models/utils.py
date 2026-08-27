@@ -5,7 +5,7 @@
 
 from typing import Optional
 from .items import GearItem
-from .stats import CharacterStats
+from .character_stats import CharacterStats
 
 
 def compute_effective_stats(
@@ -18,7 +18,6 @@ def compute_effective_stats(
     bonus_max_hp = 0
     bonus_attack = 0
     bonus_defense = 0
-    bonus_energy = 0
     bonus_speed = 0
 
     if equipped_gear is not None:
@@ -26,7 +25,6 @@ def compute_effective_stats(
         bonus_max_hp += equipped_gear.stat_bonuses.max_hp
         bonus_attack += equipped_gear.stat_bonuses.attack
         bonus_defense += equipped_gear.stat_bonuses.defense
-        bonus_energy += equipped_gear.stat_bonuses.energy
         bonus_speed += equipped_gear.stat_bonuses.speed
 
     return CharacterStats(
@@ -34,6 +32,5 @@ def compute_effective_stats(
         max_hp=base_stats.max_hp + bonus_max_hp,
         attack=base_stats.attack + bonus_attack,
         defense=base_stats.defense + bonus_defense,
-        energy=base_stats.energy + bonus_energy,
         speed=base_stats.speed + bonus_speed,
     )

@@ -15,7 +15,7 @@ from .artifacts import *
 from .messages import *
 from .registry import *
 from .serialization import *
-from .stats import *
+from .character_stats import *
 from .task import *
 from .blueprint import *
 from .world_state import *

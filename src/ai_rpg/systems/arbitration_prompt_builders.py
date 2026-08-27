@@ -48,7 +48,7 @@ def fmt_duration(duration: int) -> str:
 def fmt_stat_bonuses(stats: CharacterStats) -> str:
     return (
         f"HP {stats.hp:+d} | MAX_HP {stats.max_hp:+d} | ATK {stats.attack:+d} | "
-        f"DEF {stats.defense:+d} | ENERGY {stats.energy:+d} | SPD {stats.speed:+d}"
+        f"DEF {stats.defense:+d} | SPD {stats.speed:+d}"
     )
 
 
@@ -95,7 +95,7 @@ def build_target_full_stats_lines(
         return "- 无目标"
     return "\n".join(
         f"- {name}（HP {stats.hp}/{stats.max_hp} | ATK {stats.attack} | "
-        f"DEF {stats.defense} | ENERGY {stats.energy} | SPD {stats.speed}）"
+        f"DEF {stats.defense} | SPD {stats.speed}）"
         for name, stats in target_stats.items()
     )
 

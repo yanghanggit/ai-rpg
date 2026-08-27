@@ -14,7 +14,7 @@ from ..models import (
     StorageComponent,
 )
 from ..models.items import AnyItem, GearItem, ItemType, MaterialItem
-from ..models.stats import CharacterStats
+from ..models.character_stats import CharacterStats
 from ..utils import extract_json, prompt_builder
 
 
@@ -59,7 +59,6 @@ def _build_craft_gear_prompt(materials: List[MaterialItem]) -> str:
   - max_hp：最大生命值加成（防具类可适当给 5~15）
   - attack：攻击力加成（武器类可给 2~6）
   - defense：防御力加成（防具类可给 2~5）
-  - energy：行动次数加成（通常为 0）
   - speed：速度加成（轻型装备或饰品可给 1~2）
 - **cost**：装备费用，表示穿戴目标需要消耗的当前回合 energy。普通装备为 1；强力、重型或复杂装备可为 2；不要输出负数
 
@@ -69,7 +68,7 @@ def _build_craft_gear_prompt(materials: List[MaterialItem]) -> str:
 {{
   "name": "装备.XXX",
   "description": "...",
-  "stat_bonuses": {{"hp": 0, "max_hp": 0, "attack": 3, "defense": 0, "energy": 0, "speed": 0}},
+  "stat_bonuses": {{"hp": 0, "max_hp": 0, "attack": 3, "defense": 0, "speed": 0}},
   "cost": 1
 }}
 ```

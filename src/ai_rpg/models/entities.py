@@ -2,7 +2,7 @@ from enum import StrEnum, unique
 from typing import List, final, Optional
 from pydantic import BaseModel
 from .serialization import ComponentSerialization
-from .stats import CharacterStats
+from .character_stats import CharacterStats
 from .items import CostumeItem
 
 

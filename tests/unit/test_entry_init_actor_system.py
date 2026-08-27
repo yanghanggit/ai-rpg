@@ -16,7 +16,7 @@ from src.ai_rpg.models import (
     MonsterComponent,
     PartyMemberComponent,
 )
-from src.ai_rpg.models.stats import CharacterStats
+from src.ai_rpg.models.character_stats import CharacterStats
 from src.ai_rpg.systems.entry_init_actor_system import (
     EntryInitActorSystem,
     OtherActorInfo,

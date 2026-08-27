@@ -189,30 +189,22 @@ def build_mock_dungeon_room_response() -> DungeonRoomResponse:
             _mock_dungeon_actor(
                 MOCK_ACTOR_NAME,
                 ActorType.NPC,
-                CharacterStats(
-                    hp=18, max_hp=20, attack=6, defense=3, energy=2, speed=5
-                ),
+                CharacterStats(hp=18, max_hp=20, attack=6, defense=3, speed=5),
             ),
             _mock_dungeon_actor(
                 MOCK_TEAMMATE_NAME,
                 ActorType.NPC,
-                CharacterStats(
-                    hp=15, max_hp=15, attack=4, defense=4, energy=2, speed=4
-                ),
+                CharacterStats(hp=15, max_hp=15, attack=4, defense=4, speed=4),
             ),
             _mock_dungeon_actor(
                 MOCK_MONSTER_1_NAME,
                 ActorType.MONSTER,
-                CharacterStats(
-                    hp=10, max_hp=12, attack=5, defense=2, energy=1, speed=3
-                ),
+                CharacterStats(hp=10, max_hp=12, attack=5, defense=2, speed=3),
             ),
             _mock_dungeon_actor(
                 MOCK_MONSTER_2_NAME,
                 ActorType.MONSTER,
-                CharacterStats(
-                    hp=12, max_hp=12, attack=4, defense=2, energy=1, speed=2
-                ),
+                CharacterStats(hp=12, max_hp=12, attack=4, defense=2, speed=2),
             ),
         ],
     )
@@ -464,7 +456,7 @@ def build_mock_entities_details_response(
     player_serialization = _actor_serialization(
         MOCK_ACTOR_NAME,
         1,
-        CharacterStats(hp=18, max_hp=20, attack=6, defense=3, energy=2, speed=5),
+        CharacterStats(hp=18, max_hp=20, attack=6, defense=3, speed=5),
         [
             ComponentSerialization(
                 name=PlayerComponent.__name__,
@@ -501,7 +493,7 @@ def build_mock_entities_details_response(
                         name="淬炼长剑",
                         description="一把普通但锐利的长剑，适合新手冒险者。",
                         stat_bonuses=CharacterStats(
-                            hp=0, max_hp=0, attack=2, defense=0, energy=0, speed=1
+                            hp=0, max_hp=0, attack=2, defense=0, speed=1
                         ),
                     ),
                 ],
@@ -551,7 +543,7 @@ def build_mock_entities_details_response(
     teammate_serialization = _actor_serialization(
         MOCK_TEAMMATE_NAME,
         2,
-        CharacterStats(hp=15, max_hp=15, attack=4, defense=4, energy=2, speed=4),
+        CharacterStats(hp=15, max_hp=15, attack=4, defense=4, speed=4),
         [
             ComponentSerialization(
                 name=NPCComponent.__name__,
@@ -603,7 +595,7 @@ def build_mock_entities_details_response(
     monster_1_serialization = _actor_serialization(
         MOCK_MONSTER_1_NAME,
         3,
-        CharacterStats(hp=10, max_hp=12, attack=5, defense=2, energy=1, speed=3),
+        CharacterStats(hp=10, max_hp=12, attack=5, defense=2, speed=3),
         [
             ComponentSerialization(
                 name=MonsterComponent.__name__,
@@ -641,7 +633,7 @@ def build_mock_entities_details_response(
     monster_2_serialization = _actor_serialization(
         MOCK_MONSTER_2_NAME,
         4,
-        CharacterStats(hp=12, max_hp=12, attack=4, defense=2, energy=1, speed=2),
+        CharacterStats(hp=12, max_hp=12, attack=4, defense=2, speed=2),
         [
             ComponentSerialization(
                 name=MonsterComponent.__name__,

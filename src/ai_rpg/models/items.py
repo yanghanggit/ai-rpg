@@ -4,7 +4,7 @@ from enum import StrEnum, unique
 from typing import Annotated, List, Literal, Sequence, Union, final
 from uuid import uuid4
 from pydantic import BaseModel, Field
-from .stats import CharacterStats
+from .character_stats import CharacterStats
 from .target_type import TargetType
 
 
@@ -37,7 +37,7 @@ class GearItem(Item):
     type: Literal[ItemType.GEAR_ITEM] = Field(default=ItemType.GEAR_ITEM, frozen=True)
     stat_bonuses: CharacterStats = Field(
         default_factory=lambda: CharacterStats(
-            hp=0, max_hp=0, attack=0, defense=0, energy=0, speed=0
+            hp=0, max_hp=0, attack=0, defense=0, speed=0
         )
     )
     cost: int = Field(

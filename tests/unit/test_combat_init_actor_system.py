@@ -16,7 +16,7 @@ from src.ai_rpg.models import (
     PartyMemberComponent,
 )
 from unittest.mock import MagicMock
-from src.ai_rpg.models.stats import CharacterStats
+from src.ai_rpg.models.character_stats import CharacterStats
 from src.ai_rpg.systems.combat_init_actor_system import (
     CombatInitActorSystem,
     OtherActorInfo,

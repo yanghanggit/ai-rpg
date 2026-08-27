@@ -20,6 +20,7 @@ from ..models import (
     CharacterStatsComponent,
     DeathComponent,
     DeckComponent,
+    DEFAULT_ROUND_ENERGY,
     DrawPileComponent,
     GenerateDeckAction,
     HumanMessage,
@@ -85,7 +86,7 @@ def build_deck_prompt(
 
 | HP | 攻击 | 防御 | 每回合行动次数 |
 |---|---|---|---|
-| {actor_stats.hp}/{actor_stats.max_hp} | {actor_stats.attack} | {actor_stats.defense} | {actor_stats.energy} |
+| {actor_stats.hp}/{actor_stats.max_hp} | {actor_stats.attack} | {actor_stats.defense} | {DEFAULT_ROUND_ENERGY} |
 
 ## 设计约束
 
@@ -140,7 +141,7 @@ def build_condensed_deck_prompt(
     design_principle = build_design_principle_prompt(num_cards, keywords)
     return f"""# 战斗牌库生成（{num_cards} 张）
 
-HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense} | 行动次数:{actor_stats.energy}
+HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense} | 行动次数:{DEFAULT_ROUND_ENERGY}
 
 {design_principle}
 

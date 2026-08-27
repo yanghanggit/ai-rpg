@@ -23,9 +23,6 @@ def create_dungeon_combat_room_pipeline(
     from ..systems.draw_cards_action_system import (
         DrawCardsActionSystem,
     )
-    from ..systems.post_draw_cards_system import (
-        PostDrawCardsSystem,
-    )
     from ..systems.play_cards_action_system import (
         PlayCardsActionSystem,
     )
@@ -51,9 +48,6 @@ def create_dungeon_combat_room_pipeline(
     from ..systems.equip_gear_item_arbitration_system import (
         EquipGearItemArbitrationSystem,
     )
-    from ..systems.update_status_effects_action_system import (
-        UpdateStatusEffectsActionSystem,
-    )
     from ..systems.inject_cards_action_system import (
         InjectCardsActionSystem,
     )
@@ -66,11 +60,7 @@ def create_dungeon_combat_room_pipeline(
         StageDescriptionSystem,
     )
     from ..systems.combat_round_cleanup_system import CombatRoundCleanupSystem
-    from ..systems.combat_round_end_settlement_system import (
-        CombatRoundEndSettlementSystem,
-    )
     from ..systems.death_system import DeathSystem
-    from ..systems.combat_status_effect_tick_system import CombatStatusEffectTickSystem
     from ..systems.combat_round_transition_system import (
         CombatRoundTransitionSystem,
         ActionOrderStrategy,
@@ -93,10 +83,10 @@ def create_dungeon_combat_room_pipeline(
     # 战斗场景描述系统
     processors.add(StageDescriptionSystem(dbg_game))
 
-    # 战斗初始化系统（角色侧）：初始化战斗临时牌堆/状态效果组件，为参战角色注入战场上下文，添加 GenerateDeckAction
+    # 战斗初始化系统（角色侧）：初始化战斗临时牌堆，为参战角色注入战场上下文，添加 GenerateDeckAction
     processors.add(CombatInitActorSystem(dbg_game))
 
-    # 战斗初始化系统（场景侧）：注入战斗专用规则、转换战斗状态为进行中、推理场景状态效果依据
+    # 战斗初始化系统（场景侧）：注入战斗专用规则、转换战斗状态为进行中
     processors.add(CombatInitStageSystem(dbg_game))
 
     # 怪物牌库生成系统：响应 GenerateDeckAction，为当前战斗房间的怪物生成初始牌库；
@@ -108,7 +98,6 @@ def create_dungeon_combat_room_pipeline(
 
     # 战斗核心动作处理相关的系统
     processors.add(DrawCardsActionSystem(dbg_game))
-    processors.add(PostDrawCardsSystem(dbg_game))
     # processors.add(
     #     MonsterContextProbeSystem(dbg_game)
     # )  # 纯调试系统：在怪物出牌决策前探测其上下文同步是否正确，问题/回答不写入 LLM 上下文。
@@ -135,21 +124,8 @@ def create_dungeon_combat_room_pipeline(
     # 战斗回合清理系统（清除旧回合手牌状态）
     processors.add(CombatRoundCleanupSystem(dbg_game))
 
-    # 战斗回合末状态效果结算系统（并发 LLM 推理 ROUND_END 效果 HP 变化）
-    processors.add(CombatRoundEndSettlementSystem(dbg_game))
-
-    # 死亡处理系统（ROUND_END 效果结算后标记 HP 归零的实体）
-    processors.add(DeathSystem(dbg_game))
-
-    # 状态效果更新系统（统一在回合末结算与死亡标记之后落地：
-    # 仲裁阶段 + 回合末繁殖的 AddStatusEffectsAction 均在此处理，增添/繁殖 + 移除/顶掉）
-    processors.add(UpdateStatusEffectsActionSystem(dbg_game))
-
     # 检查战斗结果系统（必须在死亡标记之后，才能在同一周期内根据最终存活情况判定胜负）
     processors.add(CombatOutcomeSystem(dbg_game))
-
-    # 战斗状态效果 tick 系统（推进持续时间、移除到期效果）
-    processors.add(CombatStatusEffectTickSystem(dbg_game))
 
     # 战斗回合过渡系统（创建新回合 + 生成 action_order）
     processors.add(

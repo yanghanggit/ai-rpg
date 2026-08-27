@@ -7,12 +7,10 @@ from pydantic import BaseModel
 
 from ..utils import prompt_builder
 from ..models import (
-    AffixTrigger,
     Card,
     CharacterStats,
     ConsumableItem,
     GearItem,
-    StatusEffect,
     TargetType,
 )
 
@@ -22,15 +20,8 @@ from ..models import (
 
 
 @final
-class ArbitrationStatusEffectPatch(BaseModel):
-    name: str
-    counter: int
-
-
-@final
 class ArbitrationEntityFinalStats(BaseModel):
     hp: float
-    status_effect_patches: List[ArbitrationStatusEffectPatch] = []
 
 
 @final
@@ -54,15 +45,6 @@ def fmt_duration(duration: int) -> str:
 
 
 @prompt_builder
-def fmt_effects(effects: List[StatusEffect]) -> str:
-    if not effects:
-        return "  无"
-    return "\n".join(
-        f"  - {e.name}（{fmt_duration(e.duration)}）: {e.description}" for e in effects
-    )
-
-
-@prompt_builder
 def fmt_stat_bonuses(stats: CharacterStats) -> str:
     return (
         f"HP {stats.hp:+d} | MAX_HP {stats.max_hp:+d} | ATK {stats.attack:+d} | "
@@ -75,25 +57,6 @@ def build_stats_update_notification(final_hp: int, max_hp: int) -> str:
     return f"""# 你的生命值已更新
 
 当前HP: {final_hp}/{max_hp}"""
-
-
-@prompt_builder
-def fmt_stat_bonuses_compact(stats: CharacterStats) -> str:
-    """仅显示非零属性的精简格式，用于 AffixTrigger 单行上下文。"""
-    parts: List[str] = []
-    if stats.hp:
-        parts.append(f"HP{stats.hp:+d}")
-    if stats.max_hp:
-        parts.append(f"MAXHP{stats.max_hp:+d}")
-    if stats.attack:
-        parts.append(f"ATK{stats.attack:+d}")
-    if stats.defense:
-        parts.append(f"DEF{stats.defense:+d}")
-    if stats.energy:
-        parts.append(f"ENERGY{stats.energy:+d}")
-    if stats.speed:
-        parts.append(f"SPD{stats.speed:+d}")
-    return " ".join(parts) if parts else "无属性变化"
 
 
 #######################################################################################################################################
@@ -155,32 +118,6 @@ def build_round_action_info_lines(
 
 
 @prompt_builder
-def build_arbitration_effects_lines(
-    target_arbitration_effects: Dict[str, List[StatusEffect]],
-) -> str:
-    """构建目标仲裁状态效果段落（装备/消耗品仲裁专用，仅含目标）。"""
-    if not target_arbitration_effects:
-        return "无"
-    lines_parts = []
-    for t_name, t_effects in target_arbitration_effects.items():
-        lines_parts.append(f"**{t_name}**:\n{fmt_effects(t_effects)}")
-    return "\n\n".join(lines_parts)
-
-
-@prompt_builder
-def build_combat_arbitration_effects_lines(
-    actor_name: str,
-    actor_arbitration_effects: List[StatusEffect],
-    target_arbitration_effects: Dict[str, List[StatusEffect]],
-) -> str:
-    """构建出牌者+目标仲裁状态效果段落（卡牌仲裁专用）。"""
-    lines = f"**出牌者 —— {actor_name}**:\n{fmt_effects(actor_arbitration_effects)}"
-    for t_name, t_effects in target_arbitration_effects.items():
-        lines += f"\n\n**目标 —— {t_name}**:\n{fmt_effects(t_effects)}"
-    return lines
-
-
-@prompt_builder
 def build_instant_affix_section(title: str, affixes: List[str]) -> str:
     """构建「即时词缀」段落（卡牌/消耗品仲裁专用）；affixes 为空时返回空字符串。"""
     if not affixes:
@@ -209,13 +146,9 @@ FINAL_STATS_DESCRIPTION: Final[
 
 必须包含**本次行动的行动者与所有目标**——即使 HP 无变化也须列出并保持原值，不得包含场内无关角色，格式：
 ```json
-{"角色全名": {"hp": 数值, "status_effect_patches": []}}
+{"角色全名": {"hp": 数值}}
 ```
-- hp：0 ≤ hp ≤ 最大 HP
-- status_effect_patches：仅在本次仲裁改变了某效果的 counter 值时填写，格式：
-  `{"name": "效果名", "counter": <新整数值>}`
-  - name 必须与"仲裁状态效果"中列出的名称完全一致
-  - 未改变 counter 的效果不输出；若本次仲裁未触发任何 counter 变化，保持空数组 []"""
+- hp：0 ≤ hp ≤ 最大 HP"""
 
 
 NARRATIVE_DESCRIPTION: Final[
@@ -294,8 +227,6 @@ def build_combat_arbitration_prompt(
     targets: List[str],
     target_stats: Dict[str, CharacterStats],
     current_round_number: int,
-    actor_arbitration_effects: List[StatusEffect],
-    target_arbitration_effects: Dict[str, List[StatusEffect]],
     current_stage_description: str,
     gear_item: GearItem | None = None,
     action_order: List[str] | None = None,
@@ -306,9 +237,6 @@ def build_combat_arbitration_prompt(
     target_full_stats_lines = build_target_full_stats_lines(target_stats)
     round_action_info = build_round_action_info_lines(
         action_order, completed_actors, current_actor
-    )
-    arbitration_effects_lines = build_combat_arbitration_effects_lines(
-        actor_name, actor_arbitration_effects, target_arbitration_effects
     )
     spread = build_spread_sections(card, targets)
 
@@ -333,10 +261,6 @@ def build_combat_arbitration_prompt(
 ## 目标有效属性（完整）
 
 {target_full_stats_lines}
-
-## 仲裁状态效果
-
-{arbitration_effects_lines}
 
 ## 当前场景环境
 
@@ -380,8 +304,6 @@ def build_condensed_combat_arbitration_prompt(
     targets: List[str],
     target_stats: Dict[str, CharacterStats],
     current_round_number: int,
-    actor_arbitration_effects: List[StatusEffect],
-    target_arbitration_effects: Dict[str, List[StatusEffect]],
     current_stage_description: str,
     gear_item: GearItem | None = None,
     action_order: List[str] | None = None,
@@ -393,9 +315,6 @@ def build_condensed_combat_arbitration_prompt(
     target_full_stats_lines = build_target_full_stats_lines(target_stats)
     round_action_info = build_round_action_info_lines(
         action_order, completed_actors, current_actor
-    )
-    arbitration_effects_lines = build_combat_arbitration_effects_lines(
-        actor_name, actor_arbitration_effects, target_arbitration_effects
     )
     spread = build_spread_sections(card, targets)
 
@@ -420,10 +339,6 @@ def build_condensed_combat_arbitration_prompt(
 ## 目标有效属性（完整）
 
 {target_full_stats_lines}
-
-## 仲裁状态效果
-
-{arbitration_effects_lines}
 
 ## 当前场景环境
 
@@ -472,14 +387,10 @@ def build_gear_arbitration_prompt(
     item: GearItem,
     target_stats: Dict[str, CharacterStats],
     current_round_number: int,
-    target_arbitration_effects: Dict[str, List[StatusEffect]],
     current_stage_description: str,
 ) -> str:
     """生成装备仲裁提示词（完整版）。"""
     target_lines = build_target_stats_lines(target_stats)
-    arbitration_effects_lines = build_arbitration_effects_lines(
-        target_arbitration_effects
-    )
 
     return f"""# 第 {current_round_number} 回合：装备使用结算（以 JSON 格式返回）
 
@@ -492,10 +403,6 @@ def build_gear_arbitration_prompt(
 ## 目标
 
 {target_lines}
-
-## 仲裁状态效果
-
-{arbitration_effects_lines}
 
 ## 当前场景环境
 
@@ -530,14 +437,10 @@ def build_condensed_gear_arbitration_prompt(
     item: GearItem,
     target_stats: Dict[str, CharacterStats],
     current_round_number: int,
-    target_arbitration_effects: Dict[str, List[StatusEffect]],
     current_stage_description: str,
 ) -> str:
     """生成精简版装备仲裁提示词，用于写入对话历史。"""
     target_lines = build_target_stats_lines(target_stats)
-    arbitration_effects_lines = build_arbitration_effects_lines(
-        target_arbitration_effects
-    )
 
     return f"""# 第 {current_round_number} 回合：装备使用结算
 
@@ -550,10 +453,6 @@ def build_condensed_gear_arbitration_prompt(
 ## 目标
 
 {target_lines}
-
-## 仲裁状态效果
-
-{arbitration_effects_lines}
 
 ## 当前场景环境
 
@@ -587,14 +486,10 @@ def build_consumable_arbitration_prompt(
     item: ConsumableItem,
     target_stats: Dict[str, CharacterStats],
     current_round_number: int,
-    target_arbitration_effects: Dict[str, List[StatusEffect]],
     current_stage_description: str,
 ) -> str:
     """生成消耗品仲裁提示词（完整版）。"""
     target_lines = build_target_stats_lines(target_stats)
-    arbitration_effects_lines = build_arbitration_effects_lines(
-        target_arbitration_effects
-    )
 
     # 攻击性消耗品（target_type 非 SELF）时使用者不在 target_stats 中，需单独展示其身份与 HP，
     # 否则仲裁 LLM 无法在 final_stats 中对使用者施加反伤（如目标带「荆棘」）等效果。
@@ -614,10 +509,6 @@ def build_consumable_arbitration_prompt(
 ## 目标
 
 {target_lines}
-
-## 仲裁状态效果
-
-{arbitration_effects_lines}
 
 ## 当前场景环境
 
@@ -655,14 +546,10 @@ def build_condensed_consumable_arbitration_prompt(
     item: ConsumableItem,
     target_stats: Dict[str, CharacterStats],
     current_round_number: int,
-    target_arbitration_effects: Dict[str, List[StatusEffect]],
     current_stage_description: str,
 ) -> str:
     """生成精简版消耗品仲裁提示词，用于写入对话历史。"""
     target_lines = build_target_stats_lines(target_stats)
-    arbitration_effects_lines = build_arbitration_effects_lines(
-        target_arbitration_effects
-    )
 
     actor_section = (
         f"\n\n## 使用者\n\n{actor_name}（HP {actor_stats.hp}/{actor_stats.max_hp} | 防御:{actor_stats.defense}）"
@@ -680,10 +567,6 @@ def build_condensed_consumable_arbitration_prompt(
 ## 目标
 
 {target_lines}
-
-## 仲裁状态效果
-
-{arbitration_effects_lines}
 
 ## 当前场景环境
 
@@ -703,77 +586,3 @@ def build_consumable_arbitration_broadcast(
         current_round_number,
         f"使用消耗品「{item_name}」",
     )
-
-
-#######################################################################################################################################
-# AffixTrigger 生成器（统一 compact one-liner 格式，B+C+D）
-#######################################################################################################################################
-
-
-def generate_play_cards_affix_triggers(
-    actor_name: str,
-    card: Card,
-    targets: List[str],
-) -> List[AffixTrigger]:
-    """生成卡牌延迟词缀（card.on_hit_affixes）对应的 AffixTrigger 列表。
-
-    仅携带原始词缀文本与触发上下文，具体提示词措辞由 UpdateStatusEffectsActionSystem 统一拼装。
-    伤害/HP 变化已经通过仲裁广播（combat_log）与个人 HP 更新通知同步给相关实体，此处无需重复。
-    """
-    if not card.on_hit_affixes:
-        return []
-    targets_str = "、".join(targets) or "无"
-    context = f"{actor_name}的「{card.name}」→{targets_str}"
-    return [
-        AffixTrigger(source="卡牌", context=context, affix=affix)
-        for affix in card.on_hit_affixes
-    ]
-
-
-def generate_gear_on_hit_affix_triggers(
-    actor_name: str,
-    card_name: str,
-    gear_item: GearItem,
-) -> List[AffixTrigger]:
-    """生成装备 on_hit_affixes 对应的 AffixTrigger 列表（仅目标视角）。
-
-    HP 变化已经通过仲裁广播与个人 HP 更新通知同步给该实体，此处无需重复。
-    """
-    if not gear_item.on_hit_affixes:
-        return []
-    context = f"{actor_name}持「{gear_item.name}」命中（「{card_name}」）"
-    return [
-        AffixTrigger(source="装备命中·受击者", context=context, affix=affix)
-        for affix in gear_item.on_hit_affixes
-    ]
-
-
-def generate_gear_equip_affix_triggers(
-    item: GearItem,
-    targets: List[str],
-) -> List[AffixTrigger]:
-    """生成装备穿戴 equip_affixes 对应的 AffixTrigger 列表。"""
-    if not item.equip_affixes:
-        return []
-    targets_str = "、".join(targets) or "无"
-    stats_str = fmt_stat_bonuses_compact(item.stat_bonuses)
-    context = f"「{item.name}」→{targets_str}（{stats_str}）"
-    return [
-        AffixTrigger(source="装备穿戴", context=context, affix=affix)
-        for affix in item.equip_affixes
-    ]
-
-
-def generate_consumable_affix_triggers(
-    item: ConsumableItem,
-    targets: List[str],
-) -> List[AffixTrigger]:
-    """生成消耗品延迟词缀（item.on_hit_affixes）对应的 AffixTrigger 列表。"""
-    if not item.on_hit_affixes:
-        return []
-    targets_str = "、".join(targets) or "无"
-    context = f"「{item.name}」→{targets_str}"
-    return [
-        AffixTrigger(source="消耗品", context=context, affix=affix)
-        for affix in item.on_hit_affixes
-    ]

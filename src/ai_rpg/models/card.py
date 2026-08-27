@@ -15,10 +15,7 @@ class Card(BaseModel):
     description: str  # 直接战斗行为描述（第三人称客观描述，说明这张牌造成的即时效果，如伤害；与出牌场景无关）
     on_play_affixes: List[str] = (
         []
-    )  # 即时词缀列表；格式"[名称]:触发倾向描述"（如"[穿透]:本次伤害无视目标防御"）；参与本卡本次出牌仲裁，由仲裁 LLM 直接套用，不落地 StatusEffect；无即时效果时输出 []
-    on_hit_affixes: List[str] = (
-        []
-    )  # 延迟词缀列表；格式"[名称]:触发倾向描述"（如"[燃烧]:可能引发持续扣血"）；出牌命中目标后独立推理生成 StatusEffect；无持续效果时输出 []
+    )  # 即时词缀列表；格式"[名称]:触发倾向描述"（如"[穿透]:本次伤害无视目标防御"）；参与本卡本次出牌仲裁，由仲裁 LLM 直接套用；无即时效果时输出 []
     playable: bool = True  # 是否可出牌；False 时系统阻止出牌操作
     exhaust: bool = (
         False  # 是否为消耗牌；True 时出牌后永久归入 ExhaustPile，不进入 DiscardPile 循环

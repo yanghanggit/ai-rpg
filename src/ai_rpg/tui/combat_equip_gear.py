@@ -17,7 +17,6 @@ from ..models import (
     EquippedGearComponent,
     GearItem,
     InventoryComponent,
-    StatusEffectsComponent,
 )
 from .base import BaseGameScreen
 from .combat_common import (
@@ -42,7 +41,7 @@ from .server_client import (
     dungeon_combat_equip_gear,
     watch_task_until_done,
 )
-from .utils import display_name, render_item, render_status_effect
+from .utils import display_name, render_item
 
 BASE_INFO_HEADER = """\
 [bold cyan]── 使用装备 ──────────────────────────────────────[/]
@@ -178,7 +177,7 @@ class CombatEquipGearScreen(BaseGameScreen):
     def _write_target_detail(
         self, log: RichLog, entity: EntitySerialization, index_label: str = ""
     ) -> None:
-        """渲染单个候选目标的有效属性 + 状态效果（不含手牌，目标选择无需关心）。
+        """渲染单个候选目标的有效属性（不含手牌，目标选择无需关心）。
 
         index_label: 非空时与角色名写在同一行前面（如目标候选列表的编号）。
         """
@@ -189,10 +188,6 @@ class CombatEquipGearScreen(BaseGameScreen):
             )
             return
 
-        status_data = find_component_data(entity, StatusEffectsComponent.__name__)
-        status_comp = (
-            StatusEffectsComponent(**status_data) if status_data is not None else None
-        )
         death_mark = (
             "  [bold red]（已战死）[/]"
             if find_component_data(entity, DeathComponent.__name__) is not None
@@ -207,13 +202,6 @@ class CombatEquipGearScreen(BaseGameScreen):
             f"攻:{effective_stats.attack}  防:{effective_stats.defense}  "
             f"能量:{resolve_current_energy(entity, effective_stats)}  速度:{effective_stats.speed}"
         )
-
-        if status_comp is not None and status_comp.status_effects:
-            log.write(f"    状态效果（{len(status_comp.status_effects)}）：")
-            for effect in status_comp.status_effects:
-                log.write(render_status_effect(effect, entity.name))
-        else:
-            log.write("    状态效果： [dim]（无）[/]")
 
     ########################################################################################################################
     @work

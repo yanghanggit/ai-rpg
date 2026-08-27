@@ -16,7 +16,6 @@ from ..models import (
     DeathComponent,
     EntitySerialization,
     InventoryComponent,
-    StatusEffectsComponent,
     TargetType,
 )
 from .base import BaseGameScreen
@@ -42,7 +41,7 @@ from .server_client import (
     dungeon_combat_use_consumable,
     watch_task_until_done,
 )
-from .utils import display_name, render_item, render_status_effect
+from .utils import display_name, render_item
 
 BASE_INFO_HEADER = """\
 [bold cyan]── 使用消耗品 ──────────────────────────────────────[/]
@@ -176,10 +175,6 @@ class CombatUseConsumableScreen(BaseGameScreen):
             )
             return
 
-        status_data = find_component_data(entity, StatusEffectsComponent.__name__)
-        status_comp = (
-            StatusEffectsComponent(**status_data) if status_data is not None else None
-        )
         death_mark = (
             "  [bold red]（已战死）[/]"
             if find_component_data(entity, DeathComponent.__name__) is not None
@@ -194,13 +189,6 @@ class CombatUseConsumableScreen(BaseGameScreen):
             f"攻:{effective_stats.attack}  防:{effective_stats.defense}  "
             f"能量:{resolve_current_energy(entity, effective_stats)}  速度:{effective_stats.speed}"
         )
-
-        if status_comp is not None and status_comp.status_effects:
-            log.write(f"    状态效果（{len(status_comp.status_effects)}）：")
-            for effect in status_comp.status_effects:
-                log.write(render_status_effect(effect, entity.name))
-        else:
-            log.write("    状态效果： [dim]（无）[/]")
 
     ########################################################################################################################
     @work

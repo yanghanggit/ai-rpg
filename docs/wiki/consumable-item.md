@@ -16,7 +16,7 @@
 
 **前置系统**负责扣减背包库存，并按阵营向场景内所有存活角色注入行动通知上下文。
 
-**仲裁系统**由场景实体（stage entity）作为 LLM 仲裁者，结算 HP 变化与状态效果，结果广播给全场并写入本回合战斗日志。
+**仲裁系统**由场景实体（stage entity）作为 LLM 仲裁者，结算 HP 变化，结果广播给全场并写入本回合战斗日志。
 
 → 参见：[装备系统（GearItem）](gear-item.md)（管道结构相同，但装备挂载逻辑不同）
 
@@ -24,17 +24,10 @@
 
 ## 词缀机制
 
-`ConsumableItem` 按时效携带两类词缀：
-
-- **即时词缀（`on_use_affixes`）**：参与本次使用仲裁，仅对本次结算生效，不落地状态效果（如「穿透」）。
-- **延迟词缀（`on_hit_affixes`）**：使用命中目标后触发独立状态效果推理，由 LLM 决定是否生成持续 `StatusEffect`。
-
-与 `Card`（`on_play_affixes` / `on_hit_affixes`）保持同一「即时 / 延迟」二分；`GearItem` 的延迟词缀按触发时机进一步拆分为装备时（`equip_affixes`）与命中时（`on_hit_affixes`）两组字段。
-
-→ 参见：[词缀（Affix）](affix.md)、[装备系统（GearItem）](gear-item.md)
+`ConsumableItem` 携带即时词缀（`on_use_affixes`）：参与本次使用仲裁，仅对本次结算生效，不产生跨回合的持续效果（如「穿透」）。与 `Card`（`on_play_affixes`）、`GearItem`（`on_play_affixes`）保持同一语义。
 
 ---
 
 ## 合成来源
 
-消耗品可由工坊系统从材料合成。LLM 推断合成结果并同步填充延迟词缀，使合成品具备个性化能力。
+消耗品可由工坊系统从材料合成。LLM 推断合成结果并同步填充即时词缀，使合成品具备个性化能力。

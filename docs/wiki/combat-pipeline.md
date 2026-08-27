@@ -8,7 +8,7 @@
 
 管道承载四类阶段：**仅首次**（初始化）、**循环**（出牌-仲裁-结算）、**仅末次**（归档清理）、**始终**（入场/收尾）。系统通过自身守卫（检查组件是否存在、战斗状态是否匹配）自行决定是否执行，管道本身不分叉。
 
-→ 参见：[LLM 生成型游戏对象：Card 与 StatusEffect](llm-generated-objects.md)（管道中 LLM 产出两类核心对象的完整链路）
+→ 参见：[LLM 生成型游戏对象：Card](llm-generated-objects.md)（管道中 LLM 产出的核心对象的完整链路）
 
 ---
 
@@ -28,10 +28,6 @@
 
 出牌分两步：先决策（选牌选目标），再仲裁（算伤害算效果）。`MonsterPrePlaySystem` / `PartyPrePlaySystem` 用角色自身的 LLM 上下文做决策，产出确定性的 `PlayCardsAction`。`PlayCardsArbitrationSystem` 用场景实体做仲裁，产出叙事文本和数值变化。分离后决策可并行（多个怪物同时思考），仲裁保持单线程（叙事一致），且决策 LLM 不受仲裁风格干扰。
 
-### 词缀因果链
-
-affix 是信号，StatusEffect 是落地的果。延迟 affix 这条链横跨多个系统：Card/Consumable 生成时写入 `on_hit_affixes` → 仲裁时转为 `AffixTrigger` → `UpdateStatusEffectsActionSystem` 独立推理生成 StatusEffect。三类来源（卡牌 on_hit_affix、装备 on_hit_affix、场景交互）的触发在同一回合内合并，统一在回合末由 `UpdateStatusEffectsActionSystem` 一处落地：同名覆盖（保留溯源）、异名追加，并可输出 `remove_effects` 顶掉被克制/排斥的现有效果；即时 affix（`on_play_affixes`/`on_use_affixes`）则由各自仲裁系统在本次结算时直接套用。
-
 ### 回合行动序列
 
 回合按 `speed` 降序排列行动顺序——高速角色压制先手，低速角色后手收割，是角色差异化的重要维度。回合完成的标志是所有存活角色均已 pass turn，与 energy 是否耗尽无关（耗尽仅限制能打出的牌数，不自动 pass）。
@@ -50,7 +46,7 @@ affix 是信号，StatusEffect 是落地的果。延迟 affix 这条链横跨多
 
 ### 回合末
 
-回合完成判定 → 清理旧手牌 → ROUND_END 效果结算（DOT/HOT）→ 死亡处理（标记 ROUND_END 结算后 HP 归零者）→ 状态效果落地（增添/繁殖 + 移除/顶掉）→ 胜负判定 → 状态 tick（推进 duration）→ 新回合创建（按 speed 排序）。胜负判定为终局分支点：一旦分出胜负，直接跳至战斗后处理。
+回合完成判定 → 清理旧手牌 → 死亡处理 → 胜负判定 → 新回合创建（按 speed 排序）。胜负判定为终局分支点：一旦分出胜负，直接跳至战斗后处理。
 
 ### 战斗后
 
@@ -61,6 +57,6 @@ affix 是信号，StatusEffect 是落地的果。延迟 affix 这条链横跨多
 ## 跨系统关系
 
 - **副本生成管道**产出 `CombatRoom`（stage + actors + keywords），战斗管道消费它 → 参见：[副本生成管道](dungeon-generation.md)
-- **装备系统**提供命中时的 `on_hit_affixes`，在 `PlayCardsArbitrationSystem` 中与卡牌 `on_hit_affixes` 合并后进入状态效果落地链 → 参见：[装备系统](gear-item.md)
+- **装备系统**提供出牌时的 `on_play_affixes`，与卡牌的即时词缀共同参与 `PlayCardsArbitrationSystem` 的本次结算 → 参见：[装备系统](gear-item.md)
 - **消耗品系统**走同一场景实体仲裁模式 → 参见：[消耗品系统](consumable-item.md)
 - 战斗结束后 `CombatArchiveSystem` 触发记忆存储，衔接家园模式的叙事连续性

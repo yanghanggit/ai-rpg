@@ -1,4 +1,4 @@
-"""查看当前参战角色手牌与状态效果的 Screen。"""
+"""查看当前参战角色手牌的 Screen。"""
 
 from typing import List, Optional, final
 
@@ -13,18 +13,17 @@ from ..models import (
     EntitySerialization,
     EquippedGearComponent,
     HandComponent,
-    StatusEffectsComponent,
     compute_effective_stats,
 )
 from .base import BaseGameScreen
 from .combat_common import find_component_data, resolve_current_energy, role_label
 from .combat_data_access import get_entities_details
-from .utils import display_name, render_card, render_status_effect
+from .utils import display_name, render_card
 
 HEADER = """\
-[bold cyan]── 查看手牌 + 状态效果 ──────────────────────────────────────[/]
+[bold cyan]── 查看手牌 ──────────────────────────[/]
 
-[dim]显示当前战斗所有参战角色的有效属性、状态效果与手牌详情。[bold]Escape[/] 返回。[/]
+[dim]显示当前战斗所有参战角色的有效属性与手牌详情。[bold]Escape[/] 返回。[/]
 """
 
 
@@ -33,7 +32,7 @@ ACTOR_DIVIDER = "[bold cyan]═════════════════�
 
 @final
 class CombatHandStatusViewScreen(BaseGameScreen):
-    """展示当前参战 actor 的有效属性、状态效果与手牌详情。"""
+    """展示当前参战 actor 的有效属性与手牌详情。"""
 
     CSS = """
     CombatHandStatusViewScreen {
@@ -86,7 +85,7 @@ class CombatHandStatusViewScreen(BaseGameScreen):
             logger.error(
                 f"CombatHandStatusViewScreen._load_details: 查询失败 error={e}"
             )
-            log.write(f"[bold red]❌ 加载手牌与状态效果失败：{e}[/]")
+            log.write(f"[bold red]❌ 加载手牌失败：{e}[/]")
             return
 
         entity_map = {
@@ -114,13 +113,9 @@ class CombatHandStatusViewScreen(BaseGameScreen):
             log.write("")
             return
 
-        status_data = find_component_data(entity, StatusEffectsComponent.__name__)
         hand_data = find_component_data(entity, HandComponent.__name__)
         equipped_gear_data = find_component_data(entity, EquippedGearComponent.__name__)
 
-        status_comp = (
-            StatusEffectsComponent(**status_data) if status_data is not None else None
-        )
         hand_comp = HandComponent(**hand_data) if hand_data is not None else None
         equipped_gear = (
             EquippedGearComponent(**equipped_gear_data).item
@@ -130,7 +125,6 @@ class CombatHandStatusViewScreen(BaseGameScreen):
 
         effective_stats = compute_effective_stats(
             CharacterStatsComponent(**stats_data).stats,
-            status_comp.status_effects if status_comp is not None else None,
             equipped_gear,
         )
 
@@ -151,28 +145,8 @@ class CombatHandStatusViewScreen(BaseGameScreen):
         )
         log.write("")
 
-        self._write_status_effects(log, status_comp, entity.name)
-        log.write("")
         self._write_hand(log, hand_comp)
         log.write("")
-
-    def _write_status_effects(
-        self,
-        log: RichLog,
-        status_comp: Optional[StatusEffectsComponent],
-        entity_name: str,
-    ) -> None:
-        if status_comp is None:
-            log.write("  [bold]状态效果：[/]  [dim]（无）[/]")
-            return
-
-        effects = status_comp.status_effects
-        log.write(f"  [bold]状态效果（{len(effects)}）：[/]")
-        if not effects:
-            log.write("    [dim]（无状态效果）[/]")
-            return
-        for effect in effects:
-            log.write(render_status_effect(effect, entity_name))
 
     def _write_hand(self, log: RichLog, hand_comp: Optional[HandComponent]) -> None:
         if hand_comp is None:

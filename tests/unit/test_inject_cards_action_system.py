@@ -16,9 +16,7 @@ from src.ai_rpg.models import (
     DungeonComponent,
     PlayCardsAction,
     StageComponent,
-    StatusEffectsComponent,
 )
-from src.ai_rpg.systems.arbitration_prompt_builders import fmt_duration
 from src.ai_rpg.systems.inject_cards_action_system import (
     ActorPostArbitrationDirective,
     InjectCardsActionSystem,
@@ -33,7 +31,6 @@ def _make_actor_entity(context: Context, name: str) -> Entity:
     entity = context.create_entity()
     entity._name = name
     entity.add(ActorComponent, name, "test_stage")
-    entity.add(StatusEffectsComponent, name, [])
     entity.add(DiscardPileComponent, name, [])
     return entity
 
@@ -130,25 +127,6 @@ def system(mock_game: MagicMock) -> InjectCardsActionSystem:
         mock_game,
         use_condensed_prompt=True,
     )
-
-
-# ---------------------------------------------------------------------------
-# Phase 1 — 纯函数
-# ---------------------------------------------------------------------------
-
-
-class TestFmtDuration:
-    """`_fmt_duration` 的单元测试。"""
-
-    def test_minus_one_returns_永久(self) -> None:
-        assert fmt_duration(-1) == "永久"
-
-    def test_positive_returns_remaining_n_rounds(self) -> None:
-        assert fmt_duration(3) == "剩余3回合"
-        assert fmt_duration(1) == "剩余1回合"
-
-    def test_zero_edge_case(self) -> None:
-        assert fmt_duration(0) == "剩余0回合"
 
 
 # ---------------------------------------------------------------------------
@@ -266,7 +244,6 @@ class TestApplyResponse:
         client = _make_mock_chat_client("副本", '{"per_actor": []}')
         system._apply_response(client)
 
-        assert target.get(StatusEffectsComponent).status_effects == []
         assert target.get(DiscardPileComponent).cards == []
 
     def test_unknown_target_logs_error_no_crash(

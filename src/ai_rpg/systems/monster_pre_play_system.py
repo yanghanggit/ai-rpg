@@ -22,11 +22,8 @@ from ..models import (
     PartyMemberComponent,
     PassTurnAction,
     PlayCardsAction,
-    StatusEffect,
-    StatusEffectsComponent,
 )
 from ..utils import extract_json, prompt_builder
-from .arbitration_prompt_builders import fmt_effects
 
 
 #######################################################################################################################################
@@ -44,7 +41,6 @@ class _MonsterDecisionResponse(BaseModel):
 def _build_monster_decision_prompt(
     monster_name: str,
     monster_stats: CharacterStats,
-    monster_status_effects: List[StatusEffect],
     hand_cards: List[Card],
     opponent_names: List[str],
     action_order: List[str],
@@ -56,7 +52,6 @@ def _build_monster_decision_prompt(
     self_info = (
         f"HP:{stats.hp}/{stats.max_hp} | 攻击:{stats.attack} | 防御:{stats.defense}"
     )
-    status_effects_text = fmt_effects(monster_status_effects)
 
     cards_lines = "\n".join(
         f"- 【{c.name}】描述：{c.description}"
@@ -65,7 +60,6 @@ def _build_monster_decision_prompt(
             if c.on_play_affixes
             else ""
         )
-        + (f"  延迟词缀：{'\u3001'.join(c.on_hit_affixes)}" if c.on_hit_affixes else "")
         + f"  damage:{c.damage}  hit_count:{c.hit_count}  target_type:{c.target_type}"
         for c in hand_cards
     )
@@ -95,10 +89,6 @@ def _build_monster_decision_prompt(
 ## 你的当前状态
 
 {self_info}
-
-## 你的当前状态效果
-
-{status_effects_text}
 
 ## 本回合行动序列
 
@@ -137,7 +127,6 @@ pass_turn 为 true 时表示跳过出牌，其他字段可省略"""
 def _build_condensed_monster_decision_prompt(
     monster_name: str,
     monster_stats: CharacterStats,
-    monster_status_effects: List[StatusEffect],
     hand_cards: List[Card],
     opponent_names: List[str],
     action_order: List[str],
@@ -149,12 +138,10 @@ def _build_condensed_monster_decision_prompt(
     self_info = (
         f"HP:{stats.hp}/{stats.max_hp} | 攻击:{stats.attack} | 防御:{stats.defense}"
     )
-    status_effects_text = fmt_effects(monster_status_effects)
 
     cards_lines = "\n".join(
         f"- 【{c.name}】描述：{c.description}"
         + (f"  即时词缀：{'、'.join(c.on_play_affixes)}" if c.on_play_affixes else "")
-        + (f"  延迟词缀：{'、'.join(c.on_hit_affixes)}" if c.on_hit_affixes else "")
         + f"  damage:{c.damage}  hit_count:{c.hit_count}  target_type:{c.target_type}"
         for c in hand_cards
     )
@@ -181,10 +168,6 @@ def _build_condensed_monster_decision_prompt(
 ## 你的当前状态
 
 {self_info}
-
-## 你的当前状态效果
-
-{status_effects_text}
 
 ## 本回合行动序列
 
@@ -273,14 +256,6 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         # 计算怪物的当前战斗属性
         monster_stats = compute_character_stats(entity)
 
-        # 获取怪物自身当前状态效果，供决策 LLM 参考
-        assert entity.has(
-            StatusEffectsComponent
-        ), f"MonsterPrePlaySystem: 怪物 {entity.name} 缺少 StatusEffectsComponent"
-        monster_status_effects: List[StatusEffect] = entity.get(
-            StatusEffectsComponent
-        ).status_effects
-
         # 获取场上存活的远征队成员名称（对手，不传入血量）
         alive_actors = get_alive_actors_in_stage(self._game, entity)
         opponent_names: List[str] = [
@@ -303,7 +278,6 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         prompt = _build_monster_decision_prompt(
             monster_name=entity.name,
             monster_stats=monster_stats,
-            monster_status_effects=monster_status_effects,
             hand_cards=hand_comp.cards,
             opponent_names=opponent_names,
             action_order=action_order,
@@ -315,7 +289,6 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         condensed_prompt = _build_condensed_monster_decision_prompt(
             monster_name=entity.name,
             monster_stats=monster_stats,
-            monster_status_effects=monster_status_effects,
             hand_cards=hand_comp.cards,
             opponent_names=opponent_names,
             action_order=action_order,

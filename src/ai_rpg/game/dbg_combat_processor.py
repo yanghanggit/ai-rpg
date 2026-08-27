@@ -6,19 +6,14 @@ from loguru import logger
 from ..entitas import Entity, Matcher
 from ..models import (
     ActorComponent,
-    AddStatusEffectsAction,
-    AffixTrigger,
     CharacterStats,
     CharacterStatsComponent,
     DeathComponent,
     EquippedGearComponent,
-    PhaseType,
     Round,
     RoundStatsComponent,
     PartyMemberComponent,
     MonsterComponent,
-    StatusEffect,
-    StatusEffectsComponent,
     TargetType,
     InventoryComponent,
     compute_effective_stats,
@@ -26,16 +21,6 @@ from ..models import (
     DiscardPileComponent,
 )
 from .dbg_game import DBGGame
-
-
-#################################################################################################################################################
-def get_status_effects_by_phase(entity: Entity, phase: PhaseType) -> List[StatusEffect]:
-    """返回实体在指定战斗阶段生效的状态效果列表。"""
-    status_comp = entity.get(StatusEffectsComponent)
-    assert status_comp is not None, f"角色 {entity.name} 缺少 StatusEffectsComponent！"
-    if status_comp is None:
-        return []
-    return [e for e in status_comp.status_effects if e.phase == phase]
 
 
 #################################################################################################################################################
@@ -49,11 +34,6 @@ def compute_character_stats(entity: Entity) -> CharacterStats:
     stats_comp = entity.get(CharacterStatsComponent)
     return compute_effective_stats(
         stats_comp.stats,
-        (
-            entity.get(StatusEffectsComponent).status_effects
-            if entity.has(StatusEffectsComponent)
-            else None
-        ),
         (
             entity.get(EquippedGearComponent).item
             if entity.has(EquippedGearComponent)
@@ -76,21 +56,6 @@ def collect_target_character_stats(
 
 
 #################################################################################################################################################
-def collect_target_arbitration_effects(
-    game: DBGGame, target_names: Sequence[str]
-) -> Dict[str, List[StatusEffect]]:
-    """按目标名去重保序收集目标仲裁阶段状态效果。"""
-    target_arbitration_effects: Dict[str, List[StatusEffect]] = {}
-    for target_name in dict.fromkeys(target_names):
-        target_entity = game.get_entity_by_name(target_name)
-        assert target_entity is not None, f"无法找到目标实体: {target_name}"
-        target_arbitration_effects[target_name] = get_status_effects_by_phase(
-            target_entity, PhaseType.ARBITRATION
-        )
-    return target_arbitration_effects
-
-
-#################################################################################################################################################
 def set_character_hp(entity: Entity, hp: int) -> CharacterStats:
     """设置角色的当前 HP，自动 clamp 至 [0, max_hp]。"""
     assert entity.has(ActorComponent), f"{entity.name} 缺少 ActorComponent"
@@ -104,30 +69,6 @@ def set_character_hp(entity: Entity, hp: int) -> CharacterStats:
     stats_comp.stats.hp = clamped
 
     return compute_character_stats(entity)
-
-
-#################################################################################################################################################
-def apply_status_effect_patch(
-    entity: Entity, status_effect_name: str, counter: int
-) -> None:
-    """更新实体上指定状态效果的 counter，并记录更新日志。"""
-    assert entity.has(
-        StatusEffectsComponent
-    ), f"{entity.name} 缺少 StatusEffectsComponent，无法回写状态效果计数器"
-    status_comp = entity.get(StatusEffectsComponent)
-    effect_map = {e.name: e for e in status_comp.status_effects}
-    if status_effect_name in effect_map:
-        old_counter = effect_map[status_effect_name].counter
-        effect_map[status_effect_name].counter = counter
-        logger.info(
-            f"更新 {entity.name} 状态效果「{status_effect_name}」 counter: "
-            f"{old_counter} → {counter}"
-        )
-    else:
-        logger.warning(
-            f"status_effect_patches 中的效果「{status_effect_name}」"
-            f"在 {entity.name} 的 StatusEffectsComponent 中不存在，跳过"
-        )
 
 
 #################################################################################################################################################
@@ -149,20 +90,6 @@ def consume_energy(entity: Entity, amount: int = 1) -> None:
         entity.name,
         max(0, get_energy(entity) - amount),
     )
-
-
-#################################################################################################################################################
-def accumulate_status_effects_action(
-    entity: Entity, affix_triggers: List[AffixTrigger]
-) -> None:
-    """为实体追加 AddStatusEffectsAction，自动合并已有的 affixes。"""
-    existing = (
-        entity.get(AddStatusEffectsAction)
-        if entity.has(AddStatusEffectsAction)
-        else None
-    )
-    merged = (existing.affix_triggers if existing is not None else []) + affix_triggers
-    entity.replace(AddStatusEffectsAction, entity.name, merged)
 
 
 #################################################################################################################################################
@@ -342,11 +269,6 @@ def clear_combat_state(dbg_game: DBGGame) -> None:
 
     # 清除战斗回合状态
     clear_round_state(dbg_game)
-
-    # 清除所有角色的状态效果
-    for entity in dbg_game.get_group(Matcher(StatusEffectsComponent)).entities.copy():
-        logger.debug(f"clear status effects: {entity.name}")
-        entity.remove(StatusEffectsComponent)
 
     # 移动语义：装备背包持有者始终是玩家实体，清除装备前必须先将其归还玩家的
     # InventoryComponent，否则装备会随组件一起被丢弃、凭空消失。

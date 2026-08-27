@@ -8,9 +8,6 @@ from overrides import override
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_combat_processor import (
-    accumulate_status_effects_action,
-    apply_status_effect_patch,
-    collect_target_arbitration_effects,
     collect_target_character_stats,
     compute_character_stats,
     set_character_hp,
@@ -29,7 +26,6 @@ from .arbitration_prompt_builders import (
     build_condensed_gear_arbitration_prompt,
     build_gear_arbitration_broadcast,
     build_gear_arbitration_prompt,
-    generate_gear_equip_affix_triggers,
     build_stats_update_notification,
 )
 
@@ -73,11 +69,8 @@ class EquipGearItemArbitrationSystem(ReactiveProcessor):
         # 获取当前行动者的使用装备动作，用于生成仲裁提示和与 LLM 交互
         action = actor_entity.get(EquipGearItemAction)
 
-        # 获取目标实体的属性和仲裁阶段状态效果，用于生成仲裁提示和与 LLM 交互
+        # 获取目标实体的属性，用于生成仲裁提示和与 LLM 交互
         target_stats = collect_target_character_stats(self._game, action.targets)
-        target_arbitration_effects = collect_target_arbitration_effects(
-            self._game, action.targets
-        )
 
         # 获取当前回合的回合数，用于生成仲裁提示和与 LLM 交互
         current_round_number = len(
@@ -97,12 +90,11 @@ class EquipGearItemArbitrationSystem(ReactiveProcessor):
             StageDescriptionComponent
         ).narrative
 
-        # 生成装备仲裁提示消息，包括使用装备动作、目标实体的状态效果、当前回合数等信息
+        # 生成装备仲裁提示消息，包括使用装备动作、当前回合数等信息
         message = build_gear_arbitration_prompt(
             item=action.item,
             target_stats=target_stats,
             current_round_number=current_round_number,
-            target_arbitration_effects=target_arbitration_effects,
             current_stage_description=current_stage_description,
         )
 
@@ -112,7 +104,6 @@ class EquipGearItemArbitrationSystem(ReactiveProcessor):
                 item=action.item,
                 target_stats=target_stats,
                 current_round_number=current_round_number,
-                target_arbitration_effects=target_arbitration_effects,
                 current_stage_description=current_stage_description,
             )
             if self._use_condensed_prompt
@@ -250,28 +241,9 @@ class EquipGearItemArbitrationSystem(ReactiveProcessor):
                 ),
             )
 
-            for patch in entity_stats.status_effect_patches:
-                apply_status_effect_patch(entity, patch.name, patch.counter)
-
         # 将本回合的装备使用战斗日志和叙事内容记录到当前副本的最新回合中，并增加装备使用计数
         latest_round = self._game.current_dungeon_combat_room.combat.latest_round
         assert latest_round is not None, "latest_round 不应为 None"
         latest_round.gear_combat_log.append(response.combat_log)
         latest_round.gear_narrative.append(response.narrative)
         latest_round.gear_equip_count += 1
-
-        # 如果装备有装备时触发的延迟词缀，则为每个目标实体生成任务提示，并将这些任务提示应用为状态效果
-        if action.item.equip_affixes:
-            for entity_name in action.targets:
-                entity = self._game.get_entity_by_name(entity_name)
-                assert entity is not None, f"无法找到实体: {entity_name}"
-
-                # 生成装备触发的 AffixTrigger 列表，并将这些触发应用为状态效果
-                affix_triggers = generate_gear_equip_affix_triggers(
-                    item=action.item,
-                    targets=action.targets,
-                )
-
-                # 将触发应用为状态效果，确保这些效果在后续的游戏逻辑中能够被正确处理
-                accumulate_status_effects_action(entity, affix_triggers)
-                logger.debug(f"[{entity_name}] 装备仲裁后添加 AddStatusEffectsAction")

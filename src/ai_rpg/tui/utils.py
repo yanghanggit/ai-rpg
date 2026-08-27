@@ -8,7 +8,6 @@ from ..models import (
     GearItem,
     MaterialItem,
     Card,
-    StatusEffect,
     AnyAgentEvent,
     SpeakEvent,
     WhisperEvent,
@@ -28,13 +27,6 @@ TARGET_MAP: Final[Dict[str, str]] = {
     "single": "单体",
     "all": "阵营全体",
     "spread": "阵营散射",
-}
-
-# 状态效果阶段标签；键为 PhaseType 的字符串值。
-PHASE_LABEL: Final[Dict[str, str]] = {
-    "draw": "抽牌",
-    "arbitration": "仲裁",
-    "round_end": "回合末",
 }
 
 
@@ -66,12 +58,6 @@ def render_item(item: AnyItem) -> str:
         if bonus_parts:
             lines.append(f"  [dim]属性: {', '.join(bonus_parts)}[/]")
         lines.append(f"  [dim]费用: 目标 energy -{item.cost}[/]")
-        if item.equip_affixes:
-            for affix in item.equip_affixes:
-                lines.append(f"  [dim]词缀(装备时) {affix}[/]")
-        if item.on_hit_affixes:
-            for affix in item.on_hit_affixes:
-                lines.append(f"  [dim]词缀(命中时) {affix}[/]")
 
     elif isinstance(item, CostumeItem):
         lines.append(f"[bold]{item.name}[/]{count_str} [magenta]【外观】[/]")
@@ -86,9 +72,6 @@ def render_item(item: AnyItem) -> str:
         if item.on_use_affixes:
             for affix in item.on_use_affixes:
                 lines.append(f"  [dim]词缀(使用时) {affix}[/]")
-        if item.on_hit_affixes:
-            for affix in item.on_hit_affixes:
-                lines.append(f"  [dim]词缀(命中后) {affix}[/]")
 
     else:  # MaterialItem
         assert isinstance(item, MaterialItem)
@@ -124,37 +107,10 @@ def render_card(card: Card) -> str:
 
     if card.on_play_affixes:
         lines.append(f"      [yellow]即时词缀: {'、'.join(card.on_play_affixes)}[/]")
-    if card.on_hit_affixes:
-        lines.append(f"      [yellow]延迟词缀: {'、'.join(card.on_hit_affixes)}[/]")
     if card.source:
         lines.append(f"      [dim]来源: {card.source}[/]")
 
     return "\n".join(lines)
-
-
-def render_status_effect(effect: StatusEffect, entity_name: str = "") -> str:
-    """渲染单个状态效果的全部关键字段。
-
-    entity_name: 效果所挂载实体的名称；当 effect.source 与之不同时才附加显示来源，
-    避免自身施加的效果冗余标注来源。
-    """
-    duration_str = "永久" if effect.duration == -1 else f"剩余{effect.duration}回合"
-    phase_label = PHASE_LABEL.get(effect.phase.value, effect.phase.value)
-    meta_parts = [duration_str, f"阶段:{phase_label}"]
-    if effect.counter:
-        meta_parts.append(f"计数:{effect.counter}")
-    if effect.speed:
-        meta_parts.append(f"速度:{effect.speed:+d}")
-    if effect.defense:
-        meta_parts.append(f"防御:{effect.defense:+d}")
-    if effect.source and effect.source != entity_name:
-        meta_parts.append(f"来源:{display_name(effect.source)}")
-    meta = "  ".join(meta_parts)
-
-    return (
-        f"    • [bold]{effect.name}[/]  [dim]{meta}[/]\n"
-        f"      [dim]{effect.description}[/]"
-    )
 
 
 def format_agent_event(event: AnyAgentEvent) -> str:

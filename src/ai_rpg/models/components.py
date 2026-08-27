@@ -3,7 +3,6 @@
 from typing import List, final
 from ..entitas.components import Component
 from .card import Card
-from .status_effect import StatusEffect
 from .items import AnyItem, CostumeItem, GearItem
 from .stats import CharacterStats
 from .registry import register_component_type
@@ -179,18 +178,6 @@ class CharacterStatsComponent(Component):
 
     name: str
     stats: CharacterStats
-
-
-############################################################################################################
-
-
-@final
-@register_component_type
-class StatusEffectsComponent(Component):
-    """存储角色当前状态效果列表。"""
-
-    name: str
-    status_effects: List[StatusEffect]
 
 
 ############################################################################################################

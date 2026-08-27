@@ -20,10 +20,9 @@ from ..models import (
     NPCComponent,
     PlayerComponent,
     RoundStatsComponent,
-    StatusEffectsComponent,
     compute_effective_stats,
 )
-from .utils import display_name, render_card, render_status_effect
+from .utils import display_name, render_card
 
 
 ###############################################################################################################################################
@@ -88,16 +87,12 @@ def is_alive(entity: EntitySerialization) -> bool:
 def compute_effective_stats_for(
     entity: EntitySerialization,
 ) -> Optional[CharacterStats]:
-    """计算实体的有效属性（聚合状态效果 + 已装备加成）；缺少 CharacterStatsComponent 时返回 None。"""
+    """计算实体的有效属性（聚合已装备加成）；缺少 CharacterStatsComponent 时返回 None。"""
     stats_data = find_component_data(entity, CharacterStatsComponent.__name__)
     if stats_data is None:
         return None
 
-    status_data = find_component_data(entity, StatusEffectsComponent.__name__)
     equipped_gear_data = find_component_data(entity, EquippedGearComponent.__name__)
-    status_comp = (
-        StatusEffectsComponent(**status_data) if status_data is not None else None
-    )
     equipped_gear = (
         EquippedGearComponent(**equipped_gear_data).item
         if equipped_gear_data is not None
@@ -105,7 +100,6 @@ def compute_effective_stats_for(
     )
     return compute_effective_stats(
         CharacterStatsComponent(**stats_data).stats,
-        status_comp.status_effects if status_comp is not None else None,
         equipped_gear,
     )
 
@@ -136,7 +130,7 @@ def write_actor_detail(
     entity: EntitySerialization,
     index_label: str = "",
 ) -> None:
-    """渲染单个角色的有效属性 + 状态效果 + 手牌完整详情，供出牌 / 怪物回合等
+    """渲染单个角色的有效属性 + 手牌完整详情，供出牌 / 怪物回合等
     需要展示当前 turn 角色详情的页面复用，避免各自重复实现。
 
     index_label: 非空时与角色名写在同一行前面（如目标候选列表的编号）。
@@ -148,12 +142,8 @@ def write_actor_detail(
         )
         return
 
-    status_data = find_component_data(entity, StatusEffectsComponent.__name__)
     hand_data = find_component_data(entity, HandComponent.__name__)
 
-    status_comp = (
-        StatusEffectsComponent(**status_data) if status_data is not None else None
-    )
     hand_comp = HandComponent(**hand_data) if hand_data is not None else None
     death_mark = (
         "  [bold red]（已战死）[/]"
@@ -169,13 +159,6 @@ def write_actor_detail(
         f"攻:{effective_stats.attack}  防:{effective_stats.defense}  "
         f"能量:{resolve_current_energy(entity, effective_stats)}  速度:{effective_stats.speed}"
     )
-
-    if status_comp is not None and status_comp.status_effects:
-        log.write(f"    状态效果（{len(status_comp.status_effects)}）：")
-        for effect in status_comp.status_effects:
-            log.write(render_status_effect(effect, entity.name))
-    else:
-        log.write("    状态效果： [dim]（无）[/]")
 
     if hand_comp is not None and hand_comp.cards:
         log.write(f"    手牌（{len(hand_comp.cards)}）：")
@@ -256,9 +239,8 @@ def render_stage_actors(
 ) -> None:
     """渲染场景名 + 场景内所有 actor 的有效属性。
 
-    手牌数量 / 状态效果数量仅在实体实际挂载 HandComponent / StatusEffectsComponent
-    时才附加显示（由服务端按战斗阶段决定是否挂载，如 INITIALIZATION 阶段通常尚未
-    创建 HandComponent，ONGOING 阶段才会有），本函数只需按存在与否稳健地判断即可，
+    手牌数量仅在实体实际挂载 HandComponent 时才附加显示（由服务端按战斗阶段决定是否挂载，
+    如 INITIALIZATION 阶段通常尚未创建 HandComponent，ONGOING 阶段才会有），本函数只需按存在与否稳健地判断即可，
     无需调用方显式传入阶段相关的开关。
     """
     log.write(f"[bold yellow]── 场景：{display_name(stage_name)} ─────────────[/]")
@@ -277,15 +259,6 @@ def render_stage_actors(
 
         base_stats = CharacterStatsComponent(**stats_data).stats
 
-        status_effects_data = find_component_data(
-            entity, StatusEffectsComponent.__name__
-        )
-        status_effects = (
-            StatusEffectsComponent(**status_effects_data).status_effects
-            if status_effects_data is not None
-            else None
-        )
-
         equipped_gear_data = find_component_data(entity, EquippedGearComponent.__name__)
         equipped_gear = (
             EquippedGearComponent(**equipped_gear_data).item
@@ -293,9 +266,7 @@ def render_stage_actors(
             else None
         )
 
-        effective_stats = compute_effective_stats(
-            base_stats, status_effects, equipped_gear
-        )
+        effective_stats = compute_effective_stats(base_stats, equipped_gear)
         current_energy = resolve_current_energy(entity, effective_stats)
         label = role_label(entity)
         is_dead = find_component_data(entity, DeathComponent.__name__) is not None
@@ -310,9 +281,6 @@ def render_stage_actors(
         hand_data = find_component_data(entity, HandComponent.__name__)
         if hand_data is not None:
             line += f"  手牌:{len(HandComponent(**hand_data).cards)}"
-
-        if status_effects is not None:
-            line += f"  状态效果:{len(status_effects)}"
 
         log.write(line)
     log.write("")

@@ -14,7 +14,6 @@ from src.ai_rpg.models import (
     ExhaustPileComponent,
     MonsterComponent,
     PartyMemberComponent,
-    StatusEffectsComponent,
 )
 from unittest.mock import MagicMock
 from src.ai_rpg.models.stats import CharacterStats
@@ -109,27 +108,17 @@ def test_generate_combat_init_prompt_contains_key_fields() -> None:
 
 
 # ---------------------------------------------------------------------------
-# _initialize_piles_and_status_effects
+# _initialize_piles
 # ---------------------------------------------------------------------------
 
 
-def test_initialize_piles_and_status_effects_adds_all_piles(
+def test_initialize_piles_adds_all_piles(
     context: Context, system: CombatInitActorSystem
 ) -> None:
     actor = _make_actor(context, "勇者", is_ally=True)
-    system._initialize_piles_and_status_effects({actor})
+    system._initialize_piles({actor})
 
     assert actor.has(DrawPileComponent)
     assert actor.has(DiscardPileComponent)
     assert actor.has(ExhaustPileComponent)
     assert actor.get(DrawPileComponent).cards == []
-
-
-def test_initialize_piles_and_status_effects_adds_empty_status_effects(
-    context: Context, system: CombatInitActorSystem
-) -> None:
-    actor = _make_actor(context, "勇者", is_ally=True)
-    system._initialize_piles_and_status_effects({actor})
-
-    assert actor.has(StatusEffectsComponent)
-    assert actor.get(StatusEffectsComponent).status_effects == []

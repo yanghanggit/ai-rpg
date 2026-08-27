@@ -326,12 +326,6 @@ class CraftGearItemScreen(BaseGameScreen):
                     desc = str(item.get("description", ""))
                     target = str(item.get("target_type", ""))
                     stat_bonuses = item.get("stat_bonuses", {})
-                    equip_affixes: List[str] = [
-                        str(a) for a in item.get("equip_affixes", [])
-                    ]
-                    on_hit_affixes: List[str] = [
-                        str(a) for a in item.get("on_hit_affixes", [])
-                    ]
                     log.write(f"  [bold magenta]装备[/]：{display_name(name)}")
                     if desc:
                         log.write(f"  [dim]{desc}[/]")
@@ -344,10 +338,6 @@ class CraftGearItemScreen(BaseGameScreen):
                         )
                         if bonuses:
                             log.write(f"  [cyan]属性加成[/]：{bonuses}")
-                    if equip_affixes:
-                        log.write(f"  [cyan]装备词缀[/]：{', '.join(equip_affixes)}")
-                    if on_hit_affixes:
-                        log.write(f"  [cyan]命中词缀[/]：{', '.join(on_hit_affixes)}")
                     log.write("")
 
         if not shown:

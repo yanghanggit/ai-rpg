@@ -38,12 +38,11 @@
 | [AI 操作 CLI（run_agent_game.py）](wiki/run-agent-game.md) | 快照驱动设计的意图、AI 代理操作工具与 TUI 客户端的分工 |
 | [副本生成管道（Dungeon Generation Pipeline）](wiki/dungeon-generation.md) | 核心哲学：机制与内容分离、四步接力管道的分工意图与设计决策、与工坊合成的架构对比 |
 | [副本导演（Dungeon Director）](wiki/dungeon-director.md) | 全局单例、俯瞰当前副本的有状态记忆积累设计：入口身份锁定、逐房间事实追加、副本结束总结移交世界导演并重置 |
-| [战斗管道（Combat Pipeline）](wiki/combat-pipeline.md) | ECS 处理器链的架构设计：管道心跳驱动、场景实体仲裁、词缀因果链、回合行动序列与四个生命周期阶段 |
+| [战斗管道（Combat Pipeline）](wiki/combat-pipeline.md) | ECS 处理器链的架构设计：管道心跳驱动、场景实体仲裁、词缀即时结算、回合行动序列与四个生命周期阶段 |
 | [卡牌关键词（keywords）](wiki/keywords.md) | 角色牌库蓝图（存于 ArchetypeComponent）：字段级约束声明、规则/叙事分层、牌库多样性与每场采样 |
 | [卡牌流派（Archetype）生成规则](wiki/archetype-generation.md) | archetype 的生成规则：跨内容逻辑层、效果是给仲裁 LLM 的规则文本、机制根部与可结算边界、衔接与内建弱点 |
-| [词缀（Affix）](wiki/affix.md) | 词缀作为 StatusEffect 种子的创建、流转、落地与回述全线路 |
-| [DBG 核心概念定义与逻辑关系总结](<wiki/DBG 核心概念定义与逻辑关系总结.md>) | Modifiers（对局级规则）、Affixes（实体固有词缀）、Status Effects（临时状态）三者的定义、归属与逻辑关系：宏观-微观、因-果、生产-消费模型 |
-| [LLM 生成型游戏对象：Card 与 StatusEffect](wiki/llm-generated-objects.md) | 两类 LLM 动态产出的核心对象的生成点定位、全局约束视角、生成链与规则来源 |
+| [DBG 核心概念定义与逻辑关系总结](<wiki/DBG 核心概念定义与逻辑关系总结.md>) | Modifiers（对局级规则）与 Affixes（一次性效果词缀）二者的定义、归属与逻辑关系：宏观-微观模型 |
+| [LLM 生成型游戏对象：Card](wiki/llm-generated-objects.md) | Card 作为 LLM 动态产出核心对象的生成点定位、全局约束视角、生成链与规则来源 |
 | [公共知识检索系统（RAG / QueryAction）](wiki/rag-knowledge-base.md) | 公共记忆与私人记忆的二元分离、Blueprint.knowledge_base 的编排约束、pgvector 两阶段生命周期、QueryActionSystem 的触发与消费 |
 | [提示词管理（Prompt Management）](wiki/prompt-management.md) | `prompt_builder` 装饰器与登记表的设计动机、判定边界、与命名约定的关系 |
 | [新故事设计：《大渊》](wiki/新故事设计.md) | 新故事世界观草稿：双重世界（济世疗养院 / 大傩）、核心冲突、角色设定与玩法方向 |

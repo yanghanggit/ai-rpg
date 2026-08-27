@@ -20,14 +20,11 @@ from ..models import (
     DiscardPileComponent,
     HumanMessage,
     PlayCardsAction,
-    StatusEffect,
-    StatusEffectsComponent,
     TargetType,
     UseConsumableItemAction,
     EquipGearItemAction,
 )
 from ..utils import extract_json, prompt_builder
-from .arbitration_prompt_builders import fmt_duration
 from .card_prompt_builders import BUILD_CARD_FIELD_DESCRIPTION
 
 
@@ -56,7 +53,6 @@ class ActorStatusSummary:
     name: str
     hp: int
     max_hp: int
-    status_effects: List[StatusEffect]
 
 
 #######################################################################################################################################
@@ -71,19 +67,14 @@ def _collect_actor_status_summaries(
         assert entity.has(
             CharacterStatsComponent
         ), f"角色 {entity.name} 缺少 CharacterStatsComponent"
-        assert entity.has(
-            StatusEffectsComponent
-        ), f"角色 {entity.name} 缺少 StatusEffectsComponent"
 
         final_stats = compute_character_stats(entity)
-        effects_comp = entity.get(StatusEffectsComponent)
 
         summaries.append(
             ActorStatusSummary(
                 name=entity.name,
                 hp=final_stats.hp,
                 max_hp=final_stats.max_hp,
-                status_effects=effects_comp.status_effects,
             )
         )
 
@@ -100,17 +91,7 @@ def _build_actors_summary(actor_summaries: List[ActorStatusSummary]) -> str:
 
         hp_str = f"HP: {summary.hp}/{summary.max_hp}"
 
-        if len(summary.status_effects) > 0:
-            effects_str = "、".join(
-                f"{e.name}（{fmt_duration(e.duration)}）"
-                for e in summary.status_effects
-            )
-        else:
-            effects_str = "无"
-
-        actor_lines.append(
-            f"- **{summary.name}**  {hp_str}  " f"状态效果: {effects_str}"
-        )
+        actor_lines.append(f"- **{summary.name}**  {hp_str}")
 
     #
     return "\n".join(actor_lines) if actor_lines else "  （无存活角色）"
@@ -177,7 +158,7 @@ def _build_inject_cards_prompt(
           "name": "碎柱投掷",
           "description": "掷出断柱碎块，造成钝击伤害",
           "on_play_affixes": [],
-          "on_hit_affixes": [],
+
           "playable": true,
           "exhaust": true,
           "cost": 0,

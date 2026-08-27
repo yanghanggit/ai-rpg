@@ -122,27 +122,12 @@ _KW_ATTACK: Final[str] = (
     "攻击型：对单个目标造成直接伤害，damage 以角色攻击力（attack）为基数，不携带词缀。"
 )
 _KW_DEFENSE: Final[str] = (
-    "防御型：target_type 为 self，on_hit_affixes 携带词缀 [护盾]:出牌后为自身添加防御增益，"
-    "落地为 StatusEffect；duration 为一回合，defense 加成以本角色的防御力（defense）为基数。"
-)
-_KW_EROSION: Final[str] = (
-    "持续侵蚀型：target_type 为 single，damage 低于角色攻击力（attack）；"
-    "on_hit_affixes 携带词缀 [毒性侵蚀]:命中后令目标中毒，落地为 StatusEffect；"
-    "phase 为 round_end，duration 为三回合，description 为「每回合末损失 1 HP」。"
+    "防御型：target_type 为 self，on_play_affixes 携带词缀 [护盾]:本次出牌为自身叠加防御，"
+    "仅对本次结算生效，不产生跨回合的持续效果。"
 )
 _KW_ARMOR_BREAK: Final[str] = (
     "穿甲型：target_type 为 single，damage 以角色攻击力（attack）为基数；"
-    "on_play_affixes 携带词缀 [穿透]:本次出牌伤害无视目标防御，仅对本次结算生效、不落地 StatusEffect。"
-)
-_KW_VULNERABLE: Final[str] = (
-    "易伤型：target_type 为 single，damage 可为 0 或低于角色攻击力（attack）；"
-    "on_hit_affixes 携带词缀 [易伤]:命中后令目标陷入易伤，落地为 StatusEffect；"
-    "phase 为 arbitration，duration 为三回合，description 为「受击时防御减半」。"
-)
-_KW_SLOW: Final[str] = (
-    "减速型：target_type 为 single，damage 可为 0 或低于角色攻击力（attack）；"
-    "on_hit_affixes 携带词缀 [减速]:命中后令目标速度降低，落地为 StatusEffect；"
-    "phase 为 arbitration，duration 为三回合，speed 为 -1。"
+    "on_play_affixes 携带词缀 [穿透]:本次出牌伤害无视目标防御，仅对本次结算生效。"
 )
 
 
@@ -164,8 +149,6 @@ def create_actor_paper_doll() -> Actor:
             _KW_ATTACK,
             # 1 张基础防御
             _KW_DEFENSE,
-            # 1 张持续侵蚀
-            _KW_EROSION,
         ],
     )
 
@@ -297,9 +280,6 @@ def create_guzhiqiu() -> Actor:
             # 2 张基础防御
             _KW_DEFENSE,
             _KW_DEFENSE,
-            # 控制拆分：1 张易伤 + 1 张减速
-            _KW_VULNERABLE,
-            _KW_SLOW,
         ],
     )
 
@@ -421,7 +401,6 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
                 on_play_affixes=[
                     "[血锈游丝]:出牌时，刃身锈迹化为一缕暗红游丝先一步缠向目标，令本次攻击的创口更诡谲、痛感更绵长"
                 ],
-                on_hit_affixes=["[锈蚀创口]:命中后锈迹可能引发伤口感染，造成持续伤害"],
             ),
             GearItem(
                 name="装备.束身护具",
@@ -429,9 +408,6 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
                 stat_bonuses=CharacterStats(
                     hp=0, max_hp=0, attack=0, defense=2, energy=0, speed=0
                 ),
-                equip_affixes=[
-                    "[棉布韧性]:承受重击时可能激活韧性层，减少下一次受到的伤害"
-                ],
                 on_play_affixes=[
                     "[束身回护]:出牌时，护具上的旧纱如活物般自行收紧，暗红符痕微微发亮，将佩戴者的动作稳稳托住并透出一股绵韧回护之力"
                 ],
@@ -441,14 +417,12 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
                 description="一支从疗养院药房取得的玻璃针剂，液体呈淡琥珀色。针管上有细小裂纹但封口尚好。注射后迅速镇痛止血，但会留下短暂的眩晕感。",
                 count=1,
                 target_type=TargetType.SINGLE,
-                on_hit_affixes=["[镇痛]:可能移除当前出血状态"],
             ),
             ConsumableItem(
                 name="消耗品.纸钱爆散",
-                description="一叠写满朱砂字的纸钱，折叠成团后用香灰填塞。用力掷向地面后会爆散，纸片与香灰横飞，对场上所有敌人造成伤害。某些东西格外惧怕这个。",
+                description="一叠写满朱砂字的纸钱，折叠成团后用香灰填塞。用力掘向地面后会爆散，纸片与香灰横飞，对场上所有敌人造成伤害。某些东西格外惧怕这个。",
                 count=1,
                 target_type=TargetType.ALL,
-                on_hit_affixes=["[惊魂]:爆炸冲击可能令目标下回合行动延迟"],
             ),
         ],
     )

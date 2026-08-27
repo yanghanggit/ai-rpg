@@ -1,4 +1,4 @@
-"""战斗初始化系统（角色侧）：战斗触发后，为参战角色初始化临时牌堆/状态效果组件、注入战场上下文并触发初始牌库生成。"""
+"""战斗初始化系统（角色侧）：战斗触发后，为参战角色初始化临时牌堆、注入战场上下文并触发初始牌库生成。"""
 
 from dataclasses import dataclass
 from typing import Final, List, final, override, Set
@@ -16,7 +16,6 @@ from ..models import (
     FillDrawPileAction,
     GenerateDeckAction,
     StageDescriptionComponent,
-    StatusEffectsComponent,
     DrawPileComponent,
     DiscardPileComponent,
     ExhaustPileComponent,
@@ -80,7 +79,7 @@ def _build_combat_init_prompt(
 ###################################################################################################################################################################
 @final
 class CombatInitActorSystem(ExecuteProcessor):
-    """战斗初始化系统（角色侧）：初始化战斗临时牌堆/状态效果组件，为参战角色注入战场上下文，触发初始牌库生成。"""
+    """战斗初始化系统（角色侧）：初始化战斗临时牌堆，为参战角色注入战场上下文，触发初始牌库生成。"""
 
     def __init__(self, game: DBGGame) -> None:
         self._game: Final[DBGGame] = game
@@ -94,7 +93,7 @@ class CombatInitActorSystem(ExecuteProcessor):
             return
 
         logger.info(
-            "战斗初始化（角色侧）开始，正在为参战角色初始化牌堆/状态效果并注入战场上下文..."
+            "战斗初始化（角色侧）开始，正在为参战角色初始化牌堆并注入战场上下文..."
         )
 
         assert self._game.is_player_in_dungeon_stage, "战斗初始化阶段玩家必须在场景中！"
@@ -120,8 +119,8 @@ class CombatInitActorSystem(ExecuteProcessor):
         actor_entities = get_alive_actors_in_stage(self._game, player_entity)
         assert len(actor_entities) > 0, "不可能出现没人参与战斗的情况！"
 
-        # 为所有参战角色初始化战斗临时牌堆（DrawPile / DiscardPile / ExhaustPile）与空的状态效果组件
-        self._initialize_piles_and_status_effects(actor_entities)
+        # 为所有参战角色初始化战斗临时牌堆（DrawPile / DiscardPile / ExhaustPile）
+        self._initialize_piles(actor_entities)
 
         # 为每个角色注入战场上下文（无 LLM 调用）
         self._add_context(
@@ -156,8 +155,8 @@ class CombatInitActorSystem(ExecuteProcessor):
             logger.debug(f"[{actor_entity.name}] 已添加 GenerateDeckAction（怪物）")
 
     ###################################################################################################################################################################
-    def _initialize_piles_and_status_effects(self, actor_entities: Set[Entity]) -> None:
-        """为所有参战角色初始化战斗临时牌堆（DrawPile / DiscardPile / ExhaustPile）与空的 StatusEffectsComponent。"""
+    def _initialize_piles(self, actor_entities: Set[Entity]) -> None:
+        """为所有参战角色初始化战斗临时牌堆（DrawPile / DiscardPile / ExhaustPile）。"""
         for actor_entity in actor_entities:
 
             # 强制检查
@@ -178,18 +177,6 @@ class CombatInitActorSystem(ExecuteProcessor):
             logger.debug(
                 f"[{actor_entity.name}] 战斗临时牌堆初始化完成（DrawPile / DiscardPile / ExhaustPile）"
             )
-
-            # 如果没有状态效果组件则先添加一个空的，以保证后续系统（UpdateStatusEffectsActionSystem / InjectCardsActionSystem）能正常工作
-            assert (
-                not actor_entity.has(StatusEffectsComponent)
-                or len(actor_entity.get(StatusEffectsComponent).status_effects) == 0
-            ), f"角色 {actor_entity.name} 已有非空状态效果列表，理论上不应该出现这种情况！如果确实出现了，请检查之前的系统是否正确清理了状态效果。"
-            actor_entity.replace(
-                StatusEffectsComponent,
-                actor_entity.name,
-                [],
-            )
-            logger.debug(f"[{actor_entity.name}] 状态效果组件初始化完成（空）")
 
     ###################################################################################################################################################################
     def _add_context(

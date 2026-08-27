@@ -13,7 +13,6 @@ from src.ai_rpg.game.dbg_game import DBGGame
 from src.ai_rpg.models import (
     EquippedGearComponent,
     InventoryComponent,
-    StatusEffectsComponent,
 )
 from src.ai_rpg.models.items import GearItem
 from src.ai_rpg.game.dbg_combat_processor import clear_combat_state
@@ -31,8 +30,6 @@ def _make_mock_game(
 
     def _get_group(matcher: Matcher) -> SimpleNamespace:
         component_types = matcher._all or ()
-        if StatusEffectsComponent in component_types:
-            return SimpleNamespace(entities=set())
         if EquippedGearComponent in component_types:
             return SimpleNamespace(entities=set(equipped_holders))
         return SimpleNamespace(entities=set())

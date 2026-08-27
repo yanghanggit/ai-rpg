@@ -8,7 +8,7 @@ RAG 系统为 AI 角色提供「向世界提问」的能力。任何角色可发
 
 核心设计决策是**公共记忆与私人记忆的二元分离**：`Blueprint.knowledge_base` 承载任何路人都可观察到的客观环境事实，经向量化存入 pgvector；角色的身世、性格、秘密等私人知识由各自 `profile` 字段承载，不进入向量库。二者互不污染——角色不知道的事，不能通过 RAG「顺便知道」。
 
-→ 参见：[LLM 生成型游戏对象：Card 与 StatusEffect](llm-generated-objects.md)（角色 profile 作为系统消息的注入路径）
+→ 参见：[LLM 生成型游戏对象：Card](llm-generated-objects.md)（角色 profile 作为系统消息的注入路径）
 
 ---
 

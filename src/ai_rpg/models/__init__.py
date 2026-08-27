@@ -5,7 +5,6 @@ from .api import *
 from .target_type import *
 from .phase_type import *
 from .card import *
-from .status_effect import *
 from .session_message import *
 from .combat import *
 from .components import *

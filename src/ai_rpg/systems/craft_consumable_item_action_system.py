@@ -27,7 +27,6 @@ class _CraftConsumableResponse(BaseModel):
     description: str = ""
     target_type: TargetType = TargetType.SELF
     on_use_affixes: List[str] = []
-    on_hit_affixes: List[str] = []
 
 
 #######################################################################################################################################
@@ -54,7 +53,6 @@ def _build_craft_prompt(materials: List[MaterialItem]) -> str:
   - all：选定一个目标作为阵营锚点，作用于其所在阵营全体存活角色（选己方=全体友方增益，选敌方=全体敌方伤害）
   - spread：选定一个目标作为阵营锚点，对其所在阵营全体存活角色散射攻击（命中次数>阵营人数时保底每人至少一次，其余随机）
 - **on_use_affixes**：即时词缀列表，格式 `[名称]:触发倾向描述`（如 `[穿透]:本次使用无视目标防御`）；参与本次使用仲裁、仅对本次结算生效，不落地状态效果；无即时效果时输出 []
-- **on_hit_affixes**：延迟词缀列表，格式 `[名称]:触发倾向描述`（如 `[燃烧]:可能引发持续扣血`）；使用命中目标后独立推理生成持续状态效果；凡涉及“本回合/下回合/持续N回合”等跨回合影响的效果必须放在这里；无持续效果时输出 []
 
 ## 输出格式
 
@@ -63,8 +61,7 @@ def _build_craft_prompt(materials: List[MaterialItem]) -> str:
   "name": "消耗品.XXX",
   "description": "...",
   "target_type": "single",
-  "on_use_affixes": [],
-  "on_hit_affixes": ["[燃烧]:可能引发持续扣血"]
+  "on_use_affixes": []
 }}
 ```
 
@@ -119,7 +116,6 @@ class CraftConsumableItemActionSystem(ReactiveProcessor):
             description=result.description,
             target_type=result.target_type,
             on_use_affixes=result.on_use_affixes,
-            on_hit_affixes=result.on_hit_affixes,
             craft_materials=action.material_items,
         )
 
@@ -127,7 +123,7 @@ class CraftConsumableItemActionSystem(ReactiveProcessor):
         self._update_storage(storage_entity, action.material_names, new_item)
         logger.info(
             f"[CraftConsumableActionSystem] 合成完成: {new_item.name} "
-            f"(target={new_item.target_type}, on_use_affixes={new_item.on_use_affixes}, on_hit_affixes={new_item.on_hit_affixes})"
+            f"(target={new_item.target_type}, on_use_affixes={new_item.on_use_affixes})"
         )
 
     ####################################################################################################################################

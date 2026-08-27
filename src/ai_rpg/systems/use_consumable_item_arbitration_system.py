@@ -8,9 +8,6 @@ from overrides import override
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_combat_processor import (
-    accumulate_status_effects_action,
-    apply_status_effect_patch,
-    collect_target_arbitration_effects,
     collect_target_character_stats,
     compute_character_stats,
     set_character_hp,
@@ -27,7 +24,6 @@ from ..utils import extract_json
 from .arbitration_prompt_builders import (
     ArbitrationResponse,
     build_condensed_consumable_arbitration_prompt,
-    generate_consumable_affix_triggers,
     build_consumable_arbitration_broadcast,
     build_consumable_arbitration_prompt,
     build_stats_update_notification,
@@ -73,11 +69,8 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
         # 获取当前实体的 UseConsumableItemAction，用于后续的仲裁逻辑
         action = actor_entity.get(UseConsumableItemAction)
 
-        # 获取所有目标实体的当前属性、仲裁阶段状态效果、装备附加属性，用于生成仲裁提示信息
+        # 获取所有目标实体的当前属性，用于生成仲裁提示信息
         target_stats = collect_target_character_stats(self._game, action.targets)
-        target_arbitration_effects = collect_target_arbitration_effects(
-            self._game, action.targets
-        )
 
         # 获取当前回合数，用于生成仲裁提示信息
         current_round_number = len(
@@ -95,14 +88,13 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             StageDescriptionComponent
         ).narrative
 
-        # 生成仲裁提示信息，包括当前行动、目标属性、回合数、目标状态效果和装备附加属性
+        # 生成仲裁提示信息，包括当前行动、目标属性、回合数
         message = build_consumable_arbitration_prompt(
             actor_name=actor_entity.name,
             actor_stats=compute_character_stats(actor_entity),
             item=action.item,
             target_stats=target_stats,
             current_round_number=current_round_number,
-            target_arbitration_effects=target_arbitration_effects,
             current_stage_description=current_stage_description,
         )
 
@@ -114,7 +106,6 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                 item=action.item,
                 target_stats=target_stats,
                 current_round_number=current_round_number,
-                target_arbitration_effects=target_arbitration_effects,
                 current_stage_description=current_stage_description,
             )
             if self._use_condensed_prompt
@@ -252,28 +243,9 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                 ),
             )
 
-            # 回写状态效果计数器补丁
-            for patch in entity_stats.status_effect_patches:
-                apply_status_effect_patch(entity, patch.name, patch.counter)
-
         # 更新本回合的消耗品仲裁日志和计数
         latest_round = self._game.current_dungeon_combat_room.combat.latest_round
         assert latest_round is not None, "latest_round 不应为 None"
         latest_round.consumable_combat_log.append(response.combat_log)
         latest_round.consumable_narrative.append(response.narrative)
         latest_round.consumable_use_count += 1
-
-        # 消耗品仲裁结算后为所有目标（action.targets）添加 AddStatusEffectsAction
-        if action.item.on_hit_affixes:
-            for entity_name in action.targets:
-                entity = self._game.get_entity_by_name(entity_name)
-                assert entity is not None, f"无法找到实体: {entity_name}"
-
-                affix_triggers = generate_consumable_affix_triggers(
-                    item=action.item,
-                    targets=action.targets,
-                )
-                accumulate_status_effects_action(entity, affix_triggers)
-                logger.debug(f"[{entity_name}] 消耗品仲裁后添加 AddStatusEffectsAction")
-        else:
-            logger.debug("消耗品 on_hit_affixes 为空，跳过 AddStatusEffectsAction")

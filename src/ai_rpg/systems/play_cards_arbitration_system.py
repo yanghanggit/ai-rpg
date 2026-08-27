@@ -8,25 +8,18 @@ from overrides import override
 from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_combat_processor import (
-    accumulate_status_effects_action,
-    apply_status_effect_patch,
-    collect_target_arbitration_effects,
     collect_target_character_stats,
     compute_character_stats,
-    get_status_effects_by_phase,
     set_character_hp,
 )
 from ..game.dbg_game import DBGGame
 from ..models import (
-    AffixTrigger,
     CharacterStatsComponent,
     CombatArbitrationEvent,
     HumanMessage,
-    PhaseType,
     PlayCardsAction,
     RoundStatsComponent,
     StageDescriptionComponent,
-    StatusEffect,
 )
 from ..utils import extract_json
 from .arbitration_prompt_builders import (
@@ -34,8 +27,6 @@ from .arbitration_prompt_builders import (
     build_combat_arbitration_broadcast,
     build_combat_arbitration_prompt,
     build_condensed_combat_arbitration_prompt,
-    generate_gear_on_hit_affix_triggers,
-    generate_play_cards_affix_triggers,
     build_stats_update_notification,
 )
 
@@ -92,17 +83,9 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
         ), f"出牌实体 {actor_entity.name} 缺少 RoundStatsComponent！"
 
         # dict.fromkeys 去重并保序（SPREAD 的 targets 长度=hit_count，可能含重复名）
-        # 获取目标实体的当前属性、仲裁阶段状态效果、装备附加属性，用于生成仲裁提示
+        # 获取目标实体的当前属性、装备附加属性，用于生成仲裁提示
         target_stats = collect_target_character_stats(
             self._game, play_cards_action.targets
-        )
-        target_arbitration_effects = collect_target_arbitration_effects(
-            self._game, play_cards_action.targets
-        )
-
-        # 获取出牌实体在仲裁阶段的状态效果，用于生成仲裁提示
-        actor_arbitration_effects: List[StatusEffect] = get_status_effects_by_phase(
-            actor_entity, PhaseType.ARBITRATION
         )
 
         # 获取当前回合数，用于仲裁提示生成
@@ -132,8 +115,6 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             play_cards_action.targets,
             target_stats,
             current_round_number,
-            actor_arbitration_effects,
-            target_arbitration_effects,
             current_stage_description,
             play_cards_action.gear_item,
             round_action_order,
@@ -150,8 +131,6 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                 play_cards_action.targets,
                 target_stats,
                 current_round_number,
-                actor_arbitration_effects,
-                target_arbitration_effects,
                 current_stage_description,
                 play_cards_action.gear_item,
                 round_action_order,
@@ -184,16 +163,15 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             return
 
         # 解析 LLM 的响应内容，提取 JSON 并转换为 ArbitrationResponse 对象，供后续处理使用
-        self._apply_arbitration_result(chat_client, actor_entity, play_cards_action)
+        self._apply_arbitration_result(chat_client, actor_entity)
 
     #######################################################################################################################################
     def _apply_arbitration_result(
         self,
         chat_client: DeepSeekClient,
         actor_entity: Entity,
-        action: PlayCardsAction,
     ) -> None:
-        """解析 AI 仲裁响应，更新 HP/状态效果，广播仲裁事件，写入回合记录。解析失败仅记录 error。"""
+        """解析 AI 仲裁响应，更新 HP，广播仲裁事件，写入回合记录。解析失败仅记录 error。"""
 
         if chat_client.response_ai_message is None:
             logger.error("[PlayCardsArbitrationSystem] LLM 回复内容为空")
@@ -288,57 +266,12 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             max_hp = after_stats.max_hp
             logger.info(f"更新 {entity_name} HP: {old_hp} → {new_hp}/{max_hp}")
 
-            # 回写仲裁阶段状态效果的 counter（更新特殊计数器）
-            for patch in entity_stats.status_effect_patches:
-                apply_status_effect_patch(entity, patch.name, patch.counter)
-
             self._game.add_human_message(
                 entity=entity,
                 human_message=HumanMessage(
                     content=build_stats_update_notification(new_hp, max_hp)
                 ),
             )
-
-        # 根据仲裁后的状态，为卡牌命中的所有目标（action.targets，去重）添加状态效果动作，
-        # 确保状态效果在游戏中正确生效；只按出牌目标挂载，不依赖 final_stats 的实体范围。
-        # card.on_hit_affixes 与装备 on_hit_affixes 均为空时，本次出牌无延迟状态效果，直接跳过。
-        card_affixes = action.card.on_hit_affixes
-        gear_item = action.gear_item
-        gear_on_hit_affixes = gear_item.on_hit_affixes if gear_item is not None else []
-        if not card_affixes and not gear_on_hit_affixes:
-            logger.debug(
-                f"[{actor_entity.name}] 出牌卡牌无延迟词缀且装备无 on_hit_affixes，跳过 AddStatusEffectsAction"
-            )
-        else:
-
-            for entity_name in dict.fromkeys(action.targets):
-
-                entity = self._game.get_entity_by_name(entity_name)
-                assert entity is not None, f"无法找到实体: {entity_name}"
-
-                # 生成 AffixTrigger 列表，用于在仂裁后为出牌者和目标添加状态效果动作，确保状态效果在游戏中正确生效。
-                affix_triggers: List[AffixTrigger] = []
-                if card_affixes:
-                    affix_triggers += generate_play_cards_affix_triggers(
-                        actor_name=actor_entity.name,
-                        card=action.card,
-                        targets=action.targets,
-                    )
-
-                # on_hit_affixes 仅作用于命中目标（非出牌者自身）
-                if gear_on_hit_affixes and entity_name != actor_entity.name:
-                    assert (
-                        gear_item is not None
-                    ), "gear_on_hit_affixes 非空时 gear_item 不应为 None"
-                    affix_triggers += generate_gear_on_hit_affix_triggers(
-                        actor_name=actor_entity.name,
-                        card_name=action.card.name,
-                        gear_item=gear_item,
-                    )
-
-                if affix_triggers:
-                    accumulate_status_effects_action(entity, affix_triggers)
-                    logger.debug(f"[{entity_name}] 仲裁后添加 AddStatusEffectsAction")
 
         # 将本回合的战斗日志和叙事内容添加到当前回合的记录中，便于后续回合的回顾和游戏状态的追踪。
         latest_round = self._game.current_dungeon_combat_room.combat.latest_round

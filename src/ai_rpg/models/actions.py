@@ -6,7 +6,6 @@ from .card import Card
 from .dungeon_generation import DungeonBlueprint, DungeonRoomData
 from .items import ConsumableItem, CostumeItem, GearItem, MaterialItem
 from .registry import register_action_component_type, register_component_type
-from .status_effect import AffixTrigger
 
 
 ############################################################################################################
@@ -118,7 +117,7 @@ class PlayCardsAction(Component):
     targets: List[str]  # 技能目标角色名列表
     gear_item: Optional[
         GearItem
-    ]  # 出牌者当前装备；由 PlayCardsActionSystem 组装填充，仲裁系统读取 on_hit_affixes
+    ]  # 出牌者当前装备；由 PlayCardsActionSystem 组装填充，供仲裁系统使用
 
 
 ############################################################################################################
@@ -129,21 +128,6 @@ class PassTurnAction(Component):
     """触发角色主动跳过本次出牌机会，消耗 1 点 energy，推进行动顺序。"""
 
     name: str
-
-
-############################################################################################################
-
-
-@final
-@register_action_component_type
-@register_component_type
-class AddStatusEffectsAction(Component):
-    """触发为当前实体追加状态效果；由 UpdateStatusEffectsActionSystem 统一生成并处理互斥顶替。"""
-
-    name: str
-    affix_triggers: List[
-        AffixTrigger
-    ]  # affixes 触发信号列表，每条对应一个待生成的状态效果，与 StatusEffect 严格 1:1
 
 
 ############################################################################################################

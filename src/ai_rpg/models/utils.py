@@ -3,18 +3,16 @@
 提供基于组件数据的纯计算工具，不依赖 ECS Entity，便于单元测试与复用。
 """
 
-from typing import List, Optional
-from .status_effect import StatusEffect
+from typing import Optional
 from .items import GearItem
 from .stats import CharacterStats
 
 
 def compute_effective_stats(
     base_stats: CharacterStats,
-    status_effects: Optional[List[StatusEffect]] = None,
     equipped_gear: Optional[GearItem] = None,
 ) -> CharacterStats:
-    """计算角色的最终有效属性，聚合基础属性与状态效果的属性加成。"""
+    """计算角色的最终有效属性，聚合基础属性与装备的属性加成。"""
 
     bonus_hp = 0
     bonus_max_hp = 0
@@ -31,13 +29,6 @@ def compute_effective_stats(
         bonus_energy += equipped_gear.stat_bonuses.energy
         bonus_speed += equipped_gear.stat_bonuses.speed
 
-    for se in status_effects or []:
-        bonus_speed += se.speed
-        bonus_defense += se.defense
-
-    assert (
-        bonus_hp == 0
-    ), "当前设计中状态效果不应直接修改 HP，若需要请改为修改 max_hp 或通过其他机制实现"
     return CharacterStats(
         hp=base_stats.hp + bonus_hp,
         max_hp=base_stats.max_hp + bonus_max_hp,

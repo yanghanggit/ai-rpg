@@ -38,7 +38,6 @@ class DeckCardEntry(BaseModel):
     name: str
     description: str
     on_play_affixes: List[str] = []
-    on_hit_affixes: List[str] = []
     playable: bool = True
     exhaust: bool = False
     cost: int = 1
@@ -101,13 +100,13 @@ def build_deck_prompt(
 ## 核心原则
 
 - keywords 即边界，不是风格建议：要求的效果在对应字段体现；未提及即禁止
-- 即时词缀（on_play_affixes）与延迟词缀（on_hit_affixes）仅限 keywords 授权时填充
+- 即时词缀（on_play_affixes）仅限 keywords 授权时填充
 - 叙事主题是 description 的意象来源，keywords 是 description 的功能边界，二者各自独立
 
 ## 约束
 
 - `description` 须围绕上方「叙事主题」展开，可自由采用动作、物件、意象、氛围、典故等任意形态；禁止提及具体地名与某一具体战斗场景的即时情境
-- `on_play_affixes`/`on_hit_affixes` 禁止重述数值字段已确定性表达的效果：不得重复量化 `damage`/`hit_count` 已决定的伤害量级
+- `on_play_affixes` 禁止重述数值字段已确定性表达的效果：不得重复量化 `damage`/`hit_count` 已决定的伤害量级
 - `cards` 数组长度必须恰好为 {num_cards}
 - 只输出 JSON，不附加任何说明文字
 
@@ -118,7 +117,6 @@ def build_deck_prompt(
       "name": "...",
       "description": "...",
       "on_play_affixes": [],
-      "on_hit_affixes": [],
       "playable": true,
       "exhaust": false,
       "cost": 1,
@@ -299,7 +297,6 @@ class GenerateDeckActionSystem(ReactiveProcessor):
                     name=entry.name,
                     description=entry.description,
                     on_play_affixes=entry.on_play_affixes,
-                    on_hit_affixes=entry.on_hit_affixes,
                     playable=entry.playable,
                     exhaust=entry.exhaust,
                     cost=entry.cost,

@@ -143,13 +143,16 @@ class CombatInitActorSystem(ExecuteProcessor):
                 PartyMemberComponent
             ), f"角色 {actor_entity.name} 同时具有 MonsterComponent 与 PartyMemberComponent，阵营异常！"
 
-            deck_comp = actor_entity.get(DeckComponent)
-            assert (
-                deck_comp is not None
-            ), f"怪物 {actor_entity.name} 缺少 DeckComponent！"
-            assert (
-                len(deck_comp.cards) == 0
-            ), f"怪物 {actor_entity.name} 的牌库非空，不应在战斗前已被生成！"
+            assert not actor_entity.has(
+                DeckComponent
+            ), f"怪物 {actor_entity.name} 不应在战斗前已有 DeckComponent！"
+            # deck_comp = actor_entity.get(DeckComponent)
+            # assert (
+            #     deck_comp is not None
+            # ), f"怪物 {actor_entity.name} 缺少 DeckComponent！"
+            # assert (
+            #     len(deck_comp.cards) == 0
+            # ), f"怪物 {actor_entity.name} 的牌库非空，不应在战斗前已被生成！"
 
             actor_entity.replace(GenerateDeckAction, actor_entity.name)
             logger.debug(f"[{actor_entity.name}] 已添加 GenerateDeckAction（怪物）")

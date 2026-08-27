@@ -79,7 +79,7 @@ def render_item(item: AnyItem) -> str:
 
 
 def render_card(card: Card) -> str:
-    """渲染单张卡牌的全部字段（除 uuid 与 original_data 外）。"""
+    """渲染单张卡牌的全部字段（除 uuid 外）。"""
     flags: List[str] = []
     if not card.playable:
         flags.append("[bold orange1]不可出牌[/]")

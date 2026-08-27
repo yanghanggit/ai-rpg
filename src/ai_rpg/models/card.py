@@ -1,6 +1,6 @@
 """卡牌与状态效果模型定义"""
 
-from typing import List, Optional, final
+from typing import List, final
 from uuid import uuid4
 from pydantic import BaseModel, Field
 from .target_type import TargetType
@@ -30,12 +30,6 @@ class Card(BaseModel):
     self_target: bool = False  # 出牌是否锁定自身；True 时目标即出牌者本人，无需 targets
     source: str = ""  # 卡牌来源（生成/注入者名称）；空字符串表示来源未知
     uuid: str = Field(default_factory=lambda: str(uuid4()))  # 全局唯一标识符
-    original_data: Optional["Card"] = (
-        None  # 原始牌快照；None=未被修改过；首次修改时写入，后续修改不覆盖
-    )
-
-
-Card.model_rebuild()  # 解析 original_data 的前向引用
 
 
 ###############################################################################################################################################

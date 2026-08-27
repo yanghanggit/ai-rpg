@@ -160,23 +160,23 @@ def _setup_rag() -> None:
 ########################################################################################################
 def main() -> None:
     """主函数：执行完整的开发环境初始化流程"""
+
     logger.info("🚀 开始初始化开发环境...")
 
-    # 保存演示游戏蓝图
     try:
+        # 保存演示游戏蓝图
         _setup_blueprints()
-    except Exception as e:
-        logger.error(f"❌ 保存演示游戏蓝图失败: {e}")
 
-    # 保存演示副本
-    try:
+        # 保存演示副本
         _setup_dungeons()
-    except Exception as e:
-        logger.error(f"❌ 保存演示副本失败: {e}")
 
-    # PostgreSQL 相关操作
+    except Exception as e:
+        logger.error(f"❌ 保存演示游戏蓝图或副本失败: {e}")
+
     try:
-        logger.info("�️ 删除旧数据库（如果存在）...")
+
+        # PostgreSQL 相关操作
+        logger.info("🗑️ 删除旧数据库（如果存在）...")
         pgsql_drop_database(postgresql_config.database)
 
         logger.info("📦 创建新数据库...")
@@ -185,20 +185,16 @@ def main() -> None:
         logger.info("📋 创建数据库表结构...")
         pgsql_ensure_database_tables()
 
-        logger.info("� 设置PostgreSQL测试用户...")
+        logger.info("👤 设置PostgreSQL测试用户...")
         _setup_user()
 
-        logger.success("✅ PostgreSQL 初始化完成")
-    except Exception as e:
-        logger.error(f"❌ PostgreSQL 初始化失败: {e}")
-
-    # RAG 系统相关操作
-    try:
         logger.info("🚀 初始化RAG系统...")
         _setup_rag()
-        logger.success("✅ RAG 系统初始化完成")
+
+        logger.success("✅ PostgreSQL 初始化完成")
+
     except Exception as e:
-        logger.error(f"❌ RAG 系统初始化失败: {e}")
+        logger.error(f"❌ PostgreSQL 初始化失败: {e}")
 
     logger.info("🎉 开发环境初始化完成")
 

@@ -166,7 +166,6 @@ class AssembleDungeonSystem(ReactiveProcessor):
                         system_rules=RPG_SYSTEM_RULES,
                         keywords=[
                             "纯攻击型：每张卡牌专注于对单个敌人造成直接伤害，不携带任何附加效果或持续状态，伤害稳定适中。",
-                            "纯攻击型（优质）：每张卡牌专注于对单个敌人造成直接伤害，不携带任何附加效果或持续状态，体现爆发感，伤害显著高于角色基础攻击力。",
                         ],
                     )
                     for actor_bp in room_bp.actors

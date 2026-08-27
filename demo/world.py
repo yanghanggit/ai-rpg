@@ -120,23 +120,14 @@ KNOWLEDGE_BASE: Final[Dict[str, List[str]]] = {
 
 _KW_ATTACK: Final[str] = "攻击型：对单个目标造成适中数值的直接伤害，不携带词缀。"
 _KW_DEFENSE: Final[str] = "防御型：为自身添加一个持续一回合的防御增益。"
-_KW_EROSION_NORMAL: Final[str] = (
+_KW_EROSION: Final[str] = (
     "持续侵蚀型：携带持续负面状态效果（毒性侵蚀：目标每回合末 HP -1），直接伤害适中。"
 )
-_KW_EROSION_PREMIUM: Final[str] = (
-    "持续侵蚀型（优质）：携带持续负面状态效果（毒性侵蚀），持续回合翻倍或每回合伤害提高。"
-)
-_KW_ARMOR_BREAK_NORMAL: Final[str] = (
+_KW_ARMOR_BREAK: Final[str] = (
     "穿甲型：携带即时词缀，令本次出牌伤害无视目标防御（如[穿透]:本次伤害无视目标防御）。"
 )
-_KW_ARMOR_BREAK_PREMIUM: Final[str] = (
-    "穿甲型（优质）：携带即时词缀，令本次出牌伤害无视目标防御，并附加额外伤害倾向。"
-)
-_KW_CONTROL_NORMAL: Final[str] = (
+_KW_CONTROL: Final[str] = (
     "控制型：携带持续负面状态效果（易伤：目标受击时防御减半，或减速：目标速度降低），直接伤害可较低乃至为零。"
-)
-_KW_CONTROL_PREMIUM: Final[str] = (
-    "控制型（优质）：携带持续负面状态效果，可同时叠加易伤与减速，或效果显著增强。"
 )
 
 
@@ -158,9 +149,8 @@ def create_actor_paper_doll() -> Actor:
             _KW_ATTACK,
             # 1 张基础防御
             _KW_DEFENSE,
-            # 持续侵蚀普通/优质两个变体，采样时随机取舍
-            _KW_EROSION_NORMAL,
-            _KW_EROSION_PREMIUM,
+            # 1 张持续侵蚀
+            _KW_EROSION,
         ],
     )
 
@@ -260,9 +250,8 @@ def create_wuming() -> Actor:
             # 2 张基础防御
             _KW_DEFENSE,
             _KW_DEFENSE,
-            # 穿甲普通/优质两个变体，采样时随机取舍
-            _KW_ARMOR_BREAK_NORMAL,
-            _KW_ARMOR_BREAK_PREMIUM,
+            # 1 张穿甲
+            _KW_ARMOR_BREAK,
         ],
     )
 
@@ -293,9 +282,8 @@ def create_guzhiqiu() -> Actor:
             # 2 张基础防御
             _KW_DEFENSE,
             _KW_DEFENSE,
-            # 控制普通/优质两个变体，采样时随机取舍
-            _KW_CONTROL_NORMAL,
-            _KW_CONTROL_PREMIUM,
+            # 1 张控制
+            _KW_CONTROL,
         ],
     )
 

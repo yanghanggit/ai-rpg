@@ -10,7 +10,7 @@ from pydantic import BaseModel
 
 from ..deepseek import DeepSeekClient, batch_chat
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..game.dbg_combat_processor import compute_character_stats, get_cards_per_combat
+from ..game.dbg_combat_processor import compute_character_stats
 from ..game.dbg_game import DBGGame
 from ..models import (
     ActorComponent,
@@ -23,6 +23,8 @@ from ..models import (
     DrawPileComponent,
     GenerateDeckAction,
     HumanMessage,
+    MonsterComponent,
+    PartyMemberComponent,
     TargetType,
 )
 from ..utils import extract_json, prompt_builder
@@ -158,6 +160,15 @@ class GenerateDeckActionSystem(ReactiveProcessor):
         self._game: Final[DBGGame] = game
 
     ####################################################################################################################################
+    def _get_cards_per_combat(self, actor_entity: Entity) -> int:
+        """返回角色在本次战斗中的初始牌库数量（PartyMember=5，Monster=3）。"""
+        if actor_entity.has(PartyMemberComponent):
+            return 5
+        if actor_entity.has(MonsterComponent):
+            return 3
+        return 3
+
+    ####################################################################################################################################
     @override
     def get_trigger(self) -> Dict[Matcher, GroupEvent]:
         return {Matcher(GenerateDeckAction): GroupEvent.ADDED}
@@ -195,7 +206,7 @@ class GenerateDeckActionSystem(ReactiveProcessor):
     def _build_client(self, entity: Entity) -> DeepSeekClient:
         """为单个实体构建牌库生成的 DeepSeekClient。"""
 
-        num_cards = get_cards_per_combat(entity)
+        num_cards = self._get_cards_per_combat(entity)
 
         archetype_comp = entity.get(ArchetypeComponent)
         assert archetype_comp is not None, f"{entity.name} 缺少 ArchetypeComponent"
@@ -250,7 +261,7 @@ class GenerateDeckActionSystem(ReactiveProcessor):
             entity is not None
         ), f"DeckGenerationSystem: 无法找到实体 {chat_client.name} 以处理生成结果"
 
-        num_cards = get_cards_per_combat(entity)
+        num_cards = self._get_cards_per_combat(entity)
 
         try:
             # 解析 LLM 响应 JSON

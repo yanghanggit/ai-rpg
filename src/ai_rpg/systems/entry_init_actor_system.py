@@ -216,7 +216,7 @@ class EntryInitActorSystem(ExecuteProcessor):
 
     ###################################################################################################################################################################
     def _add_generate_deck_actions(self) -> None:
-        """为远征队成员（玩家及其队友）添加 GenerateDeckAction。"""
+        """为所有远征队成员添加 GenerateDeckAction（每次进本追加新牌，牌库累积增长）。"""
         count = 0
 
         party_entities = self._game.get_group(
@@ -231,9 +231,6 @@ class EntryInitActorSystem(ExecuteProcessor):
             assert (
                 deck_comp is not None
             ), f"远征队成员 {entity.name} 缺少 DeckComponent！"
-            assert (
-                len(deck_comp.cards) == 0
-            ), f"远征队成员 {entity.name} 的牌库非空，不应重复生成！"
 
             entity.replace(GenerateDeckAction, entity.name)
             logger.debug(f"[{entity.name}] 已添加 GenerateDeckAction（远征队）")

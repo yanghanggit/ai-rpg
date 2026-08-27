@@ -118,16 +118,31 @@ KNOWLEDGE_BASE: Final[Dict[str, List[str]]] = {
 
 # ── 卡牌关键词常量（避免重复字符串，方便统一修改） ──────────────────────────────────────────────
 
-_KW_ATTACK: Final[str] = "攻击型：对单个目标造成适中数值的直接伤害，不携带词缀。"
-_KW_DEFENSE: Final[str] = "防御型：为自身添加一个持续一回合的防御增益。"
+_KW_ATTACK: Final[str] = (
+    "攻击型：对单个目标造成直接伤害，damage 以角色攻击力（attack）为基数，不携带词缀。"
+)
+_KW_DEFENSE: Final[str] = (
+    "防御型：target_type 为 self，on_hit_affixes 携带词缀 [护盾]:出牌后为自身添加防御增益，"
+    "落地为 StatusEffect；duration 为一回合，defense 加成以本角色的防御力（defense）为基数。"
+)
 _KW_EROSION: Final[str] = (
-    "持续侵蚀型：携带持续负面状态效果（毒性侵蚀：目标每回合末 HP -1），直接伤害适中。"
+    "持续侵蚀型：target_type 为 single，damage 低于角色攻击力（attack）；"
+    "on_hit_affixes 携带词缀 [毒性侵蚀]:命中后令目标中毒，落地为 StatusEffect；"
+    "phase 为 round_end，duration 为三回合，description 为「每回合末损失 1 HP」。"
 )
 _KW_ARMOR_BREAK: Final[str] = (
-    "穿甲型：携带即时词缀，令本次出牌伤害无视目标防御（如[穿透]:本次伤害无视目标防御）。"
+    "穿甲型：target_type 为 single，damage 以角色攻击力（attack）为基数；"
+    "on_play_affixes 携带词缀 [穿透]:本次出牌伤害无视目标防御，仅对本次结算生效、不落地 StatusEffect。"
 )
-_KW_CONTROL: Final[str] = (
-    "控制型：携带持续负面状态效果（易伤：目标受击时防御减半，或减速：目标速度降低），直接伤害可较低乃至为零。"
+_KW_VULNERABLE: Final[str] = (
+    "易伤型：target_type 为 single，damage 可为 0 或低于角色攻击力（attack）；"
+    "on_hit_affixes 携带词缀 [易伤]:命中后令目标陷入易伤，落地为 StatusEffect；"
+    "phase 为 arbitration，duration 为三回合，description 为「受击时防御减半」。"
+)
+_KW_SLOW: Final[str] = (
+    "减速型：target_type 为 single，damage 可为 0 或低于角色攻击力（attack）；"
+    "on_hit_affixes 携带词缀 [减速]:命中后令目标速度降低，落地为 StatusEffect；"
+    "phase 为 arbitration，duration 为三回合，speed 为 -1。"
 )
 
 
@@ -282,8 +297,9 @@ def create_guzhiqiu() -> Actor:
             # 2 张基础防御
             _KW_DEFENSE,
             _KW_DEFENSE,
-            # 1 张控制
-            _KW_CONTROL,
+            # 控制拆分：1 张易伤 + 1 张减速
+            _KW_VULNERABLE,
+            _KW_SLOW,
         ],
     )
 

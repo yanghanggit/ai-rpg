@@ -1,7 +1,7 @@
 """战斗流程处理模块"""
 
 import random
-from typing import Dict, List, Optional, Sequence, Set
+from typing import Dict, List, Optional, Sequence, Set, Tuple
 from loguru import logger
 from ..entitas import Entity, Matcher
 from ..models import (
@@ -210,6 +210,40 @@ def get_alive_monsters_in_stage(
 
 
 #################################################################################################################################################
+def _resolve_camp_from_anchor(
+    label: str,
+    actor_entity: Entity,
+    passed_targets: List[str],
+    dbg_game: DBGGame,
+) -> Tuple[List[Entity], str]:
+    """校验 passed_targets 恰好 1 个锚点目标，并展开为该锚点所在阵营的全体存活角色。"""
+    if len(passed_targets) != 1:
+        return (
+            [],
+            f"{label} 目标数量必须为 1（作为阵营锚点），实际收到 {len(passed_targets)} 个",
+        )
+
+    # 构建当前场景中所有存活角色的映射，便于根据锚点名称快速查找对应实体。
+    alive_map = {e.name: e for e in get_alive_actors_in_stage(dbg_game, actor_entity)}
+    anchor_name = passed_targets[0]
+    anchor_entity = alive_map.get(anchor_name)
+    if anchor_entity is None:
+        return (
+            [],
+            f"目标 '{anchor_name}' 不在当前场景存活角色列表中: {sorted(alive_map)}",
+        )
+
+    # 根据锚点实体的阵营类型，返回该阵营的全体存活角色。
+    if anchor_entity.has(PartyMemberComponent):
+        return get_alive_party_members_in_stage(anchor_entity, dbg_game), ""
+    if anchor_entity.has(MonsterComponent):
+        return get_alive_monsters_in_stage(anchor_entity, dbg_game), ""
+
+    # 如果锚点实体既不属于远征队也不属于怪物阵营，则返回错误。
+    return [], f"目标 '{anchor_name}' 不属于任何可识别阵营"
+
+
+#################################################################################################################################################
 def resolve_targets(
     target_type: TargetType,
     hit_count: int,
@@ -218,29 +252,6 @@ def resolve_targets(
     dbg_game: DBGGame,
 ) -> tuple[List[str], str]:
     """根据 target_type 解析并验证目标。"""
-
-    def _resolve_camp_from_anchor(label: str) -> tuple[List[Entity], str]:
-        """校验 passed_targets 恰好 1 个锚点目标，并展开为该锚点所在阵营的全体存活角色。"""
-        if len(passed_targets) != 1:
-            return (
-                [],
-                f"{label} 目标数量必须为 1（作为阵营锚点），实际收到 {len(passed_targets)} 个",
-            )
-        alive_map = {
-            e.name: e for e in get_alive_actors_in_stage(dbg_game, actor_entity)
-        }
-        anchor_name = passed_targets[0]
-        anchor_entity = alive_map.get(anchor_name)
-        if anchor_entity is None:
-            return (
-                [],
-                f"目标 '{anchor_name}' 不在当前场景存活角色列表中: {sorted(alive_map)}",
-            )
-        if anchor_entity.has(PartyMemberComponent):
-            return get_alive_party_members_in_stage(anchor_entity, dbg_game), ""
-        if anchor_entity.has(MonsterComponent):
-            return get_alive_monsters_in_stage(anchor_entity, dbg_game), ""
-        return [], f"目标 '{anchor_name}' 不属于任何可识别阵营"
 
     match target_type:
         case TargetType.SINGLE:
@@ -260,7 +271,9 @@ def resolve_targets(
             return list(passed_targets), ""
 
         case TargetType.ALL:
-            camp_members, err = _resolve_camp_from_anchor("ALL")
+            camp_members, err = _resolve_camp_from_anchor(
+                "ALL", actor_entity, passed_targets, dbg_game
+            )
             if err:
                 return [], err
             if not camp_members:
@@ -268,7 +281,9 @@ def resolve_targets(
             return [e.name for e in camp_members], ""
 
         case TargetType.SPREAD:
-            camp_members, err = _resolve_camp_from_anchor("SPREAD")
+            camp_members, err = _resolve_camp_from_anchor(
+                "SPREAD", actor_entity, passed_targets, dbg_game
+            )
             if err:
                 return [], err
             if not camp_members:
@@ -284,16 +299,6 @@ def resolve_targets(
 
         case TargetType.SELF:
             return [actor_entity.name], ""
-
-
-####################################################################################################################################
-def get_cards_per_combat(actor_entity: Entity) -> int:
-    """返回角色在本次战斗中的初始牌库数量（PartyMember=5，Monster=3）。"""
-    if actor_entity.has(PartyMemberComponent):
-        return 5
-    if actor_entity.has(MonsterComponent):
-        return 3
-    return 3
 
 
 #######################################################################################################################################

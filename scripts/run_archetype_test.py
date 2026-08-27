@@ -14,7 +14,7 @@ sys.path.insert(
 
 from ai_rpg.deepseek import MODEL_PRO, DeepSeekClient
 from ai_rpg.models.messages import SystemMessage
-
+from typing import Tuple
 
 # 日志文件目录 archetypes
 ARCHETYPE_DIR = Path(".archetypes")
@@ -53,7 +53,17 @@ _SYSTEM_PROMPT = SystemMessage(
 - 可结算：每条 keyword 都必须能被上面的流程落地；设计应落在「稳定且无聊」与「花哨但无法结算」之间。
 
 ## keyword 文本风格
-每条 keyword =「类型名：一句话」，只声明效果倾向（定性）、目标、时效与资源倾向，不写具体数值，不写人设与世界观内容。"""
+
+每条 keyword 是「类型名 + 字段级约束」，完整声明一张卡牌的功能边界，禁止「适中」「较低」这类模糊形容词。固定结构：
+
+- 目标类型：target_type 为 self / single；
+- 伤害与出牌者攻击力的相对关系：damage 以攻击力为基数 / 低于攻击力 / 可为 0 或较低；
+- 词缀落点与文本：即时效果写 on_play_affixes（仅本次结算、不落地 StatusEffect），跨回合效果写 on_hit_affixes（落地为 StatusEffect），词缀文本为 [名称]:触发倾向描述；无附加效果则写「不携带词缀」；
+- 落地 StatusEffect 时，声明其数值设计：phase（arbitration / round_end）、duration（持续回合数）、数值挂靠字段——防御增/减写 defense、速度升降写 speed、乘性规则或每回合 HP 变化写 description。
+
+数值原则：随角色成长的数值（伤害、防御）挂靠其聚合属性（攻击力/防御力）作基数；离散数值（持续回合数、速度、生效阶段）给出确定值；不写人设与世界观内容。
+
+示例：`持续侵蚀型：target_type 为 single，damage 低于角色攻击力；on_hit_affixes 携带词缀 [毒性侵蚀]:命中后令目标中毒，落地为 StatusEffect；phase 为 round_end，duration 为三回合，description 为「每回合末损失 1 HP」。`"""
 )
 
 
@@ -104,7 +114,7 @@ async def generate(strategy: str | None, num_keywords: int) -> DeepSeekClient:
 
 def write_outputs(
     client: DeepSeekClient, strategy: str | None, num_keywords: int
-) -> tuple[Path, Path | None]:
+) -> Tuple[Path, Path | None]:
     """最终输出写入 .archetypes/ 下的 .md，思考过程写入独立的 .txt"""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     md_path = ARCHETYPE_DIR / f"{timestamp}_archetype.md"

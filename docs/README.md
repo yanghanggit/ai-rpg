@@ -39,7 +39,7 @@
 | [副本生成管道（Dungeon Generation Pipeline）](wiki/dungeon-generation.md) | 核心哲学：机制与内容分离、四步接力管道的分工意图与设计决策、与工坊合成的架构对比 |
 | [副本导演（Dungeon Director）](wiki/dungeon-director.md) | 全局单例、俯瞰当前副本的有状态记忆积累设计：入口身份锁定、逐房间事实追加、副本结束总结移交世界导演并重置 |
 | [战斗管道（Combat Pipeline）](wiki/combat-pipeline.md) | ECS 处理器链的架构设计：管道心跳驱动、场景实体仲裁、词缀因果链、回合行动序列与四个生命周期阶段 |
-| [卡牌关键词（keywords）](wiki/keywords.md) | 角色牌库蓝图（存于 ArchetypeComponent）：风格池声明、规则/叙事分层、牌库多样性与质量变体 |
+| [卡牌关键词（keywords）](wiki/keywords.md) | 角色牌库蓝图（存于 ArchetypeComponent）：字段级约束声明、规则/叙事分层、牌库多样性与每场采样 |
 | [卡牌流派（Archetype）生成规则](wiki/archetype-generation.md) | archetype 的生成规则：跨内容逻辑层、效果是给仲裁 LLM 的规则文本、机制根部与可结算边界、衔接与内建弱点 |
 | [词缀（Affix）](wiki/affix.md) | 词缀作为 StatusEffect 种子的创建、流转、落地与回述全线路 |
 | [DBG 核心概念定义与逻辑关系总结](<wiki/DBG 核心概念定义与逻辑关系总结.md>) | Modifiers（对局级规则）、Affixes（实体固有词缀）、Status Effects（临时状态）三者的定义、归属与逻辑关系：宏观-微观、因-果、生产-消费模型 |

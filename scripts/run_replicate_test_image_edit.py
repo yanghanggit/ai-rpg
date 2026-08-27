@@ -15,7 +15,7 @@ import asyncio
 import sys
 import uuid
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import click
 
@@ -276,7 +276,7 @@ async def run_demo_scenario(scenario_key: str, model: str = "nano-banana") -> No
     help="测试 API 连接",
 )
 def main(
-    input_images: tuple[str, ...],
+    input_images: Tuple[str, ...],
     prompt: Optional[str],
     model: str,
     output_format: str,
@@ -301,7 +301,7 @@ def main(
 
 
 async def _async_main(
-    input_images: tuple[str, ...],
+    input_images: Tuple[str, ...],
     prompt: Optional[str],
     model: str,
     output_format: str,

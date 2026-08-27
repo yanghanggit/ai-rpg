@@ -250,7 +250,7 @@ def resolve_targets(
     actor_entity: Entity,
     passed_targets: List[str],
     dbg_game: DBGGame,
-) -> tuple[List[str], str]:
+) -> Tuple[List[str], str]:
     """根据 target_type 解析并验证目标。"""
 
     match target_type:

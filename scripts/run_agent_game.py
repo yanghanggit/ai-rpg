@@ -63,14 +63,14 @@ from ai_rpg.game.config import (
 from config import LOGS_DIR
 from ai_rpg.game import restore_world
 from pathlib import Path
-from typing import Final as _Final
+from typing import Final, Tuple
 
 # 仅在本 CLI 运行时启用 chat dump（调试用途）
 import ai_rpg.deepseek.config
 
 ai_rpg.deepseek.config.CHAT_DUMP_ENABLED = True
 
-LOG_LEVEL: _Final[str] = "DEBUG"
+LOG_LEVEL: Final[str] = "DEBUG"
 
 
 def _setup_logger(log_file_path: Path) -> None:
@@ -207,7 +207,7 @@ def stages(snapshot: str) -> None:
     help="本轮需要真正触发行动规划的角色全名，可重复使用（如 --actors 角色.A --actors 角色.B）。"
     "调用前建议先用 stages --snapshot PATH 查询当前场景内的角色名单。",
 )
-def advance(snapshot: str, actors: tuple[str, ...]) -> None:
+def advance(snapshot: str, actors: Tuple[str, ...]) -> None:
     """推进一轮家园剧情，仅为 --actors 指定角色激活行动规划并归档。"""
 
     snapshot_path = Path(snapshot)
@@ -404,7 +404,7 @@ def draw_cards(snapshot: str) -> None:
     help="目标角色名，可重复使用（如 --targets 怪物.野猪）",
 )
 def play_cards_specified(
-    snapshot: str, actor: str, card: str, targets: tuple[str, ...]
+    snapshot: str, actor: str, card: str, targets: Tuple[str, ...]
 ) -> None:
     """指定角色出牌（怪物则由 AI 自动出牌）并归档。需战斗进行中且 draw-cards 之后。"""
 
@@ -495,7 +495,7 @@ def pass_turn(snapshot: str, actor: str) -> None:
     help="目标角色名，可重复使用（如 --targets 怪物.野猪）；SELF 时可省略，ALL/SPREAD 时需提供恰好 1 个目标作为阵营锚点",
 )
 def use_consumable(
-    snapshot: str, actor: str, item: str, targets: tuple[str, ...]
+    snapshot: str, actor: str, item: str, targets: Tuple[str, ...]
 ) -> None:
     """指定角色使用消耗品并归档。需战斗进行中。"""
 
@@ -548,7 +548,7 @@ def use_consumable(
     default=(),
     help="目标角色名，可重复使用（如 --targets 盟友.某某）；SINGLE 时指定一个目标，敌我皆可",
 )
-def equip_gear(snapshot: str, actor: str, item: str, targets: tuple[str, ...]) -> None:
+def equip_gear(snapshot: str, actor: str, item: str, targets: Tuple[str, ...]) -> None:
     """指定角色装备 GearItem 并归档。需战斗进行中。"""
 
     snapshot_path = Path(snapshot)
@@ -1005,7 +1005,7 @@ def remove_costume(snapshot: str, target: str) -> None:
     required=True,
     help="参与合成的材料名称，可重复使用（如 --materials 材料.草药.薄荷 --materials 材料.矿石.铁粉）",
 )
-def craft_item(snapshot: str, materials: tuple[str, ...]) -> None:
+def craft_item(snapshot: str, materials: Tuple[str, ...]) -> None:
     """使用储物箱材料合成消耗品并归档。需处于家园模式。"""
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
@@ -1044,7 +1044,7 @@ def craft_item(snapshot: str, materials: tuple[str, ...]) -> None:
     required=True,
     help="参与锻造的材料名称，可重复使用（如 --materials 材料.遗迹铁片 --materials 材料.硬化兽骨）",
 )
-def craft_gear(snapshot: str, materials: tuple[str, ...]) -> None:
+def craft_gear(snapshot: str, materials: Tuple[str, ...]) -> None:
     """使用储物箱材料锻造装备并归档。需处于家园模式。"""
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
@@ -1081,7 +1081,7 @@ def craft_gear(snapshot: str, materials: tuple[str, ...]) -> None:
     required=True,
     help="参与制作的材料名称，可重复使用（如 --materials 材料.丝质布料 --materials 材料.金线刺绣）",
 )
-def craft_costume(snapshot: str, materials: tuple[str, ...]) -> None:
+def craft_costume(snapshot: str, materials: Tuple[str, ...]) -> None:
     """使用储物箱材料制作时装并归档。需处于家园模式。"""
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():

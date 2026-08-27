@@ -66,7 +66,7 @@ class HomeNpcPlanSystem(ReactiveProcessor):
             chat_clients.append(self._build_client(actor_entity))
 
             # 这句是为了防止NPC乱跑用的，暂时先放这里。
-            self._mock_inject_context(actor_entity)
+            self._mock_inject_test_message(actor_entity)
 
         # 批量请求 LLM 合成行动规划
         await batch_chat(clients=chat_clients)
@@ -98,7 +98,7 @@ class HomeNpcPlanSystem(ReactiveProcessor):
             logger.error(f"Exception: {e}")
             return
 
-        # 添加上下文！存入精简版 prompt，附挂原始全量 prompt 供检索
+        # 添加消息！存入精简版 prompt，附挂原始全量 prompt 供检索
         if self._use_condensed_prompt:
             self._game.add_human_message(
                 actor_entity,
@@ -117,7 +117,7 @@ class HomeNpcPlanSystem(ReactiveProcessor):
                 ),
             )
 
-        # 添加 AI 响应消息到上下文。
+        # 添加 AI 响应消息到对话历史。
         self._game.add_ai_message(actor_entity, chat_client.response_ai_message)
 
         # 将验证后的行动规划响应转化为游戏行动组件，并处理内心独白通知
@@ -129,7 +129,7 @@ class HomeNpcPlanSystem(ReactiveProcessor):
     ) -> None:
         """将验证后的行动规划响应转化为游戏行动组件，并处理内心独白通知。"""
 
-        # 添加内心独白: 上下文！，这里做直接添加与通知处理
+        # 添加内心独白: 消息！，这里做直接添加与通知处理
         if validated_response.mind != "":
 
             stage_entity = self._game.resolve_stage_entity(actor_entity)
@@ -222,11 +222,11 @@ class HomeNpcPlanSystem(ReactiveProcessor):
                 if self._use_condensed_prompt
                 else None
             ),
-            context=self._game.get_agent_context(entity).context,
+            messages=self._game.get_agent_memory(entity).messages,
         )
 
     #######################################################################################################################################
-    def _mock_inject_context(self, actor_entity: Entity) -> None:
+    def _mock_inject_test_message(self, actor_entity: Entity) -> None:
         """【测试用】向非玩家盟友注入一组连续的 mock 消息，模拟强制发起特定行动的场景。"""
         self._game.add_human_message(
             actor_entity,

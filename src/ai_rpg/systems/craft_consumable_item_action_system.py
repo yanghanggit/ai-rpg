@@ -137,7 +137,7 @@ class CraftConsumableItemActionSystem(ReactiveProcessor):
         chat_client = DeepSeekClient(
             name=entity.name,
             full_prompt=prompt,
-            context=self._game.get_agent_context(entity).context,
+            messages=self._game.get_agent_memory(entity).messages,
         )
 
         # 发起 LLM 请求，捕获异常以防止整个流程崩溃

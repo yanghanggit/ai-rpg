@@ -95,7 +95,7 @@ async def generate(strategy: str | None, num_keywords: int) -> DeepSeekClient:
     client = DeepSeekClient(
         name="archetype_gen",
         full_prompt=build_prompt(strategy, num_keywords),
-        context=[_SYSTEM_PROMPT],
+        messages=[_SYSTEM_PROMPT],
         model=MODEL_PRO,
         thinking=True,
         timeout=300,

@@ -97,7 +97,7 @@ async def advance_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, st
     # 当前房间已结束：向副本导演追加该房间的事实记忆
     notify_dungeon_director_room_ended(dbg_game, dungeon, current_room)
 
-    # 调试探针：让副本导演基于刚累积的记忆推理一次，人工核对上下文管理是否符合预期
+    # 调试探针：让副本导演基于刚累积的记忆推理一次，人工核对记忆管理是否符合预期
     await debug_probe_dungeon_director_reasoning(dbg_game, dungeon)
 
     # 推进索引

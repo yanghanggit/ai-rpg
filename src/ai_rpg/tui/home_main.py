@@ -540,7 +540,7 @@ class HomeMainScreen(BaseGameScreen):
 
     @work(exclusive=True)
     async def _watch_notifications(self) -> None:
-        """常驻监听会话消息 SSE 流，仅用于统计未读数量（高水位线，存于 GameSession），不写入日志、不推进 last_sequence_id。
+        """常驻监听会话消息 SSE 流，仅用于统计未读数量（高水位线，存于 ClientSession），不写入日志、不推进 last_sequence_id。
 
         真正的内容展示由 `_pull_new_messages` / `_do_view_messages` 主动拉取完成，
         这里只负责让用户知道“服务器有新消息”，实现先有限披露（通知）再主动获取的模式。

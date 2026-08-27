@@ -73,7 +73,7 @@ def build_action_planning_prompt(
 
 ## 行动规则
 
-- `mind`（必填）：第一人称内心独白。只写自身思考，禁止捏造他人动作、反应或对话，禁止虚构 context 中未记录的事件。
+- `mind`（必填）：第一人称内心独白。只写自身思考，禁止捏造他人动作、反应或对话，禁止虚构消息历史中未记录的事件。
 - `query`（可选）：从外部知识库检索信息。可与任何行动并用。
 - `speak` / `whisper` / `announce`（至多选一）：speak 对场景内角色公开说话，whisper 私密耳语，announce 全家园广播。
 - `trans_stage`：移动至目标场景（从"可移动至"列表选择）。与 speak / whisper / announce 互斥。
@@ -102,7 +102,7 @@ def build_condensed_planning_prompt(
     other_actors_appearances: Dict[str, str],
     available_home_stages: List[str],
 ) -> str:
-    """构建角色行动规划提示词（精简版，仅保留动态上下文）。"""
+    """构建角色行动规划提示词（精简版，仅保留动态信息）。"""
     other_actors_appearance_info = []
     for actor_name, appearance in other_actors_appearances.items():
         other_actors_appearance_info.append(f"{actor_name}: {appearance}")

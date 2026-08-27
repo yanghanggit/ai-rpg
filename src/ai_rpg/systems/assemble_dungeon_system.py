@@ -94,14 +94,14 @@ class AssembleDungeonSystem(ReactiveProcessor):
         )
 
         # 副本生成完成：重置副本生成系统实体（WorldComponent + DungeonGenerationComponent）
-        # 的 agent context，仅保留首条 system prompt，清除其余全部对话
-        agent_context = self._game.get_agent_context(entity)
-        del agent_context.context[1:]
+        # 的 agent memory，仅保留首条 system prompt，清除其余全部对话
+        agent_memory = self._game.get_agent_memory(entity)
+        del agent_memory.messages[1:]
         logger.info(
-            f"[AssembleDungeonSystem] 已重置 agent context，保留 {len(agent_context.context)} 条消息"
+            f"[AssembleDungeonSystem] 已重置 agent memory，保留 {len(agent_memory.messages)} 条消息"
         )
         assert isinstance(
-            agent_context.context[0], SystemMessage
+            agent_memory.messages[0], SystemMessage
         ), "首条消息不是 SystemMessage"
 
     ####################################################################################################################################

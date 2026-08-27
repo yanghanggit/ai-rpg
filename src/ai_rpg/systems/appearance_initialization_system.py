@@ -74,7 +74,7 @@ class AppearanceInitializationSystem(ExecuteProcessor):
         return DeepSeekClient(
             name=entity.name,
             full_prompt=prompt,
-            context=self._game.get_agent_context(entity).context,
+            messages=self._game.get_agent_memory(entity).messages,
         )
 
     #######################################################################################################################################
@@ -102,7 +102,7 @@ class AppearanceInitializationSystem(ExecuteProcessor):
             new_appearance,
         )
 
-        # 添加事件上下文。
+        # 添加事件消息。
         self._game.add_human_message(
             entity,
             HumanMessage(

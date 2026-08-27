@@ -57,7 +57,7 @@ class ActorComponent(Component):
 @final
 @register_component_type
 class StageDescriptionComponent(Component):
-    """场景环境叙述，由 AI 根据当前状态动态生成，为行动规划与战斗初始化等系统提供上下文。"""
+    """场景环境叙述，由 AI 根据当前状态动态生成，为行动规划与战斗初始化等系统提供背景信息。"""
 
     name: str
     narrative: str  # 叙述性描述文本

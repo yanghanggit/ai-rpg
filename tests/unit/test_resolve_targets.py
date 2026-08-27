@@ -33,7 +33,7 @@ def _make_game(player_name: str = "player", actor_name: str = "hero") -> DBGGame
     world = WorldState(
         entity_counter=0,
         entities=[],
-        agents_context={},
+        agent_memories={},
         dungeon=Dungeon(name="dungeon_alpha", rooms=[], profile=""),
         blueprint=blueprint,
     )

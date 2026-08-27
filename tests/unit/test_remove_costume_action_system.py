@@ -71,7 +71,7 @@ def mock_game(entity_manager: RPGEntityManager) -> MagicMock:
     game = MagicMock(spec=DBGGame)
     game.get_group.side_effect = entity_manager.get_group
     game.get_entity_by_name.side_effect = entity_manager.get_entity_by_name
-    game.get_agent_context.return_value = MagicMock(context=[])
+    game.get_agent_memory.return_value = MagicMock(messages=[])
     game.get_storage_entity.return_value = None
     game.resolve_stage_entity.return_value = _make_stage_entity(entity_manager)
     return game

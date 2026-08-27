@@ -5,38 +5,34 @@ from typing import Callable, Dict, List, Literal
 
 from loguru import logger
 
-from ..models.messages import ContextMessage, HumanMessage, ToolMessage
+from ..models.messages import ChatMessage, HumanMessage, ToolMessage
 from .client import DeepSeekClient, ToolDefinition
 
 
 async def agent_loop(
     name: str,
     prompt: str,
-    context: List[ContextMessage],
+    messages: List[ChatMessage],
     tools: List[ToolDefinition],
     handlers: Dict[str, Callable[..., str]],
     max_rounds: int = 5,
     tool_choice: Literal["auto", "none", "required"] = "auto",
     thinking: bool = False,
 ) -> bool:
-    """通用 agentic 循环：驱动 LLM 与工具交互，直到 LLM 主动 stop 或达到最大轮次。
-
-    注意：本函数会原地修改传入的 context（追加首轮 prompt、每轮 AI 回复与工具结果）。
-    调用方若希望保留原列表不被改动，请在传入前自行复制，例如 ``list(context)``。
-    """
-    # 方案 C：不复制 context，直接原地追加，由调用方决定是否传入副本以隔离。
-    history: List[ContextMessage] = context
+    """通用 agentic 循环：驱动 LLM 与工具交互，直到 LLM 主动 stop 或达到最大轮次。"""
+    # 方案 C：不复制 messages，直接原地追加，由调用方决定是否传入副本以隔离。
+    history: List[ChatMessage] = messages
     current_prompt = prompt
 
     # 进入 agent 循环，每轮与 LLM 交互，处理工具调用，直到 LLM 主动 stop 或达到最大轮次
     for round_num in range(1, max_rounds + 1):
         logger.debug(f"[agent_loop:{name}] 第 {round_num}/{max_rounds} 轮")
 
-        # 初始化 DeepSeekClient，用于与 LLM 进行交互，传入当前轮次的 prompt、上下文、工具定义和工具选择策略
+        # 初始化 DeepSeekClient，用于与 LLM 进行交互，传入当前轮次的 prompt、消息历史、工具定义和工具选择策略
         client = DeepSeekClient(
             name=name,
             full_prompt=current_prompt,
-            context=history,
+            messages=history,
             tools=tools,
             tool_choice=tool_choice,
             thinking=thinking,

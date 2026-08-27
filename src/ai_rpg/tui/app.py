@@ -3,7 +3,7 @@
 from typing import Callable, Optional
 from textual.app import App, ComposeResult
 from textual.screen import Screen
-from .session import GameSession
+from .session import ClientSession
 from .launch import LaunchScreen
 
 
@@ -15,7 +15,7 @@ class GameClient(App[None]):
     ]
 
     # ── 会话状态：登录后写入，登出后清空 ──
-    session: Optional[GameSession] = None
+    session: Optional[ClientSession] = None
 
     def __init__(
         self, *, launch_screen: Callable[[], "Screen[None]"] = LaunchScreen

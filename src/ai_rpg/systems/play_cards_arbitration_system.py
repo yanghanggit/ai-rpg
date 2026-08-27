@@ -122,7 +122,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             round_current_actor,
         )
 
-        # 生成精简后的仲裁提示消息，用于在需要时向 LLM 提供更简洁的上下文信息
+        # 生成精简后的仲裁提示消息，用于在需要时向 LLM 提供更简洁的背景信息
         condensed_message = (
             build_condensed_combat_arbitration_prompt(
                 actor_entity.name,
@@ -146,7 +146,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             name=stage_entity.name,
             full_prompt=message,
             condensed_prompt=condensed_message,
-            context=self._game.get_agent_context(stage_entity).context,
+            messages=self._game.get_agent_memory(stage_entity).messages,
             timeout=60 * 2,
         )
 
@@ -177,7 +177,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             logger.error("[PlayCardsArbitrationSystem] LLM 回复内容为空")
             return
 
-        # 获取当前行动者所在的场景实体，确保后续的仲裁结果能够正确应用到对应的场景上下文
+        # 获取当前行动者所在的场景实体，确保后续的仲裁结果能够正确应用到对应的场景
         stage_entity = self._game.resolve_stage_entity(actor_entity)
         assert (
             stage_entity is not None
@@ -209,7 +209,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                 format_response.stage_description,
             )
 
-        # 根据是否使用精简提示，添加上下文。
+        # 根据是否使用精简提示，添加消息。
         if self._use_condensed_prompt:
             self._game.add_human_message(
                 entity=stage_entity,
@@ -224,7 +224,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                 human_message=HumanMessage(content=chat_client.full_prompt),
             )
 
-        # 将 AI 的响应消息添加到游戏上下文中，便于后续的回合记录和状态更新。
+        # 将 AI 的响应消息添加到对话历史中，便于后续的回合记录和状态更新。
         self._game.add_ai_message(
             entity=stage_entity,
             ai_message=chat_client.response_ai_message,

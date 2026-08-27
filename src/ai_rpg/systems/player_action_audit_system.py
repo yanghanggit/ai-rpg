@@ -168,17 +168,17 @@ class PlayerActionAuditSystem(ReactiveProcessor):
         # 构建审核提示词
         prompt = _build_audit_prompt(content)
 
-        # 获取审计世界实体的AI上下文
-        agent_context = self._game.get_agent_context(world_entity)
+        # 获取审计世界实体的AI记忆
+        agent_memory = self._game.get_agent_memory(world_entity)
         assert isinstance(
-            agent_context.context[0], SystemMessage
-        ), "审计世界实体AI上下文的第一条消息必须是SystemMessage类型"
+            agent_memory.messages[0], SystemMessage
+        ), "审计世界实体AI记忆的第一条消息必须是SystemMessage类型"
 
         # 创建AI审核请求（使用审计世界实体的system prompt）
         chat_client = DeepSeekClient(
             name=world_entity.name,
             full_prompt=prompt,
-            context=[agent_context.context[0]],
+            messages=[agent_memory.messages[0]],
         )
 
         # 发送审核请求；出错时默认拒绝，保证安全性

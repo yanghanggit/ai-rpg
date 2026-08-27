@@ -59,7 +59,7 @@ class WhisperActionSystem(ReactiveProcessor):
                 # 处理交互错误
                 if error == InteractionError.TARGET_NOT_FOUND:
 
-                    # 记录在上下文里！
+                    # 记录在对话历史里！
                     self._game.add_human_message(
                         entity=entity,
                         human_message=HumanMessage(

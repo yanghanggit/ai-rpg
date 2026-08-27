@@ -122,7 +122,7 @@ class WearCostumeActionSystem(ReactiveProcessor):
         client = DeepSeekClient(
             name=entity.name,
             full_prompt=prompt,
-            context=self._game.get_agent_context(entity).context,
+            messages=self._game.get_agent_memory(entity).messages,
         )
 
         try:

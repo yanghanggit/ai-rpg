@@ -38,7 +38,7 @@ def create_dungeon_entry_room_pipeline(
     # 入口场景描述系统
     processors.add(StageDescriptionSystem(dbg_game))
 
-    # 入口初始化系统（角色侧）：为入口场景内的远征队成员注入场景环境上下文 + 为副本全部角色添加 GenerateDeckAction
+    # 入口初始化系统（角色侧）：为入口场景内的远征队成员注入场景环境信息 + 为副本全部角色添加 GenerateDeckAction
     processors.add(EntryInitActorSystem(dbg_game))
 
     # 牌库生成系统：LLM 生成初始卡牌 → DeckComponent + DrawPileComponent

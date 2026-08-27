@@ -132,9 +132,9 @@ class GenerateDungeonProfileSystem(ReactiveProcessor):
         success = await agent_loop(
             name=entity.name,
             prompt=_build_dungeon_profile_prompt(directive),
-            # 直接传入实体的持久化 agent context：agent_loop 原地追加，
+            # 直接传入实体的持久化 agent memory：agent_loop 原地追加，
             # 本步完整对话即成为后续步骤的记忆
-            context=self._game.get_agent_context(entity).context,
+            messages=self._game.get_agent_memory(entity).messages,
             tools=[PROFILE_TOOL],
             handlers={
                 "record_dungeon_profile": partial(

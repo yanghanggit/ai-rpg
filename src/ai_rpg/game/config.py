@@ -23,7 +23,7 @@ assert WORLDS_DIR.exists(), f"找不到目录: {WORLDS_DIR}"
 
 
 ###########################################################################################################################################
-# 开发期 AI 响应磁盘缓存目录（基于 context+prompt hash，避免重复调用 AI 接口）
+# 开发期 AI 响应磁盘缓存目录（基于 messages+prompt hash，避免重复调用 AI 接口）
 DEBUG_CACHE_DIR: Path = Path(".debug_cache")
 DEBUG_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 assert DEBUG_CACHE_DIR.exists(), f"找不到目录: {DEBUG_CACHE_DIR}"

@@ -73,7 +73,7 @@ class GenerateDungeonDirectiveSystem(ReactiveProcessor):
         client = DeepSeekClient(
             name=director_entity.name,
             full_prompt=prompt,
-            context=self._game.get_agent_context(director_entity).context,
+            messages=self._game.get_agent_memory(director_entity).messages,
             model=MODEL_FLASH,
             # thinking=False,
         )
@@ -93,7 +93,7 @@ class GenerateDungeonDirectiveSystem(ReactiveProcessor):
                 f"[GenerateDungeonDirectiveSystem] 世界导演创作指令:\n{directive}"
             )
 
-            # 4. 持久化导演 Q&A 到导演上下文
+            # 4. 持久化导演 Q&A 到导演记忆
             self._game.add_human_message(
                 director_entity,
                 HumanMessage(content=prompt),
@@ -104,7 +104,7 @@ class GenerateDungeonDirectiveSystem(ReactiveProcessor):
             )
 
         # 5. 挂接 GenerateDungeonDirectiveAction，将指令传递给 GenerateDungeonProfileSystem
-        #    （无论是否获得指令都挂接，保证流程持续推进；不写入副本生成系统上下文）
+        #    （无论是否获得指令都挂接，保证流程持续推进；不写入副本生成系统记忆）
         generation_entity.replace(
             GenerateDungeonDirectiveAction,
             generation_entity.name,

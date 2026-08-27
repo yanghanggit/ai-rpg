@@ -77,7 +77,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             self._game.current_dungeon_combat_room.combat.rounds or []
         )
 
-        # 获取当前行动者所在的场景实体，确保后续的仲裁请求能够正确发送到对应的场景上下文
+        # 获取当前行动者所在的场景实体，确保后续的仲裁请求能够正确发送到对应的场景
         stage_entity = self._game.resolve_stage_entity(actor_entity)
         assert stage_entity is not None, f"无法找到 {actor_entity.name} 所在的场景实体"
 
@@ -98,7 +98,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             current_stage_description=current_stage_description,
         )
 
-        # 生成精简后的仲裁提示信息，用于在需要时向 LLM 提供更简洁的上下文
+        # 生成精简后的仲裁提示信息，用于在需要时向 LLM 提供更简洁的背景信息
         condensed_message = (
             build_condensed_consumable_arbitration_prompt(
                 actor_name=actor_entity.name,
@@ -117,7 +117,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             name=stage_entity.name,
             full_prompt=message,
             condensed_prompt=condensed_message,
-            context=self._game.get_agent_context(stage_entity).context,
+            messages=self._game.get_agent_memory(stage_entity).messages,
             timeout=60 * 2,
         )
 
@@ -148,7 +148,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             logger.error("[UseConsumableItemArbitrationSystem] LLM 回复内容为空")
             return
 
-        # 获取当前行动者所在的场景实体，确保后续的仲裁结果能够正确应用到对应的场景上下文
+        # 获取当前行动者所在的场景实体，确保后续的仲裁结果能够正确应用到对应的场景
         stage_entity = self._game.resolve_stage_entity(actor_entity)
         assert (
             stage_entity is not None

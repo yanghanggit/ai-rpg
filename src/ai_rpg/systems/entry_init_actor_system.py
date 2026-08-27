@@ -1,4 +1,4 @@
-"""副本入口初始化系统（角色侧）：为入口场景内的远征队成员注入场景环境上下文，并为远征队成员触发初始牌库生成（怪物牌库在各自战斗房间生成）。"""
+"""副本入口初始化系统（角色侧）：为入口场景内的远征队成员注入场景环境信息，并为远征队成员触发初始牌库生成（怪物牌库在各自战斗房间生成）。"""
 
 from dataclasses import dataclass
 from typing import Final, List, Set, final, override
@@ -77,7 +77,7 @@ def _build_entry_init_prompt(
 ###################################################################################################################################################################
 @final
 class EntryInitActorSystem(ExecuteProcessor):
-    """副本入口初始化系统（角色侧）：为入口场景内的远征队成员注入场景环境上下文（无 LLM），并为远征队成员添加 GenerateDeckAction 触发初始牌库生成。"""
+    """副本入口初始化系统（角色侧）：为入口场景内的远征队成员注入场景环境信息（无 LLM），并为远征队成员添加 GenerateDeckAction 触发初始牌库生成。"""
 
     def __init__(self, game: DBGGame) -> None:
         self._game: Final[DBGGame] = game
@@ -96,7 +96,7 @@ class EntryInitActorSystem(ExecuteProcessor):
             return
 
         logger.info(
-            "入口初始化（角色侧）开始：注入入口场景上下文 + 为远征队成员触发牌库生成..."
+            "入口初始化（角色侧）开始：注入入口场景环境信息 + 为远征队成员触发牌库生成..."
         )
 
         # 获取玩家实体，player 所在场景即入口场景
@@ -113,12 +113,12 @@ class EntryInitActorSystem(ExecuteProcessor):
         # 获取场景环境组件
         stage_description_comp = current_stage_entity.get(StageDescriptionComponent)
 
-        # 入口场景内仅有远征队成员（怪物分散在各战斗房间，不在此处注入上下文）
+        # 入口场景内仅有远征队成员（怪物分散在各战斗房间，不在此处注入场景环境信息）
         actor_entities = get_alive_actors_in_stage(self._game, player_entity)
         assert len(actor_entities) > 0, "入口场景内不可能没有远征队成员！"
 
-        # 为每个角色注入入口场景上下文（无 LLM 调用）
-        self._add_context(
+        # 为每个角色注入入口场景环境信息（无 LLM 调用）
+        self._inject_entry_scene_environment(
             actor_entities=actor_entities,
             stage_name=current_stage_entity.name,
             stage_description=stage_description_comp.narrative,
@@ -131,26 +131,26 @@ class EntryInitActorSystem(ExecuteProcessor):
         entry_room.initialized = True
 
     ###################################################################################################################################################################
-    def _add_context(
+    def _inject_entry_scene_environment(
         self,
         actor_entities: Set[Entity],
         stage_name: str,
         stage_description: str,
     ) -> None:
-        """为所有入口场景内的角色注入场景上下文（human message + 模拟 AI 回应），无 LLM 调用。"""
+        """为所有入口场景内的角色注入场景环境信息（human message + 模拟 AI 回应），无 LLM 调用。"""
 
         for actor_entity in actor_entities:
 
-            # 幂等保护：同一场景内只注入一次，避免入口初始化任务被重复触发时重复写入上下文
+            # 幂等保护：同一场景内只注入一次，避免入口初始化任务被重复触发时重复写入场景环境信息
             existing_messages = self._game.filter_messages(
                 entity=actor_entity,
-                predicate=lambda msg, index, context: (
+                predicate=lambda msg, index, messages: (
                     getattr(msg, "entry_initialization", None) == stage_name
                 ),
             )
             if existing_messages:
                 logger.debug(
-                    f"[{actor_entity.name}] 已注入过 {stage_name} 的入口场景上下文，跳过"
+                    f"[{actor_entity.name}] 已注入过 {stage_name} 的入口场景环境信息，跳过"
                 )
                 continue
 
@@ -189,7 +189,7 @@ class EntryInitActorSystem(ExecuteProcessor):
             # 计算角色有效属性（含装备加成）
             actor_stats = compute_character_stats(actor_entity)
 
-            # 生成入口场景上下文提示词
+            # 生成入口场景环境提示词
             entry_init_prompt = _build_entry_init_prompt(
                 stage_name=stage_name,
                 stage_description=stage_description,
@@ -197,7 +197,7 @@ class EntryInitActorSystem(ExecuteProcessor):
                 actor_stats=actor_stats,
             )
 
-            # 注入入口场景上下文
+            # 注入入口场景环境信息
             self._game.add_human_message(
                 entity=actor_entity,
                 human_message=HumanMessage(
@@ -212,7 +212,9 @@ class EntryInitActorSystem(ExecuteProcessor):
                 ai_message=AIMessage(content="已感知当前场景环境。"),
             )
 
-            logger.debug(f"[{actor_entity.name}] 入口场景上下文注入完成（无 LLM 推理）")
+            logger.debug(
+                f"[{actor_entity.name}] 入口场景环境信息注入完成（无 LLM 推理）"
+            )
 
     ###################################################################################################################################################################
     def _add_generate_deck_actions(self) -> None:

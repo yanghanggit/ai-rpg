@@ -1,4 +1,4 @@
-"""怪物上下文探测系统（纯调试）。"""
+"""怪物记忆探测系统（纯调试）。"""
 
 from typing import Dict, Final, List, final, override
 
@@ -17,7 +17,7 @@ from ..utils import prompt_builder
 
 #######################################################################################################################################
 @prompt_builder
-def _build_context_probe_prompt(monster_name: str) -> str:
+def _build_memory_probe_prompt(monster_name: str) -> str:
     """生成调试探针问题（固定文案，不携带任何答案，避免让怪物直接照抄）。"""
     return f"""# 战场环境回忆测试
 
@@ -34,9 +34,9 @@ def _build_context_probe_prompt(monster_name: str) -> str:
 
 #######################################################################################################################################
 @final
-class MonsterContextProbeSystem(ReactiveProcessor):
+class MonsterMemoryProbeSystem(ReactiveProcessor):
     """
-    怪物上下文探测系统（纯调试）。
+    怪物记忆探测系统（纯调试）。
     """
 
     def __init__(self, game: DBGGame) -> None:
@@ -66,24 +66,24 @@ class MonsterContextProbeSystem(ReactiveProcessor):
 
         # 与 MonsterPrePlaySystem 保持一致的战斗状态守卫。
         if not self._game.current_dungeon_combat_room.combat.is_ongoing:
-            logger.debug("MonsterContextProbeSystem: 战斗未进行中，跳过探测")
+            logger.debug("MonsterMemoryProbeSystem: 战斗未进行中，跳过探测")
             return
 
         if not entities:
             return
 
-        # 为每个怪物构建探测请求（context 只读复用，不会修改现有历史）。
+        # 为每个怪物构建探测请求（memory 只读复用，不会修改现有历史）。
         chat_clients: List[DeepSeekClient] = []
         for entity in entities:
-            prompt = _build_context_probe_prompt(monster_name=entity.name)
+            prompt = _build_memory_probe_prompt(monster_name=entity.name)
             chat_clients.append(
                 DeepSeekClient(
                     name=entity.name,
                     full_prompt=prompt,
-                    context=self._game.get_agent_context(entity).context,
+                    messages=self._game.get_agent_memory(entity).messages,
                 )
             )
-            logger.info(f"MonsterContextProbeSystem: [{entity.name}] 上下文探测开始")
+            logger.info(f"MonsterMemoryProbeSystem: [{entity.name}] 记忆探测开始")
 
         # 并行 LLM 推理。
         await batch_chat(clients=chat_clients)
@@ -92,21 +92,21 @@ class MonsterContextProbeSystem(ReactiveProcessor):
         for client in chat_clients:
             assert (
                 self._game.get_entity_by_name(client.name) is not None
-            ), f"MonsterContextProbeSystem: 无法找到实体 {client.name}"
+            ), f"MonsterMemoryProbeSystem: 无法找到实体 {client.name}"
 
             # 获取实体对象，确保存在。
             if client.response_ai_message is None:
                 logger.warning(
-                    f"MonsterContextProbeSystem: [{client.name}] LLM 返回空响应，无法比对"
+                    f"MonsterMemoryProbeSystem: [{client.name}] LLM 返回空响应，无法比对"
                 )
                 continue
 
             logger.info("=" * 80)
             logger.info(
-                f"MonsterContextProbeSystem: [{client.name}] 调试探针问题：\n{client.full_prompt}"
+                f"MonsterMemoryProbeSystem: [{client.name}] 调试探针问题：\n{client.full_prompt}"
             )
             logger.info(
-                f"MonsterContextProbeSystem: [{client.name}] 怪物回答：\n{client.response_content}"
+                f"MonsterMemoryProbeSystem: [{client.name}] 怪物回答：\n{client.response_content}"
             )
             logger.info("=" * 80)
 

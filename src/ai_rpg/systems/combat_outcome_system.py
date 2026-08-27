@@ -21,7 +21,7 @@ from ..game.dbg_combat_processor import clear_round_state
 ########################################################################################################################################################################
 @prompt_builder
 def _build_combat_result_notification(stage_name: str, is_victory: bool) -> str:
-    """生成写入 agent 上下文的战斗胜/败通知文本。"""
+    """生成写入 agent 记忆的战斗胜/败通知文本。"""
     result_text = "胜利" if is_victory else "失败"
     return f"# {stage_name}的战斗{result_text}！"
 

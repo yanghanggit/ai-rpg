@@ -11,7 +11,7 @@ from src.ai_rpg.models.messages import (
     SystemMessage,
     ToolMessage,
 )
-from src.ai_rpg.models.messages import ContextMessage
+from src.ai_rpg.models.messages import ChatMessage
 from src.ai_rpg.utils.debug_cache import (
     compute_cache_key,
     load_debug_cache,
@@ -31,11 +31,11 @@ class TestComputeCacheKey:
         assert all(c in "0123456789abcdef" for c in key)
 
     def test_deterministic(self) -> None:
-        ctx: List[ContextMessage] = [
+        messages: List[ChatMessage] = [
             SystemMessage(content="sys"),
             HumanMessage(content="hi"),
         ]
-        assert compute_cache_key(ctx) == compute_cache_key(ctx)
+        assert compute_cache_key(messages) == compute_cache_key(messages)
 
     def test_different_content_different_key(self) -> None:
         key1 = compute_cache_key([HumanMessage(content="a")])
@@ -47,7 +47,7 @@ class TestComputeCacheKey:
         key2 = compute_cache_key([AIMessage(content="y"), HumanMessage(content="x")])
         assert key1 != key2
 
-    def test_empty_context(self) -> None:
+    def test_empty_messages(self) -> None:
         key = compute_cache_key([])
         assert len(key) == 64
 

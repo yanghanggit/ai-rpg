@@ -69,7 +69,7 @@ def _notify_world_director(
     dungeon: Dungeon,
     summary: str,
 ) -> Optional[Entity]:
-    """将副本归档总结作为「世界变化通知」写入世界导演的上下文。
+    """将副本归档总结作为「世界变化通知」写入世界导演的记忆。
 
     只追加消息、不触发 LLM 思考；世界导演后续的决策由未来 action/system 驱动。
     返回世界导演实体（找不到时返回 None）。
@@ -141,7 +141,7 @@ def _build_entity_fact_block(
     entity_name: str,
     messages: Sequence[BaseMessage],
 ) -> str:
-    """将单个实体的上下文（跳过 SystemMessage）整理为一段事实记忆文本。
+    """将单个实体的记忆（跳过 SystemMessage）整理为一段事实记忆文本。
 
     模块标题使用纯文本（不使用 # 标题，避免与消息内容中的多级 # 混淆），
     消息内容沿用 Human / AI(实体名) / Tool(实体名) 的角色标记。
@@ -248,7 +248,7 @@ def notify_dungeon_director_room_ended(
         _build_entity_fact_block(
             label,
             entity.name,
-            dbg_game.get_agent_context(entity).context,
+            dbg_game.get_agent_memory(entity).messages,
         )
         for label, entity in room_entities
     )
@@ -267,8 +267,8 @@ async def debug_probe_dungeon_director_reasoning(
 ) -> None:
     """调试探针：让副本导演基于当前已积累的记忆做一次通用推理问答。
 
-    仅用于人工核对上下文管理是否符合预期（结果打印在 DeepSeekClient 的日志中），
-    只读取 context 不追加消息，不影响副本导演的正式记忆。
+    仅用于人工核对记忆管理是否符合预期（结果打印在 DeepSeekClient 的日志中），
+    只读取记忆不追加消息，不影响副本导演的正式记忆。
     """
 
     director_entity = _get_dungeon_director_entity(dbg_game)
@@ -276,14 +276,14 @@ async def debug_probe_dungeon_director_reasoning(
         logger.warning("[dungeon_director] 未找到副本导演实体，跳过调试探针")
         return
 
-    agent_context = dbg_game.get_agent_context(director_entity)
+    agent_memory = dbg_game.get_agent_memory(director_entity)
 
     prompt = "调试探针：到目前为止都发生了什么？你后续希望发生什么？"
 
     client = DeepSeekClient(
         name=dungeon.name,
         full_prompt=prompt,
-        context=agent_context.context,
+        messages=agent_memory.messages,
         model=MODEL_FLASH,
     )
     await client.chat()
@@ -306,7 +306,7 @@ async def archive_dungeon(
         logger.warning("[archive_dungeon] 未找到副本导演实体，归档跳过")
         return None
 
-    agent_context = dbg_game.get_agent_context(director_entity)
+    agent_memory = dbg_game.get_agent_memory(director_entity)
 
     try:
 
@@ -321,7 +321,7 @@ async def archive_dungeon(
         client = DeepSeekClient(
             name=f"dungeon:{dungeon.name}",
             full_prompt=prompt,
-            context=agent_context.context,
+            messages=agent_memory.messages,
             model=MODEL_FLASH,
         )
         await client.chat()
@@ -333,7 +333,7 @@ async def archive_dungeon(
 
         logger.info(f"[archive_dungeon] 副本「{dungeon.name}」导演总结:\n{summary}")
 
-        # 将总结作为「世界变化通知」写入世界导演（GM）的上下文
+        # 将总结作为「世界变化通知」写入世界导演（GM）的记忆
         _notify_world_director(dbg_game, dungeon, summary)
 
     except Exception as e:
@@ -345,9 +345,9 @@ async def archive_dungeon(
 
         # 副本导演记忆生命周期限定于当前副本：归档后重置，仅保留首条 system prompt
         assert isinstance(
-            agent_context.context[0], SystemMessage
-        ), "副本导演 agent context 首条消息必须是 SystemMessage"
-        del agent_context.context[1:]
+            agent_memory.messages[0], SystemMessage
+        ), "副本导演 agent memory 首条消息必须是 SystemMessage"
+        del agent_memory.messages[1:]
         logger.info(
-            f"[archive_dungeon] 已重置副本导演记忆，保留 {len(agent_context.context)} 条消息"
+            f"[archive_dungeon] 已重置副本导演记忆，保留 {len(agent_memory.messages)} 条消息"
         )

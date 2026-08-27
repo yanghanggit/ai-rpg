@@ -136,7 +136,7 @@ def _build_inject_cards_prompt(
 
 **干预原则**：
 
-- ✅ 塞牌须有据：仅可将上下文叙事中已明确描述的环境要素（沙尘入眼、热浪灼烧、松软地面失稳、碎石可用、断柱可借力等）转化为卡牌，不得凭空引入场景中未出现的物件
+- ✅ 塞牌须有据：仅可将叙事中已明确描述的环境要素（沙尘入眼、热浪灼烧、松软地面失稳、碎石可用、断柱可借力等）转化为卡牌，不得凭空引入场景中未出现的物件
 - ✅ 干预前先推断该物件当前状态（完好/部分损耗/已触发/已取走/仍可操作…），仅状态允许进一步交互时才可转化；若当前不可用，需在 `description` 中体现，并将对应卡牌的 `playable` 设为 `false`
 - ❌ 禁止：无中生有的卡牌（即与环境交互无关、纯粹基于角色内在情绪/能力的卡牌）
 - 不滥用：若无明显可利用的环境要素，**必须输出空数组**
@@ -182,8 +182,8 @@ def _build_inject_cards_prompt(
 class InjectCardsActionSystem(ReactiveProcessor):
     """场景塞牌系统：响应 PlayCardsAction / UseConsumableItemAction / EquipGearItemAction 事件，
 
-    在对应的仲裁系统结算完毕后（同一帧内，依赖流水线中的注册顺序），复用 stage 已被更新的对话
-    上下文（其中已包含本次行动的仲裁叙事），由 stage agent 判断是否需要向场内角色塞入场景卡牌。
+    在对应的仲裁系统结算完毕后（同一帧内，依赖流水线中的注册顺序），复用 stage 已被更新的消息
+    历史（其中已包含本次行动的仲裁叙事），由 stage agent 判断是否需要向场内角色塞入场景卡牌。
     """
 
     def __init__(
@@ -260,7 +260,7 @@ class InjectCardsActionSystem(ReactiveProcessor):
             name=stage_entity.name,
             full_prompt=prompt,
             condensed_prompt=condensed_message,
-            context=self._game.get_agent_context(stage_entity).context,
+            messages=self._game.get_agent_memory(stage_entity).messages,
         )
 
         logger.debug(f"InjectCardsActionSystem: [{stage_entity.name}] 进行场景塞牌评估")
@@ -317,7 +317,7 @@ class InjectCardsActionSystem(ReactiveProcessor):
             logger.error(f"原始响应: {chat_client.response_content}")
             return
 
-        # 添加上下文消息到 stage entity 的对话历史，便于后续回顾与调试
+        # 添加消息到 stage entity 的对话历史，便于后续回顾与调试
         if self._use_condensed_prompt:
             self._game.add_human_message(
                 entity=stage_entity,

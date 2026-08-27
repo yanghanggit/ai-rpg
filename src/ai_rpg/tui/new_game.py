@@ -150,10 +150,10 @@ class NewGameScreen(BaseGameScreen):
                 f"_start_new_game: 游戏创建成功 user_name={user_name} game_name={game_name} → 进入 HomeScreen"
             )
             from .home_main import HomeMainScreen
-            from .session import GameSession
+            from .session import ClientSession
 
             app = self.game_client
-            app.session = GameSession(
+            app.session = ClientSession(
                 player_session=resp.player_session,
                 blueprint=resp.blueprint,
             )

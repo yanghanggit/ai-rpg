@@ -81,7 +81,7 @@ async def new_game(
     world_data = WorldState(
         entity_counter=1000,
         entities=[],
-        agents_context={},
+        agent_memories={},
         dungeon=Dungeon(name="", rooms=[], profile=""),
         blueprint=blueprint_data,
     )

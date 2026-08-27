@@ -1,4 +1,4 @@
-"""游戏会话状态数据类"""
+"""客户端会话状态数据类"""
 
 from dataclasses import dataclass, field
 
@@ -6,8 +6,8 @@ from ..models import Blueprint, PlayerSession
 
 
 @dataclass
-class GameSession:
-    """玩家登录后存续的会话状态。登出时销毁，重登时重建。"""
+class ClientSession:
+    """玩家登录后存续的客户端会话状态。登出时销毁，重登时重建。"""
 
     player_session: PlayerSession
     blueprint: Blueprint

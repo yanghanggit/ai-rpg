@@ -1,5 +1,5 @@
 """
-Tests for RPGGame context message management methods:
+Tests for RPGGame memory message management methods:
   - add_human_message
   - add_ai_message
   - filter_messages
@@ -27,7 +27,7 @@ def game(sample_game: Any) -> Any:
 
 @pytest.fixture
 def actor(game: Any) -> Entity:
-    """Create a named entity inside the game context."""
+    """Create a named entity inside the game."""
     return cast(Entity, game._create_entity("TestActor"))
 
 
@@ -47,9 +47,9 @@ class TestAddHumanMessage:
         """Message is appended; content and type are correct."""
         game.add_human_message(actor, HumanMessage(content="hello"))
 
-        ctx = game.get_agent_context(actor).context
-        assert len(ctx) == 1
-        msg = ctx[0]
+        msgs = game.get_agent_memory(actor).messages
+        assert len(msgs) == 1
+        msg = msgs[0]
         assert isinstance(msg, HumanMessage)
         assert msg.content == "hello"
 
@@ -64,8 +64,8 @@ class TestAddHumanMessage:
             ),
         )
 
-        ctx = game.get_agent_context(actor).context
-        msg = ctx[0]
+        msgs = game.get_agent_memory(actor).messages
+        msg = msgs[0]
         assert isinstance(msg, HumanMessage)
         assert getattr(msg, "home_actor_planning") == "TestActor"
         assert getattr(msg, "home_actor_full_prompt") == "full prompt text"
@@ -76,20 +76,20 @@ class TestAddHumanMessage:
         game.add_human_message(actor, HumanMessage(content="second"))
         game.add_human_message(actor, HumanMessage(content="third"))
 
-        ctx = game.get_agent_context(actor).context
-        assert [m.content for m in ctx] == ["first", "second", "third"]
+        msgs = game.get_agent_memory(actor).messages
+        assert [m.content for m in msgs] == ["first", "second", "third"]
 
-    def test_different_entities_have_independent_contexts(
+    def test_different_entities_have_independent_memories(
         self, game: Any, actor: Entity, second_actor: Entity
     ) -> None:
         """Messages for different entities do not bleed into each other."""
         game.add_human_message(actor, HumanMessage(content="for actor"))
         game.add_human_message(second_actor, HumanMessage(content="for other"))
 
-        assert len(game.get_agent_context(actor).context) == 1
-        assert len(game.get_agent_context(second_actor).context) == 1
-        assert game.get_agent_context(actor).context[0].content == "for actor"
-        assert game.get_agent_context(second_actor).context[0].content == "for other"
+        assert len(game.get_agent_memory(actor).messages) == 1
+        assert len(game.get_agent_memory(second_actor).messages) == 1
+        assert game.get_agent_memory(actor).messages[0].content == "for actor"
+        assert game.get_agent_memory(second_actor).messages[0].content == "for other"
 
 
 # ---------------------------------------------------------------------------
@@ -103,10 +103,10 @@ class TestAddAiMessage:
         ai_msg = AIMessage(content="AI reply")
         game.add_ai_message(actor, ai_msg)
 
-        ctx = game.get_agent_context(actor).context
-        assert len(ctx) == 1
-        assert isinstance(ctx[0], AIMessage)
-        assert ctx[0].content == "AI reply"
+        msgs = game.get_agent_memory(actor).messages
+        assert len(msgs) == 1
+        assert isinstance(msgs[0], AIMessage)
+        assert msgs[0].content == "AI reply"
 
     def test_empty_content_raises(self, game: Any, actor: Entity) -> None:
         """Passing an AIMessage with empty content triggers AssertionError."""
@@ -123,15 +123,15 @@ class TestAddAiMessage:
         ai_msg = AIMessage(content="with tag", tag="test_tag")
         game.add_ai_message(actor, ai_msg)
 
-        ctx = game.get_agent_context(actor).context
-        assert getattr(ctx[0], "tag") == "test_tag"
+        msgs = game.get_agent_memory(actor).messages
+        assert getattr(msgs[0], "tag") == "test_tag"
 
     def test_same_message_object_is_stored(self, game: Any, actor: Entity) -> None:
         """The exact message object passed is the one stored (identity check)."""
         ai_msg = AIMessage(content="identity check")
         game.add_ai_message(actor, ai_msg)
 
-        assert game.get_agent_context(actor).context[0] is ai_msg
+        assert game.get_agent_memory(actor).messages[0] is ai_msg
 
 
 # ---------------------------------------------------------------------------
@@ -146,7 +146,7 @@ class TestFilterMessages:
             actor, HumanMessage(content="msg", home_actor_planning="TestActor")
         )
         result = game.filter_messages(
-            actor, predicate=lambda msg, index, context: False
+            actor, predicate=lambda msg, index, messages: False
         )
         assert result == []
 
@@ -157,7 +157,7 @@ class TestFilterMessages:
         )
         result = game.filter_messages(
             actor,
-            predicate=lambda msg, index, context: (
+            predicate=lambda msg, index, messages: (
                 getattr(msg, "home_actor_planning", None) == "TestActor"
             ),
         )
@@ -171,7 +171,7 @@ class TestFilterMessages:
         )
         result = game.filter_messages(
             actor,
-            predicate=lambda msg, index, context: (
+            predicate=lambda msg, index, messages: (
                 getattr(msg, "home_actor_planning", None) == "NonExistent"
             ),
         )
@@ -184,7 +184,7 @@ class TestFilterMessages:
         game.add_human_message(actor, HumanMessage(content="plain msg"))
         result = game.filter_messages(
             actor,
-            predicate=lambda msg, index, context: (
+            predicate=lambda msg, index, messages: (
                 getattr(msg, "no_such_attr", None) is not None
             ),
         )
@@ -204,7 +204,7 @@ class TestFilterMessages:
 
         result = game.filter_messages(
             actor,
-            predicate=lambda msg, index, context: (
+            predicate=lambda msg, index, messages: (
                 getattr(msg, "home_actor_planning", None) == "TestActor"
             ),
         )
@@ -225,7 +225,7 @@ class TestFilterMessages:
 
         result = game.filter_messages(
             actor,
-            predicate=lambda msg, index, context: (
+            predicate=lambda msg, index, messages: (
                 getattr(msg, "home_actor_planning", None) == "TestActor"
             ),
             reverse_order=True,
@@ -245,7 +245,7 @@ class TestFilterMessages:
 
         result = game.filter_messages(
             actor,
-            predicate=lambda msg, index, context: (
+            predicate=lambda msg, index, messages: (
                 getattr(msg, "home_actor_planning", None) == "TestActor"
             ),
             reverse_order=False,
@@ -272,7 +272,7 @@ class TestFilterMessages:
 
         result = game.filter_messages(
             actor,
-            predicate=lambda msg, index, context: (
+            predicate=lambda msg, index, messages: (
                 getattr(msg, "home_actor_planning", None) == "TestActor"
                 and getattr(msg, "home_actor_full_prompt", None) == "prompt"
             ),
@@ -280,16 +280,16 @@ class TestFilterMessages:
         assert len(result) == 1
         assert result[0].content == "full match"
 
-    def test_index_and_context_available(self, game: Any, actor: Entity) -> None:
-        """Predicate receives the original index and the full context list."""
+    def test_index_and_messages_available(self, game: Any, actor: Entity) -> None:
+        """Predicate receives the original index and the full message list."""
         game.add_human_message(actor, HumanMessage(content="first"))
         game.add_human_message(actor, HumanMessage(content="second"))
         game.add_human_message(actor, HumanMessage(content="third"))
 
-        # 只保留原始索引为 1 且上下文长度为 3 的消息
+        # 只保留原始索引为 1 且消息列表长度为 3 的消息
         result = game.filter_messages(
             actor,
-            predicate=lambda msg, index, context: (index == 1 and len(context) == 3),
+            predicate=lambda msg, index, messages: (index == 1 and len(messages) == 3),
         )
         assert len(result) == 1
         assert result[0].content == "second"
@@ -302,20 +302,20 @@ class TestFilterMessages:
 
 class TestRemoveMessages:
     def test_empty_input_returns_zero(self, game: Any, actor: Entity) -> None:
-        """Passing an empty list returns 0 and leaves the context unchanged."""
+        """Passing an empty list returns 0 and leaves the message list unchanged."""
         game.add_human_message(actor, HumanMessage(content="keep me"))
         count = game.remove_messages(actor, [])
         assert count == 0
-        assert len(game.get_agent_context(actor).context) == 1
+        assert len(game.get_agent_memory(actor).messages) == 1
 
     def test_removes_existing_message(self, game: Any, actor: Entity) -> None:
-        """A message that is in the context is removed; return value is 1."""
+        """A message that is in the message list is removed; return value is 1."""
         game.add_human_message(actor, HumanMessage(content="to remove"))
-        msg = game.get_agent_context(actor).context[0]
+        msg = game.get_agent_memory(actor).messages[0]
 
         count = game.remove_messages(actor, [msg])
         assert count == 1
-        assert msg not in game.get_agent_context(actor).context
+        assert msg not in game.get_agent_memory(actor).messages
 
     def test_removes_multiple_messages(self, game: Any, actor: Entity) -> None:
         """Multiple messages are removed and the correct count is returned."""
@@ -323,23 +323,23 @@ class TestRemoveMessages:
         game.add_human_message(actor, HumanMessage(content="msg2"))
         game.add_human_message(actor, HumanMessage(content="keep"))
 
-        ctx = game.get_agent_context(actor).context
-        to_remove = [ctx[0], ctx[1]]
+        msgs = game.get_agent_memory(actor).messages
+        to_remove = [msgs[0], msgs[1]]
 
         count = game.remove_messages(actor, to_remove)
         assert count == 2
-        remaining = game.get_agent_context(actor).context
+        remaining = game.get_agent_memory(actor).messages
         assert len(remaining) == 1
         assert remaining[0].content == "keep"
 
-    def test_not_in_context_returns_zero(self, game: Any, actor: Entity) -> None:
-        """Passing a message that was never in the context returns 0."""
+    def test_not_in_memory_returns_zero(self, game: Any, actor: Entity) -> None:
+        """Passing a message that was never in the memory returns 0."""
         game.add_human_message(actor, "keep")
-        foreign = HumanMessage(content="not in context")
+        foreign = HumanMessage(content="not in memory")
 
         count = game.remove_messages(actor, [foreign])
         assert count == 0
-        assert len(game.get_agent_context(actor).context) == 1
+        assert len(game.get_agent_memory(actor).messages) == 1
 
 
 # ---------------------------------------------------------------------------
@@ -349,10 +349,10 @@ class TestRemoveMessages:
 
 class TestRemoveMessageRange:
     def _fill(self, game: Any, actor: Entity, n: int = 5) -> List[Any]:
-        """Helper: add n HumanMessages and return all context objects."""
+        """Helper: add n HumanMessages and return all message objects."""
         for i in range(n):
             game.add_human_message(actor, HumanMessage(content=f"msg{i}"))
-        return list(game.get_agent_context(actor).context)
+        return list(game.get_agent_memory(actor).messages)
 
     def test_same_message_raises(self, game: Any, actor: Entity) -> None:
         """begin == end triggers AssertionError."""
@@ -371,7 +371,7 @@ class TestRemoveMessageRange:
         msgs = self._fill(game, actor, 5)
         game.remove_message_range(actor, msgs[1], msgs[3])
 
-        remaining = game.get_agent_context(actor).context
+        remaining = game.get_agent_memory(actor).messages
         assert len(remaining) == 2
         assert remaining[0] is msgs[0]
         assert remaining[1] is msgs[4]
@@ -385,9 +385,9 @@ class TestRemoveMessageRange:
         assert deleted[1] is msgs[2]
         assert deleted[2] is msgs[3]
 
-    def test_context_size_after_removal(self, game: Any, actor: Entity) -> None:
-        """Context shrinks by exactly the number of deleted messages."""
+    def test_memory_size_after_removal(self, game: Any, actor: Entity) -> None:
+        """Memory shrinks by exactly the number of deleted messages."""
         msgs = self._fill(game, actor, 5)
         deleted = game.remove_message_range(actor, msgs[0], msgs[2])
         assert len(deleted) == 3
-        assert len(game.get_agent_context(actor).context) == 2
+        assert len(game.get_agent_memory(actor).messages) == 2

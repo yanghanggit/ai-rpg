@@ -77,7 +77,7 @@ class EquipGearItemArbitrationSystem(ReactiveProcessor):
             self._game.current_dungeon_combat_room.combat.rounds or []
         )
 
-        # 获取当前行动者所在的场景实体，确保后续的仲裁结果能够正确应用到对应的场景上下文
+        # 获取当前行动者所在的场景实体，确保后续的仲裁结果能够正确应用到对应的场景
         stage_entity = self._game.resolve_stage_entity(actor_entity)
         assert (
             stage_entity is not None
@@ -98,7 +98,7 @@ class EquipGearItemArbitrationSystem(ReactiveProcessor):
             current_stage_description=current_stage_description,
         )
 
-        # 生成精简后的装备仲裁提示消息，用于在需要时向 LLM 提供更简洁的上下文信息
+        # 生成精简后的装备仲裁提示消息，用于在需要时向 LLM 提供更简洁的背景信息
         condensed_message = (
             build_condensed_gear_arbitration_prompt(
                 item=action.item,
@@ -115,7 +115,7 @@ class EquipGearItemArbitrationSystem(ReactiveProcessor):
             name=stage_entity.name,
             full_prompt=message,
             condensed_prompt=condensed_message,
-            context=self._game.get_agent_context(stage_entity).context,
+            messages=self._game.get_agent_memory(stage_entity).messages,
             timeout=60 * 2,
         )
 
@@ -145,7 +145,7 @@ class EquipGearItemArbitrationSystem(ReactiveProcessor):
             logger.error("[EquipGearItemArbitrationSystem] LLM 返回空响应")
             return
 
-        # 获取当前行动者所在的场景实体，确保后续的仲裁结果能够正确应用到对应的场景上下文
+        # 获取当前行动者所在的场景实体，确保后续的仲裁结果能够正确应用到对应的场景
         stage_entity = self._game.resolve_stage_entity(actor_entity)
         assert (
             stage_entity is not None
@@ -178,7 +178,7 @@ class EquipGearItemArbitrationSystem(ReactiveProcessor):
                 response.stage_description,
             )
 
-        # 根据是否使用精简提示，添加上下文。
+        # 根据是否使用精简提示，添加消息。
         if self._use_condensed_prompt:
             self._game.add_human_message(
                 entity=stage_entity,
@@ -193,7 +193,7 @@ class EquipGearItemArbitrationSystem(ReactiveProcessor):
                 human_message=HumanMessage(content=chat_client.full_prompt),
             )
 
-        # 添加 AI 消息到游戏上下文中，以便后续的仲裁逻辑能够参考 LLM 的响应内容
+        # 添加 AI 消息到对话历史中，以便后续的仲裁逻辑能够参考 LLM 的响应内容
         self._game.add_ai_message(
             entity=stage_entity,
             ai_message=chat_client.response_ai_message,
@@ -219,7 +219,7 @@ class EquipGearItemArbitrationSystem(ReactiveProcessor):
             exclude_entities={stage_entity},
         )
 
-        # 更新每个实体的最终状态，包括血量和状态效果，并将这些更新通知到游戏上下文中
+        # 更新每个实体的最终状态，包括血量和状态效果，并将这些更新通知到对话历史中
         for entity_name, entity_stats in response.final_stats.items():
             entity = self._game.get_entity_by_name(entity_name)
             assert entity is not None, f"无法找到 final_stats 中的实体: {entity_name}"

@@ -72,11 +72,11 @@ class RetreatActionSystem(ReactiveProcessor):
         entity.replace(DeathComponent, entity.name)
         logger.info(f"撤退: 角色 {entity.name} 标记为死亡")
 
-        # 解析所在场景，生成撤退叙事消息并写入上下文
+        # 解析所在场景，生成撤退叙事消息并写入对话历史
         stage_entity = self._game.resolve_stage_entity(entity)
         assert stage_entity is not None, f"Entity {entity.name} must be in a stage"
 
-        # 生成撤退消息并写入上下文
+        # 生成撤退消息并写入对话历史
         retreat_message = _build_retreat_message(dungeon_name, stage_entity.name)
         self._game.add_human_message(
             entity,

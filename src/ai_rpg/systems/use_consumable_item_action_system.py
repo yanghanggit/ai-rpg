@@ -31,7 +31,7 @@ def _build_consumable_notice(
 #######################################################################################################################################
 @final
 class UseConsumableItemActionSystem(ReactiveProcessor):
-    """消耗品使用前置动作系统：扣减库存 + 按阵营广播通知上下文。"""
+    """消耗品使用前置动作系统：扣减库存 + 按阵营广播通知。"""
 
     def __init__(self, game: DBGGame) -> None:
         super().__init__(game)

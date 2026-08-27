@@ -20,11 +20,11 @@ from ..utils import prompt_builder
 
 #######################################################################################################################################
 @prompt_builder
-def _build_play_card_context_prompt(
+def _build_play_card_record_prompt(
     play_cards_action: PlayCardsAction,
     round_number: int,
 ) -> str:
-    """生成出牌上下文消息，注入角色的对话历史，帮助 LLM 感知本回合出牌情况。"""
+    """生成出牌记录消息，注入角色的对话历史，帮助 LLM 感知本回合出牌情况。"""
     card = play_cards_action.card
     targets_str = (
         "、".join(play_cards_action.targets) if play_cards_action.targets else "无目标"
@@ -46,7 +46,7 @@ def _build_play_card_context_prompt(
 #######################################################################################################################################
 @prompt_builder
 def _build_action_notice_for_others(actor_name: str, round_number: int) -> str:
-    """生成出牌行动预告，广播给场景内其他角色，维护观察者视角的上下文连贯性。"""
+    """生成出牌行动预告，广播给场景内其他角色，维护观察者视角的叙事连贯性。"""
     return f"【第 {round_number} 回合】{actor_name} 正在出牌。"
 
 
@@ -133,20 +133,20 @@ class PlayCardsActionSystem(ReactiveProcessor):
                 f"  completed_actors: {last_round.completed_actors} / current_turn_actor_name={last_round.current_actor}"
             )
 
-            # 为出牌角色注入本回合出牌上下文，作为其对话历史的一部分
+            # 为出牌角色注入本回合出牌记录，作为其对话历史的一部分
             self._game.add_human_message(
                 entity=entity,
                 human_message=HumanMessage(
-                    content=_build_play_card_context_prompt(
+                    content=_build_play_card_record_prompt(
                         play_cards_action=play_cards_action,
                         round_number=len(current_rounds),
                     ),
-                    play_card_context=play_cards_action.card.model_dump_json(),
+                    play_card_record=play_cards_action.card.model_dump_json(),
                 ),
             )
 
             # 向场景内其他角色（排除出牌者自身与场景仲裁实体）广播简短的行动预告，
-            # 使观察者上下文在收到仲裁结算之前已感知到出牌事件
+            # 使观察者在收到仲裁结算之前已感知到出牌事件
             stage_entity = self._game.resolve_stage_entity(entity)
             assert (
                 stage_entity is not None

@@ -108,11 +108,11 @@ def test_build_entry_init_prompt_contains_key_fields() -> None:
 
 
 # ---------------------------------------------------------------------------
-# _add_context
+# _inject_entry_scene_environment
 # ---------------------------------------------------------------------------
 
 
-def test_add_context_injects_human_and_ai_messages(
+def test_inject_entry_scene_environment_injects_human_and_ai_messages(
     context: Context, mock_game: MagicMock, system: EntryInitActorSystem
 ) -> None:
     actor_a = _make_actor(context, "勇者", is_ally=True)
@@ -120,7 +120,7 @@ def test_add_context_injects_human_and_ai_messages(
 
     mock_game.filter_messages.return_value = []
 
-    system._add_context(
+    system._inject_entry_scene_environment(
         actor_entities={actor_a, actor_b},
         stage_name="入口石室",
         stage_description="潮湿阴冷的洞口",
@@ -136,7 +136,7 @@ def test_add_context_injects_human_and_ai_messages(
         assert getattr(human_message, "entry_initialization", None) == "入口石室"
 
 
-def test_add_context_skips_already_injected_actor(
+def test_inject_entry_scene_environment_skips_already_injected_actor(
     context: Context, mock_game: MagicMock, system: EntryInitActorSystem
 ) -> None:
     actor = _make_actor(context, "勇者", is_ally=True)
@@ -144,7 +144,7 @@ def test_add_context_skips_already_injected_actor(
     # 已有同场景标记，应跳过注入
     mock_game.filter_messages.return_value = [object()]
 
-    system._add_context(
+    system._inject_entry_scene_environment(
         actor_entities={actor},
         stage_name="入口石室",
         stage_description="潮湿阴冷的洞口",

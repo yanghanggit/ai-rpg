@@ -142,7 +142,7 @@ class StageDescriptionSystem(ExecuteProcessor):
                 if self._use_condensed_prompt
                 else None
             ),
-            context=self._game.get_agent_context(stage_entity).context,
+            messages=self._game.get_agent_memory(stage_entity).messages,
         )
 
     #######################################################################################################################################
@@ -173,10 +173,10 @@ class StageDescriptionSystem(ExecuteProcessor):
             logger.error(f"Exception: {e}")
             return False
 
-        # 添加上下文。
+        # 添加消息。
         if self._use_condensed_prompt:
 
-            # 使用精简 prompt 加入上下文。
+            # 使用精简 prompt 加入消息历史。
             self._game.add_human_message(
                 stage_entity,
                 HumanMessage(
@@ -186,12 +186,12 @@ class StageDescriptionSystem(ExecuteProcessor):
             )
         else:
 
-            # 直接使用完整 prompt 加入上下文。
+            # 直接使用完整 prompt 加入消息历史。
             self._game.add_human_message(
                 stage_entity, HumanMessage(content=chat_client.full_prompt)
             )
 
-        # 添加上下文。
+        # 添加消息。
         self._game.add_ai_message(stage_entity, chat_client.response_ai_message)
 
         # 更新环境描写

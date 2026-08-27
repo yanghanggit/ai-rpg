@@ -14,7 +14,7 @@ from src.ai_rpg.models.components import (
     WorldComponent,
 )
 from src.ai_rpg.models.messages import SystemMessage
-from src.ai_rpg.models.world_state import AgentContext
+from src.ai_rpg.models.world_state import AgentMemory
 from src.ai_rpg.systems.player_action_audit_system import (
     ContentAuditResponse,
     PlayerActionAuditSystem,
@@ -39,11 +39,11 @@ def _rejected_json(reason: str = "内容违规") -> str:
     return f'{{"is_approved": false, "reason": "{reason}"}}'
 
 
-def _make_agent_context(name: str = "audit_system") -> AgentContext:
-    """构造包含 SystemMessage 的 AgentContext，满足系统内部 assert 条件。"""
-    return AgentContext(
+def _make_agent_memory(name: str = "audit_system") -> AgentMemory:
+    """构造包含 SystemMessage 的 AgentMemory，满足系统内部 assert 条件。"""
+    return AgentMemory(
         name=name,
-        context=[SystemMessage(content="你是内容审核员。")],
+        messages=[SystemMessage(content="你是内容审核员。")],
     )
 
 
@@ -62,7 +62,7 @@ def mock_game(context: Context) -> MagicMock:
     """MagicMock DBGGame，将 get_group() 代理到真实 Context。"""
     game = MagicMock(spec=DBGGame)
     game.get_group.side_effect = context.get_group
-    game.get_agent_context.return_value = _make_agent_context()
+    game.get_agent_memory.return_value = _make_agent_memory()
     return game
 
 

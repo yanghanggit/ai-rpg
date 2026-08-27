@@ -1,5 +1,5 @@
 from typing import Dict, List, final
-from .messages import ContextMessage
+from .messages import ChatMessage
 from pydantic import BaseModel, Field
 from .dungeon import Dungeon
 from .serialization import EntitySerialization
@@ -8,9 +8,9 @@ from .blueprint import Blueprint
 
 ###############################################################################################################################################
 @final
-class AgentContext(BaseModel):
+class AgentMemory(BaseModel):
     name: str
-    context: List[ContextMessage]
+    messages: List[ChatMessage]
 
 
 ###############################################################################################################################################
@@ -33,7 +33,7 @@ class WorldState(BaseModel):
             storage_entity="",
         )
     )
-    agents_context: Dict[str, AgentContext] = {}
+    agent_memories: Dict[str, AgentMemory] = {}
 
 
 ###############################################################################################################################################

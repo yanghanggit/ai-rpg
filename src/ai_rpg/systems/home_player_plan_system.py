@@ -1,4 +1,4 @@
-"""家园玩家上下文注入系统。"""
+"""家园玩家规划注入系统。"""
 
 from typing import Dict, Final, List, Optional, final
 
@@ -31,7 +31,7 @@ from .home_planning_prompt_builders import (
 #######################################################################################################################################
 @final
 class HomePlayerPlanSystem(ReactiveProcessor):
-    """家园玩家上下文注入系统。让Player Agent以为自己做了规划然后产生行动，这样就和NPC的上下文格式一致了。"""
+    """家园玩家规划注入系统。让Player Agent以为自己做了规划然后产生行动，这样就和NPC的消息格式一致了。"""
 
     def __init__(self, game: DBGGame, use_condensed_prompt: bool = True) -> None:
         super().__init__(game)
@@ -65,21 +65,21 @@ class HomePlayerPlanSystem(ReactiveProcessor):
         assert (
             len(entities) == 1
         ), "HomePlayerPlanSystem expects exactly one player entity at a time."
-        self._inject_player_scene_context(entities[0])
+        self._inject_player_scene_observation(entities[0])
 
     #######################################################################################################################################
-    def _inject_player_scene_context(self, player_entity: Entity) -> None:
+    def _inject_player_scene_observation(self, player_entity: Entity) -> None:
         """向玩家实体注入当前场景观察信息（不调用 LLM）。"""
 
         mock_response = self._build_player_action_response(player_entity)
         assert (
             mock_response is not None
-        ), f"玩家 {player_entity.name} 无法构建影子 plan，跳过家园上下文注入。"
+        ), f"玩家 {player_entity.name} 无法构建影子 plan，跳过家园规划注入。"
 
         current_stage = self._game.resolve_stage_entity(player_entity)
         assert (
             current_stage is not None
-        ), f"玩家 {player_entity.name} 不在任何场景中，无法注入家园规划上下文。"
+        ), f"玩家 {player_entity.name} 不在任何场景中，无法注入家园规划观察信息。"
 
         # 获取当前场景中除玩家自身外的其他角色的外观信息
         other_actors_appearances = get_other_actors_appearances(
@@ -134,7 +134,7 @@ class HomePlayerPlanSystem(ReactiveProcessor):
                 ),
             )
 
-        # 将 AI 的响应消息添加上下文。
+        # 将 AI 的响应消息添加到对话历史。
         self._game.add_ai_message(
             player_entity, AIMessage(content=mock_response.model_dump_json(indent=2))
         )

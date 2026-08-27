@@ -155,7 +155,7 @@ class CombatLootSystem(ExecuteProcessor):
 
     #######################################################################################################################################
     def _create_loot_client(self, monster: Entity) -> DeepSeekClient:
-        """为单头怪物创建配置好的 DeepSeekClient，传入其战斗上下文。"""
+        """为单头怪物创建配置好的 DeepSeekClient，传入其消息历史。"""
         total_rounds = len(self._game.current_dungeon_combat_room.combat.rounds or [])
 
         player_entity = self._game.get_player_entity()
@@ -174,7 +174,7 @@ class CombatLootSystem(ExecuteProcessor):
             full_prompt=_build_loot_prompt(
                 monster.name, appearance, stage_name, total_rounds
             ),
-            context=self._game.get_agent_context(monster).context,
+            messages=self._game.get_agent_memory(monster).messages,
         )
 
     #######################################################################################################################################

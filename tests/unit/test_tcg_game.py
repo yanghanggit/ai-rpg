@@ -51,7 +51,7 @@ def _make_game(
     world = WorldState(
         entity_counter=0,
         entities=[],
-        agents_context={},
+        agent_memories={},
         dungeon=Dungeon(name="dungeon_alpha", rooms=[], profile=""),
         blueprint=blueprint,
     )
@@ -207,7 +207,7 @@ class TestBuildFromBlueprint:
         world = WorldState(
             entity_counter=0,
             entities=[],
-            agents_context={},
+            agent_memories={},
             dungeon=Dungeon(name="", rooms=[], profile=""),
             blueprint=bp,
         )

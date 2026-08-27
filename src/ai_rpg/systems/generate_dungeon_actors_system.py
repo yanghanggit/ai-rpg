@@ -121,7 +121,7 @@ def _handle_record_dungeon_actor(
         f"  room_name:  {room_name}\n"
         f"  累计: {len(result.actors)} 个"
     )
-    # 返回结构化 JSON 文本，作为 ToolMessage 进入 agent context，供后续步骤的 LLM 记忆使用
+    # 返回结构化 JSON 文本，作为 ToolMessage 进入 agent memory，供后续步骤的 LLM 记忆使用
     return record.model_dump_json(ensure_ascii=False)
 
 
@@ -182,8 +182,8 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
                 profile=dungeon_profile,
                 combat_rooms=combat_rooms,
             ),
-            # 直接传入实体的持久化 agent context：agent_loop 原地追加
-            context=self._game.get_agent_context(entity).context,
+            # 直接传入实体的持久化 agent memory：agent_loop 原地追加
+            messages=self._game.get_agent_memory(entity).messages,
             tools=[_build_actor_tool(combat_rooms)],
             handlers={
                 "record_dungeon_actor": partial(_handle_record_dungeon_actor, result),

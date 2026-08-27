@@ -68,7 +68,7 @@ def create_dungeon_combat_room_pipeline(
     from ..systems.combat_round_completion_system import CombatRoundCompletionSystem
     from ..systems.monster_pre_play_system import MonsterPrePlaySystem
 
-    # from ..systems.monster_context_probe_system import MonsterContextProbeSystem
+    # from ..systems.monster_memory_probe_system import MonsterMemoryProbeSystem
     from ..systems.party_pre_play_system import PartyPrePlaySystem
 
     dbg_game = cast(DBGGame, game)
@@ -83,7 +83,7 @@ def create_dungeon_combat_room_pipeline(
     # 战斗场景描述系统
     processors.add(StageDescriptionSystem(dbg_game))
 
-    # 战斗初始化系统（角色侧）：初始化战斗临时牌堆，为参战角色注入战场上下文，添加 GenerateDeckAction
+    # 战斗初始化系统（角色侧）：初始化战斗临时牌堆，为参战角色注入战场环境，添加 GenerateDeckAction
     processors.add(CombatInitActorSystem(dbg_game))
 
     # 战斗初始化系统（场景侧）：注入战斗专用规则、转换战斗状态为进行中
@@ -99,8 +99,8 @@ def create_dungeon_combat_room_pipeline(
     # 战斗核心动作处理相关的系统
     processors.add(DrawCardsActionSystem(dbg_game))
     # processors.add(
-    #     MonsterContextProbeSystem(dbg_game)
-    # )  # 纯调试系统：在怪物出牌决策前探测其上下文同步是否正确，问题/回答不写入 LLM 上下文。
+    #     MonsterMemoryProbeSystem(dbg_game)
+    # )  # 纯调试系统：在怪物出牌决策前探测其记忆同步是否正确，问题/回答不写入 LLM 记忆。
     processors.add(MonsterPrePlaySystem(dbg_game))
     processors.add(PartyPrePlaySystem(dbg_game))
     processors.add(PlayCardsActionSystem(dbg_game))
@@ -115,7 +115,7 @@ def create_dungeon_combat_room_pipeline(
     processors.add(EquipGearItemArbitrationSystem(dbg_game))
     processors.add(DeathSystem(dbg_game))
 
-    # 仂裁结算后，由 stage agent（地牢主视角）复用已更新的对话上下文，判断是否需要向场内角色塞入场景卡牌
+    # 仂裁结算后，由 stage agent（地牢主视角）复用已更新的对话历史，判断是否需要向场内角色塞入场景卡牌
     processors.add(InjectCardsActionSystem(dbg_game))
 
     # 回合完成判定系统

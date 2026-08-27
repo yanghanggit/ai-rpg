@@ -65,7 +65,7 @@ def activate_speak_action(
     logger.debug(f"激活说话动作: {player_entity.name} -> {target}: {content}")
     player_entity.replace(SpeakAction, player_entity.name, {target: content})
 
-    # 为玩家自身激活行动计划（写入影子 plan，记录本轮上下文），是否让 NPC 也在本轮真正规划由调用方另行决定。
+    # 为玩家自身激活行动计划（写入影子 plan，记录本轮信息），是否让 NPC 也在本轮真正规划由调用方另行决定。
     activate_plan_action(dbg_game, [player_entity.name])
 
     # 返回成功消息，表示说话动作已成功激活。
@@ -120,7 +120,7 @@ def activate_switch_stage(dbg_game: DBGGame, stage_name: str) -> Tuple[bool, str
     logger.debug(f"激活场景转换: {player_entity.name} -> {stage_name}")
     player_entity.replace(TransStageAction, player_entity.name, stage_name)
 
-    # 为玩家自身激活行动计划（写入影子 plan，记录本轮上下文），是否让 NPC 也在本轮真正规划由调用方另行决定。
+    # 为玩家自身激活行动计划（写入影子 plan，记录本轮信息），是否让 NPC 也在本轮真正规划由调用方另行决定。
     activate_plan_action(dbg_game, [player_entity.name])
 
     # 返回成功消息，表示场景转换动作已成功激活。

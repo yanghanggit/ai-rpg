@@ -33,7 +33,7 @@ def _build_combat_summary_prompt(stage_name: str, total_rounds: int) -> str:
 #######################################################################################################################################
 @final
 class CombatArchiveSystem(ExecuteProcessor):
-    """战斗结束后执行上下文压缩与事件派发。"""
+    """战斗结束后执行记忆压缩与事件派发。"""
 
     def __init__(self, game: DBGGame) -> None:
         self._game: Final[DBGGame] = game
@@ -72,12 +72,12 @@ class CombatArchiveSystem(ExecuteProcessor):
             full_prompt=_build_combat_summary_prompt(
                 combat_stage_entity.name, total_rounds
             ),
-            context=self._game.get_agent_context(combat_actor).context,
+            messages=self._game.get_agent_memory(combat_actor).messages,
         )
 
     #######################################################################################################################################
     def _archive_actor_combat_record(self, chat_client: DeepSeekClient) -> None:
-        """对单个角色完成上下文压缩并派发 CombatArchiveEvent。"""
+        """对单个角色完成记忆压缩并派发 CombatArchiveEvent。"""
 
         if chat_client.response_ai_message is None:
             logger.error(f"LLM 响应缺失，无法归档战斗记录！chat_client: {chat_client}")
@@ -103,7 +103,7 @@ class CombatArchiveSystem(ExecuteProcessor):
             human_message=HumanMessage(content=chat_client.full_prompt),
         )
 
-        # 将 LLM 生成的摘要写回角色上下文
+        # 将 LLM 生成的摘要写回角色记忆
         self._game.add_ai_message(
             processed_actor_entity,
             chat_client.response_ai_message.model_copy(
@@ -146,7 +146,7 @@ class CombatArchiveSystem(ExecuteProcessor):
     def _extract_combat_message_range(
         self, entity: Entity
     ) -> List[SystemMessage | HumanMessage | AIMessage | ToolMessage]:
-        """从角色上下文中移除本场战斗的所有消息并返回被移除的列表。"""
+        """从角色记忆中移除本场战斗的所有消息并返回被移除的列表。"""
         # 获取当前的战斗实体。
         stage_entity = self._game.resolve_stage_entity(entity)
         assert stage_entity is not None, f"无法获取角色 {entity.name} 所在的场景实体！"
@@ -154,7 +154,7 @@ class CombatArchiveSystem(ExecuteProcessor):
         # 获取最近的战斗消息。
         begin_messages = self._game.filter_messages(
             entity=entity,
-            predicate=lambda msg, index, context: (
+            predicate=lambda msg, index, messages: (
                 getattr(msg, "combat_initialization", None) == stage_entity.name
             ),
         )
@@ -165,7 +165,7 @@ class CombatArchiveSystem(ExecuteProcessor):
         # 获取最近的战斗消息。
         end_messages = self._game.filter_messages(
             entity=entity,
-            predicate=lambda msg, index, context: (
+            predicate=lambda msg, index, messages: (
                 getattr(msg, "combat_outcome", None) == stage_entity.name
             ),
         )

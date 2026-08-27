@@ -195,7 +195,7 @@ class TestStageTransition:
     def test_empty_actors_set_does_nothing(self, game: Any) -> None:
         """空角色集合不应改变任何状态。"""
         dest = _make_stage(game, "终点")
-        # 不抛异常，context 无变化
+        # 不抛异常，memory 无变化
         stage_transition(game, set(), dest)
 
     def test_transfer_to_same_stage_is_noop(self, game: Any) -> None:
@@ -227,46 +227,44 @@ class TestStageTransition:
     # 消息广播验证
     # ------------------------------------------------------------------
 
-    def test_actor_context_receives_transition_self_message(self, game: Any) -> None:
-        """角色自身 context 中应存在包含起点/终点的场景转换消息。"""
+    def test_actor_memory_receives_transition_self_message(self, game: Any) -> None:
+        """角色自身 memory 中应存在包含起点/终点的场景转换消息。"""
         source = _make_stage(game, "起点")
         dest = _make_stage(game, "终点")
         actor = _make_actor(game, "英雄", source.name)
 
         stage_transition(game, {actor}, dest)
 
-        messages = game.get_agent_context(actor).context
+        messages = game.get_agent_memory(actor).messages
         contents = [m.content for m in messages]
         assert any(
             "起点" in c and "终点" in c for c in contents
-        ), f"未在 actor context 中找到含起点/终点的转换消息，实际消息: {contents}"
+        ), f"未在 actor memory 中找到含起点/终点的转换消息，实际消息: {contents}"
 
-    def test_source_stage_context_receives_departure_message(self, game: Any) -> None:
-        """起点场景 context 中应存在角色离开的广播消息。"""
+    def test_source_stage_memory_receives_departure_message(self, game: Any) -> None:
+        """起点场景 memory 中应存在角色离开的广播消息。"""
         source = _make_stage(game, "起点")
         dest = _make_stage(game, "终点")
         actor = _make_actor(game, "英雄", source.name)
 
         stage_transition(game, {actor}, dest)
 
-        messages = game.get_agent_context(source).context
+        messages = game.get_agent_memory(source).messages
         contents = [m.content for m in messages]
         assert any(
             "离开" in c for c in contents
-        ), f"未在起点场景 context 中找到离开消息，实际消息: {contents}"
+        ), f"未在起点场景 memory 中找到离开消息，实际消息: {contents}"
 
-    def test_destination_stage_context_receives_arrival_message(
-        self, game: Any
-    ) -> None:
-        """终点场景 context 中应存在角色到达的广播消息。"""
+    def test_destination_stage_memory_receives_arrival_message(self, game: Any) -> None:
+        """终点场景 memory 中应存在角色到达的广播消息。"""
         source = _make_stage(game, "起点")
         dest = _make_stage(game, "终点")
         actor = _make_actor(game, "英雄", source.name)
 
         stage_transition(game, {actor}, dest)
 
-        messages = game.get_agent_context(dest).context
+        messages = game.get_agent_memory(dest).messages
         contents = [m.content for m in messages]
         assert any(
             "进入" in c for c in contents
-        ), f"未在终点场景 context 中找到到达消息，实际消息: {contents}"
+        ), f"未在终点场景 memory 中找到到达消息，实际消息: {contents}"

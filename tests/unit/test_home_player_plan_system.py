@@ -4,8 +4,8 @@
 1. filter() 与 HomeNpcPlanSystem 的路由互斥（只处理玩家自身）
 2. _build_player_action_response()：由玩家已挂载的 Action 组件反推出的"影子 plan"核心映射逻辑；
    若无任何主动行动组件（不应发生），返回 None 并记录警告，不再伪造"待命"占位内容
-3. _inject_player_scene_context()：确认全程不调用 LLM；正常情况下写入与 NPC 真实 plan 同构的
-   JSON 上下文，非法状态下（无主动行动）整体跳过、不写入任何消息
+3. _inject_player_scene_observation()：确认全程不调用 LLM；正常情况下写入与 NPC 真实 plan 同构的
+   JSON 信息，非法状态下（无主动行动）整体跳过、不写入任何消息
 """
 
 import json
@@ -143,7 +143,7 @@ class TestBuildPlayerActionResponse:
 
 
 # ---------------------------------------------------------------------------
-# _inject_player_scene_context — 端到端：不调用 LLM，仅写入结构化上下文
+# _inject_player_scene_observation — 端到端：不调用 LLM，仅写入结构化信息
 # ---------------------------------------------------------------------------
 
 
@@ -155,7 +155,7 @@ class TestInjectPlayerSceneContext:
         entity = _make_player(context)
         entity.replace(SpeakAction, entity.name, {"角色.NPC_A": "你好"})
 
-        system._inject_player_scene_context(entity)
+        system._inject_player_scene_observation(entity)
 
         ai_message = mock_game.add_ai_message.call_args.args[1]
         payload = json.loads(ai_message.content)

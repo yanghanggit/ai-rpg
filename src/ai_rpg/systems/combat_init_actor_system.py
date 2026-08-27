@@ -1,4 +1,4 @@
-"""战斗初始化系统（角色侧）：战斗触发后，为参战角色初始化临时牌堆、注入战场上下文并触发初始牌库生成。"""
+"""战斗初始化系统（角色侧）：战斗触发后，为参战角色初始化临时牌堆、注入战场环境并触发初始牌库生成。"""
 
 from dataclasses import dataclass
 from typing import Final, List, final, override, Set
@@ -58,7 +58,7 @@ def _build_combat_init_prompt(
     other_actors_info: List[OtherActorInfo],
     actor_stats: CharacterStats,
 ) -> str:
-    """生成战斗初始化上下文通知"""
+    """生成战斗初始化通知"""
     attrs_prompt = f"HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense}"
 
     return f"""# 战斗触发通知
@@ -79,7 +79,7 @@ def _build_combat_init_prompt(
 ###################################################################################################################################################################
 @final
 class CombatInitActorSystem(ExecuteProcessor):
-    """战斗初始化系统（角色侧）：初始化战斗临时牌堆，为参战角色注入战场上下文，触发初始牌库生成。"""
+    """战斗初始化系统（角色侧）：初始化战斗临时牌堆，为参战角色注入战场环境，触发初始牌库生成。"""
 
     def __init__(self, game: DBGGame) -> None:
         self._game: Final[DBGGame] = game
@@ -93,7 +93,7 @@ class CombatInitActorSystem(ExecuteProcessor):
             return
 
         logger.info(
-            "战斗初始化（角色侧）开始，正在为参战角色初始化牌堆并注入战场上下文..."
+            "战斗初始化（角色侧）开始，正在为参战角色初始化牌堆并注入战场环境..."
         )
 
         assert self._game.is_player_in_dungeon_stage, "战斗初始化阶段玩家必须在场景中！"
@@ -122,8 +122,8 @@ class CombatInitActorSystem(ExecuteProcessor):
         # 为所有参战角色初始化战斗临时牌堆（DrawPile / DiscardPile / ExhaustPile）
         self._initialize_piles(actor_entities)
 
-        # 为每个角色注入战场上下文（无 LLM 调用）
-        self._add_context(
+        # 为每个角色注入战场环境信息（无 LLM 调用）
+        self._inject_combat_environment(
             actor_entities=actor_entities,
             stage_name=current_stage_entity.name,
             stage_description=stage_description_comp.narrative,
@@ -182,13 +182,13 @@ class CombatInitActorSystem(ExecuteProcessor):
             )
 
     ###################################################################################################################################################################
-    def _add_context(
+    def _inject_combat_environment(
         self,
         actor_entities: Set[Entity],
         stage_name: str,
         stage_description: str,
     ) -> None:
-        """为所有参战角色注入战场上下文（human message + 模拟 AI 回应），无 LLM 调用。"""
+        """为所有参战角色注入战场环境信息（human message + 模拟 AI 回应），无 LLM 调用。"""
 
         for actor_entity in actor_entities:
 
@@ -227,7 +227,7 @@ class CombatInitActorSystem(ExecuteProcessor):
             # 计算角色有效属性（含装备加成）
             actor_stats = compute_character_stats(actor_entity)
 
-            # 生成战场上下文提示词
+            # 生成战场环境提示词
             combat_init_prompt = _build_combat_init_prompt(
                 stage_name=stage_name,
                 stage_description=stage_description,
@@ -235,7 +235,7 @@ class CombatInitActorSystem(ExecuteProcessor):
                 actor_stats=actor_stats,
             )
 
-            # 注入战场上下文
+            # 注入战场环境信息
             self._game.add_human_message(
                 entity=actor_entity,
                 human_message=HumanMessage(
@@ -250,7 +250,7 @@ class CombatInitActorSystem(ExecuteProcessor):
                 ai_message=AIMessage(content="已感知战场环境，进入战斗准备状态。"),
             )
 
-            logger.debug(f"[{actor_entity.name}] 战斗上下文注入完成（无 LLM 推理）")
+            logger.debug(f"[{actor_entity.name}] 战场环境信息注入完成（无 LLM 推理）")
 
 
 ###################################################################################################################################################################

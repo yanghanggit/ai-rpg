@@ -24,7 +24,7 @@ from ai_rpg.deepseek import (
 )
 from ai_rpg.models.messages import (
     AIMessage,
-    ContextMessage,
+    ChatMessage,
     HumanMessage,
     SystemMessage,
     ToolMessage,
@@ -40,7 +40,7 @@ async def test_chat() -> None:
     client = DeepSeekClient(
         name="test_chat",
         full_prompt="请简单介绍一下你自己。",
-        context=[_SYSTEM],
+        messages=[_SYSTEM],
     )
     await client.chat()
     print("📝 回复:")
@@ -59,7 +59,7 @@ async def test_batch_chat() -> None:
         DeepSeekClient(
             name=f"batch_{i}",
             full_prompt=q,
-            context=[_SYSTEM],
+            messages=[_SYSTEM],
         )
         for i, q in enumerate(questions)
     ]
@@ -122,7 +122,7 @@ async def test_cache_tokens() -> None:
     client = DeepSeekClient(
         name="test_cache",
         full_prompt="请用一句话解释什么是缓存。",
-        context=[_SYSTEM],
+        messages=[_SYSTEM],
     )
     await client.chat()
     # print(f"缓存命中 tokens : {client.prompt_cache_hit_tokens}")
@@ -144,7 +144,7 @@ async def test_model_matrix() -> None:
         DeepSeekClient(
             name=f"{model}__thinking={thinking}",
             full_prompt=_PROMPT,
-            context=[_SYSTEM],
+            messages=[_SYSTEM],
             model=model,
             thinking=thinking,
         )
@@ -205,7 +205,7 @@ async def test_tool_call_single() -> None:
     client = DeepSeekClient(
         name="test_tool_single",
         full_prompt="北京现在天气怎么样？",
-        context=[_SYSTEM],
+        messages=[_SYSTEM],
         tools=[_WEATHER_TOOL],
     )
     await client.chat()
@@ -238,7 +238,7 @@ async def test_tool_call_full_round() -> None:
     first = DeepSeekClient(
         name="tool_round1",
         full_prompt=user_question,
-        context=[_SYSTEM],
+        messages=[_SYSTEM],
         tools=[_WEATHER_TOOL],
     )
     await first.chat()
@@ -249,9 +249,9 @@ async def test_tool_call_full_round() -> None:
         first.finish_reason == "tool_calls" and first.tool_calls
     ), "转 1 预期 tool_calls"
 
-    # 执行工具，构建回传上下文
+    # 执行工具，构建回传消息
     assert first.response_ai_message is not None
-    history = list(first._context) + [
+    history = list(first._messages) + [
         HumanMessage(content=user_question),
         first.response_ai_message,
     ]
@@ -265,7 +265,7 @@ async def test_tool_call_full_round() -> None:
     second = DeepSeekClient(
         name="tool_round2",
         full_prompt="",  # continuation 模式
-        context=history,
+        messages=history,
         tools=[_WEATHER_TOOL],
         tool_choice="none",  # 强制回答，不再调用工具
     )
@@ -287,7 +287,7 @@ async def test_tool_call_multi() -> None:
     client = DeepSeekClient(
         name="test_tool_multi",
         full_prompt="北京和上海分别是什么天气？",
-        context=[_SYSTEM],
+        messages=[_SYSTEM],
         tools=[_WEATHER_TOOL],
     )
     await client.chat()
@@ -318,28 +318,28 @@ async def test_tool_call_with_thinking() -> None:
     """测试 tool calling + thinking 模式：agent_loop 驱动，LLM 思考后调用工具并回复"""
     print("\n=== 测试 tool calling + thinking ===")
 
-    # 方案 C 验证：自己持有 context 引用，观察 agent_loop 是否原地追加
-    context: List[ContextMessage] = [_SYSTEM]
-    print(f"[before] context 消息数 = {len(context)}")
-    print(get_buffer_string(context))
+    # 方案 C 验证：自己持有 messages 引用，观察 agent_loop 是否原地追加
+    messages: List[ChatMessage] = [_SYSTEM]
+    print(f"[before] messages 消息数 = {len(messages)}")
+    print(get_buffer_string(messages))
 
     ok = await agent_loop(
         name="tool_think",
         prompt="广州今天天气怎么样？适合出门吗？",
-        context=context,
+        messages=messages,
         tools=[_WEATHER_TOOL],
         handlers={"get_current_weather": _mock_get_weather},
         thinking=True,
     )
     print(f"agent_loop 结果: {'✅ 成功' if ok else '❌ 失败'}")
 
-    print(f"[after] context 消息数 = {len(context)}")
-    print(get_buffer_string(context))
+    print(f"[after] messages 消息数 = {len(messages)}")
+    print(get_buffer_string(messages))
 
     assert ok, "agent_loop（thinking）应成功完成"
-    # 方案 C：agent_loop 原地追加后，外部持有的 context 应已包含完整对话历史
-    assert len(context) > 1, "agent_loop 应原地追加消息到 context"
-    print("✅ tool calling + thinking 验证通过（context 已被原地追加）")
+    # 方案 C：agent_loop 原地追加后，外部持有的 messages 应已包含完整对话历史
+    assert len(messages) > 1, "agent_loop 应原地追加消息到 messages"
+    print("✅ tool calling + thinking 验证通过（messages 已被原地追加）")
 
 
 async def test_batch_agent_loop() -> None:
@@ -350,14 +350,14 @@ async def test_batch_agent_loop() -> None:
         AgentLoopConfig(
             name="batch_aloop_beijing",
             prompt="北京今天天气怎么样？",
-            context=[_SYSTEM],
+            messages=[_SYSTEM],
             tools=[_WEATHER_TOOL],
             handlers={"get_current_weather": _mock_get_weather},
         ),
         AgentLoopConfig(
             name="batch_aloop_shanghai",
             prompt="上海今天天气怎么样？",
-            context=[_SYSTEM],
+            messages=[_SYSTEM],
             tools=[_WEATHER_TOOL],
             handlers={"get_current_weather": _mock_get_weather},
         ),

@@ -65,7 +65,7 @@ def context() -> Context:
 @pytest.fixture()
 def mock_game() -> MagicMock:
     game = MagicMock(spec=DBGGame)
-    game.get_agent_context.return_value = MagicMock(context=[])
+    game.get_agent_memory.return_value = MagicMock(messages=[])
     return game
 
 

@@ -8,15 +8,15 @@ import shutil
 from typing import Optional, Tuple, Dict
 from pathlib import Path
 from pydantic import TypeAdapter
-from ..models import get_buffer_string, AgentContext, PlayerSession, Dungeon, WorldState
+from ..models import get_buffer_string, AgentMemory, PlayerSession, Dungeon, WorldState
 from ..models.blueprint import Blueprint
-from ..models.messages import ContextMessage
+from ..models.messages import ChatMessage
 from ..models.serialization import EntitySerialization
 from ..models.session_message import SessionMessage
 from loguru import logger
 
-# TypeAdapter 用于将 JSON 字符串转换为 ContextMessage 对象
-_context_adapter: TypeAdapter[ContextMessage] = TypeAdapter(ContextMessage)
+# TypeAdapter 用于将 JSON 字符串转换为 ChatMessage 对象
+_message_adapter: TypeAdapter[ChatMessage] = TypeAdapter(ChatMessage)
 
 
 ###############################################################################################################################################
@@ -49,22 +49,22 @@ def restore_world(snapshot_dir: Path) -> Tuple[WorldState, PlayerSession]:
     # 读取并反序列化 WorldState
     world = WorldState.model_validate_json(world_path.read_text(encoding="utf-8"))
 
-    # 从 contexts/ 目录重建 agents_context
-    agents_context: Dict[str, AgentContext] = {}
-    contexts_dir = snapshot_dir / "contexts"
-    if contexts_dir.exists():
-        for ctx_file in contexts_dir.glob("*.jsonl"):
-            agent_name = ctx_file.stem
-            context_messages: list[ContextMessage] = []
-            for line in ctx_file.read_text(encoding="utf-8").strip().split("\n"):
+    # 从 memories/ 目录重建 agent_memories
+    agent_memories: Dict[str, AgentMemory] = {}
+    memories_dir = snapshot_dir / "memories"
+    if memories_dir.exists():
+        for memory_file in memories_dir.glob("*.jsonl"):
+            agent_name = memory_file.stem
+            memory_messages: list[ChatMessage] = []
+            for line in memory_file.read_text(encoding="utf-8").strip().split("\n"):
                 if line.strip():
-                    context_messages.append(_context_adapter.validate_json(line))
-            agents_context[agent_name] = AgentContext(
-                name=agent_name, context=context_messages
+                    memory_messages.append(_message_adapter.validate_json(line))
+            agent_memories[agent_name] = AgentMemory(
+                name=agent_name, messages=memory_messages
             )
 
-    # 将 agents_context 赋值给 world
-    world.agents_context = agents_context
+    # 将 agent_memories 赋值给 world
+    world.agent_memories = agent_memories
 
     # 从 entities/ 目录重建 entities
     entities_list: list[EntitySerialization] = []
@@ -139,7 +139,7 @@ def archive_world(
             ├── player_session.jsonl    # JSONL 格式，首行为元数据，后续每行一个事件
             ├── blueprint/{blueprint_name}.json
             ├── entities/{entity}.json ...
-            ├── contexts/{agent}.jsonl, {agent}_buffer.txt ...
+            ├── memories/{agent}.jsonl, {agent}_buffer.txt ...
             ├── dungeon/{dungeon_name}.json
     """
 
@@ -157,7 +157,7 @@ def archive_world(
 
         # 将 world 序列化为 JSON（各字段已在独立目录中存储）
         world_state_json = world.model_dump_json(
-            exclude={"agents_context", "entities", "dungeon", "blueprint"}
+            exclude={"agent_memories", "entities", "dungeon", "blueprint"}
         )
 
         # player_session 序列化为 JSONL（首行元数据，后续每行一个事件）
@@ -190,8 +190,8 @@ def archive_world(
         # entities/
         _dump_entities(save_dir, world)
 
-        # contexts/
-        _dump_agent_contexts(save_dir, world)
+        # memories/
+        _dump_agent_memories(save_dir, world)
 
         # blueprint/
         _dump_blueprint(save_dir, world.blueprint)
@@ -208,25 +208,25 @@ def archive_world(
 
 
 ###############################################################################################################################################
-def _dump_agent_contexts(
+def _dump_agent_memories(
     debug_dir: Path, world: WorldState, should_write_buffer_string: bool = True
 ) -> None:
-    """写入每个 agent 的上下文 JSONL 和 buffer.txt 文件到 contexts/ 目录"""
+    """写入每个 agent 的记忆 JSONL 和 buffer.txt 文件到 memories/ 目录"""
 
-    # 写contexts/目录
-    context_dir = debug_dir / "contexts"
-    context_dir.mkdir(parents=True, exist_ok=True)
+    # 写memories/目录
+    memory_dir = debug_dir / "memories"
+    memory_dir.mkdir(parents=True, exist_ok=True)
 
     # 实体记忆块之间的长分割线
     sep: str = "-" * 100
 
-    # 写每个 agent 的上下文 JSONL 和 buffer.txt
-    for agent_name, agent_context in world.agents_context.items():
+    # 写每个 agent 的记忆 JSONL 和 buffer.txt
+    for agent_name, agent_memory in world.agent_memories.items():
 
         # 写 agent_name.jsonl（每行一条消息）
-        context_lines = [msg.model_dump_json() for msg in agent_context.context]
-        (context_dir / f"{agent_name}.jsonl").write_text(
-            "\n".join(context_lines) + "\n", encoding="utf-8"
+        message_lines = [msg.model_dump_json() for msg in agent_memory.messages]
+        (memory_dir / f"{agent_name}.jsonl").write_text(
+            "\n".join(message_lines) + "\n", encoding="utf-8"
         )
 
         # 写 agent_name_buffer.txt
@@ -234,7 +234,7 @@ def _dump_agent_contexts(
 
             # 构建 agent 的 buffer 字符串
             buffer_str = get_buffer_string(
-                agent_context.context,
+                agent_memory.messages,
                 system_prefix="\n" + sep + "\nSystem",
                 human_prefix="\n" + sep + "\nHuman",
                 ai_prefix="\n" + sep + f"\nAI({agent_name})",
@@ -242,7 +242,7 @@ def _dump_agent_contexts(
             )
 
             # 写入 agent_name_buffer.txt 文件
-            (context_dir / f"{agent_name}_buffer.txt").write_text(
+            (memory_dir / f"{agent_name}_buffer.txt").write_text(
                 buffer_str, encoding="utf-8"
             )
 

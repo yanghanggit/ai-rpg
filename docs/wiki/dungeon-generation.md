@@ -14,7 +14,7 @@
 
 副本涉及三层创作——整体设定、逐个房间、每个房间的怪物——且后一层依赖前一层的产出。因此设计为多步 `ReactiveProcessor` 接力，每步完成时把产物写入两条通道，并替换实体上的 Action 组件触发下一步：
 
-1. **Agent Context（LLM 记忆）**：Step 1–3 的 prompt / AI 回复 / 工具结果原地追加到副本生成实体的持久化上下文，后续步骤的 LLM 直接继承前序创作，保持叙事连贯。例外是 Step 0：世界导演的 Q&A 写入导演实体自己的 context，指令经 Action 组件字段（`GenerateDungeonDirectiveAction.directive`）传入 Step 1，而非写入副本生成实体 context。
+1. **Agent Memory（LLM 记忆）**：Step 1–3 的 prompt / AI 回复 / 工具结果原地追加到副本生成实体的持久化记忆，后续步骤的 LLM 直接继承前序创作，保持叙事连贯。例外是 Step 0：世界导演的 Q&A 写入导演实体自己的 memory，指令经 Action 组件字段（`GenerateDungeonDirectiveAction.directive`）传入 Step 1，而非写入副本生成实体 memory。
 2. **Action 组件（控制流数据）**：确定性字段（房间数、房间列表、蓝图）经 Action 组件传给下一步，供代码构建工具 schema 与组装实体。
 
 Step 0–3 之间不再写任何中间 JSON 文件，数据全在内存流转；Step 4 才将最终副本（Dungeon）与调试蓝图（DungeonBlueprint）写入磁盘。
@@ -27,7 +27,7 @@ Step 0–3 之间不再写任何中间 JSON 文件，数据全在内存流转；
 
 **Step 1 — 副本设定生成**（`GenerateDungeonProfileSystem`）。单次 `agent_loop`（调用一次 `record_dungeon_profile` 工具）锁定副本名称、整体设定（`dungeon_profile`）与房间总数（`dungeon_room_count`，含 1 个入口房间）。设定刻意回避角色身份与评价性词汇，只呈现感官与情境细节。产物挂 `GenerateDungeonRoomsAction`。
 
-**Step 2 — 房间设计**（`GenerateDungeonRoomsSystem`）。在 Step 1 的同一 agent 上下文内一次性生成全部房间。首房间强制为叙事入口（`room_type = "entry"`），纯氛围描写；其余为战斗房间（`room_type = "combat"`）。同上下文保证入口到深处的叙事递进。产物 `rooms: List[DungeonRoomData]` 挂 `GenerateDungeonActorsAction`。
+**Step 2 — 房间设计**（`GenerateDungeonRoomsSystem`）。在 Step 1 的同一 agent 记忆内一次性生成全部房间。首房间强制为叙事入口（`room_type = "entry"`），纯氛围描写；其余为战斗房间（`room_type = "combat"`）。同记忆保证入口到深处的叙事递进。产物 `rooms: List[DungeonRoomData]` 挂 `GenerateDungeonActorsAction`。
 
 **Step 3 — 怪物生成**（`GenerateDungeonActorsSystem`）。单次 agent_loop：LLM 可在一个 response 内并行、也可分多次调用 `record_dungeon_actor`（每次创建一个怪物），每个怪物用 `room_name` 显式声明归属房间。handler 累积，代码严格校验「归属合法」且「每个 combat 房间数量 == `actor_count`」。产物组装为 `DungeonBlueprint`，挂 `AssembleDungeonAction`。
 
@@ -67,9 +67,9 @@ Step 4  组装 Dungeon 实体树
 | 首房间强制为 entry 房间 | 副本入口需要叙事铺垫，与战斗房间职责分离 |
 | room_type 显式声明房间类型 | 避免以 actor_count 等间接字段推断类型，扩展新房间类型只需加 Literal 值 |
 | 房间总数与角色数由 LLM 决定 | 硬编码会使不同规模的副本产出单一 |
-| Step 2 一次性生成全部房间 | 房间间的递进关系需要同一上下文 |
+| Step 2 一次性生成全部房间 | 房间间的递进关系需要同一记忆 |
 | Step 3 单 agent_loop 多次工具调用 | 一个 response 可并行发多个 `record_dungeon_actor`，每次调用原子清晰，无需并发编排 |
-| agent context 添加式传递 | 后续步骤 LLM 继承前序创作，保持叙事连贯 |
+| agent memory 添加式传递 | 后续步骤 LLM 继承前序创作，保持叙事连贯 |
 | Action 组件传递控制流数据 | 确定性字段（房间数、房间列表、蓝图）供代码构建工具 schema 与组装，不经 LLM 文本解析 |
 | Step 4 零 LLM 调用 | 组装是纯结构映射，无需创意决策 |
 

@@ -60,7 +60,7 @@ class ToolMessage(BaseMessage):
 
 ############################################################################################################
 # 显式判别联合：反序列化时强制以 type 字段区分子类，未知 type 值会立即报错
-ContextMessage = Annotated[
+ChatMessage = Annotated[
     Union[SystemMessage, HumanMessage, AIMessage, ToolMessage],
     Field(discriminator="type"),
 ]

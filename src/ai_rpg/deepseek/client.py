@@ -1,7 +1,6 @@
 """DeepSeek 直连客户端
 
-直接调用 DeepSeek 平台 REST API，不经过本地 deepseek_chat_server。
-公共接口与 ChatClient 保持一致，context 类型改用本模块的自定义消息类型。
+直接调用 DeepSeek 平台 REST API.
 
 temperature 参数默认为 1.0。
 我们建议您根据如下表格，按使用场景设置 temperature。
@@ -166,7 +165,7 @@ class DeepSeekClient:
         self,
         name: str,
         full_prompt: str,
-        context: Sequence[BaseMessage],
+        messages: Sequence[BaseMessage],
         model: str = MODEL_FLASH,
         thinking: bool = False,
         timeout: Optional[int] = None,
@@ -188,7 +187,7 @@ class DeepSeekClient:
         self._condensed_prompt: Final[str] = (
             condensed_prompt if condensed_prompt is not None else full_prompt
         )
-        self._context: Final[Sequence[BaseMessage]] = context
+        self._messages: Final[Sequence[BaseMessage]] = messages
         self._model: Final[str] = model
         self._thinking: Final[bool] = thinking
         self._timeout: Final[int] = timeout if timeout is not None else 30
@@ -201,8 +200,8 @@ class DeepSeekClient:
 
         assert self._timeout > 0, "timeout should be positive"
 
-        if not self._context:
-            logger.warning(f"{self._name}: context is empty")
+        if not self._messages:
+            logger.warning(f"{self._name}: messages is empty")
 
         self._temperature: Final[float] = (
             temperature if temperature is not None else 1.0
@@ -271,9 +270,9 @@ class DeepSeekClient:
 
     ################################################################################################################################################################################
     def _build_payload(self) -> Dict[str, Any]:
-        """将 context + prompt 转换为 DeepSeek API payload"""
+        """将 messages + prompt 转换为 DeepSeek API payload"""
         messages: List[Dict[str, Any]] = []
-        for msg in self._context:
+        for msg in self._messages:
             if isinstance(msg, ToolMessage):
                 # ToolMessage 需要额外携带 tool_call_id 字段
                 messages.append(
@@ -490,9 +489,9 @@ class DeepSeekClient:
 
         try:
 
-            # 拷贝 context，再把本轮 prompt / response 分别补齐为 HumanMessage / AIMessage，
+            # 拷贝 messages，再把本轮 prompt / response 分别补齐为 HumanMessage / AIMessage，
             # 使全部消息（含本轮）统一交给 get_buffer_string.
-            messages: List[BaseMessage] = list(self._context)
+            messages: List[BaseMessage] = list(self._messages)
 
             # 添加本轮 prompt / response
             messages.append(HumanMessage(content=(self._full_prompt)))

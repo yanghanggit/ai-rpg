@@ -192,7 +192,7 @@ class TestReact:
         mock_game.resolve_stage_entity.return_value = stage
         mock_game.get_actors_in_stage.return_value = set()
         mock_game.get_group.return_value.entities.copy.return_value = set()
-        mock_game.get_agent_context.return_value = MagicMock(context=[])
+        mock_game.get_agent_memory.return_value = MagicMock(messages=[])
 
         npc1 = _make_actor(context, "角色.NPC_A")
         npc2 = _make_actor(context, "角色.NPC_B")

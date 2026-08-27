@@ -20,13 +20,13 @@
 
 ### 场景实体担任仲裁者
 
-出牌结算、消耗品使用、装备使用均由场景实体（stage entity）作为 LLM 仲裁者统一处理，而非由出牌者或目标自行计算。设计意图：场景实体持有完整的战场上下文（每轮仲裁叙事、所有角色的 HP 变化通知），能产出叙事一致的结算结果。出牌仲裁额外读入卡牌的 description，作为叙事种子——结合场景环境、目标状态与即时词缀做「故事泛化」产出 narrative，description 只影响演出措辞，伤害仍按确定性规则结算。仲裁结果通过 `CombatArbitrationEvent` 广播，角色只接收自己视角的叙事片段。
+出牌结算、消耗品使用、装备使用均由场景实体（stage entity）作为 LLM 仲裁者统一处理，而非由出牌者或目标自行计算。设计意图：场景实体持有完整的战场环境信息（每轮仲裁叙事、所有角色的 HP 变化通知），能产出叙事一致的结算结果。出牌仲裁额外读入卡牌的 description，作为叙事种子——结合场景环境、目标状态与即时词缀做「故事泛化」产出 narrative，description 只影响演出措辞，伤害仍按确定性规则结算。仲裁结果通过 `CombatArbitrationEvent` 广播，角色只接收自己视角的叙事片段。
 
 → 参见：[消耗品系统（ConsumableItem）](consumable-item.md)（相同的仲裁模式，消耗品使用时场景实体统一结算）
 
 ### 决策与结算分离
 
-出牌分两步：先决策（选牌选目标），再仲裁（算伤害算效果）。`MonsterPrePlaySystem` / `PartyPrePlaySystem` 用角色自身的 LLM 上下文做决策，产出确定性的 `PlayCardsAction`。`PlayCardsArbitrationSystem` 用场景实体做仲裁，产出叙事文本和数值变化。分离后决策可并行（多个怪物同时思考），仲裁保持单线程（叙事一致），且决策 LLM 不受仲裁风格干扰。
+出牌分两步：先决策（选牌选目标），再仲裁（算伤害算效果）。`MonsterPrePlaySystem` / `PartyPrePlaySystem` 用角色自身的 LLM 记忆做决策，产出确定性的 `PlayCardsAction`。`PlayCardsArbitrationSystem` 用场景实体做仲裁，产出叙事文本和数值变化。分离后决策可并行（多个怪物同时思考），仲裁保持单线程（叙事一致），且决策 LLM 不受仲裁风格干扰。
 
 ### 回合行动序列
 
@@ -38,7 +38,7 @@
 
 ### 初始化
 
-`CombatInitActorSystem` 为参战角色挂载空牌堆、注入战场上下文。`CombatInitStageSystem` 切换战斗状态为 `ONGOING`、判定场景环境效果。牌库生成由 `GenerateDeckActionSystem` 并行完成，关键词来自角色预置的 `ArchetypeComponent.keywords`。
+`CombatInitActorSystem` 为参战角色挂载空牌堆、注入战场环境。`CombatInitStageSystem` 切换战斗状态为 `ONGOING`、判定场景环境效果。牌库生成由 `GenerateDeckActionSystem` 并行完成，关键词来自角色预置的 `ArchetypeComponent.keywords`。
 
 ### 回合循环
 

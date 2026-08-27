@@ -4,7 +4,7 @@ from overrides import override
 from ..entitas import Entity
 from ..models.messages import HumanMessage
 from .game_session import GameSession
-from .rpg_agent_context import RPGAgentContext
+from .rpg_agent_memory import RPGAgentMemory
 from .rpg_entity_manager import RPGEntityManager
 from .rpg_game_pipeline_manager import RPGGamePipelineManager
 from ..models import (
@@ -15,7 +15,7 @@ from ..models import PlayerSession
 
 
 #################################################################################################################################################
-class RPGGame(GameSession, RPGAgentContext, RPGEntityManager, RPGGamePipelineManager):
+class RPGGame(GameSession, RPGAgentMemory, RPGEntityManager, RPGGamePipelineManager):
     """
     RPG游戏核心类，基于ECS架构整合游戏会话管理、实体管理和LLM处理管道
     """
@@ -43,9 +43,9 @@ class RPGGame(GameSession, RPGAgentContext, RPGEntityManager, RPGGamePipelineMan
     ###############################################################################################################################################
     @override
     def destroy_entity(self, entity: Entity) -> None:
-        """销毁实体并清理其LLM上下文"""
+        """销毁实体并清理其LLM记忆"""
         logger.debug(f"destroy_entity: {entity.name}")
-        self.remove_agent_context(entity)
+        self.remove_agent_memory(entity)
         return super().destroy_entity(entity)
 
     ###############################################################################################################################################

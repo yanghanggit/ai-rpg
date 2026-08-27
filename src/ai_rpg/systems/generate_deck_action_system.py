@@ -237,12 +237,12 @@ class GenerateDeckActionSystem(ReactiveProcessor):
             keywords=sampled_keywords,
         )
 
-        # 构建 DeepSeekClient，传入完整提示词、精简提示词和上下文
+        # 构建 DeepSeekClient，传入完整提示词、精简提示词和消息历史
         return DeepSeekClient(
             name=entity.name,
             full_prompt=prompt,
             condensed_prompt=condensed_prompt,
-            context=self._game.get_agent_context(entity).context,
+            messages=self._game.get_agent_memory(entity).messages,
         )
 
     #######################################################################################################################################

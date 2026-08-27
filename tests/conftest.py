@@ -48,7 +48,7 @@ def sample_game() -> Any:
     world = WorldState(
         entity_counter=1000,
         entities=[],
-        agents_context={},
+        agent_memories={},
         dungeon=dungeon,
         blueprint=blueprint,
     )

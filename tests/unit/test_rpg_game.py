@@ -1,9 +1,9 @@
 """
 Unit tests for src/ai_rpg/game/rpg_game.py
 
-覆盖范围（不重复 test_rpg_game_context.py 中已有的用例）：
-  - get_agent_context
-  - destroy_entity（含 agents_context 清理）
+覆盖范围（不重复 test_rpg_agent_memory.py 中已有的用例）：
+  - get_agent_memory
+  - destroy_entity（含 agent_memories 清理）
   - add_system_message
   - flush_entities / restore_from_snapshot
   - notify_entities
@@ -76,39 +76,39 @@ def second_actor(game: Any) -> Entity:
 
 
 # ---------------------------------------------------------------------------
-# get_agent_context
+# get_agent_memory
 # ---------------------------------------------------------------------------
 
 
-class TestGetAgentContext:
-    def test_creates_context_on_first_access(self, game: Any, actor: Entity) -> None:
-        """首次访问不存在的实体时，自动创建 AgentContext。"""
-        assert actor.name not in game._world.agents_context
-        ctx = game.get_agent_context(actor)
-        assert ctx is not None
-        assert actor.name in game._world.agents_context
+class TestGetAgentMemory:
+    def test_creates_memory_on_first_access(self, game: Any, actor: Entity) -> None:
+        """首次访问不存在的实体时，自动创建 AgentMemory。"""
+        assert actor.name not in game._world.agent_memories
+        memory = game.get_agent_memory(actor)
+        assert memory is not None
+        assert actor.name in game._world.agent_memories
 
     def test_returns_same_object_on_repeated_call(
         self, game: Any, actor: Entity
     ) -> None:
         """同一实体重复调用返回同一对象（identity）。"""
-        ctx1 = game.get_agent_context(actor)
-        ctx2 = game.get_agent_context(actor)
-        assert ctx1 is ctx2
+        memory1 = game.get_agent_memory(actor)
+        memory2 = game.get_agent_memory(actor)
+        assert memory1 is memory2
 
-    def test_context_name_matches_entity(self, game: Any, actor: Entity) -> None:
-        """返回的 AgentContext.name 与实体名称一致。"""
-        ctx = game.get_agent_context(actor)
-        assert ctx.name == actor.name
+    def test_memory_name_matches_entity(self, game: Any, actor: Entity) -> None:
+        """返回的 AgentMemory.name 与实体名称一致。"""
+        memory = game.get_agent_memory(actor)
+        assert memory.name == actor.name
 
-    def test_different_entities_have_independent_contexts(
+    def test_different_entities_have_independent_memories(
         self, game: Any, actor: Entity, second_actor: Entity
     ) -> None:
-        """不同实体各自拥有独立的 AgentContext 对象。"""
-        ctx_a = game.get_agent_context(actor)
-        ctx_b = game.get_agent_context(second_actor)
-        assert ctx_a is not ctx_b
-        assert ctx_a.name != ctx_b.name
+        """不同实体各自拥有独立的 AgentMemory 对象。"""
+        memory_a = game.get_agent_memory(actor)
+        memory_b = game.get_agent_memory(second_actor)
+        assert memory_a is not memory_b
+        assert memory_a.name != memory_b.name
 
 
 # ---------------------------------------------------------------------------
@@ -122,16 +122,16 @@ class TestDestroyEntity:
         game.destroy_entity(actor)
         assert game.get_entity_by_name(actor.name) is None
 
-    def test_destroy_cleans_up_agents_context(self, game: Any, actor: Entity) -> None:
-        """销毁时，world.agents_context 中对应 key 被移除。"""
-        game.get_agent_context(actor)  # ensure context exists
-        assert actor.name in game._world.agents_context
+    def test_destroy_cleans_up_agent_memories(self, game: Any, actor: Entity) -> None:
+        """销毁时，world.agent_memories 中对应 key 被移除。"""
+        game.get_agent_memory(actor)  # ensure memory exists
+        assert actor.name in game._world.agent_memories
         game.destroy_entity(actor)
-        assert actor.name not in game._world.agents_context
+        assert actor.name not in game._world.agent_memories
 
-    def test_destroy_entity_without_context_ok(self, game: Any, actor: Entity) -> None:
-        """没有 agents_context 的实体销毁时不抛异常。"""
-        assert actor.name not in game._world.agents_context
+    def test_destroy_entity_without_memory_ok(self, game: Any, actor: Entity) -> None:
+        """没有 agent_memories 的实体销毁时不抛异常。"""
+        assert actor.name not in game._world.agent_memories
         game.destroy_entity(actor)  # should not raise
         assert game.get_entity_by_name(actor.name) is None
 
@@ -145,13 +145,13 @@ class TestAddSystemMessage:
     def test_basic_system_message(self, game: Any, actor: Entity) -> None:
         """成功添加 SystemMessage，内容与类型正确。"""
         game.add_system_message(actor, SystemMessage(content="system prompt"))
-        ctx = game.get_agent_context(actor).context
-        assert len(ctx) == 1
-        assert isinstance(ctx[0], SystemMessage)
-        assert ctx[0].content == "system prompt"
+        messages = game.get_agent_memory(actor).messages
+        assert len(messages) == 1
+        assert isinstance(messages[0], SystemMessage)
+        assert messages[0].content == "system prompt"
 
     def test_system_message_not_first_raises(self, game: Any, actor: Entity) -> None:
-        """context 非空时调用 add_system_message 触发 AssertionError。"""
+        """memory 非空时调用 add_system_message 触发 AssertionError。"""
         game.add_human_message(actor, HumanMessage(content="already something here"))
         with pytest.raises(AssertionError):
             game.add_system_message(actor, SystemMessage(content="system prompt"))
@@ -216,8 +216,8 @@ class TestNotifyEntities:
         event = _agent_event("broadcast")
         game.notify_entities({actor, second_actor}, event)
 
-        assert game.get_agent_context(actor).context[-1].content == "broadcast"
-        assert game.get_agent_context(second_actor).context[-1].content == "broadcast"
+        assert game.get_agent_memory(actor).messages[-1].content == "broadcast"
+        assert game.get_agent_memory(second_actor).messages[-1].content == "broadcast"
 
     def test_notify_sends_to_player_session(self, game: Any, actor: Entity) -> None:
         """notify_entities 向 player_session 发送 SessionMessage。"""
@@ -254,9 +254,9 @@ class TestBroadcastToStage:
 
         game.broadcast_to_stage(stage, _agent_event("stage msg"))
 
-        assert game.get_agent_context(stage).context[-1].content == "stage msg"
-        assert game.get_agent_context(a1).context[-1].content == "stage msg"
-        assert game.get_agent_context(a2).context[-1].content == "stage msg"
+        assert game.get_agent_memory(stage).messages[-1].content == "stage msg"
+        assert game.get_agent_memory(a1).messages[-1].content == "stage msg"
+        assert game.get_agent_memory(a2).messages[-1].content == "stage msg"
 
     def test_broadcast_excludes_specified_entities(self, game: Any) -> None:
         """被排除的实体不收到广播消息。"""
@@ -267,9 +267,9 @@ class TestBroadcastToStage:
         game.broadcast_to_stage(stage, _agent_event("exclusive"), exclude_entities={a2})
 
         # a1 and stage get it, a2 is excluded
-        assert game.get_agent_context(a1).context[-1].content == "exclusive"
-        assert game.get_agent_context(stage).context[-1].content == "exclusive"
-        assert len(game.get_agent_context(a2).context) == 0
+        assert game.get_agent_memory(a1).messages[-1].content == "exclusive"
+        assert game.get_agent_memory(stage).messages[-1].content == "exclusive"
+        assert len(game.get_agent_memory(a2).messages) == 0
 
     def test_broadcast_with_no_actors_reaches_stage_only(self, game: Any) -> None:
         """场景中无 actor 时，只有场景实体收到广播。"""
@@ -279,8 +279,8 @@ class TestBroadcastToStage:
 
         game.broadcast_to_stage(stage, _agent_event("empty stage msg"))
 
-        assert game.get_agent_context(stage).context[-1].content == "empty stage msg"
-        assert len(game.get_agent_context(unrelated_actor).context) == 0
+        assert game.get_agent_memory(stage).messages[-1].content == "empty stage msg"
+        assert len(game.get_agent_memory(unrelated_actor).messages) == 0
 
     def test_broadcast_asserts_on_entity_without_stage(self, game: Any) -> None:
         """传入没有 StageComponent 也没有 ActorComponent 的实体触发 AssertionError。"""

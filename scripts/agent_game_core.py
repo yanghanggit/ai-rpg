@@ -53,7 +53,7 @@ async def create_and_initialize_game(
     world_data = WorldState(
         entity_counter=1000,
         entities=[],
-        agents_context={},
+        agent_memories={},
         dungeon=dungeon,
         blueprint=world_blueprint,
     )

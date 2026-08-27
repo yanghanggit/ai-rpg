@@ -23,6 +23,7 @@ class Card(BaseModel):
     cost: int = 1  # 出牌费用；消耗行动者当前 energy 的点数；energy 不足时禁止出牌
     damage: int = 0  # 造成的伤害值（单次）
     hit_count: int = 1  # 攻击次数（默认 1；>1 时为多段攻击，每段独立结算）
+    block: int = 0  # 手牌持有期间提供的格挡值；出牌仲裁时累加进持有者总防御
     target_type: TargetType = TargetType.SINGLE  # 出牌目标类型，决定目标约束策略
     source: str = ""  # 卡牌来源（生成/注入者名称）；空字符串表示来源未知
     uuid: str = Field(default_factory=lambda: str(uuid4()))  # 全局唯一标识符

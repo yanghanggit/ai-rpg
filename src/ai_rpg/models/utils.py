@@ -6,13 +6,15 @@
 from typing import Optional
 from .items import GearItem
 from .character_stats import CharacterStats
+from .components import HandComponent
 
 
 def compute_effective_stats(
     base_stats: CharacterStats,
     equipped_gear: Optional[GearItem] = None,
+    hand_component: Optional[HandComponent] = None,
 ) -> CharacterStats:
-    """计算角色的最终有效属性，聚合基础属性与装备的属性加成。"""
+    """计算角色的最终有效属性，聚合基础属性、装备加成与手牌格挡。"""
 
     bonus_hp = 0
     bonus_max_hp = 0
@@ -24,6 +26,9 @@ def compute_effective_stats(
         bonus_max_hp += equipped_gear.stat_bonuses.max_hp
         bonus_attack += equipped_gear.stat_bonuses.attack
         bonus_defense += equipped_gear.stat_bonuses.defense
+
+    if hand_component is not None:
+        bonus_defense += sum(card.block for card in hand_component.cards)
 
     return CharacterStats(
         hp=base_stats.hp + bonus_hp,

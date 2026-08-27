@@ -60,7 +60,7 @@ def _build_monster_decision_prompt(
             if c.on_play_affixes
             else ""
         )
-        + f"  damage:{c.damage}  hit_count:{c.hit_count}  target_type:{c.target_type}"
+        + f"  damage:{c.damage}  hit_count:{c.hit_count}  block:{c.block}  target_type:{c.target_type}"
         for c in hand_cards
     )
 
@@ -142,7 +142,7 @@ def _build_condensed_monster_decision_prompt(
     cards_lines = "\n".join(
         f"- 【{c.name}】描述：{c.description}"
         + (f"  即时词缀：{'、'.join(c.on_play_affixes)}" if c.on_play_affixes else "")
-        + f"  damage:{c.damage}  hit_count:{c.hit_count}  target_type:{c.target_type}"
+        + f"  damage:{c.damage}  hit_count:{c.hit_count}  block:{c.block}  target_type:{c.target_type}"
         for c in hand_cards
     )
 

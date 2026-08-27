@@ -51,10 +51,10 @@ class FillDrawPileSystem(ReactiveProcessor):
     def _fill_draw_pile(self, entity: Entity) -> None:
         """将 DeckComponent 中的卡牌洗牌后填入 DrawPileComponent。"""
         deck_comp = entity.get(DeckComponent)
-        assert deck_comp is not None
+        assert deck_comp is not None, f"[{entity.name}] 缺失 DeckComponent"
 
         draw_pile = entity.get(DrawPileComponent)
-        assert draw_pile is not None
+        assert draw_pile is not None, f"[{entity.name}] 缺失 DrawPileComponent"
 
         if not deck_comp.cards:
             logger.warning(f"[{entity.name}] DeckComponent 为空，无法填充 DrawPile")

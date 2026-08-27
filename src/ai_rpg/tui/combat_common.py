@@ -99,9 +99,14 @@ def compute_effective_stats_for(
         if equipped_gear_data is not None
         else None
     )
+
+    hand_data = find_component_data(entity, HandComponent.__name__)
+    hand_component = HandComponent(**hand_data) if hand_data is not None else None
+
     return compute_effective_stats(
         CharacterStatsComponent(**stats_data).stats,
         equipped_gear,
+        hand_component,
     )
 
 
@@ -266,7 +271,12 @@ def render_stage_actors(
             else None
         )
 
-        effective_stats = compute_effective_stats(base_stats, equipped_gear)
+        hand_data = find_component_data(entity, HandComponent.__name__)
+        hand_component = HandComponent(**hand_data) if hand_data is not None else None
+
+        effective_stats = compute_effective_stats(
+            base_stats, equipped_gear, hand_component
+        )
         current_energy = resolve_current_energy(entity, effective_stats)
         label = role_label(entity)
         is_dead = find_component_data(entity, DeathComponent.__name__) is not None
@@ -278,9 +288,8 @@ def render_stage_actors(
             f"能量:{current_energy}"
         )
 
-        hand_data = find_component_data(entity, HandComponent.__name__)
-        if hand_data is not None:
-            line += f"  手牌:{len(HandComponent(**hand_data).cards)}"
+        if hand_component is not None:
+            line += f"  手牌:{len(hand_component.cards)}"
 
         log.write(line)
     log.write("")

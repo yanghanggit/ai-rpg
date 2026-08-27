@@ -99,6 +99,7 @@ def render_card(card: Card) -> str:
         f"费用:{card.cost}",
         f"伤害:{card.damage}",
         f"连击:{card.hit_count}",
+        f"格挡:{card.block}",
         f"目标:{target_label}",
     ]
     lines.append("      " + "  ".join(stat_parts))

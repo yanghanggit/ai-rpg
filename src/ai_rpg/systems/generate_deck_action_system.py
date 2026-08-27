@@ -44,6 +44,7 @@ class DeckCardEntry(BaseModel):
     cost: int = 1
     damage: int
     hit_count: int = 1
+    block: int = 0
     target_type: str = TargetType.SINGLE
 
 
@@ -62,9 +63,7 @@ def build_design_principle_prompt(
 ) -> str:
     """生成关键词约束段落。无关键词时输出差异化指引。"""
     if not keywords:
-        return (
-            f"关键词约束：无（{num_cards}张卡牌应有差异化，如高伤低防/高防低伤/均衡型）"
-        )
+        return f"关键词约束：无（{num_cards}张卡牌应有差异化，如高伤低格挡/高格挡低伤/均衡型）"
     lines = "\n".join(f"  - 卡牌{i + 1}：{keywords[i]}" for i in range(len(keywords)))
     return f"关键词约束（按顺序对应）：\n{lines}"
 
@@ -107,7 +106,7 @@ def build_deck_prompt(
 ## 约束
 
 - `description` 须围绕上方「叙事主题」展开，可自由采用动作、物件、意象、氛围、典故等任意形态；禁止提及具体地名与某一具体战斗场景的即时情境
-- `on_play_affixes` 禁止重述数值字段已确定性表达的效果：不得重复量化 `damage`/`hit_count` 已决定的伤害量级
+- `on_play_affixes` 禁止重述数值字段已确定性表达的效果：不得重复量化 `damage`/`hit_count`/`block` 已决定的数值量级
 - `cards` 数组长度必须恰好为 {num_cards}
 - 只输出 JSON，不附加任何说明文字
 
@@ -123,6 +122,7 @@ def build_deck_prompt(
       "cost": 1,
       "damage": 0,
       "hit_count": 1,
+      "block": 0,
       "target_type": "single"
     }}
   ]
@@ -303,6 +303,7 @@ class GenerateDeckActionSystem(ReactiveProcessor):
                     cost=entry.cost,
                     damage=entry.damage,
                     hit_count=entry.hit_count,
+                    block=entry.block,
                     target_type=TargetType(entry.target_type),
                     source=entity.name,
                 )

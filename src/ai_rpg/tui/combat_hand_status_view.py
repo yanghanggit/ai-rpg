@@ -126,6 +126,7 @@ class CombatHandStatusViewScreen(BaseGameScreen):
         effective_stats = compute_effective_stats(
             CharacterStatsComponent(**stats_data).stats,
             equipped_gear,
+            hand_comp,
         )
 
         death_mark = (

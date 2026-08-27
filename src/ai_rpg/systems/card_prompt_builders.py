@@ -19,6 +19,7 @@ BUILD_CARD_FIELD_DESCRIPTION: Final[
 | cost | 出牌费用，消耗行动者当前 energy 点数；默认 1 |
 | damage | 单次命中造成的伤害（以角色攻击力为基数计算；无伤害取 0） |
 | hit_count | 攻击次数（默认 1；多段时每段独立作用） |
+| block | 手牌持有期间提供的格挡值（出牌仲裁时累加进持有者总防御；无格挡取 0） |
 | target_type | 出牌目标类型（见下表） |
 
 | target_type | 含义 |

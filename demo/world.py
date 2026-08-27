@@ -119,15 +119,13 @@ KNOWLEDGE_BASE: Final[Dict[str, List[str]]] = {
 # ── 卡牌关键词常量（避免重复字符串，方便统一修改） ──────────────────────────────────────────────
 
 _KW_ATTACK: Final[str] = (
-    "攻击型：对单个目标造成直接伤害，damage 以角色攻击力（attack）为基数，不携带词缀。"
+    "攻击型：target_type 为 single，damage 以角色攻击力（attack）为基数；"
+    "block 为 0；on_play_affixes 为空。"
 )
 _KW_DEFENSE: Final[str] = (
-    "防御型：target_type 为 self，on_play_affixes 携带词缀 [护盾]:本次出牌为自身叠加防御，"
-    "仅对本次结算生效，不产生跨回合的持续效果。"
-)
-_KW_ARMOR_BREAK: Final[str] = (
-    "穿甲型：target_type 为 single，damage 以角色攻击力（attack）为基数；"
-    "on_play_affixes 携带词缀 [穿透]:本次出牌伤害无视目标防御，仅对本次结算生效。"
+    "防御型：target_type 为 self，damage 为 0；"
+    "block 提供手牌持有期间的格挡值（出牌仲裁时累加进持有者总防御）；"
+    "on_play_affixes 为空。"
 )
 
 
@@ -147,7 +145,8 @@ def create_actor_paper_doll() -> Actor:
             # 2 张基础攻击
             _KW_ATTACK,
             _KW_ATTACK,
-            # 1 张基础防御
+            # 2 张基础防御
+            _KW_DEFENSE,
             _KW_DEFENSE,
         ],
     )
@@ -241,15 +240,12 @@ def create_wuming() -> Actor:
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
         keywords=[
-            # 3 张基础攻击
-            _KW_ATTACK,
+            # 2 张基础攻击
             _KW_ATTACK,
             _KW_ATTACK,
             # 2 张基础防御
             _KW_DEFENSE,
             _KW_DEFENSE,
-            # 1 张穿甲
-            _KW_ARMOR_BREAK,
         ],
     )
 

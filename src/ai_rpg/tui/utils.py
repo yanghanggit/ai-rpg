@@ -23,7 +23,6 @@ from ..models import (
 
 
 TARGET_MAP: Final[Dict[str, str]] = {
-    "self": "仅自身",
     "single": "单体",
     "all": "阵营全体",
     "spread": "阵营散射",
@@ -88,7 +87,11 @@ def render_card(card: Card) -> str:
         flags.append("[bold orange1]消耗牌[/]")
     flag_mark = "  " + " ".join(flags) if flags else ""
 
-    target_label = TARGET_MAP.get(card.target_type.value, card.target_type.value)
+    target_label = (
+        "自身"
+        if card.self_target
+        else TARGET_MAP.get(card.target_type.value, card.target_type.value)
+    )
 
     lines = [
         f"    [bold]{card.name}[/]{flag_mark}",

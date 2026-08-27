@@ -178,8 +178,12 @@ def resolve_targets(
     actor_entity: Entity,
     passed_targets: List[str],
     dbg_game: DBGGame,
+    self_target: bool = False,
 ) -> Tuple[List[str], str]:
-    """根据 target_type 解析并验证目标。"""
+    """根据 target_type 解析并验证目标。self_target=True 时锁定出牌者自身。"""
+
+    if self_target:
+        return [actor_entity.name], ""
 
     match target_type:
         case TargetType.SINGLE:
@@ -224,9 +228,6 @@ def resolve_targets(
             else:
                 spread_targets = random.choices(camp_members, k=hit_count)
             return [e.name for e in spread_targets], ""
-
-        case TargetType.SELF:
-            return [actor_entity.name], ""
 
 
 #######################################################################################################################################

@@ -45,6 +45,7 @@ class DeckCardEntry(BaseModel):
     damage: int
     hit_count: int = 1
     block: int = 0
+    self_target: bool = False
     target_type: str = TargetType.SINGLE
 
 
@@ -123,6 +124,7 @@ def build_deck_prompt(
       "damage": 0,
       "hit_count": 1,
       "block": 0,
+      "self_target": false,
       "target_type": "single"
     }}
   ]
@@ -304,6 +306,7 @@ class GenerateDeckActionSystem(ReactiveProcessor):
                     damage=entry.damage,
                     hit_count=entry.hit_count,
                     block=entry.block,
+                    self_target=entry.self_target,
                     target_type=TargetType(entry.target_type),
                     source=entity.name,
                 )

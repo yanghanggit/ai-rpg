@@ -60,7 +60,7 @@ def _build_monster_decision_prompt(
             if c.on_play_affixes
             else ""
         )
-        + f"  damage:{c.damage}  hit_count:{c.hit_count}  block:{c.block}  target_type:{c.target_type}"
+        + f"  damage:{c.damage}  hit_count:{c.hit_count}  block:{c.block}  self_target:{c.self_target}  target_type:{c.target_type}"
         for c in hand_cards
     )
 
@@ -107,7 +107,7 @@ def _build_monster_decision_prompt(
 ## 决策建议
 
 - 行动序列严格顺序执行，排在你前面的角色已出手，其目标可能已死亡
-- targets 从"场上存活对手"中选全名；SELF 时可省略；其余类型（SINGLE/ALL/SPREAD）须提供恰好 1 个目标全名：SINGLE 时即为该目标本身，ALL/SPREAD 时该目标作为阵营锚点，系统会自动展开为其所在阵营的全部/散射角色
+- targets 从"场上存活对手"中选全名；self_target 为 true 时可省略 targets；其余类型（SINGLE/ALL/SPREAD）须提供恰好 1 个目标全名：SINGLE 时即为该目标本身，ALL/SPREAD 时该目标作为阵营锚点，系统会自动展开为其所在阵营的全部/散射角色
 - 若所有手牌均无法执行（如全部封印），可选择跳过出牌（pass_turn: true），此时 card_name/targets 可省略
 
 ## 输出 JSON
@@ -116,7 +116,7 @@ def _build_monster_decision_prompt(
 {{
   "pass_turn": false,
   "card_name": "从手牌中选择一张卡牌的名称（必须是以下之一：{card_names_json}）",
-  "targets": ["目标全名列表，SELF 时可为 []，其余类型须恰好 1 个元素"]
+  "targets": ["目标全名列表，self_target 为 true 时可为 []，其余类型须恰好 1 个元素"]
 }}
 ```
 pass_turn 为 true 时表示跳过出牌，其他字段可省略"""
@@ -142,7 +142,7 @@ def _build_condensed_monster_decision_prompt(
     cards_lines = "\n".join(
         f"- 【{c.name}】描述：{c.description}"
         + (f"  即时词缀：{'、'.join(c.on_play_affixes)}" if c.on_play_affixes else "")
-        + f"  damage:{c.damage}  hit_count:{c.hit_count}  block:{c.block}  target_type:{c.target_type}"
+        + f"  damage:{c.damage}  hit_count:{c.hit_count}  block:{c.block}  self_target:{c.self_target}  target_type:{c.target_type}"
         for c in hand_cards
     )
 
@@ -377,6 +377,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
             entity,
             decision.targets,
             self._game,
+            selected_card.self_target,
         )
         if resolve_err:
             logger.warning(

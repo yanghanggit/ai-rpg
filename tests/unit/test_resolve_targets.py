@@ -207,6 +207,8 @@ class TestResolveTargetsSelf:
         hero = _make_ally(game, "hero", "stage1")
         _make_monster(game, "怪物A", "stage1")
 
-        targets, err = resolve_targets(TargetType.SELF, 1, hero, ["怪物A"], game)
+        targets, err = resolve_targets(
+            TargetType.SINGLE, 1, hero, ["怪物A"], game, self_target=True
+        )
         assert err == ""
         assert targets == ["hero"]

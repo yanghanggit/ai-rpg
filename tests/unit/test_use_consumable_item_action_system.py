@@ -29,7 +29,7 @@ def _make_consumable(
     name: str,
     *,
     count: int = 1,
-    target_type: TargetType = TargetType.SELF,
+    target_type: TargetType = TargetType.SINGLE,
 ) -> ConsumableItem:
     return ConsumableItem(
         name=name,

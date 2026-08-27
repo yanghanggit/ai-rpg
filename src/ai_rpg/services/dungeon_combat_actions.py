@@ -188,7 +188,12 @@ async def activate_play_cards_specified(
 
     # 解析卡牌的目标，根据卡牌的目标类型和命中次数，结合玩家提供的目标名称列表，解析出实际的目标实体列表。
     resolved_targets, resolve_err = resolve_targets(
-        selected_card.target_type, selected_card.hit_count, entity, targets, dbg_game
+        selected_card.target_type,
+        selected_card.hit_count,
+        entity,
+        targets,
+        dbg_game,
+        selected_card.self_target,
     )
     if resolve_err:
         logger.error(f"activate_play_cards_specified: {resolve_err}")

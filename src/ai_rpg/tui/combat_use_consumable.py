@@ -423,11 +423,6 @@ class CombatUseConsumableScreen(BaseGameScreen):
 
         player_name = self._snapshot.player_name
 
-        if item.target_type == TargetType.SELF:
-            self._flow.pending_targets = [player_name] if player_name else []
-            self._enter_confirm(log)
-            return
-
         if item.target_type == TargetType.SINGLE:
             candidates = [
                 (name, entity)

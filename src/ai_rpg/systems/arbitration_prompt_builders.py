@@ -253,6 +253,7 @@ def build_combat_arbitration_prompt(
 - 叙事（description）：{card.description}
 - damage：{card.damage}（单次伤害）
 - hit_count：{card.hit_count}（攻击次数）
+- self_target：{card.self_target}（是否锁定自身）
 {spread.hit_assignment}{build_instant_affix_section("本卡即时词缀", card.on_play_affixes)}{build_gear_play_section(gear_item)}
 
 ## 目标
@@ -331,6 +332,7 @@ def build_condensed_combat_arbitration_prompt(
 - 叙事（description）：{card.description}
 - damage：{card.damage}（单次伤害）
 - hit_count：{card.hit_count}（攻击次数）
+- self_target：{card.self_target}（是否锁定自身）
 {spread.hit_assignment}{build_instant_affix_section("本卡即时词缀", card.on_play_affixes)}{build_gear_play_section(gear_item)}
 
 ## 目标
@@ -492,7 +494,7 @@ def build_consumable_arbitration_prompt(
     """生成消耗品仲裁提示词（完整版）。"""
     target_lines = build_target_stats_lines(target_stats)
 
-    # 攻击性消耗品（target_type 非 SELF）时使用者不在 target_stats 中，需单独展示其身份与 HP，
+    # 当使用者不在 target_stats 中（目标为其他角色）时，需单独展示其身份与 HP，
     # 否则仲裁 LLM 无法在 final_stats 中对使用者施加反伤（如目标带「荆棘」）等效果。
     actor_section = (
         f"\n\n## 使用者\n\n{actor_name}（HP {actor_stats.hp}/{actor_stats.max_hp} | 防御:{actor_stats.defense}）"

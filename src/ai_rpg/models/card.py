@@ -24,7 +24,10 @@ class Card(BaseModel):
     damage: int = 0  # 造成的伤害值（单次）
     hit_count: int = 1  # 攻击次数（默认 1；>1 时为多段攻击，每段独立结算）
     block: int = 0  # 手牌持有期间提供的格挡值；出牌仲裁时累加进持有者总防御
-    target_type: TargetType = TargetType.SINGLE  # 出牌目标类型，决定目标约束策略
+    target_type: TargetType = (
+        TargetType.SINGLE
+    )  # 出牌目标类型，决定目标约束策略；self_target=True 时忽略
+    self_target: bool = False  # 出牌是否锁定自身；True 时目标即出牌者本人，无需 targets
     source: str = ""  # 卡牌来源（生成/注入者名称）；空字符串表示来源未知
     uuid: str = Field(default_factory=lambda: str(uuid4()))  # 全局唯一标识符
     original_data: Optional["Card"] = (

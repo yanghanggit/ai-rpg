@@ -367,7 +367,7 @@ class CombatPlayCardsScreen(BaseGameScreen):
 
         current_actor = self._snapshot.current_actor
 
-        if card.target_type == TargetType.SELF:
+        if card.self_target:
             self._flow.pending_targets = [current_actor] if current_actor else []
             self._enter_confirm(log)
             return

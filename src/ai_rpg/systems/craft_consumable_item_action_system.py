@@ -25,7 +25,7 @@ class _CraftConsumableResponse(BaseModel):
 
     name: str = ""
     description: str = ""
-    target_type: TargetType = TargetType.SELF
+    target_type: TargetType = TargetType.SINGLE
     on_use_affixes: List[str] = []
 
 
@@ -36,7 +36,7 @@ def _build_craft_prompt(materials: List[MaterialItem]) -> str:
     material_lines = "\n".join(
         f"- **{m.name}**（数量 {m.count}）：{m.description}" for m in materials
     )
-    target_type_options = "、".join(t.value for t in TargetType if t != TargetType.SELF)
+    target_type_options = "、".join(t.value for t in TargetType)
 
     return f"""# 任务：根据材料创意合成一件消耗品
 

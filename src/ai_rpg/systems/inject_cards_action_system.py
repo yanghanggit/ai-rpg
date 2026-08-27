@@ -165,6 +165,7 @@ def _build_inject_cards_prompt(
           "damage": 2,
           "hit_count": 1,
           "block": 0,
+          "self_target": false,
           "target_type": "{TargetType.SINGLE}"
         }}
       ]

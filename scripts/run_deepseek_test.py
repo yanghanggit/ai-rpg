@@ -14,7 +14,6 @@ sys.path.insert(
 from ai_rpg.deepseek import (
     MODEL_FLASH,
     MODEL_PRO,
-    AgentLoopConfig,
     DeepSeekClient,
     ToolDefinition,
     ToolFunction,
@@ -346,27 +345,33 @@ async def test_batch_agent_loop() -> None:
     """测试批量并发 agent_loop：两个 weather 查询同时执行"""
     print("\n=== 测试 batch_agent_loop() ===")
 
-    configs = [
-        AgentLoopConfig(
-            name="batch_aloop_beijing",
-            prompt="北京今天天气怎么样？",
-            messages=[_SYSTEM],
-            tools=[_WEATHER_TOOL],
-            handlers={"get_current_weather": _mock_get_weather},
+    tasks = [
+        (
+            "batch_aloop_beijing",
+            agent_loop(
+                name="batch_aloop_beijing",
+                prompt="北京今天天气怎么样？",
+                messages=[_SYSTEM],
+                tools=[_WEATHER_TOOL],
+                handlers={"get_current_weather": _mock_get_weather},
+            ),
         ),
-        AgentLoopConfig(
-            name="batch_aloop_shanghai",
-            prompt="上海今天天气怎么样？",
-            messages=[_SYSTEM],
-            tools=[_WEATHER_TOOL],
-            handlers={"get_current_weather": _mock_get_weather},
+        (
+            "batch_aloop_shanghai",
+            agent_loop(
+                name="batch_aloop_shanghai",
+                prompt="上海今天天气怎么样？",
+                messages=[_SYSTEM],
+                tools=[_WEATHER_TOOL],
+                handlers={"get_current_weather": _mock_get_weather},
+            ),
         ),
     ]
 
-    outcomes = await batch_agent_loop(configs)
-    for i, (cfg, ok) in enumerate(zip(configs, outcomes)):
+    outcomes = await batch_agent_loop(tasks)
+    for i, ((name, _), ok) in enumerate(zip(tasks, outcomes)):
         status = "✅ 成功" if ok else "❌ 失败"
-        print(f"  [{i}] {cfg.name}: {status}")
+        print(f"  [{i}] {name}: {status}")
 
     assert all(outcomes), f"预期全部成功，实际: {outcomes}"
     print("✅ batch_agent_loop 验证通过")

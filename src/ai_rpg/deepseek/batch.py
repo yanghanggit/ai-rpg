@@ -5,33 +5,12 @@
 
 import asyncio
 import time
-from typing import Callable, Dict, List, Literal
+from typing import Any, Coroutine, List, Tuple
 
 import httpx
 from loguru import logger
-from pydantic import BaseModel, ConfigDict
 
-from ..models.messages import ChatMessage
-from .agent_loop import agent_loop
-from .client import DeepSeekClient, ToolDefinition
-
-
-############################################################################################################
-class AgentLoopConfig(BaseModel):
-    """单次 agent_loop 的配置。"""
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    name: str
-    prompt: str
-    messages: List[
-        ChatMessage
-    ]  # agent_loop 会原地修改该列表；需隔离时请传入各自独立的副本
-    tools: List[ToolDefinition] = []
-    handlers: Dict[str, Callable[..., str]] = {}
-    max_rounds: int = 5
-    tool_choice: Literal["auto", "none", "required"] = "auto"
-    thinking: bool = False
+from .client import DeepSeekClient
 
 
 ############################################################################################################
@@ -69,36 +48,33 @@ async def batch_chat(clients: List[DeepSeekClient]) -> None:
 
 ############################################################################################################
 async def batch_agent_loop(
-    configs: List[AgentLoopConfig],
+    tasks: List[Tuple[str, Coroutine[Any, Any, bool]]],
 ) -> List[bool]:
-    """批量并发执行 agent_loop。"""
-    if not configs:
+    """批量并发执行 agent_loop 任务。
+
+    任务列表需在调用方组装，每个元素为 ``(任务名, 协程)``，
+    协程通常由 ``agent_loop(...)`` 返回，例如::
+
+        tasks = [
+            ("北京天气", agent_loop(name="北京天气", prompt=..., ...)),
+            ("上海天气", agent_loop(name="上海天气", prompt=..., ...)),
+        ]
+        outcomes = await batch_agent_loop(tasks)
+    """
+    if not tasks:
         return []
 
-    logger.info(f"batch_agent_loop: 启动 {len(configs)} 个 agent_loop")
+    logger.info(f"batch_agent_loop: 启动 {len(tasks)} 个任务")
 
     start_time = time.time()
     results = await asyncio.gather(
-        *[
-            agent_loop(
-                name=cfg.name,
-                prompt=cfg.prompt,
-                messages=cfg.messages,
-                tools=cfg.tools,
-                handlers=cfg.handlers,
-                max_rounds=cfg.max_rounds,
-                tool_choice=cfg.tool_choice,
-                thinking=cfg.thinking,
-            )
-            for cfg in configs
-        ],
+        *[coro for _, coro in tasks],
         return_exceptions=True,
     )
     elapsed = time.time() - start_time
 
     outcomes: List[bool] = []
-    for i, result in enumerate(results):
-        name = configs[i].name
+    for (name, _), result in zip(tasks, results):
         if isinstance(result, BaseException):
             logger.error(
                 f"batch_agent_loop '{name}' 异常: {type(result).__name__}: {result}"
@@ -109,7 +85,7 @@ async def batch_agent_loop(
             outcomes.append(bool(result))
 
     succeeded = sum(1 for o in outcomes if o)
-    logger.info(f"batch_agent_loop: {succeeded}/{len(configs)} 成功, {elapsed:.2f}s")
+    logger.info(f"batch_agent_loop: {succeeded}/{len(tasks)} 成功, {elapsed:.2f}s")
     return outcomes
 
 

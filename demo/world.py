@@ -297,10 +297,6 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
         description="一件洗至发硬的灰白病号服，袖口与领口已微微起毛。宽松的剪裁反而衬出肩宽骨架，穿在身上像一件被反复浆洗过的旧衣——干净，但带着洗不掉的时间痕迹。",
     )
 
-    # 故意让无名的 character_stats 里有一些数值，方便演示战斗初始化时的属性展示
-    actor_wuming.character_stats.speed = 2
-    # actor_wuming.character_stats.attack = 100
-
     actor_guzhiqiu = create_guzhiqiu()
     actor_guzhiqiu.custom_item = CostumeItem(
         name="时装.灰布长衫",
@@ -395,9 +391,7 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
             GearItem(
                 name="装备.束缚短刃",
                 description="一柄由锈蚀手术剪反复磨砺而成的短刃，刃身仍留着暗红锈斑，握柄裹着泛黄的束身带。挥动时刃口会拖出一道若有若无的暗红残影，仿佛把周遭的光都裁开一线；贴近刃脊处有极轻的嗡鸣，像每一次出鞘都藏着比伤口更深的念想。",
-                stat_bonuses=CharacterStats(
-                    hp=0, max_hp=0, attack=2, defense=0, speed=0
-                ),
+                stat_bonuses=CharacterStats(hp=0, max_hp=0, attack=2, defense=0),
                 on_play_affixes=[
                     "[血锈游丝]:出牌时，刃身锈迹化为一缕暗红游丝先一步缠向目标，令本次攻击的创口更诡谲、痛感更绵长"
                 ],
@@ -405,9 +399,7 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
             GearItem(
                 name="装备.束身护具",
                 description="由多层泛黄束身带与旧纱布反复衬叠而成的护具，表面缝着几道几近褪尽的暗红符痕，像被谁以禁制之法重新绞合过。穿上后衣料之间会发出极轻的窸窣声，仿佛有看不见的丝线贴着躯干缓缓游走，将迫近的寒意都缓去半拍。",
-                stat_bonuses=CharacterStats(
-                    hp=0, max_hp=0, attack=0, defense=2, speed=0
-                ),
+                stat_bonuses=CharacterStats(hp=0, max_hp=0, attack=0, defense=2),
                 on_play_affixes=[
                     "[束身回护]:出牌时，护具上的旧纱如活物般自行收紧，暗红符痕微微发亮，将佩戴者的动作稳稳托住并透出一股绵韧回护之力"
                 ],

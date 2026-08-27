@@ -187,7 +187,7 @@ class CombatUseConsumableScreen(BaseGameScreen):
         log.write(
             f"    HP:[yellow]{effective_stats.hp}/{effective_stats.max_hp}[/]  "
             f"攻:{effective_stats.attack}  防:{effective_stats.defense}  "
-            f"能量:{resolve_current_energy(entity, effective_stats)}  速度:{effective_stats.speed}"
+            f"能量:{resolve_current_energy(entity, effective_stats)}"
         )
 
     ########################################################################################################################

@@ -36,9 +36,7 @@ class GearItem(Item):
 
     type: Literal[ItemType.GEAR_ITEM] = Field(default=ItemType.GEAR_ITEM, frozen=True)
     stat_bonuses: CharacterStats = Field(
-        default_factory=lambda: CharacterStats(
-            hp=0, max_hp=0, attack=0, defense=0, speed=0
-        )
+        default_factory=lambda: CharacterStats(hp=0, max_hp=0, attack=0, defense=0)
     )
     cost: int = Field(
         default=1, ge=0

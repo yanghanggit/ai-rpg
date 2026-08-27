@@ -18,19 +18,16 @@ def compute_effective_stats(
     bonus_max_hp = 0
     bonus_attack = 0
     bonus_defense = 0
-    bonus_speed = 0
 
     if equipped_gear is not None:
         bonus_hp += equipped_gear.stat_bonuses.hp
         bonus_max_hp += equipped_gear.stat_bonuses.max_hp
         bonus_attack += equipped_gear.stat_bonuses.attack
         bonus_defense += equipped_gear.stat_bonuses.defense
-        bonus_speed += equipped_gear.stat_bonuses.speed
 
     return CharacterStats(
         hp=base_stats.hp + bonus_hp,
         max_hp=base_stats.max_hp + bonus_max_hp,
         attack=base_stats.attack + bonus_attack,
         defense=base_stats.defense + bonus_defense,
-        speed=base_stats.speed + bonus_speed,
     )

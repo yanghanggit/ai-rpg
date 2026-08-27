@@ -50,7 +50,6 @@ def render_item(item: AnyItem) -> str:
             (s.defense, "防御+{}"),
             (s.hp, "HP+{}"),
             (s.max_hp, "MaxHP+{}"),
-            (s.speed, "速度+{}"),
         ]:
             if val:
                 bonus_parts.append(fmt.format(val))

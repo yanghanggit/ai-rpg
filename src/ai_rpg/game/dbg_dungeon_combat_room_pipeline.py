@@ -129,7 +129,9 @@ def create_dungeon_combat_room_pipeline(
 
     # 战斗回合过渡系统（创建新回合 + 生成 action_order）
     processors.add(
-        CombatRoundTransitionSystem(dbg_game, strategy=ActionOrderStrategy.SPEED_ORDER)
+        CombatRoundTransitionSystem(
+            dbg_game, strategy=ActionOrderStrategy.CREATION_ORDER
+        )
     )
 
     # 战斗掉落系统（胜利时为每头怪物推理掉落 MaterialItem，写入玩家 CombatLootComponent）

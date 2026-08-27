@@ -157,7 +157,7 @@ def write_actor_detail(
     log.write(
         f"    HP:[yellow]{effective_stats.hp}/{effective_stats.max_hp}[/]  "
         f"攻:{effective_stats.attack}  防:{effective_stats.defense}  "
-        f"能量:{resolve_current_energy(entity, effective_stats)}  速度:{effective_stats.speed}"
+        f"能量:{resolve_current_energy(entity, effective_stats)}"
     )
 
     if hand_comp is not None and hand_comp.cards:
@@ -275,7 +275,7 @@ def render_stage_actors(
             f"  {label} [bold]{display_name(entity.name)}[/]{death_mark}  "
             f"HP:[yellow]{effective_stats.hp}/{effective_stats.max_hp}[/]  "
             f"攻:{effective_stats.attack}  防:{effective_stats.defense}  "
-            f"能量:{current_energy}  速度:{effective_stats.speed}"
+            f"能量:{current_energy}"
         )
 
         hand_data = find_component_data(entity, HandComponent.__name__)

@@ -9,7 +9,7 @@ from loguru import logger
 from ..entitas import Entity, ExecuteProcessor
 from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import get_alive_actors_in_stage
-from ..game.dbg_combat_processor import compute_character_stats, get_energy
+from ..game.dbg_combat_processor import get_energy
 from ..models import (
     CharacterStatsComponent,
     DeathComponent,
@@ -30,7 +30,6 @@ class ActionOrderStrategy(StrEnum):
 
     RANDOM = "random"  # 随机打乱（默认）
     CREATION_ORDER = "creation_order"  # 按实体创建顺序（creation_order 小的靠前）
-    SPEED_ORDER = "speed_order"  # 按速度降序（speed 大的靠前），体现角色敏捷/迟缓个性
 
 
 @final
@@ -92,8 +91,6 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
         # 快照必须在 start_new_round 之后构建，此时 RoundStatsComponent 已按新回合重置
         if self._strategy == ActionOrderStrategy.RANDOM:
             snapshot_entities = self._shuffled_actors_by_round(actors_in_stage)
-        elif self._strategy == ActionOrderStrategy.SPEED_ORDER:
-            snapshot_entities = self._sorted_actors_by_round_speed(actors_in_stage)
         else:  # CREATION_ORDER（含未知策略回退）
             snapshot_entities = self._sorted_actors_by_creation_order(actors_in_stage)
 
@@ -131,18 +128,6 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
             actor.replace(RoundStatsComponent, actor.name, DEFAULT_ROUND_ENERGY)
 
         return new_round
-
-    ############################################################################################################
-    def _sorted_actors_by_round_speed(self, actors: Set[Entity]) -> List[Entity]:
-        """从给定的角色集合中，筛选本回合仍有行动力的角色并按速度降序排列。"""
-        eligible: List[Entity] = [entity for entity in actors if get_energy(entity) > 0]
-        eligible.sort(
-            key=lambda entity: (
-                -compute_character_stats(entity).speed,  # 速度降序（含装备加成）
-                entity.get(IdentityComponent).creation_order,
-            )
-        )
-        return eligible
 
     ############################################################################################################
     def _shuffled_actors_by_round(self, actors: Set[Entity]) -> List[Entity]:

@@ -44,6 +44,5 @@
 | [DBG 核心概念定义与逻辑关系总结](<wiki/DBG 核心概念定义与逻辑关系总结.md>) | Modifiers（对局级规则）与 Affixes（一次性效果词缀）二者的定义、归属与逻辑关系：宏观-微观模型 |
 | [LLM 生成型游戏对象：Card](wiki/llm-generated-objects.md) | Card 作为 LLM 动态产出核心对象的生成点定位、全局约束视角、生成链与规则来源 |
 | [公共知识检索系统（RAG / QueryAction）](wiki/rag-knowledge-base.md) | 公共记忆与私人记忆的二元分离、Blueprint.knowledge_base 的编排约束、pgvector 两阶段生命周期、QueryActionSystem 的触发与消费 |
-| [提示词管理（Prompt Management）](wiki/prompt-management.md) | `prompt_builder` 装饰器与登记表的设计动机、判定边界、与命名约定的关系 |
 | [新故事设计：《大渊》](wiki/新故事设计.md) | 新故事世界观草稿：双重世界（济世疗养院 / 大傩）、核心冲突、角色设定与玩法方向 |
 | [战役设定与全局规则桥接（CAMPAIGN_SETTING / RPG_SYSTEM_RULES）](wiki/campaign-setting-rules-bridge.md) | 动态设定与静态规则的分层、抽象设定的惰性知识问题、事件级引用提示的桥接方案 |

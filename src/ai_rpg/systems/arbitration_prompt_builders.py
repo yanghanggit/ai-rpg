@@ -1,16 +1,13 @@
 """仲裁提示词构建器模块。"""
 
-from dataclasses import dataclass
 from typing import Dict, Final, List, final
 
 from pydantic import BaseModel
 
 from ..models import (
-    Card,
     CharacterStats,
     ConsumableItem,
     GearItem,
-    TargetType,
 )
 from ..utils import prompt_builder
 
@@ -37,11 +34,6 @@ class ArbitrationResponse(BaseModel):
 #######################################################################################################################################
 # 共享格式化工具函数
 #######################################################################################################################################
-
-
-@prompt_builder
-def fmt_duration(duration: int) -> str:
-    return "永久" if duration == -1 else f"剩余{duration}回合"
 
 
 @prompt_builder
@@ -84,43 +76,11 @@ def build_target_stats_lines(
 
 
 @prompt_builder
-def build_round_action_info_lines(
-    action_order: List[str] | None,
-    completed_actors: List[str] | None,
-    current_actor: str | None,
-) -> str:
-    """构建回合行动信息段落（卡牌仲裁专用，仅作背景信息，不改变结算规则）。"""
-    order_text = " → ".join(action_order) if action_order else "无"
-    completed_text = "、".join(completed_actors) if completed_actors else "无"
-    current_text = current_actor if current_actor else "无"
-    return (
-        f"- 行动顺序：{order_text}\n"
-        f"- 已完成行动者：{completed_text}\n"
-        f"- 当前行动者：{current_text}"
-    )
-
-
-@prompt_builder
 def build_instant_affix_section(title: str, affixes: List[str]) -> str:
     """构建「即时词缀」段落（卡牌/消耗品仲裁专用）；affixes 为空时返回空字符串。"""
     if not affixes:
         return ""
     return f"\n\n## {title}\n\n" + "\n".join(f"- {a}" for a in affixes)
-
-
-@prompt_builder
-def build_gear_play_section(gear_item: GearItem | None) -> str:
-    """构建出牌者装备段落（含装备即时词缀）；无装备时返回空字符串。"""
-    if gear_item is None:
-        return ""
-    section = (
-        f"\n\n## 出牌者装备\n\n"
-        f"- 名称：{gear_item.name}\n"
-        f"- 描述：{gear_item.description}"
-    )
-    return section + build_instant_affix_section(
-        "装备即时词缀", gear_item.on_play_affixes
-    )
 
 
 FINAL_STATS_DESCRIPTION: Final[
@@ -164,175 +124,9 @@ CALC_RULES_SECTION: Final[
 目标 HP = max(0, min(计算后 HP, 最大 HP))"""
 
 
-ON_HIT_AFFIX_RULES: Final[
-    str
-] = """## 受击词缀
-
-get_entity_stats 返回的「受击词缀」仅在**该实体是本次出牌的目标**时触发；出牌者自身的受击词缀不触发（除非出牌者也同时是目标）。依词缀描述结算（如 [反伤] 对出牌者造成伤害），不引入词缀未提及的新机制。"""
-
-
 #######################################################################################################################################
-# SPREAD 专属 prompt 片段（卡牌仲裁用）
+# 仲裁广播生成器
 #######################################################################################################################################
-
-
-@dataclass
-class SpreadSections:
-    """SPREAD 专属 prompt 片段"""
-
-    hit_assignment: str
-    log_example: str
-
-
-def build_spread_sections(
-    card: Card,
-    targets: List[str],
-) -> SpreadSections:
-    """为 SPREAD 卡牌构建仲裁 prompt 中的专属片段。
-
-    当 target_type 不是 SPREAD 时，所有字段均为空字符串。
-    """
-    if card.target_type != TargetType.SPREAD:
-        return SpreadSections("", "")
-
-    hit_lines = "\n".join(f"  第{i + 1}击 → {t}" for i, t in enumerate(targets))
-    hit_assignment = (
-        f"\n## 命中分配（系统预先随机确定，共 {card.hit_count} 击）\n\n"
-        f"{hit_lines}\n\n"
-        f"按上方命中分配逐段结算，final_stats 须包含**所有被命中过的不重复目标**。"
-    )
-    log_example = "\nspread 示例：`[英雄|回旋镖→随机:3×3段,敌A×2伤害5,敌B×1伤害3] HP:敌A 15→10 敌B 12→9`"
-    return SpreadSections(hit_assignment=hit_assignment, log_example=log_example)
-
-
-#######################################################################################################################################
-# 卡牌仲裁提示词生成器（play_cards）
-#######################################################################################################################################
-
-
-@prompt_builder
-def build_card_data_lines(card: Card) -> str:
-    """输出一张卡参与仲裁的全部数据字段（出牌侧：含即时词缀，排除系统管理字段）。"""
-    on_play = "、".join(card.on_play_affixes) if card.on_play_affixes else "无"
-    return (
-        f"- 卡牌：{card.name}\n"
-        f"- 叙事（description）：{card.description}\n"
-        f"- cost：{card.cost}\n"
-        f"- damage：{card.damage}（单次伤害）\n"
-        f"- hit_count：{card.hit_count}（攻击次数）\n"
-        f"- block：{card.block}\n"
-        f"- 即时词缀：{on_play}"
-    )
-
-
-@prompt_builder
-def build_combat_arbitration_tool_prompt(
-    actor_name: str,
-    card: Card,
-    targets: List[str],
-    current_round_number: int,
-    current_stage_description: str,
-    gear_item: GearItem | None = None,
-    action_order: List[str] | None = None,
-    completed_actors: List[str] | None = None,
-    current_actor: str | None = None,
-) -> str:
-    unique_targets = list(dict.fromkeys(targets))
-    target_names = "、".join(unique_targets) if unique_targets else "无"
-    round_action_info = build_round_action_info_lines(
-        action_order, completed_actors, current_actor
-    )
-    spread = build_spread_sections(card, targets)
-
-    return f"""# 第 {current_round_number} 回合：战斗结算（工具调用模式）
-
-## 出牌者
-
-{actor_name}
-
-## 出牌
-
-{build_card_data_lines(card)}
-{spread.hit_assignment}{build_gear_play_section(gear_item)}
-
-## 目标
-
-{target_names}
-
-## 当前场景环境
-
-{current_stage_description}
-
-## 回合行动信息（背景信息，不改变结算规则）
-
-{round_action_info}
-
-{CALC_RULES_SECTION}
-
-{ON_HIT_AFFIX_RULES}
-
-## 工具使用流程
-
-1. 调用 get_entity_stats 读取「出牌者」与所有「目标」的当前属性与受击词缀（可在同一次回复中并发调用多个）。
-2. 依据「计算规则」结算，得出每个受影响角色的最终 HP。
-3. 对每个受影响角色（含出牌者与所有目标）调用 set_entity_hp 写入最终 HP（可在同一次回复中并发调用多个）。
-4. 调用 submit_arbitration 提交最终结果，结束本次仲裁。
-
-## submit_arbitration 字段说明
-
-### combat_log（简名 = 全名最后一段）
-
-正常：`[出牌者简名|卡牌→目标:damage Xx击_count次,伤害Z] HP:目标简名 旧→新`
-多段示例：`[英雄|回旋镖→石缝蜥:3x3次,伤害7] HP:石缝蜥 15→8`{spread.log_example}
-阵亡跳过：`[出牌者简名|已阵亡，卡牌无法执行]`
-
-{NARRATIVE_DESCRIPTION}
-
-{STAGE_DESCRIPTION_DESCRIPTION}"""
-
-
-@prompt_builder
-def build_condensed_combat_arbitration_tool_prompt(
-    actor_name: str,
-    card: Card,
-    targets: List[str],
-    current_round_number: int,
-    current_stage_description: str,
-    gear_item: GearItem | None = None,
-    action_order: List[str] | None = None,
-    completed_actors: List[str] | None = None,
-    current_actor: str | None = None,
-) -> str:
-    """精简版工具化仲裁提示词，省略静态规则与工具流程说明，用于写入对话历史减少重复 token。"""
-    unique_targets = list(dict.fromkeys(targets))
-    target_names = "、".join(unique_targets) if unique_targets else "无"
-    round_action_info = build_round_action_info_lines(
-        action_order, completed_actors, current_actor
-    )
-    spread = build_spread_sections(card, targets)
-
-    return f"""# 第 {current_round_number} 回合：战斗结算（工具调用模式）
-
-## 出牌者
-
-{actor_name}
-
-## 出牌
-
-{build_card_data_lines(card)}
-{spread.hit_assignment}{build_gear_play_section(gear_item)}
-
-## 目标
-
-{target_names}
-
-## 当前场景环境
-
-{current_stage_description}
-
-## 回合行动信息（背景信息，不改变结算规则）
-
-{round_action_info}"""
 
 
 @prompt_builder
@@ -349,18 +143,6 @@ def build_arbitration_broadcast(
 ## 数据日志
 
 {combat_log}"""
-
-
-@prompt_builder
-def build_combat_arbitration_broadcast(
-    combat_log: str, narrative: str, current_round_number: int, actor_name: str
-) -> str:
-    return build_arbitration_broadcast(
-        combat_log,
-        narrative,
-        current_round_number,
-        f"{actor_name} 出牌仲裁",
-    )
 
 
 #######################################################################################################################################

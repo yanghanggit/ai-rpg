@@ -3,6 +3,7 @@ from typing import List, final, Optional
 from pydantic import BaseModel
 from .serialization import ComponentSerialization
 from .character_stats import CharacterStats
+from .card import Card
 from .items import CostumeItem
 
 
@@ -37,6 +38,9 @@ class Actor(BaseModel):
     keywords: List[str] = (
         []
     )  # 卡牌关键词约束列表，用于限制 LLM 生成卡牌的功能边界（规则层）；叙事主题由角色设定（profile）提炼
+    cards: List[Card] = (
+        []
+    )  # 预置卡牌列表；GenerateDeckActionSystem 停用时直接写入 DeckComponent
 
 
 ###############################################################################################################################################

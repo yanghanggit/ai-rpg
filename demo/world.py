@@ -9,6 +9,7 @@ from ai_rpg.models import (
     Actor,
     ActorType,
     Blueprint,
+    Card,
     CharacterStats,
     CombatRoom,
     ComponentSerialization,
@@ -129,6 +130,40 @@ _KW_DEFENSE: Final[str] = (
 )
 
 
+def _make_attack_card() -> Card:
+    """创建基础攻击卡牌。"""
+    return Card(
+        name="纸刃",
+        description="对单个敌人造成直接伤害。",
+        on_play_affixes=[],
+        playable=True,
+        exhaust=False,
+        cost=1,
+        damage=3,
+        hit_count=1,
+        block=0,
+        target_type=TargetType.SINGLE,
+        self_target=False,
+    )
+
+
+def _make_defense_card() -> Card:
+    """创建基础防御卡牌。"""
+    return Card(
+        name="纸盾",
+        description="为自身提供格挡值，持有时提升防御。",
+        on_play_affixes=[],
+        playable=True,
+        exhaust=False,
+        cost=1,
+        damage=0,
+        hit_count=1,
+        block=3,
+        target_type=TargetType.SINGLE,
+        self_target=True,
+    )
+
+
 ########################################################################################################################
 def create_actor_paper_doll() -> Actor:
     """创建纸人怪物实例。"""
@@ -141,14 +176,15 @@ def create_actor_paper_doll() -> Actor:
         character_stats=CharacterStats(),
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
-        keywords=[
+        keywords=[],
+        cards=[
             # 3 张基础攻击
-            _KW_ATTACK,
-            _KW_ATTACK,
-            _KW_ATTACK,
+            _make_attack_card(),
+            _make_attack_card(),
+            _make_attack_card(),
             # 2 张基础防御
-            _KW_DEFENSE,
-            _KW_DEFENSE,
+            _make_defense_card(),
+            _make_defense_card(),
         ],
     )
 
@@ -240,14 +276,15 @@ def create_wuming() -> Actor:
         character_stats=CharacterStats(),
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
-        keywords=[
+        keywords=[],
+        cards=[
             # 3 张基础攻击
-            _KW_ATTACK,
-            _KW_ATTACK,
-            _KW_ATTACK,
+            _make_attack_card(),
+            _make_attack_card(),
+            _make_attack_card(),
             # 2 张基础防御
-            _KW_DEFENSE,
-            _KW_DEFENSE,
+            _make_defense_card(),
+            _make_defense_card(),
         ],
     )
 
@@ -270,14 +307,15 @@ def create_guzhiqiu() -> Actor:
         character_stats=CharacterStats(),
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=RPG_SYSTEM_RULES,
-        keywords=[
+        keywords=[],
+        cards=[
             # 3 张基础攻击
-            _KW_ATTACK,
-            _KW_ATTACK,
-            _KW_ATTACK,
+            _make_attack_card(),
+            _make_attack_card(),
+            _make_attack_card(),
             # 2 张基础防御
-            _KW_DEFENSE,
-            _KW_DEFENSE,
+            _make_defense_card(),
+            _make_defense_card(),
         ],
     )
 

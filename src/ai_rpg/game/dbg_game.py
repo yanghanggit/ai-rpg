@@ -358,15 +358,16 @@ class DBGGame(RPGGame):
                     assert False, f"未知的 ActorType: {actor_model.type}"
 
             # DBG 组件：牌组（DeckComponent）
-            actor_entity.replace(DeckComponent, actor_entity.name, [])
+            initial_cards = copy.deepcopy(actor_model.cards)
+            for card in initial_cards:
+                if not card.source:
+                    card.source = actor_entity.name
+            actor_entity.replace(DeckComponent, actor_entity.name, initial_cards)
             logger.debug(
-                f"为 Actor 实体 {actor_entity.name} 挂载空牌组（DeckComponent）"
+                f"为 Actor 实体 {actor_entity.name} 挂载牌组（DeckComponent，{len(initial_cards)} 张）"
             )
 
             # DBG 组件：卡牌流派（ArchetypeComponent）+ 关键词约束
-            assert (
-                len(actor_model.keywords) > 0
-            ), f"DBG 游戏要求每个角色至少有一个关键词约束: {actor_model.name}"
             actor_entity.replace(
                 ArchetypeComponent, actor_entity.name, actor_model.keywords.copy()
             )

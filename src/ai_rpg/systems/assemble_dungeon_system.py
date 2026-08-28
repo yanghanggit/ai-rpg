@@ -9,6 +9,7 @@ from ..game.dbg_game import DBGGame
 from ..models import (
     ActorType,
     AssembleDungeonAction,
+    Card,
     CharacterStats,
     CombatRoom,
     Dungeon,
@@ -18,6 +19,7 @@ from ..models import (
     StageType,
     RPG_SYSTEM_RULES,
     SystemMessage,
+    TargetType,
 )
 from ..models.dungeon_generation import DungeonBlueprint
 from ..models.entity_factory import create_actor, create_stage
@@ -164,8 +166,16 @@ class AssembleDungeonSystem(ReactiveProcessor):
                         character_stats=CharacterStats(),
                         campaign_setting=self._game._world.blueprint.campaign_setting,
                         system_rules=RPG_SYSTEM_RULES,
-                        keywords=[
-                            "纯攻击型：每张卡牌专注于对单个敌人造成直接伤害，damage 以角色攻击力（attack）为基数，不携带任何附加效果或持续状态。",
+                        keywords=[],
+                        cards=[
+                            Card(
+                                name="袭击",
+                                description="对单个敌人造成直接伤害。",
+                                damage=3,
+                                block=0,
+                                target_type=TargetType.SINGLE,
+                                self_target=False,
+                            )
                         ],
                     )
                     for actor_bp in room_bp.actors

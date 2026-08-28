@@ -3,6 +3,7 @@
 """
 
 from typing import List
+from .card import Card
 from . import (
     Actor,
     ActorType,
@@ -23,6 +24,7 @@ def create_actor(
     campaign_setting: str,
     system_rules: str,
     keywords: List[str] = [],
+    cards: List[Card] = [],
 ) -> Actor:
     """
     创建一个游戏角色(Actor)实例。
@@ -35,7 +37,6 @@ def create_actor(
         campaign_setting.strip() != ""
     ), "DBG 游戏要求必须有游戏设定(campaign_setting)"
     assert system_rules.strip() != "", "DBG 游戏要求必须有系统规则(system_rules)"
-    assert len(keywords) > 0, f"DBG 游戏要求每个角色至少有一个关键词约束: {name}"
 
     actor = Actor(
         name=name,
@@ -45,6 +46,7 @@ def create_actor(
         system_message="",
         character_stats=character_stats,
         keywords=keywords,
+        cards=cards,
     )
 
     # 血量加满!!!!

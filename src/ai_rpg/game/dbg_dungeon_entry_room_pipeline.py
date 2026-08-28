@@ -19,7 +19,8 @@ def create_dungeon_entry_room_pipeline(
     from ..systems.destroy_entity_system import DestroyEntitySystem
     from ..systems.entry_init_actor_system import EntryInitActorSystem
     from ..systems.epilogue_system import EpilogueSystem
-    from ..systems.generate_deck_action_system import GenerateDeckActionSystem
+
+    # from ..systems.generate_deck_action_system import GenerateDeckActionSystem
     from ..systems.prologue_system import PrologueSystem
     from ..systems.stage_description_system import (
         StageDescriptionSystem,
@@ -42,7 +43,8 @@ def create_dungeon_entry_room_pipeline(
     processors.add(EntryInitActorSystem(dbg_game))
 
     # 牌库生成系统：LLM 生成初始卡牌 → DeckComponent + DrawPileComponent
-    processors.add(GenerateDeckActionSystem(dbg_game))
+    # （临时停用：改用 Actor.cards 预置牌库）
+    # processors.add(GenerateDeckActionSystem(dbg_game))
 
     # 清除动作相关的临时状态
     processors.add(ActionCleanupSystem(dbg_game))

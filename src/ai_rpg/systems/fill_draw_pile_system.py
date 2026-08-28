@@ -62,7 +62,9 @@ class FillDrawPileSystem(ReactiveProcessor):
 
         cards = deck_comp.cards.copy()
         random.shuffle(cards)
-        draw_pile.cards = [c.model_copy() for c in cards]
+        # 深拷贝：确保战斗内对卡牌的任意修改（含 on_play_affixes 嵌套列表）
+        # 都不会反噬 DeckComponent 中的原始牌，战斗结束后原始牌库仍可安全保存。
+        draw_pile.cards = [c.model_copy(deep=True) for c in cards]
 
         logger.debug(
             f"[{entity.name}] FillDrawPile: {len(cards)} 张牌已洗牌填入 DrawPile"

@@ -119,19 +119,19 @@ KNOWLEDGE_BASE: Final[Dict[str, List[str]]] = {
 
 # ── 卡牌关键词常量（避免重复字符串，方便统一修改） ──────────────────────────────────────────────
 
-_KW_ATTACK: Final[str] = (
-    "攻击型：target_type 为 single，self_target 为 false，damage 以角色攻击力（attack）为基数；"
-    "block 为 0；on_play_affixes 为空。"
-)
-_KW_DEFENSE: Final[str] = (
-    "防御型：self_target 为 true，damage 为 0；"
-    "block 提供手牌持有期间的格挡值（出牌仲裁时累加进持有者总防御）；"
-    "on_play_affixes 为空。"
-)
+# _KW_ATTACK: Final[str] = (
+#     "攻击型：target_type 为 single，self_target 为 false，damage 为卡牌自身值，"
+#     "填充牌库时叠加角色攻击力（attack）；block 为 0；on_play_affixes 为空。"
+# )
+# _KW_DEFENSE: Final[str] = (
+#     "防御型：self_target 为 true，damage 为 0；"
+#     "block 为卡牌自身格挡值，填充牌库时叠加角色防御力（defense），持有期间累加进持有者总防御；"
+#     "on_play_affixes 为空。"
+# )
 
 
 def _make_attack_card() -> Card:
-    """创建基础攻击卡牌。"""
+    """创建基础攻击卡牌（damage 为卡牌自身值，填充牌库时叠加角色 attack）。"""
     return Card(
         name="纸刃",
         description="对单个敌人造成直接伤害。",
@@ -139,7 +139,7 @@ def _make_attack_card() -> Card:
         playable=True,
         exhaust=False,
         cost=1,
-        damage=3,
+        damage=1,
         hit_count=1,
         block=0,
         target_type=TargetType.SINGLE,
@@ -148,7 +148,7 @@ def _make_attack_card() -> Card:
 
 
 def _make_defense_card() -> Card:
-    """创建基础防御卡牌。"""
+    """创建基础防御卡牌（block 为卡牌自身格挡值，填充牌库时叠加角色 defense）。"""
     return Card(
         name="纸盾",
         description="为自身提供格挡值，持有时提升防御。",
@@ -158,7 +158,7 @@ def _make_defense_card() -> Card:
         cost=1,
         damage=0,
         hit_count=1,
-        block=3,
+        block=2,
         target_type=TargetType.SINGLE,
         self_target=True,
     )

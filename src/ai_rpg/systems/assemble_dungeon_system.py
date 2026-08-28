@@ -171,7 +171,7 @@ class AssembleDungeonSystem(ReactiveProcessor):
                             Card(
                                 name="袭击",
                                 description="对单个敌人造成直接伤害。",
-                                damage=3,
+                                damage=1,  # 卡牌自身伤害；FillDrawPileSystem 会叠加角色 attack
                                 block=0,
                                 target_type=TargetType.SINGLE,
                                 self_target=False,

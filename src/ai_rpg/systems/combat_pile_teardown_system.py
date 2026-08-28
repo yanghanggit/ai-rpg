@@ -60,11 +60,15 @@ class CombatPileTeardownSystem(ExecuteProcessor):
             exhaust_pile = entity.get(ExhaustPileComponent)
 
             total = (
-                len(draw_pile.cards) + len(discard_pile.cards) + len(exhaust_pile.cards)
+                len(draw_pile.cards)
+                + len(draw_pile.retained_cards)
+                + len(discard_pile.cards)
+                + len(exhaust_pile.cards)
             )
 
-            # 清空三个战斗子堆（副本直接丢弃，原始牌在 DeckComponent 中完整保留）
+            # 清空三个战斗子堆（含 DrawPile 的 retain 保留队列；副本直接丢弃，原始牌在 DeckComponent 中完整保留）
             draw_pile.cards.clear()
+            draw_pile.retained_cards.clear()
             discard_pile.cards.clear()
             exhaust_pile.cards.clear()
 

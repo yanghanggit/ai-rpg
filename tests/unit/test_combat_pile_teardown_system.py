@@ -64,7 +64,7 @@ def _make_combat_entity(context: Context, name: str) -> Entity:
     entity._name = name
     entity.add(ActorComponent, name, "home")
     entity.add(DeckComponent, name, [])
-    entity.add(DrawPileComponent, name, [])
+    entity.add(DrawPileComponent, name, [], [])
     entity.add(DiscardPileComponent, name, [])
     entity.add(ExhaustPileComponent, name, [])
     return entity

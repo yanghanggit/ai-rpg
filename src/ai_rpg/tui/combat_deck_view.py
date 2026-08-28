@@ -110,7 +110,10 @@ class CombatDeckViewScreen(BaseGameScreen):
             # 若实体不存在相应组件则跳过不显示。
             draw_pile_data = find_component_data(entity, DrawPileComponent.__name__)
             if draw_pile_data is not None:
-                _render_pile(log, "抽牌堆", DrawPileComponent(**draw_pile_data).cards)
+                draw_pile = DrawPileComponent(**draw_pile_data)
+                _render_pile(log, "抽牌堆", draw_pile.cards)
+                if draw_pile.retained_cards:
+                    _render_pile(log, "保留队列", draw_pile.retained_cards)
 
             exhaust_pile_data = find_component_data(
                 entity, ExhaustPileComponent.__name__

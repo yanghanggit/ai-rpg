@@ -19,6 +19,7 @@ from ..models import (
     compute_effective_stats,
     HandComponent,
     DiscardPileComponent,
+    DrawPileComponent,
 )
 from .dbg_game import DBGGame
 
@@ -232,31 +233,42 @@ def resolve_targets(
 
 #######################################################################################################################################
 def clear_round_state(game: DBGGame) -> None:
-    """清除所有角色实体的每回合可变状态（手牌归入弃牌堆 + 回合动态属性）"""
+    """清除所有角色实体的每回合可变状态（手牌归入弃牌堆 + 回合动态属性）。"""
 
-    # 清除所有角色实体的手牌组件，将剩余手牌归入 DiscardPile（STS 标准：回合末未出牌进弃牌堆）
+    # 清除所有角色实体的手牌组件（STS 标准：回合末未出牌进弃牌堆）
     for entity in game.get_group(
         Matcher(all_of=[HandComponent, DiscardPileComponent])
     ).entities.copy():
+
         hand_comp = entity.get(HandComponent)
         discard_pile_comp = entity.get(DiscardPileComponent)
 
         if hand_comp.cards:
-            # 仅归入来源为本角色的卡牌；外来塞入牌（source != actor_name）直接丢弃
-            own_cards = [c for c in hand_comp.cards if c.source == entity.name]
-            foreign_cards = [c for c in hand_comp.cards if c.source != entity.name]
-            discard_pile_comp.cards.extend(own_cards)
-            logger.debug(
-                f"clear hands: {entity.name} 将 {len(own_cards)} 张剩余手牌归入 DiscardPile，DiscardPile 累计 {len(discard_pile_comp.cards)} 张"
-            )
-            for fc in foreign_cards:
+
+            retain_cards = [c for c in hand_comp.cards if c.retain]
+            discard_cards = [c for c in hand_comp.cards if not c.retain]
+
+            # 将非 retain 的手牌归入弃牌堆（战斗子堆均为副本，不会回流 DeckComponent）
+            discard_pile_comp.cards.extend(discard_cards)
+
+            # retain 牌暂存到 DrawPile 的保留队列，下回合优先取回手牌
+            if retain_cards:
+                assert entity.has(
+                    DrawPileComponent
+                ), f"{entity.name} 缺少 DrawPileComponent，无法存放 retain 牌"
+                draw_pile_comp = entity.get(DrawPileComponent)
+                draw_pile_comp.retained_cards.extend(retain_cards)
                 logger.debug(
-                    f"clear hands: [{entity.name}] 外来牌 [{fc.name}](source={fc.source!r}) 回合结束，source 不匹配，丢弃"
+                    f"clear hands: {entity.name} 将 {len(retain_cards)} 张 retain 牌转入 DrawPile 保留队列"
                 )
+
+            logger.debug(
+                f"clear hands: {entity.name} 将 {len(discard_cards)} 张剩余手牌归入 DiscardPile，DiscardPile 累计 {len(discard_pile_comp.cards)} 张"
+            )
         else:
             logger.debug(f"clear hands: {entity.name}")
 
-        # 移除 HandComponent
+        # 无论是否有手牌，回合末统一移除 HandComponent
         entity.remove(HandComponent)
 
     # 清除所有角色实体的回合动态属性组件
@@ -269,7 +281,7 @@ def clear_round_state(game: DBGGame) -> None:
 def clear_combat_state(dbg_game: DBGGame) -> None:
     """清除一次战斗（Combat）结束后的临时状态。"""
 
-    # 清除战斗回合状态
+    # 清除战斗回合状态（retain 牌同样转入 DrawPile 保留队列，由 CombatPileTeardownSystem 兜底清空）
     clear_round_state(dbg_game)
 
     # 移动语义：装备背包持有者始终是玩家实体，清除装备前必须先将其归还玩家的

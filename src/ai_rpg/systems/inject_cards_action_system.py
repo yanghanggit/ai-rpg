@@ -161,6 +161,7 @@ def _build_inject_cards_prompt(
 
           "playable": true,
           "exhaust": true,
+          "retain": false,
           "cost": 0,
           "damage": 2,
           "hit_count": 1,

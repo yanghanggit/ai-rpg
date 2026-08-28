@@ -199,7 +199,8 @@ class CombatOutcomeSystem(ExecuteProcessor):
         """统计实体 DrawPile + Hand + DiscardPile 三堆卡牌总数（不含 ExhaustPile）。"""
         total = 0
         if entity.has(DrawPileComponent):
-            total += len(entity.get(DrawPileComponent).cards)
+            draw_pile = entity.get(DrawPileComponent)
+            total += len(draw_pile.cards) + len(draw_pile.retained_cards)
         if entity.has(HandComponent):
             total += len(entity.get(HandComponent).cards)
         if entity.has(DiscardPileComponent):

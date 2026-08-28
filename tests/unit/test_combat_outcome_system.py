@@ -73,7 +73,12 @@ def _add_cards(
 ) -> None:
     """为实体挂载牌堆组件并填入指定数量的占位卡牌。"""
     if draw:
-        entity.add(DrawPileComponent, entity.name, [_make_card() for _ in range(draw)])
+        entity.add(
+            DrawPileComponent,
+            entity.name,
+            [_make_card() for _ in range(draw)],
+            [],
+        )
     if hand:
         entity.add(HandComponent, entity.name, [_make_card() for _ in range(hand)])
     if discard:

@@ -41,6 +41,7 @@ class DeckCardEntry(BaseModel):
     on_play_affixes: List[str] = []
     playable: bool = True
     exhaust: bool = False
+    retain: bool = False
     cost: int = 1
     damage: int
     hit_count: int = 1
@@ -120,6 +121,7 @@ def build_deck_prompt(
       "on_play_affixes": [],
       "playable": true,
       "exhaust": false,
+      "retain": false,
       "cost": 1,
       "damage": 0,
       "hit_count": 1,
@@ -302,6 +304,7 @@ class GenerateDeckActionSystem(ReactiveProcessor):
                     on_play_affixes=entry.on_play_affixes,
                     playable=entry.playable,
                     exhaust=entry.exhaust,
+                    retain=entry.retain,
                     cost=entry.cost,
                     damage=entry.damage,
                     hit_count=entry.hit_count,

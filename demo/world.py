@@ -164,6 +164,24 @@ def _make_defense_card() -> Card:
     )
 
 
+def _make_retain_card() -> Card:
+    """创建带 retain 的防御卡牌（demo：回合末保留在手牌中，不进入弃牌堆）。"""
+    return Card(
+        name="纸盾·护",
+        description="为自身提供格挡值，持有时提升防御，且不会在回合末离开手牌。",
+        on_play_affixes=[],
+        playable=True,
+        exhaust=False,
+        retain=True,
+        cost=1,
+        damage=0,
+        hit_count=1,
+        block=2,
+        target_type=TargetType.SINGLE,
+        self_target=True,
+    )
+
+
 ########################################################################################################################
 def create_actor_paper_doll() -> Actor:
     """创建纸人怪物实例。"""
@@ -285,6 +303,8 @@ def create_wuming() -> Actor:
             # 2 张基础防御
             _make_defense_card(),
             _make_defense_card(),
+            # 1 张带 retain 的防御牌（demo：回合末保留在手牌中，不进入弃牌堆）
+            _make_retain_card(),
         ],
     )
 

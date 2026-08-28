@@ -20,6 +20,9 @@ class Card(BaseModel):
     exhaust: bool = (
         False  # 是否为消耗牌；True 时出牌后永久归入 ExhaustPile，不进入 DiscardPile 循环
     )
+    retain: bool = (
+        False  # 是否保留在手牌中；True 时回合末不清入手牌（不进入 DiscardPile），跨回合留在 HandComponent
+    )
     cost: int = 1  # 出牌费用；消耗行动者当前 energy 的点数；energy 不足时禁止出牌
     damage: int = 0  # 造成的伤害值（单次）
     hit_count: int = 1  # 攻击次数（默认 1；>1 时为多段攻击，每段独立结算）

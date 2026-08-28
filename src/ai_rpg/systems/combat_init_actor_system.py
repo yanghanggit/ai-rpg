@@ -12,7 +12,6 @@ from ..game.dbg_combat_processor import (
     get_alive_actors_in_stage,
 )
 from ..models import (
-    DeckComponent,
     FillDrawPileAction,
     # GenerateDeckAction,
     StageDescriptionComponent,
@@ -135,25 +134,25 @@ class CombatInitActorSystem(ExecuteProcessor):
             logger.debug(f"[{actor_entity.name}] 已添加 FillDrawPileAction")
 
         # 怪物牌库已通过 blueprint/dungeon 的 cards 预置；GenerateDeckActionSystem 已临时停用
-        for actor_entity in actor_entities:
-            if not actor_entity.has(MonsterComponent):
-                continue
+        # for actor_entity in actor_entities:
+        #     if not actor_entity.has(MonsterComponent):
+        #         continue
 
-            assert not actor_entity.has(
-                PartyMemberComponent
-            ), f"角色 {actor_entity.name} 同时具有 MonsterComponent 与 PartyMemberComponent，阵营异常！"
+        #     assert not actor_entity.has(
+        #         PartyMemberComponent
+        #     ), f"角色 {actor_entity.name} 同时具有 MonsterComponent 与 PartyMemberComponent，阵营异常！"
 
-            assert actor_entity.has(
-                DeckComponent
-            ), f"怪物 {actor_entity.name} 缺少 DeckComponent 组件！"
-            deck_comp = actor_entity.get(DeckComponent)
-            assert (
-                deck_comp is not None and len(deck_comp.cards) > 0
-            ), f"怪物 {actor_entity.name} 缺少预置牌库（DeckComponent）！"
+        #     assert actor_entity.has(
+        #         DeckComponent
+        #     ), f"怪物 {actor_entity.name} 缺少 DeckComponent 组件！"
+        #     deck_comp = actor_entity.get(DeckComponent)
+        #     assert (
+        #         deck_comp is not None and len(deck_comp.cards) > 0
+        #     ), f"怪物 {actor_entity.name} 缺少预置牌库（DeckComponent）！"
 
-            # 牌库已预置，无需在此触发 LLM 生成
-            # actor_entity.replace(GenerateDeckAction, actor_entity.name)
-            # logger.debug(f"[{actor_entity.name}] 已添加 GenerateDeckAction（怪物）")
+        # 牌库已预置，无需在此触发 LLM 生成
+        # actor_entity.replace(GenerateDeckAction, actor_entity.name)
+        # logger.debug(f"[{actor_entity.name}] 已添加 GenerateDeckAction（怪物）")
 
     ###################################################################################################################################################################
     def _initialize_piles(self, actor_entities: Set[Entity]) -> None:
@@ -171,8 +170,8 @@ class CombatInitActorSystem(ExecuteProcessor):
                 ExhaustPileComponent
             ), f"角色 {actor_entity.name} 已有 ExhaustPileComponent，理论上不应该出现这种情况！如果确实出现了，请检查之前的系统是否正确清理了旧牌堆。"
 
-            # 强制初始化空的牌堆组件
-            actor_entity.replace(DrawPileComponent, actor_entity.name, [])
+            # 强制初始化空的牌堆组件（DrawPile 含 retain 保留队列）
+            actor_entity.replace(DrawPileComponent, actor_entity.name, [], [])
             actor_entity.replace(DiscardPileComponent, actor_entity.name, [])
             actor_entity.replace(ExhaustPileComponent, actor_entity.name, [])
             logger.debug(

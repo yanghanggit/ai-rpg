@@ -25,6 +25,8 @@ from ..models import (
 class DrawCardsActionSystem(ReactiveProcessor):
     """
     响应 DrawCardsAction，为每个存活角色填充 HandComponent。
+
+    优先取回 DrawPile.retained_cards 中的 retain 牌，再抽取本回合正常张数。
     """
 
     def __init__(self, game: DBGGame) -> None:
@@ -74,6 +76,16 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
         return drawn
 
+    ####################################################################################################################################
+    def _take_retained_cards(self, entity: Entity) -> List[Card]:
+        """取出 DrawPile.retained_cards 中的 retain 牌（FIFO 归还手牌）。"""
+        draw_pile = entity.get(DrawPileComponent)
+        assert draw_pile is not None
+
+        retained = list(draw_pile.retained_cards)
+        draw_pile.retained_cards.clear()
+        return retained
+
     ######################################################################################################################################
     @override
     async def react(self, entities: List[Entity]) -> None:
@@ -86,14 +98,27 @@ class DrawCardsActionSystem(ReactiveProcessor):
             f"DrawCardsActionSystem: 处理 {len(entities)} 个实体的 DrawCardsAction"
         )
 
-        # 从 DrawPile 抽牌（含 DiscardPile reshuffle 逻辑），并立即写入原始（未调整）手牌
+        # 先取回 retain 牌（加法），再抽本回合正常张数（含 DiscardPile reshuffle 逻辑）；
+        # 本游戏不设置手牌上限，retain 牌不挤占正常抽牌张数。
         for entity in entities:
-            max_num_cards = 3 if entity.has(PartyMemberComponent) else 1
+
+            # 根据角色类型确定本回合最大抽牌数（PartyMember 和非 PartyMember 均为 3 张）
+            max_num_cards = 3 if entity.has(PartyMemberComponent) else 3
+
+            # 先取回 retain 牌，再抽本回合正常张数，合并为新的手牌
+            retained = self._take_retained_cards(entity)
+
+            # 抽取本回合正常张数的牌
             drawn = self._draw_from_pile(entity, max_num_cards)
+
+            # 合并 retain 牌与新抽牌为新的手牌
+            new_hand = retained + drawn
+
             logger.debug(
-                f"[{entity.name}] 抽取 {len(drawn)} 张：{[c.name for c in drawn]}"
+                f"[{entity.name}] retain 牌 {len(retained)} 张 + 新抽 {len(drawn)} 张："
+                f"{[c.name for c in drawn]} → 手牌共 {len(new_hand)} 张"
             )
-            entity.replace(HandComponent, entity.name, drawn)
+            entity.replace(HandComponent, entity.name, new_hand)
 
         # 标记本回合 DRAW 阶段已完成（后续 PostDrawCardsSystem 可能仍会异步调整手牌数值）
         last_round = self._game.current_dungeon_combat_room.combat.latest_round

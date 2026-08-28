@@ -2,8 +2,9 @@
 
 from dataclasses import dataclass
 from typing import Dict, Final, List, final
+
 from pydantic import BaseModel
-from ..utils import prompt_builder
+
 from ..models import (
     Card,
     CharacterStats,
@@ -11,6 +12,7 @@ from ..models import (
     GearItem,
     TargetType,
 )
+from ..utils import prompt_builder
 
 #######################################################################################################################################
 # 共享仲裁响应数据模型
@@ -341,6 +343,122 @@ def build_condensed_combat_arbitration_prompt(
 ## 目标有效属性（完整）
 
 {target_full_stats_lines}
+
+## 当前场景环境
+
+{current_stage_description}
+
+## 回合行动信息（背景信息，不改变结算规则）
+
+{round_action_info}"""
+
+
+@prompt_builder
+def build_combat_arbitration_tool_prompt(
+    actor_name: str,
+    card: Card,
+    targets: List[str],
+    current_round_number: int,
+    current_stage_description: str,
+    gear_item: GearItem | None = None,
+    action_order: List[str] | None = None,
+    completed_actors: List[str] | None = None,
+    current_actor: str | None = None,
+) -> str:
+    unique_targets = list(dict.fromkeys(targets))
+    target_names = "、".join(unique_targets) if unique_targets else "无"
+    round_action_info = build_round_action_info_lines(
+        action_order, completed_actors, current_actor
+    )
+    spread = build_spread_sections(card, targets)
+
+    return f"""# 第 {current_round_number} 回合：战斗结算（工具调用模式）
+
+## 出牌者
+
+{actor_name}
+
+## 出牌
+
+- 卡牌：{card.name}
+- 叙事（description）：{card.description}
+- damage：{card.damage}（单次伤害）
+- hit_count：{card.hit_count}（攻击次数）
+- self_target：{card.self_target}（是否锁定自身）
+{spread.hit_assignment}{build_instant_affix_section("本卡即时词缀", card.on_play_affixes)}{build_gear_play_section(gear_item)}
+
+## 目标
+
+{target_names}
+
+## 当前场景环境
+
+{current_stage_description}
+
+## 回合行动信息（背景信息，不改变结算规则）
+
+{round_action_info}
+
+{CALC_RULES_SECTION}
+
+## 工具使用流程
+
+1. 调用 get_entity_stats 读取「出牌者」与所有「目标」的当前属性（可在同一次回复中并发调用多个）。
+2. 依据「计算规则」结算，得出每个受影响角色的最终 HP。
+3. 对每个受影响角色（含出牌者与所有目标）调用 set_entity_hp 写入最终 HP（可在同一次回复中并发调用多个）。
+4. 调用 submit_arbitration 提交最终结果，结束本次仲裁。
+
+## submit_arbitration 字段说明
+
+### combat_log（简名 = 全名最后一段）
+
+正常：`[出牌者简名|卡牌→目标:damage Xx击_count次,伤害Z] HP:目标简名 旧→新`
+多段示例：`[英雄|回旋镖→石缝蜥:3x3次,伤害7] HP:石缝蜥 15→8`{spread.log_example}
+阵亡跳过：`[出牌者简名|已阵亡，卡牌无法执行]`
+
+{NARRATIVE_DESCRIPTION}
+
+{STAGE_DESCRIPTION_DESCRIPTION}"""
+
+
+@prompt_builder
+def build_condensed_combat_arbitration_tool_prompt(
+    actor_name: str,
+    card: Card,
+    targets: List[str],
+    current_round_number: int,
+    current_stage_description: str,
+    gear_item: GearItem | None = None,
+    action_order: List[str] | None = None,
+    completed_actors: List[str] | None = None,
+    current_actor: str | None = None,
+) -> str:
+    """精简版工具化仲裁提示词，省略静态规则与工具流程说明，用于写入对话历史减少重复 token。"""
+    unique_targets = list(dict.fromkeys(targets))
+    target_names = "、".join(unique_targets) if unique_targets else "无"
+    round_action_info = build_round_action_info_lines(
+        action_order, completed_actors, current_actor
+    )
+    spread = build_spread_sections(card, targets)
+
+    return f"""# 第 {current_round_number} 回合：战斗结算（工具调用模式）
+
+## 出牌者
+
+{actor_name}
+
+## 出牌
+
+- 卡牌：{card.name}
+- 叙事（description）：{card.description}
+- damage：{card.damage}（单次伤害）
+- hit_count：{card.hit_count}（攻击次数）
+- self_target：{card.self_target}（是否锁定自身）
+{spread.hit_assignment}{build_instant_affix_section("本卡即时词缀", card.on_play_affixes)}{build_gear_play_section(gear_item)}
+
+## 目标
+
+{target_names}
 
 ## 当前场景环境
 

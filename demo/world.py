@@ -201,6 +201,25 @@ def _make_ethereal_card() -> Card:
     )
 
 
+def _make_armor_piercing_card() -> Card:
+    """创建带【穿甲】即时词缀的攻击卡牌（demo：本次伤害无视目标防御）。"""
+    return Card(
+        name="纸刃·穿",
+        description="对单个敌人造成直接伤害。纸刃借势贯穿，无视目标防御。",
+        on_play_affixes=["[穿甲]:本次伤害无视目标防御"],
+        playable=True,
+        exhaust=False,
+        retain=False,
+        ethereal=False,
+        cost=1,
+        damage=1,
+        hit_count=1,
+        block=0,
+        target_type=TargetType.SINGLE,
+        self_target=False,
+    )
+
+
 ########################################################################################################################
 def create_actor_paper_doll() -> Actor:
     """创建纸人怪物实例。"""
@@ -326,6 +345,8 @@ def create_wuming() -> Actor:
             _make_retain_card(),
             # 1 张带 ethereal（虚无）的攻击牌（demo：pass turn 时若仍在手牌则自动消耗）
             _make_ethereal_card(),
+            # 1 张带【穿甲】即时词缀的攻击牌（demo：本次伤害无视目标防御）
+            _make_armor_piercing_card(),
         ],
     )
 

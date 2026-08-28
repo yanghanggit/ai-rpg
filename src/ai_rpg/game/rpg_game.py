@@ -3,7 +3,7 @@ from loguru import logger
 from overrides import override
 from ..entitas import Entity
 from ..models.messages import HumanMessage
-from .game_session import GameSession
+from .base_game import BaseGame
 from .rpg_agent_memory import RPGAgentMemory
 from .rpg_entity_manager import RPGEntityManager
 from .rpg_game_pipeline_manager import RPGGamePipelineManager
@@ -15,7 +15,7 @@ from ..models import PlayerSession
 
 
 #################################################################################################################################################
-class RPGGame(GameSession, RPGAgentMemory, RPGEntityManager, RPGGamePipelineManager):
+class RPGGame(BaseGame, RPGAgentMemory, RPGEntityManager, RPGGamePipelineManager):
     """
     RPG游戏核心类，基于ECS架构整合游戏会话管理、实体管理和LLM处理管道
     """
@@ -28,7 +28,7 @@ class RPGGame(GameSession, RPGAgentMemory, RPGEntityManager, RPGGamePipelineMana
     ) -> None:
 
         # 必须按着此顺序实现父类
-        GameSession.__init__(self, name)  # 需要传递 name
+        BaseGame.__init__(self, name)  # 需要传递 name
         RPGEntityManager.__init__(self)  # 继承 Context, 需要调用其 __init__
         RPGGamePipelineManager.__init__(self)  # 管道管理器初始化
 

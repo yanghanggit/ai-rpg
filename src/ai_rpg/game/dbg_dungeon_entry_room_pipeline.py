@@ -2,12 +2,12 @@
 
 from typing import cast
 
-from .game_session import GameSession
+from .base_game import BaseGame
 from .rpg_game_pipeline_manager import RPGGameProcessPipeline
 
 
 def create_dungeon_entry_room_pipeline(
-    game: GameSession,
+    game: BaseGame,
 ) -> RPGGameProcessPipeline:
     """创建副本入口场景的流程管道（叙事 + 牌库生成，无战斗）"""
 

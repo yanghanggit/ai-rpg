@@ -1,12 +1,12 @@
 """副本生成流程管道工厂模块。"""
 
 from typing import cast
-from .game_session import GameSession
+from .base_game import BaseGame
 from .rpg_game_pipeline_manager import RPGGameProcessPipeline
 
 
 def create_dungeon_generate_pipeline(
-    game: GameSession,
+    game: BaseGame,
 ) -> RPGGameProcessPipeline:
     """创建副本生成流程管道（LLM 文本生成 + 图片生成）"""
 

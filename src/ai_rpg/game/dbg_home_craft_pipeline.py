@@ -1,11 +1,11 @@
 """家园制作流程管道工厂模块（仅在玩家处于家园场景时使用）。"""
 
 from typing import cast
-from .game_session import GameSession
+from .base_game import BaseGame
 from .rpg_game_pipeline_manager import RPGGameProcessPipeline
 
 
-def create_home_craft_pipeline(game: GameSession) -> RPGGameProcessPipeline:
+def create_home_craft_pipeline(game: BaseGame) -> RPGGameProcessPipeline:
     """创建家园制作流程管道（仅处理 craft 动作）"""
 
     ### 不这样就循环引用

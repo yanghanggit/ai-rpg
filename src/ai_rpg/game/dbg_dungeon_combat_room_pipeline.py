@@ -1,12 +1,12 @@
 """地牢战斗场景流程管道工厂模块。"""
 
 from typing import cast
-from .game_session import GameSession
+from .base_game import BaseGame
 from .rpg_game_pipeline_manager import RPGGameProcessPipeline
 
 
 def create_dungeon_combat_room_pipeline(
-    game: GameSession,
+    game: BaseGame,
 ) -> RPGGameProcessPipeline:
     """创建地牢战斗场景的流程管道"""
 

@@ -2,9 +2,7 @@
 
 from dataclasses import dataclass
 from typing import Dict, Final, List, final
-
 from pydantic import BaseModel
-
 from ..utils import prompt_builder
 from ..models import (
     Card,
@@ -67,18 +65,19 @@ def build_stats_update_notification(final_hp: int, max_hp: int) -> str:
 @prompt_builder
 def build_target_stats_lines(
     target_stats: Dict[str, CharacterStats],
-    show_defense: bool = False,
+    # show_defense: bool = False,
 ) -> str:
     """构建目标信息段落：名称、HP，可选防御。"""
     if not target_stats:
         return "- 无目标"
+
+    # 构建每个目标的状态行，包括名称、HP 和防御。
     target_line_parts = []
     for name, stats in target_stats.items():
-        if show_defense:
-            line = f"- {name}（HP {stats.hp}/{stats.max_hp} | 防御:{stats.defense}）"
-        else:
-            line = f"- {name}（HP {stats.hp}/{stats.max_hp}）"
+        line = f"- {name}（HP {stats.hp}/{stats.max_hp} | 防御:{stats.defense}）"
         target_line_parts.append(line)
+
+    # 将所有目标的状态行拼接为最终段落。
     return "\n".join(target_line_parts)
 
 
@@ -171,12 +170,12 @@ CALC_RULES_SECTION: Final[
     str
 ] = """## 计算规则
 
-**卡牌出牌**：单段有效伤害 = max(1, damage − 目标防御)（最低保底 1），共 hit_count 段；出牌者 HP 已为 0 则跳过结算。
-**防御**：角色防御 = 基础防御 + 装备加成 + 手牌持有卡牌的 block 之和；本提示中展示的「防御/目标防御」均已按此聚合，直接使用展示值。
+**卡牌出牌**：单段有效伤害 = max(0, damage − 目标防御)，共 hit_count 段；出牌者 HP 为 0 则跳过结算。
+**防御**：本提示中展示的「防御/目标防御」已聚合完成，直接使用展示值。
 **装备穿戴**：stat_bonuses 已由系统确定性写入，无需重复计算。
 **消耗品使用**：依物品描述中明确写明的数值计算；描述模糊时给出合理推断并体现在 narrative 中。
-**即时词缀**：若本次结算列出即时词缀，以上方结算规则为基础逻辑，结合即时词缀共同考量，务必保证即时词缀被实际执行、不被遗漏；两者如何结合由你发挥判断力自行泛化，不引入词缀未提及的新机制。
-**叙事泛化**：本次行动的「描述/叙事」是生成 narrative 与 stage_description 的故事素材——把它与当前场景环境、状态效果、即时词缀结合起来自由泛化（动作、物件、意象、氛围均可），但不得改变上方各结算规则确定的数值结果。
+**即时词缀**：若列出即时词缀，须确保其被实际执行；可与结算规则泛化结合，但不引入词缀未提及的新机制。
+**叙事泛化**：将「描述/叙事」作为 narrative 与 stage_description 的素材，结合场景环境、状态效果、即时词缀自由泛化，但不得改变以上结算规则确定的数值结果。
 
 目标 HP = max(0, min(计算后 HP, 最大 HP))"""
 
@@ -234,7 +233,7 @@ def build_combat_arbitration_prompt(
     completed_actors: List[str] | None = None,
     current_actor: str | None = None,
 ) -> str:
-    target_lines = build_target_stats_lines(target_stats, show_defense=True)
+    target_lines = build_target_stats_lines(target_stats)
     target_full_stats_lines = build_target_full_stats_lines(target_stats)
     round_action_info = build_round_action_info_lines(
         action_order, completed_actors, current_actor
@@ -313,7 +312,7 @@ def build_condensed_combat_arbitration_prompt(
     current_actor: str | None = None,
 ) -> str:
     """精简版仲裁提示词，省略静态规则与格式说明，用于写入对话历史减少重复 token。"""
-    target_lines = build_target_stats_lines(target_stats, show_defense=True)
+    target_lines = build_target_stats_lines(target_stats)
     target_full_stats_lines = build_target_full_stats_lines(target_stats)
     round_action_info = build_round_action_info_lines(
         action_order, completed_actors, current_actor

@@ -84,24 +84,6 @@ def build_target_stats_lines(
 
 
 @prompt_builder
-def build_target_full_stats_lines(
-    target_stats: Dict[str, CharacterStats],
-) -> str:
-    """构建目标完整有效属性段落（卡牌仲裁专用）。
-
-    数据来源必须为 compute_effective_stats 的聚合结果（即 collect_target_character_stats
-    的返回值），不使用 CharacterStatsComponent.stats 原始值。
-    """
-    if not target_stats:
-        return "- 无目标"
-    return "\n".join(
-        f"- {name}（HP {stats.hp}/{stats.max_hp} | ATK {stats.attack} | "
-        f"DEF {stats.defense}）"
-        for name, stats in target_stats.items()
-    )
-
-
-@prompt_builder
 def build_round_action_info_lines(
     action_order: List[str] | None,
     completed_actors: List[str] | None,
@@ -182,6 +164,13 @@ CALC_RULES_SECTION: Final[
 目标 HP = max(0, min(计算后 HP, 最大 HP))"""
 
 
+ON_HIT_AFFIX_RULES: Final[
+    str
+] = """## 受击词缀
+
+get_entity_stats 返回的「受击词缀」仅在**该实体是本次出牌的目标**时触发；出牌者自身的受击词缀不触发（除非出牌者也同时是目标）。依词缀描述结算（如 [反伤] 对出牌者造成伤害），不引入词缀未提及的新机制。"""
+
+
 #######################################################################################################################################
 # SPREAD 专属 prompt 片段（卡牌仲裁用）
 #######################################################################################################################################
@@ -222,135 +211,18 @@ def build_spread_sections(
 
 
 @prompt_builder
-def build_combat_arbitration_prompt(
-    actor_name: str,
-    actor_stats: CharacterStats,
-    card: Card,
-    targets: List[str],
-    target_stats: Dict[str, CharacterStats],
-    current_round_number: int,
-    current_stage_description: str,
-    gear_item: GearItem | None = None,
-    action_order: List[str] | None = None,
-    completed_actors: List[str] | None = None,
-    current_actor: str | None = None,
-) -> str:
-    target_lines = build_target_stats_lines(target_stats)
-    target_full_stats_lines = build_target_full_stats_lines(target_stats)
-    round_action_info = build_round_action_info_lines(
-        action_order, completed_actors, current_actor
+def build_card_data_lines(card: Card) -> str:
+    """输出一张卡参与仲裁的全部数据字段（出牌侧：含即时词缀，排除系统管理字段）。"""
+    on_play = "、".join(card.on_play_affixes) if card.on_play_affixes else "无"
+    return (
+        f"- 卡牌：{card.name}\n"
+        f"- 叙事（description）：{card.description}\n"
+        f"- cost：{card.cost}\n"
+        f"- damage：{card.damage}（单次伤害）\n"
+        f"- hit_count：{card.hit_count}（攻击次数）\n"
+        f"- block：{card.block}\n"
+        f"- 即时词缀：{on_play}"
     )
-    spread = build_spread_sections(card, targets)
-
-    return f"""# 第 {current_round_number} 回合：战斗结算（以 JSON 格式返回）
-
-## 出牌者
-
-{actor_name}（HP {actor_stats.hp}/{actor_stats.max_hp} | 防御:{actor_stats.defense}）
-
-## 出牌
-
-- 卡牌：{card.name}
-- 叙事（description）：{card.description}
-- damage：{card.damage}（单次伤害）
-- hit_count：{card.hit_count}（攻击次数）
-- self_target：{card.self_target}（是否锁定自身）
-{spread.hit_assignment}{build_instant_affix_section("本卡即时词缀", card.on_play_affixes)}{build_gear_play_section(gear_item)}
-
-## 目标
-
-{target_lines}
-
-## 目标有效属性（完整）
-
-{target_full_stats_lines}
-
-## 当前场景环境
-
-{current_stage_description}
-
-## 回合行动信息（背景信息，不改变结算规则）
-
-{round_action_info}
-
-{CALC_RULES_SECTION}
-
-## 输出格式
-
-```json
-{{
-  "combat_log": "字符串",
-  "final_stats": {{}},
-  "narrative": "战斗演出",
-  "stage_description": "场景环境快照"
-}}
-```
-
-### combat_log（简名 = 全名最后一段）
-
-正常：`[出牌者简名|卡牌→目标:damage Xx击_count次,伤害Z] HP:目标简名 旧→新`
-多段示例：`[英雄|回旋镖→石缝蜥:3x3次,伤害7] HP:石缝蜥 15→8`{spread.log_example}
-阵亡跳过：`[出牌者简名|已阵亡，卡牌无法执行]`
-
-{FINAL_STATS_DESCRIPTION}
-
-{NARRATIVE_DESCRIPTION}
-
-{STAGE_DESCRIPTION_DESCRIPTION}"""
-
-
-@prompt_builder
-def build_condensed_combat_arbitration_prompt(
-    actor_name: str,
-    actor_stats: CharacterStats,
-    card: Card,
-    targets: List[str],
-    target_stats: Dict[str, CharacterStats],
-    current_round_number: int,
-    current_stage_description: str,
-    gear_item: GearItem | None = None,
-    action_order: List[str] | None = None,
-    completed_actors: List[str] | None = None,
-    current_actor: str | None = None,
-) -> str:
-    """精简版仲裁提示词，省略静态规则与格式说明，用于写入对话历史减少重复 token。"""
-    target_lines = build_target_stats_lines(target_stats)
-    target_full_stats_lines = build_target_full_stats_lines(target_stats)
-    round_action_info = build_round_action_info_lines(
-        action_order, completed_actors, current_actor
-    )
-    spread = build_spread_sections(card, targets)
-
-    return f"""# 第 {current_round_number} 回合：战斗结算（以 JSON 格式返回）
-
-## 出牌者
-
-{actor_name}（HP {actor_stats.hp}/{actor_stats.max_hp} | 防御:{actor_stats.defense}）
-
-## 出牌
-
-- 卡牌：{card.name}
-- 叙事（description）：{card.description}
-- damage：{card.damage}（单次伤害）
-- hit_count：{card.hit_count}（攻击次数）
-- self_target：{card.self_target}（是否锁定自身）
-{spread.hit_assignment}{build_instant_affix_section("本卡即时词缀", card.on_play_affixes)}{build_gear_play_section(gear_item)}
-
-## 目标
-
-{target_lines}
-
-## 目标有效属性（完整）
-
-{target_full_stats_lines}
-
-## 当前场景环境
-
-{current_stage_description}
-
-## 回合行动信息（背景信息，不改变结算规则）
-
-{round_action_info}"""
 
 
 @prompt_builder
@@ -380,12 +252,8 @@ def build_combat_arbitration_tool_prompt(
 
 ## 出牌
 
-- 卡牌：{card.name}
-- 叙事（description）：{card.description}
-- damage：{card.damage}（单次伤害）
-- hit_count：{card.hit_count}（攻击次数）
-- self_target：{card.self_target}（是否锁定自身）
-{spread.hit_assignment}{build_instant_affix_section("本卡即时词缀", card.on_play_affixes)}{build_gear_play_section(gear_item)}
+{build_card_data_lines(card)}
+{spread.hit_assignment}{build_gear_play_section(gear_item)}
 
 ## 目标
 
@@ -401,9 +269,11 @@ def build_combat_arbitration_tool_prompt(
 
 {CALC_RULES_SECTION}
 
+{ON_HIT_AFFIX_RULES}
+
 ## 工具使用流程
 
-1. 调用 get_entity_stats 读取「出牌者」与所有「目标」的当前属性（可在同一次回复中并发调用多个）。
+1. 调用 get_entity_stats 读取「出牌者」与所有「目标」的当前属性与受击词缀（可在同一次回复中并发调用多个）。
 2. 依据「计算规则」结算，得出每个受影响角色的最终 HP。
 3. 对每个受影响角色（含出牌者与所有目标）调用 set_entity_hp 写入最终 HP（可在同一次回复中并发调用多个）。
 4. 调用 submit_arbitration 提交最终结果，结束本次仲裁。
@@ -449,12 +319,8 @@ def build_condensed_combat_arbitration_tool_prompt(
 
 ## 出牌
 
-- 卡牌：{card.name}
-- 叙事（description）：{card.description}
-- damage：{card.damage}（单次伤害）
-- hit_count：{card.hit_count}（攻击次数）
-- self_target：{card.self_target}（是否锁定自身）
-{spread.hit_assignment}{build_instant_affix_section("本卡即时词缀", card.on_play_affixes)}{build_gear_play_section(gear_item)}
+{build_card_data_lines(card)}
+{spread.hit_assignment}{build_gear_play_section(gear_item)}
 
 ## 目标
 

@@ -2,7 +2,9 @@
 
 from typing import List, final
 from uuid import uuid4
+
 from pydantic import BaseModel, Field
+
 from .target_type import TargetType
 
 
@@ -16,6 +18,9 @@ class Card(BaseModel):
     on_play_affixes: List[str] = (
         []
     )  # 即时词缀列表；格式"[名称]:触发倾向描述"（如"[穿透]:本次伤害无视目标防御"）；参与本卡本次出牌仲裁，由仲裁 LLM 直接套用；无即时效果时输出 []
+    on_hit_affixes: List[str] = (
+        []
+    )  # 受击词缀列表；格式"[名称]:触发倾向描述"（如"[反伤]:受到攻击时对出牌者造成2点伤害"）；持有在手牌期间生效，当持有者被本次出牌命中时触发；无受击效果时输出 []
     playable: bool = True  # 是否可出牌；False 时系统阻止出牌操作
     exhaust: bool = (
         False  # 是否为消耗牌；True 时出牌后永久归入 ExhaustPile，不进入 DiscardPile 循环

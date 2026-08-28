@@ -6,6 +6,7 @@
 from typing import Dict, Final, List
 
 from ai_rpg.models import (
+    RPG_SYSTEM_RULES,
     Actor,
     ActorType,
     Blueprint,
@@ -17,9 +18,6 @@ from ai_rpg.models import (
     ConsumableWorkshopComponent,
     CostumeItem,
     CostumeWorkshopComponent,
-    create_actor,
-    create_stage,
-    create_world,
     Dungeon,
     DungeonDirectorComponent,
     DungeonGenerationComponent,
@@ -28,14 +26,15 @@ from ai_rpg.models import (
     GearWorkshopComponent,
     MaterialItem,
     PlayerActionAuditComponent,
-    RPG_SYSTEM_RULES,
     Stage,
     StageType,
     TargetType,
     World,
     WorldDirectorComponent,
+    create_actor,
+    create_stage,
+    create_world,
 )
-
 
 # ---------------------------------------------------------------------------
 # CAMPAIGN_SETTING 编写原则
@@ -220,6 +219,26 @@ def _make_armor_piercing_card() -> Card:
     )
 
 
+def _make_thorns_card() -> Card:
+    """创建带【反伤】受击词缀的卡牌（demo：持有期间，被攻击时对出牌者造成伤害，数值取 damage）。"""
+    return Card(
+        name="纸刺",
+        description="贴身缠绕的纸刺，持有期间在被攻击时反噬对方。",
+        on_play_affixes=[],
+        on_hit_affixes=["[反伤]:受到攻击时，对出牌者造成伤害"],
+        playable=True,
+        exhaust=False,
+        retain=False,
+        ethereal=False,
+        cost=1,
+        damage=2,
+        hit_count=1,
+        block=0,
+        target_type=TargetType.SINGLE,
+        self_target=True,
+    )
+
+
 ########################################################################################################################
 def create_actor_paper_doll() -> Actor:
     """创建纸人怪物实例。"""
@@ -241,6 +260,9 @@ def create_actor_paper_doll() -> Actor:
             # 2 张基础防御
             _make_defense_card(),
             _make_defense_card(),
+            # 2 张带【反伤】受击词缀的卡牌（demo：持有期间，被攻击时反噬出牌者）
+            _make_thorns_card(),
+            _make_thorns_card(),
         ],
     )
 

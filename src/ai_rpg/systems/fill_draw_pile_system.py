@@ -6,6 +6,9 @@ from typing import Dict, Final, List, final, override
 from loguru import logger
 
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
+from ..game.dbg_combat_processor import (
+    compute_character_stats,
+)
 from ..game.dbg_game import DBGGame
 from ..models import (
     ActorComponent,
@@ -14,9 +17,6 @@ from ..models import (
     DeckComponent,
     DrawPileComponent,
     FillDrawPileAction,
-)
-from ..game.dbg_combat_processor import (
-    compute_character_stats,
 )
 
 

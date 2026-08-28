@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 from ..deepseek import ToolDefinition, ToolFunction, agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_combat_processor import (
+    collect_hand_on_hit_cards,
     compute_character_stats,
     set_character_hp,
 )
@@ -37,7 +38,7 @@ from .arbitration_prompt_builders import (
 GET_ENTITY_STATS_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="get_entity_stats",
-        description="读取指定战斗角色的最终有效属性（HP/最大HP/攻击/防御）。用于获取发起者与目标当前状态。",
+        description="读取指定战斗角色的最终有效属性（HP/最大HP/攻击/防御）与其手牌中带受击词缀的卡牌（含这些卡牌的 damage/hit_count/block 等数据）。用于获取发起者与目标当前状态。",
         parameters={
             "type": "object",
             "properties": {
@@ -113,14 +114,24 @@ class _ArbitrationContext(BaseModel):
 
 
 def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
-    """处理 get_entity_stats 工具调用。"""
+    """处理 get_entity_stats 工具调用：返回 stats + 参与受击仲裁的手牌卡牌数据。"""
     entity = game.get_actor_entity(entity_name)
     if entity is None:
         return f"错误：找不到战斗角色 {entity_name}"
     stats = compute_character_stats(entity)
+    hit_cards = collect_hand_on_hit_cards(entity)
+    if hit_cards:
+        cards_str = "；".join(
+            f"{c.name}(description={c.description}, cost={c.cost}, damage={c.damage}, "
+            f"hit_count={c.hit_count}, block={c.block}, 受击词缀={c.on_hit_affixes})"
+            for c in hit_cards
+        )
+    else:
+        cards_str = "无"
     return (
         f"{entity_name}: HP {stats.hp}/{stats.max_hp} | "
-        f"ATK {stats.attack} | DEF {stats.defense}"
+        f"ATK {stats.attack} | DEF {stats.defense} | "
+        f"受击卡牌: {cards_str}"
     )
 
 

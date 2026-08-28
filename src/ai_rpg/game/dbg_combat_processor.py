@@ -2,24 +2,27 @@
 
 import random
 from typing import Dict, List, Optional, Sequence, Set, Tuple
+
 from loguru import logger
+
 from ..entitas import Entity, Matcher
 from ..models import (
     ActorComponent,
+    Card,
     CharacterStats,
     CharacterStatsComponent,
     DeathComponent,
-    EquippedGearComponent,
-    Round,
-    RoundStatsComponent,
-    PartyMemberComponent,
-    MonsterComponent,
-    TargetType,
-    InventoryComponent,
-    compute_effective_stats,
-    HandComponent,
     DiscardPileComponent,
     DrawPileComponent,
+    EquippedGearComponent,
+    HandComponent,
+    InventoryComponent,
+    MonsterComponent,
+    PartyMemberComponent,
+    Round,
+    RoundStatsComponent,
+    TargetType,
+    compute_effective_stats,
 )
 from .dbg_game import DBGGame
 
@@ -42,6 +45,15 @@ def compute_character_stats(entity: Entity) -> CharacterStats:
         ),
         entity.get(HandComponent) if entity.has(HandComponent) else None,
     )
+
+
+#################################################################################################################################################
+def collect_hand_on_hit_cards(entity: Entity) -> List[Card]:
+    """收集角色手牌中所有带受击词缀的卡牌（持有期间参与受击仲裁）。"""
+    hand = entity.get(HandComponent) if entity.has(HandComponent) else None
+    if hand is None:
+        return []
+    return [card for card in hand.cards if card.on_hit_affixes]
 
 
 #################################################################################################################################################

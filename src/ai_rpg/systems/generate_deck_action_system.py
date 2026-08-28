@@ -42,6 +42,7 @@ class DeckCardEntry(BaseModel):
     playable: bool = True
     exhaust: bool = False
     retain: bool = False
+    ethereal: bool = False
     cost: int = 1
     damage: int
     hit_count: int = 1
@@ -122,6 +123,7 @@ def build_deck_prompt(
       "playable": true,
       "exhaust": false,
       "retain": false,
+      "ethereal": false,
       "cost": 1,
       "damage": 0,
       "hit_count": 1,
@@ -305,6 +307,7 @@ class GenerateDeckActionSystem(ReactiveProcessor):
                     playable=entry.playable,
                     exhaust=entry.exhaust,
                     retain=entry.retain,
+                    ethereal=entry.ethereal,
                     cost=entry.cost,
                     damage=entry.damage,
                     hit_count=entry.hit_count,

@@ -34,6 +34,7 @@ def create_dungeon_combat_room_pipeline(
     )
 
     from ..systems.exhaust_cards_action_system import ExhaustCardsActionSystem
+    from ..systems.exhaust_ethereal_cards_system import ExhaustEtherealCardsSystem
     from ..systems.move_to_discard_pile_system import MoveToDiscardPileSystem
     from ..systems.pass_turn_action_system import PassTurnActionSystem
     from ..systems.retreat_action_system import RetreatActionSystem
@@ -111,6 +112,7 @@ def create_dungeon_combat_room_pipeline(
     processors.add(MoveToDiscardPileSystem(dbg_game))
     processors.add(ExhaustCardsActionSystem(dbg_game))
     processors.add(PassTurnActionSystem(dbg_game))
+    processors.add(ExhaustEtherealCardsSystem(dbg_game))
     processors.add(RetreatActionSystem(dbg_game))
     processors.add(PlayCardsArbitrationSystem(dbg_game))
     processors.add(UseConsumableItemArbitrationSystem(dbg_game))

@@ -87,6 +87,8 @@ def render_card(card: Card) -> str:
         flags.append("[bold orange1]消耗牌[/]")
     if card.retain:
         flags.append("[bold cyan]保留[/]")
+    if card.ethereal:
+        flags.append("[bold magenta]虚无[/]")
     flag_mark = "  " + " ".join(flags) if flags else ""
 
     target_label = (

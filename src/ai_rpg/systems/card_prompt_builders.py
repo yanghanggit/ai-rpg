@@ -17,6 +17,7 @@ BUILD_CARD_FIELD_DESCRIPTION: Final[
 | playable | 是否可出牌；默认 true |
 | exhaust | 出牌后是否永久消耗（本场战斗不再进入抽牌循环）；默认 false |
 | retain | 是否保留在手牌中；true 时回合末不进入弃牌堆，跨回合留在手牌（无手牌上限）；默认 false |
+| ethereal | 虚无词缀；true 时 pass turn 若仍在手牌中则自动消耗（移入 ExhaustPile）；默认 false |
 | cost | 出牌费用，消耗行动者当前 energy 点数；默认 1 |
 | damage | 单次命中造成的伤害（以角色攻击力为基数计算；无伤害取 0） |
 | hit_count | 攻击次数（默认 1；多段时每段独立作用） |

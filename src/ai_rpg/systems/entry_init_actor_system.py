@@ -5,7 +5,7 @@ from typing import Final, List, Set, final, override
 
 from loguru import logger
 
-from ..entitas import Entity, ExecuteProcessor, Matcher
+from ..entitas import Entity, ExecuteProcessor
 from ..game.dbg_combat_processor import (
     compute_character_stats,
     get_alive_actors_in_stage,
@@ -14,8 +14,6 @@ from ..game.dbg_game import DBGGame
 from ..models import (
     AppearanceComponent,
     CharacterStats,
-    DeckComponent,
-    GenerateDeckAction,
     MonsterComponent,
     PartyMemberComponent,
     StageDescriptionComponent,
@@ -125,7 +123,7 @@ class EntryInitActorSystem(ExecuteProcessor):
         )
 
         # 为远征队成员添加 GenerateDeckAction，触发初始牌库生成（怪物牌库在各自战斗房间生成）
-        self._add_generate_deck_actions()
+        # self._add_generate_deck_actions()
 
         # 状态守护：标记入口房间已完成初始化，避免重复触发
         entry_room.initialized = True
@@ -217,27 +215,27 @@ class EntryInitActorSystem(ExecuteProcessor):
             )
 
     ###################################################################################################################################################################
-    def _add_generate_deck_actions(self) -> None:
-        """为所有远征队成员添加 GenerateDeckAction（每次进本追加新牌，牌库累积增长）。"""
-        count = 0
+    # def _add_generate_deck_actions(self) -> None:
+    #     """为所有远征队成员添加 GenerateDeckAction（每次进本追加新牌，牌库累积增长）。"""
+    #     count = 0
 
-        party_entities = self._game.get_group(
-            Matcher(all_of=[PartyMemberComponent])
-        ).entities.copy()
-        for entity in party_entities:
-            assert entity.has(
-                PartyMemberComponent
-            ), f"角色 {entity.name} 缺少 PartyMemberComponent，不应被入口初始化选中！"
+    #     party_entities = self._game.get_group(
+    #         Matcher(all_of=[PartyMemberComponent])
+    #     ).entities.copy()
+    #     for entity in party_entities:
+    #         assert entity.has(
+    #             PartyMemberComponent
+    #         ), f"角色 {entity.name} 缺少 PartyMemberComponent，不应被入口初始化选中！"
 
-            deck_comp = entity.get(DeckComponent)
-            assert (
-                deck_comp is not None
-            ), f"远征队成员 {entity.name} 缺少 DeckComponent！"
+    #         deck_comp = entity.get(DeckComponent)
+    #         assert (
+    #             deck_comp is not None
+    #         ), f"远征队成员 {entity.name} 缺少 DeckComponent！"
 
-            entity.replace(GenerateDeckAction, entity.name)
-            logger.debug(f"[{entity.name}] 已添加 GenerateDeckAction（远征队）")
-            count += 1
+    #         entity.replace(GenerateDeckAction, entity.name)
+    #         logger.debug(f"[{entity.name}] 已添加 GenerateDeckAction（远征队）")
+    #         count += 1
 
-        logger.info(
-            f"[EntryInitActorSystem] 完成，已为 {count} 个远征队成员添加 GenerateDeckAction"
-        )
+    #     logger.info(
+    #         f"[EntryInitActorSystem] 完成，已为 {count} 个远征队成员添加 GenerateDeckAction"
+    #     )

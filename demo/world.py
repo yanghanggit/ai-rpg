@@ -182,6 +182,25 @@ def _make_retain_card() -> Card:
     )
 
 
+def _make_ethereal_card() -> Card:
+    """创建带 ethereal（虚无）词缀的攻击卡牌（demo：pass turn 时若仍在手牌则自动消耗）。"""
+    return Card(
+        name="纸刃·虚",
+        description="对单个敌人造成直接伤害。若未及时打出，纸刃将自行燃尽消散。",
+        on_play_affixes=[],
+        playable=True,
+        exhaust=False,
+        retain=False,
+        ethereal=True,
+        cost=1,
+        damage=2,
+        hit_count=1,
+        block=0,
+        target_type=TargetType.SINGLE,
+        self_target=False,
+    )
+
+
 ########################################################################################################################
 def create_actor_paper_doll() -> Actor:
     """创建纸人怪物实例。"""
@@ -305,6 +324,8 @@ def create_wuming() -> Actor:
             _make_defense_card(),
             # 1 张带 retain 的防御牌（demo：回合末保留在手牌中，不进入弃牌堆）
             _make_retain_card(),
+            # 1 张带 ethereal（虚无）的攻击牌（demo：pass turn 时若仍在手牌则自动消耗）
+            _make_ethereal_card(),
         ],
     )
 

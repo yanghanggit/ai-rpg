@@ -12,7 +12,6 @@ from src.ai_rpg.models import (
     AppearanceComponent,
     CharacterStatsComponent,
     DeckComponent,
-    GenerateDeckAction,
     MonsterComponent,
     PartyMemberComponent,
 )
@@ -159,20 +158,20 @@ def test_inject_entry_scene_environment_skips_already_injected_actor(
 # ---------------------------------------------------------------------------
 
 
-def test_add_generate_deck_actions_adds_action_to_party_only(
-    context: Context, mock_game: MagicMock, system: EntryInitActorSystem
-) -> None:
-    ally = _make_actor(context, "勇者", is_ally=True)
-    monster = _make_actor(context, "哥布林", is_monster=True)
+# def test_add_generate_deck_actions_adds_action_to_party_only(
+#     context: Context, mock_game: MagicMock, system: EntryInitActorSystem
+# ) -> None:
+#     ally = _make_actor(context, "勇者", is_ally=True)
+#     monster = _make_actor(context, "哥布林", is_monster=True)
 
-    party_group = MagicMock()
-    party_group.entities = {ally}
+#     party_group = MagicMock()
+#     party_group.entities = {ally}
 
-    mock_game.get_group.return_value = party_group
+#     mock_game.get_group.return_value = party_group
 
-    system._add_generate_deck_actions()
+#     system._add_generate_deck_actions()
 
-    # 只为远征队添加；怪物牌库改由战斗管道生成
-    assert ally.has(GenerateDeckAction)
-    assert not monster.has(GenerateDeckAction)
-    mock_game.get_group.assert_called_once()
+#     # 只为远征队添加；怪物牌库改由战斗管道生成
+#     assert ally.has(GenerateDeckAction)
+#     assert not monster.has(GenerateDeckAction)
+#     mock_game.get_group.assert_called_once()

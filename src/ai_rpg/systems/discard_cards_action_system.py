@@ -1,22 +1,24 @@
-"""出牌后路由系统模块。"""
+"""弃牌处理系统模块。"""
 
-from typing import Final, final, Dict, List
+from typing import Dict, Final, List, final
+
 from loguru import logger
 from overrides import override
+
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
+from ..game.dbg_game import DBGGame
 from ..models import (
     ActorComponent,
     DiscardPileComponent,
     HandComponent,
     PlayCardsAction,
 )
-from ..game.dbg_game import DBGGame
 
 
 #######################################################################################################################################
 @final
-class MoveToDiscardPileSystem(ReactiveProcessor):
-    """出牌后路由系统。"""
+class DiscardCardsActionSystem(ReactiveProcessor):
+    """弃牌处理系统。"""
 
     def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
@@ -42,7 +44,7 @@ class MoveToDiscardPileSystem(ReactiveProcessor):
     async def react(self, entities: List[Entity]) -> None:
         """将出牌从 Hand 移入 DiscardPile。"""
         if not self._game.current_dungeon_combat_room.combat.is_ongoing:
-            logger.debug("MoveToDiscardPileSystem: 战斗未进行中，跳过出牌路由")
+            logger.debug("DiscardCardsActionSystem: 战斗未进行中，跳过弃牌处理")
             return
 
         for entity in entities:

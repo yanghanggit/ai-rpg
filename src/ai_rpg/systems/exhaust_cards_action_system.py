@@ -61,7 +61,7 @@ class ExhaustCardsActionSystem(ReactiveProcessor):
             discard_pile = entity.get(DiscardPileComponent)
             exhaust_pile = entity.get(ExhaustPileComponent)
 
-            # MoveToDiscardPileSystem 先执行，已将还原后的原始牌（与 played_card 同 uuid）写入 DiscardPile
+            # DiscardCardsActionSystem 先执行，已将还原后的原始牌（与 played_card 同 uuid）写入 DiscardPile
             # 通过 uuid 定位（played_card 本身是调整副本，不在 DiscardPile 中）
             card_to_exhaust = next(
                 (c for c in discard_pile.cards if c.uuid == played_card.uuid),
@@ -78,7 +78,7 @@ class ExhaustCardsActionSystem(ReactiveProcessor):
                     f"（ExhaustPile 累计 {len(exhaust_pile.cards)} 张）"
                 )
             else:
-                # MoveToDiscardPileSystem 对所有出牌必定写入 DiscardPile，此分支为防御性日志
+                # DiscardCardsActionSystem 对所有出牌必定写入 DiscardPile，此分支为防御性日志
                 logger.warning(
                     f"  [{entity.name}] 消耗牌 [{played_card.name}] 未在 DiscardPile 中找到对应实例，跳过移入 ExhaustPile"
                 )

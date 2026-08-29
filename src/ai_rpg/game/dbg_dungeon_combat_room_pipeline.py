@@ -35,7 +35,7 @@ def create_dungeon_combat_room_pipeline(
 
     from ..systems.exhaust_cards_action_system import ExhaustCardsActionSystem
     from ..systems.exhaust_ethereal_cards_system import ExhaustEtherealCardsSystem
-    from ..systems.move_to_discard_pile_system import MoveToDiscardPileSystem
+    from ..systems.discard_cards_action_system import DiscardCardsActionSystem
     from ..systems.pass_turn_action_system import PassTurnActionSystem
     from ..systems.retreat_action_system import RetreatActionSystem
     from ..systems.action_cleanup_system import ActionCleanupSystem
@@ -106,20 +106,30 @@ def create_dungeon_combat_room_pipeline(
     # )  # 纯调试系统：在怪物出牌决策前探测其记忆同步是否正确，问题/回答不写入 LLM 记忆。
     processors.add(MonsterPrePlaySystem(dbg_game))
     processors.add(PartyPrePlaySystem(dbg_game))
+
+    # 战斗动作仲裁系统（处理出牌、使用消耗品、装备装备等动作）
     processors.add(PlayCardsActionSystem(dbg_game))
     processors.add(UseConsumableItemActionSystem(dbg_game))
     processors.add(EquipGearItemActionSystem(dbg_game))
-    processors.add(MoveToDiscardPileSystem(dbg_game))
+
+    # 战斗动作后处理系统（如将出牌移至弃牌堆、消耗牌等）
+    processors.add(DiscardCardsActionSystem(dbg_game))
     processors.add(ExhaustCardsActionSystem(dbg_game))
     processors.add(PassTurnActionSystem(dbg_game))
     processors.add(ExhaustEtherealCardsSystem(dbg_game))
+
+    # 撤退动作系统
     processors.add(RetreatActionSystem(dbg_game))
+
+    # 3个仲裁系统：出牌、使用消耗品、装备装备
     processors.add(PlayCardsArbitrationSystem(dbg_game))
     processors.add(UseConsumableItemArbitrationSystem(dbg_game))
     processors.add(EquipGearItemArbitrationSystem(dbg_game))
+
+    # 仲裁之后可能触发的系统（如死亡判定）
     processors.add(DeathSystem(dbg_game))
 
-    # 仂裁结算后，由 stage agent（地牢主视角）复用已更新的对话历史，判断是否需要向场内角色塞入场景卡牌
+    # 仲裁结算后，由 stage agent（地牢主视角）复用已更新的对话历史，判断是否需要向场内角色塞入场景卡牌
     processors.add(InjectCardsActionSystem(dbg_game))
 
     # 回合完成判定系统

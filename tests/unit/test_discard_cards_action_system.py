@@ -1,4 +1,4 @@
-"""MoveToDiscardPileSystem 单元测试。"""
+"""DiscardCardsActionSystem 单元测试。"""
 
 from unittest.mock import MagicMock
 
@@ -9,13 +9,13 @@ from src.ai_rpg.entitas.entity import Entity
 from src.ai_rpg.game.dbg_game import DBGGame
 from src.ai_rpg.models import (
     ActorComponent,
+    Card,
     DiscardPileComponent,
     HandComponent,
     PlayCardsAction,
+    TargetType,
 )
-from src.ai_rpg.models import Card, TargetType
-from src.ai_rpg.systems.move_to_discard_pile_system import MoveToDiscardPileSystem
-
+from src.ai_rpg.systems.discard_cards_action_system import DiscardCardsActionSystem
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -63,8 +63,8 @@ def mock_game() -> MagicMock:
 
 
 @pytest.fixture()
-def system(mock_game: MagicMock) -> MoveToDiscardPileSystem:
-    return MoveToDiscardPileSystem(mock_game)
+def system(mock_game: MagicMock) -> DiscardCardsActionSystem:
+    return DiscardCardsActionSystem(mock_game)
 
 
 # ---------------------------------------------------------------------------
@@ -72,7 +72,7 @@ def system(mock_game: MagicMock) -> MoveToDiscardPileSystem:
 # ---------------------------------------------------------------------------
 
 
-class TestMoveToDiscardPileSystemSkip:
+class TestDiscardCardsActionSystemSkip:
     """非 ongoing 状态时系统应跳过，不修改任何 pile。"""
 
     @pytest.mark.asyncio
@@ -80,7 +80,7 @@ class TestMoveToDiscardPileSystemSkip:
         self,
         context: Context,
         mock_game: MagicMock,
-        system: MoveToDiscardPileSystem,
+        system: DiscardCardsActionSystem,
     ) -> None:
         mock_game.current_dungeon_combat_room.combat.is_ongoing = False
         entity = _make_entity(context, "英雄")
@@ -94,7 +94,7 @@ class TestMoveToDiscardPileSystemSkip:
         assert len(entity.get(DiscardPileComponent).cards) == 0
 
 
-class TestMoveToDiscardPileSystemOwnCard:
+class TestDiscardCardsActionSystemOwnCard:
     """自有牌（source == entity.name）：应从 Hand 移除并写入 DiscardPile。"""
 
     @pytest.mark.asyncio
@@ -102,7 +102,7 @@ class TestMoveToDiscardPileSystemOwnCard:
         self,
         context: Context,
         mock_game: MagicMock,
-        system: MoveToDiscardPileSystem,
+        system: DiscardCardsActionSystem,
     ) -> None:
         entity = _make_entity(context, "英雄")
         card = _make_card("斩击", source="英雄")
@@ -118,7 +118,7 @@ class TestMoveToDiscardPileSystemOwnCard:
         self,
         context: Context,
         mock_game: MagicMock,
-        system: MoveToDiscardPileSystem,
+        system: DiscardCardsActionSystem,
     ) -> None:
         entity = _make_entity(context, "英雄")
         card = _make_card("斩击", source="英雄")
@@ -130,7 +130,7 @@ class TestMoveToDiscardPileSystemOwnCard:
         assert card in entity.get(DiscardPileComponent).cards
 
 
-class TestMoveToDiscardPileSystemForeignCard:
+class TestDiscardCardsActionSystemForeignCard:
     """外来牌（source != entity.name）：也应写入 DiscardPile（无 source 过滤）。"""
 
     @pytest.mark.asyncio
@@ -138,7 +138,7 @@ class TestMoveToDiscardPileSystemForeignCard:
         self,
         context: Context,
         mock_game: MagicMock,
-        system: MoveToDiscardPileSystem,
+        system: DiscardCardsActionSystem,
     ) -> None:
         entity = _make_entity(context, "英雄")
         foreign_card = _make_card("外来秘术", source="他人")

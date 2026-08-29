@@ -164,7 +164,7 @@ class TestExhaustCardsActionSystemExhaustFalse:
 
 class TestExhaustCardsActionSystemForeignCard:
     """exhaust=True 的外来牌（source != entity.name）：
-    MoveToDiscardPileSystem 将其写入 DiscardPile，ExhaustCardsActionSystem 应将其
+    DiscardCardsActionSystem 将其写入 DiscardPile，ExhaustCardsActionSystem 应将其
     移入 ExhaustPile（战斗结束后由 CombatPileTeardownSystem 统一清理子堆，无需 source 过滤）。"""
 
     @pytest.mark.asyncio
@@ -176,7 +176,7 @@ class TestExhaustCardsActionSystemForeignCard:
     ) -> None:
         entity = _make_entity(context, "英雄")
         foreign_card = _make_card("外来秘术", source="他人", exhaust=True)
-        # MoveToDiscardPileSystem 已无条件将出牌写入 DiscardPile
+        # DiscardCardsActionSystem 已无条件将出牌写入 DiscardPile
         entity.get(DiscardPileComponent).cards.append(foreign_card)
         entity.add(PlayCardsAction, "英雄", foreign_card, [], None)
 

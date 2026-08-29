@@ -308,11 +308,10 @@ class UseConsumableItemAction(Component):
 @register_action_component_type
 @register_component_type
 class EquipGearItemAction(Component):
-    """触发角色在战斗中使用背包内装备，由系统替换目标已装备 GearItem 并由 LLM 仲裁附加效果。"""
+    """触发当前行动者（我方）将团队背包内的装备转化为手牌。"""
 
     name: str
     item: GearItem  # 使用的装备对象（从 InventoryComponent 检索后填入）
-    targets: List[str]  # 装备目标角色名列表（固定为单一友方目标）
 
 
 ############################################################################################################

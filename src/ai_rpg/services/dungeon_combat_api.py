@@ -651,7 +651,6 @@ async def dungeon_combat_equip_gear(
             equip_gear_task.task_id,
             payload.user_name,
             payload.item_name,
-            payload.targets,
             game_server,
         )
     )

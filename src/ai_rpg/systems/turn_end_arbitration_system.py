@@ -377,7 +377,7 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
             ok = await agent_loop(
                 name=pass_turn_entity.name,
                 prompt=full_prompt,
-                messages=list(self._game.get_agent_memory(pass_turn_entity).messages),
+                messages=self._game.get_agent_memory(pass_turn_entity).messages,
                 tools=[
                     GET_ENTITY_STATS_TOOL,
                     SET_ENTITY_HP_TOOL,

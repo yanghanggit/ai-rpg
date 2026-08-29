@@ -1,10 +1,11 @@
 """卡牌与状态效果模型定义"""
 
-from typing import List, final
+from typing import List, Optional, final
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
+from .items import GearItem
 from .target_type import TargetType
 
 
@@ -47,6 +48,9 @@ class Card(BaseModel):
     self_target: bool = False  # 出牌是否锁定自身；True 时目标即出牌者本人，无需 targets
     source: str = ""  # 卡牌来源（生成/注入者名称）；空字符串表示来源未知
     uuid: str = Field(default_factory=lambda: str(uuid4()))  # 全局唯一标识符
+    gear_item: Optional[GearItem] = (
+        None  # 由 GearItem 临时转化而来的卡牌时，存储来源 GearItem；普通卡牌为 None
+    )
 
 
 ###############################################################################################################################################

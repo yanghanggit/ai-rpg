@@ -149,12 +149,10 @@ async def use_consumable_game(
 async def equip_gear_game(
     world: WorldState,
     player_session: PlayerSession,
-    actor: str,
     item: str,
-    targets: List[str],
     save_dir: Path,
 ) -> DBGGame:
-    """让指定角色装备 GearItem 并归档。需战斗进行中且当前回合未完成。"""
+    """将 GearItem 转化为当前行动者（我方）的手牌并归档。需战斗进行中且当前回合未完成。"""
     terminal_game = await restore_game(world, player_session)
 
     if not terminal_game.is_current_room_dungeon_combat:
@@ -170,7 +168,7 @@ async def equip_gear_game(
         logger.error("equip-gear 当前没有未完成的回合可供装备")
         return terminal_game
 
-    success, message = activate_equip_gear(terminal_game, item, list(targets))
+    success, message = activate_equip_gear(terminal_game, item)
     if not success:
         logger.error(f"equip-gear 失败: {message}")
         return terminal_game

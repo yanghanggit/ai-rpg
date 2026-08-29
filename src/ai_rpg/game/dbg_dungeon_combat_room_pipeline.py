@@ -46,9 +46,6 @@ def create_dungeon_combat_room_pipeline(
     from ..systems.use_consumable_item_arbitration_system import (
         UseConsumableItemArbitrationSystem,
     )
-    from ..systems.equip_gear_item_arbitration_system import (
-        EquipGearItemArbitrationSystem,
-    )
     from ..systems.turn_end_arbitration_system import TurnEndArbitrationSystem
     from ..systems.inject_cards_action_system import (
         InjectCardsActionSystem,
@@ -124,10 +121,9 @@ def create_dungeon_combat_room_pipeline(
     processors.add(ExhaustCardsActionSystem(dbg_game))
     processors.add(ExhaustEtherealCardsSystem(dbg_game))
 
-    # 3个仲裁系统：出牌、使用消耗品、装备装备
+    # 仲裁系统：出牌、使用消耗品
     processors.add(PlayCardsArbitrationSystem(dbg_game))
     processors.add(UseConsumableItemArbitrationSystem(dbg_game))
-    processors.add(EquipGearItemArbitrationSystem(dbg_game))
 
     # 回合结束仲裁系统（监视 PassTurnAction，扫全场持有回合结束词缀卡牌的角色并并发仲裁）
     processors.add(TurnEndArbitrationSystem(dbg_game))

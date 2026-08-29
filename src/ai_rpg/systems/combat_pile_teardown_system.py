@@ -8,10 +8,12 @@ from ..entitas import ExecuteProcessor, Matcher
 from ..game.dbg_game import DBGGame
 from ..models import (
     ActorComponent,
+    Card,
     DeckComponent,
     DrawPileComponent,
     DiscardPileComponent,
     ExhaustPileComponent,
+    InventoryComponent,
 )
 
 
@@ -24,6 +26,20 @@ class CombatPileTeardownSystem(ExecuteProcessor):
 
     def __init__(self, game: DBGGame) -> None:
         self._game: Final[DBGGame] = game
+
+    ####################################################################################################################################
+    def _return_gear_from_card(self, card: Card) -> None:
+        """战斗结束时，由 GearItem 临时转化而来的卡牌离场，其装备归还玩家背包。"""
+        gear = card.gear_item
+        if gear is None:
+            return
+
+        player_entity = self._game.get_player_entity()
+        assert player_entity is not None, "玩家实体不存在！"
+        assert player_entity.has(InventoryComponent), "玩家实体缺少 InventoryComponent"
+        player_entity.get(InventoryComponent).items.append(gear)
+        logger.debug(f"CombatPileTeardownSystem: 装备 {gear.name!r} 已归还玩家背包")
+        card.gear_item = None
 
     ####################################################################################################################################
     @override
@@ -58,6 +74,15 @@ class CombatPileTeardownSystem(ExecuteProcessor):
             draw_pile = entity.get(DrawPileComponent)
             discard_pile = entity.get(DiscardPileComponent)
             exhaust_pile = entity.get(ExhaustPileComponent)
+
+            # 战斗结束：由 GearItem 临时转化而来的卡牌离场，其装备归还玩家背包
+            for card in (
+                draw_pile.cards
+                + draw_pile.retained_cards
+                + discard_pile.cards
+                + exhaust_pile.cards
+            ):
+                self._return_gear_from_card(card)
 
             total = (
                 len(draw_pile.cards)

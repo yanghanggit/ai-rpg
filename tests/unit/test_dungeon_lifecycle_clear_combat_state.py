@@ -1,84 +1,52 @@
-"""_clear_combat_state 单元测试：验证战斗结束清理装备组件时，装备物件会被
-归还玩家 InventoryComponent，而不是随组件一起被直接丢弃（移动语义）。"""
+"""CombatPileTeardownSystem 单元测试：验证 GearItem 转化卡牌离场时装备归还玩家背包。"""
 
-from types import SimpleNamespace
+from typing import List
 from unittest.mock import MagicMock
-
-import pytest
 
 from src.ai_rpg.entitas.context import Context
 from src.ai_rpg.entitas.entity import Entity
-from src.ai_rpg.entitas.matcher import Matcher
 from src.ai_rpg.game.dbg_game import DBGGame
-from src.ai_rpg.models import (
-    EquippedGearComponent,
-    InventoryComponent,
-)
+from src.ai_rpg.models import Card, InventoryComponent
 from src.ai_rpg.models.items import GearItem
-from src.ai_rpg.game.dbg_combat_processor import clear_combat_state
+from src.ai_rpg.systems.combat_pile_teardown_system import CombatPileTeardownSystem
 
 
 def _make_gear(name: str) -> GearItem:
     return GearItem(name=name, description="测试装备")
 
 
-def _make_mock_game(
-    context: Context, *, player_entity: Entity, equipped_holders: list[Entity]
-) -> MagicMock:
+def _make_player(context: Context, name: str, items: List[GearItem]) -> Entity:
+    entity = context.create_entity()
+    entity._name = name
+    entity.add(InventoryComponent, name, list(items))
+    return entity
+
+
+def _make_mock_game(player: Entity) -> MagicMock:
     game = MagicMock(spec=DBGGame)
-    game.get_player_entity.return_value = player_entity
-
-    def _get_group(matcher: Matcher) -> SimpleNamespace:
-        component_types = matcher._all or ()
-        if EquippedGearComponent in component_types:
-            return SimpleNamespace(entities=set(equipped_holders))
-        return SimpleNamespace(entities=set())
-
-    game.get_group.side_effect = _get_group
+    game.get_player_entity.return_value = player
     return game
 
 
-class TestClearCombatState:
-    def test_returns_equipped_gear_to_player_inventory(self) -> None:
+class TestReturnGearFromCard:
+    def test_returns_gear_to_player_inventory(self) -> None:
         context = Context()
-
-        player = context.create_entity()
-        player._name = "player"
-        player.add(InventoryComponent, "player", [])
-
+        player = _make_player(context, "player", [])
         gear = _make_gear("装备.测试")
-        holder = context.create_entity()
-        holder._name = "队友A"
-        holder.add(EquippedGearComponent, "队友A", gear)
+        card = Card(name="斩击", description="x", gear_item=gear)
+        system = CombatPileTeardownSystem(_make_mock_game(player))
 
-        game = _make_mock_game(context, player_entity=player, equipped_holders=[holder])
+        system._return_gear_from_card(card)
 
-        clear_combat_state(game)
-
-        assert not holder.has(EquippedGearComponent)
+        assert card.gear_item is None
         assert gear in player.get(InventoryComponent).items
 
-    def test_no_equipped_gear_leaves_inventory_untouched(self) -> None:
+    def test_noop_when_card_has_no_gear(self) -> None:
         context = Context()
+        player = _make_player(context, "player", [])
+        card = Card(name="斩击", description="x")
+        system = CombatPileTeardownSystem(_make_mock_game(player))
 
-        player = context.create_entity()
-        player._name = "player"
-        existing_item = _make_gear("装备.已有")
-        player.add(InventoryComponent, "player", [existing_item])
+        system._return_gear_from_card(card)
 
-        game = _make_mock_game(context, player_entity=player, equipped_holders=[])
-
-        clear_combat_state(game)
-
-        assert player.get(InventoryComponent).items == [existing_item]
-
-    def test_raises_when_player_missing_inventory_component(self) -> None:
-        context = Context()
-
-        player = context.create_entity()
-        player._name = "player"
-
-        game = _make_mock_game(context, player_entity=player, equipped_holders=[])
-
-        with pytest.raises(AssertionError):
-            clear_combat_state(game)
+        assert player.get(InventoryComponent).items == []

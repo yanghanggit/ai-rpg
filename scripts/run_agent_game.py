@@ -533,23 +533,12 @@ def use_consumable(
     help="存档目录路径",
 )
 @click.option(
-    "--actor",
-    required=True,
-    help="装备道具的角色全名（如 角色.某某）",
-)
-@click.option(
     "--item",
     required=True,
-    help="要装备的道具名称（须存在于该角色背包中，类型为 GearItem）",
+    help="要装备的道具名称（须存在于玩家背包中，类型为 GearItem）",
 )
-@click.option(
-    "--targets",
-    multiple=True,
-    default=(),
-    help="目标角色名，可重复使用（如 --targets 盟友.某某）；SINGLE 时指定一个目标，敌我皆可",
-)
-def equip_gear(snapshot: str, actor: str, item: str, targets: Tuple[str, ...]) -> None:
-    """指定角色装备 GearItem 并归档。需战斗进行中。"""
+def equip_gear(snapshot: str, item: str) -> None:
+    """将 GearItem 转化为当前行动者（我方）的手牌并归档。需战斗进行中。"""
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
@@ -570,9 +559,7 @@ def equip_gear(snapshot: str, actor: str, item: str, targets: Tuple[str, ...]) -
     logger.info(f"读取存档：{snapshot_path}")
     logger.info(f"本次存档目录：{_save_dir}")
 
-    asyncio.run(
-        equip_gear_game(world, player_session, actor, item, list(targets), _save_dir)
-    )
+    asyncio.run(equip_gear_game(world, player_session, item, _save_dir))
 
 
 ###############################################################################################################################################

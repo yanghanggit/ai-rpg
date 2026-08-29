@@ -8,8 +8,8 @@ from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import (
     get_alive_party_members_in_stage,
     get_alive_monsters_in_stage,
+    get_current_turn_actor,
     get_energy,
-    require_single_anchor_target,
     resolve_targets,
 )
 from ..models import (
@@ -28,7 +28,6 @@ from ..models import (
     UseConsumableItemAction,
     GearItem,
     ConsumableItem,
-    TargetType,
 )
 from ..entitas import Entity, Matcher
 
@@ -186,22 +185,12 @@ async def activate_play_cards_specified(
             f"能量不足，无法出牌『{card_name}』（需要{selected_card.cost}点，当前剩余{current_energy}点）",
         )
 
-    # 校验目标数量并提取单个锚点目标名（self_target 卡牌无需目标名）。
-    anchor_target_name, anchor_err = require_single_anchor_target(
-        targets,
-        selected_card.target_type.value.upper(),
-        self_target=selected_card.self_target,
-    )
-    if anchor_err:
-        logger.error(f"activate_play_cards_specified: {anchor_err}")
-        return False, anchor_err
-
-    # 解析卡牌的目标，根据卡牌的目标类型和命中次数，结合玩家提供的锚点目标名，解析出实际的目标实体列表。
+    # 解析卡牌的目标，根据卡牌的目标类型和命中次数，结合玩家提供的目标列表，解析出实际的目标实体列表（self_target 卡牌无需目标名）。
     resolved_targets, resolve_err = resolve_targets(
         selected_card.target_type,
         selected_card.hit_count,
         entity,
-        anchor_target_name,
+        targets,
         dbg_game,
         selected_card.self_target,
     )
@@ -389,21 +378,12 @@ def activate_use_consumable(
         logger.error(msg)
         return False, msg
 
-    # 校验目标数量并提取单个锚点目标名。
-    anchor_target_name, anchor_err = require_single_anchor_target(
-        targets,
-        selected_item.target_type.value.upper(),
-    )
-    if anchor_err:
-        logger.error(f"activate_use_consumable: {anchor_err}")
-        return False, anchor_err
-
     # 解析消耗品的目标，根据消耗品的目标类型、数量和玩家实体，结合传入的目标列表，确定最终的目标实体列表。如果解析失败，则返回错误。
     resolved_targets, resolve_err = resolve_targets(
         selected_item.target_type,
         1,
         player_entity,
-        anchor_target_name,
+        targets,
         dbg_game,
         self_target=False,
     )
@@ -431,9 +411,8 @@ def activate_use_consumable(
 def activate_equip_gear(
     dbg_game: DBGGame,
     item_name: str,
-    targets: List[str],
 ) -> Tuple[bool, str]:
-    """使用队伍背包内的指定装备。装备是队伍级别的行为."""
+    """将团队背包内的指定装备转化为当前行动者（我方）的手牌。装备是队伍级行为。"""
 
     # 检查玩家是否在副本场景中，如果不在则无法使用装备。
     if not dbg_game.is_player_in_dungeon_stage:
@@ -466,26 +445,33 @@ def activate_equip_gear(
         logger.error(msg)
         return False, msg
 
-    # 获取当前回合的行动者名称，如果没有行动者，则无法使用装备。
-    current_turn_actor_name = latest_round.current_actor
+    # 装备权：必须是当前行动者，且为我方角色
+    current_turn_actor_name = get_current_turn_actor(dbg_game, latest_round)
     if current_turn_actor_name is None:
         msg = "使用装备失败：当前没有行动角色"
         logger.error(msg)
         return False, msg
 
-    # 获取玩家实体，并确保其具有必要的组件（PartyMemberComponent 和 InventoryComponent），以便使用装备。
-    player_entity = dbg_game.get_player_entity()
-    assert player_entity is not None, "activate_equip_gear: player_entity is None"
-    assert player_entity.has(PartyMemberComponent), "玩家实体缺少 PartyMemberComponent"
-    assert player_entity.has(InventoryComponent), "玩家实体缺少 InventoryComponent"
+    actor_entity = dbg_game.get_entity_by_name(current_turn_actor_name)
+    assert (
+        actor_entity is not None
+    ), f"activate_equip_gear: 无法找到当前行动者 {current_turn_actor_name}"
 
-    # 只有背包持有者本人是当前行动者时，才允许发动装备使用。
-    if current_turn_actor_name != player_entity.name:
-        msg = f"使用装备失败：当前行动角色 {current_turn_actor_name} 不是背包持有者 {player_entity.name}"
+    if not actor_entity.has(PartyMemberComponent):
+        msg = f"使用装备失败：当前行动角色 {current_turn_actor_name} 不是我方角色"
         logger.error(msg)
         return False, msg
 
-    # 从玩家实体中获取背包组件，并尝试在背包中找到指定的装备，如果找不到则返回错误。
+    if not actor_entity.has(HandComponent):
+        msg = f"使用装备失败：当前行动角色 {current_turn_actor_name} 缺少手牌组件（HandComponent）"
+        logger.error(msg)
+        return False, msg
+
+    # 团队背包：装备统一由 player 持有
+    player_entity = dbg_game.get_player_entity()
+    assert player_entity is not None, "activate_equip_gear: player_entity is None"
+    assert player_entity.has(InventoryComponent), "玩家实体缺少 InventoryComponent"
+
     inventory_comp = player_entity.get(InventoryComponent)
     selected_item = next((i for i in inventory_comp.items if i.name == item_name), None)
     if selected_item is None:
@@ -502,53 +488,15 @@ def activate_equip_gear(
         logger.error(msg)
         return False, msg
 
-    # 校验目标数量并提取单个锚点目标名（装备固定为 SINGLE 单目标）。
-    anchor_target_name, anchor_err = require_single_anchor_target(targets, "SINGLE")
-    if anchor_err:
-        logger.error(f"activate_equip_gear: {anchor_err}")
-        return False, anchor_err
-
-    # 装备固定作用于单一目标，先按 SINGLE 规则解析（不限阵营）。
-    resolved_targets, resolve_err = resolve_targets(
-        TargetType.SINGLE,
-        1,
-        player_entity,
-        anchor_target_name,
-        dbg_game,
-        self_target=False,
-    )
-    if resolve_err:
-        logger.error(f"activate_equip_gear: {resolve_err}")
-        return False, resolve_err
-
-    # 检查解析后的目标数量是否符合装备的要求，如果不是单目标装备则返回错误。
-    if len(resolved_targets) != 1:
-        msg = f"装备使用要求单目标，解析结果为 {resolved_targets}"
-        logger.error(msg)
-        return False, msg
-
-    # 获取目标实体，并检查其当前回合剩余能量，如果能量不足则无法为其装备。
-    target_entity = dbg_game.get_entity_by_name(resolved_targets[0])
-    assert (
-        target_entity is not None
-    ), f"activate_equip_gear: 无法找到目标实体 {resolved_targets[0]}"
-
-    # 装备只能作用于友方目标，resolve_targets 不再限制阵营，此处显式校验。
-    if not target_entity.has(PartyMemberComponent):
-        msg = f"装备使用失败：目标 '{target_entity.name}' 不是友方角色，装备只能用于友方目标"
-        logger.error(msg)
-        return False, msg
-
     logger.debug(
-        f"为玩家 {player_entity.name} 激活装备使用，物品: {selected_item.name} 目标: {resolved_targets}"
+        f"为当前行动者 {actor_entity.name} 激活装备使用，物品: {selected_item.name}"
     )
 
-    # 将装备使用动作挂载到玩家实体上，以便在游戏逻辑中处理该动作。
-    player_entity.replace(
+    # 将装备使用动作挂载到当前行动者实体上，以便在游戏逻辑中处理该动作。
+    actor_entity.replace(
         EquipGearItemAction,
-        player_entity.name,
+        actor_entity.name,
         selected_item,
-        resolved_targets,
     )
 
     # 返回成功消息，表示装备使用动作已成功激活。

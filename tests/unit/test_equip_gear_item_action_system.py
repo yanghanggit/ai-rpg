@@ -1,7 +1,7 @@
-"""EquipGearItemActionSystem 单元测试：验证装备的移动语义（背包 → 目标，换装归还）。"""
+"""EquipGearItemActionSystem 单元测试：验证 GearItem 转化为手牌的流程。"""
 
 from typing import List
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -10,9 +10,11 @@ from src.ai_rpg.entitas.entity import Entity
 from src.ai_rpg.game.dbg_game import DBGGame
 from src.ai_rpg.models import (
     AgentEvent,
-    EquippedGearComponent,
-    InventoryComponent,
+    Card,
     EquipGearItemAction,
+    HandComponent,
+    InventoryComponent,
+    PartyMemberComponent,
 )
 from src.ai_rpg.models.items import GearItem
 from src.ai_rpg.systems.equip_gear_item_action_system import EquipGearItemActionSystem
@@ -24,37 +26,41 @@ from src.ai_rpg.systems.equip_gear_item_action_system import EquipGearItemAction
 
 
 def _make_gear(name: str) -> GearItem:
-    return GearItem(
-        name=name,
-        description="测试装备",
-    )
+    return GearItem(name=name, description="测试装备")
 
 
-def _make_player_entity(
+def _make_actor_entity(
     context: Context,
     name: str,
-    items: List[GearItem],
     action_item: GearItem,
-    targets: List[str],
 ) -> Entity:
-    """创建持有 InventoryComponent + EquipGearItemAction 的 player 实体。"""
+    """创建携带 HandComponent + PartyMemberComponent + EquipGearItemAction 的当前行动者。"""
+    entity = context.create_entity()
+    entity._name = name
+    entity.add(HandComponent, name, [])
+    entity.add(PartyMemberComponent, name)
+    entity.add(EquipGearItemAction, name, action_item)
+    return entity
+
+
+def _make_player_entity(context: Context, name: str, items: List[GearItem]) -> Entity:
+    """创建持有团队背包（InventoryComponent）的 player 实体。"""
     entity = context.create_entity()
     entity._name = name
     entity.add(InventoryComponent, name, list(items))
-    entity.add(EquipGearItemAction, name, action_item, targets)
     return entity
 
 
-def _make_party_entity(context: Context, name: str) -> Entity:
-    """创建友方目标实体。"""
-    entity = context.create_entity()
-    entity._name = name
-    return entity
-
-
-def _setup_mock_dungeon(mock_game: MagicMock, *, round_count: int = 1) -> None:
+def _setup_mock_game(mock_game: MagicMock, player: Entity) -> MagicMock:
     mock_game.current_dungeon_combat_room.combat.is_ongoing = True
-    mock_game.current_dungeon_combat_room.combat.rounds = [MagicMock()] * round_count
+    mock_game.current_dungeon_combat_room.combat.rounds = [MagicMock()]
+    latest_round = MagicMock()
+    latest_round.gear_combat_log = []
+    latest_round.gear_narrative = []
+    latest_round.gear_equip_count = 0
+    mock_game.current_dungeon_combat_room.combat.latest_round = latest_round
+    mock_game.get_player_entity.return_value = player
+    return latest_round
 
 
 # ---------------------------------------------------------------------------
@@ -92,92 +98,44 @@ class TestReact:
     ) -> None:
         mock_game.current_dungeon_combat_room.combat.is_ongoing = False
         gear = _make_gear("装备.测试")
-        player = _make_player_entity(context, "player", [gear], gear, ["队友A"])
+        actor = _make_actor_entity(context, "角色.测试", gear)
 
-        await system.react([player])
+        await system.react([actor])
 
-        mock_game.get_entity_by_name.assert_not_called()
+        mock_game.get_player_entity.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_equip_moves_item_to_target_and_broadcasts(
+    async def test_converts_gear_to_hand_card(
         self,
         context: Context,
         mock_game: MagicMock,
         system: EquipGearItemActionSystem,
     ) -> None:
-        _setup_mock_dungeon(mock_game)
         gear = _make_gear("装备.测试")
-        player = _make_player_entity(context, "player", [gear], gear, ["队友A"])
-        target = _make_party_entity(context, "队友A")
+        actor = _make_actor_entity(context, "角色.测试", gear)
+        player = _make_player_entity(context, "player", [gear])
+        latest_round = _setup_mock_game(mock_game, player)
         stage = context.create_entity()
         stage._name = "测试场景"
-        mock_game.get_entity_by_name.return_value = target
         mock_game.resolve_stage_entity.return_value = stage
 
-        await system.react([player])
+        generated = Card(name="斩击", description="x")
+        with patch.object(
+            system, "_generate_card", new=AsyncMock(return_value=generated)
+        ):
+            await system.react([actor])
 
-        assert target.get(EquippedGearComponent).item.name == "装备.测试"
-        assert target.get(EquippedGearComponent).item is gear
+        # 移动语义：gear 从团队背包移除
         assert gear not in player.get(InventoryComponent).items
+        # 生成的卡牌进入当前行动者手牌
+        assert generated in actor.get(HandComponent).cards
+        # 本回合装备使用结果被记录
+        assert latest_round.gear_equip_count == 1
+        assert latest_round.gear_combat_log
+        assert latest_round.gear_narrative
+        # 广播装备转化通知
         mock_game.broadcast_to_stage.assert_called_once()
         _, kwargs = mock_game.broadcast_to_stage.call_args
-        assert kwargs["entity"] is player
+        assert kwargs["entity"] is actor
         assert kwargs["exclude_entities"] == {stage}
         assert isinstance(kwargs["agent_event"], AgentEvent)
-        assert kwargs["agent_event"].message == (
-            "【第 1 回合 · 装备行动】\n「队友A」装备了「装备.测试」。"
-        )
-
-    @pytest.mark.asyncio
-    async def test_swapping_gear_returns_previous_item_to_owner_inventory(
-        self,
-        context: Context,
-        mock_game: MagicMock,
-        system: EquipGearItemActionSystem,
-    ) -> None:
-        """目标已装备旧装备时，再次为其装备新装备应将旧装备归还背包持有者
-        （移动语义下的换装场景，对齐 WornCostumeComponent 的换装行为）。"""
-        _setup_mock_dungeon(mock_game)
-        new_gear = _make_gear("装备.新")
-        old_gear = _make_gear("装备.旧")
-        player = _make_player_entity(context, "player", [new_gear], new_gear, ["队友A"])
-        target = _make_party_entity(context, "队友A")
-        target.add(EquippedGearComponent, target.name, old_gear)
-        stage = context.create_entity()
-        stage._name = "测试场景"
-        mock_game.get_entity_by_name.return_value = target
-        mock_game.resolve_stage_entity.return_value = stage
-
-        await system.react([player])
-
-        assert target.get(EquippedGearComponent).item is new_gear
-        assert old_gear in player.get(InventoryComponent).items
-        assert new_gear not in player.get(InventoryComponent).items
-
-    @pytest.mark.asyncio
-    async def test_does_not_affect_other_holders_equipped_gear(
-        self,
-        context: Context,
-        mock_game: MagicMock,
-        system: EquipGearItemActionSystem,
-    ) -> None:
-        """为一个目标装备新装备，不应影响其它已装备角色的 EquippedGearComponent。"""
-        _setup_mock_dungeon(mock_game)
-        action_gear = _make_gear("装备.测试")
-        other_holder_gear = _make_gear("装备.测试")
-        player = _make_player_entity(
-            context, "player", [action_gear], action_gear, ["队友A"]
-        )
-        target = _make_party_entity(context, "队友A")
-        other_holder = _make_party_entity(context, "队友B")
-        stage = context.create_entity()
-        stage._name = "测试场景"
-        other_holder.add(EquippedGearComponent, other_holder.name, other_holder_gear)
-        mock_game.get_entity_by_name.return_value = target
-        mock_game.resolve_stage_entity.return_value = stage
-
-        await system.react([player])
-
-        assert other_holder.has(EquippedGearComponent)
-        assert other_holder.get(EquippedGearComponent).item is other_holder_gear
-        assert target.get(EquippedGearComponent).item is action_gear

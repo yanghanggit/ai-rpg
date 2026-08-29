@@ -406,7 +406,6 @@ async def execute_equip_gear_task(
     task_id: str,
     user_name: str,
     item_name: str,
-    targets: List[str],
     game_server: GameServer,
 ) -> None:
     """后台执行使用装备任务"""
@@ -434,7 +433,7 @@ async def execute_equip_gear_task(
                 raise ValueError("战斗未在进行中")
 
             # 执行使用装备逻辑
-            success, message = activate_equip_gear(rpg_game, item_name, targets)
+            success, message = activate_equip_gear(rpg_game, item_name)
             if not success:
                 raise ValueError(f"使用装备失败: {message}")
 

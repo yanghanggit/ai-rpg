@@ -13,9 +13,7 @@ from ..models import (
     DeathComponent,
     DiscardPileComponent,
     DrawPileComponent,
-    EquippedGearComponent,
     HandComponent,
-    InventoryComponent,
     MonsterComponent,
     PartyMemberComponent,
     Round,
@@ -136,28 +134,6 @@ def get_alive_monsters_in_stage(
 
 
 #################################################################################################################################################
-def require_single_anchor_target(
-    passed_targets: List[str],
-    label: str,
-    self_target: bool = False,
-) -> Tuple[Optional[str], str]:
-    """从调用方传入的目标列表提取单个锚点目标名。
-
-    self_target=True 时无需目标名，返回 (None, "")；否则要求恰好 1 个元素。
-    返回 (锚点目标名, 错误信息)。
-    """
-    if self_target:
-        return None, ""
-
-    if len(passed_targets) != 1:
-        return (
-            None,
-            f"{label} 目标数量必须为 1（作为目标/阵营锚点），实际收到 {len(passed_targets)} 个",
-        )
-    return passed_targets[0], ""
-
-
-#################################################################################################################################################
 def _expand_camp_members(
     anchor_target_name: str,
     actor_entity: Entity,
@@ -188,56 +164,98 @@ def resolve_targets(
     target_type: TargetType,
     hit_count: int,
     actor_entity: Entity,
-    anchor_target_name: Optional[str],
+    passed_targets: Sequence[str],
     dbg_game: DBGGame,
     self_target: bool = False,
 ) -> Tuple[List[str], str]:
-    """根据 target_type 解析并验证目标。self_target=True 时锁定出牌者自身；否则锚定单个目标名。"""
+    """根据 target_type 解析并验证目标。self_target=True 时锁定出牌者自身；否则要求 passed_targets 恰好 1 个元素作为锚点。"""
 
     if self_target:
+        # self_target 为 True 时，目标锁定为出牌者自身
         return [actor_entity.name], ""
 
-    if not anchor_target_name:
-        return [], "非 self_target 出牌必须提供恰好 1 个目标名"
+    # self_target 为 False 时，要求 passed_targets 恰好 1 个元素作为锚点
+    if len(passed_targets) != 1:
+        return (
+            [],
+            f"{target_type.value.upper()} 目标数量必须为 1（作为目标/阵营锚点），实际收到 {len(passed_targets)} 个",
+        )
+
+    # 获取锚点目标名称（passed_targets 中的唯一元素）
+    anchor_target_name = passed_targets[0]
 
     match target_type:
+
         case TargetType.SINGLE:
+
+            # 获取当前场景中所有存活角色的名称集合
             alive_names = {
                 e.name for e in get_alive_actors_in_stage(dbg_game, actor_entity)
             }
+
+            # SINGLE 类型目标必须在当前场景存活角色列表中
             if anchor_target_name not in alive_names:
                 return (
                     [],
                     f"目标 '{anchor_target_name}' 不在当前场景存活角色列表中: {sorted(alive_names)}",
                 )
+
+            # 返回 SINGLE 类型目标的锚点名称作为目标列表
             return [anchor_target_name], ""
 
         case TargetType.ALL:
+
+            # 获取阵营。
             camp_members, err = _expand_camp_members(
                 anchor_target_name, actor_entity, dbg_game
             )
+
+            # 如果获取阵营成员失败，返回错误
             if err:
                 return [], err
+
+            # 如果阵营当前无存活角色，返回错误
             if not camp_members:
                 return [], "ALL：锚点所在阵营当前无存活角色"
+
+            # 返回阵营中所有存活角色的名称列表作为目标列表
             return [e.name for e in camp_members], ""
 
         case TargetType.SPREAD:
+
+            # 获取阵营。
             camp_members, err = _expand_camp_members(
                 anchor_target_name, actor_entity, dbg_game
             )
+
+            # 如果获取阵营成员失败，返回错误
             if err:
                 return [], err
+
+            # 如果阵营当前无存活角色，返回错误
             if not camp_members:
                 return [], "SPREAD：锚点所在阵营当前无存活角色"
+
+            # 如果命中数量大于阵营存活角色数量，需要进行重复抽取以满足命中数量
             if hit_count > len(camp_members):
+
+                # 先将阵营中所有存活角色加入目标列表，再随机补足剩余命中数量
                 spread_targets = list(camp_members) + random.choices(
                     camp_members, k=hit_count - len(camp_members)
                 )
+
+                # 将目标列表打乱顺序，保证随机性
                 random.shuffle(spread_targets)
             else:
+                # 如果命中数量不超过阵营存活角色数量，直接随机抽取命中数量的目标
                 spread_targets = random.choices(camp_members, k=hit_count)
+
+            # 返回最终的 SPREAD 类型目标列表
             return [e.name for e in spread_targets], ""
+
+        case _:
+            assert False, f"未知的目标类型：{target_type}"
+            # return [], f"未知的目标类型：{target_type}"
 
 
 #######################################################################################################################################
@@ -293,19 +311,5 @@ def clear_combat_state(dbg_game: DBGGame) -> None:
     # 清除战斗回合状态（retain 牌同样转入 DrawPile 保留队列，由 CombatPileTeardownSystem 兜底清空）
     clear_round_state(dbg_game)
 
-    # 移动语义：装备背包持有者始终是玩家实体，清除装备前必须先将其归还玩家的
-    # InventoryComponent，否则装备会随组件一起被丢弃、凭空消失。
-    player_entity = dbg_game.get_player_entity()
-    assert player_entity is not None, "玩家实体不存在！"
-    assert player_entity.has(InventoryComponent), "玩家实体缺少 InventoryComponent"
-    player_inventory = player_entity.get(InventoryComponent)
-
-    # 清除所有角色的装备组件，装备物归还玩家背包
-    for entity in dbg_game.get_group(Matcher(EquippedGearComponent)).entities.copy():
-        equipped_item = entity.get(EquippedGearComponent).item
-        player_inventory.items.append(equipped_item)
-        entity.remove(EquippedGearComponent)
-        logger.debug(
-            f"clear equipped gear: {entity.name}，已将装备 {equipped_item.name!r} "
-            f"归还玩家 {player_entity.name} 的 InventoryComponent"
-        )
+    # 剩下的处理
+    logger.debug("clear combat state: 战斗结束，已清除回合状态")

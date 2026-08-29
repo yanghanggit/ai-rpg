@@ -512,7 +512,6 @@ async def dungeon_combat_equip_gear(
     user_name: str,
     game_name: str,
     item_name: str,
-    targets: List[str],
 ) -> DungeonCombatEquipGearItemResponse:
     """使用玩家背包内装备，返回后台任务信息。"""
     async with httpx.AsyncClient(timeout=10) as client:
@@ -522,7 +521,6 @@ async def dungeon_combat_equip_gear(
                 user_name=user_name,
                 game_name=game_name,
                 item_name=item_name,
-                targets=targets,
             ).model_dump(),
         )
         response.raise_for_status()

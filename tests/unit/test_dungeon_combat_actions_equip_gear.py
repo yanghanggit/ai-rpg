@@ -1,78 +1,89 @@
+from typing import List
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from src.ai_rpg.models import (
-    InventoryComponent,
+    HandComponent,
     PartyMemberComponent,
 )
 from src.ai_rpg.models.items import GearItem
 from src.ai_rpg.services.dungeon_combat_actions import activate_equip_gear
 
 
-def _make_game(*, current_actor: str, player_name: str = "player") -> MagicMock:
+def _make_game() -> MagicMock:
     game = MagicMock()
     game.is_player_in_dungeon_stage = True
     game.current_dungeon_combat_room.combat.is_ongoing = True
     game.current_dungeon_combat_room.combat.latest_round = SimpleNamespace(
         draw_completed=True,
-        current_actor=current_actor,
     )
-
-    player = MagicMock()
-    player.name = player_name
-    player.has.side_effect = lambda component_type: component_type in {
-        PartyMemberComponent,
-        InventoryComponent,
-    }
-    game.get_player_entity.return_value = player
     return game
 
 
-def test_activate_equip_gear_requires_inventory_holder_turn() -> None:
-    game = _make_game(current_actor="ally", player_name="player")
+def _make_actor(name: str, *, party: bool, hand: bool) -> MagicMock:
+    actor = MagicMock()
+    actor.name = name
+    actor.has.side_effect = lambda component_type: (
+        component_type == PartyMemberComponent and party
+    ) or (component_type == HandComponent and hand)
+    return actor
 
-    ok, msg = activate_equip_gear(game, "装备.测试", ["player"])
 
-    assert ok is False
-    assert "不是背包持有者" in msg
+def _make_player(items: List[GearItem]) -> MagicMock:
+    player = MagicMock()
+    player.name = "player"
+    player.has.return_value = True
+    player.get.return_value = SimpleNamespace(items=items)
+    return player
 
 
-def test_activate_equip_gear_rejects_non_ally_target() -> None:
-    game = _make_game(current_actor="player", player_name="player")
-    gear = GearItem(name="装备.测试", description="测试装备")
-    player = game.get_player_entity.return_value
-    player.get.return_value = SimpleNamespace(items=[gear])
-    target = MagicMock()
-    target.name = "怪物.测试"
-    target.has.return_value = False
-    game.get_entity_by_name.return_value = target
+def test_activate_equip_gear_rejects_non_party_actor() -> None:
+    game = _make_game()
+    game.get_entity_by_name.return_value = _make_actor(
+        "怪物.测试", party=False, hand=True
+    )
+    game.get_player_entity.return_value = _make_player([])
 
     with patch(
-        "src.ai_rpg.services.dungeon_combat_actions.resolve_targets",
-        return_value=(["怪物.测试"], ""),
+        "src.ai_rpg.services.dungeon_combat_actions.get_current_turn_actor",
+        return_value="怪物.测试",
     ):
-        ok, msg = activate_equip_gear(game, "装备.测试", ["怪物.测试"])
+        ok, msg = activate_equip_gear(game, "装备.测试")
 
     assert ok is False
-    assert "只能用于友方目标" in msg
-    player.replace.assert_not_called()
+    assert "不是我方角色" in msg
+
+
+def test_activate_equip_gear_rejects_missing_hand() -> None:
+    game = _make_game()
+    game.get_entity_by_name.return_value = _make_actor(
+        "角色.测试", party=True, hand=False
+    )
+    game.get_player_entity.return_value = _make_player([])
+
+    with patch(
+        "src.ai_rpg.services.dungeon_combat_actions.get_current_turn_actor",
+        return_value="角色.测试",
+    ):
+        ok, msg = activate_equip_gear(game, "装备.测试")
+
+    assert ok is False
+    assert "缺少手牌组件" in msg
 
 
 def test_activate_equip_gear_activates_action() -> None:
-    game = _make_game(current_actor="player", player_name="player")
+    game = _make_game()
     gear = GearItem(name="装备.测试", description="测试装备")
-    player = game.get_player_entity.return_value
-    player.get.return_value = SimpleNamespace(items=[gear])
-    target = MagicMock()
-    target.name = "队友A"
-    game.get_entity_by_name.return_value = target
+    actor = _make_actor("角色.测试", party=True, hand=True)
+    game.get_entity_by_name.return_value = actor
+    game.get_player_entity.return_value = _make_player([gear])
 
     with patch(
-        "src.ai_rpg.services.dungeon_combat_actions.resolve_targets",
-        return_value=(["队友A"], ""),
+        "src.ai_rpg.services.dungeon_combat_actions.get_current_turn_actor",
+        return_value="角色.测试",
     ):
-        ok, msg = activate_equip_gear(game, "装备.测试", ["队友A"])
+        ok, msg = activate_equip_gear(game, "装备.测试")
 
     assert ok is True
     assert "成功激活装备使用" in msg
-    player.replace.assert_called_once()
+    actor.replace.assert_called_once()

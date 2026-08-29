@@ -379,7 +379,6 @@ class DungeonCombatEquipGearItemRequest(BaseModel):
     user_name: str
     game_name: str
     item_name: str
-    targets: List[str] = []
 
 
 @final

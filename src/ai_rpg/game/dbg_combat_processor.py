@@ -264,7 +264,7 @@ def clear_round_state(game: DBGGame) -> None:
 
     # 清除所有角色实体的手牌组件（STS 标准：回合末未出牌进弃牌堆）
     for entity in game.get_group(
-        Matcher(all_of=[HandComponent, DiscardPileComponent])
+        Matcher(all_of=[HandComponent, DiscardPileComponent, DrawPileComponent])
     ).entities.copy():
 
         hand_comp = entity.get(HandComponent)

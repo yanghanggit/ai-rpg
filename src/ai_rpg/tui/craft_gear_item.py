@@ -324,20 +324,13 @@ class CraftGearItemScreen(BaseGameScreen):
                         )
                         shown = True
                     desc = str(item.get("description", ""))
-                    target = str(item.get("target_type", ""))
-                    stat_bonuses = item.get("stat_bonuses", {})
+                    card_spec = item.get("card_spec") or []
+                    card_spec_guide = card_spec[0] if card_spec else ""
                     log.write(f"  [bold magenta]装备[/]：{display_name(name)}")
                     if desc:
                         log.write(f"  [dim]{desc}[/]")
-                    log.write(f"  [cyan]目标类型[/]：{target}")
-                    if stat_bonuses:
-                        bonuses = ", ".join(
-                            f"{k}+{v}"
-                            for k, v in stat_bonuses.items()
-                            if isinstance(v, int) and v != 0
-                        )
-                        if bonuses:
-                            log.write(f"  [cyan]属性加成[/]：{bonuses}")
+                    if card_spec_guide:
+                        log.write(f"  [cyan]功能边界[/]：{card_spec_guide}")
                     log.write("")
 
         if not shown:

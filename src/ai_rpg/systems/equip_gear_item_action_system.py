@@ -50,16 +50,16 @@ class _GearCardResponse(BaseModel):
 
 #######################################################################################################################################
 @prompt_builder
-def _build_keyword_guide(keywords: List[str]) -> str:
-    """取 GearItem.keywords[0] 作为完整的功能边界描述（数组为扩展预留）。"""
-    return keywords[0] if keywords else "无"
+def _build_card_spec_guide(card_spec: List[str]) -> str:
+    """取 GearItem.card_spec[0] 作为完整的功能边界描述（数组为扩展预留）。"""
+    return card_spec[0] if card_spec else "无"
 
 
 #######################################################################################################################################
 @prompt_builder
 def _build_gear_card_prompt(gear: GearItem, actor_stats: CharacterStats) -> str:
     """生成 GearItem => Card 的完整提示词。"""
-    keyword_guide = _build_keyword_guide(gear.keywords)
+    card_spec_guide = _build_card_spec_guide(gear.card_spec)
 
     return f"""# 装备转化为手牌：生成 1 张卡牌
 
@@ -68,9 +68,9 @@ def _build_gear_card_prompt(gear: GearItem, actor_stats: CharacterStats) -> str:
 - 名称：{gear.name}
 - 描述：{gear.description}
 
-## 功能边界（keywords）
+## 功能边界（card_spec）
 
-{keyword_guide}
+{card_spec_guide}
 
 ## 你的当前属性
 
@@ -79,7 +79,7 @@ HP {actor_stats.hp}/{actor_stats.max_hp} | 攻击 {actor_stats.attack} | 防御 
 ## 设计约束
 
 - name 与 description 默认与装备保持一致：请留空或原样输出装备的 name/description，不要另行创作（仅未来强化改造场景才可改写）
-- keywords 即边界：要求的效果在对应字段体现；未提及即禁止
+- card_spec 即边界：要求的效果在对应字段体现；未提及即禁止
 - 只输出 JSON，不附加任何说明文字
 
 {BUILD_CARD_FIELD_DESCRIPTION}
@@ -111,14 +111,14 @@ def _build_condensed_gear_card_prompt(
     gear: GearItem, actor_stats: CharacterStats
 ) -> str:
     """生成 GearItem => Card 的精简版提示词（写入对话历史）。"""
-    keyword_guide = _build_keyword_guide(gear.keywords)
+    card_spec_guide = _build_card_spec_guide(gear.card_spec)
 
     return f"""# 装备转化为手牌
 
 装备：{gear.name}（{gear.description}）
 
-功能边界（keywords）：
-{keyword_guide}
+功能边界（card_spec）：
+{card_spec_guide}
 
 你的属性：HP {actor_stats.hp}/{actor_stats.max_hp} | 攻击 {actor_stats.attack} | 防御 {actor_stats.defense}"""
 

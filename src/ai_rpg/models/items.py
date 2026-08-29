@@ -37,9 +37,9 @@ class GearItem(Item):
     resources: Sequence["AnyItem"] = Field(
         default_factory=list
     )  # 合成时消耗的原料列表；未必是 MaterialItem（保留 AnyItem 扩展余地）
-    keywords: List[str] = (
+    card_spec: List[str] = (
         []
-    )  # GearItem => Card 时的功能边界约束/指导词；空表示无额外约束
+    )  # GearItem => Card 的功能边界规格；每个 str 是一条完整描述，当前使用 [0]
 
 
 #######################################################################################################################################

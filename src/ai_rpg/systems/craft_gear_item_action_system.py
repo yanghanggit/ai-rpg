@@ -14,8 +14,8 @@ from ..models import (
     StorageComponent,
 )
 from ..models.items import AnyItem, GearItem, ItemType, MaterialItem
-from ..models.character_stats import CharacterStats
 from ..utils import extract_json, prompt_builder
+from .card_prompt_builders import BUILD_CARD_FIELD_DESCRIPTION
 
 
 #######################################################################################################################################
@@ -25,8 +25,7 @@ class _CraftGearItemResponse(BaseModel):
 
     name: str = ""
     description: str = ""
-    stat_bonuses: CharacterStats = CharacterStats()
-    cost: int = 1
+    card_spec: List[str] = []
 
 
 #######################################################################################################################################
@@ -54,12 +53,14 @@ def _build_craft_gear_prompt(materials: List[MaterialItem]) -> str:
 
 - **name**：装备全名，采用「装备.XXXX」命名格式，体现材料特性与装备类型，简洁有辨识度
 - **description**：物品描述，30-60字，说明外观、手感或穿戴感受，体现材料的来源与工艺痕迹
-- **stat_bonuses**：属性加成对象，字段含义如下（所有字段默认为 0，根据装备定位填写合理非零值）：
-  - hp：当前生命值加成（通常为 0，一般不改变）
-  - max_hp：最大生命值加成（防具类可适当给 5~15）
-  - attack：攻击力加成（武器类可给 2~6）
-  - defense：防御力加成（防具类可给 2~5）
-- **cost**：装备费用，表示穿戴目标需要消耗的当前回合 energy。普通装备为 1；强力、重型或复杂装备可为 2；不要输出负数
+- **card_spec**：字符串列表，描述这件装备在战斗中被转化为卡牌时的功能边界；每个字符串是一条完整描述，当前系统仅使用第一条（`card_spec[0]`），但请以列表返回
+  - 描述格式采用 `[字段]:内容`，多个字段用「；」分隔；字段名以「卡牌字段说明」为准
+  - 只描述功能字段（伤害/格挡/词缀/目标类型等），不要针对 name/description 写（gear 转卡牌时 name/description 默认沿用装备本身）
+  - 示例：`"[伤害]:3点单体物理伤害；[攻击次数]:1段；[费用]:1；[目标类型]:single；[即时词缀]:[穿透] 本次伤害无视目标防御"`
+
+## 卡牌字段说明
+
+{BUILD_CARD_FIELD_DESCRIPTION}
 
 ## 输出格式
 
@@ -67,8 +68,7 @@ def _build_craft_gear_prompt(materials: List[MaterialItem]) -> str:
 {{
   "name": "装备.XXX",
   "description": "...",
-  "stat_bonuses": {{"hp": 0, "max_hp": 0, "attack": 3, "defense": 0}},
-  "cost": 1
+  "card_spec": ["[伤害]:3；[费用]:1；[目标类型]:single"]
 }}
 ```
 
@@ -130,10 +130,14 @@ class CraftGearItemActionSystem(ReactiveProcessor):
             name=result.name,
             description=result.description,
             resources=action.material_items,
+            card_spec=result.card_spec,
         )
         self._update_storage(storage_entity, action.material_names, new_item)
 
-        logger.info(f"[CraftGearItemActionSystem] 合成完成: {new_item.name}")
+        logger.info(
+            f"[CraftGearItemActionSystem] 合成完成: {new_item.name} "
+            f"card_spec={new_item.card_spec}"
+        )
 
     ####################################################################################################################################
     async def _call_llm(

@@ -49,6 +49,13 @@ ON_HIT_AFFIX_RULES: Final[
 get_entity_stats 返回的「受击词缀」仅在**该实体是本次出牌的目标**时触发；出牌者自身的受击词缀不触发（除非出牌者也同时是目标）。依词缀描述结算（如 [反伤] 对出牌者造成伤害），不引入词缀未提及的新机制。"""
 
 
+SOURCE_FIELD_RULES: Final[
+    str
+] = """## source 字段
+
+`source` 为卡牌的来源（生成/注入者名称），空字符串表示来源未知；出牌卡牌与 get_entity_stats 返回的受击卡牌都会携带各自的 `source`。"""
+
+
 @dataclass
 class _SpreadSections:
     """SPREAD 专属 prompt 片段"""
@@ -112,10 +119,12 @@ def _build_gear_play_section(gear_item: GearItem | None) -> str:
 
 @prompt_builder
 def _build_card_data_lines(card: Card) -> str:
-    """输出一张卡参与仲裁的全部数据字段（出牌侧：含即时词缀，排除系统管理字段）。"""
+    """输出一张卡参与仲裁的全部数据字段（出牌侧：含即时词缀与来源，排除系统管理字段）。"""
     on_play = "、".join(card.on_play_affixes) if card.on_play_affixes else "无"
+    source = card.source or "未知"
     return (
         f"- 卡牌：{card.name}\n"
+        f"- source（来源/注入者）：{source}\n"
         f"- 叙事（description）：{card.description}\n"
         f"- cost：{card.cost}\n"
         f"- damage：{card.damage}（单次伤害）\n"
@@ -170,6 +179,8 @@ def _build_combat_arbitration_tool_prompt(
 {CALC_RULES_SECTION}
 
 {ON_HIT_AFFIX_RULES}
+
+{SOURCE_FIELD_RULES}
 
 ## 工具使用流程
 
@@ -253,7 +264,7 @@ def _build_combat_arbitration_broadcast(
 GET_ENTITY_STATS_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="get_entity_stats",
-        description="读取指定战斗角色的最终有效属性（HP/最大HP/攻击/防御）与其手牌中带受击词缀的卡牌（含这些卡牌的 damage/hit_count/block 等数据）。用于获取发起者与目标当前状态。",
+        description="读取指定战斗角色的最终有效属性（HP/最大HP/攻击/防御）与其手牌中带受击词缀的卡牌（含这些卡牌的 source/damage/hit_count/block 等数据）。用于获取发起者与目标当前状态。",
         parameters={
             "type": "object",
             "properties": {
@@ -337,8 +348,8 @@ def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
     hit_cards = collect_hand_on_hit_cards(entity)
     if hit_cards:
         cards_str = "；".join(
-            f"{c.name}(description={c.description}, cost={c.cost}, damage={c.damage}, "
-            f"hit_count={c.hit_count}, block={c.block}, 受击词缀={c.on_hit_affixes})"
+            f"{c.name}(source={c.source or '未知'}, description={c.description}, cost={c.cost}, "
+            f"damage={c.damage}, hit_count={c.hit_count}, block={c.block}, 受击词缀={c.on_hit_affixes})"
             for c in hit_cards
         )
     else:

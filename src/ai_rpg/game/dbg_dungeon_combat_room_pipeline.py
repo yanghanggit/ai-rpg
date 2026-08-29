@@ -49,6 +49,7 @@ def create_dungeon_combat_room_pipeline(
     from ..systems.equip_gear_item_arbitration_system import (
         EquipGearItemArbitrationSystem,
     )
+    from ..systems.turn_end_arbitration_system import TurnEndArbitrationSystem
     from ..systems.inject_cards_action_system import (
         InjectCardsActionSystem,
     )
@@ -107,24 +108,29 @@ def create_dungeon_combat_room_pipeline(
     processors.add(MonsterPrePlaySystem(dbg_game))
     processors.add(PartyPrePlaySystem(dbg_game))
 
+    # 撤退动作系统
+    processors.add(RetreatActionSystem(dbg_game))
+
     # 战斗动作仲裁系统（处理出牌、使用消耗品、装备装备等动作）
     processors.add(PlayCardsActionSystem(dbg_game))
     processors.add(UseConsumableItemActionSystem(dbg_game))
     processors.add(EquipGearItemActionSystem(dbg_game))
 
+    # 过回合动作系统
+    processors.add(PassTurnActionSystem(dbg_game))
+
     # 战斗动作后处理系统（如将出牌移至弃牌堆、消耗牌等）
     processors.add(DiscardCardsActionSystem(dbg_game))
     processors.add(ExhaustCardsActionSystem(dbg_game))
-    processors.add(PassTurnActionSystem(dbg_game))
     processors.add(ExhaustEtherealCardsSystem(dbg_game))
-
-    # 撤退动作系统
-    processors.add(RetreatActionSystem(dbg_game))
 
     # 3个仲裁系统：出牌、使用消耗品、装备装备
     processors.add(PlayCardsArbitrationSystem(dbg_game))
     processors.add(UseConsumableItemArbitrationSystem(dbg_game))
     processors.add(EquipGearItemArbitrationSystem(dbg_game))
+
+    # 回合结束仲裁系统（监视 PassTurnAction，扫全场持有回合结束词缀卡牌的角色并并发仲裁）
+    processors.add(TurnEndArbitrationSystem(dbg_game))
 
     # 仲裁之后可能触发的系统（如死亡判定）
     processors.add(DeathSystem(dbg_game))

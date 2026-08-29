@@ -51,6 +51,15 @@ def _build_action_notice_for_others(actor_name: str, round_number: int) -> str:
 
 
 #######################################################################################################################################
+@prompt_builder
+def _build_unplayable_card_error_message(actor_name: str, card_name: str) -> str:
+    """构建不可出牌卡牌的拦截提示（写入出牌者上下文，供 LLM 下次决策参考）。"""
+    return f"""# 提示！{actor_name} 试图打出「{card_name}」，但该卡牌不可出牌（playable=False）。
+
+**提示：** playable=False 的卡牌不能出牌，只能留在手牌中（如带回合结束词缀的卡牌），下一次决策时请不要选择它。"""
+
+
+#######################################################################################################################################
 @final
 class PlayCardsActionSystem(ReactiveProcessor):
     """出牌动作系统。"""
@@ -104,6 +113,25 @@ class PlayCardsActionSystem(ReactiveProcessor):
 
             # 输出出牌信息日志，包含角色名、卡牌名、卡牌属性（治疗/攻击/防御）和目标
             play_cards_action = entity.get(PlayCardsAction)
+
+            # 计算端拦截：不可出牌的卡（playable=False）不进入出牌流程，防止 LLM 决策误选
+            if not play_cards_action.card.playable:
+                logger.error(
+                    f"PlayCardsActionSystem: 卡牌 '{play_cards_action.card.name}' "
+                    f"不可出牌（playable=False），拦截出牌"
+                )
+                # 将拦截原因写入出牌者上下文，让 LLM 下次决策时理解
+                self._game.add_human_message(
+                    entity=entity,
+                    human_message=HumanMessage(
+                        content=_build_unplayable_card_error_message(
+                            play_cards_action.name,
+                            play_cards_action.card.name,
+                        )
+                    ),
+                )
+                entity.remove(PlayCardsAction)
+                continue
 
             # 组装填充 gear_item：从出牌者当前装备组件读取，供 PlayCardsArbitrationSystem 直接使用
             play_cards_action.gear_item = (

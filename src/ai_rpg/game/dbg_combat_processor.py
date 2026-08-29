@@ -57,6 +57,15 @@ def collect_hand_on_hit_cards(entity: Entity) -> List[Card]:
 
 
 #################################################################################################################################################
+def collect_hand_turn_end_cards(entity: Entity) -> List[Card]:
+    """收集角色手牌中所有带回合结束词缀的卡牌（持有期间在回合结束时触发）。"""
+    hand = entity.get(HandComponent) if entity.has(HandComponent) else None
+    if hand is None:
+        return []
+    return [card for card in hand.cards if card.on_turn_end_affixes]
+
+
+#################################################################################################################################################
 def collect_target_character_stats(
     game: DBGGame, target_names: Sequence[str]
 ) -> Dict[str, CharacterStats]:

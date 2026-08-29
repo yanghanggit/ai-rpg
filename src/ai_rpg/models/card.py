@@ -21,6 +21,9 @@ class Card(BaseModel):
     on_hit_affixes: List[str] = (
         []
     )  # 受击词缀列表；格式"[名称]:触发倾向描述"（如"[反伤]:受到攻击时对出牌者造成2点伤害"）；持有在手牌期间生效，当持有者被本次出牌命中时触发；无受击效果时输出 []
+    on_turn_end_affixes: List[str] = (
+        []
+    )  # 回合结束词缀列表；格式"[名称]:触发倾向描述"（如"[灼烧]:回合结束时对持有者造成 damage 点伤害"）；持有在手牌期间生效，回合结束（pass turn）时触发；无则 []
     playable: bool = True  # 是否可出牌；False 时系统阻止出牌操作
     exhaust: bool = (
         False  # 是否为消耗牌；True 时出牌后永久归入 ExhaustPile，不进入 DiscardPile 循环

@@ -8,6 +8,7 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_combat_processor import (
     compute_character_stats,
     get_alive_actors_in_stage,
+    get_energy,
     require_single_anchor_target,
     resolve_targets,
 )
@@ -23,6 +24,7 @@ from ..models import (
     PartyMemberComponent,
     PassTurnAction,
     PlayCardsAction,
+    TargetType,
 )
 from ..utils import extract_json, prompt_builder
 
@@ -38,40 +40,71 @@ class _MonsterDecisionResponse(BaseModel):
 
 
 #######################################################################################################################################
-@prompt_builder
-def _build_monster_decision_prompt(
+def _target_label(card: Card) -> str:
+    """返回卡牌目标约束的中文描述。"""
+    if card.self_target:
+        return "自身"
+    match card.target_type:
+        case TargetType.SINGLE:
+            return "单个目标"
+        case TargetType.ALL:
+            return "阵营全体(锚点)"
+        case TargetType.SPREAD:
+            return "阵营散射(锚点)"
+    return str(card.target_type.value)
+
+
+#######################################################################################################################################
+def _format_card(card: Card) -> str:
+    """将一张手牌格式化为紧凑、信息密度高的文本。"""
+    lines = [
+        f"- 【{card.name}】{card.description}",
+        f"  费用{card.cost} 伤害{card.damage}×{card.hit_count}段 格挡{card.block} "
+        f"目标:{_target_label(card)} {'可出' if card.playable else '不可出'}",
+    ]
+
+    affix_parts = [
+        f"即时词缀:{'、'.join(card.on_play_affixes) if card.on_play_affixes else '无'}",
+        f"受击词缀:{'、'.join(card.on_hit_affixes) if card.on_hit_affixes else '无'}",
+        f"回合结束词缀:{'、'.join(card.on_turn_end_affixes) if card.on_turn_end_affixes else '无'}",
+    ]
+
+    flags = []
+    if card.exhaust:
+        flags.append("消耗")
+    if card.retain:
+        flags.append("保留")
+    if card.ethereal:
+        flags.append("虚无")
+    if flags:
+        affix_parts.append("特性:" + "、".join(flags))
+
+    lines.append("  " + " | ".join(affix_parts))
+    return "\n".join(lines)
+
+
+#######################################################################################################################################
+def _build_context_block(
     monster_name: str,
-    monster_stats: CharacterStats,
+    stats: CharacterStats,
+    energy: int,
     hand_cards: List[Card],
     opponent_names: List[str],
     action_order: List[str],
     completed_actors: List[str],
-    current_round_number: int,
 ) -> str:
-    """生成怪物出牌决策的 LLM 提示词。"""
-    stats = monster_stats
+    """构建出牌决策提示词共享的上下文块（状态/序列/手牌/对手）。"""
     self_info = (
-        f"HP:{stats.hp}/{stats.max_hp} | 攻击:{stats.attack} | 防御:{stats.defense}"
+        f"HP {stats.hp}/{stats.max_hp} | 攻击 {stats.attack} | "
+        f"防御 {stats.defense} | 能量 {energy}"
     )
-
-    cards_lines = "\n".join(
-        f"- 【{c.name}】描述：{c.description}"
-        + (
-            f"  即时词缀：{'\u3001'.join(c.on_play_affixes)}"
-            if c.on_play_affixes
-            else ""
-        )
-        + f"  damage:{c.damage}  hit_count:{c.hit_count}  block:{c.block}  self_target:{c.self_target}  target_type:{c.target_type}"
-        for c in hand_cards
-    )
-
+    cards_lines = "\n".join(_format_card(c) for c in hand_cards)
     opponents_lines = (
         "\n".join(f"- {name}" for name in opponent_names)
         if opponent_names
         else "- 无存活对手"
     )
 
-    # 构造行动序列文本，标注自己的位置
     order_display = " → ".join(
         f"你（{name}）" if name == monster_name else name for name in action_order
     )
@@ -81,46 +114,73 @@ def _build_monster_decision_prompt(
     position_text = f"第 {my_position} 位" if my_position is not None else "未知"
     completed_text = "、".join(completed_actors) if completed_actors else "无"
 
-    card_names_json = ", ".join(f'"{c.name}"' for c in hand_cards)
-
-    return f"""# 第 {current_round_number} 回合：选择你的出牌（以 JSON 格式返回）
-
-请根据当前局势选择一张手牌并决定攻击目标。
-
-## 你的当前状态
+    return f"""## 你的状态
 
 {self_info}
 
-## 本回合行动序列
+## 行动序列
 
 完整序列：{order_display}
 已行动：{completed_text}
 你的位置：{position_text}，现在轮到你
 
-## 当前手牌
+## 手牌
 
 {cards_lines}
 
-## 场上存活对手
+## 存活对手
 
-{opponents_lines}
+{opponents_lines}"""
 
-## 决策建议
 
-- 行动序列严格顺序执行，排在你前面的角色已出手，其目标可能已死亡
-- targets 从"场上存活对手"中选全名；self_target 为 true 时可省略 targets；其余类型（SINGLE/ALL/SPREAD）须提供恰好 1 个目标全名：SINGLE 时即为该目标本身，ALL/SPREAD 时该目标作为阵营锚点，系统会自动展开为其所在阵营的全部/散射角色
-- 若所有手牌均无法执行（如全部封印），可选择跳过出牌（pass_turn: true），此时 card_name/targets 可省略
+#######################################################################################################################################
+@prompt_builder
+def _build_monster_decision_prompt(
+    monster_name: str,
+    monster_stats: CharacterStats,
+    energy: int,
+    hand_cards: List[Card],
+    opponent_names: List[str],
+    action_order: List[str],
+    completed_actors: List[str],
+    current_round_number: int,
+) -> str:
+    """生成怪物出牌决策的 LLM 提示词（完整版）。"""
+    context = _build_context_block(
+        monster_name=monster_name,
+        stats=monster_stats,
+        energy=energy,
+        hand_cards=hand_cards,
+        opponent_names=opponent_names,
+        action_order=action_order,
+        completed_actors=completed_actors,
+    )
+    playable_names = [c.name for c in hand_cards if c.playable]
+    card_names_json = "、".join(f'"{name}"' for name in playable_names)
+
+    return f"""# 第 {current_round_number} 回合 · 出牌决策
+
+请从「手牌」中选择一张打出，或跳过本回合（pass_turn=true）。只返回 JSON。
+
+{context}
+
+## 决策规则
+
+- 行动按序列顺序执行，排在你前面的角色已行动，其目标可能已死亡。
+- 只能打出「可出」的牌；「不可出」（playable=False）的牌只能留在手牌中，不要选择。
+- targets 从「存活对手」中选全名；目标为「自身」的牌可省略 targets。
+- SINGLE 填恰好 1 个目标；ALL/SPREAD 填恰好 1 个阵营锚点，系统自动展开为对应阵营的存活角色。
+- 若没有可执行的牌，返回 pass_turn=true，card_name/targets 可省略。
 
 ## 输出 JSON
 
 ```json
 {{
   "pass_turn": false,
-  "card_name": "从手牌中选择一张卡牌的名称（必须是以下之一：{card_names_json}）",
-  "targets": ["目标全名列表，self_target 为 true 时可为 []，其余类型须恰好 1 个元素"]
+  "card_name": "选择的手牌名（可出：{card_names_json}）",
+  "targets": ["目标全名列表；目标为自身时可为 []]"
 }}
-```
-pass_turn 为 true 时表示跳过出牌，其他字段可省略"""
+```"""
 
 
 #######################################################################################################################################
@@ -128,6 +188,7 @@ pass_turn 为 true 时表示跳过出牌，其他字段可省略"""
 def _build_condensed_monster_decision_prompt(
     monster_name: str,
     monster_stats: CharacterStats,
+    energy: int,
     hand_cards: List[Card],
     opponent_names: List[str],
     action_order: List[str],
@@ -135,56 +196,23 @@ def _build_condensed_monster_decision_prompt(
     current_round_number: int,
 ) -> str:
     """生成怪物出牌决策的精简版提示词（写入对话历史，减少 token 消耗）。"""
-    stats = monster_stats
-    self_info = (
-        f"HP:{stats.hp}/{stats.max_hp} | 攻击:{stats.attack} | 防御:{stats.defense}"
+    context = _build_context_block(
+        monster_name=monster_name,
+        stats=monster_stats,
+        energy=energy,
+        hand_cards=hand_cards,
+        opponent_names=opponent_names,
+        action_order=action_order,
+        completed_actors=completed_actors,
     )
+    playable_names = [c.name for c in hand_cards if c.playable]
+    card_names_json = "、".join(f'"{name}"' for name in playable_names)
 
-    cards_lines = "\n".join(
-        f"- 【{c.name}】描述：{c.description}"
-        + (f"  即时词缀：{'、'.join(c.on_play_affixes)}" if c.on_play_affixes else "")
-        + f"  damage:{c.damage}  hit_count:{c.hit_count}  block:{c.block}  self_target:{c.self_target}  target_type:{c.target_type}"
-        for c in hand_cards
-    )
+    return f"""# 第 {current_round_number} 回合 · 出牌决策
 
-    opponents_lines = (
-        "\n".join(f"- {name}" for name in opponent_names)
-        if opponent_names
-        else "- 无存活对手"
-    )
+{context}
 
-    order_display = " → ".join(
-        f"你（{name}）" if name == monster_name else name for name in action_order
-    )
-    my_position = next(
-        (i + 1 for i, name in enumerate(action_order) if name == monster_name), None
-    )
-    position_text = f"第 {my_position} 位" if my_position is not None else "未知"
-    completed_text = "、".join(completed_actors) if completed_actors else "无"
-
-    card_names_json = ", ".join(f'"{c.name}"' for c in hand_cards)
-
-    return f"""# 第 {current_round_number} 回合：选择你的出牌（以 JSON 格式返回）
-
-## 你的当前状态
-
-{self_info}
-
-## 本回合行动序列
-
-完整序列：{order_display}
-已行动：{completed_text}
-你的位置：{position_text}，现在轮到你
-
-## 当前手牌
-
-{cards_lines}
-
-## 场上存活对手
-
-{opponents_lines}
-
-输出 JSON（pass_turn/card_name/targets；可用卡牌：{card_names_json})"""
+输出 JSON（pass_turn/card_name/targets；可出卡牌：{card_names_json}）"""
 
 
 #######################################################################################################################################
@@ -256,6 +284,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
 
         # 计算怪物的当前战斗属性
         monster_stats = compute_character_stats(entity)
+        energy = get_energy(entity)
 
         # 获取场上存活的远征队成员名称（对手，不传入血量）
         alive_actors = get_alive_actors_in_stage(self._game, entity)
@@ -279,6 +308,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         prompt = _build_monster_decision_prompt(
             monster_name=entity.name,
             monster_stats=monster_stats,
+            energy=energy,
             hand_cards=hand_comp.cards,
             opponent_names=opponent_names,
             action_order=action_order,
@@ -290,6 +320,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         condensed_prompt = _build_condensed_monster_decision_prompt(
             monster_name=entity.name,
             monster_stats=monster_stats,
+            energy=energy,
             hand_cards=hand_comp.cards,
             opponent_names=opponent_names,
             action_order=action_order,

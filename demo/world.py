@@ -239,6 +239,28 @@ def _make_thorns_card() -> Card:
     )
 
 
+def _make_dot_card() -> Card:
+    """创建带回合结束词缀的持续伤害卡牌（demo：retain=True + playable=False，
+    回合结束时对持有者自身造成伤害，用于测试 TurnEndArbitrationSystem）。"""
+    return Card(
+        name="纸人·灼纹",
+        description="纸人身上的朱砂纹路如暗火般缓慢燃烧，每个回合结束时灼痛自身。",
+        on_play_affixes=[],
+        on_hit_affixes=[],
+        on_turn_end_affixes=["[灼烧]:回合结束时对持有者造成伤害"],
+        playable=False,
+        exhaust=False,
+        retain=True,
+        ethereal=False,
+        cost=1,
+        damage=1,
+        hit_count=1,
+        block=0,
+        target_type=TargetType.SINGLE,
+        self_target=True,
+    )
+
+
 ########################################################################################################################
 def create_actor_paper_doll() -> Actor:
     """创建纸人怪物实例。"""
@@ -263,6 +285,8 @@ def create_actor_paper_doll() -> Actor:
             # 2 张带【反伤】受击词缀的卡牌（demo：持有期间，被攻击时反噬出牌者）
             _make_thorns_card(),
             _make_thorns_card(),
+            # 1 张带回合结束词缀的持续伤害卡牌（demo：retain + playable=False，回合结束时对持有者自身造成伤害）
+            _make_dot_card(),
         ],
     )
 

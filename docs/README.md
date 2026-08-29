@@ -41,6 +41,7 @@
 | [战斗管道（Combat Pipeline）](wiki/combat-pipeline.md) | ECS 处理器链的架构设计：管道心跳驱动、场景实体仲裁、词缀即时结算、回合行动序列与四个生命周期阶段 |
 | [卡牌关键词（keywords）](wiki/keywords.md) | 角色牌库蓝图（存于 ArchetypeComponent）：字段级约束声明、规则/叙事分层、牌库多样性与每场采样 |
 | [卡牌流派（Archetype）生成规则](wiki/archetype-generation.md) | archetype 的生成规则：跨内容逻辑层、效果是给仲裁 LLM 的规则文本、机制根部与可结算边界、衔接与内建弱点 |
+| [卡牌数据模型（Card）](wiki/card.md) | Card 字段的三层结构（确定性骨架 / 语义词缀 / 生命周期流转）、source 的双重身份与「确定性骨架 + LLM 语义」的设计取舍 |
 | [DBG 核心概念定义与逻辑关系总结](<wiki/DBG 核心概念定义与逻辑关系总结.md>) | Modifiers（对局级规则）与 Affixes（一次性效果词缀）二者的定义、归属与逻辑关系：宏观-微观模型 |
 | [LLM 生成型游戏对象：Card](wiki/llm-generated-objects.md) | Card 作为 LLM 动态产出核心对象的生成点定位、全局约束视角、生成链与规则来源 |
 | [公共知识检索系统（RAG / QueryAction）](wiki/rag-knowledge-base.md) | 公共记忆与私人记忆的二元分离、Blueprint.knowledge_base 的编排约束、pgvector 两阶段生命周期、QueryActionSystem 的触发与消费 |

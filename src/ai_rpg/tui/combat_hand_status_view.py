@@ -11,7 +11,6 @@ from ..models import (
     CharacterStatsComponent,
     DeathComponent,
     EntitySerialization,
-    EquippedGearComponent,
     HandComponent,
     compute_effective_stats,
 )
@@ -114,18 +113,11 @@ class CombatHandStatusViewScreen(BaseGameScreen):
             return
 
         hand_data = find_component_data(entity, HandComponent.__name__)
-        equipped_gear_data = find_component_data(entity, EquippedGearComponent.__name__)
 
         hand_comp = HandComponent(**hand_data) if hand_data is not None else None
-        equipped_gear = (
-            EquippedGearComponent(**equipped_gear_data).item
-            if equipped_gear_data is not None
-            else None
-        )
 
         effective_stats = compute_effective_stats(
             CharacterStatsComponent(**stats_data).stats,
-            equipped_gear,
             hand_comp,
         )
 

@@ -129,16 +129,11 @@ class CraftGearItemActionSystem(ReactiveProcessor):
         new_item = GearItem(
             name=result.name,
             description=result.description,
-            stat_bonuses=result.stat_bonuses,
-            cost=result.cost,
-            craft_materials=action.material_items,
+            resources=action.material_items,
         )
         self._update_storage(storage_entity, action.material_names, new_item)
 
-        logger.info(
-            f"[CraftGearItemActionSystem] 合成完成: {new_item.name} "
-            f"(cost={new_item.cost}, stat_bonuses={new_item.stat_bonuses})"
-        )
+        logger.info(f"[CraftGearItemActionSystem] 合成完成: {new_item.name}")
 
     ####################################################################################################################################
     async def _call_llm(

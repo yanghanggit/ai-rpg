@@ -115,8 +115,6 @@ class CombatEquipGearScreen(BaseGameScreen):
         装备同样是队伍级行为，始终挂在玩家自身实体上，且必须由玩家本人回合发动；
     与消耗品的关键差异：
         - 目标恒为单一友方（可含玩家自身），服务端要求解析结果恰好 1 个目标；
-    - 消耗的是**目标**（而非玩家）本回合剩余 energy（`RoundStatsComponent`），
-            目标 energy 不足以支付装备 cost 时无法为其装备；
     - 无「每回合限用一次」的限制，但同一件装备若已被任意实体装备中则不可再次
       使用，直到下一关 / 退出副本清空。
     """
@@ -504,20 +502,9 @@ class CombatEquipGearScreen(BaseGameScreen):
             self._back_to_menu(log)
             return
 
-        effective_stats = compute_effective_stats_for(target_entity)
-        current_energy = resolve_current_energy(target_entity, effective_stats)
-        if current_energy < item.cost:
-            log.write(
-                f"[red]目标『{display_name(target_name)}』本回合能量不足"
-                f"（需要{item.cost}，剩余{current_energy}），无法为其装备，使用已取消，返回菜单。[/]"
-            )
-            self._back_to_menu(log)
-            return
-
         log.write("[bold yellow]── 确认使用 ─────────────────────────────────[/]")
         log.write(render_item(item))
         log.write(f"  目标： {display_name(target_name)}")
-        log.write(f"  费用： 消耗目标 {item.cost} 点 energy")
         log.write("")
         log.write("  [bold green]1[/]  确认使用")
         log.write("  [bold green]0[/]  取消，返回菜单")

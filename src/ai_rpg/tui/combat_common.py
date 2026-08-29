@@ -15,7 +15,6 @@ from ..models import (
     DEFAULT_ROUND_ENERGY,
     DeathComponent,
     EntitySerialization,
-    EquippedGearComponent,
     HandComponent,
     MonsterComponent,
     NPCComponent,
@@ -93,19 +92,11 @@ def compute_effective_stats_for(
     if stats_data is None:
         return None
 
-    equipped_gear_data = find_component_data(entity, EquippedGearComponent.__name__)
-    equipped_gear = (
-        EquippedGearComponent(**equipped_gear_data).item
-        if equipped_gear_data is not None
-        else None
-    )
-
     hand_data = find_component_data(entity, HandComponent.__name__)
     hand_component = HandComponent(**hand_data) if hand_data is not None else None
 
     return compute_effective_stats(
         CharacterStatsComponent(**stats_data).stats,
-        equipped_gear,
         hand_component,
     )
 
@@ -264,19 +255,10 @@ def render_stage_actors(
 
         base_stats = CharacterStatsComponent(**stats_data).stats
 
-        equipped_gear_data = find_component_data(entity, EquippedGearComponent.__name__)
-        equipped_gear = (
-            EquippedGearComponent(**equipped_gear_data).item
-            if equipped_gear_data is not None
-            else None
-        )
-
         hand_data = find_component_data(entity, HandComponent.__name__)
         hand_component = HandComponent(**hand_data) if hand_data is not None else None
 
-        effective_stats = compute_effective_stats(
-            base_stats, equipped_gear, hand_component
-        )
+        effective_stats = compute_effective_stats(base_stats, hand_component)
         current_energy = resolve_current_energy(entity, effective_stats)
         label = role_label(entity)
         is_dead = find_component_data(entity, DeathComponent.__name__) is not None

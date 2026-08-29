@@ -37,32 +37,9 @@ def test_activate_equip_gear_requires_inventory_holder_turn() -> None:
     assert "不是背包持有者" in msg
 
 
-def test_activate_equip_gear_rejects_when_target_energy_less_than_cost() -> None:
-    game = _make_game(current_actor="player", player_name="player")
-    gear = GearItem(name="装备.测试", description="测试装备", cost=2)
-    player = game.get_player_entity.return_value
-    player.get.return_value = SimpleNamespace(items=[gear])
-    target = MagicMock()
-    target.name = "队友A"
-    game.get_entity_by_name.return_value = target
-
-    with (
-        patch(
-            "src.ai_rpg.services.dungeon_combat_actions.resolve_targets",
-            return_value=(["队友A"], ""),
-        ),
-        patch("src.ai_rpg.services.dungeon_combat_actions.get_energy", return_value=1),
-    ):
-        ok, msg = activate_equip_gear(game, "装备.测试", ["队友A"])
-
-    assert ok is False
-    assert "需要2点" in msg
-    player.replace.assert_not_called()
-
-
 def test_activate_equip_gear_rejects_non_ally_target() -> None:
     game = _make_game(current_actor="player", player_name="player")
-    gear = GearItem(name="装备.测试", description="测试装备", cost=1)
+    gear = GearItem(name="装备.测试", description="测试装备")
     player = game.get_player_entity.return_value
     player.get.return_value = SimpleNamespace(items=[gear])
     target = MagicMock()
@@ -81,21 +58,18 @@ def test_activate_equip_gear_rejects_non_ally_target() -> None:
     player.replace.assert_not_called()
 
 
-def test_activate_equip_gear_activates_action_when_target_energy_covers_cost() -> None:
+def test_activate_equip_gear_activates_action() -> None:
     game = _make_game(current_actor="player", player_name="player")
-    gear = GearItem(name="装备.测试", description="测试装备", cost=2)
+    gear = GearItem(name="装备.测试", description="测试装备")
     player = game.get_player_entity.return_value
     player.get.return_value = SimpleNamespace(items=[gear])
     target = MagicMock()
     target.name = "队友A"
     game.get_entity_by_name.return_value = target
 
-    with (
-        patch(
-            "src.ai_rpg.services.dungeon_combat_actions.resolve_targets",
-            return_value=(["队友A"], ""),
-        ),
-        patch("src.ai_rpg.services.dungeon_combat_actions.get_energy", return_value=2),
+    with patch(
+        "src.ai_rpg.services.dungeon_combat_actions.resolve_targets",
+        return_value=(["队友A"], ""),
     ):
         ok, msg = activate_equip_gear(game, "装备.测试", ["队友A"])
 

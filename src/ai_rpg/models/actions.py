@@ -1,6 +1,6 @@
 """游戏动作组件。添加到实体后由对应系统处理执行。"""
 
-from typing import Dict, List, Optional, final
+from typing import Dict, List, final
 from ..entitas.components import Component
 from .card import Card
 from .dungeon_generation import DungeonBlueprint, DungeonRoomData
@@ -115,9 +115,6 @@ class PlayCardsAction(Component):
     name: str
     card: Card  # 使用的卡牌
     targets: List[str]  # 技能目标角色名列表
-    gear_item: Optional[
-        GearItem
-    ]  # 出牌者当前装备；由 PlayCardsActionSystem 组装填充，供仲裁系统使用
 
 
 ############################################################################################################

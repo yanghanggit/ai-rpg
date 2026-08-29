@@ -18,8 +18,8 @@ from src.ai_rpg.models.items import GearItem
 from src.ai_rpg.game.dbg_combat_processor import clear_combat_state
 
 
-def _make_gear(name: str, cost: int = 1) -> GearItem:
-    return GearItem(name=name, description="测试装备", cost=cost)
+def _make_gear(name: str) -> GearItem:
+    return GearItem(name=name, description="测试装备")
 
 
 def _make_mock_game(

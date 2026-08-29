@@ -86,7 +86,7 @@ class TestExhaustCardsActionSystemSkip:
         entity = _make_entity(context, "英雄")
         card = _make_card("闪击", source="英雄", exhaust=True)
         entity.get(DiscardPileComponent).cards.append(card)
-        entity.add(PlayCardsAction, "英雄", card, [], None)
+        entity.add(PlayCardsAction, "英雄", card, [])
 
         await system.react([entity])
 
@@ -108,7 +108,7 @@ class TestExhaustCardsActionSystemExhaustTrue:
         entity = _make_entity(context, "英雄")
         card = _make_card("终焉之击", source="英雄", exhaust=True)
         entity.get(DiscardPileComponent).cards.append(card)
-        entity.add(PlayCardsAction, "英雄", card, [], None)
+        entity.add(PlayCardsAction, "英雄", card, [])
 
         await system.react([entity])
 
@@ -128,11 +128,11 @@ class TestExhaustCardsActionSystemExhaustTrue:
         card2 = _make_card("消耗牌B", source="英雄", exhaust=True)
 
         entity.get(DiscardPileComponent).cards.append(card1)
-        entity.add(PlayCardsAction, "英雄", card1, [], None)
+        entity.add(PlayCardsAction, "英雄", card1, [])
         await system.react([entity])
 
         entity.get(DiscardPileComponent).cards.append(card2)
-        entity.replace(PlayCardsAction, "英雄", card2, [], None)
+        entity.replace(PlayCardsAction, "英雄", card2, [])
         await system.react([entity])
 
         exhaust = entity.get(ExhaustPileComponent)
@@ -154,7 +154,7 @@ class TestExhaustCardsActionSystemExhaustFalse:
         entity = _make_entity(context, "英雄")
         card = _make_card("普通斩击", source="英雄", exhaust=False)
         entity.get(DiscardPileComponent).cards.append(card)
-        entity.add(PlayCardsAction, "英雄", card, [], None)
+        entity.add(PlayCardsAction, "英雄", card, [])
 
         await system.react([entity])
 
@@ -178,7 +178,7 @@ class TestExhaustCardsActionSystemForeignCard:
         foreign_card = _make_card("外来秘术", source="他人", exhaust=True)
         # DiscardCardsActionSystem 已无条件将出牌写入 DiscardPile
         entity.get(DiscardPileComponent).cards.append(foreign_card)
-        entity.add(PlayCardsAction, "英雄", foreign_card, [], None)
+        entity.add(PlayCardsAction, "英雄", foreign_card, [])
 
         await system.react([entity])
 

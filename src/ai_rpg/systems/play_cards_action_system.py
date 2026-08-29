@@ -17,7 +17,6 @@ from ..models import (
     AgentEvent,
     Card,
     DeathComponent,
-    EquippedGearComponent,
     HandComponent,
     HumanMessage,
     PlayCardsAction,
@@ -163,13 +162,6 @@ class PlayCardsActionSystem(ReactiveProcessor):
                 )
                 entity.remove(PlayCardsAction)
                 continue
-
-            # 组装填充 gear_item：从出牌者当前装备组件读取，供 PlayCardsArbitrationSystem 直接使用
-            play_cards_action.gear_item = (
-                entity.get(EquippedGearComponent).item
-                if entity.has(EquippedGearComponent)
-                else None
-            )
 
             logger.debug(
                 f"  [{play_cards_action.name}] 出牌 → 卡牌: {play_cards_action.card.name}"

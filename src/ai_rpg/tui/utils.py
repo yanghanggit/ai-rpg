@@ -42,19 +42,6 @@ def render_item(item: AnyItem) -> str:
     if isinstance(item, GearItem):
         lines.append(f"[bold]{item.name}[/]{count_str} [yellow]【装备】[/]")
         lines.append(f"  [dim]{item.description}[/]")
-        s = item.stat_bonuses
-        bonus_parts = []
-        for val, fmt in [
-            (s.attack, "攻击+{}"),
-            (s.defense, "防御+{}"),
-            (s.hp, "HP+{}"),
-            (s.max_hp, "MaxHP+{}"),
-        ]:
-            if val:
-                bonus_parts.append(fmt.format(val))
-        if bonus_parts:
-            lines.append(f"  [dim]属性: {', '.join(bonus_parts)}[/]")
-        lines.append(f"  [dim]费用: 目标 energy -{item.cost}[/]")
 
     elif isinstance(item, CostumeItem):
         lines.append(f"[bold]{item.name}[/]{count_str} [magenta]【外观】[/]")

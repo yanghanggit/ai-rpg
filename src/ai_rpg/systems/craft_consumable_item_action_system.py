@@ -116,7 +116,7 @@ class CraftConsumableItemActionSystem(ReactiveProcessor):
             description=result.description,
             target_type=result.target_type,
             on_use_affixes=result.on_use_affixes,
-            craft_materials=action.material_items,
+            resources=action.material_items,
         )
 
         # 更新储物箱：扣减已用材料（count 递减，归零则移除），追加合成品

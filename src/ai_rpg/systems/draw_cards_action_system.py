@@ -25,7 +25,6 @@ from ..models import (
 class DrawCardsActionSystem(ReactiveProcessor):
     """
     响应 DrawCardsAction，为每个存活角色填充 HandComponent。
-
     优先取回 DrawPile.retained_cards 中的 retain 牌，再抽取本回合正常张数。
     """
 
@@ -54,15 +53,23 @@ class DrawCardsActionSystem(ReactiveProcessor):
     ####################################################################################################################################
     def _draw_from_pile(self, entity: Entity, n: int) -> List[Card]:
         """从 DrawPile 抽取 n 张牌（FIFO）。"""
+
         draw_pile = entity.get(DrawPileComponent)
         discard_pile = entity.get(DiscardPileComponent)
-        assert draw_pile is not None and discard_pile is not None
+        assert (
+            draw_pile is not None and discard_pile is not None
+        ), "DrawPileComponent 或 DiscardPileComponent 不存在"
 
         drawn: List[Card] = []
         while len(drawn) < n:
+
             if draw_pile.cards:
+
+                # DrawPile 非空，直接抽取一张牌
                 drawn.append(draw_pile.cards.pop(0))  # FIFO
+
             elif discard_pile.cards:
+
                 # DrawPile 耗尽：将 DiscardPile 洗牌补入
                 random.shuffle(discard_pile.cards)
                 draw_pile.cards.extend(discard_pile.cards)

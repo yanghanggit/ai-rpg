@@ -1,4 +1,4 @@
-"""EquipGearItemActionSystem 单元测试：验证以 energy 消耗替代耐久约束的装备机制。"""
+"""EquipGearItemActionSystem 单元测试：验证装备的移动语义（背包 → 目标，换装归还）。"""
 
 from typing import List
 from unittest.mock import MagicMock
@@ -12,8 +12,6 @@ from src.ai_rpg.models import (
     AgentEvent,
     EquippedGearComponent,
     InventoryComponent,
-    PartyMemberComponent,
-    RoundStatsComponent,
     EquipGearItemAction,
 )
 from src.ai_rpg.models.items import GearItem
@@ -25,11 +23,10 @@ from src.ai_rpg.systems.equip_gear_item_action_system import EquipGearItemAction
 # ---------------------------------------------------------------------------
 
 
-def _make_gear(name: str, cost: int = 1) -> GearItem:
+def _make_gear(name: str) -> GearItem:
     return GearItem(
         name=name,
         description="测试装备",
-        cost=cost,
     )
 
 
@@ -48,12 +45,10 @@ def _make_player_entity(
     return entity
 
 
-def _make_party_entity(context: Context, name: str, energy: int) -> Entity:
-    """创建带 RoundStatsComponent（当前回合剩余 energy）的友方角色实体。"""
+def _make_party_entity(context: Context, name: str) -> Entity:
+    """创建友方目标实体。"""
     entity = context.create_entity()
     entity._name = name
-    entity.add(PartyMemberComponent, name)
-    entity.add(RoundStatsComponent, name, energy)
     return entity
 
 
@@ -104,16 +99,16 @@ class TestReact:
         mock_game.get_entity_by_name.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_target_energy_deducted_by_item_cost(
+    async def test_equip_moves_item_to_target_and_broadcasts(
         self,
         context: Context,
         mock_game: MagicMock,
         system: EquipGearItemActionSystem,
     ) -> None:
         _setup_mock_dungeon(mock_game)
-        gear = _make_gear("装备.测试", cost=2)
+        gear = _make_gear("装备.测试")
         player = _make_player_entity(context, "player", [gear], gear, ["队友A"])
-        target = _make_party_entity(context, "队友A", energy=3)
+        target = _make_party_entity(context, "队友A")
         stage = context.create_entity()
         stage._name = "测试场景"
         mock_game.get_entity_by_name.return_value = target
@@ -121,7 +116,6 @@ class TestReact:
 
         await system.react([player])
 
-        assert target.get(RoundStatsComponent).energy == 1
         assert target.get(EquippedGearComponent).item.name == "装备.测试"
         assert target.get(EquippedGearComponent).item is gear
         assert gear not in player.get(InventoryComponent).items
@@ -144,10 +138,10 @@ class TestReact:
         """目标已装备旧装备时，再次为其装备新装备应将旧装备归还背包持有者
         （移动语义下的换装场景，对齐 WornCostumeComponent 的换装行为）。"""
         _setup_mock_dungeon(mock_game)
-        new_gear = _make_gear("装备.新", cost=1)
-        old_gear = _make_gear("装备.旧", cost=1)
+        new_gear = _make_gear("装备.新")
+        old_gear = _make_gear("装备.旧")
         player = _make_player_entity(context, "player", [new_gear], new_gear, ["队友A"])
-        target = _make_party_entity(context, "队友A", energy=2)
+        target = _make_party_entity(context, "队友A")
         target.add(EquippedGearComponent, target.name, old_gear)
         stage = context.create_entity()
         stage._name = "测试场景"
@@ -169,13 +163,13 @@ class TestReact:
     ) -> None:
         """为一个目标装备新装备，不应影响其它已装备角色的 EquippedGearComponent。"""
         _setup_mock_dungeon(mock_game)
-        action_gear = _make_gear("装备.测试", cost=1)
-        other_holder_gear = _make_gear("装备.测试", cost=1)
+        action_gear = _make_gear("装备.测试")
+        other_holder_gear = _make_gear("装备.测试")
         player = _make_player_entity(
             context, "player", [action_gear], action_gear, ["队友A"]
         )
-        target = _make_party_entity(context, "队友A", energy=2)
-        other_holder = _make_party_entity(context, "队友B", energy=2)
+        target = _make_party_entity(context, "队友A")
+        other_holder = _make_party_entity(context, "队友B")
         stage = context.create_entity()
         stage._name = "测试场景"
         other_holder.add(EquippedGearComponent, other_holder.name, other_holder_gear)
@@ -187,21 +181,3 @@ class TestReact:
         assert other_holder.has(EquippedGearComponent)
         assert other_holder.get(EquippedGearComponent).item is other_holder_gear
         assert target.get(EquippedGearComponent).item is action_gear
-
-    @pytest.mark.asyncio
-    async def test_raises_when_target_energy_less_than_item_cost(
-        self,
-        context: Context,
-        mock_game: MagicMock,
-        system: EquipGearItemActionSystem,
-    ) -> None:
-        """系统信任调用方（activate_equip_gear）已校验目标 energy>=cost；
-        若目标 energy 不足仍被调用，系统层断言应失败。"""
-        _setup_mock_dungeon(mock_game)
-        gear = _make_gear("装备.测试", cost=2)
-        player = _make_player_entity(context, "player", [gear], gear, ["队友A"])
-        target = _make_party_entity(context, "队友A", energy=1)
-        mock_game.get_entity_by_name.return_value = target
-
-        with pytest.raises(AssertionError):
-            await system.react([player])

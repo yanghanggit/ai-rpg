@@ -50,7 +50,6 @@ def _make_actor_with_play_cards_action(context: Context, name: str) -> Entity:
         name,
         _make_card("斩击"),
         [name],
-        None,
     )
     return entity
 

@@ -492,9 +492,6 @@ def build_mock_entities_details_response(
                     GearItem(
                         name="淬炼长剑",
                         description="一把普通但锐利的长剑，适合新手冒险者。",
-                        stat_bonuses=CharacterStats(
-                            hp=0, max_hp=0, attack=2, defense=0
-                        ),
                     ),
                 ],
             ),

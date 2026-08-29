@@ -22,7 +22,6 @@ from ..models import (
     DeathComponent,
     RetreatAction,
     MonsterTurnAction,
-    HandComponent,
     InventoryComponent,
     CombatLootComponent,
     EquipGearItemAction,
@@ -220,7 +219,6 @@ async def activate_play_cards_specified(
         entity.name,
         selected_card,
         resolved_targets,
-        None,  # gear_item 由 PlayCardsActionSystem 组装填充
     )
 
     # 返回成功信息，表示已经成功为角色激活了出牌动作。
@@ -538,13 +536,6 @@ def activate_equip_gear(
     # 装备只能作用于友方目标，resolve_targets 不再限制阵营，此处显式校验。
     if not target_entity.has(PartyMemberComponent):
         msg = f"装备使用失败：目标 '{target_entity.name}' 不是友方角色，装备只能用于友方目标"
-        logger.error(msg)
-        return False, msg
-
-    # 检查目标实体的当前能量是否足以支付装备的消耗，如果不足则返回错误。
-    current_energy = get_energy(target_entity)
-    if current_energy < selected_item.cost:
-        msg = f"目标 '{target_entity.name}' 当前能量不足（需要{selected_item.cost}点，当前剩余{current_energy}点），无法为其装备"
         logger.error(msg)
         return False, msg
 

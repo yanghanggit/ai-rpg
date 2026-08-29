@@ -110,7 +110,7 @@ class CraftCostumeItemActionSystem(ReactiveProcessor):
         new_item = CostumeItem(
             name=result.name,
             description=result.description,
-            craft_materials=action.material_items,
+            resources=action.material_items,
         )
         self._update_storage(storage_entity, action.material_names, new_item)
 

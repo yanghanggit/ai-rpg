@@ -37,14 +37,6 @@ class ArbitrationResponse(BaseModel):
 
 
 @prompt_builder
-def fmt_stat_bonuses(stats: CharacterStats) -> str:
-    return (
-        f"HP {stats.hp:+d} | MAX_HP {stats.max_hp:+d} | ATK {stats.attack:+d} | "
-        f"DEF {stats.defense:+d}"
-    )
-
-
-@prompt_builder
 def build_stats_update_notification(final_hp: int, max_hp: int) -> str:
     return f"""# 你的生命值已更新
 
@@ -116,7 +108,6 @@ CALC_RULES_SECTION: Final[
 
 **卡牌出牌**：单段有效伤害 = max(0, damage − 目标防御)，共 hit_count 段；出牌者 HP 为 0 则跳过结算。
 **防御**：本提示中展示的「防御/目标防御」已聚合完成，直接使用展示值。
-**装备穿戴**：stat_bonuses 已由系统确定性写入，无需重复计算。
 **消耗品使用**：依物品描述中明确写明的数值计算；描述模糊时给出合理推断并体现在 narrative 中。
 **即时词缀**：若列出即时词缀，须确保其被实际执行；可与结算规则泛化结合，但不引入词缀未提及的新机制。
 **叙事泛化**：将「描述/叙事」作为 narrative 与 stage_description 的素材，结合场景环境、状态效果、即时词缀自由泛化，但不得改变以上结算规则确定的数值结果。
@@ -166,7 +157,6 @@ def build_gear_arbitration_prompt(
 
 - 名称：{item.name}
 - 描述：{item.description}
-- 确定性属性加成（已生效）：{fmt_stat_bonuses(item.stat_bonuses)}
 
 ## 目标
 
@@ -216,7 +206,6 @@ def build_condensed_gear_arbitration_prompt(
 
 - 名称：{item.name}
 - 描述：{item.description}
-- 确定性属性加成（已生效）：{fmt_stat_bonuses(item.stat_bonuses)}
 
 ## 目标
 

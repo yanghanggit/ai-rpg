@@ -21,7 +21,6 @@ from ..models import (
     Card,
     CharacterStatsComponent,
     CombatArbitrationEvent,
-    GearItem,
     HandComponent,
     HumanMessage,
     PlayCardsAction,
@@ -35,7 +34,6 @@ from .arbitration_prompt_builders import (
     NARRATIVE_DESCRIPTION,
     STAGE_DESCRIPTION_DESCRIPTION,
     build_arbitration_broadcast,
-    build_instant_affix_section,
     build_stats_update_notification,
 )
 
@@ -104,21 +102,6 @@ def _build_round_action_info_lines(
 
 
 @prompt_builder
-def _build_gear_play_section(gear_item: GearItem | None) -> str:
-    """构建出牌者装备段落（含装备即时词缀）；无装备时返回空字符串。"""
-    if gear_item is None:
-        return ""
-    section = (
-        f"\n\n## 出牌者装备\n\n"
-        f"- 名称：{gear_item.name}\n"
-        f"- 描述：{gear_item.description}"
-    )
-    return section + build_instant_affix_section(
-        "装备即时词缀", gear_item.on_play_affixes
-    )
-
-
-@prompt_builder
 def _build_card_data_lines(card: Card) -> str:
     """输出一张卡参与仲裁的全部数据字段（出牌侧：含即时词缀与来源，排除系统管理字段）。"""
     on_play = "、".join(card.on_play_affixes) if card.on_play_affixes else "无"
@@ -142,7 +125,6 @@ def _build_combat_arbitration_tool_prompt(
     targets: List[str],
     current_round_number: int,
     current_stage_description: str,
-    gear_item: GearItem | None = None,
     action_order: List[str] | None = None,
     completed_actors: List[str] | None = None,
     current_actor: str | None = None,
@@ -163,7 +145,7 @@ def _build_combat_arbitration_tool_prompt(
 ## 出牌
 
 {_build_card_data_lines(card)}
-{spread.hit_assignment}{_build_gear_play_section(gear_item)}
+{spread.hit_assignment}
 
 ## 目标
 
@@ -210,7 +192,6 @@ def _build_condensed_combat_arbitration_tool_prompt(
     targets: List[str],
     current_round_number: int,
     current_stage_description: str,
-    gear_item: GearItem | None = None,
     action_order: List[str] | None = None,
     completed_actors: List[str] | None = None,
     current_actor: str | None = None,
@@ -232,7 +213,7 @@ def _build_condensed_combat_arbitration_tool_prompt(
 ## 出牌
 
 {_build_card_data_lines(card)}
-{spread.hit_assignment}{_build_gear_play_section(gear_item)}
+{spread.hit_assignment}
 
 ## 目标
 
@@ -480,7 +461,6 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             play_cards_action.targets,
             current_round_number,
             current_stage_description,
-            play_cards_action.gear_item,
             round_action_order,
             round_completed_actors,
             round_current_actor,
@@ -494,7 +474,6 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                 play_cards_action.targets,
                 current_round_number,
                 current_stage_description,
-                play_cards_action.gear_item,
                 round_action_order,
                 round_completed_actors,
                 round_current_actor,

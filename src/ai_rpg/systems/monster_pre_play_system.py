@@ -437,7 +437,6 @@ class MonsterPrePlaySystem(ReactiveProcessor):
             entity.name,
             selected_card,
             valid_targets,
-            None,  # gear_item 由 PlayCardsActionSystem 组装填充
         )
         logger.debug(
             f"MonsterPrePlaySystem: [{entity.name}] 决策出牌 '{selected_card.name}'，目标：{valid_targets}"

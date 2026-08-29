@@ -5,7 +5,6 @@ from loguru import logger
 from overrides import override
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
-from ..game.dbg_combat_processor import consume_energy, get_energy
 from ..utils import prompt_builder
 from ..models import (
     AgentEvent,
@@ -101,7 +100,7 @@ class EquipGearItemActionSystem(ReactiveProcessor):
         ), "EquipGearItemActionSystem: 使用装备必须指定至少一个目标"
         target_name = action.targets[0]
         logger.debug(
-            f"EquipGearItemActionSystem: 使用装备 '{item.name}' | cost={item.cost} | 目标: {action.targets}"
+            f"EquipGearItemActionSystem: 使用装备 '{item.name}' | 目标: {action.targets}"
         )
 
         # 装备到目标实体。前置校验由 activate_equip_gear 负责，这里只落地动作效果。
@@ -109,9 +108,6 @@ class EquipGearItemActionSystem(ReactiveProcessor):
         assert (
             target_entity is not None
         ), f"EquipGearItemActionSystem: 无法找到目标 {target_name}"
-        assert (
-            get_energy(target_entity) >= item.cost
-        ), f"{target_entity.name} 能量不足！需要 energy={item.cost}，当前 energy={get_energy(target_entity)}"
 
         # 移动语义：装备背包持有者（entity）必须持有 InventoryComponent，装备将从其
         # InventoryComponent.items 中移出，而非拷贝。
@@ -140,16 +136,6 @@ class EquipGearItemActionSystem(ReactiveProcessor):
         )
         logger.debug(
             f"EquipGearItemActionSystem: [{entity.name}] 已为 [{target_name}] 装备 '{item.name}'"
-        )
-
-        # 消耗被装备目标本回合指定 energy；不调用 advance_turn ——
-        # 行动权推进完全由 completed_actors（仅 pass turn 写入）决定，装备动作本身不结束任何人的回合
-        if item.cost > 0:
-            consume_energy(target_entity, item.cost)
-
-        # 记录日志
-        logger.debug(
-            f"EquipGearItemActionSystem: '{target_entity.name}' 装备消耗 {item.cost} 点 energy，剩余 {get_energy(target_entity)}"
         )
 
         # 向场景内所有存活角色广播装备使用通知

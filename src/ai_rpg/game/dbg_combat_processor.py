@@ -28,7 +28,7 @@ from .dbg_game import DBGGame
 
 #################################################################################################################################################
 def compute_character_stats(entity: Entity) -> CharacterStats:
-    """计算角色的最终有效属性，聚合基础属性、已装备物品的属性加成与手牌格挡。"""
+    """计算角色的最终有效属性，聚合基础属性与手牌格挡。"""
     assert entity.has(ActorComponent), f"{entity.name} 缺少 ActorComponent"
     assert entity.has(
         CharacterStatsComponent
@@ -37,11 +37,6 @@ def compute_character_stats(entity: Entity) -> CharacterStats:
     stats_comp = entity.get(CharacterStatsComponent)
     return compute_effective_stats(
         stats_comp.stats,
-        (
-            entity.get(EquippedGearComponent).item
-            if entity.has(EquippedGearComponent)
-            else None
-        ),
         entity.get(HandComponent) if entity.has(HandComponent) else None,
     )
 

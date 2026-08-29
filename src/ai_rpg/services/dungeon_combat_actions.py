@@ -9,6 +9,7 @@ from ..game.dbg_combat_processor import (
     get_alive_party_members_in_stage,
     get_alive_monsters_in_stage,
     get_energy,
+    require_single_anchor_target,
     resolve_targets,
 )
 from ..models import (
@@ -186,12 +187,22 @@ async def activate_play_cards_specified(
             f"能量不足，无法出牌『{card_name}』（需要{selected_card.cost}点，当前剩余{current_energy}点）",
         )
 
-    # 解析卡牌的目标，根据卡牌的目标类型和命中次数，结合玩家提供的目标名称列表，解析出实际的目标实体列表。
+    # 校验目标数量并提取单个锚点目标名（self_target 卡牌无需目标名）。
+    anchor_target_name, anchor_err = require_single_anchor_target(
+        targets,
+        selected_card.target_type.value.upper(),
+        self_target=selected_card.self_target,
+    )
+    if anchor_err:
+        logger.error(f"activate_play_cards_specified: {anchor_err}")
+        return False, anchor_err
+
+    # 解析卡牌的目标，根据卡牌的目标类型和命中次数，结合玩家提供的锚点目标名，解析出实际的目标实体列表。
     resolved_targets, resolve_err = resolve_targets(
         selected_card.target_type,
         selected_card.hit_count,
         entity,
-        targets,
+        anchor_target_name,
         dbg_game,
         selected_card.self_target,
     )
@@ -380,9 +391,23 @@ def activate_use_consumable(
         logger.error(msg)
         return False, msg
 
+    # 校验目标数量并提取单个锚点目标名。
+    anchor_target_name, anchor_err = require_single_anchor_target(
+        targets,
+        selected_item.target_type.value.upper(),
+    )
+    if anchor_err:
+        logger.error(f"activate_use_consumable: {anchor_err}")
+        return False, anchor_err
+
     # 解析消耗品的目标，根据消耗品的目标类型、数量和玩家实体，结合传入的目标列表，确定最终的目标实体列表。如果解析失败，则返回错误。
     resolved_targets, resolve_err = resolve_targets(
-        selected_item.target_type, 1, player_entity, targets, dbg_game
+        selected_item.target_type,
+        1,
+        player_entity,
+        anchor_target_name,
+        dbg_game,
+        self_target=False,
     )
     if resolve_err:
         logger.error(f"activate_use_consumable: {resolve_err}")
@@ -479,9 +504,20 @@ def activate_equip_gear(
         logger.error(msg)
         return False, msg
 
+    # 校验目标数量并提取单个锚点目标名（装备固定为 SINGLE 单目标）。
+    anchor_target_name, anchor_err = require_single_anchor_target(targets, "SINGLE")
+    if anchor_err:
+        logger.error(f"activate_equip_gear: {anchor_err}")
+        return False, anchor_err
+
     # 装备固定作用于单一目标，先按 SINGLE 规则解析（不限阵营）。
     resolved_targets, resolve_err = resolve_targets(
-        TargetType.SINGLE, 1, player_entity, targets, dbg_game
+        TargetType.SINGLE,
+        1,
+        player_entity,
+        anchor_target_name,
+        dbg_game,
+        self_target=False,
     )
     if resolve_err:
         logger.error(f"activate_equip_gear: {resolve_err}")

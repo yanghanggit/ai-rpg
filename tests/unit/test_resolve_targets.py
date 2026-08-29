@@ -3,7 +3,10 @@
 from typing import Any, cast
 
 from src.ai_rpg.entitas.entity import Entity
-from src.ai_rpg.game.dbg_combat_processor import resolve_targets
+from src.ai_rpg.game.dbg_combat_processor import (
+    require_single_anchor_target,
+    resolve_targets,
+)
 from src.ai_rpg.game.dbg_game import DBGGame
 from src.ai_rpg.models import (
     ActorComponent,
@@ -66,17 +69,38 @@ def _make_monster(game: Any, name: str, stage_name: str, dead: bool = False) -> 
     return entity
 
 
+class TestRequireSingleAnchorTarget:
+    def test_requires_exactly_one_element(self) -> None:
+        anchor, err = require_single_anchor_target([], "SINGLE")
+        assert anchor is None
+        assert "数量必须为 1" in err
+
+        anchor2, err2 = require_single_anchor_target(["A", "B"], "ALL")
+        assert anchor2 is None
+        assert "数量必须为 1" in err2
+
+    def test_extracts_single_element(self) -> None:
+        anchor, err = require_single_anchor_target(["怪物A"], "SPREAD")
+        assert err == ""
+        assert anchor == "怪物A"
+
+    def test_self_target_skips_validation(self) -> None:
+        anchor, err = require_single_anchor_target([], "SINGLE", self_target=True)
+        assert err == ""
+        assert anchor is None
+
+
 class TestResolveTargetsSingle:
-    def test_single_requires_exactly_one_target(self) -> None:
+    def test_single_rejects_missing_anchor(self) -> None:
         game = _make_game()
         stage = _make_stage(game, "stage1")
         hero = _make_ally(game, "hero", "stage1")
         _make_monster(game, "怪物A", "stage1")
         del stage
 
-        targets, err = resolve_targets(TargetType.SINGLE, 1, hero, [], game)
+        targets, err = resolve_targets(TargetType.SINGLE, 1, hero, None, game)
         assert targets == []
-        assert "数量必须为 1" in err
+        assert "必须提供恰好 1 个目标名" in err
 
     def test_single_target_must_be_alive_in_stage(self) -> None:
         game = _make_game()
@@ -84,7 +108,7 @@ class TestResolveTargetsSingle:
         hero = _make_ally(game, "hero", "stage1")
         _make_monster(game, "怪物A", "stage1", dead=True)
 
-        targets, err = resolve_targets(TargetType.SINGLE, 1, hero, ["怪物A"], game)
+        targets, err = resolve_targets(TargetType.SINGLE, 1, hero, "怪物A", game)
         assert targets == []
         assert "不在当前场景存活角色列表中" in err
 
@@ -94,7 +118,7 @@ class TestResolveTargetsSingle:
         hero = _make_ally(game, "hero", "stage1")
         _make_monster(game, "怪物A", "stage1")
 
-        targets, err = resolve_targets(TargetType.SINGLE, 1, hero, ["怪物A"], game)
+        targets, err = resolve_targets(TargetType.SINGLE, 1, hero, "怪物A", game)
         assert err == ""
         assert targets == ["怪物A"]
 
@@ -108,7 +132,7 @@ class TestResolveTargetsAll:
         _make_monster(game, "怪物B", "stage1")
         _make_monster(game, "怪物C", "stage1", dead=True)
 
-        targets, err = resolve_targets(TargetType.ALL, 1, hero, ["怪物A"], game)
+        targets, err = resolve_targets(TargetType.ALL, 1, hero, "怪物A", game)
         assert err == ""
         assert set(targets) == {"怪物A", "怪物B"}
 
@@ -119,23 +143,10 @@ class TestResolveTargetsAll:
         _make_ally(game, "队友A", "stage1")
         _make_monster(game, "怪物A", "stage1")
 
-        targets, err = resolve_targets(TargetType.ALL, 1, hero, ["hero"], game)
+        targets, err = resolve_targets(TargetType.ALL, 1, hero, "hero", game)
         assert err == ""
         # 阵营展开不排除行动者自己
         assert set(targets) == {"hero", "队友A"}
-
-    def test_all_rejects_anchor_count_not_one(self) -> None:
-        game = _make_game()
-        _make_stage(game, "stage1")
-        hero = _make_ally(game, "hero", "stage1")
-        _make_monster(game, "怪物A", "stage1")
-        _make_monster(game, "怪物B", "stage1")
-
-        targets, err = resolve_targets(
-            TargetType.ALL, 1, hero, ["怪物A", "怪物B"], game
-        )
-        assert targets == []
-        assert "数量必须为 1" in err
 
     def test_all_rejects_dead_or_nonexistent_anchor(self) -> None:
         game = _make_game()
@@ -143,11 +154,11 @@ class TestResolveTargetsAll:
         hero = _make_ally(game, "hero", "stage1")
         _make_monster(game, "怪物A", "stage1", dead=True)
 
-        targets, err = resolve_targets(TargetType.ALL, 1, hero, ["怪物A"], game)
+        targets, err = resolve_targets(TargetType.ALL, 1, hero, "怪物A", game)
         assert targets == []
         assert "不在当前场景存活角色列表中" in err
 
-        targets2, err2 = resolve_targets(TargetType.ALL, 1, hero, ["不存在的人"], game)
+        targets2, err2 = resolve_targets(TargetType.ALL, 1, hero, "不存在的人", game)
         assert targets2 == []
         assert "不在当前场景存活角色列表中" in err2
 
@@ -158,7 +169,7 @@ class TestResolveTargetsAll:
         neutral = game._create_entity("中立者")
         neutral.add(ActorComponent, "中立者", "stage1")
 
-        targets, err = resolve_targets(TargetType.ALL, 1, hero, ["中立者"], game)
+        targets, err = resolve_targets(TargetType.ALL, 1, hero, "中立者", game)
         assert targets == []
         assert "不属于任何可识别阵营" in err
 
@@ -171,7 +182,7 @@ class TestResolveTargetsSpread:
         _make_monster(game, "怪物A", "stage1")
         _make_monster(game, "怪物B", "stage1")
 
-        targets, err = resolve_targets(TargetType.SPREAD, 5, hero, ["怪物A"], game)
+        targets, err = resolve_targets(TargetType.SPREAD, 5, hero, "怪物A", game)
         assert err == ""
         assert len(targets) == 5
         assert set(targets) <= {"怪物A", "怪物B"}
@@ -184,31 +195,21 @@ class TestResolveTargetsSpread:
         hero = _make_ally(game, "hero", "stage1")
         _make_ally(game, "队友A", "stage1")
 
-        targets, err = resolve_targets(TargetType.SPREAD, 4, hero, ["hero"], game)
+        targets, err = resolve_targets(TargetType.SPREAD, 4, hero, "hero", game)
         assert err == ""
         assert len(targets) == 4
         assert set(targets) <= {"hero", "队友A"}
 
-    def test_spread_requires_exactly_one_anchor(self) -> None:
-        game = _make_game()
-        _make_stage(game, "stage1")
-        hero = _make_ally(game, "hero", "stage1")
-        _make_monster(game, "怪物A", "stage1")
-
-        targets, err = resolve_targets(TargetType.SPREAD, 3, hero, [], game)
-        assert targets == []
-        assert "数量必须为 1" in err
-
 
 class TestResolveTargetsSelf:
-    def test_self_ignores_passed_targets_and_returns_actor(self) -> None:
+    def test_self_ignores_anchor_and_returns_actor(self) -> None:
         game = _make_game()
         _make_stage(game, "stage1")
         hero = _make_ally(game, "hero", "stage1")
         _make_monster(game, "怪物A", "stage1")
 
         targets, err = resolve_targets(
-            TargetType.SINGLE, 1, hero, ["怪物A"], game, self_target=True
+            TargetType.SINGLE, 1, hero, None, game, self_target=True
         )
         assert err == ""
         assert targets == ["hero"]

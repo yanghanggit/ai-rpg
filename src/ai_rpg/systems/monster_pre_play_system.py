@@ -8,6 +8,7 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_combat_processor import (
     compute_character_stats,
     get_alive_actors_in_stage,
+    require_single_anchor_target,
     resolve_targets,
 )
 from ..game.dbg_game import DBGGame
@@ -370,12 +371,25 @@ class MonsterPrePlaySystem(ReactiveProcessor):
             entity.replace(PassTurnAction, entity.name)
             return
 
+        # 校验目标数量并提取单个锚点目标名（self_target 卡牌无需目标名）。
+        anchor_target_name, anchor_err = require_single_anchor_target(
+            decision.targets,
+            selected_card.target_type.value.upper(),
+            self_target=selected_card.self_target,
+        )
+        if anchor_err:
+            logger.warning(
+                f"MonsterPrePlaySystem: [{entity.name}] 目标解析失败：{anchor_err}，执行过牌"
+            )
+            entity.replace(PassTurnAction, entity.name)
+            return
+
         # 根据 target_type 解析出牌目标（与玩家出牌走同一套 resolve_targets 逻辑，避免重复实现）
         valid_targets, resolve_err = resolve_targets(
             selected_card.target_type,
             selected_card.hit_count,
             entity,
-            decision.targets,
+            anchor_target_name,
             self._game,
             selected_card.self_target,
         )

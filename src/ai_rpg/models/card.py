@@ -34,6 +34,9 @@ class Card(BaseModel):
     ethereal: bool = (
         False  # 虚无词缀；True 时 pass turn 时若仍留在手牌中，自动移入 ExhaustPileComponent
     )
+    transferable: bool = (
+        False  # 是否可传递：出牌时 copy 一份到每个解析目标的手牌（source 保持原卡，uuid 重新生成）
+    )
     cost: int = 1  # 出牌费用；消耗行动者当前 energy 的点数；energy 不足时禁止出牌
     damage: int = 0  # 造成的伤害值（单次）
     hit_count: int = 1  # 攻击次数（默认 1；>1 时为多段攻击，每段独立结算）

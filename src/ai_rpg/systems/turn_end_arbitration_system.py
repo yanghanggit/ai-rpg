@@ -2,17 +2,15 @@
 
 import json
 from functools import partial
-from typing import Dict, Final, List, Optional, Set, Tuple, final
+from typing import Dict, Final, List, Optional, Set, final
 
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel, Field
 
-from ..deepseek import ToolDefinition, ToolFunction, agent_loop, batch_agent_loop
+from ..deepseek import ToolDefinition, ToolFunction, agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_combat_processor import (
-    collect_hand_on_hit_cards,
-    collect_hand_turn_end_cards,
     compute_character_stats,
     get_alive_actors_in_stage,
     set_character_hp,
@@ -23,6 +21,7 @@ from ..models import (
     Card,
     CharacterStatsComponent,
     CombatArbitrationEvent,
+    HandComponent,
     HumanMessage,
     MonsterComponent,
     PartyMemberComponent,
@@ -44,7 +43,7 @@ TURN_END_AFFIX_RULES: Final[
     str
 ] = """## 回合结束词缀
 
-持有者手牌中带 `on_turn_end_affixes` 的卡牌在回合结束（pass turn）时触发。依各卡牌词缀描述结算，受影响目标由词缀描述与场上存活角色自行判断；持有者自身也可成为目标。不引入词缀未提及的新机制。"""
+你是这些卡牌的持有者，也是本次回合结束结算的仲裁者。每张卡牌的 `source` 是它的来源（生成/注入者名称）；词缀若提及「非 source 者」，指当前持有者（当其不等于该卡牌 source 时）。依各卡牌词缀描述结算，受影响目标由词缀描述与场上存活角色自行判断；持有者自身也可成为目标。不引入词缀未提及的新机制。"""
 
 
 @prompt_builder
@@ -95,9 +94,7 @@ def _build_turn_end_arbitration_tool_prompt(
 
     return f"""# 第 {current_round_number} 回合：回合结束结算（工具调用模式）
 
-## 持有者
-
-{holder_name}
+你是 {holder_name}，你正持有以下带回合结束词缀的卡牌；现在是你的回合结束（pass turn）时刻，由你作为仲裁者结算这些词缀的效果。
 
 ## 回合结束词缀卡牌
 
@@ -117,7 +114,7 @@ def _build_turn_end_arbitration_tool_prompt(
 
 ## 工具使用流程
 
-1. 调用 get_entity_stats 读取「持有者」与所有可能受影响角色的当前属性与受击词缀（可在同一次回复中并发调用多个）。
+1. 调用 get_entity_stats 读取「持有者」与所有可能受影响角色的当前属性（可在同一次回复中并发调用多个）。
 2. 依据「计算规则」与各卡牌「回合结束词缀」结算，得出每个受影响角色的最终 HP。
 3. 对每个受影响角色（含持有者与所有目标）调用 set_entity_hp 写入最终 HP（可在同一次回复中并发调用多个）。
 4. 调用 submit_arbitration 提交最终结果，结束本次仲裁。
@@ -145,9 +142,7 @@ def _build_condensed_turn_end_arbitration_tool_prompt(
 
     return f"""# 第 {current_round_number} 回合：回合结束结算（工具调用模式）
 
-## 持有者
-
-{holder_name}
+你是 {holder_name}（持有者/仲裁者），回合结束时结算下列卡牌的词缀效果。
 
 ## 回合结束词缀卡牌
 
@@ -180,7 +175,7 @@ def _build_turn_end_arbitration_broadcast(
 GET_ENTITY_STATS_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="get_entity_stats",
-        description="读取指定战斗角色的最终有效属性（HP/最大HP/攻击/防御）与其手牌中带受击词缀的卡牌（含这些卡牌的 source/damage/hit_count/block 等数据）。用于获取持有者与目标当前状态。",
+        description="读取指定战斗角色的最终有效属性（HP/最大HP/攻击/防御）。用于获取持有者与目标当前状态。",
         parameters={
             "type": "object",
             "properties": {
@@ -251,24 +246,14 @@ class _TurnEndArbitrationContext(BaseModel):
 
 
 def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
-    """处理 get_entity_stats 工具调用：返回 stats + 参与受击仲裁的手牌卡牌数据。"""
+    """处理 get_entity_stats 工具调用：返回指定角色的最终有效属性。"""
     entity = game.get_actor_entity(entity_name)
     if entity is None:
         return f"错误：找不到战斗角色 {entity_name}"
     stats = compute_character_stats(entity)
-    hit_cards = collect_hand_on_hit_cards(entity)
-    if hit_cards:
-        cards_str = "；".join(
-            f"{c.name}(source={c.source or '未知'}, description={c.description}, cost={c.cost}, "
-            f"damage={c.damage}, hit_count={c.hit_count}, block={c.block}, 受击词缀={c.on_hit_affixes})"
-            for c in hit_cards
-        )
-    else:
-        cards_str = "无"
     return (
         f"{entity_name}: HP {stats.hp}/{stats.max_hp} | "
-        f"ATK {stats.attack} | DEF {stats.defense} | "
-        f"受击卡牌: {cards_str}"
+        f"ATK {stats.attack} | DEF {stats.defense}"
     )
 
 
@@ -317,6 +302,14 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
         return entity.has(PassTurnAction)
 
     #######################################################################################################################################
+    def _collect_hand_turn_end_cards(self, entity: Entity) -> List[Card]:
+        """收集角色手牌中所有带回合结束词缀的卡牌（持有期间在回合结束时触发）。"""
+        hand = entity.get(HandComponent) if entity.has(HandComponent) else None
+        if hand is None:
+            return []
+        return [card for card in hand.cards if card.on_turn_end_affixes]
+
+    #######################################################################################################################################
     @override
     async def react(self, entities: List[Entity]) -> None:
 
@@ -345,99 +338,79 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
             self._game.current_dungeon_combat_room.combat.rounds or []
         )
 
-        # 仅扫描发起 pass turn 的行动者手牌，找出持有回合结束词缀卡牌的持有者
-        holders: List[Tuple[Entity, List[Card]]] = []
-        for actor in entities:
-            turn_end_cards = collect_hand_turn_end_cards(actor)
-            if turn_end_cards:
-                holders.append((actor, turn_end_cards))
-
-        if not holders:
+        # 仅处理本次发起 pass turn 的行动者（PassTurnActionSystem 一次只处理一个）
+        turn_end_cards = self._collect_hand_turn_end_cards(pass_turn_entity)
+        if not turn_end_cards:
             logger.debug(
                 "TurnEndArbitrationSystem: 本次 pass turn 的行动者无回合结束词缀卡牌，跳过"
             )
             return
 
-        # 场上存活角色（含阵营标签，供 LLM 判断目标；不用于扫描持有者）
+        # 场上存活角色（含阵营标签，供 LLM 判断目标）
         alive_actors = get_alive_actors_in_stage(self._game, pass_turn_entity)
         alive_actor_names = sorted(
             f"{actor.name}（{_camp_label(actor)}）" for actor in alive_actors
         )
 
-        # 为每个持有者组装 agent_loop 任务（独立 ctx / prompt / messages 副本）
-        jobs: List[
-            Tuple[Entity, List[Card], _TurnEndArbitrationContext, str, Optional[str]]
-        ] = []
-        for holder, cards in holders:
-            ctx = _TurnEndArbitrationContext()
-            full_prompt = _build_turn_end_arbitration_tool_prompt(
-                holder.name,
-                cards,
+        full_prompt = _build_turn_end_arbitration_tool_prompt(
+            pass_turn_entity.name,
+            turn_end_cards,
+            alive_actor_names,
+            current_round_number,
+            current_stage_description,
+        )
+        condensed_prompt = (
+            _build_condensed_turn_end_arbitration_tool_prompt(
+                pass_turn_entity.name,
+                turn_end_cards,
                 alive_actor_names,
                 current_round_number,
                 current_stage_description,
             )
-            condensed_prompt = (
-                _build_condensed_turn_end_arbitration_tool_prompt(
-                    holder.name,
-                    cards,
-                    alive_actor_names,
-                    current_round_number,
-                    current_stage_description,
-                )
-                if self._use_condensed_prompt
-                else None
-            )
-            jobs.append((holder, cards, ctx, full_prompt, condensed_prompt))
+            if self._use_condensed_prompt
+            else None
+        )
 
-        tasks = [
-            (
-                holder.name,
-                agent_loop(
-                    name=holder.name,
-                    prompt=full_prompt,
-                    messages=list(self._game.get_agent_memory(holder).messages),
-                    tools=[
-                        GET_ENTITY_STATS_TOOL,
-                        SET_ENTITY_HP_TOOL,
-                        SUBMIT_ARBITRATION_TOOL,
-                    ],
-                    handlers={
-                        "get_entity_stats": partial(
-                            _handle_get_entity_stats, self._game
-                        ),
-                        "set_entity_hp": partial(
-                            _handle_set_entity_hp, self._game, ctx
-                        ),
-                        "submit_arbitration": partial(_handle_submit_arbitration, ctx),
-                    },
-                    max_rounds=6,
-                    tool_choice="auto",
-                    terminal_tool=SUBMIT_ARBITRATION_TOOL,
-                ),
-            )
-            for holder, _cards, ctx, full_prompt, _cond in jobs
-        ]
+        ctx = _TurnEndArbitrationContext()
 
-        # 并发执行所有持有者的 agent_loop
-        outcomes = await batch_agent_loop(tasks)
-
-        # 逐个落库（各持有者写各自的记忆，互不冲突）
-        for (holder, _cards, ctx, full_prompt, condensed_prompt), ok in zip(
-            jobs, outcomes
-        ):
-            if not ok or ctx.combat_log is None or ctx.narrative is None:
-                logger.error(
-                    f"TurnEndArbitrationSystem: [{holder.name}] 回合结束仲裁未正常完成，跳过落库"
-                )
-                continue
-            self._apply_turn_end_arbitration_result(
-                stage_entity,
-                holder,
-                ctx,
-                full_prompt,
-                condensed_prompt,
+        try:
+            ok = await agent_loop(
+                name=pass_turn_entity.name,
+                prompt=full_prompt,
+                messages=list(self._game.get_agent_memory(pass_turn_entity).messages),
+                tools=[
+                    GET_ENTITY_STATS_TOOL,
+                    SET_ENTITY_HP_TOOL,
+                    SUBMIT_ARBITRATION_TOOL,
+                ],
+                handlers={
+                    "get_entity_stats": partial(_handle_get_entity_stats, self._game),
+                    "set_entity_hp": partial(_handle_set_entity_hp, self._game, ctx),
+                    "submit_arbitration": partial(_handle_submit_arbitration, ctx),
+                },
+                max_rounds=6,
+                tool_choice="auto",
+                terminal_tool=SUBMIT_ARBITRATION_TOOL,
             )
+        except Exception as e:
+            logger.error(
+                f"TurnEndArbitrationSystem: [{pass_turn_entity.name}] agent_loop 异常: {e}"
+            )
+            return
+
+        if not ok or ctx.combat_log is None or ctx.narrative is None:
+            logger.error(
+                f"TurnEndArbitrationSystem: [{pass_turn_entity.name}] 回合结束仲裁未正常完成，跳过落库"
+            )
+            return
+
+        self._apply_turn_end_arbitration_result(
+            stage_entity,
+            pass_turn_entity,
+            ctx,
+            full_prompt,
+            condensed_prompt,
+        )
 
     #######################################################################################################################################
     def _apply_turn_end_arbitration_result(

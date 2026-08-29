@@ -12,7 +12,6 @@ from pydantic import BaseModel, Field
 from ..deepseek import ToolDefinition, ToolFunction, agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_combat_processor import (
-    collect_hand_on_hit_cards,
     compute_character_stats,
     set_character_hp,
 )
@@ -23,6 +22,7 @@ from ..models import (
     CharacterStatsComponent,
     CombatArbitrationEvent,
     GearItem,
+    HandComponent,
     HumanMessage,
     PlayCardsAction,
     RoundStatsComponent,
@@ -38,6 +38,7 @@ from .arbitration_prompt_builders import (
     build_instant_affix_section,
     build_stats_update_notification,
 )
+
 
 ###########################################################################################################################################
 # 仲裁提示词构建器（play_cards 专属）
@@ -339,13 +340,27 @@ class _ArbitrationContext(BaseModel):
     stage_description: Optional[str] = None
 
 
+###########################################################################################################################################
+def _collect_hand_on_hit_cards(entity: Entity) -> List[Card]:
+    """收集角色手牌中所有带受击词缀的卡牌（持有期间参与受击仲裁）。"""
+    hand = entity.get(HandComponent) if entity.has(HandComponent) else None
+    if hand is None:
+        return []
+    return [card for card in hand.cards if card.on_hit_affixes]
+
+
+###########################################################################################################################################
 def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
     """处理 get_entity_stats 工具调用：返回 stats + 参与受击仲裁的手牌卡牌数据。"""
     entity = game.get_actor_entity(entity_name)
     if entity is None:
         return f"错误：找不到战斗角色 {entity_name}"
+
+    # 计算角色的基础属性（HP、攻击力、防御力等）
     stats = compute_character_stats(entity)
-    hit_cards = collect_hand_on_hit_cards(entity)
+
+    # 收集角色手牌中所有带受击词缀的卡牌（持有期间参与受击仲裁）
+    hit_cards = _collect_hand_on_hit_cards(entity)
     if hit_cards:
         cards_str = "；".join(
             f"{c.name}(source={c.source or '未知'}, description={c.description}, cost={c.cost}, "
@@ -354,6 +369,8 @@ def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
         )
     else:
         cards_str = "无"
+
+    # 返回角色的基础属性和受击卡牌信息
     return (
         f"{entity_name}: HP {stats.hp}/{stats.max_hp} | "
         f"ATK {stats.attack} | DEF {stats.defense} | "

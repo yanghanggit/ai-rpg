@@ -7,7 +7,6 @@ import pytest
 
 from src.ai_rpg.entitas.context import Context
 from src.ai_rpg.entitas.entity import Entity
-from src.ai_rpg.game.dbg_combat_processor import collect_hand_turn_end_cards
 from src.ai_rpg.game.dbg_game import DBGGame
 from src.ai_rpg.models import (
     ActorComponent,
@@ -60,7 +59,10 @@ def mock_game() -> MagicMock:
 
 
 class TestCollectHandTurnEndCards:
-    def test_returns_only_turn_end_cards(self, context: Context) -> None:
+    def test_returns_only_turn_end_cards(
+        self, context: Context, mock_game: MagicMock
+    ) -> None:
+        system = TurnEndArbitrationSystem(mock_game)
         actor = _make_actor(context, "英雄")
         actor.get(HandComponent).cards.extend(
             [
@@ -70,7 +72,7 @@ class TestCollectHandTurnEndCards:
             ]
         )
 
-        cards = collect_hand_turn_end_cards(actor)
+        cards = system._collect_hand_turn_end_cards(actor)
 
         assert [c.name for c in cards] == ["灼纹"]
 
@@ -96,11 +98,11 @@ class TestTurnEndArbitrationSystem:
         entity.add(PassTurnAction, "英雄")
 
         with patch(
-            "src.ai_rpg.systems.turn_end_arbitration_system.batch_agent_loop"
-        ) as mock_batch:
+            "src.ai_rpg.systems.turn_end_arbitration_system.agent_loop"
+        ) as mock_agent_loop:
             await system.react([entity])
 
-        mock_batch.assert_not_called()
+        mock_agent_loop.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_react_skips_when_no_turn_end_cards(
@@ -112,11 +114,11 @@ class TestTurnEndArbitrationSystem:
         pass_entity.get(HandComponent).cards.append(_make_card("普通牌"))
 
         with patch(
-            "src.ai_rpg.systems.turn_end_arbitration_system.batch_agent_loop"
-        ) as mock_batch:
+            "src.ai_rpg.systems.turn_end_arbitration_system.agent_loop"
+        ) as mock_agent_loop:
             await system.react([pass_entity])
 
-        mock_batch.assert_not_called()
+        mock_agent_loop.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_react_with_holder_calls_agent_loop(

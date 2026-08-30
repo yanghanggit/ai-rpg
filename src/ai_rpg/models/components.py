@@ -289,13 +289,13 @@ class DiscardPileComponent(Component):
 
 
 ############################################################################################################
-@final
-@register_component_type
-class ArchetypeComponent(Component):
-    """卡牌流派（archetype）：keywords 的总纲/容器/目标，定义角色卡牌的功能边界（规则层），运行时不可变；叙事主题由角色设定（profile）在生成时提炼。"""
+# @final
+# @register_component_type
+# class ArchetypeComponent(Component):
+#     """卡牌流派（archetype）：keywords 的总纲/容器/目标，定义角色卡牌的功能边界（规则层），运行时不可变；叙事主题由角色设定（profile）在生成时提炼。"""
 
-    name: str
-    keywords: List[str]  # 卡牌生成关键词约束（规则层），运行时不可变
+#     name: str
+#     keywords: List[str]  # 卡牌生成关键词约束（规则层），运行时不可变
 
 
 ############################################################################################################

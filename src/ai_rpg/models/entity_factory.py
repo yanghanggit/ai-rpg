@@ -45,7 +45,7 @@ def create_actor(
         base_body=base_body,
         system_message="",
         character_stats=character_stats,
-        keywords=keywords,
+        # keywords=keywords,
         cards=cards,
     )
 

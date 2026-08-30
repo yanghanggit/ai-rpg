@@ -9,7 +9,7 @@
 >
 > - 写**设计意图与架构决策**：解释"为何这样设计"、"与哪些系统交互"，不描述实现步骤。代码已能自述的细节不再复述。
 > - 写**跨系统关联**：本系统如何被其他系统驱动、产出被谁消费。单系统内部的步骤逻辑靠代码阅读。
-> - 写**相对稳定的知识**：核心类名（如 `GearItem`、`EquippedGearComponent`）可用行内代码引用；变量名、函数名、字段名随实现变化，引用它们等于复述代码，应规避。
+> - 写**相对稳定的知识**：核心类名（如 `GearItem`、`DeckComponent`）可用行内代码引用；变量名、函数名、字段名随实现变化，引用它们等于复述代码，应规避。
 > - 写**紧凑精要**：追求信息密度，避免铺陈。一段文字如果删掉后设计意图仍然完整，就该删。
 >
 > **怎么写**
@@ -31,19 +31,16 @@
 
 | 文档 | 简介 |
 | ------ | ------ |
-| [消耗品系统（ConsumableItem）](wiki/consumable-item.md) | 消耗品的数据模型、战斗使用管道、词缀机制设计 |
-| [装备系统（GearItem）](wiki/gear-item.md) | 装备的数据模型、移动语义装备管道、EquippedGearComponent 生命周期 |
+| [消耗品系统（ConsumableItem）](wiki/consumable-item.md) | 消耗品的数据模型、战斗使用管道、使用效果提示词（on_use_prompt）设计 |
+| [装备系统（GearItem）](wiki/gear-item.md) | 装备的数据模型、装备转化为手牌的管道、gear_item 战斗结束归还 |
 | [工坊合成管道（Craft Pipeline）](wiki/craft-pipeline.md) | 工坊合成的核心哲学：机制与内容分离、配置注入路径、材料驱动的创意生成 |
 | [材料系统（MaterialItem）](wiki/material-item.md) | 材料的数据模型、工坊合成管道（消耗品/装备/时装三类产物）、与其他物品类型的关系 |
 | [AI 操作 CLI（run_agent_game.py）](wiki/run-agent-game.md) | 快照驱动设计的意图、AI 代理操作工具与 TUI 客户端的分工 |
 | [副本生成管道（Dungeon Generation Pipeline）](wiki/dungeon-generation.md) | 核心哲学：机制与内容分离、四步接力管道的分工意图与设计决策、与工坊合成的架构对比 |
 | [副本导演（Dungeon Director）](wiki/dungeon-director.md) | 全局单例、俯瞰当前副本的有状态记忆积累设计：入口身份锁定、逐房间事实追加、副本结束总结移交世界导演并重置 |
-| [战斗管道（Combat Pipeline）](wiki/combat-pipeline.md) | ECS 处理器链的架构设计：管道心跳驱动、场景实体仲裁、词缀即时结算、回合行动序列与四个生命周期阶段 |
-| [卡牌关键词（keywords）](wiki/keywords.md) | 角色牌库蓝图（存于 ArchetypeComponent）：字段级约束声明、规则/叙事分层、牌库多样性与每场采样 |
-| [卡牌流派（Archetype）生成规则](wiki/archetype-generation.md) | archetype 的生成规则：跨内容逻辑层、效果是给仲裁 LLM 的规则文本、机制根部与可结算边界、衔接与内建弱点 |
-| [卡牌数据模型（Card）](wiki/card.md) | Card 字段的三层结构（确定性骨架 / 语义词缀 / 生命周期流转）、source 的双重身份与「确定性骨架 + LLM 语义」的设计取舍 |
+| [战斗管道（Combat Pipeline）](wiki/combat-pipeline.md) | ECS 处理器链的架构设计：管道心跳驱动、牌库预置与抽牌堆确定性填充、仲裁的三方归属、回合行动序列与生命周期阶段 |
+| [卡牌数据模型（Card）](wiki/card.md) | Card 字段的三层结构（确定性骨架 / 语义词缀 / 生命周期流转）、来源引用（source 与 gear_item）与「确定性骨架 + LLM 语义」的设计取舍 |
 | [DBG 核心概念定义与逻辑关系总结](<wiki/DBG 核心概念定义与逻辑关系总结.md>) | Modifiers（对局级规则）与 Affixes（一次性效果词缀）二者的定义、归属与逻辑关系：宏观-微观模型 |
-| [LLM 生成型游戏对象：Card](wiki/llm-generated-objects.md) | Card 作为 LLM 动态产出核心对象的生成点定位、全局约束视角、生成链与规则来源 |
 | [公共知识检索系统（RAG / QueryAction）](wiki/rag-knowledge-base.md) | 公共记忆与私人记忆的二元分离、Blueprint.knowledge_base 的编排约束、pgvector 两阶段生命周期、QueryActionSystem 的触发与消费 |
 | [新故事设计：《大渊》](wiki/新故事设计.md) | 新故事世界观草稿：双重世界（济世疗养院 / 大傩）、核心冲突、角色设定与玩法方向 |
 | [战役设定与全局规则桥接（CAMPAIGN_SETTING / RPG_SYSTEM_RULES）](wiki/campaign-setting-rules-bridge.md) | 动态设定与静态规则的分层、抽象设定的惰性知识问题、事件级引用提示的桥接方案 |

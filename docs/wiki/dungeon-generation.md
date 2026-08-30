@@ -31,7 +31,7 @@ Step 0–3 之间不再写任何中间 JSON 文件，数据全在内存流转；
 
 **Step 3 — 怪物生成**（`GenerateDungeonActorsSystem`）。单次 agent_loop：LLM 可在一个 response 内并行、也可分多次调用 `record_dungeon_actor`（每次创建一个怪物），每个怪物用 `room_name` 显式声明归属房间。handler 累积，代码严格校验「归属合法」且「每个 combat 房间数量 == `actor_count`」。产物组装为 `DungeonBlueprint`，挂 `AssembleDungeonAction`。
 
-**Step 4 — 实体组装**（`AssembleDungeonSystem`）。零 LLM 调用，纯确定性映射。根据 `room_type` 分发：`"entry"` → `EntryRoom`，`"combat"` → `CombatRoom`（含 Stage + Actor）。当前为所有怪物统一赋予「纯攻击型」战斗关键词——框架层行为预设，与故事内容无关。
+**Step 4 — 实体组装**（`AssembleDungeonSystem`）。零 LLM 调用，纯确定性映射。根据 `room_type` 分发：`"entry"` → `EntryRoom`，`"combat"` → `CombatRoom`（含 Stage + Actor）。当前为所有怪物统一赋予一张预置卡牌「袭击」（单体伤害，伤害值在抽牌堆填充时叠加怪物攻击力）——框架层行为预设，与故事内容无关。
 
 Step 5（场景插画）已实现但未接入主管道，不阻塞副本基础可用性。`AssembleDungeonSystem` 仍会挂 `IllustrateDungeonAction`，但因 `IllustrateDungeonActionSystem` 未注册，该动作会在当轮 `ActionCleanupSystem` 中被清除，无副作用。
 
@@ -39,13 +39,11 @@ Step 5（场景插画）已实现但未接入主管道，不阻塞副本基础�
 
 ## 数据流一览
 
-```text
-Step 0  directive ── GenerateDungeonDirectiveAction ─▶
-Step 1  profile   ── GenerateDungeonRoomsAction(dungeon_name, dungeon_profile, dungeon_room_count) ─▶
-Step 2  rooms     ── GenerateDungeonActorsAction(dungeon_name, dungeon_profile, rooms) ─▶
-Step 3  actors    ── AssembleDungeonAction(dungeon_name, blueprint) ─▶
-Step 4  组装 Dungeon 实体树
-```
+- Step 0 directive → `GenerateDungeonDirectiveAction`
+- Step 1 profile → `GenerateDungeonRoomsAction`（dungeon_name / dungeon_profile / dungeon_room_count）
+- Step 2 rooms → `GenerateDungeonActorsAction`（dungeon_name / dungeon_profile / rooms）
+- Step 3 actors → `AssembleDungeonAction`（dungeon_name / blueprint）
+- Step 4 组装 Dungeon 实体树
 
 ---
 
@@ -80,5 +78,5 @@ Step 4  组装 Dungeon 实体树
 | room_type | DungeonRoom 子类 | 说明 | 可扩展 |
 | --- | --- | --- | --- |
 | `entry` | `EntryRoom` | 叙事入口，无战斗，纯场景氛围 | — |
-| `combat` | `CombatRoom` | 战斗房间，含怪物与牌组 | — |
+| `combat` | `CombatRoom` | 战斗房间，含怪物与预置卡牌 | — |
 | *(future)* | *(TBD)* | 如 puzzle、treasure 等 | 新类型只需追加 Literal + DungeonRoom 子类 |

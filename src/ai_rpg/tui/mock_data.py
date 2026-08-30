@@ -25,7 +25,7 @@ from ..models import (
     ConsumableItem,
     WornCostumeComponent,
     CostumeItem,
-    ArchetypeComponent,
+    # ArchetypeComponent,
     DeckComponent,
     DiscardPileComponent,
     DrawPileComponent,
@@ -173,7 +173,7 @@ def _mock_dungeon_actor(
         system_message="",
         character_stats=stats,
         custom_item=None,
-        keywords=[],
+        # keywords=[],
     )
 
 
@@ -301,10 +301,10 @@ def _deck_component_serialization(
             name=DeckComponent.__name__,
             data=DeckComponent(name=name, cards=cards).model_dump(),
         ),
-        ComponentSerialization(
-            name=ArchetypeComponent.__name__,
-            data=ArchetypeComponent(name=name, keywords=keywords).model_dump(),
-        ),
+        # ComponentSerialization(
+        #     name=ArchetypeComponent.__name__,
+        #     data=ArchetypeComponent(name=name, keywords=keywords).model_dump(),
+        # ),
     ]
 
 

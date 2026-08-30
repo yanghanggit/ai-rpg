@@ -1,7 +1,6 @@
 """出牌动作系统模块。"""
 
-from typing import Dict, Final, List, Sequence, final
-from uuid import uuid4
+from typing import Dict, Final, List, final
 
 from loguru import logger
 from overrides import override
@@ -15,8 +14,6 @@ from ..game.dbg_game import DBGGame
 from ..models import (
     ActorComponent,
     AgentEvent,
-    Card,
-    DeathComponent,
     HandComponent,
     HumanMessage,
     PlayCardsAction,
@@ -89,30 +86,6 @@ class PlayCardsActionSystem(ReactiveProcessor):
         )
 
     #######################################################################################################################################
-    def _transfer_card_copy(self, card: Card, target_names: Sequence[str]) -> int:
-        """将可传递卡牌 copy 一份到每个存活目标的手牌；返回实际 copy 数量。
-
-        复制时 source 保持原卡，uuid 重新生成；重复目标名去重，只 copy 一次。
-        """
-        copied_count = 0
-        for target_name in dict.fromkeys(target_names):
-            target = self._game.get_actor_entity(target_name)
-            if (
-                target is None
-                or target.has(DeathComponent)
-                or not target.has(HandComponent)
-            ):
-                continue
-            copied = card.model_copy(deep=True)
-            copied.uuid = str(uuid4())
-            target.get(HandComponent).cards.append(copied)
-            copied_count += 1
-            logger.debug(
-                f"transfer_card_copy: 「{card.name}」已 copy 到 {target_name} 的手牌"
-            )
-        return copied_count
-
-    #######################################################################################################################################
     @override
     async def react(self, entities: List[Entity]) -> None:
         """处理出牌动作。"""
@@ -179,13 +152,6 @@ class PlayCardsActionSystem(ReactiveProcessor):
             # 仅 pass turn 才会写入 completed_actors 并真正交出行动权，见 PassTurnActionSystem；
             # 因此这里不调用 advance_turn ——是否轮到下一角色完全由 completed_actors 决定）
             consume_energy(entity, play_cards_action.card.cost)
-
-            # 可传递卡牌：出牌时 copy 一份到每个解析目标的手牌（source 保持原卡）
-            if play_cards_action.card.transferable:
-                self._transfer_card_copy(
-                    play_cards_action.card,
-                    play_cards_action.targets,
-                )
 
             logger.debug(
                 f"  completed_actors: {last_round.completed_actors} / current_turn_actor_name={last_round.current_actor}"

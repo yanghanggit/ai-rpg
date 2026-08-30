@@ -240,7 +240,7 @@ def _make_thorns_card() -> Card:
 
 
 def _make_dot_card() -> Card:
-    """创建带回合结束词缀的可传递毒牌（demo：无名打出后 copy 到目标手牌，
+    """创建带回合结束词缀的可传递毒牌（demo：无名打出后 copy 到目标手牌、从源手牌移除本体，
     回合结束时对非 source 者造成持续伤害）。"""
     return Card(
         name="蚀纸毒",
@@ -392,7 +392,7 @@ def create_wuming() -> Actor:
             _make_ethereal_card(),
             # 1 张带【穿甲】即时词缀的攻击牌（demo：本次伤害无视目标防御）
             _make_armor_piercing_card(),
-            # 1 张可传递的毒牌（demo：出牌时 copy 到目标手牌，回合结束时对非 source 者造成持续伤害）
+            # 1 张可传递的毒牌（demo：出牌时 copy 到目标手牌、从源手牌移除本体，回合结束时对非 source 者造成持续伤害）
             _make_dot_card(),
         ],
     )

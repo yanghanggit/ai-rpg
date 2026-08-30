@@ -26,6 +26,9 @@ def create_dungeon_combat_room_pipeline(
     from ..systems.play_cards_action_system import (
         PlayCardsActionSystem,
     )
+    from ..systems.transfer_cards_action_system import (
+        TransferCardsActionSystem,
+    )
     from ..systems.use_consumable_item_action_system import (
         UseConsumableItemActionSystem,
     )
@@ -110,6 +113,8 @@ def create_dungeon_combat_room_pipeline(
 
     # 战斗动作仲裁系统（处理出牌、使用消耗品、装备装备等动作）
     processors.add(PlayCardsActionSystem(dbg_game))
+    # 可传递卡牌转移系统：出牌时从源手牌移除本体，并 copy 到每个目标手牌（新 uuid）
+    processors.add(TransferCardsActionSystem(dbg_game))
     processors.add(UseConsumableItemActionSystem(dbg_game))
     processors.add(EquipGearItemActionSystem(dbg_game))
 

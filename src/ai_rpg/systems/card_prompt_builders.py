@@ -20,7 +20,7 @@ BUILD_CARD_FIELD_DESCRIPTION: Final[
 | exhaust | 出牌后永久消耗，不进抽牌循环；默认 false |
 | retain | 回合末保留在手牌，不进弃牌堆；默认 false |
 | ethereal | pass turn 时若仍在手牌则自动消耗；默认 false |
-| transferable | 出牌时是否 copy 一份到每个目标手牌；默认 false |
+| transferable | 出牌时是否 copy 一份到每个目标手牌，并从源手牌移除本体；默认 false |
 | cost | 出牌费用，消耗 energy；默认 1 |
 | damage | 单次伤害；非 0 叠加角色攻击力；无伤害取 0 |
 | hit_count | 攻击次数；默认 1，多段各自独立 |

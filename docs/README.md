@@ -41,6 +41,7 @@
 | [战斗管道（Combat Pipeline）](wiki/combat-pipeline.md) | ECS 处理器链的架构设计：管道心跳驱动、牌库预置与抽牌堆确定性填充、仲裁的三方归属、回合行动序列与生命周期阶段 |
 | [卡牌数据模型（Card）](wiki/card.md) | Card 字段的三层结构（确定性骨架 / 语义词缀 / 生命周期流转）、来源引用（source 与 gear_item）与「确定性骨架 + LLM 语义」的设计取舍 |
 | [DBG 核心概念定义与逻辑关系总结](<wiki/DBG 核心概念定义与逻辑关系总结.md>) | Modifiers（对局级规则）与 Affixes（一次性效果词缀）二者的定义、归属与逻辑关系：宏观-微观模型 |
-| [公共知识检索系统（RAG / QueryAction）](wiki/rag-knowledge-base.md) | 公共记忆与私人记忆的二元分离、Blueprint.knowledge_base 的编排约束、pgvector 两阶段生命周期、QueryActionSystem 的触发与消费 |
+| [公共知识检索系统（RAG）](wiki/rag-knowledge-base.md) | 公共记忆与私人记忆的二元分离、Blueprint.knowledge_base 的编排约束、pgvector 两阶段生命周期、query 工具即时回流 |
+| [家园规划系统（Home Plan Action）](wiki/home-plan-action.md) | PlanAction 信号驱动的行动规划：工具调用式决策、query 先查后决策、玩家影子工具轨迹对齐 |
 | [新故事设计：《大渊》](wiki/新故事设计.md) | 新故事世界观草稿：双重世界（济世疗养院 / 大傩）、核心冲突、角色设定与玩法方向 |
 | [战役设定与全局规则桥接（CAMPAIGN_SETTING / RPG_SYSTEM_RULES）](wiki/campaign-setting-rules-bridge.md) | 动态设定与静态规则的分层、抽象设定的惰性知识问题、事件级引用提示的桥接方案 |

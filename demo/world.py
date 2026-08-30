@@ -14,6 +14,7 @@ from ai_rpg.models import (
     CharacterStats,
     CombatRoom,
     ComponentSerialization,
+    ConsumableArbitratorComponent,
     ConsumableItem,
     ConsumableWorkshopComponent,
     CostumeItem,
@@ -469,6 +470,7 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
             create_gear_workshop(),
             create_consumable_workshop(),
             create_costume_workshop(),
+            create_consumable_arbitrator(),
             create_dungeon_director(),
             create_world_director(),
         ],
@@ -478,11 +480,17 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
                 name="消耗品.止血药粉",
                 description="一小纸包灰白色粉末，闻起来有股辛辣的草药味。洒在伤口上会引起短暂刺痛，随后迅速止血。",
                 count=2,
+                on_use_prompt=[
+                    "将药粉洒在伤口上迅速止血：使单个友方目标恢复 3 点 HP。"
+                ],
             ),
             ConsumableItem(
                 name="消耗品.香灰投掷包",
                 description="道观废墟中收集的冷灰色香灰，用旧报纸卷成小包。掷向单个敌人可造成灼烧伤害，香灰对某些东西格外有效。",
                 count=2,
+                on_use_prompt=[
+                    "将香灰包掷向单个敌人，香灰灼烧其躯体：对该目标造成 3 点伤害。"
+                ],
             ),
             MaterialItem(
                 name="材料.符纸残片",
@@ -549,11 +557,13 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
                 name="消耗品.吗啡针剂",
                 description="一支从疗养院药房取得的玻璃针剂，液体呈淡琥珀色。针管上有细小裂纹但封口尚好。注射后迅速镇痛止血，但会留下短暂的眩晕感。",
                 count=1,
+                on_use_prompt=["注射后迅速镇痛止血：使单个目标恢复 4 点 HP。"],
             ),
             ConsumableItem(
                 name="消耗品.纸钱爆散",
                 description="一叠写满朱砂字的纸钱，折叠成团后用香灰填塞。用力掘向地面后会爆散，纸片与香灰横飞，对场上所有敌人造成伤害。某些东西格外惧怕这个。",
                 count=1,
+                on_use_prompt=["用力掘向地面，纸钱与香灰爆散：对目标造成 2 点伤害。"],
             ),
         ],
     )
@@ -785,6 +795,38 @@ def create_costume_workshop() -> World:
         ComponentSerialization(
             name=CostumeWorkshopComponent.__name__,
             data=CostumeWorkshopComponent(name=world.name).model_dump(),
+        )
+    ]
+
+    return world
+
+
+###############################################################################################################################
+def create_consumable_arbitrator() -> World:
+    """创建消耗品仲裁世界（临时 agent 宿主：结算消耗品使用效果）。"""
+
+    world = create_world(
+        name="世界.消耗品仲裁",
+        campaign_setting=CAMPAIGN_SETTING,
+        system_rules=RPG_SYSTEM_RULES,
+        role_rules="""## 消耗品仲裁职责
+
+你是游戏世界的消耗品效果仲裁者。当一名角色在战斗中使用消耗品时，你被临时唤醒，作为该次消耗品使用效果的裁决者。
+
+你只能在系统提供的工具边界内行动：读取角色的当前属性、写入角色的最终生命值、提交本次仲裁的最终结果（战斗日志、演出叙事、场景环境快照）。
+
+## 结算原则
+
+- 严格依据本次任务提示词中的「消耗品描述」与「效果提示」结算，效果提示未写明的效果不得凭空添加。
+- 数值计算保持克制与合理，不超出消耗品描述与效果提示的语义范围。
+- 演出叙事必须植根于当前世界观与场景环境，用感官描写呈现，不出现游戏机制术语。
+- 只裁决本次消耗品使用，不越界改动无关角色或场景以外的任何状态。""",
+    )
+
+    world.components = [
+        ComponentSerialization(
+            name=ConsumableArbitratorComponent.__name__,
+            data=ConsumableArbitratorComponent(name=world.name).model_dump(),
         )
     ]
 

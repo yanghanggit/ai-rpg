@@ -229,6 +229,14 @@ class CostumeWorkshopComponent(Component):
     name: str
 
 
+@final
+@register_component_type
+class ConsumableArbitratorComponent(Component):
+    """标记世界实体具有消耗品使用仲裁职责（LLM 驱动，作为临时 agent 结算消耗品效果）。"""
+
+    name: str
+
+
 ############################################################################################################
 @final
 @register_component_type

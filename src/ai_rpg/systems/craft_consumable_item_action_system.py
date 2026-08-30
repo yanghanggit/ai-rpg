@@ -24,9 +24,22 @@ class _CraftConsumableResponse(BaseModel):
 
     name: str = ""
     description: str = ""
+    on_use_prompt: List[str] = []
 
 
 #######################################################################################################################################
+#######################################################################################################################################
+CONSUMABLE_ON_USE_CAPABILITY: Final[
+    str
+] = """消耗品的「使用效果提示词」会交给战斗结算 agent 执行，该 agent 仅能：
+- 读取发起者与目标的 HP/攻击/防御；
+- 修改受影响角色的 HP（0 ≤ HP ≤ 最大 HP）；
+- 提交战斗日志、演出叙事与场景环境快照。
+
+因此 on_use_prompt 只能描述「对目标（或发起者）造成伤害 / 恢复 HP」这类可被解释的即时效果，并可用感官描写暗示表现方式；
+禁止描述状态效果、属性增减、道具增减、跨回合持续效果等战斗结算 agent 无法解释的机制。"""
+
+
 @prompt_builder
 def _build_craft_prompt(materials: List[MaterialItem]) -> str:
     """构建合成消耗品的 LLM 提示词。"""
@@ -43,13 +56,19 @@ def _build_craft_prompt(materials: List[MaterialItem]) -> str:
 
 - **name**：消耗品全名，采用「消耗品.XXXX」命名格式，体现材料特性与用途，简洁有辨识度
 - **description**：物品描述，30-60字，说明外观、气味或使用感受，体现材料的来源与效果想象
+- **on_use_prompt**：使用效果提示词，`[字符串]` 列表，当前仅使用第一项（`[0]`）作为整段效果提示；用一句话说清「对谁、造成什么、数值多少」
+
+## on_use_prompt 能力边界
+
+{CONSUMABLE_ON_USE_CAPABILITY}
 
 ## 输出格式
 
 ```json
 {{
   "name": "消耗品.XXX",
-  "description": "..."
+  "description": "...",
+  "on_use_prompt": ["对目标造成 3 点伤害。"]
 }}
 ```
 
@@ -102,12 +121,16 @@ class CraftConsumableItemActionSystem(ReactiveProcessor):
         new_item = ConsumableItem(
             name=result.name,
             description=result.description,
+            on_use_prompt=result.on_use_prompt,
             resources=action.material_items,
         )
 
         # 更新储物箱：扣减已用材料（count 递减，归零则移除），追加合成品
         self._update_storage(storage_entity, action.material_names, new_item)
-        logger.info(f"[CraftConsumableActionSystem] 合成完成: {new_item.name}")
+        logger.info(
+            f"[CraftConsumableActionSystem] 合成完成: {new_item.name} "
+            f"(on_use_prompt={new_item.on_use_prompt})"
+        )
 
     ####################################################################################################################################
     async def _call_llm(

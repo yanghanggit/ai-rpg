@@ -2,12 +2,12 @@
 
 聚焦三个关键环节，不追求覆盖度：
 1. filter() 与 HomePlayerPlanSystem 的路由互斥（玩家角色也持有 NPCComponent，必须被排除）
-2. _apply_actor_action_response()：LLM 响应 JSON → ECS 行动组件的映射，及异常响应的容错
-3. react()：client-driven 设计下，只为传入的实体各发起一次真实 LLM 请求（不再有 is_player_active 分支）
+2. _apply_submitted_action()：提交结果 → ECS 行动组件的映射，及空 payload 的容错
+3. react()：client-driven 设计下，只为传入的实体各发起一次 agent_loop 规划
 """
 
-from typing import List
-from unittest.mock import MagicMock, patch
+from typing import Any, List
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -19,15 +19,13 @@ from src.ai_rpg.models import (
     NPCComponent,
     PlanAction,
     PlayerComponent,
-    QueryAction,
     SpeakAction,
     StageDescriptionComponent,
     TransStageAction,
     WhisperAction,
 )
-from src.ai_rpg.models.messages import AIMessage
 from src.ai_rpg.systems.home_npc_plan_system import HomeNpcPlanSystem
-from src.ai_rpg.systems.home_planning_prompt_builders import ActionPlanResponse
+from src.ai_rpg.systems.home_planning import PlanResult
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -50,16 +48,6 @@ def _make_actor(
     if is_player:
         entity.add(PlayerComponent, "player1")
     return entity
-
-
-def _make_chat_client(name: str, response_json: str) -> MagicMock:
-    client = MagicMock()
-    client.name = name
-    client.full_prompt = "prompt"
-    client.condensed_prompt = "condensed"
-    client.response_content = response_json
-    client.response_ai_message = AIMessage(content=response_json)
-    return client
 
 
 # ---------------------------------------------------------------------------
@@ -102,12 +90,12 @@ class TestFilter:
 
 
 # ---------------------------------------------------------------------------
-# _apply_actor_action_response — LLM 响应 → ECS 行动组件映射
+# _apply_submitted_action — 提交结果 → ECS 行动组件映射
 # ---------------------------------------------------------------------------
 
 
-class TestApplyActorActionResponse:
-    def test_speak_whisper_and_mind_are_mapped(
+class TestApplySubmittedAction:
+    def test_speak_and_mind_are_mapped(
         self, context: Context, mock_game: MagicMock, system: HomeNpcPlanSystem
     ) -> None:
         entity = _make_actor(context)
@@ -115,105 +103,95 @@ class TestApplyActorActionResponse:
         stage._name = "场景.石台广场"
         mock_game.resolve_stage_entity.return_value = stage
 
-        response = ActionPlanResponse(
+        result = PlanResult(
+            submitted=True,
             mind="有点热",
-            speak={"角色.玩家A": "你好"},
-            whisper={"角色.玩家A": "悄悄话"},
+            action_type="speak",
+            target_messages={"角色.玩家A": "你好"},
         )
-        system._apply_actor_action_response(entity, response)
+        system._apply_submitted_action(entity, result)
 
         assert entity.get(SpeakAction).target_messages == {"角色.玩家A": "你好"}
-        assert entity.get(WhisperAction).target_messages == {"角色.玩家A": "悄悄话"}
         mock_game.notify_entities.assert_called_once()
         notified_entities, event = mock_game.notify_entities.call_args.args
         assert notified_entities == {entity}
         assert event.content == "有点热"
 
-    def test_query_and_trans_stage_are_mapped_without_mind_event(
+    def test_trans_stage_without_mind_event(
         self, context: Context, mock_game: MagicMock, system: HomeNpcPlanSystem
     ) -> None:
         entity = _make_actor(context)
-        response = ActionPlanResponse(
-            mind="", query="沙漠历史", trans_stage="场景.断壁石室"
+
+        result = PlanResult(
+            submitted=True,
+            mind="",
+            action_type="trans_stage",
+            target_stage_name="场景.断壁石室",
         )
+        system._apply_submitted_action(entity, result)
 
-        system._apply_actor_action_response(entity, response)
-
-        assert entity.get(QueryAction).question == "沙漠历史"
         assert entity.get(TransStageAction).target_stage_name == "场景.断壁石室"
-        mock_game.notify_entities.assert_not_called()  # mind 为空时不产生 MindEvent 通知
+        mock_game.notify_entities.assert_not_called()
 
-
-# ---------------------------------------------------------------------------
-# _execute_actor_actions — 异常响应的容错
-# ---------------------------------------------------------------------------
-
-
-class TestExecuteActorActions:
-    def test_invalid_json_response_is_ignored(
+    def test_none_action_mounts_nothing(
         self, context: Context, mock_game: MagicMock, system: HomeNpcPlanSystem
     ) -> None:
         entity = _make_actor(context)
-        mock_game.get_entity_by_name.return_value = entity
 
-        system._execute_actor_actions(_make_chat_client(entity.name, "不是JSON"))
+        result = PlanResult(submitted=True, mind="", action_type="none")
+        system._apply_submitted_action(entity, result)
 
-        mock_game.add_human_message.assert_not_called()
         assert not entity.has(SpeakAction)
-
-    def test_empty_ai_message_is_ignored(
-        self, context: Context, mock_game: MagicMock, system: HomeNpcPlanSystem
-    ) -> None:
-        entity = _make_actor(context)
-        mock_game.get_entity_by_name.return_value = entity
-        client = _make_chat_client(entity.name, "{}")
-        client.response_ai_message = None
-
-        system._execute_actor_actions(client)
-
-        mock_game.add_human_message.assert_not_called()
+        assert not entity.has(WhisperAction)
+        assert not entity.has(TransStageAction)
+        mock_game.notify_entities.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
-# react() — client-driven 分发：只为传入的实体各发起一次真实 plan 请求
+# react() — client-driven 分发：只为传入的实体各发起一次 agent_loop 规划
 # ---------------------------------------------------------------------------
 
 
 class TestReact:
     @pytest.mark.asyncio
-    async def test_dispatches_one_client_per_npc_and_injects_mock_context(
+    async def test_dispatches_one_agent_loop_per_npc_and_applies_submitted(
         self, context: Context, mock_game: MagicMock, system: HomeNpcPlanSystem
     ) -> None:
-        """2 个 NPC 传入 → batch_chat 应收到 2 个 client（不再有 is_player_active
-        分支跳过任何一个）；每个 NPC 均被注入临时的“禁止 trans_stage” mock 消息。"""
+        """2 个 NPC 传入 → 生成 2 个 agent_loop 任务；每个提交结果都被应用一次。"""
         stage = context.create_entity()
         stage._name = "场景.石台广场"
         stage.add(StageDescriptionComponent, stage.name, "石台广场")
         mock_game.resolve_stage_entity.return_value = stage
-        mock_game.get_actors_in_stage.return_value = set()
         mock_game.get_group.return_value.entities.copy.return_value = set()
         mock_game.get_agent_memory.return_value = MagicMock(messages=[])
 
         npc1 = _make_actor(context, "角色.NPC_A")
         npc2 = _make_actor(context, "角色.NPC_B")
 
-        captured: List[object] = []
-
-        async def _capture(clients: List[object]) -> None:
-            captured.extend(clients)
+        def _fake_run(entity: Entity, result: PlanResult) -> bool:
+            # 同步占位：react 构建任务列表时会立即调用 _run_agent_loop，
+            # 这里直接标记 submitted，便于验证后续串行落库。
+            result.submitted = True
+            result.action_type = "speak"
+            result.target_messages = {"角色.X": "hi"}
+            return True
 
         with (
+            patch.object(
+                system,
+                "_run_agent_loop",
+                new=MagicMock(side_effect=_fake_run),
+            ) as run_patch,
+            patch.object(system, "_apply_submitted_action") as apply_patch,
             patch(
-                "src.ai_rpg.systems.home_npc_plan_system.batch_chat",
-                side_effect=_capture,
-            ),
-            patch.object(system, "_execute_actor_actions"),
+                "src.ai_rpg.systems.home_npc_plan_system.batch_agent_loop",
+                new=AsyncMock(),
+            ) as batch_patch,
         ):
             await system.react([npc1, npc2])
 
-        assert len(captured) == 2
-        mock_messages = [
-            call.args[1].content for call in mock_game.add_human_message.call_args_list
-        ]
-        assert len(mock_messages) == 2
-        assert all("不可以使用trans_stage" in content for content in mock_messages)
+        assert run_patch.call_count == 2
+        assert batch_patch.await_args is not None
+        tasks: List[tuple[str, Any]] = batch_patch.await_args.args[0]
+        assert [name for name, _ in tasks] == ["角色.NPC_A", "角色.NPC_B"]
+        assert apply_patch.call_count == 2

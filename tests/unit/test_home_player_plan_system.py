@@ -2,10 +2,8 @@
 
 聚焦三个关键环节，不追求覆盖度：
 1. filter() 与 HomeNpcPlanSystem 的路由互斥（只处理玩家自身）
-2. _build_player_action_response()：由玩家已挂载的 Action 组件反推出的"影子 plan"核心映射逻辑；
-   若无任何主动行动组件（不应发生），返回 None 并记录警告，不再伪造"待命"占位内容
-3. _inject_player_scene_observation()：确认全程不调用 LLM；正常情况下写入与 NPC 真实 plan 同构的
-   JSON 信息，非法状态下（无主动行动）整体跳过、不写入任何消息
+2. _extract_action_from_components()：由玩家已挂载的 Action 组件反推出 submit_action_plan 参数
+3. _inject_player_mimic_messages()：确认全程不调用 LLM；伪造与 NPC 等价的工具调用轨迹写入记忆
 """
 
 import json
@@ -108,57 +106,81 @@ class TestFilter:
 
 
 # ---------------------------------------------------------------------------
-# _build_player_action_response — 影子 plan 的核心映射逻辑
+# _extract_action_from_components — 玩家动作组件 → submit_action_plan 参数
 # ---------------------------------------------------------------------------
 
 
-class TestBuildPlayerActionResponse:
-    def test_active_action_present_leaves_mind_empty(
+class TestExtractActionFromComponents:
+    def test_speak_action_is_extracted(
         self, context: Context, system: HomePlayerPlanSystem
     ) -> None:
-        """玩家本轮已由 API 挂载 SpeakAction：影子 plan 应还原该动作，mind 留空。"""
         entity = _make_player(context)
         entity.replace(SpeakAction, entity.name, {"角色.NPC_A": "你好"})
 
-        response = system._build_player_action_response(entity)
+        action_type, target_messages, message, target_stage_name = (
+            system._extract_action_from_components(entity)
+        )
 
-        assert response is not None
-        assert response.speak == {"角色.NPC_A": "你好"}
-        assert response.mind == ""
+        assert action_type == "speak"
+        assert target_messages == {"角色.NPC_A": "你好"}
+        assert message == ""
+        assert target_stage_name == ""
 
     def test_no_action_returns_none_and_logs_warning(
         self, context: Context, system: HomePlayerPlanSystem
     ) -> None:
-        """玩家没有任何主动动作组件（不应发生的非法状态）：返回 None 并记录警告，
-        不再伪造"待命"占位内容。"""
+        """玩家没有任何主动动作组件（不应发生的非法状态）：返回 none 并记录警告。"""
         entity = _make_player(context)
 
         with patch(
             "src.ai_rpg.systems.home_player_plan_system.logger.warning"
         ) as mock_warning:
-            response = system._build_player_action_response(entity)
+            action_type, target_messages, message, target_stage_name = (
+                system._extract_action_from_components(entity)
+            )
 
-        assert response is None
+        assert action_type == "none"
+        assert target_messages == {}
+        assert message == ""
+        assert target_stage_name == ""
         mock_warning.assert_called_once()
 
 
 # ---------------------------------------------------------------------------
-# _inject_player_scene_observation — 端到端：不调用 LLM，仅写入结构化信息
+# _inject_player_mimic_messages — 端到端：不调用 LLM，伪造工具调用轨迹
 # ---------------------------------------------------------------------------
 
 
-class TestInjectPlayerSceneContext:
-    def test_active_speak_action_writes_shadow_plan(
+class TestInjectPlayerMimicMessages:
+    def test_active_speak_action_writes_mimic_tool_call(
         self, context: Context, mock_game: MagicMock, system: HomePlayerPlanSystem
     ) -> None:
         _stub_scene(context, mock_game)
         entity = _make_player(context)
         entity.replace(SpeakAction, entity.name, {"角色.NPC_A": "你好"})
 
-        system._inject_player_scene_observation(entity)
+        memory = MagicMock()
+        memory.messages = []
+        mock_game.get_agent_memory.return_value = memory
 
-        ai_message = mock_game.add_ai_message.call_args.args[1]
-        payload = json.loads(ai_message.content)
-        assert payload["speak"] == {"角色.NPC_A": "你好"}
-        assert payload["mind"] == ""
-        mock_game.notify_entities.assert_not_called()  # 本系统不再产生 MindEvent 通知
+        system._inject_player_mimic_messages(entity)
+
+        assert len(memory.messages) == 3
+        human_msg, ai_msg, tool_msg = memory.messages
+
+        assert human_msg.type == "human"
+        assert ai_msg.type == "ai"
+        assert ai_msg.content == ""  # tool call 的 AI 消息 content 为空
+
+        tool_calls = ai_msg.additional_kwargs["tool_calls"]
+        assert len(tool_calls) == 1
+        assert tool_calls[0]["function"]["name"] == "submit_action_plan"
+        args = json.loads(tool_calls[0]["function"]["arguments"])
+        assert args["action_type"] == "speak"
+        assert args["target_messages"] == {"角色.NPC_A": "你好"}
+        assert args["mind"] == ""
+
+        assert tool_msg.type == "tool"
+        assert tool_msg.tool_call_id == tool_calls[0]["id"]
+
+        mock_game.notify_entities.assert_not_called()

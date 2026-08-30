@@ -1,7 +1,8 @@
 """通用 agentic 循环工具函数。"""
 
+import inspect
 import json
-from typing import Callable, Dict, List, Literal, Optional
+from typing import Awaitable, Callable, Dict, List, Literal, Optional, Union
 
 from loguru import logger
 
@@ -14,16 +15,17 @@ async def agent_loop(
     prompt: str,
     messages: List[ChatMessage],
     tools: List[ToolDefinition],
-    handlers: Dict[str, Callable[..., str]],
+    handlers: Dict[str, Callable[..., Union[str, Awaitable[str]]]],
     max_rounds: int = 5,
     tool_choice: Literal["auto", "none", "required"] = "auto",
     thinking: bool = False,
-    terminal_tool: Optional[ToolDefinition] = None,
+    terminal_tools: List[ToolDefinition] = [],
 ) -> bool:
-    """通用 agentic 循环：驱动 LLM 与工具交互，直到 LLM 主动 stop、调用 terminal_tool 或达到最大轮次。"""
+    """通用 agentic 循环：驱动 LLM 与工具交互，直到 LLM 主动 stop、调用 terminal_tools 中任一或达到最大轮次。"""
     # 方案 C：不复制 messages，直接原地追加，由调用方决定是否传入副本以隔离。
     history: List[ChatMessage] = messages
     current_prompt = prompt
+    terminal_tool_names = {t.function.name for t in terminal_tools}
 
     # 进入 agent 循环，每轮与 LLM 交互，处理工具调用，直到 LLM 主动 stop 或达到最大轮次
     for round_num in range(1, max_rounds + 1):
@@ -87,7 +89,12 @@ async def agent_loop(
 
                 # 执行工具调用，传入解析后的参数，如果执行失败则记录错误并返回错误信息
                 try:
-                    result = handler(**json.loads(tc.function.arguments))
+                    raw_result = handler(**json.loads(tc.function.arguments))
+                    # 兼容 async handler：同步 handler 原样使用，异步 handler 在此 await
+                    if inspect.isawaitable(raw_result):
+                        result = await raw_result
+                    else:
+                        result = raw_result
                 except Exception as e:
                     logger.error(
                         f"[agent_loop:{name}] 工具 {tc.function.name!r} 执行失败: {e}\n"
@@ -100,12 +107,9 @@ async def agent_loop(
 
             # 标记是否出现了终止工具；本轮所有工具调用处理完毕后统一退出，
             # 避免同一回复中终止工具排在其它工具之前时遗漏后续工具。
-            if (
-                terminal_tool is not None
-                and tc.function.name == terminal_tool.function.name
-            ):
+            if tc.function.name in terminal_tool_names:
                 terminal_seen = True
-                terminal_name = terminal_tool.function.name
+                terminal_name = tc.function.name
 
         # 终止工具已执行：本轮其余工具调用也已处理完毕，提前结束循环
         if terminal_seen:

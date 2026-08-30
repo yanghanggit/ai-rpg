@@ -1,6 +1,8 @@
 """家园玩家规划注入系统。"""
 
-from typing import Dict, Final, List, Optional, final
+import json
+import uuid
+from typing import Any, Dict, Final, List, Tuple, final
 
 from loguru import logger
 from overrides import override
@@ -14,29 +16,24 @@ from ..models import (
     PlanAction,
     PlayerComponent,
     SpeakAction,
-    StageDescriptionComponent,
     TransStageAction,
     WhisperAction,
 )
-from ..models.messages import AIMessage, HumanMessage
-from .home_planning_prompt_builders import (
-    ActionPlanResponse,
-    build_action_planning_prompt,
-    build_condensed_planning_prompt,
-    get_available_home_stages,
-    get_other_actors_appearances,
+from ..models.messages import AIMessage, HumanMessage, ToolMessage
+from .home_planning import (
+    build_action_planning_tool_prompt,
+    build_planning_context,
 )
 
 
 #######################################################################################################################################
 @final
 class HomePlayerPlanSystem(ReactiveProcessor):
-    """家园玩家规划注入系统。让Player Agent以为自己做了规划然后产生行动，这样就和NPC的消息格式一致了。"""
+    """家园玩家规划注入系统。让 Player Agent 以为自己走了工具调用规划，从而与 NPC 的记忆格式一致。"""
 
-    def __init__(self, game: DBGGame, use_condensed_prompt: bool = True) -> None:
+    def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
         self._game: Final[DBGGame] = game
-        self._use_condensed_prompt: Final[bool] = use_condensed_prompt
 
     ####################################################################################################################################
     @override
@@ -65,113 +62,76 @@ class HomePlayerPlanSystem(ReactiveProcessor):
         assert (
             len(entities) == 1
         ), "HomePlayerPlanSystem expects exactly one player entity at a time."
-        self._inject_player_scene_observation(entities[0])
+        self._inject_player_mimic_messages(entities[0])
 
     #######################################################################################################################################
-    def _inject_player_scene_observation(self, player_entity: Entity) -> None:
-        """向玩家实体注入当前场景观察信息（不调用 LLM）。"""
+    def _inject_player_mimic_messages(self, player_entity: Entity) -> None:
+        """伪造一条与 NPC 等价的 submit_action_plan 工具调用轨迹写入玩家记忆。"""
 
-        mock_response = self._build_player_action_response(player_entity)
-        assert (
-            mock_response is not None
-        ), f"玩家 {player_entity.name} 无法构建影子 plan，跳过家园规划注入。"
+        ctx = build_planning_context(self._game, player_entity)
+        prompt = build_action_planning_tool_prompt(ctx)
 
-        current_stage = self._game.resolve_stage_entity(player_entity)
-        assert (
-            current_stage is not None
-        ), f"玩家 {player_entity.name} 不在任何场景中，无法注入家园规划观察信息。"
-
-        # 获取当前场景中除玩家自身外的其他角色的外观信息
-        other_actors_appearances = get_other_actors_appearances(
-            self._game, player_entity, current_stage
+        action_type, target_messages, message, target_stage_name = (
+            self._extract_action_from_components(player_entity)
         )
 
-        # 获取玩家可用的家园场景列表
-        available_home_stages = get_available_home_stages(
-            self._game, player_entity, current_stage
+        submit_args: Dict[str, Any] = {"mind": "", "action_type": action_type}
+        if action_type in ("speak", "whisper"):
+            submit_args["target_messages"] = target_messages
+        elif action_type == "announce":
+            submit_args["message"] = message
+        elif action_type == "trans_stage":
+            submit_args["target_stage_name"] = target_stage_name
+
+        call_id = f"call_shadow_{uuid.uuid4().hex}"
+        ai_message = AIMessage(
+            content="",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "id": call_id,
+                        "type": "function",
+                        "function": {
+                            "name": "submit_action_plan",
+                            "arguments": json.dumps(submit_args, ensure_ascii=False),
+                        },
+                    }
+                ]
+            },
         )
+        tool_message = ToolMessage(content="行动计划已提交", tool_call_id=call_id)
 
-        # 获取当前场景的叙事描述
-        stage_narrative = current_stage.get(StageDescriptionComponent).narrative
-
-        # 提取可用家园场景的名称列表
-        available_stage_names = [e.name for e in available_home_stages]
-
-        # 构建完整的行动规划提示，包括当前场景、场景叙事、其他角色外观信息以及可用家园场景列表
-        full_prompt = build_action_planning_prompt(
-            current_stage=current_stage.name,
-            current_stage_narration=stage_narrative,
-            other_actors_appearances=other_actors_appearances,
-            available_home_stages=available_stage_names,
-        )
-
-        # 如果配置了使用精简提示，则构建精简后的行动规划提示并发送给游戏系统
-        if self._use_condensed_prompt:
-            condensed_prompt = build_condensed_planning_prompt(
-                current_stage=current_stage.name,
-                current_stage_narration=stage_narrative,
-                other_actors_appearances=other_actors_appearances,
-                available_home_stages=available_stage_names,
-            )
-
-            # 将精简后的行动规划提示发送给游戏系统，附带玩家的全量提示以便参考
-            self._game.add_human_message(
-                player_entity,
-                HumanMessage(
-                    content=condensed_prompt,
-                    home_actor_planning=player_entity.name,
-                    home_actor_full_prompt=full_prompt,
-                ),
-            )
-        else:
-
-            # 如果未配置使用精简提示，则直接将完整的行动规划提示发送给游戏系统
-            self._game.add_human_message(
-                player_entity,
-                HumanMessage(
-                    content=full_prompt,
-                    home_actor_planning=player_entity.name,
-                ),
-            )
-
-        # 将 AI 的响应消息添加到对话历史。
-        self._game.add_ai_message(
-            player_entity, AIMessage(content=mock_response.model_dump_json(indent=2))
-        )
+        # 直接追加：tool call 的 AIMessage content 为空，不能走 add_ai_message 的断言
+        memory = self._game.get_agent_memory(player_entity)
+        memory.messages.append(HumanMessage(content=prompt))
+        memory.messages.append(ai_message)
+        memory.messages.append(tool_message)
 
     #######################################################################################################################################
-    def _build_player_action_response(
+    def _extract_action_from_components(
         self, player_entity: Entity
-    ) -> Optional[ActionPlanResponse]:
-        """根据玩家当前挂载的主动行动组件构建等效的 ActionPlanResponse（影子 plan）。"""
-
-        response = ActionPlanResponse()
+    ) -> Tuple[str, Dict[str, str], str, str]:
+        """从玩家当前挂载的主动行动组件反推 submit_action_plan 参数。"""
 
         if player_entity.has(SpeakAction):
-            response.speak = player_entity.get(SpeakAction).target_messages
-
+            return "speak", player_entity.get(SpeakAction).target_messages, "", ""
         if player_entity.has(WhisperAction):
-            response.whisper = player_entity.get(WhisperAction).target_messages
-
+            return "whisper", player_entity.get(WhisperAction).target_messages, "", ""
         if player_entity.has(AnnounceAction):
-            response.announce = player_entity.get(AnnounceAction).message
-
+            return "announce", {}, player_entity.get(AnnounceAction).message, ""
         if player_entity.has(TransStageAction):
-            response.trans_stage = player_entity.get(TransStageAction).target_stage_name
-
-        if not any(
-            [
-                response.speak,
-                response.whisper,
-                response.announce,
-                response.trans_stage,
-            ]
-        ):
-            logger.warning(
-                f"HomePlayerPlanSystem: 玩家 {player_entity.name} 被挂载 PlanAction 但没有任何主动行动组件，跳过影子 plan 构建"
+            return (
+                "trans_stage",
+                {},
+                "",
+                player_entity.get(TransStageAction).target_stage_name,
             )
-            return None
 
-        return response
+        # filter 已保证至少存在一个主动行动组件，此处兜底
+        logger.warning(
+            f"HomePlayerPlanSystem: 玩家 {player_entity.name} 挂载 PlanAction 但无任何主动行动组件"
+        )
+        return "none", {}, "", ""
 
-    #######################################################################################################################################
+
+#######################################################################################################################################

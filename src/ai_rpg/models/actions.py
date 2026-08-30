@@ -55,17 +55,6 @@ class AnnounceAction(Component):
 @final
 @register_action_component_type
 @register_component_type
-class QueryAction(Component):
-    """触发角色向系统发起查询请求。"""
-
-    name: str
-    question: str
-
-
-############################################################################################################
-@final
-@register_action_component_type
-@register_component_type
 class TransStageAction(Component):
     """触发角色移动到目标场景。"""
 

@@ -1,9 +1,12 @@
+"""家园 NPC 自主行动规划系统。"""
+
+from functools import partial
 from typing import Dict, Final, List, final
 
 from loguru import logger
 from overrides import override
 
-from ..deepseek import DeepSeekClient, batch_chat
+from ..deepseek import agent_loop, batch_agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game import DBGGame
 from ..models import (
@@ -13,21 +16,19 @@ from ..models import (
     NPCComponent,
     PlanAction,
     PlayerComponent,
-    QueryAction,
     SpeakAction,
-    StageDescriptionComponent,
     TransStageAction,
     WhisperAction,
 )
-from ..models.messages import HumanMessage
-from ..utils import extract_json
-from .home_planning_prompt_builders import (
-    ActionPlanResponse,
-    build_action_planning_prompt,
-    build_condensed_planning_prompt,
+from .home_planning import (
+    QUERY_KNOWLEDGE_BASE_TOOL,
+    PlanResult,
+    build_action_planning_tool_prompt,
     build_mind_notification,
-    get_available_home_stages,
-    get_other_actors_appearances,
+    build_planning_context,
+    build_submit_action_plan_tool,
+    handle_query_knowledge_base,
+    handle_submit_action_plan,
 )
 
 
@@ -36,10 +37,9 @@ from .home_planning_prompt_builders import (
 class HomeNpcPlanSystem(ReactiveProcessor):
     """家园 NPC 自主行动规划系统。"""
 
-    def __init__(self, game: DBGGame, use_condensed_prompt: bool = True) -> None:
+    def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
         self._game: Final[DBGGame] = game
-        self._use_condensed_prompt: Final[bool] = use_condensed_prompt
 
     ####################################################################################################################################
     @override
@@ -60,179 +60,76 @@ class HomeNpcPlanSystem(ReactiveProcessor):
     @override
     async def react(self, entities: List[Entity]) -> None:
 
-        # 构建每个 NPC 的聊天客户端
-        chat_clients: List[DeepSeekClient] = []
-        for actor_entity in entities:
-            chat_clients.append(self._build_client(actor_entity))
+        # 每个 NPC 一个结果容器；agent_loop 并发执行，落库阶段串行保证顺序确定
+        results: Dict[str, PlanResult] = {e.name: PlanResult() for e in entities}
+        tasks = [(e.name, self._run_agent_loop(e, results[e.name])) for e in entities]
 
-            # 这句是为了防止NPC乱跑用的，暂时先放这里。
-            self._mock_inject_test_message(actor_entity)
+        await batch_agent_loop(tasks)
 
-        # 批量请求 LLM 合成行动规划
-        await batch_chat(clients=chat_clients)
-
-        # 解析 LLM 响应并转化为游戏行动组件，保存对话历史
-        for chat_client in chat_clients:
-            self._execute_actor_actions(chat_client)
-
-    #######################################################################################################################################
-    def _execute_actor_actions(self, chat_client: DeepSeekClient) -> None:
-        """执行角色的行动决策。"""
-
-        actor_entity = self._game.get_entity_by_name(chat_client.name)
-        assert (
-            actor_entity is not None
-        ), f"Cannot find entity by name: {chat_client.name}"
-
-        # 检查 LLM 是否返回了有效的 AI 消息，如果没有则记录错误并返回
-        if chat_client.response_ai_message is None:
-            logger.error(f"HomeNpcPlanSystem: [{actor_entity.name}] LLM 返回空响应")
-            return
-
-        try:
-            # 验证响应
-            validated_response = ActionPlanResponse.model_validate_json(
-                extract_json(chat_client.response_content)
-            )
-        except Exception as e:
-            logger.error(f"Exception: {e}")
-            return
-
-        # 添加消息！存入精简版 prompt，附挂原始全量 prompt 供检索
-        if self._use_condensed_prompt:
-            self._game.add_human_message(
-                actor_entity,
-                HumanMessage(
-                    content=chat_client.condensed_prompt,
-                    home_actor_planning=actor_entity.name,
-                    home_actor_full_prompt=chat_client.full_prompt,
-                ),
-            )
-        else:
-            self._game.add_human_message(
-                actor_entity,
-                HumanMessage(
-                    content=chat_client.full_prompt,
-                    home_actor_planning=actor_entity.name,
-                ),
-            )
-
-        # 添加 AI 响应消息到对话历史。
-        self._game.add_ai_message(actor_entity, chat_client.response_ai_message)
-
-        # 将验证后的行动规划响应转化为游戏行动组件，并处理内心独白通知
-        self._apply_actor_action_response(actor_entity, validated_response)
+        # 串行落库：写内心独白通知 + 挂载主动行动组件（query 已由工具轨迹写回记忆）
+        for entity in entities:
+            result = results[entity.name]
+            if not result.submitted:
+                logger.error(f"HomeNpcPlanSystem: [{entity.name}] 未提交有效行动计划")
+                continue
+            self._apply_submitted_action(entity, result)
 
     #######################################################################################################################################
-    def _apply_actor_action_response(
-        self, actor_entity: Entity, validated_response: ActionPlanResponse
-    ) -> None:
-        """将验证后的行动规划响应转化为游戏行动组件，并处理内心独白通知。"""
+    async def _run_agent_loop(self, entity: Entity, result: PlanResult) -> bool:
+        """驱动单个 NPC 的工具化行动规划（原地写入持久记忆）。"""
 
-        # 添加内心独白: 消息！，这里做直接添加与通知处理
-        if validated_response.mind != "":
+        ctx = build_planning_context(self._game, entity)
+        prompt = build_action_planning_tool_prompt(ctx)
+        submit_tool = build_submit_action_plan_tool(ctx.available_stage_names)
 
-            stage_entity = self._game.resolve_stage_entity(actor_entity)
+        ok = await agent_loop(
+            name=entity.name,
+            prompt=prompt,
+            # 原地写：真实工具调用轨迹即持久记忆（"是什么就是什么"）
+            messages=self._game.get_agent_memory(entity).messages,
+            tools=[QUERY_KNOWLEDGE_BASE_TOOL, submit_tool],
+            handlers={
+                "query_knowledge_base": partial(
+                    handle_query_knowledge_base, self._game
+                ),
+                "submit_action_plan": partial(handle_submit_action_plan, result),
+            },
+            terminal_tools=[submit_tool],
+            max_rounds=5,
+        )
+        return ok and result.submitted
+
+    #######################################################################################################################################
+    def _apply_submitted_action(self, entity: Entity, result: PlanResult) -> None:
+        """将提交的行动决策落到 ECS 组件（query 除外，已工具化）。"""
+
+        # 内心独白：仅通知自己
+        if result.mind:
+            stage_entity = self._game.resolve_stage_entity(entity)
             assert stage_entity is not None, "actor无所在场景是有问题的"
             self._game.notify_entities(
-                set({actor_entity}),
+                {entity},
                 MindEvent(
-                    message=build_mind_notification(
-                        actor_entity.name, validated_response.mind
-                    ),
-                    actor=actor_entity.name,
+                    message=build_mind_notification(entity.name, result.mind),
+                    actor=entity.name,
                     stage=stage_entity.name,
-                    content=validated_response.mind,
+                    content=result.mind,
                 ),
             )
 
-        # 添加说话动作
-        if len(validated_response.speak) > 0:
-            actor_entity.replace(
-                SpeakAction, actor_entity.name, validated_response.speak
-            )
-
-        # 添加耳语动作
-        if len(validated_response.whisper) > 0:
-            actor_entity.replace(
-                WhisperAction, actor_entity.name, validated_response.whisper
-            )
-
-        # 添加宣布动作
-        if validated_response.announce != "":
-            actor_entity.replace(
-                AnnounceAction,
-                actor_entity.name,
-                validated_response.announce,
-            )
-
-        # 添加查询动作
-        if validated_response.query != "":
-            actor_entity.replace(
-                QueryAction, actor_entity.name, validated_response.query
-            )
-
-        # 最后：如果需要可以添加传送场景。
-        if validated_response.trans_stage != "":
-            actor_entity.replace(
-                TransStageAction,
-                actor_entity.name,
-                validated_response.trans_stage,
-            )
-
-    #######################################################################################################################################
-    def _build_client(self, entity: Entity) -> DeepSeekClient:
-        """为角色创建聊天客户端。"""
-        # 找到当前场景
-        current_stage = self._game.resolve_stage_entity(entity)
-        assert current_stage is not None, "当前角色所在的场景不存在"
-
-        # 找到当前场景内所有角色 & 他们的外观描述（不含自己）
-        other_actors_appearances = get_other_actors_appearances(
-            self._game, entity, current_stage
+        # 主动行动：挂载对应组件，交由下游系统处理
+        has_target_messages = isinstance(result.target_messages, dict) and bool(
+            result.target_messages
         )
+        if result.action_type == "speak" and has_target_messages:
+            entity.replace(SpeakAction, entity.name, result.target_messages)
+        elif result.action_type == "whisper" and has_target_messages:
+            entity.replace(WhisperAction, entity.name, result.target_messages)
+        elif result.action_type == "announce" and result.message:
+            entity.replace(AnnounceAction, entity.name, result.message)
+        elif result.action_type == "trans_stage" and result.target_stage_name:
+            entity.replace(TransStageAction, entity.name, result.target_stage_name)
+        # action_type == "none" 或 payload 缺失 → 不挂组件
 
-        # 找到当前场景可去往的家园场景
-        available_home_stages = get_available_home_stages(
-            self._game, entity, current_stage
-        )
 
-        # 生成请求处理器
-        stage_narrative = current_stage.get(StageDescriptionComponent).narrative
-
-        # 提取可用家园场景的名称列表
-        available_stage_names = [e.name for e in available_home_stages]
-
-        # 生成行动规划提示词
-        return DeepSeekClient(
-            name=entity.name,
-            full_prompt=build_action_planning_prompt(
-                current_stage=current_stage.name,
-                current_stage_narration=stage_narrative,
-                other_actors_appearances=other_actors_appearances,
-                available_home_stages=available_stage_names,
-            ),
-            condensed_prompt=(
-                build_condensed_planning_prompt(
-                    current_stage=current_stage.name,
-                    current_stage_narration=stage_narrative,
-                    other_actors_appearances=other_actors_appearances,
-                    available_home_stages=available_stage_names,
-                )
-                if self._use_condensed_prompt
-                else None
-            ),
-            messages=self._game.get_agent_memory(entity).messages,
-        )
-
-    #######################################################################################################################################
-    def _mock_inject_test_message(self, actor_entity: Entity) -> None:
-        """【测试用】向非玩家盟友注入一组连续的 mock 消息，模拟强制发起特定行动的场景。"""
-        self._game.add_human_message(
-            actor_entity,
-            HumanMessage(
-                content="这是一个测试消息，要求你在后续的计划行动中不可以使用trans_stage 来移动场景！"
-            ),
-        )
-
-    #######################################################################################################################################
+#######################################################################################################################################

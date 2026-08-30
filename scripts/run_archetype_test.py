@@ -1,4 +1,14 @@
-"""生成一个卡牌流派 archetype（多个 keywords）。"""
+"""生成一个卡牌流派 archetype（多个 keywords）。
+
+- transferable + retain + on_turn_end + "非source者" = 传染型 DoT（已跑通）。
+- playable=False + on_turn_end = 被动光环/诅咒。
+- retain + on_hit = 常驻反伤。
+- exhaust + on_play = 一次性爆发技。
+- ethereal + on_play = 「本回合不打就消失」的压迫感。
+- block + retain = 跨回合护盾。
+- SPREAD + transferable = 群体传染/扩散。
+- source + 词缀 = 反噬来源、敌我识别。
+"""
 
 import asyncio
 import os

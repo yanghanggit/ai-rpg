@@ -514,7 +514,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                 },
                 max_rounds=6,
                 tool_choice="auto",
-                terminal_tool=SUBMIT_ARBITRATION_TOOL,
+                terminal_tools=[SUBMIT_ARBITRATION_TOOL],
             )
         except Exception as e:
             logger.error(f"[PlayCardsArbitrationSystem] agent_loop 异常: {e}")

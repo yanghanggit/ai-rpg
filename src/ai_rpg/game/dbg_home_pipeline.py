@@ -16,9 +16,6 @@ def create_home_pipeline(game: BaseGame) -> RPGGameProcessPipeline:
     from ..systems.appearance_initialization_system import (
         AppearanceInitializationSystem,
     )
-    from ..systems.query_action_system import (
-        QueryActionSystem,
-    )
     from ..systems.action_cleanup_system import ActionCleanupSystem
     from ..systems.epilogue_system import EpilogueSystem
     from ..systems.prologue_system import PrologueSystem
@@ -52,7 +49,6 @@ def create_home_pipeline(game: BaseGame) -> RPGGameProcessPipeline:
     processors.add(HomeNpcPlanSystem(dbg_game))
 
     # 动作处理相关的系统
-    processors.add(QueryActionSystem(dbg_game))
     processors.add(PlayerActionAuditSystem(dbg_game))
     processors.add(SpeakActionSystem(dbg_game))
     processors.add(WhisperActionSystem(dbg_game))

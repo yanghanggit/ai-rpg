@@ -478,13 +478,11 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
                 name="消耗品.止血药粉",
                 description="一小纸包灰白色粉末，闻起来有股辛辣的草药味。洒在伤口上会引起短暂刺痛，随后迅速止血。",
                 count=2,
-                target_type=TargetType.SINGLE,
             ),
             ConsumableItem(
                 name="消耗品.香灰投掷包",
                 description="道观废墟中收集的冷灰色香灰，用旧报纸卷成小包。掷向单个敌人可造成灼烧伤害，香灰对某些东西格外有效。",
                 count=2,
-                target_type=TargetType.SINGLE,
             ),
             MaterialItem(
                 name="材料.符纸残片",
@@ -551,13 +549,11 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
                 name="消耗品.吗啡针剂",
                 description="一支从疗养院药房取得的玻璃针剂，液体呈淡琥珀色。针管上有细小裂纹但封口尚好。注射后迅速镇痛止血，但会留下短暂的眩晕感。",
                 count=1,
-                target_type=TargetType.SINGLE,
             ),
             ConsumableItem(
                 name="消耗品.纸钱爆散",
                 description="一叠写满朱砂字的纸钱，折叠成团后用香灰填塞。用力掘向地面后会爆散，纸片与香灰横飞，对场上所有敌人造成伤害。某些东西格外惧怕这个。",
                 count=1,
-                target_type=TargetType.ALL,
             ),
         ],
     )

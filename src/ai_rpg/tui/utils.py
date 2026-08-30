@@ -48,14 +48,8 @@ def render_item(item: AnyItem) -> str:
         lines.append(f"  [dim]{item.description}[/]")
 
     elif isinstance(item, ConsumableItem):
-        target_label = TARGET_MAP.get(item.target_type.value, item.target_type.value)
-        lines.append(
-            f"[bold]{item.name}[/]{count_str} [green]【消耗品】[/]  [dim]目标: {target_label}[/]"
-        )
+        lines.append(f"[bold]{item.name}[/]{count_str} [green]【消耗品】[/]")
         lines.append(f"  [dim]{item.description}[/]")
-        if item.on_use_affixes:
-            for affix in item.on_use_affixes:
-                lines.append(f"  [dim]词缀(使用时) {affix}[/]")
 
     else:  # MaterialItem
         assert isinstance(item, MaterialItem)

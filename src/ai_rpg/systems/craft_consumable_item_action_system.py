@@ -14,7 +14,6 @@ from ..models import (
     StorageComponent,
 )
 from ..models.items import AnyItem, ConsumableItem, ItemType, MaterialItem
-from ..models.target_type import TargetType
 from ..utils import extract_json, prompt_builder
 
 
@@ -25,8 +24,6 @@ class _CraftConsumableResponse(BaseModel):
 
     name: str = ""
     description: str = ""
-    target_type: TargetType = TargetType.SINGLE
-    on_use_affixes: List[str] = []
 
 
 #######################################################################################################################################
@@ -36,8 +33,6 @@ def _build_craft_prompt(materials: List[MaterialItem]) -> str:
     material_lines = "\n".join(
         f"- **{m.name}**（数量 {m.count}）：{m.description}" for m in materials
     )
-    target_type_options = "、".join(t.value for t in TargetType)
-
     return f"""# 任务：根据材料创意合成一件消耗品
 
 ## 投入材料
@@ -48,20 +43,13 @@ def _build_craft_prompt(materials: List[MaterialItem]) -> str:
 
 - **name**：消耗品全名，采用「消耗品.XXXX」命名格式，体现材料特性与用途，简洁有辨识度
 - **description**：物品描述，30-60字，说明外观、气味或使用感受，体现材料的来源与效果想象
-- **target_type**：目标类型，从以下选项中选择一个：{target_type_options}
-  - single：作用于单个角色（可为友方治疗/辅助，也可为敌方造成伤害/削弱，依材料创意与效果自行判断）
-  - all：选定一个目标作为阵营锚点，作用于其所在阵营全体存活角色（选己方=全体友方增益，选敌方=全体敌方伤害）
-  - spread：选定一个目标作为阵营锚点，对其所在阵营全体存活角色散射攻击（命中次数>阵营人数时保底每人至少一次，其余随机）
-- **on_use_affixes**：即时词缀列表，格式 `[名称]:触发倾向描述`（如 `[穿透]:本次使用无视目标防御`）；参与本次使用仲裁、仅对本次结算生效，不落地状态效果；无即时效果时输出 []
 
 ## 输出格式
 
 ```json
 {{
   "name": "消耗品.XXX",
-  "description": "...",
-  "target_type": "single",
-  "on_use_affixes": []
+  "description": "..."
 }}
 ```
 
@@ -114,17 +102,12 @@ class CraftConsumableItemActionSystem(ReactiveProcessor):
         new_item = ConsumableItem(
             name=result.name,
             description=result.description,
-            target_type=result.target_type,
-            on_use_affixes=result.on_use_affixes,
             resources=action.material_items,
         )
 
         # 更新储物箱：扣减已用材料（count 递减，归零则移除），追加合成品
         self._update_storage(storage_entity, action.material_names, new_item)
-        logger.info(
-            f"[CraftConsumableActionSystem] 合成完成: {new_item.name} "
-            f"(target={new_item.target_type}, on_use_affixes={new_item.on_use_affixes})"
-        )
+        logger.info(f"[CraftConsumableActionSystem] 合成完成: {new_item.name}")
 
     ####################################################################################################################################
     async def _call_llm(

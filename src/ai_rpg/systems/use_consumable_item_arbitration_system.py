@@ -61,7 +61,9 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
         assert (
             len(entities) == 1
         ), "UseConsumableItemArbitrationSystem 期望每次仅处理一个 UseConsumableItemAction 实体"
-        await self._request_consumable_arbitration(entities[0])
+        logger.debug("UseConsumableItemArbitrationSystem: 开始仲裁消耗品使用")
+
+        # await self._request_consumable_arbitration(entities[0])
 
     #######################################################################################################################################
     async def _request_consumable_arbitration(self, actor_entity: Entity) -> None:

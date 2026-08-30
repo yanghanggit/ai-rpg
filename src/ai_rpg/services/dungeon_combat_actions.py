@@ -8,6 +8,7 @@ from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import (
     get_alive_party_members_in_stage,
     get_alive_monsters_in_stage,
+    get_alive_actors_in_stage,
     get_current_turn_actor,
     get_energy,
     resolve_targets,
@@ -341,27 +342,30 @@ def activate_use_consumable(
         logger.error(msg)
         return False, msg
 
-    # 检查当前回合的行动者是否存在，如果不存在则无法使用消耗品。
-    current_turn_actor_name = latest_round.current_actor
-    if current_turn_actor_name is None:
+    # 发起人 = 当前行动者，且必须是我方角色（消耗品是队伍级行为，仅友方使用）。
+    current_actor_name = latest_round.current_actor
+    if current_actor_name is None:
         msg = "使用消耗品失败：当前没有行动角色"
         logger.error(msg)
         return False, msg
 
-    # 获取玩家实体，并确保其具有必要的组件（PartyMemberComponent 和 InventoryComponent），以便使用消耗品。
-    player_entity = dbg_game.get_player_entity()
-    assert player_entity is not None, "activate_use_consumable: player_entity is None"
-    assert player_entity.has(PartyMemberComponent), "玩家实体缺少 PartyMemberComponent"
-    assert player_entity.has(InventoryComponent), "玩家实体缺少 InventoryComponent"
-
-    # 只有背包持有者本人是当前行动者时，才允许发起消耗品使用。
-    current_turn_entity = dbg_game.get_actor_entity(current_turn_actor_name)
-    if current_turn_entity is None or current_turn_actor_name != player_entity.name:
-        msg = f"使用消耗品失败：当前行动角色 {current_turn_actor_name} 不是背包持有者 {player_entity.name}"
+    current_actor_entity = dbg_game.get_actor_entity(current_actor_name)
+    if current_actor_entity is None:
+        msg = f"使用消耗品失败：找不到当前行动角色 {current_actor_name}"
         logger.error(msg)
         return False, msg
 
-    # 从玩家实体中获取背包组件，并尝试在背包中找到指定的消耗品，如果找不到则返回错误。
+    if not current_actor_entity.has(PartyMemberComponent):
+        msg = f"使用消耗品失败：当前行动角色 {current_actor_name} 不是我方角色"
+        logger.error(msg)
+        return False, msg
+
+    # 队伍背包：消耗品统一由 player 持有。
+    player_entity = dbg_game.get_player_entity()
+    assert player_entity is not None, "activate_use_consumable: player_entity is None"
+    assert player_entity.has(InventoryComponent), "玩家实体缺少 InventoryComponent"
+
+    # 从队伍背包中查找指定消耗品。
     inventory_comp = player_entity.get(InventoryComponent)
     selected_item = next((i for i in inventory_comp.items if i.name == item_name), None)
     if selected_item is None:
@@ -378,29 +382,30 @@ def activate_use_consumable(
         logger.error(msg)
         return False, msg
 
-    # 解析消耗品的目标，根据消耗品的目标类型、数量和玩家实体，结合传入的目标列表，确定最终的目标实体列表。如果解析失败，则返回错误。
-    resolved_targets, resolve_err = resolve_targets(
-        selected_item.target_type,
-        1,
-        player_entity,
-        targets,
-        dbg_game,
-        self_target=False,
-    )
-    if resolve_err:
-        logger.error(f"activate_use_consumable: {resolve_err}")
-        return False, resolve_err
+    # 目标由调用方显式给出（target_type 已移除），仅校验均为当前场景存活角色。
+    alive_names = {
+        e.name for e in get_alive_actors_in_stage(dbg_game, current_actor_entity)
+    }
+    invalid_targets = [t for t in targets if t not in alive_names]
+    if invalid_targets:
+        msg = (
+            f"使用消耗品失败：目标 {invalid_targets} 不在当前场景存活角色列表中: "
+            f"{sorted(alive_names)}"
+        )
+        logger.error(msg)
+        return False, msg
 
     logger.debug(
-        f"为玩家 {player_entity.name} 激活消耗品使用，物品: {selected_item.name} 目标: {resolved_targets}"
+        f"为当前行动者 {current_actor_entity.name} 激活消耗品使用，"
+        f"物品: {selected_item.name} 目标: {targets}"
     )
 
-    # 将使用消耗品的动作挂在玩家实体上，记录玩家、消耗品和目标实体列表，以便在游戏逻辑中处理实际的消耗品使用效果。
-    player_entity.replace(
+    # 将使用消耗品的动作挂在当前行动者实体上。
+    current_actor_entity.replace(
         UseConsumableItemAction,
-        player_entity.name,
+        current_actor_entity.name,
         selected_item,
-        resolved_targets,
+        list(targets),
     )
 
     # 返回成功消息，表示已成功激活消耗品的使用。

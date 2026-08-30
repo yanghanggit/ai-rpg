@@ -261,7 +261,7 @@ def build_consumable_arbitration_prompt(
 ## 消耗品
 
 - 名称：{item.name}
-- 描述：{item.description}{actor_section}{build_instant_affix_section("本消耗品即时词缀", item.on_use_affixes)}
+- 描述：{item.description}{actor_section}
 
 ## 目标
 
@@ -319,7 +319,7 @@ def build_condensed_consumable_arbitration_prompt(
 ## 消耗品
 
 - 名称：{item.name}
-- 描述：{item.description}{actor_section}{build_instant_affix_section("本消耗品即时词缀", item.on_use_affixes)}
+- 描述：{item.description}{actor_section}
 
 ## 目标
 

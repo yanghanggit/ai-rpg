@@ -31,7 +31,7 @@ def _build_consumable_notice(
 #######################################################################################################################################
 @final
 class UseConsumableItemActionSystem(ReactiveProcessor):
-    """消耗品使用前置动作系统：扣减库存 + 按阵营广播通知。"""
+    """消耗品使用前置动作系统：扣减队伍背包库存 + 按阵营广播通知。"""
 
     def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
@@ -45,7 +45,7 @@ class UseConsumableItemActionSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(UseConsumableItemAction) and entity.has(InventoryComponent)
+        return entity.has(UseConsumableItemAction)
 
     #######################################################################################################################################
     @override
@@ -63,20 +63,24 @@ class UseConsumableItemActionSystem(ReactiveProcessor):
         ), f"UseConsumableItemActionSystem: 同一时间不应有多个实体触发使用消耗品前置动作，当前数量={len(entities)}"
 
         entity = entities[0]
-        assert entity.has(
-            InventoryComponent
-        ), f"UseConsumableItemActionSystem: 触发实体 {entity.name} 缺失 InventoryComponent"
-
         action = entity.get(UseConsumableItemAction)
         item = action.item
 
         logger.debug(
             f"UseConsumableItemActionSystem: [{entity.name}] 使用消耗品 '{item.name}'"
-            f" | target_type={item.target_type} | 目标: {action.targets}"
+            f" | 目标: {action.targets}"
         )
 
-        # 扣减背包中的消耗品数量：找到匹配条目并扣减，耗尽则移除该条目
-        inventory_comp = entity.get(InventoryComponent)
+        # 扣减队伍背包（player 持有）中的消耗品数量：找到匹配条目并扣减，耗尽则移除该条目
+        player_entity = self._game.get_player_entity()
+        assert (
+            player_entity is not None
+        ), "UseConsumableItemActionSystem: player_entity is None"
+        assert player_entity.has(
+            InventoryComponent
+        ), "UseConsumableItemActionSystem: player 缺少 InventoryComponent"
+
+        inventory_comp = player_entity.get(InventoryComponent)
         updated_items = []
         consumed = False
         for inv_item in inventory_comp.items:
@@ -93,12 +97,12 @@ class UseConsumableItemActionSystem(ReactiveProcessor):
 
         if not consumed:
             logger.warning(
-                f"UseConsumableItemActionSystem: [{entity.name}] 背包中未找到 '{item.name}'，跳过扣减"
+                f"UseConsumableItemActionSystem: [{entity.name}] 队伍背包中未找到 '{item.name}'，跳过扣减"
             )
         else:
             logger.debug(
                 f"UseConsumableItemActionSystem: [{entity.name}] 消耗品 '{item.name}' 扣减完毕，"
-                f"剩余背包道具: {[i.name for i in entity.get(InventoryComponent).items]}"
+                f"剩余背包道具: {[i.name for i in player_entity.get(InventoryComponent).items]}"
             )
 
         # 向场景内所有存活角色广播消耗品使用通知

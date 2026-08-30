@@ -28,7 +28,7 @@
   draw-cards      --snapshot PATH                               全员抽牌
   play-cards-specified --snapshot PATH --actor A --card C [--targets T...]  指定角色出牌（怪物 AI 自动出牌）
   pass-turn       --snapshot PATH --actor A                     跳过出牌
-  use-consumable  --snapshot PATH --actor A --item I [--targets T...]  使用消耗品
+  use-consumable  --snapshot PATH --item I [--targets T...]  使用消耗品
   equip-gear      --snapshot PATH --actor A --item I [--targets T...]  装备 GearItem
   retreat         --snapshot PATH                               主动撤退（失败） → 家园模式
   collect-loot    --snapshot PATH                               收战利品（胜利后）
@@ -479,25 +479,18 @@ def pass_turn(snapshot: str, actor: str) -> None:
     help="存档目录路径",
 )
 @click.option(
-    "--actor",
-    required=True,
-    help="使用消耗品的角色全名（如 角色.某某）",
-)
-@click.option(
     "--item",
     required=True,
-    help="要使用的消耗品名称（须存在于该角色背包中）",
+    help="要使用的消耗品名称（须存在于队伍背包中）",
 )
 @click.option(
     "--targets",
     multiple=True,
     default=(),
-    help="目标角色名，可重复使用（如 --targets 怪物.野猪）；SELF 时可省略，ALL/SPREAD 时需提供恰好 1 个目标作为阵营锚点",
+    help="目标角色名，可重复传入多个（如 --targets 怪物.野猪）；目标须为当前场景存活角色，由服务端校验",
 )
-def use_consumable(
-    snapshot: str, actor: str, item: str, targets: Tuple[str, ...]
-) -> None:
-    """指定角色使用消耗品并归档。需战斗进行中。"""
+def use_consumable(snapshot: str, item: str, targets: Tuple[str, ...]) -> None:
+    """由当前行动者使用队伍背包内的消耗品并归档。需战斗进行中。"""
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
@@ -519,9 +512,7 @@ def use_consumable(
     logger.info(f"本次存档目录：{_save_dir}")
 
     asyncio.run(
-        use_consumable_game(
-            world, player_session, actor, item, list(targets), _save_dir
-        )
+        use_consumable_game(world, player_session, item, list(targets), _save_dir)
     )
 
 

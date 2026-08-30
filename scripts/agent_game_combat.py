@@ -113,12 +113,11 @@ async def play_cards_specified_game(
 async def use_consumable_game(
     world: WorldState,
     player_session: PlayerSession,
-    actor: str,
     item: str,
     targets: List[str],
     save_dir: Path,
 ) -> DBGGame:
-    """让指定角色使用消耗品并归档。需战斗进行中且当前回合未完成。"""
+    """让当前行动者使用队伍背包内的消耗品并归档。需战斗进行中且当前回合未完成。"""
     terminal_game = await restore_game(world, player_session)
 
     if not terminal_game.is_current_room_dungeon_combat:

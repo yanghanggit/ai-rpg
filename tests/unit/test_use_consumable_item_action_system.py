@@ -14,7 +14,6 @@ from src.ai_rpg.models import (
     UseConsumableItemAction,
 )
 from src.ai_rpg.models.items import ConsumableItem
-from src.ai_rpg.models.target_type import TargetType
 from src.ai_rpg.systems.use_consumable_item_action_system import (
     UseConsumableItemActionSystem,
 )
@@ -25,32 +24,30 @@ from src.ai_rpg.systems.use_consumable_item_action_system import (
 # ---------------------------------------------------------------------------
 
 
-def _make_consumable(
-    name: str,
-    *,
-    count: int = 1,
-    target_type: TargetType = TargetType.SINGLE,
-) -> ConsumableItem:
-    return ConsumableItem(
-        name=name,
-        description="测试消耗品",
-        count=count,
-        target_type=target_type,
-    )
+def _make_consumable(name: str, *, count: int = 1) -> ConsumableItem:
+    return ConsumableItem(name=name, description="测试消耗品", count=count)
 
 
-def _make_player_entity(
+def _make_actor_entity(
     context: Context,
     name: str,
-    items: List[ConsumableItem],
     action_item: ConsumableItem,
     targets: List[str],
 ) -> Entity:
-    """创建持有 InventoryComponent + UseConsumableItemAction 的 player 实体。"""
+    """创建携带 UseConsumableItemAction 的当前行动者实体（不再持有 InventoryComponent）。"""
+    entity = context.create_entity()
+    entity._name = name
+    entity.add(UseConsumableItemAction, name, action_item, targets)
+    return entity
+
+
+def _make_player_entity(
+    context: Context, name: str, items: List[ConsumableItem]
+) -> Entity:
+    """创建持有队伍背包（InventoryComponent）的 player 实体。"""
     entity = context.create_entity()
     entity._name = name
     entity.add(InventoryComponent, name, list(items))
-    entity.add(UseConsumableItemAction, name, action_item, targets)
     return entity
 
 
@@ -86,20 +83,19 @@ def system(mock_game: MagicMock) -> UseConsumableItemActionSystem:
 
 
 class TestFilter:
-    def test_true_when_action_and_inventory_present(
+    def test_true_when_action_present(
         self, context: Context, system: UseConsumableItemActionSystem
     ) -> None:
         item = _make_consumable("治愈药水")
-        entity = _make_player_entity(context, "player", [item], item, [])
-        assert system.filter(entity) is True
+        actor = _make_actor_entity(context, "角色.无名", item, [])
+        assert system.filter(actor) is True
 
-    def test_false_when_inventory_missing(
+    def test_false_when_action_missing(
         self, context: Context, system: UseConsumableItemActionSystem
     ) -> None:
-        item = _make_consumable("治愈药水")
         entity = context.create_entity()
         entity._name = "player"
-        entity.add(UseConsumableItemAction, "player", item, [])
+        entity.add(InventoryComponent, "player", [_make_consumable("治愈药水")])
         assert system.filter(entity) is False
 
 
@@ -118,12 +114,13 @@ class TestReact:
     ) -> None:
         mock_game.current_dungeon_combat_room.combat.is_ongoing = False
         item = _make_consumable("治愈药水", count=2)
-        player = _make_player_entity(context, "player", [item], item, [])
+        actor = _make_actor_entity(context, "角色.无名", item, [])
 
-        await system.react([player])
+        await system.react([actor])
 
         mock_game.broadcast_to_stage.assert_not_called()
         mock_game.resolve_stage_entity.assert_not_called()
+        mock_game.get_player_entity.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_broadcasts_notice_to_stage(
@@ -134,22 +131,22 @@ class TestReact:
     ) -> None:
         _setup_mock_dungeon(mock_game, round_count=3)
         item = _make_consumable("鼓舞之酒", count=2)
-        player = _make_player_entity(
-            context, "player", [item], item, ["队友A", "队友B"]
-        )
+        actor = _make_actor_entity(context, "角色.无名", item, ["队友A", "队友B"])
+        player = _make_player_entity(context, "player", [item])
+        mock_game.get_player_entity.return_value = player
         stage = context.create_entity()
         stage._name = "测试场景"
         mock_game.resolve_stage_entity.return_value = stage
 
-        await system.react([player])
+        await system.react([actor])
 
         mock_game.broadcast_to_stage.assert_called_once()
         _, kwargs = mock_game.broadcast_to_stage.call_args
-        assert kwargs["entity"] is player
+        assert kwargs["entity"] is actor
         assert kwargs["exclude_entities"] == {stage}
         assert isinstance(kwargs["agent_event"], AgentEvent)
         message = kwargs["agent_event"].message
-        assert "player" in message
+        assert "角色.无名" in message
         assert "鼓舞之酒" in message
         assert "队友A" in message
         assert "队友B" in message
@@ -164,12 +161,14 @@ class TestReact:
     ) -> None:
         _setup_mock_dungeon(mock_game, round_count=1)
         item = _make_consumable("治愈药水", count=1)
-        player = _make_player_entity(context, "player", [item], item, [])
+        actor = _make_actor_entity(context, "角色.无名", item, [])
+        player = _make_player_entity(context, "player", [item])
+        mock_game.get_player_entity.return_value = player
         stage = context.create_entity()
         stage._name = "测试场景"
         mock_game.resolve_stage_entity.return_value = stage
 
-        await system.react([player])
+        await system.react([actor])
 
         _, kwargs = mock_game.broadcast_to_stage.call_args
         assert "无" in kwargs["agent_event"].message
@@ -183,10 +182,12 @@ class TestReact:
     ) -> None:
         _setup_mock_dungeon(mock_game)
         item = _make_consumable("治愈药水", count=2)
-        player = _make_player_entity(context, "player", [item], item, [])
+        actor = _make_actor_entity(context, "角色.无名", item, [])
+        player = _make_player_entity(context, "player", [item])
+        mock_game.get_player_entity.return_value = player
         mock_game.resolve_stage_entity.return_value = context.create_entity()
 
-        await system.react([player])
+        await system.react([actor])
 
         inv = player.get(InventoryComponent)
         assert inv.items[0].count == 1
@@ -200,10 +201,12 @@ class TestReact:
     ) -> None:
         _setup_mock_dungeon(mock_game)
         item = _make_consumable("最后一瓶药", count=1)
-        player = _make_player_entity(context, "player", [item], item, [])
+        actor = _make_actor_entity(context, "角色.无名", item, [])
+        player = _make_player_entity(context, "player", [item])
+        mock_game.get_player_entity.return_value = player
         mock_game.resolve_stage_entity.return_value = context.create_entity()
 
-        await system.react([player])
+        await system.react([actor])
 
         inv = player.get(InventoryComponent)
         assert len(inv.items) == 0
@@ -215,14 +218,16 @@ class TestReact:
         mock_game: MagicMock,
         system: UseConsumableItemActionSystem,
     ) -> None:
-        """背包中找不到目标道具时仅记录警告，不影响广播通知的发送。"""
+        """队伍背包中找不到目标道具时仅记录警告，不影响广播通知的发送。"""
         _setup_mock_dungeon(mock_game)
         item = _make_consumable("治愈药水", count=1)
         other_item = _make_consumable("其他道具", count=1)
-        player = _make_player_entity(context, "player", [other_item], item, [])
+        actor = _make_actor_entity(context, "角色.无名", item, [])
+        player = _make_player_entity(context, "player", [other_item])
+        mock_game.get_player_entity.return_value = player
         mock_game.resolve_stage_entity.return_value = context.create_entity()
 
-        await system.react([player])
+        await system.react([actor])
 
         inv = player.get(InventoryComponent)
         assert len(inv.items) == 1
@@ -238,8 +243,8 @@ class TestReact:
     ) -> None:
         _setup_mock_dungeon(mock_game)
         item = _make_consumable("治愈药水", count=1)
-        player_a = _make_player_entity(context, "player_a", [item], item, [])
-        player_b = _make_player_entity(context, "player_b", [item], item, [])
+        actor_a = _make_actor_entity(context, "角色.无名", item, [])
+        actor_b = _make_actor_entity(context, "角色.顾知秋", item, [])
 
         with pytest.raises(AssertionError):
-            await system.react([player_a, player_b])
+            await system.react([actor_a, actor_b])

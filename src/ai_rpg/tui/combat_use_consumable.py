@@ -16,7 +16,6 @@ from ..models import (
     DeathComponent,
     EntitySerialization,
     InventoryComponent,
-    TargetType,
 )
 from .base import BaseGameScreen
 from .combat_common import (
@@ -421,29 +420,12 @@ class CombatUseConsumableScreen(BaseGameScreen):
         item = self._flow.selected_item
         assert item is not None
 
-        player_name = self._snapshot.player_name
-
-        if item.target_type == TargetType.SINGLE:
-            candidates = [
-                (name, entity)
-                for name, entity in self._snapshot.entities_map.items()
-                if name != player_name and is_alive(entity)
-            ]
-        elif item.target_type in (TargetType.ALL, TargetType.SPREAD):
-            # 选择一个目标作为阵营锚点（含自己），服务端会展开为该目标所在阵营的全部/散射存活角色。
-            candidates = [
-                (name, entity)
-                for name, entity in self._snapshot.entities_map.items()
-                if is_alive(entity)
-            ]
-        else:
-            # TargetType.CARD 等暂不在本页支持选择目标，直接以空目标使用，交由服务端处理。
-            log.write(
-                f"[yellow]目标类型 {item.target_type.value} 暂不支持在本页选择目标，使用时将不指定目标。[/]"
-            )
-            self._flow.pending_targets = []
-            self._enter_confirm(log)
-            return
+        # 消耗品已无 target_type，目标即从当前场景存活角色中任选一个。
+        candidates = [
+            (name, entity)
+            for name, entity in self._snapshot.entities_map.items()
+            if is_alive(entity)
+        ]
 
         if not candidates:
             log.write("[red]当前没有可选的目标，使用已取消，返回菜单。[/]")
@@ -453,10 +435,6 @@ class CombatUseConsumableScreen(BaseGameScreen):
         self._flow.target_candidates = candidates
         log.write("[bold yellow]── 选择目标 ─────────────────────────────────[/]")
         log.write(render_item(item))
-        if item.target_type in (TargetType.ALL, TargetType.SPREAD):
-            log.write(
-                "[dim]提示：所选目标将作为阵营锚点，实际会作用于其所在阵营的全部/散射存活角色。[/]"
-            )
         log.write("")
         for i, (_, entity) in enumerate(candidates, start=1):
             log.write("[dim]────────────────────────────[/]")

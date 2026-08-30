@@ -8,7 +8,7 @@ from typing import Set, Tuple
 from loguru import logger
 from ..models.dungeon import CombatRoom
 from ..game.dbg_game import DBGGame
-from ..game.dbg_combat_processor import clear_combat_state
+from ..game.dbg_combat_processor import assert_no_residual_combat_state
 from ..game.rpg_stage_transition import stage_transition
 from ..models import (
     Dungeon,
@@ -142,8 +142,8 @@ def enter_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, str]:
     # 执行场景传送
     stage_transition(dbg_game, party_member_entities, stage_entity)
 
-    # 清除残留战斗状态，保底行为，此时就不应该有。
-    clear_combat_state(dbg_game)
+    # 保底断言：pipeline 理应已清理完毕，此时不应存在残留战斗临时组件
+    assert_no_residual_combat_state(dbg_game)
 
     # 若是战斗房间则创建战斗实例并初始化；入口房间仅做场景传送，不创建战斗
     if isinstance(current_room, CombatRoom):

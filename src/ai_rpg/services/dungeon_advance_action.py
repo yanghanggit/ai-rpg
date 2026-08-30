@@ -9,7 +9,7 @@ from loguru import logger
 from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import (
     set_character_hp,
-    clear_combat_state,
+    assert_no_residual_combat_state,
 )
 from ..game.rpg_stage_transition import stage_transition
 from ..models import (
@@ -126,9 +126,9 @@ async def advance_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, st
     # 执行场景传送
     stage_transition(dbg_game, party_member_entities, next_stage_entity)
 
-    # 离开战斗房间时清除残留战斗状态
+    # 离开战斗房间：保底断言 pipeline 已清理完毕，不应存在残留战斗临时组件
     if isinstance(current_room, CombatRoom):
-        clear_combat_state(dbg_game)
+        assert_no_residual_combat_state(dbg_game)
 
     # 进入战斗房间时创建战斗实例并初始化
     if isinstance(next_room, CombatRoom):

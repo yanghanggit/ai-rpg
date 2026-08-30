@@ -10,7 +10,7 @@ from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import (
     compute_character_stats,
     set_character_hp,
-    clear_combat_state,
+    assert_no_residual_combat_state,
 )
 from ..game.rpg_stage_transition import stage_transition
 from ..models import (
@@ -101,9 +101,9 @@ def exit_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, str]:
         party_member_entity.remove(PartyMemberComponent)
         logger.info(f"从远征队移除: {party_member_entity.name}")
 
-    # 离开战斗房间时清除残留战斗状态
+    # 离开战斗房间：保底断言 pipeline 已清理完毕，不应存在残留战斗临时组件
     if isinstance(current_room, CombatRoom):
-        clear_combat_state(dbg_game)
+        assert_no_residual_combat_state(dbg_game)
 
     logger.info(f"exit_dungeon 完成: {dungeon.name}")
     return True, "成功退出副本"

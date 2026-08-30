@@ -42,44 +42,41 @@ class CombatOutcomeSystem(ExecuteProcessor):
     @override
     async def execute(self) -> None:
         """检测阵营全灭条件，调用 complete_combat() 结束战斗并广播结果；战斗未 ONGOING 时静默跳过。"""
+
         if not self._game.current_dungeon_combat_room.combat.is_ongoing:
             logger.debug("当前不在战斗阶段，无需判定战斗胜负")
             return  # 不是本阶段就直接返回
 
         logger.debug("判定战斗胜负：检查双方阵营存活情况")
 
+        combat_result = self._determine_combat_result()
+        if combat_result == CombatResult.NONE:
+            logger.debug("战斗尚未结束，继续进行")
+            return
+
+        logger.info(f"战斗结束，结果: {combat_result}")
+
+        # 推进战斗状态机（ONGOING -> COMPLETE），后续 pipeline 系统据此判断是否进入战后阶段
+        self._game.current_dungeon_combat_room.combat.complete_combat(combat_result)
+
+        # 根据判定结果清理回合状态并广播战斗结果
+        clear_round_state(self._game)
+
+        # 广播战斗结果给远征队成员
+        self._broadcast_result_to_party_members(combat_result)
+
+    ########################################################################################################################################################################
+    def _determine_combat_result(self) -> CombatResult:
+        """根据当前战斗状态判断战斗结果。"""
+
         if self._is_player_side_eliminated():
-
-            # 如果玩家阵营全灭，则判定为战斗失败
-            logger.info("ally side eliminated!!!")
-            self._game.current_dungeon_combat_room.combat.complete_combat(
-                CombatResult.LOSE
-            )
-            clear_round_state(self._game)
-            self._broadcast_result_to_party_members(CombatResult.LOSE)
-
+            return CombatResult.LOSE
         elif self._is_enemy_side_eliminated():
-
-            # 如果敌方阵营全灭，则判定为战斗胜利
-            logger.info("enemy side eliminated!!!")
-            self._game.current_dungeon_combat_room.combat.complete_combat(
-                CombatResult.WIN
-            )
-            clear_round_state(self._game)
-            self._broadcast_result_to_party_members(CombatResult.WIN)
-
+            return CombatResult.WIN
         elif self._is_both_sides_cardless():
+            return CombatResult.LOSE
 
-            # 双方均无可用卡牌（DrawPile / Hand / DiscardPile 均为空）时，判定敌人获胜
-            logger.info("both sides out of cards!!! enemy wins")
-            self._game.current_dungeon_combat_room.combat.complete_combat(
-                CombatResult.LOSE
-            )
-            clear_round_state(self._game)
-            self._broadcast_result_to_party_members(CombatResult.LOSE)
-
-        else:
-            logger.debug("双方均未全灭，战斗继续进行")
+        return CombatResult.NONE
 
     ########################################################################################################################################################################
     def _get_actors_in_stage(self) -> Set[Entity]:

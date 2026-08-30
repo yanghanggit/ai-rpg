@@ -13,6 +13,7 @@ from ..models import (
     DeathComponent,
     DiscardPileComponent,
     DrawPileComponent,
+    ExhaustPileComponent,
     HandComponent,
     MonsterComponent,
     PartyMemberComponent,
@@ -305,11 +306,22 @@ def clear_round_state(game: DBGGame) -> None:
 
 
 ###################################################################################################################################################################
-def clear_combat_state(dbg_game: DBGGame) -> None:
-    """清除一次战斗（Combat）结束后的临时状态。"""
+def assert_no_residual_combat_state(dbg_game: DBGGame) -> None:
+    """断言战斗临时组件已被 pipeline（CombatRoundCleanupSystem/CombatOutcomeSystem/CombatPileTeardownSystem）清理干净，此函数不做任何清理动作。"""
 
-    # 清除战斗回合状态（retain 牌同样转入 DrawPile 保留队列，由 CombatPileTeardownSystem 兜底清空）
-    clear_round_state(dbg_game)
+    residual_entities = dbg_game.get_group(
+        Matcher(
+            any_of=[
+                HandComponent,
+                RoundStatsComponent,
+                DrawPileComponent,
+                DiscardPileComponent,
+                ExhaustPileComponent,
+            ]
+        )
+    ).entities
 
-    # 剩下的处理
-    logger.debug("clear combat state: 战斗结束，已清除回合状态")
+    assert not residual_entities, (
+        "检测到残留战斗临时组件，pipeline 理应已清理完毕: "
+        f"{[entity.name for entity in residual_entities]}"
+    )

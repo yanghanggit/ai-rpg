@@ -81,6 +81,7 @@ async def agent_loop(
 
             # 根据工具调用的名称找到对应的处理函数，如果找不到则记录警告并返回错误信息，否则执行处理函数并捕获异常
             handler = handlers.get(tc.function.name)
+            succeeded = False
             if handler is None:
                 # 如果工具调用的名称在 handlers 中找不到对应的处理函数，记录警告并返回错误信息
                 logger.warning(f"[agent_loop:{name}] 未知工具: {tc.function.name!r}")
@@ -95,6 +96,7 @@ async def agent_loop(
                         result = await raw_result
                     else:
                         result = raw_result
+                    succeeded = True
                 except Exception as e:
                     logger.error(
                         f"[agent_loop:{name}] 工具 {tc.function.name!r} 执行失败: {e}\n"
@@ -105,9 +107,9 @@ async def agent_loop(
             # 将工具调用的结果添加到历史记录中，以便在下一轮继续使用
             history.append(ToolMessage(content=result, tool_call_id=tc.id))
 
-            # 标记是否出现了终止工具；本轮所有工具调用处理完毕后统一退出，
-            # 避免同一回复中终止工具排在其它工具之前时遗漏后续工具。
-            if tc.function.name in terminal_tool_names:
+            # 只有真正执行成功的终止工具才结束循环；失败时错误已回写历史，进入下一轮让 LLM 重试。
+            # 本轮所有工具调用处理完毕后统一退出，避免同一回复中终止工具排在其它工具之前时遗漏后续工具。
+            if succeeded and tc.function.name in terminal_tool_names:
                 terminal_seen = True
                 terminal_name = tc.function.name
 

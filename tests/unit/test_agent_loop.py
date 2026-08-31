@@ -129,3 +129,54 @@ async def test_sync_handler_result_appended() -> None:
     assert messages[2].type == "tool"
     assert messages[2].content == "sync:7"
     assert messages[2].tool_call_id == "call_2"
+
+
+#######################################################################################################################################
+@pytest.mark.asyncio
+async def test_failed_terminal_tool_retries_next_round() -> None:
+    """终止工具的 arguments 为坏 JSON 时，不应结束循环，应回写错误并让 LLM 下一轮重试。"""
+    submit_tool = _build_terminal_tool("submit")
+
+    # 第一轮：终止工具参数是非法 JSON（模拟 LLM 漏加引号）
+    bad_tool_call = ToolCall(
+        id="call_bad",
+        function=ToolCall.Function(name="submit", arguments='{"narrative": 未加引号}'),
+    )
+    fake_bad = _FakeClient(
+        _build_ai_message("submit", {}), "tool_calls", [bad_tool_call]
+    )
+
+    # 第二轮：终止工具参数合法
+    good_tool_call = ToolCall(
+        id="call_good",
+        function=ToolCall.Function(name="submit", arguments=json.dumps({})),
+    )
+    fake_good = _FakeClient(
+        _build_ai_message("submit", {}), "tool_calls", [good_tool_call]
+    )
+
+    calls = []
+
+    def submit_handler() -> str:
+        calls.append(1)
+        return "ok"
+
+    messages: list[ChatMessage] = []
+    with patch("src.ai_rpg.deepseek.agent_loop.DeepSeekClient") as mock_client:
+        mock_client.side_effect = [fake_bad, fake_good]
+        ok = await agent_loop(
+            name="test",
+            prompt="go",
+            messages=messages,
+            tools=[submit_tool],
+            handlers={"submit": submit_handler},
+            terminal_tools=[submit_tool],
+        )
+
+    assert ok is True
+    assert len(calls) == 1  # 坏 JSON 不调用 handler；第二轮成功调用一次
+    assert messages[2].type == "tool"
+    assert messages[2].content.startswith("错误：工具执行失败")
+    assert messages[4].type == "tool"
+    assert messages[4].content == "ok"
+    assert messages[4].tool_call_id == "call_good"

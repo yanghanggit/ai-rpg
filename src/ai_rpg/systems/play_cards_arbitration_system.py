@@ -195,49 +195,6 @@ def _build_combat_arbitration_tool_prompt(
 
 
 @prompt_builder
-def _build_condensed_combat_arbitration_tool_prompt(
-    actor_name: str,
-    card: Card,
-    targets: List[str],
-    current_round_number: int,
-    current_stage_description: str,
-    action_order: List[str] | None = None,
-    completed_actors: List[str] | None = None,
-    current_actor: str | None = None,
-) -> str:
-    """精简版工具化仲裁提示词，省略静态规则与工具流程说明，用于写入对话历史减少重复 token。"""
-    unique_targets = list(dict.fromkeys(targets))
-    target_names = "、".join(unique_targets) if unique_targets else "无"
-    round_action_info = _build_round_action_info_lines(
-        action_order, completed_actors, current_actor
-    )
-    spread = _build_spread_sections(card, targets)
-
-    return f"""# 第 {current_round_number} 回合：战斗结算（工具调用模式）
-
-## 出牌者
-
-{actor_name}
-
-## 出牌
-
-{_build_card_data_lines(card)}
-{spread.hit_assignment}
-
-## 目标
-
-{target_names}
-
-## 当前场景环境
-
-{current_stage_description}
-
-## 回合行动信息（背景信息，不改变结算规则）
-
-{round_action_info}"""
-
-
-@prompt_builder
 def _build_combat_arbitration_broadcast(
     combat_log: str, narrative: str, current_round_number: int, actor_name: str
 ) -> str:
@@ -399,10 +356,9 @@ def _handle_submit_arbitration(
 class PlayCardsArbitrationSystem(ReactiveProcessor):
     """响应 PlayCardsAction 事件，对单张出牌立即进行 AI 仲裁结算（工具调用模式）。"""
 
-    def __init__(self, game: DBGGame, use_condensed_prompt: bool = True) -> None:
+    def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
         self._game: Final[DBGGame] = game
-        self._use_condensed_prompt: Final[bool] = use_condensed_prompt
 
     #######################################################################################################################################
     @override
@@ -475,33 +431,14 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             round_current_actor,
         )
 
-        # 生成精简后的仲裁提示消息（写入对话历史）
-        condensed_message = (
-            _build_condensed_combat_arbitration_tool_prompt(
-                actor_entity.name,
-                play_cards_action.card,
-                play_cards_action.targets,
-                current_round_number,
-                current_stage_description,
-                round_action_order,
-                round_completed_actors,
-                round_current_actor,
-            )
-            if self._use_condensed_prompt
-            else None
-        )
-
         # 仲裁结果容器：handler 通过 partial 绑定写入，避免闭包。
         ctx = _ArbitrationContext()
-
-        # agent_loop 会原地追加消息，因此传入副本，避免工具调用痕迹污染持久记忆。
-        messages = list(self._game.get_agent_memory(stage_entity).messages)
 
         try:
             ok = await agent_loop(
                 name=stage_entity.name,
                 prompt=message,
-                messages=messages,
+                messages=self._game.get_agent_memory(stage_entity).messages,
                 tools=[
                     GET_ENTITY_STATS_TOOL,
                     SET_ENTITY_HP_TOOL,
@@ -552,8 +489,6 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             stage_entity,
             actor_entity,
             ctx,
-            message,
-            condensed_message,
         )
 
     #######################################################################################################################################
@@ -562,8 +497,6 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
         stage_entity: Entity,
         actor_entity: Entity,
         ctx: _ArbitrationContext,
-        full_prompt: str,
-        condensed_prompt: Optional[str],
     ) -> None:
         """应用工具化仲裁结果：更新 HP，广播仲裁事件，写入回合记录。"""
 
@@ -591,22 +524,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                 stage_description,
             )
 
-        # 根据是否使用精简提示，添加消息。
-        if self._use_condensed_prompt and condensed_prompt is not None:
-            self._game.add_human_message(
-                entity=stage_entity,
-                human_message=HumanMessage(
-                    content=condensed_prompt,
-                    full_prompt=full_prompt,
-                ),
-            )
-        else:
-            self._game.add_human_message(
-                entity=stage_entity,
-                human_message=HumanMessage(content=full_prompt),
-            )
-
-        # 将 AI 的最终结果写入对话历史（等价于旧流程的 response_ai_message）
+        # agent_loop 已原地写入完整提示词与工具调用轨迹，这里仅补记干净的结构化结果。
         self._game.add_ai_message(
             entity=stage_entity,
             ai_message=AIMessage(

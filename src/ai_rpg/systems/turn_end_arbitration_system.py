@@ -129,35 +129,6 @@ def _build_turn_end_arbitration_tool_prompt(
 
 
 @prompt_builder
-def _build_condensed_turn_end_arbitration_tool_prompt(
-    holder_name: str,
-    cards: List[Card],
-    alive_actor_names: List[str],
-    current_round_number: int,
-    current_stage_description: str,
-) -> str:
-    """生成回合结束仲裁提示词（精简版，写入对话历史减少重复 token）。"""
-    cards_lines = "\n\n".join(_build_turn_end_card_lines(c) for c in cards)
-    alive_lines = _build_alive_actor_lines(alive_actor_names)
-
-    return f"""# 第 {current_round_number} 回合：回合结束结算（工具调用模式）
-
-你是 {holder_name}（持有者/仲裁者），回合结束时结算下列卡牌的词缀效果。
-
-## 回合结束词缀卡牌
-
-{cards_lines}
-
-## 场上存活角色
-
-{alive_lines}
-
-## 当前场景环境
-
-{current_stage_description}"""
-
-
-@prompt_builder
 def _build_turn_end_arbitration_broadcast(
     combat_log: str, narrative: str, current_round_number: int, holder_name: str
 ) -> str:
@@ -286,10 +257,9 @@ def _handle_submit_arbitration(
 class TurnEndArbitrationSystem(ReactiveProcessor):
     """响应 PassTurnAction 事件，对发起 pass turn 的行动者持有回合结束词缀卡牌进行仲裁结算。"""
 
-    def __init__(self, game: DBGGame, use_condensed_prompt: bool = True) -> None:
+    def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
         self._game: Final[DBGGame] = game
-        self._use_condensed_prompt: Final[bool] = use_condensed_prompt
 
     #######################################################################################################################################
     @override
@@ -359,18 +329,6 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
             current_round_number,
             current_stage_description,
         )
-        condensed_prompt = (
-            _build_condensed_turn_end_arbitration_tool_prompt(
-                pass_turn_entity.name,
-                turn_end_cards,
-                alive_actor_names,
-                current_round_number,
-                current_stage_description,
-            )
-            if self._use_condensed_prompt
-            else None
-        )
-
         ctx = _TurnEndArbitrationContext()
 
         try:
@@ -408,8 +366,6 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
             stage_entity,
             pass_turn_entity,
             ctx,
-            full_prompt,
-            condensed_prompt,
         )
 
     #######################################################################################################################################
@@ -418,8 +374,6 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
         stage_entity: Entity,
         holder: Entity,
         ctx: _TurnEndArbitrationContext,
-        full_prompt: str,
-        condensed_prompt: Optional[str],
     ) -> None:
         """应用单个持有者的回合结束仲裁结果：写持有者记忆、更新受影响角色 HP、定向广播。"""
 
@@ -438,20 +392,7 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
                 return
 
         # 仲裁者是持卡人（holder），结果写入 holder 自身记忆，而非 stage。
-        if self._use_condensed_prompt and condensed_prompt is not None:
-            self._game.add_human_message(
-                entity=holder,
-                human_message=HumanMessage(
-                    content=condensed_prompt,
-                    full_prompt=full_prompt,
-                ),
-            )
-        else:
-            self._game.add_human_message(
-                entity=holder,
-                human_message=HumanMessage(content=full_prompt),
-            )
-
+        # agent_loop 已原地写入完整提示词与工具调用轨迹，这里仅补记干净的结构化结果。
         self._game.add_ai_message(
             entity=holder,
             ai_message=AIMessage(

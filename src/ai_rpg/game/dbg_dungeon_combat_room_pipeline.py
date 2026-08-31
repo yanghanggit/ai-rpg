@@ -50,9 +50,6 @@ def create_dungeon_combat_room_pipeline(
         UseConsumableItemArbitrationSystem,
     )
     from ..systems.turn_end_arbitration_system import TurnEndArbitrationSystem
-    from ..systems.inject_cards_action_system import (
-        InjectCardsActionSystem,
-    )
     from ..systems.combat_archive_system import CombatArchiveSystem
     from ..systems.combat_loot_system import CombatLootSystem
     from ..systems.fill_draw_pile_system import FillDrawPileSystem
@@ -135,9 +132,6 @@ def create_dungeon_combat_room_pipeline(
 
     # 仲裁之后可能触发的系统（如死亡判定）
     processors.add(DeathSystem(dbg_game))
-
-    # 仲裁结算后，由 stage agent（地牢主视角）复用已更新的对话历史，判断是否需要向场内角色塞入场景卡牌
-    processors.add(InjectCardsActionSystem(dbg_game))
 
     # 回合完成判定系统
     processors.add(CombatRoundCompletionSystem(dbg_game))

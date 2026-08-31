@@ -184,7 +184,7 @@ class TestReact:
             ) as run_patch,
             patch.object(system, "_apply_submitted_action") as apply_patch,
             patch(
-                "src.ai_rpg.systems.home_npc_plan_system.batch_agent_loop",
+                "src.ai_rpg.systems.home_npc_plan_system.batch_run_boolean_tasks",
                 new=AsyncMock(),
             ) as batch_patch,
         ):

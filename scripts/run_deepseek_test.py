@@ -18,9 +18,9 @@ from ai_rpg.deepseek import (
     ToolDefinition,
     ToolFunction,
     agent_loop,
-    batch_agent_loop,
     batch_chat,
 )
+from ai_rpg.utils import batch_run_boolean_tasks
 from ai_rpg.models.messages import (
     AIMessage,
     ChatMessage,
@@ -341,9 +341,9 @@ async def test_tool_call_with_thinking() -> None:
     print("✅ tool calling + thinking 验证通过（messages 已被原地追加）")
 
 
-async def test_batch_agent_loop() -> None:
-    """测试批量并发 agent_loop：两个 weather 查询同时执行"""
-    print("\n=== 测试 batch_agent_loop() ===")
+async def test_batch_run_boolean_tasks() -> None:
+    """测试批量并发 bool 任务：两个 weather 查询同时执行"""
+    print("\n=== 测试 batch_run_boolean_tasks() ===")
 
     tasks = [
         (
@@ -368,13 +368,13 @@ async def test_batch_agent_loop() -> None:
         ),
     ]
 
-    outcomes = await batch_agent_loop(tasks)
+    outcomes = await batch_run_boolean_tasks(tasks)
     for i, ((name, _), ok) in enumerate(zip(tasks, outcomes)):
         status = "✅ 成功" if ok else "❌ 失败"
         print(f"  [{i}] {name}: {status}")
 
     assert all(outcomes), f"预期全部成功，实际: {outcomes}"
-    print("✅ batch_agent_loop 验证通过")
+    print("✅ batch_run_boolean_tasks 验证通过")
 
 
 async def _run_async_tests() -> None:
@@ -387,7 +387,7 @@ async def _run_async_tests() -> None:
     await test_tool_call_full_round()
     await test_tool_call_multi()
     await test_tool_call_with_thinking()
-    await test_batch_agent_loop()
+    await test_batch_run_boolean_tasks()
 
 
 def main() -> None:

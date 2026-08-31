@@ -6,7 +6,7 @@ from typing import Dict, Final, List, final
 from loguru import logger
 from overrides import override
 
-from ..deepseek import agent_loop, batch_agent_loop
+from ..deepseek import agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game import DBGGame
 from ..models import (
@@ -20,6 +20,7 @@ from ..models import (
     TransStageAction,
     WhisperAction,
 )
+from ..utils import batch_run_boolean_tasks
 from .home_planning import (
     QUERY_KNOWLEDGE_BASE_TOOL,
     PlanResult,
@@ -64,7 +65,7 @@ class HomeNpcPlanSystem(ReactiveProcessor):
         results: Dict[str, PlanResult] = {e.name: PlanResult() for e in entities}
         tasks = [(e.name, self._run_agent_loop(e, results[e.name])) for e in entities]
 
-        await batch_agent_loop(tasks)
+        await batch_run_boolean_tasks(tasks)
 
         # 串行落库：写内心独白通知 + 挂载主动行动组件（query 已由工具轨迹写回记忆）
         for entity in entities:

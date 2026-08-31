@@ -5,7 +5,7 @@
 
 import asyncio
 import time
-from typing import Any, Coroutine, List, Tuple
+from typing import List
 
 import httpx
 from loguru import logger
@@ -44,49 +44,3 @@ async def batch_chat(clients: List[DeepSeekClient]) -> None:
         logger.warning(f"batch_chat: {failed}/{len(clients)} failed")
     else:
         logger.debug(f"batch_chat: all {len(clients)} requests succeeded")
-
-
-############################################################################################################
-async def batch_agent_loop(
-    tasks: List[Tuple[str, Coroutine[Any, Any, bool]]],
-) -> List[bool]:
-    """批量并发执行 agent_loop 任务。
-
-    任务列表需在调用方组装，每个元素为 ``(任务名, 协程)``，
-    协程通常由 ``agent_loop(...)`` 返回，例如::
-
-        tasks = [
-            ("北京天气", agent_loop(name="北京天气", prompt=..., ...)),
-            ("上海天气", agent_loop(name="上海天气", prompt=..., ...)),
-        ]
-        outcomes = await batch_agent_loop(tasks)
-    """
-    if not tasks:
-        return []
-
-    logger.info(f"batch_agent_loop: 启动 {len(tasks)} 个任务")
-
-    start_time = time.time()
-    results = await asyncio.gather(
-        *[coro for _, coro in tasks],
-        return_exceptions=True,
-    )
-    elapsed = time.time() - start_time
-
-    outcomes: List[bool] = []
-    for (name, _), result in zip(tasks, results):
-        if isinstance(result, BaseException):
-            logger.error(
-                f"batch_agent_loop '{name}' 异常: {type(result).__name__}: {result}"
-            )
-            outcomes.append(False)
-        else:
-            logger.info(f"batch_agent_loop '{name}': {'成功' if result else '失败'}")
-            outcomes.append(bool(result))
-
-    succeeded = sum(1 for o in outcomes if o)
-    logger.info(f"batch_agent_loop: {succeeded}/{len(tasks)} 成功, {elapsed:.2f}s")
-    return outcomes
-
-
-############################################################################################################

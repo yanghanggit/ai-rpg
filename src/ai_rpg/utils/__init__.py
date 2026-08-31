@@ -12,6 +12,9 @@ from .prompt_registry import (
     prompt_builder,
     get_prompt_builders,
 )
+from .batch import (
+    batch_run_boolean_tasks,
+)
 
 # 公开的API
 __all__ = [
@@ -21,4 +24,5 @@ __all__ = [
     "save_debug_cache",
     "prompt_builder",
     "get_prompt_builders",
+    "batch_run_boolean_tasks",
 ]

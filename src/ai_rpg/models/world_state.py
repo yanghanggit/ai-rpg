@@ -27,6 +27,7 @@ class WorldState(BaseModel):
             name="",
             player_actor="",
             campaign_setting="",
+            system_rules="",
             knowledge_base={},
             stages=[],
             world_entities=[],

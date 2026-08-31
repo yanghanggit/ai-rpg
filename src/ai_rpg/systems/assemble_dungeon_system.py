@@ -17,7 +17,6 @@ from ..models import (
     EntryRoom,
     IllustrateDungeonAction,
     StageType,
-    RPG_SYSTEM_RULES,
     SystemMessage,
     TargetType,
 )
@@ -142,7 +141,7 @@ class AssembleDungeonSystem(ReactiveProcessor):
                 stage_type=StageType.DUNGEON,
                 profile=room_bp.profile,
                 campaign_setting=self._game._world.blueprint.campaign_setting,
-                system_rules=RPG_SYSTEM_RULES,
+                system_rules=self._game._world.blueprint.system_rules,
             )
 
             # 根据 room_type 创建对应的房间类型
@@ -165,7 +164,7 @@ class AssembleDungeonSystem(ReactiveProcessor):
                         base_body=actor_bp.base_body,
                         character_stats=CharacterStats(),
                         campaign_setting=self._game._world.blueprint.campaign_setting,
-                        system_rules=RPG_SYSTEM_RULES,
+                        system_rules=self._game._world.blueprint.system_rules,
                         keywords=[],
                         cards=[
                             Card(

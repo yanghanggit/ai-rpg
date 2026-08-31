@@ -43,6 +43,7 @@ def _make_game(
             name="test",
             player_actor=actor_name,
             campaign_setting="",
+            system_rules="",
             knowledge_base={},
             stages=[],
             world_entities=[],
@@ -107,7 +108,7 @@ def _make_actor_model(
         character_stats=CharacterStats(
             hp=hp, max_hp=hp, attack=attack, defense=defense
         ),
-        keywords=["通用型：无特殊约束，自由生成卡牌。"],
+        # keywords=["通用型：无特殊约束，自由生成卡牌。"],
     )
 
 
@@ -196,6 +197,7 @@ class TestBuildFromBlueprint:
             name="full_test",
             player_actor="hero",
             campaign_setting="",
+            system_rules="",
             knowledge_base={},
             stages=[home],
             world_entities=[],

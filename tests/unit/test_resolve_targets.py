@@ -25,6 +25,7 @@ def _make_game(player_name: str = "player", actor_name: str = "hero") -> DBGGame
         name="test",
         player_actor=actor_name,
         campaign_setting="",
+        system_rules="",
         knowledge_base={},
         stages=[],
         world_entities=[],

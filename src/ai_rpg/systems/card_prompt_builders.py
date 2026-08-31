@@ -17,7 +17,9 @@ BUILD_CARD_FIELD_DESCRIPTION: Final[
 - 过牌（pass turn）：结束本回合行动。
 - 回合结束：所有存活角色都过牌后本轮结束；清理手牌（retain 保留，其余进弃牌堆）。
 
-## 词缀（on_play / on_hit / on_turn_end）
+## 词缀
+
+词缀文本格式：`[名称]:触发倾向描述`（如 `[穿透]:本次伤害无视目标防御`）。词缀只写本次结算内的即时效果；状态、层数、跨回合持续效果不属于词缀（由 transferable / retain 等字段承载）。
 
 - 出牌仲裁：
     - on_play_affixes：发起方打出的这张牌，即时结算，仅本次出牌生效。
@@ -40,6 +42,9 @@ BUILD_CARD_FIELD_DESCRIPTION: Final[
 | block | 持有期格挡；默认 0 |
 | target_type | 目标类型（见下表）；self_target=true 时忽略 |
 | self_target | 锁定自身；true 时无需 targets |
+| on_play_affixes | 见上文 |
+| on_hit_affixes | 见上文 |
+| on_turn_end_affixes | 见上文 |
 | playable | 是否可出牌；默认 true |
 | exhaust | 出牌后永久消耗，不进弃牌循环；默认 false |
 | retain | 回合末保留在手牌，不进弃牌堆；默认 false |

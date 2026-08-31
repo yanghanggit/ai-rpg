@@ -17,4 +17,4 @@
 合成完成后，所用材料从储物箱（`StorageComponent`）中扣减（count 递减、归零移除），合成产物取而代之进入储物箱；产物携带 `resources` 记录本次消耗的原料清单，作为来源可追溯凭证。
 
 → 参见：[消耗品系统（ConsumableItem）](consumable-item.md)（合成产物的使用效果提示词与战斗使用管道）
-→ 参见：[装备系统（GearItem）](gear-item.md)（合成产物的 card_spec 与装备转化管道）
+→ 参见：[装备系统（GearItem）](gear-item.md)（合成产物的 card 与装备转化管道）

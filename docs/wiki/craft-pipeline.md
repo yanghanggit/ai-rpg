@@ -37,7 +37,7 @@
 工坊系统支持三种合成方向，由发起合成时选定的产物类型决定走哪条管道：
 
 - `ConsumableItem`：一次性战斗道具，携带 `on_use_prompt` 使用效果提示词，描述可被结算 agent 解释的即时效果（伤害/恢复 HP）。
-- `GearItem`：装备道具，携带 `card_spec` 功能边界，战斗中转化为手牌、战斗结束归还。
+- `GearItem`：装备道具，携带 `card` 功能边界，战斗中转化为手牌、战斗结束归还。
 - `CostumeItem`：纯外观道具，仅包含名称与描述，不参与任何战斗计算。
 
 三者共用同一材料池，但 agent 已按职责拆分为三个世界实体：消耗品由「世界.消耗品工坊」（`ConsumableWorkshopComponent`）负责，装备由「世界.装备工坊」（`GearWorkshopComponent`）负责，时装由「世界.时装工坊」（`CostumeWorkshopComponent`）负责，仅 prompt 模板与产物 schema 因目标类型而异。各工坊的具体审美与内容约束由其 `system_message` 注入，不在此处展开。

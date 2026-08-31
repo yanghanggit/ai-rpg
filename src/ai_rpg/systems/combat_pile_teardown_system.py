@@ -3,15 +3,17 @@
 """
 
 from typing import Final, final, override
+
 from loguru import logger
+
 from ..entitas import ExecuteProcessor, Matcher
 from ..game.dbg_game import DBGGame
 from ..models import (
     ActorComponent,
-    Card,
     DeckComponent,
-    DrawPileComponent,
     DiscardPileComponent,
+    DrawPileComponent,
+    EquippedGearComponent,
     ExhaustPileComponent,
     InventoryComponent,
 )
@@ -28,18 +30,29 @@ class CombatPileTeardownSystem(ExecuteProcessor):
         self._game: Final[DBGGame] = game
 
     ####################################################################################################################################
-    def _return_gear_from_card(self, card: Card) -> None:
-        """战斗结束时，由 GearItem 临时转化而来的卡牌离场，其装备归还玩家背包。"""
-        gear = card.gear_item
-        if gear is None:
+    def _return_equipped_gear(self) -> None:
+        """战斗结束时，收集所有角色实体上的 EquippedGearComponent 装备，归还玩家背包。"""
+        gear_entities = self._game.get_group(
+            Matcher(EquippedGearComponent)
+        ).entities.copy()
+        if not gear_entities:
             return
 
+        # 获取玩家实体及其背包组件，准备归还装备
         player_entity = self._game.get_player_entity()
         assert player_entity is not None, "玩家实体不存在！"
         assert player_entity.has(InventoryComponent), "玩家实体缺少 InventoryComponent"
-        player_entity.get(InventoryComponent).items.append(gear)
-        logger.debug(f"CombatPileTeardownSystem: 装备 {gear.name!r} 已归还玩家背包")
-        card.gear_item = None
+        inventory = player_entity.get(InventoryComponent)
+
+        # 遍历所有装备实体，将其装备归还到玩家背包，并移除 EquippedGearComponent
+        for entity in gear_entities:
+            equipped = entity.get(EquippedGearComponent)
+            inventory.items.extend(equipped.items)
+            entity.remove(EquippedGearComponent)
+            logger.debug(
+                f"CombatPileTeardownSystem: {entity.name} 的 "
+                f"{len(equipped.items)} 件装备已归还玩家背包"
+            )
 
     ####################################################################################################################################
     @override
@@ -51,17 +64,18 @@ class CombatPileTeardownSystem(ExecuteProcessor):
             logger.debug("CombatPileTeardownSystem: 当前非战斗后阶段，跳过")
             return
 
-        entities = list(
-            self._game.get_group(
-                Matcher(
-                    ActorComponent,
-                    DeckComponent,
-                    DrawPileComponent,
-                    DiscardPileComponent,
-                    ExhaustPileComponent,
-                )
-            ).entities
-        )
+        # 战斗结束：归还所有当前行动者登记的装备到玩家背包
+        self._return_equipped_gear()
+
+        entities = self._game.get_group(
+            Matcher(
+                ActorComponent,
+                DeckComponent,
+                DrawPileComponent,
+                DiscardPileComponent,
+                ExhaustPileComponent,
+            )
+        ).entities.copy()
 
         if not entities:
             logger.debug("CombatPileTeardownSystem: 没有符合条件的实体，跳过")
@@ -74,15 +88,6 @@ class CombatPileTeardownSystem(ExecuteProcessor):
             draw_pile = entity.get(DrawPileComponent)
             discard_pile = entity.get(DiscardPileComponent)
             exhaust_pile = entity.get(ExhaustPileComponent)
-
-            # 战斗结束：由 GearItem 临时转化而来的卡牌离场，其装备归还玩家背包
-            for card in (
-                draw_pile.cards
-                + draw_pile.retained_cards
-                + discard_pile.cards
-                + exhaust_pile.cards
-            ):
-                self._return_gear_from_card(card)
 
             total = (
                 len(draw_pile.cards)

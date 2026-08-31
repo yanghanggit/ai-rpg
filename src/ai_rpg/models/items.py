@@ -1,9 +1,12 @@
 """物品相关模型定义"""
 
 from enum import StrEnum, unique
-from typing import Annotated, List, Literal, Sequence, Union, final
+from typing import Annotated, List, Literal, Optional, Sequence, Union, final
 from uuid import uuid4
+
 from pydantic import BaseModel, Field
+
+from .card import Card
 
 
 ###############################################################################################################################################
@@ -36,9 +39,9 @@ class GearItem(Item):
     resources: Sequence["AnyItem"] = Field(
         default_factory=list
     )  # 合成时消耗的原料列表；未必是 MaterialItem（保留 AnyItem 扩展余地）
-    card_spec: List[str] = (
-        []
-    )  # GearItem => Card 的功能边界规格；每个 str 是一条完整描述，当前使用 [0]
+    card: Optional[Card] = (
+        None  # GearItem => Card 的完整卡牌规格；装备时直接复制物化为手牌
+    )
 
 
 #######################################################################################################################################

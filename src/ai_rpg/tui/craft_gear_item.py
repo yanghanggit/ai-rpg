@@ -8,6 +8,7 @@ from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.widgets import Input, RichLog, Static
 
+from ..models import Card, StorageComponent
 from .base import BaseGameScreen
 from .server_client import (
     TaskFailedError,
@@ -15,8 +16,7 @@ from .server_client import (
     home_craft_gear_item,
     watch_task_until_done,
 )
-from .utils import display_name
-from ..models import StorageComponent
+from .utils import display_name, render_card
 
 CRAFT_GEAR_HEADER = """\
 [bold cyan]── 装备工坊 ──────────────────────────────────────[/]
@@ -324,13 +324,22 @@ class CraftGearItemScreen(BaseGameScreen):
                         )
                         shown = True
                     desc = str(item.get("description", ""))
-                    card_spec = item.get("card_spec") or []
-                    card_spec_guide = card_spec[0] if card_spec else ""
+                    card = item.get("card")
                     log.write(f"  [bold magenta]装备[/]：{display_name(name)}")
                     if desc:
                         log.write(f"  [dim]{desc}[/]")
-                    if card_spec_guide:
-                        log.write(f"  [cyan]功能边界[/]：{card_spec_guide}")
+                    if isinstance(card, dict):
+                        try:
+                            card = Card.model_validate(card)
+                        except Exception as e:
+                            logger.warning(
+                                f"CraftGearItemScreen._show_craft_result: 解析卡牌失败 error={e}"
+                            )
+                            log.write("  [dim]（卡牌规格解析失败）[/]")
+                        else:
+                            log.write("  [cyan]卡牌规格[/]：")
+                            for line in render_card(card).split("\n"):
+                                log.write(line)
                     log.write("")
 
         if not shown:

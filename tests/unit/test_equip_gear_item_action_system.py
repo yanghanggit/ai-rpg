@@ -1,7 +1,7 @@
 """EquipGearItemActionSystem 单元测试：验证 GearItem 转化为手牌的流程。"""
 
 from typing import List
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -12,6 +12,7 @@ from src.ai_rpg.models import (
     AgentEvent,
     Card,
     EquipGearItemAction,
+    EquippedGearComponent,
     HandComponent,
     InventoryComponent,
     PartyMemberComponent,
@@ -19,14 +20,17 @@ from src.ai_rpg.models import (
 from src.ai_rpg.models.items import GearItem
 from src.ai_rpg.systems.equip_gear_item_action_system import EquipGearItemActionSystem
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
 
 def _make_gear(name: str) -> GearItem:
-    return GearItem(name=name, description="测试装备")
+    return GearItem(
+        name=name,
+        description="测试装备",
+        card=Card(name=name, description="测试装备", cost=1, damage=3),
+    )
 
 
 def _make_actor_entity(
@@ -120,13 +124,14 @@ class TestReact:
         mock_game.resolve_stage_entity.return_value = stage
 
         generated = Card(name="斩击", description="x")
-        with patch.object(
-            system, "_generate_card", new=AsyncMock(return_value=generated)
-        ):
+        with patch.object(system, "_materialize_card", return_value=generated):
             await system.react([actor])
 
         # 移动语义：gear 从团队背包移除
         assert gear not in player.get(InventoryComponent).items
+        # 装备登记到当前行动者
+        assert actor.has(EquippedGearComponent)
+        assert gear in actor.get(EquippedGearComponent).items
         # 生成的卡牌进入当前行动者手牌
         assert generated in actor.get(HandComponent).cards
         # 本回合装备使用结果被记录

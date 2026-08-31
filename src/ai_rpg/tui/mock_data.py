@@ -8,22 +8,25 @@ EntitiesDetailsResponse）严格一致，均通过真实 Pydantic 模型构造�
 """
 
 from typing import Dict, Final, List, Optional
+
+from ..models import (
+    Actor as DungeonActor,
+)
 from ..models import (
     ActorComponent,
     ActorType,
     AnyItem,
     AppearanceComponent,
     Card,
+    CharacterStats,
+    CharacterStatsComponent,
     Combat,
     CombatLootComponent,
     CombatResult,
     CombatRoom,
     CombatState,
-    CharacterStats,
-    CharacterStatsComponent,
     ComponentSerialization,
     ConsumableItem,
-    WornCostumeComponent,
     CostumeItem,
     # ArchetypeComponent,
     DeckComponent,
@@ -47,12 +50,14 @@ from ..models import (
     PartyMemberComponent,
     PlayerComponent,
     Round,
-    Stage as DungeonStage,
     StageComponent,
-    StageType,
     StagesStateResponse,
+    StageType,
     StorageComponent,
-    Actor as DungeonActor,
+    WornCostumeComponent,
+)
+from ..models import (
+    Stage as DungeonStage,
 )
 
 # ── 固定身份信息（session is None 时使用，替代真实登录会话）──
@@ -492,6 +497,12 @@ def build_mock_entities_details_response(
                     GearItem(
                         name="淬炼长剑",
                         description="一把普通但锐利的长剑，适合新手冒险者。",
+                        card=Card(
+                            name="淬炼长剑",
+                            description="一把普通但锐利的长剑，适合新手冒险者。",
+                            cost=1,
+                            damage=5,
+                        ),
                     ),
                 ],
             ),

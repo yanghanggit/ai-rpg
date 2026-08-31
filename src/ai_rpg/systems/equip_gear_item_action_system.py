@@ -1,126 +1,25 @@
-"""装备转化系统模块：将 GearItem 转化为一张 Card 放入当前行动者手牌。"""
+"""装备转化系统模块：将 GearItem 直接物化为一张 Card 放入当前行动者手牌。"""
 
 from typing import Dict, Final, List, Optional, final
+from uuid import uuid4
 
 from loguru import logger
 from overrides import override
-from pydantic import BaseModel
 
-from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_combat_processor import compute_character_stats
 from ..game.dbg_game import DBGGame
 from ..models import (
     AgentEvent,
     Card,
-    CharacterStats,
     EquipGearItemAction,
+    EquippedGearComponent,
     GearItem,
     HandComponent,
-    HumanMessage,
     InventoryComponent,
     PartyMemberComponent,
-    TargetType,
-    BUILD_CARD_FIELD_DESCRIPTION,
 )
-from ..utils import extract_json, prompt_builder
-
-
-#######################################################################################################################################
-@final
-class _GearCardResponse(BaseModel):
-    """GearItem => Card 的 LLM 响应数据模型（单张卡牌）。"""
-
-    name: str = ""  # 默认留空，沿用 GearItem.name；未来强化场景可改写
-    description: str = ""  # 默认留空，沿用 GearItem.description；未来强化场景可改写
-    on_play_affixes: List[str] = []
-    on_hit_affixes: List[str] = []
-    on_turn_end_affixes: List[str] = []
-    playable: bool = True
-    exhaust: bool = False
-    retain: bool = False
-    ethereal: bool = False
-    cost: int = 1
-    damage: int = 0
-    hit_count: int = 1
-    block: int = 0
-    self_target: bool = False
-    target_type: str = TargetType.SINGLE
-
-
-#######################################################################################################################################
-@prompt_builder
-def _build_card_spec_guide(card_spec: List[str]) -> str:
-    """取 GearItem.card_spec[0] 作为完整的功能边界描述（数组为扩展预留）。"""
-    return card_spec[0] if card_spec else "无"
-
-
-#######################################################################################################################################
-@prompt_builder
-def _build_gear_card_prompt(gear: GearItem, actor_stats: CharacterStats) -> str:
-    """生成 GearItem => Card 的完整提示词。"""
-    card_spec_guide = _build_card_spec_guide(gear.card_spec)
-
-    return f"""# 装备转化为手牌：生成 1 张卡牌
-
-## 装备
-
-- 名称：{gear.name}
-- 描述：{gear.description}
-
-## 功能边界（card_spec）
-
-{card_spec_guide}
-
-## 你的当前属性
-
-HP {actor_stats.hp}/{actor_stats.max_hp} | 攻击 {actor_stats.attack} | 防御 {actor_stats.defense}
-
-## 设计约束
-
-- name 与 description 默认与装备保持一致：请留空或原样输出装备的 name/description，不要另行创作（仅未来强化改造场景才可改写）
-- card_spec 即边界：要求的效果在对应字段体现；未提及即禁止
-- 只输出 JSON，不附加任何说明文字
-
-{BUILD_CARD_FIELD_DESCRIPTION}
-
-```json
-{{
-  "name": "",
-  "description": "",
-  "on_play_affixes": [],
-  "on_hit_affixes": [],
-  "on_turn_end_affixes": [],
-  "playable": true,
-  "exhaust": false,
-  "retain": false,
-  "ethereal": false,
-  "cost": 1,
-  "damage": 0,
-  "hit_count": 1,
-  "block": 0,
-  "self_target": false,
-  "target_type": "single"
-}}
-```"""
-
-
-#######################################################################################################################################
-@prompt_builder
-def _build_condensed_gear_card_prompt(
-    gear: GearItem, actor_stats: CharacterStats
-) -> str:
-    """生成 GearItem => Card 的精简版提示词（写入对话历史）。"""
-    card_spec_guide = _build_card_spec_guide(gear.card_spec)
-
-    return f"""# 装备转化为手牌
-
-装备：{gear.name}（{gear.description}）
-
-功能边界（card_spec）：
-{card_spec_guide}
-
-你的属性：HP {actor_stats.hp}/{actor_stats.max_hp} | 攻击 {actor_stats.attack} | 防御 {actor_stats.defense}"""
+from ..utils import prompt_builder
 
 
 #######################################################################################################################################
@@ -141,7 +40,7 @@ def _build_gear_notice(
 #######################################################################################################################################
 @final
 class EquipGearItemActionSystem(ReactiveProcessor):
-    """装备转化系统：把团队背包内的 GearItem 转化为 Card 放入当前行动者手牌。"""
+    """装备转化系统：把团队背包内的 GearItem 物化为 Card 放入当前行动者手牌。"""
 
     def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
@@ -179,8 +78,8 @@ class EquipGearItemActionSystem(ReactiveProcessor):
         assert entity.has(HandComponent), f"{entity.name} 缺少 HandComponent"
         assert entity.has(PartyMemberComponent), f"{entity.name} 不是友方角色"
 
-        # 用发起穿装备的 Actor 上下文做推理，将 GearItem 转化为一张 Card
-        card = await self._generate_card(entity, item)
+        # 直接复制 GearItem.card 物化为一张 Card，无需再调用 LLM
+        card = self._materialize_card(entity, item)
         if card is None:
             logger.error(f"[EquipGearItemActionSystem] {entity.name} 转化装备失败")
             return
@@ -195,6 +94,12 @@ class EquipGearItemActionSystem(ReactiveProcessor):
             for inventory_item in inventory.items
             if inventory_item is not item
         ]
+
+        # 登记到当前行动者：战斗结束后由 CombatPileTeardownSystem 归还玩家背包
+        if entity.has(EquippedGearComponent):
+            entity.get(EquippedGearComponent).items.append(item)
+        else:
+            entity.add(EquippedGearComponent, entity.name, [item])
 
         # 将生成的卡牌放入当前行动者手牌
         hand_comp = entity.get(HandComponent)
@@ -232,91 +137,31 @@ class EquipGearItemActionSystem(ReactiveProcessor):
         )
 
     ####################################################################################################################################
-    async def _generate_card(
+    def _materialize_card(
         self,
         entity: Entity,
         gear: GearItem,
     ) -> Optional[Card]:
-        """用发起穿装备的 Actor 上下文，将 GearItem 转化为一张 Card。"""
+        """将 GearItem.card 复制物化为一张手牌 Card，并叠加当前行动者属性加成。"""
 
-        actor_stats = compute_character_stats(entity)
-        prompt = _build_gear_card_prompt(gear, actor_stats)
-        condensed_prompt = _build_condensed_gear_card_prompt(gear, actor_stats)
-
-        chat_client = DeepSeekClient(
-            name=entity.name,
-            full_prompt=prompt,
-            condensed_prompt=condensed_prompt,
-            messages=self._game.get_agent_memory(entity).messages,
-        )
-
-        try:
-            await chat_client.chat()
-        except Exception as e:
-            logger.error(f"[EquipGearItemActionSystem] LLM 请求失败: {e}")
-            return None
-
-        if chat_client.response_ai_message is None:
-            logger.error("[EquipGearItemActionSystem] LLM 返回空响应")
-            return None
-
-        try:
-            response = _GearCardResponse.model_validate_json(
-                extract_json(chat_client.response_content)
-            )
-        except Exception as e:
+        if gear.card is None:
             logger.error(
-                f"[EquipGearItemActionSystem] 解析 LLM 响应失败: {e}\n"
-                f"{chat_client.response_content}"
+                f"[EquipGearItemActionSystem] {gear.name} 缺少 card，无法转化为手牌"
             )
             return None
 
-        valid_target_types = {t.value for t in TargetType}
-        if response.target_type not in valid_target_types:
-            logger.warning(
-                f"[EquipGearItemActionSystem] target_type 无效: {response.target_type!r}"
-            )
-            return None
-
-        card = Card(
-            name=response.name or gear.name,
-            description=response.description or gear.description,
-            on_play_affixes=response.on_play_affixes,
-            on_hit_affixes=response.on_hit_affixes,
-            on_turn_end_affixes=response.on_turn_end_affixes,
-            playable=response.playable,
-            exhaust=response.exhaust,
-            retain=response.retain,
-            ethereal=response.ethereal,
-            cost=response.cost,
-            damage=response.damage,
-            hit_count=response.hit_count,
-            block=response.block,
-            self_target=response.self_target,
-            target_type=TargetType(response.target_type),
-            source=entity.name,
-            gear_item=gear,
-        )
-
+        card = gear.card.model_copy(deep=True)
+        # 手牌是一张独立副本，必须重新生成 uuid（exhaust/discard 系统按 uuid 定位）
+        card.uuid = str(uuid4())
+        card.source = entity.name
         # 计算端强制：GearItem 转化的卡牌跨回合保留在手牌（不进入弃牌堆）
         card.retain = True
 
         # 沿用 fill_draw_pile_system 的思路：卡牌自身值非 0 时，叠加当前行动者属性
+        actor_stats = compute_character_stats(entity)
         if card.damage != 0:
             card.damage += actor_stats.attack
         if card.block != 0:
             card.block += actor_stats.defense
-
-        # 将本轮任务提示词与 LLM 回复写入发起穿装备的 Actor 上下文
-        self._game.add_human_message(
-            entity=entity,
-            human_message=HumanMessage(
-                content=chat_client.condensed_prompt,
-                full_prompt=chat_client.full_prompt,
-            ),
-        )
-        self._game.add_ai_message(
-            entity=entity, ai_message=chat_client.response_ai_message
-        )
 
         return card

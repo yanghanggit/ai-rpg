@@ -10,9 +10,11 @@ from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..models import (
+    BUILD_CARD_FIELD_DESCRIPTION,
+    Card,
     CraftGearItemAction,
     StorageComponent,
-    BUILD_CARD_FIELD_DESCRIPTION,
+    TargetType,
 )
 from ..models.items import AnyItem, GearItem, ItemType, MaterialItem
 from ..utils import extract_json, prompt_builder
@@ -20,12 +22,32 @@ from ..utils import extract_json, prompt_builder
 
 #######################################################################################################################################
 @final
+class _CraftCardSpec(BaseModel):
+    """工坊合成装备时 LLM 生成的卡牌功能规格（name/description 由装备名与描述沿用）。"""
+
+    on_play_affixes: List[str] = []
+    on_hit_affixes: List[str] = []
+    on_turn_end_affixes: List[str] = []
+    playable: bool = True
+    exhaust: bool = False
+    retain: bool = False
+    ethereal: bool = False
+    transferable: bool = False
+    cost: int = 1
+    damage: int = 0
+    hit_count: int = 1
+    block: int = 0
+    self_target: bool = False
+    target_type: str = TargetType.SINGLE
+
+
+@final
 class _CraftGearItemResponse(BaseModel):
     """工坊合成装备的 LLM 响应数据模型。"""
 
     name: str = ""
     description: str = ""
-    card_spec: List[str] = []
+    card: _CraftCardSpec
 
 
 #######################################################################################################################################
@@ -53,10 +75,9 @@ def _build_craft_gear_prompt(materials: List[MaterialItem]) -> str:
 
 - **name**：装备全名，采用「装备.XXXX」命名格式，体现材料特性与装备类型，简洁有辨识度
 - **description**：物品描述，30-60字，说明外观、手感或穿戴感受，体现材料的来源与工艺痕迹
-- **card_spec**：字符串列表，描述这件装备在战斗中被转化为卡牌时的功能边界；每个字符串是一条完整描述，当前系统仅使用第一条（`card_spec[0]`），但请以列表返回
-  - 描述格式采用 `[字段]:内容`，多个字段用「；」分隔；字段名以「卡牌字段说明」为准
-  - 只描述功能字段（伤害/格挡/词缀/目标类型等），不要针对 name/description 写（gear 转卡牌时 name/description 默认沿用装备本身）
-  - 示例：`"[伤害]:3点单体物理伤害；[攻击次数]:1段；[费用]:1；[目标类型]:single；[即时词缀]:[穿透] 本次伤害无视目标防御"`
+- **card**：这件装备在战斗中被转化为手牌时的完整卡牌规格（对象）；`name`/`description` 由系统沿用装备的 `name`/`description`，因此 `card` 内不要输出 name/description，只输出下列功能字段：
+  - `on_play_affixes` / `on_hit_affixes` / `on_turn_end_affixes` / `playable` / `exhaust` / `retain` / `ethereal` / `transferable` / `cost` / `damage` / `hit_count` / `block` / `self_target` / `target_type`
+  - 字段含义严格以「卡牌字段说明」为准，未提及即禁止
 
 ## 卡牌字段说明
 
@@ -68,7 +89,22 @@ def _build_craft_gear_prompt(materials: List[MaterialItem]) -> str:
 {{
   "name": "装备.XXX",
   "description": "...",
-  "card_spec": ["[伤害]:3；[费用]:1；[目标类型]:single"]
+  "card": {{
+    "on_play_affixes": [],
+    "on_hit_affixes": [],
+    "on_turn_end_affixes": [],
+    "playable": true,
+    "exhaust": false,
+    "retain": false,
+    "ethereal": false,
+    "transferable": false,
+    "cost": 1,
+    "damage": 3,
+    "hit_count": 1,
+    "block": 0,
+    "self_target": false,
+    "target_type": "single"
+  }}
 }}
 ```
 
@@ -125,18 +161,23 @@ class CraftGearItemActionSystem(ReactiveProcessor):
         if result is None:
             return
 
+        # 由 LLM 产出的卡牌规格构造完整 Card
+        card = self._build_card(result)
+        if card is None:
+            return
+
         # 更新 StorageComponent：扣减材料 + 追加成品
         new_item = GearItem(
             name=result.name,
             description=result.description,
             resources=action.material_items,
-            card_spec=result.card_spec,
+            card=card,
         )
         self._update_storage(storage_entity, action.material_names, new_item)
 
         logger.info(
             f"[CraftGearItemActionSystem] 合成完成: {new_item.name} "
-            f"card_spec={new_item.card_spec}"
+            f"card={new_item.card}"
         )
 
     ####################################################################################################################################
@@ -185,6 +226,35 @@ class CraftGearItemActionSystem(ReactiveProcessor):
 
         # 返回解析成功的 response 对象，供调用方使用
         return response
+
+    ####################################################################################################################################
+    def _build_card(self, result: _CraftGearItemResponse) -> Optional[Card]:
+        """将 LLM 产出的卡牌规格构造为完整 Card；target_type 非法时返回 None。"""
+        valid_target_types = {t.value for t in TargetType}
+        if result.card.target_type not in valid_target_types:
+            logger.error(
+                f"[CraftGearItemActionSystem] target_type 无效: {result.card.target_type!r}"
+            )
+            return None
+
+        return Card(
+            name=result.name,
+            description=result.description,
+            on_play_affixes=result.card.on_play_affixes,
+            on_hit_affixes=result.card.on_hit_affixes,
+            on_turn_end_affixes=result.card.on_turn_end_affixes,
+            playable=result.card.playable,
+            exhaust=result.card.exhaust,
+            retain=result.card.retain,
+            ethereal=result.card.ethereal,
+            transferable=result.card.transferable,
+            cost=result.card.cost,
+            damage=result.card.damage,
+            hit_count=result.card.hit_count,
+            block=result.card.block,
+            self_target=result.card.self_target,
+            target_type=TargetType(result.card.target_type),
+        )
 
     ####################################################################################################################################
     def _update_storage(

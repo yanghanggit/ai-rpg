@@ -1,12 +1,12 @@
 """ECS 组件定义。添加到实体后由对应系统读取处理。"""
 
 from typing import Final, List, final
+
 from ..entitas.components import Component
 from .card import Card
-from .items import AnyItem, CostumeItem
 from .character_stats import CharacterStats
+from .items import AnyItem, CostumeItem, GearItem
 from .registry import register_component_type
-
 
 ############################################################################################################
 # 每回合固定行动次数（能量）；由 CombatRoundTransitionSystem 用于初始化 RoundStatsComponent，
@@ -289,16 +289,6 @@ class DiscardPileComponent(Component):
 
 
 ############################################################################################################
-# @final
-# @register_component_type
-# class ArchetypeComponent(Component):
-#     """卡牌流派（archetype）：keywords 的总纲/容器/目标，定义角色卡牌的功能边界（规则层），运行时不可变；叙事主题由角色设定（profile）在生成时提炼。"""
-
-#     name: str
-#     keywords: List[str]  # 卡牌生成关键词约束（规则层），运行时不可变
-
-
-############################################################################################################
 @final
 @register_component_type
 class DeckComponent(Component):
@@ -348,3 +338,13 @@ class WornCostumeComponent(Component):
 
     name: str
     item: CostumeItem
+
+
+############################################################################################################
+@final
+@register_component_type
+class EquippedGearComponent(Component):
+    """战斗中由当前行动者转化、待归还玩家背包的装备暂存列表；可同时存在于多个角色实体上。"""
+
+    name: str
+    items: List[GearItem]

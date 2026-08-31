@@ -222,7 +222,7 @@ def _build_cards(raw_cards: List[object]) -> Tuple[List[Card], List[str]]:
                 target_type=TargetType(entry.target_type),
                 self_target=entry.self_target,
                 source="",
-                gear_item=None,
+                # gear_item=None,
             )
         except Exception as e:
             warnings.append(f"第 {i} 张卡「{entry.name}」构造失败，已跳过：{e}")

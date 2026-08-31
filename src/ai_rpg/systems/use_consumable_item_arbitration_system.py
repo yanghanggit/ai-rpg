@@ -120,7 +120,7 @@ def _build_consumable_arbitration_prompt(
 GET_ENTITY_STATS_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="get_entity_stats",
-        description="读取指定战斗角色的最终有效属性（HP/最大HP/攻击/防御）。用于获取发起者与目标当前状态。",
+        description="读取指定战斗角色的最终有效属性（HP/最大HP/攻击/防御）。其中 DEF 已是最终有效防御（已含手牌 block 之和），直接用于结算，无需再叠加 block。用于获取发起者与目标当前状态。",
         parameters={
             "type": "object",
             "properties": {
@@ -205,7 +205,7 @@ def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
     stats = compute_character_stats(entity)
     return (
         f"{entity_name}: HP {stats.hp}/{stats.max_hp} | "
-        f"ATK {stats.attack} | DEF {stats.defense}"
+        f"ATK {stats.attack} | DEF {stats.defense}（最终有效防御，已含手牌 block，直接使用）"
     )
 
 

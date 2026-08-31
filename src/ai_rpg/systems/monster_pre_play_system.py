@@ -83,6 +83,12 @@ def _format_card(card: Card) -> str:
 
 
 #######################################################################################################################################
+def _affordable_playable_names(hand_cards: List[Card], energy: int) -> List[str]:
+    """返回手牌中「可出且费用可支付（cost <= 剩余能量）」的卡牌名列表。"""
+    return [c.name for c in hand_cards if c.playable and c.cost <= energy]
+
+
+#######################################################################################################################################
 def _build_context_block(
     monster_name: str,
     stats: CharacterStats,
@@ -95,7 +101,7 @@ def _build_context_block(
     """构建出牌决策提示词共享的上下文块（状态/序列/手牌/对手）。"""
     self_info = (
         f"HP {stats.hp}/{stats.max_hp} | 攻击 {stats.attack} | "
-        f"防御 {stats.defense} | 能量 {energy}"
+        f"防御 {stats.defense} | 剩余能量 {energy}（每打出一张牌需支付其「费用 cost」点能量）"
     )
     cards_lines = "\n".join(_format_card(c) for c in hand_cards)
     opponents_lines = (
@@ -154,8 +160,11 @@ def _build_monster_decision_prompt(
         action_order=action_order,
         completed_actors=completed_actors,
     )
-    playable_names = [c.name for c in hand_cards if c.playable]
-    card_names_json = "、".join(f'"{name}"' for name in playable_names)
+    affordable_names = _affordable_playable_names(hand_cards, energy)
+    if affordable_names:
+        card_names_hint = "、".join(f'"{name}"' for name in affordable_names)
+    else:
+        card_names_hint = "无——剩余能量不足以支付任何牌，请返回 pass_turn=true"
 
     return f"""# 第 {current_round_number} 回合 · 出牌决策
 
@@ -167,6 +176,8 @@ def _build_monster_decision_prompt(
 
 - 行动按序列顺序执行，排在你前面的角色已行动，其目标可能已死亡。
 - 只能打出「可出」的牌；「不可出」（playable=False）的牌只能留在手牌中，不要选择。
+- 每打出一张牌需支付其「费用 cost」点能量；你当前剩余能量为 {energy}，只能选择 cost ≤ {energy} 的牌。
+- 若所有「可出」牌的 cost 都大于剩余能量，则必须返回 pass_turn=true。
 - targets 从「存活对手」中选全名；目标为「自身」的牌可省略 targets。
 - SINGLE 填恰好 1 个目标；ALL/SPREAD 填恰好 1 个阵营锚点，系统自动展开为对应阵营的存活角色。
 - 若没有可执行的牌，返回 pass_turn=true，card_name/targets 可省略。
@@ -176,7 +187,7 @@ def _build_monster_decision_prompt(
 ```json
 {{
   "pass_turn": false,
-  "card_name": "选择的手牌名（可出：{card_names_json}）",
+  "card_name": "选择的手牌名（可出：{card_names_hint}）",
   "targets": ["目标全名列表；目标为自身时可为 []]"
 }}
 ```"""
@@ -204,14 +215,17 @@ def _build_condensed_monster_decision_prompt(
         action_order=action_order,
         completed_actors=completed_actors,
     )
-    playable_names = [c.name for c in hand_cards if c.playable]
-    card_names_json = "、".join(f'"{name}"' for name in playable_names)
+    affordable_names = _affordable_playable_names(hand_cards, energy)
+    if affordable_names:
+        card_names_hint = "、".join(f'"{name}"' for name in affordable_names)
+    else:
+        card_names_hint = "无（剩余能量不足，应 pass_turn=true）"
 
     return f"""# 第 {current_round_number} 回合 · 出牌决策
 
 {context}
 
-输出 JSON（pass_turn/card_name/targets；可出卡牌：{card_names_json}）"""
+输出 JSON（pass_turn/card_name/targets；可出且费用可支付的卡牌：{card_names_hint}；只能选择 cost ≤ 剩余能量的牌，无牌可出则 pass_turn=true）"""
 
 
 #######################################################################################################################################
@@ -397,6 +411,28 @@ class MonsterPrePlaySystem(ReactiveProcessor):
             logger.error(
                 f"MonsterPrePlaySystem: [{entity.name}] LLM 返回的卡牌名 '{decision.card_name}' "
                 f"不在手牌中：{[c.name for c in hand_comp.cards]}，执行过牌"
+            )
+            entity.replace(PassTurnAction, entity.name)
+            return
+
+        # 兜底校验：能量不足以支付所选卡牌费用 → 写入警告提醒（写入怪物 agent memory）+ 强制过牌，
+        # 防止下游 play_cards_action_system 的 consume_energy 因能量不足触发 AssertionError。
+        energy = get_energy(entity)
+        if energy < selected_card.cost:
+            logger.warning(
+                f"MonsterPrePlaySystem: [{entity.name}] 决策出牌 '{selected_card.name}' "
+                f"能量不足（费用 {selected_card.cost} > 剩余 {energy}），强制过牌"
+            )
+            self._game.add_human_message(
+                entity=entity,
+                human_message=HumanMessage(
+                    content=(
+                        f"# 出牌决策无效提醒\n"
+                        f"你选择了「{selected_card.name}」（费用 {selected_card.cost}），"
+                        f"但当前剩余能量仅 {energy} 点，不足以支付费用，本次已强制跳过出牌。"
+                        f"下次当剩余能量不足以支付任何牌时，请直接返回 pass_turn=true。"
+                    )
+                ),
             )
             entity.replace(PassTurnAction, entity.name)
             return

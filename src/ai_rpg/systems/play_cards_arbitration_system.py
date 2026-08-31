@@ -52,7 +52,8 @@ ON_HIT_AFFIX_RULES: Final[
     str
 ] = """## 受击词缀
 
-get_entity_stats 返回的「受击词缀」仅在**该实体是本次出牌的目标**时触发；出牌者自身的受击词缀不触发（除非出牌者也同时是目标）。依词缀描述结算（如 [反伤] 对出牌者造成伤害），不引入词缀未提及的新机制。"""
+get_entity_stats 返回的「受击卡牌」仅列出带受击词缀（on_hit_affixes）的卡牌，用于结算受击效果；它**不是**完整手牌清单，其中展示的 block（如有）已包含在 `DEF` 字段内，不得重复累加。
+「受击词缀」仅在**该实体是本次出牌的目标**时触发；出牌者自身的受击词缀不触发（除非出牌者也同时是目标）。依词缀描述结算（如 [反伤] 对出牌者造成伤害），受击词缀的数值以该卡牌在 get_entity_stats 中返回的 damage 字段为准，不引入词缀未提及的新机制。"""
 
 
 SOURCE_FIELD_RULES: Final[
@@ -212,7 +213,7 @@ def _build_combat_arbitration_broadcast(
 GET_ENTITY_STATS_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="get_entity_stats",
-        description="读取指定战斗角色的最终有效属性（HP/最大HP/攻击/防御）与其手牌中带受击词缀的卡牌（含这些卡牌的 source/damage/hit_count/block 等数据）。用于获取发起者与目标当前状态。",
+        description="读取指定战斗角色的最终有效属性（HP/最大HP/攻击/防御）与其手牌中带受击词缀的卡牌（含这些卡牌的 source/damage/hit_count/block 等数据）。其中 DEF 已是最终有效防御（已含手牌 block 之和），直接用于结算，无需再叠加 block。用于获取发起者与目标当前状态。",
         parameters={
             "type": "object",
             "properties": {
@@ -320,8 +321,8 @@ def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
     # 返回角色的基础属性和受击卡牌信息
     return (
         f"{entity_name}: HP {stats.hp}/{stats.max_hp} | "
-        f"ATK {stats.attack} | DEF {stats.defense} | "
-        f"受击卡牌: {cards_str}"
+        f"ATK {stats.attack} | DEF {stats.defense}（最终有效防御，已含手牌 block，直接使用） | "
+        f"受击卡牌（仅含带受击词缀的卡牌，非完整手牌）: {cards_str}"
     )
 
 

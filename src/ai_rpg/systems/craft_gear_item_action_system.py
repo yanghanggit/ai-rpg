@@ -171,13 +171,13 @@ class CraftGearItemActionSystem(ReactiveProcessor):
             name=result.name,
             description=result.description,
             resources=action.material_items,
-            card=card,
+            cards=[card],
         )
         self._update_storage(storage_entity, action.material_names, new_item)
 
         logger.info(
             f"[CraftGearItemActionSystem] 合成完成: {new_item.name} "
-            f"card={new_item.card}"
+            f"cards={new_item.cards}"
         )
 
     ####################################################################################################################################

@@ -324,22 +324,24 @@ class CraftGearItemScreen(BaseGameScreen):
                         )
                         shown = True
                     desc = str(item.get("description", ""))
-                    card = item.get("card")
+                    cards = item.get("cards") or []
                     log.write(f"  [bold magenta]装备[/]：{display_name(name)}")
                     if desc:
                         log.write(f"  [dim]{desc}[/]")
-                    if isinstance(card, dict):
+                    for card_data in cards:
+                        if not isinstance(card_data, dict):
+                            continue
                         try:
-                            card = Card.model_validate(card)
+                            card = Card.model_validate(card_data)
                         except Exception as e:
                             logger.warning(
                                 f"CraftGearItemScreen._show_craft_result: 解析卡牌失败 error={e}"
                             )
                             log.write("  [dim]（卡牌规格解析失败）[/]")
-                        else:
-                            log.write("  [cyan]卡牌规格[/]：")
-                            for line in render_card(card).split("\n"):
-                                log.write(line)
+                            continue
+                        log.write("  [cyan]卡牌规格[/]：")
+                        for line in render_card(card).split("\n"):
+                            log.write(line)
                     log.write("")
 
         if not shown:

@@ -497,12 +497,14 @@ def build_mock_entities_details_response(
                     GearItem(
                         name="淬炼长剑",
                         description="一把普通但锐利的长剑，适合新手冒险者。",
-                        card=Card(
-                            name="淬炼长剑",
-                            description="一把普通但锐利的长剑，适合新手冒险者。",
-                            cost=1,
-                            damage=5,
-                        ),
+                        cards=[
+                            Card(
+                                name="淬炼长剑",
+                                description="一把普通但锐利的长剑，适合新手冒险者。",
+                                cost=1,
+                                damage=5,
+                            ),
+                        ],
                     ),
                 ],
             ),

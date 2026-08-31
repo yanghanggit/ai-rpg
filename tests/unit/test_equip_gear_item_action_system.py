@@ -29,7 +29,7 @@ def _make_gear(name: str) -> GearItem:
     return GearItem(
         name=name,
         description="测试装备",
-        card=Card(name=name, description="测试装备", cost=1, damage=3),
+        cards=[Card(name=name, description="测试装备", cost=1, damage=3)],
     )
 
 
@@ -124,7 +124,7 @@ class TestReact:
         mock_game.resolve_stage_entity.return_value = stage
 
         generated = Card(name="斩击", description="x")
-        with patch.object(system, "_materialize_card", return_value=generated):
+        with patch.object(system, "_materialize_cards", return_value=[generated]):
             await system.react([actor])
 
         # 移动语义：gear 从团队背包移除

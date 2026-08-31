@@ -12,10 +12,10 @@ from ..game.dbg_game import DBGGame
 from ..models import (
     CraftGearItemAction,
     StorageComponent,
+    BUILD_CARD_FIELD_DESCRIPTION,
 )
 from ..models.items import AnyItem, GearItem, ItemType, MaterialItem
 from ..utils import extract_json, prompt_builder
-from .card_prompt_builders import BUILD_CARD_FIELD_DESCRIPTION
 
 
 #######################################################################################################################################

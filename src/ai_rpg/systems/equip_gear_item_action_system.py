@@ -21,9 +21,9 @@ from ..models import (
     InventoryComponent,
     PartyMemberComponent,
     TargetType,
+    BUILD_CARD_FIELD_DESCRIPTION,
 )
 from ..utils import extract_json, prompt_builder
-from .card_prompt_builders import BUILD_CARD_FIELD_DESCRIPTION
 
 
 #######################################################################################################################################

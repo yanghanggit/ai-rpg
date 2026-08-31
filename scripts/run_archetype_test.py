@@ -35,10 +35,9 @@ sys.path.insert(
 )
 
 from ai_rpg.deepseek import MODEL_FLASH, MODEL_PRO, DeepSeekClient
-from ai_rpg.models.card import Card
+from ai_rpg.models.card import Card, BUILD_CARD_FIELD_DESCRIPTION
 from ai_rpg.models.messages import SystemMessage
 from ai_rpg.models.target_type import TargetType
-from ai_rpg.systems.card_prompt_builders import BUILD_CARD_FIELD_DESCRIPTION
 from ai_rpg.utils import extract_json
 
 # 日志文件目录 archetypes

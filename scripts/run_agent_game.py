@@ -30,7 +30,7 @@
   pass-turn       --snapshot PATH --actor A                     跳过出牌
   use-consumable  --snapshot PATH --item I [--targets T...]  使用消耗品
   equip-gear      --snapshot PATH --actor A --item I [--targets T...]  装备 GearItem
-  retreat         --snapshot PATH                               主动撤退（失败） → 家园模式
+  retreat         --snapshot PATH                               主动撤退（结算为失败，成员死亡）
   collect-loot    --snapshot PATH                               收战利品（胜利后）
   next-dungeon    --snapshot PATH                               下一关（胜利后，需存在下一关）
   exit-dungeon    --snapshot PATH                               退出副本 → 家园模式（无论胜负）
@@ -40,7 +40,7 @@
   副本：enter-dungeon → draw-cards → play-cards-specified(循环至战斗结束)
         胜利 → collect-loot → next-dungeon 或 exit-dungeon
         失败 → exit-dungeon
-        战斗中途撤退 → retreat"""
+        战斗中途撤退 → retreat → exit-dungeon"""
 
 import os
 import sys
@@ -797,7 +797,7 @@ def roster(snapshot: str) -> None:
     help="存档目录路径",
 )
 def retreat(snapshot: str) -> None:
-    """主动撤退（视为失败）并归档。需战斗进行中。"""
+    """主动撤退（结算为失败、成员死亡）并归档。需战斗进行中；随后用 exit-dungeon 返回家园。"""
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():

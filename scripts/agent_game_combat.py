@@ -218,7 +218,7 @@ async def retreat_game(
     player_session: PlayerSession,
     save_dir: Path,
 ) -> DBGGame:
-    """主动撤退（视为失败）并归档。需战斗进行中。"""
+    """主动撤退（结算为失败、成员死亡）并归档。需战斗进行中；随后用 exit-dungeon 返回家园。"""
     # 复位游戏状态
     terminal_game = await restore_game(world, player_session)
 

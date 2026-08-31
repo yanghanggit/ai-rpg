@@ -14,7 +14,7 @@ def _build_retreat_message(dungeon_name: str, stage_name: str) -> str:
     """生成撤退提示消息"""
     return f"""# 提示！战斗撤退：从副本 {dungeon_name} 的关卡 {stage_name} 撤退
 
-你选择了战斗中撤退。所有同伴视为战斗失败。战斗结束后将返回家园。
+你选择了战斗中撤退。所有同伴视为战斗失败。战斗结束后，需退出副本方能返回家园。
 （关于「副本」及进出副本的具体设定，见你的「游戏设定」与「全局规则」。）"""
 
 

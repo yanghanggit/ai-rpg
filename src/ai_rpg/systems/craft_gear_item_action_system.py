@@ -77,9 +77,7 @@ def _build_craft_gear_prompt(materials: List[MaterialItem]) -> str:
 - **description**：物品描述，30-60字，说明外观、手感或穿戴感受，体现材料的来源与工艺痕迹
 - **card**：这件装备在战斗中被转化为手牌时的完整卡牌规格（对象）；`name`/`description` 由系统沿用装备的 `name`/`description`，因此 `card` 内不要输出 name/description，只输出下列功能字段：
   - `on_play_affixes` / `on_hit_affixes` / `on_turn_end_affixes` / `playable` / `exhaust` / `retain` / `ethereal` / `transferable` / `cost` / `damage` / `hit_count` / `block` / `self_target` / `target_type`
-  - 字段含义严格以「卡牌字段说明」为准，未提及即禁止
-
-## 卡牌字段说明
+  - 字段含义严格以下方说明为准，未提及即禁止
 
 {BUILD_CARD_FIELD_DESCRIPTION}
 

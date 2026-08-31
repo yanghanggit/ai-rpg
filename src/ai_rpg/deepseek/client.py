@@ -170,6 +170,7 @@ class DeepSeekClient:
         thinking: bool = False,
         timeout: Optional[int] = None,
         temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
         condensed_prompt: Optional[str] = None,
         tools: Optional[Sequence[ToolDefinition]] = None,
         tool_choice: Optional[Literal["auto", "none", "required"]] = None,
@@ -206,6 +207,7 @@ class DeepSeekClient:
         self._temperature: Final[float] = (
             temperature if temperature is not None else 1.0
         )
+        self._max_tokens: Final[int] = max_tokens if max_tokens is not None else 16384
         self._reasoning_effort: Final[Optional[Literal["low", "high", "max"]]] = (
             reasoning_effort
         )
@@ -310,7 +312,7 @@ class DeepSeekClient:
             "messages": messages,
             "model": self._model,
             "thinking": {"type": "enabled" if self._thinking else "disabled"},
-            "max_tokens": 16384,
+            "max_tokens": self._max_tokens,
             "response_format": {"type": "text"},
             "stream": False,
             "temperature": self._temperature,

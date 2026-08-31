@@ -3,7 +3,6 @@ from .agent_event import *
 from .image import *
 from .api import *
 from .target_type import *
-from .phase_type import *
 from .card import *
 from .session_message import *
 from .combat import *

@@ -10,9 +10,9 @@ from typing import final
 class TargetType(StrEnum):
     """目标类型"""
 
-    SINGLE = "single"
-    ALL = "all"
-    SPREAD = "spread"
+    SINGLE = "single"  # 单体目标
+    ALL = "all"  # 阵营锚点
+    SPREAD = "spread"  # 阵营锚点 + 扩散效果
 
 
 ###############################################################################################################################################

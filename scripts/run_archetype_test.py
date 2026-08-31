@@ -1,155 +1,317 @@
-"""生成一个卡牌流派 archetype（多个 keywords）。
+"""生成一个卡牌流派 archetype（一组互相衔接的 Card），直接输出 Card 结构体。
 
-- transferable + retain + on_turn_end + "非source者" = 传染型 DoT（已跑通）。
-- playable=False + on_turn_end = 被动光环/诅咒。
-- retain + on_hit = 常驻反伤。
-- exhaust + on_play = 一次性爆发技。
-- ethereal + on_play = 「本回合不打就消失」的压迫感。
-- block + retain = 跨回合护盾。
-- SPREAD + transferable = 群体传染/扩散。
-- source + 词缀 = 反噬来源、敌我识别。
+与旧版不同：不再生成 keywords 中间层（GenerateDeckActionSystem 已停用），
+而是让 LLM 直接产出一组完整卡牌，写入 .archetypes/ 下的单个 JSON 文件。
+
+JSON 结构：
+{
+  "model": ...,
+  "thinking": ...,
+  "generated_at": ...,
+  "strategy": ...,
+  "card_count_requested": ...,
+  "card_count_actual": ...,
+  "archetype": {"name", "positioning", "win_condition", "weakness"},
+  "thinking_process": ...,
+  "cards": [ ...Card... ],
+  "warnings": [...],
+  "raw_output": ...
+}
 """
 
 import asyncio
+import json
 import os
 import sys
 from datetime import datetime
 from pathlib import Path
+from typing import List, Tuple
 
 import click
+from pydantic import BaseModel
 
 sys.path.insert(
     0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
 )
 
-from ai_rpg.deepseek import MODEL_PRO, DeepSeekClient
+from ai_rpg.deepseek import MODEL_FLASH, MODEL_PRO, DeepSeekClient
+from ai_rpg.models.card import Card
 from ai_rpg.models.messages import SystemMessage
-from typing import Tuple
+from ai_rpg.models.target_type import TargetType
+from ai_rpg.systems.card_prompt_builders import BUILD_CARD_FIELD_DESCRIPTION
+from ai_rpg.utils import extract_json
 
 # 日志文件目录 archetypes
 ARCHETYPE_DIR = Path(".archetypes")
 ARCHETYPE_DIR.mkdir(parents=True, exist_ok=True)
 assert ARCHETYPE_DIR.exists(), f"找不到目录: {ARCHETYPE_DIR}"
 
+# 可选模型
+MODEL_CHOICES = {
+    "flash": MODEL_FLASH,
+    "pro": MODEL_PRO,
+}
+
+
 # ── 系统提示词：跨内容原则 + 可结算边界 + 文本风格 + 衔接与弱点 ──
 _SYSTEM_PROMPT = SystemMessage(
-    content="""# 你是本游戏的卡牌构筑设计者。你为角色设计「keywords」——一组跨内容的逻辑关键词，是角色牌库的规则层蓝图；牌库生成 LLM 会逐条消费它们，每条 keyword 对应一张卡牌。
+    content="""# 你是本游戏的卡牌构筑设计者。为一个角色设计一个完整 archetype——一组互相衔接的战斗卡牌（Card），直接作为该角色初始牌库蓝图。
 
-## 本游戏的战斗流程
+## 设计铁律
 
-战斗按回合推进，回合内角色按创建顺序依次行动，消耗行动点（energy）出牌。角色 AI 决策出牌后，由场景实体「仲裁 LLM」结算：它以卡的确定性基数为底，结合卡上词缀自由泛化出本次结果。
+- 机制与内容分离：只写规则层逻辑，用游戏通用词汇，不绑定人设/世界观/叙事内容（人设润色由 profile 运行时注入）。
+- 有衔接：不是并列功能清单，而是一条互相衔接的取胜链条；整套有且仅有一个「如何对自己有利」的倾向。
+- 有弱点：该倾向自带结构性弱点，并在 narrative 中显式写出。
+- 可结算：每张卡都能被战斗流程落地，落在「稳定且无聊」与「花哨但无法结算」之间。
+- 字段独立：每个字段只表达自己的职责，不重复、不互相替代。
 
-## 关键设计点（机制的根部）
+## 数值原则
 
-卡牌由以下部分组成：
-- 确定性基数：damage（单段伤害，被目标防御减免）、hit_count（段数）、target_type（单目标 / 全体 / 散射 / 自身）。
-- 即时词缀：本次出牌结算生效的一次性规则，仲裁 LLM 在执行确定性基数之上自行泛化套用，不产生跨回合的持续效果。
-- 资源字段：cost（行动点消耗）、playable（是否可出）、exhaust（出后本场移除）。
-
-框架边界：战斗只发生在当前场景的既有角色之间，没有生成新实体、操控角色行动、改牌堆的机制；需要这些能力的想法都不可结算。
-
-## 设计哲学
-
-- 机制与内容分离：keywords 只写规则层逻辑，用游戏通用词汇；禁止绑定具体人设、世界观或叙事内容——人设润色由 profile 在运行时注入。
-- 有衔接：keywords 不是并列功能清单，而是一条互相衔接的取胜链条，前一张的产出喂给后一张，整套有且仅有一个明确的「如何对自己有利」的倾向。
-- 有弱点：该倾向必须自带结构性弱点，并在输出中显式写出。
-- 可结算：每条 keyword 都必须能被上面的流程落地；设计应落在「稳定且无聊」与「花哨但无法结算」之间。
-
-## keyword 文本风格
-
-每条 keyword 是「类型名 + 字段级约束」，完整声明一张卡牌的功能边界，禁止「适中」「较低」这类模糊形容词。固定结构：
-
-- 目标类型：target_type 为 self / single；
-- 伤害与出牌者攻击力的相对关系：damage 以攻击力为基数 / 低于攻击力 / 可为 0 或较低；
-- 词缀落点与文本：效果写 on_play_affixes（仅本次结算生效，不产生跨回合影响），词缀文本为 [名称]:触发倾向描述；无附加效果则写「不携带词缀」。
-
-数值原则：随角色成长的数值（伤害、防御）挂靠其聚合属性（攻击力/防御力）作基数；离散数值（如段数）给出确定值；不写人设与世界观内容。
-
-示例：`穿甲型：target_type 为 single，damage 以角色攻击力为基数；on_play_affixes 携带词缀 [穿透]:本次出牌伤害无视目标防御，仅对本次结算生效。`"""
+随成长数值（伤害/防御）挂靠聚合属性（攻击/防御）作基数；离散数值（hit_count/cost）给确定值。"""
 )
 
 
-def build_prompt(strategy: str | None, num_keywords: int) -> str:
+###############################################################################################################################################
+class ArchetypeNarrative(BaseModel):
+    """archetype 的叙事元数据（流派名称 / 定位 / 取胜逻辑 / 结构性弱点）。"""
+
+    name: str = ""
+    positioning: str = ""
+    win_condition: str = ""
+    weakness: str = ""
+
+
+###############################################################################################################################################
+class CardEntry(BaseModel):
+    """LLM 输出中的单张卡牌条目；source / uuid / gear_item 由脚本侧填充，不在其中。"""
+
+    name: str
+    description: str
+    on_play_affixes: List[str] = []
+    on_hit_affixes: List[str] = []
+    on_turn_end_affixes: List[str] = []
+    playable: bool = True
+    exhaust: bool = False
+    retain: bool = False
+    ethereal: bool = False
+    transferable: bool = False
+    cost: int = 1
+    damage: int = 0
+    hit_count: int = 1
+    block: int = 0
+    target_type: str = TargetType.SINGLE
+    self_target: bool = False
+
+
+###############################################################################################################################################
+def build_prompt(strategy: str | None, num_cards: int) -> str:
     """构造本次生成任务提示词"""
     seed = (
         f"策略方向种子：{strategy}。围绕该方向设计。"
         if strategy
         else "策略方向由你自由设计。"
     )
-    keyword_lines = "\n".join(f"- <keyword {i}>" for i in range(1, num_keywords + 1))
-    return f"""请设计一个完整的 archetype（含 {num_keywords} 条 keywords）。{seed}
+    return f"""请设计一个完整的 archetype：{num_cards} 张互相衔接的战斗卡牌。{seed}
 
 流派名称用游戏设计通用词汇，不绑定任何具体人设。
 
-输出 Markdown，严格遵循以下结构：
+## 输出格式
 
-## 流派
+输出 JSON，严格遵循以下结构（`cards` 数组长度恰好为 {num_cards}）：
 
-<逻辑流派名称 + 一句话定位>
+```json
+{{
+  "archetype": {{
+    "name": "<逻辑流派名称>",
+    "positioning": "<一句话定位>",
+    "win_condition": "<如何取胜：卡牌之间的衔接逻辑>",
+    "weakness": "<结构性弱点>"
+  }},
+  "cards": [
+    {{
+      "name": "...",
+      "description": "...",
+      "on_play_affixes": [],
+      "on_hit_affixes": [],
+      "on_turn_end_affixes": [],
+      "playable": true,
+      "exhaust": false,
+      "retain": false,
+      "ethereal": false,
+      "transferable": false,
+      "cost": 1,
+      "damage": 0,
+      "hit_count": 1,
+      "block": 0,
+      "target_type": "single",
+      "self_target": false
+    }}
+  ]
+}}
+```
 
-## 倾向
+{BUILD_CARD_FIELD_DESCRIPTION}
 
-<如何取胜：keywords 的衔接逻辑>
+## 约束
 
-## 弱点
-
-<结构性弱点>
-
-## keywords
-
-{keyword_lines}"""
+- `cards` 数组长度必须恰好为 {num_cards}
+- 每张卡必须给出所有字段；无附加效果时 on_play_affixes / on_hit_affixes / on_turn_end_affixes 输出 []
+- `description` 是叙事锚点：不含数值，不重述其它字段已确定的效果
+- 不要输出 source / uuid / gear_item（系统自动填充）
+- 只输出 JSON，不附加任何说明文字"""
 
 
-async def generate(strategy: str | None, num_keywords: int) -> DeepSeekClient:
-    """调用 MODEL_PRO + thinking 生成 archetype"""
+###############################################################################################################################################
+async def generate(
+    strategy: str | None, num_cards: int, model: str, thinking: bool
+) -> DeepSeekClient:
+    """调用选定模型生成 archetype（可选 thinking）"""
     client = DeepSeekClient(
         name="archetype_gen",
-        full_prompt=build_prompt(strategy, num_keywords),
+        full_prompt=build_prompt(strategy, num_cards),
         messages=[_SYSTEM_PROMPT],
-        model=MODEL_PRO,
-        thinking=True,
+        model=model,
+        thinking=thinking,
         timeout=300,
+        max_tokens=65536 if thinking else None,
     )
     await client.chat()
     return client
 
 
-def write_outputs(
-    client: DeepSeekClient, strategy: str | None, num_keywords: int
-) -> Tuple[Path, Path | None]:
-    """最终输出写入 .archetypes/ 下的 .md，思考过程写入独立的 .txt"""
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    md_path = ARCHETYPE_DIR / f"{timestamp}_archetype.md"
+###############################################################################################################################################
+def _build_cards(raw_cards: List[object]) -> Tuple[List[Card], List[str]]:
+    """把 LLM 输出的 cards 逐张校验并构造为 Card；非法卡打警告并跳过。"""
+    cards: List[Card] = []
+    warnings: List[str] = []
+    valid_target_types = {t.value for t in TargetType}
 
+    for i, raw_card in enumerate(raw_cards, 1):
+        if not isinstance(raw_card, dict):
+            warnings.append(f"第 {i} 张卡不是 JSON 对象，已跳过：{raw_card!r}")
+            continue
+
+        try:
+            entry = CardEntry.model_validate(raw_card)
+        except Exception as e:
+            warnings.append(f"第 {i} 张卡字段校验失败，已跳过：{e}")
+            continue
+
+        if entry.target_type not in valid_target_types:
+            warnings.append(
+                f"第 {i} 张卡「{entry.name}」target_type 无效（{entry.target_type!r}），"
+                f"有效值为 {sorted(valid_target_types)}，已跳过"
+            )
+            continue
+
+        try:
+            card = Card(
+                name=entry.name,
+                description=entry.description,
+                on_play_affixes=entry.on_play_affixes,
+                on_hit_affixes=entry.on_hit_affixes,
+                on_turn_end_affixes=entry.on_turn_end_affixes,
+                playable=entry.playable,
+                exhaust=entry.exhaust,
+                retain=entry.retain,
+                ethereal=entry.ethereal,
+                transferable=entry.transferable,
+                cost=entry.cost,
+                damage=entry.damage,
+                hit_count=entry.hit_count,
+                block=entry.block,
+                target_type=TargetType(entry.target_type),
+                self_target=entry.self_target,
+                source="",
+                gear_item=None,
+            )
+        except Exception as e:
+            warnings.append(f"第 {i} 张卡「{entry.name}」构造失败，已跳过：{e}")
+            continue
+
+        cards.append(card)
+
+    return cards, warnings
+
+
+###############################################################################################################################################
+def parse_response(
+    client: DeepSeekClient,
+) -> Tuple[dict[str, object], List[Card], str, str, List[str]]:
+    """解析 LLM 响应，返回 (archetype 叙事, cards, 思考过程, 原始输出, 警告)。"""
+    raw = client.response_content.strip()
     reasoning = client.response_reasoning_content.strip()
-    output = client.response_content.strip()
+    warnings: List[str] = []
+    archetype: dict[str, object] = {}
+    cards: List[Card] = []
 
-    content = f"""# archetype 生成结果
+    try:
+        data = json.loads(extract_json(raw))
+    except Exception as e:
+        warnings.append(f"解析 LLM 输出 JSON 失败：{e}")
+        return archetype, cards, reasoning, raw, warnings
 
-- 模型：`{MODEL_PRO}`
-- 思考模式：开启
-- 生成时间：{datetime.now().isoformat()}
-- keyword 数量：{num_keywords}
-- 策略方向：{strategy or '自由设计'}
+    if not isinstance(data, dict):
+        warnings.append("LLM 输出不是 JSON 对象")
+        return archetype, cards, reasoning, raw, warnings
 
----
+    try:
+        archetype = ArchetypeNarrative.model_validate(
+            data.get("archetype") or {}
+        ).model_dump(mode="json")
+    except Exception as e:
+        warnings.append(f"解析 archetype 叙事元数据失败：{e}")
 
-## 最终输出
+    raw_cards = data.get("cards")
+    if not isinstance(raw_cards, list):
+        warnings.append("cards 字段缺失或不是数组")
+        return archetype, cards, reasoning, raw, warnings
 
-{output}
-"""
-    md_path.write_text(content, encoding="utf-8")
+    cards, card_warnings = _build_cards(raw_cards)
+    warnings.extend(card_warnings)
 
-    reasoning_path: Path | None = None
-    if reasoning:
-        reasoning_path = ARCHETYPE_DIR / f"{timestamp}_archetype_reasoning.txt"
-        reasoning_path.write_text(reasoning + "\n", encoding="utf-8")
-
-    return md_path, reasoning_path
+    return archetype, cards, reasoning, raw, warnings
 
 
-async def _run(strategy: str | None, num_keywords: int) -> None:
-    client = await generate(strategy, num_keywords)
+###############################################################################################################################################
+def write_outputs(
+    *,
+    strategy: str | None,
+    num_cards: int,
+    model: str,
+    thinking: bool,
+    archetype: dict[str, object],
+    cards: List[Card],
+    reasoning: str,
+    raw: str,
+    warnings: List[str],
+) -> Path:
+    """最终输出写入 .archetypes/ 下的单个 JSON 文件。"""
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    path = ARCHETYPE_DIR / f"{timestamp}_archetype.json"
+
+    data = {
+        "model": model,
+        "thinking": thinking,
+        "generated_at": datetime.now().isoformat(),
+        "strategy": strategy or "自由设计",
+        "card_count_requested": num_cards,
+        "card_count_actual": len(cards),
+        "archetype": archetype,
+        "thinking_process": reasoning,
+        "cards": [card.model_dump(mode="json") for card in cards],
+        "warnings": warnings,
+        "raw_output": raw,
+    }
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    return path
+
+
+###############################################################################################################################################
+async def _run(
+    strategy: str | None, num_cards: int, model: str, thinking: bool
+) -> None:
+    client = await generate(strategy, num_cards, model, thinking)
 
     print("=" * 80)
     print("💭 思考过程:")
@@ -159,12 +321,28 @@ async def _run(strategy: str | None, num_keywords: int) -> None:
     print(client.response_content)
     print("=" * 80)
 
-    path, reasoning_path = write_outputs(client, strategy, num_keywords)
+    archetype, cards, reasoning, raw, warnings = parse_response(client)
+    path = write_outputs(
+        strategy=strategy,
+        num_cards=num_cards,
+        model=model,
+        thinking=thinking,
+        archetype=archetype,
+        cards=cards,
+        reasoning=reasoning,
+        raw=raw,
+        warnings=warnings,
+    )
+
     print(f"✅ 已写入: {path}")
-    if reasoning_path is not None:
-        print(f"✅ 思考过程: {reasoning_path}")
+    print(f"   卡牌数量: {len(cards)}/{num_cards}")
+    if archetype:
+        print(f"   流派: {archetype.get('name', '')}")
+    for warning in warnings:
+        print(f"⚠️  {warning}")
 
 
+###############################################################################################################################################
 @click.command()
 @click.option(
     "--strategy",
@@ -175,14 +353,30 @@ async def _run(strategy: str | None, num_keywords: int) -> None:
 @click.option(
     "--count",
     "-n",
-    "num_keywords",
-    default=6,
+    "num_cards",
+    default=5,
     show_default=True,
-    help="生成的 keyword 数量。",
+    help="生成的卡牌数量。",
 )
-def main(strategy: str | None, num_keywords: int) -> None:
-    """生成一个跨内容的卡牌流派 archetype 并写入 .archetypes/。"""
-    asyncio.run(_run(strategy, num_keywords))
+@click.option(
+    "--model",
+    "-m",
+    "model",
+    type=click.Choice(list(MODEL_CHOICES.keys()), case_sensitive=False),
+    default="flash",
+    show_default=True,
+    help="使用的模型。",
+)
+@click.option(
+    "--thinking/--no-thinking",
+    "thinking",
+    default=False,
+    show_default=True,
+    help="是否开启思考模式。",
+)
+def main(strategy: str | None, num_cards: int, model: str, thinking: bool) -> None:
+    """生成一组互相衔接的卡牌（archetype）并写入 .archetypes/ 下的 JSON。"""
+    asyncio.run(_run(strategy, num_cards, MODEL_CHOICES[model], thinking))
 
 
 if __name__ == "__main__":

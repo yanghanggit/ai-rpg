@@ -161,19 +161,6 @@ KNOWLEDGE_BASE: Final[Dict[str, List[str]]] = {
 }
 
 
-# ── 卡牌关键词常量（避免重复字符串，方便统一修改） ──────────────────────────────────────────────
-
-# _KW_ATTACK: Final[str] = (
-#     "攻击型：target_type 为 single，self_target 为 false，damage 为卡牌自身值，"
-#     "填充牌库时叠加角色攻击力（attack）；block 为 0；on_play_affixes 为空。"
-# )
-# _KW_DEFENSE: Final[str] = (
-#     "防御型：self_target 为 true，damage 为 0；"
-#     "block 为卡牌自身格挡值，填充牌库时叠加角色防御力（defense），持有期间累加进持有者总防御；"
-#     "on_play_affixes 为空。"
-# )
-
-
 def _make_attack_card() -> Card:
     """创建基础攻击卡牌（damage 为卡牌自身值，填充牌库时叠加角色 attack）。"""
     return Card(

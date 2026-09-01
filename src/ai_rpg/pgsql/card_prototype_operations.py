@@ -1,7 +1,7 @@
 """卡牌原型数据库操作函数。
 
 面向后续 Agent 工具的两级披露：
-  - `list_card_prototype_index`：一级披露（id / archetype / name / summary / tags），用于「选择核心」前纵览；
+  - `list_card_prototype_index`：一级披露（id / domain / port / port_subtype / name / summary / tags），用于「选择核心」前纵览；
   - `get_card_prototype`：二级披露（含 guide 与 card_json），用于精读被选中的原型。
 """
 
@@ -15,7 +15,9 @@ from .card_prototype import CardPrototypeDB
 ############################################################################################################
 def save_card_prototype(
     prototype_id: str,
-    archetype: str,
+    domain: str,
+    port: str,
+    port_subtype: str,
     name: str,
     summary: str,
     guide: str,
@@ -32,7 +34,9 @@ def save_card_prototype(
             db.query(CardPrototypeDB).filter_by(prototype_id=prototype_id).first()
         )
         if existing is not None:
-            existing.archetype = archetype
+            existing.domain = domain
+            existing.port = port
+            existing.port_subtype = port_subtype
             existing.name = name
             existing.summary = summary
             existing.guide = guide
@@ -44,7 +48,9 @@ def save_card_prototype(
 
         proto = CardPrototypeDB(
             prototype_id=prototype_id,
-            archetype=archetype,
+            domain=domain,
+            port=port,
+            port_subtype=port_subtype,
             name=name,
             summary=summary,
             guide=guide,
@@ -68,20 +74,25 @@ def save_card_prototype(
 
 ############################################################################################################
 def list_card_prototype_index(
-    archetype: Optional[str] = None,
+    domain: Optional[str] = None,
+    port: Optional[str] = None,
 ) -> List[Dict[str, object]]:
-    """列出一级披露索引（不含 guide / card_json），可按 archetype 过滤。"""
+    """列出一级披露索引（不含 guide / card_json），可按 domain / port 过滤。"""
 
     db = SessionLocal()
     try:
         query = db.query(CardPrototypeDB)
-        if archetype:
-            query = query.filter(CardPrototypeDB.archetype == archetype)
+        if domain:
+            query = query.filter(CardPrototypeDB.domain == domain)
+        if port:
+            query = query.filter(CardPrototypeDB.port == port)
         rows = query.order_by(CardPrototypeDB.created_at).all()
         return [
             {
                 "prototype_id": row.prototype_id,
-                "archetype": row.archetype,
+                "domain": row.domain,
+                "port": row.port,
+                "port_subtype": row.port_subtype,
                 "name": row.name,
                 "summary": row.summary,
                 "tags": json.loads(row.tags_json),

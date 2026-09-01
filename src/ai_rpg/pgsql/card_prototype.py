@@ -16,8 +16,14 @@ class CardPrototypeDB(UUIDBase):
         String(100), unique=True, index=True, nullable=False
     )
 
-    # 玩法范式标签（攻击 / 防御 / …），供按类检索
-    archetype: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
+    # 应用场景（手牌 / 装备），供按域检索（工坊合成按「装备」过滤）
+    domain: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
+
+    # 三端大类（攻击端 / 防御端 / 运转端）
+    port: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
+
+    # 三端小类（前端伤害 / 成长性伤害 / 铺垫性攻击支持 / 前端防御 / 成长性防御 / 特殊防御机制）
+    port_subtype: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
 
     # 原型名（教学性文本，不耦合游戏内容）
     name: Mapped[str] = mapped_column(String(100), nullable=False)

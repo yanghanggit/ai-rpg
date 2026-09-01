@@ -164,7 +164,9 @@ def _setup_card_prototypes() -> None:
     for proto in CARD_PROTOTYPES:
         save_card_prototype(
             prototype_id=proto.meta.prototype_id,
-            archetype=proto.meta.archetype,
+            domain=proto.meta.domain,
+            port=proto.meta.port,
+            port_subtype=proto.meta.port_subtype,
             name=proto.meta.name,
             summary=proto.meta.summary,
             guide=proto.meta.guide,
@@ -172,7 +174,8 @@ def _setup_card_prototypes() -> None:
             tags=list(proto.meta.tags),
         )
         logger.info(
-            f"📥 卡牌原型已入库: {proto.meta.prototype_id}（{proto.meta.archetype}）"
+            f"📥 卡牌原型已入库: {proto.meta.prototype_id}"
+            f"（{proto.meta.domain}/{proto.meta.port}/{proto.meta.port_subtype}）"
         )
 
     logger.success(f"✅ 卡牌原型初始化完成（{len(CARD_PROTOTYPES)} 个）")

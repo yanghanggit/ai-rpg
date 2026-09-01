@@ -65,30 +65,37 @@ def _build_craft_gear_prompt(materials: List[MaterialItem]) -> str:
         f"- **{m.name}**（数量 {m.count}）：{m.description}" for m in materials
     )
 
-    return f"""# 任务：根据材料创意合成一件装备
+    return (
+        f"""# 任务：根据材料创意合成一件装备
 
 ## 投入材料
 
 {material_lines}
 
-## 要求
+## 装备叙事
 
 - **name**：装备全名，采用「装备.XXXX」命名格式，体现材料特性与装备类型，简洁有辨识度
 - **description**：物品描述，30-60字，说明外观、手感或穿戴感受，体现材料的来源与工艺痕迹
-- **card**：这件装备在战斗中被转化为手牌时的完整卡牌规格（对象）；`name`/`description` 由系统沿用装备的 `name`/`description`，因此 `card` 内不要输出 name/description，只输出下列功能字段：
-  - `on_play_affixes` / `on_hit_affixes` / `on_turn_end_affixes` / `playable` / `exhaust` / `retain` / `ethereal` / `transferable` / `cost` / `damage` / `hit_count` / `block` / `self_target` / `target_type`
-  - 字段含义严格以下方说明为准，未提及即禁止
 
-{BUILD_CARD_FIELD_DESCRIPTION}
+## 卡牌规格（card）
 
-## 输出格式
+`card` 是这件装备在战斗中被转化为手牌时的完整卡牌规格。`card` 内不输出 `name`/`description`（由系统沿用装备的）；其余字段以下方说明为准，未提及即禁止。
 
+"""
+        + BUILD_CARD_FIELD_DESCRIPTION
+        + """
+
+## 示例
+
+以下示例仅演示字段与词缀的结构，具体内容请据材料自由发挥。
+
+**进攻装备**（`on_play_affixes` 出牌即时生效）：
 ```json
-{{
-  "name": "装备.XXX",
-  "description": "...",
-  "card": {{
-    "on_play_affixes": [],
+{
+  "name": "装备.名字",
+  "description": "对装备进行描述，突出装备特点",
+  "card": {
+    "on_play_affixes": ["[词缀名]:本次出牌产生何种即时效果"],
     "on_hit_affixes": [],
     "on_turn_end_affixes": [],
     "playable": true,
@@ -102,11 +109,85 @@ def _build_craft_gear_prompt(materials: List[MaterialItem]) -> str:
     "block": 0,
     "self_target": false,
     "target_type": "single"
-  }}
-}}
+  }
+}
+```
+
+**防御装备**（`block` 持有期格挡 + `on_hit_affixes` 受击触发 + `retain` 跨回合保留）：
+```json
+{
+  "name": "装备.名字",
+  "description": "对装备进行描述，突出装备特点",
+  "card": {
+    "on_play_affixes": [],
+    "on_hit_affixes": ["[词缀名]:持有者受到攻击命中时触发何种效果"],
+    "on_turn_end_affixes": [],
+    "playable": true,
+    "exhaust": false,
+    "retain": true,
+    "ethereal": false,
+    "transferable": false,
+    "cost": 1,
+    "damage": 0,
+    "hit_count": 1,
+    "block": 3,
+    "self_target": false,
+    "target_type": "single"
+  }
+}
+```
+
+**投掷/传染装备**（`transferable` 传给敌人 + `on_turn_end_affixes` 持续反噬，词缀用「非 source 者」指代新持有者）：
+```json
+{
+  "name": "装备.名字",
+  "description": "对装备进行描述，突出装备特点",
+  "card": {
+    "on_play_affixes": [],
+    "on_hit_affixes": [],
+    "on_turn_end_affixes": ["[词缀名]:回合结束时对非 source 者结算何种持续效果"],
+    "playable": true,
+    "exhaust": false,
+    "retain": true,
+    "ethereal": false,
+    "transferable": true,
+    "cost": 1,
+    "damage": 1,
+    "hit_count": 1,
+    "block": 0,
+    "self_target": false,
+    "target_type": "single"
+  }
+}
+```
+
+## 输出格式
+
+```json
+{
+  "name": "装备.XXX",
+  "description": "...",
+  "card": {
+    "on_play_affixes": [],
+    "on_hit_affixes": [],
+    "on_turn_end_affixes": [],
+    "playable": true,
+    "exhaust": false,
+    "retain": false,
+    "ethereal": false,
+    "transferable": false,
+    "cost": 1,
+    "damage": 0,
+    "hit_count": 1,
+    "block": 0,
+    "self_target": false,
+    "target_type": "single"
+  }
+}
 ```
 
 严格按 JSON 格式输出，不要添加其他内容。"""
+    )
 
 
 #######################################################################################################################################

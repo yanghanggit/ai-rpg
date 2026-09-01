@@ -1,30 +1,36 @@
 """工坊合成装备系统模块。"""
 
-from typing import Dict, Final, List, Optional, final
+import json
+from functools import partial
+from typing import Any, Dict, Final, List, final
 
 from loguru import logger
 from overrides import override
 from pydantic import BaseModel
 
-from ..deepseek import DeepSeekClient
+from ..deepseek import ToolDefinition, ToolFunction, agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..models import (
     BUILD_CARD_FIELD_DESCRIPTION,
     Card,
+    ChatMessage,
     CraftGearItemAction,
     StorageComponent,
+    SystemMessage,
     TargetType,
 )
 from ..models.items import AnyItem, GearItem, ItemType, MaterialItem
-from ..utils import extract_json, prompt_builder
+from ..utils import prompt_builder
 
 
 #######################################################################################################################################
 @final
-class _CraftCardSpec(BaseModel):
-    """工坊合成装备时 LLM 生成的卡牌功能规格（name/description 由装备名与描述沿用）。"""
+class _CraftGearSpec(BaseModel):
+    """submit_gear 提交的完整装备规格：名称/描述 + 卡牌字段。"""
 
+    name: str = ""
+    description: str = ""
     on_play_affixes: List[str] = []
     on_hit_affixes: List[str] = []
     on_turn_end_affixes: List[str] = []
@@ -41,32 +47,291 @@ class _CraftCardSpec(BaseModel):
     target_type: str = TargetType.SINGLE
 
 
+#######################################################################################################################################
 @final
-class _CraftGearItemResponse(BaseModel):
-    """工坊合成装备的 LLM 响应数据模型。"""
+class _GearExample(BaseModel):
+    """示例装备卡片（内容层）：纵览元数据 + 完整卡牌规格。"""
 
-    name: str = ""
-    description: str = ""
-    card: _CraftCardSpec
+    id: str
+    name: str
+    summary: str
+    tags: List[str] = []
+    spec: _CraftGearSpec
+
+
+#######################################################################################################################################
+def _example_index(example: _GearExample) -> Dict[str, Any]:
+    """将示例压缩为 index 纵览条目（不含完整 spec）。"""
+    return {
+        "id": example.id,
+        "name": example.name,
+        "summary": example.summary,
+        "tags": example.tags,
+    }
+
+
+#######################################################################################################################################
+_GEAR_EXAMPLES: Final[List[_GearExample]] = [
+    _GearExample(
+        id="offense",
+        name="进攻装备",
+        summary="出牌即时造成伤害，词缀集中在 on_play_affixes。",
+        tags=["on_play_affixes", "damage"],
+        spec=_CraftGearSpec(
+            name="装备.名字",
+            description="对装备进行描述，突出装备特点",
+            on_play_affixes=["[词缀名]:本次出牌产生何种即时效果"],
+            on_hit_affixes=[],
+            on_turn_end_affixes=[],
+            playable=True,
+            exhaust=False,
+            retain=False,
+            ethereal=False,
+            transferable=False,
+            cost=1,
+            damage=3,
+            hit_count=1,
+            block=0,
+            self_target=False,
+            target_type=TargetType.SINGLE,
+        ),
+    ),
+    _GearExample(
+        id="defense",
+        name="防御装备",
+        summary="持有期提供格挡，受击时触发词缀，跨回合保留。",
+        tags=["on_hit_affixes", "block", "retain"],
+        spec=_CraftGearSpec(
+            name="装备.名字",
+            description="对装备进行描述，突出装备特点",
+            on_play_affixes=[],
+            on_hit_affixes=["[词缀名]:持有者受到攻击命中时触发何种效果"],
+            on_turn_end_affixes=[],
+            playable=True,
+            exhaust=False,
+            retain=True,
+            ethereal=False,
+            transferable=False,
+            cost=1,
+            damage=0,
+            hit_count=1,
+            block=3,
+            self_target=False,
+            target_type=TargetType.SINGLE,
+        ),
+    ),
+    _GearExample(
+        id="contagion",
+        name="投掷/传染装备",
+        summary="出牌后转移给敌人，回合结束对非 source 者持续结算。",
+        tags=["transferable", "on_turn_end_affixes", "retain"],
+        spec=_CraftGearSpec(
+            name="装备.名字",
+            description="对装备进行描述，突出装备特点",
+            on_play_affixes=[],
+            on_hit_affixes=[],
+            on_turn_end_affixes=["[词缀名]:回合结束时对非 source 者结算何种持续效果"],
+            playable=True,
+            exhaust=False,
+            retain=True,
+            ethereal=False,
+            transferable=True,
+            cost=1,
+            damage=1,
+            hit_count=1,
+            block=0,
+            self_target=False,
+            target_type=TargetType.SINGLE,
+        ),
+    ),
+]
+
+
+#######################################################################################################################################
+LIST_GEAR_EXAMPLES_TOOL: Final[ToolDefinition] = ToolDefinition(
+    function=ToolFunction(
+        name="list_gear_examples",
+        description="纵览全部可用装备示例的索引（id / 名称 / 一句话定位 / 机制标签），用于在准备阶段建立全局观并结合材料筛选相关示例。",
+        parameters={"type": "object", "properties": {}},
+    )
+)
+
+
+#######################################################################################################################################
+GET_GEAR_EXAMPLE_TOOL: Final[ToolDefinition] = ToolDefinition(
+    function=ToolFunction(
+        name="get_gear_example",
+        description="按 id 获取某个示例装备的完整卡牌规格（名称 / 描述 / card 全字段），用于在准备阶段精读最相关的示例。",
+        parameters={
+            "type": "object",
+            "properties": {
+                "example_id": {
+                    "type": "string",
+                    "description": "示例 id，必须来自 list_gear_examples 返回的索引（如 offense / defense / contagion）",
+                },
+            },
+            "required": ["example_id"],
+        },
+    )
+)
+
+
+#######################################################################################################################################
+SUBMIT_GEAR_TOOL: Final[ToolDefinition] = ToolDefinition(
+    function=ToolFunction(
+        name="submit_gear",
+        description="提交本次合成的装备规格（名称、描述与完整卡牌规格）。调用后本次合成结束。",
+        parameters={
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "装备全名，采用「装备.XXXX」命名格式，体现材料特性与装备类型",
+                },
+                "description": {
+                    "type": "string",
+                    "description": "物品描述，30-60字，说明外观、手感或穿戴感受",
+                },
+                "card": {
+                    "type": "object",
+                    "description": "该装备在战斗中被转化为手牌时的完整卡牌规格；card 内不包含 name/description（由系统沿用装备的）",
+                    "properties": {
+                        "on_play_affixes": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "即时词缀；本卡被打出时结算，仅本次出牌生效；无则 []",
+                        },
+                        "on_hit_affixes": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "受击词缀；持有者被本次出牌命中时触发；无则 []",
+                        },
+                        "on_turn_end_affixes": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "回合结束词缀；持有者每次 pass turn 结算一次；无则 []",
+                        },
+                        "playable": {
+                            "type": "boolean",
+                            "description": "是否可出牌；默认 true",
+                        },
+                        "exhaust": {
+                            "type": "boolean",
+                            "description": "出牌后永久消耗；默认 false",
+                        },
+                        "retain": {
+                            "type": "boolean",
+                            "description": "回合末保留在手牌；默认 false",
+                        },
+                        "ethereal": {
+                            "type": "boolean",
+                            "description": "pass turn 时若仍在手牌则自动消耗；默认 false",
+                        },
+                        "transferable": {
+                            "type": "boolean",
+                            "description": "出牌时从源手牌移除本体并复制到目标手牌；默认 false",
+                        },
+                        "cost": {
+                            "type": "integer",
+                            "description": "出牌费用（消耗 energy）；默认 1",
+                        },
+                        "damage": {
+                            "type": "integer",
+                            "description": "单次伤害；默认 0",
+                        },
+                        "hit_count": {
+                            "type": "integer",
+                            "description": "攻击次数，多段各自独立结算；默认 1",
+                        },
+                        "block": {
+                            "type": "integer",
+                            "description": "手牌持有期间提供的格挡；默认 0",
+                        },
+                        "self_target": {
+                            "type": "boolean",
+                            "description": "锁定出牌者自身；true 时无需 targets",
+                        },
+                        "target_type": {
+                            "type": "string",
+                            "enum": ["single", "all", "spread"],
+                            "description": "目标类型：single 单体、all 阵营锚点、spread 散射",
+                        },
+                    },
+                    "required": [
+                        "on_play_affixes",
+                        "on_hit_affixes",
+                        "on_turn_end_affixes",
+                        "playable",
+                        "exhaust",
+                        "retain",
+                        "ethereal",
+                        "transferable",
+                        "cost",
+                        "damage",
+                        "hit_count",
+                        "block",
+                        "self_target",
+                        "target_type",
+                    ],
+                },
+            },
+            "required": ["name", "description", "card"],
+        },
+    )
+)
+
+
+#######################################################################################################################################
+def _handle_list_gear_examples() -> str:
+    """处理 list_gear_examples 工具调用：返回全部示例的 index 纵览。"""
+    index = [_example_index(e) for e in _GEAR_EXAMPLES]
+    logger.info(
+        f"[CraftGearItemActionSystem] list_gear_examples 执行: 共 {len(index)} 个示例"
+    )
+    return json.dumps(index, ensure_ascii=False)
+
+
+#######################################################################################################################################
+def _handle_get_gear_example(example_id: str) -> str:
+    """处理 get_gear_example 工具调用：按 id 返回完整示例数据。"""
+    for example in _GEAR_EXAMPLES:
+        if example.id == example_id:
+            logger.info(
+                f"[CraftGearItemActionSystem] get_gear_example 执行: {example.id}"
+            )
+            return example.model_dump_json(ensure_ascii=False)
+    return f"错误：未知示例 id {example_id!r}，可用 id 请通过 list_gear_examples 查询。"
+
+
+#######################################################################################################################################
+def _handle_submit_gear(
+    results: List[_CraftGearSpec],
+    name: str,
+    description: str,
+    card: Dict[str, Any],
+) -> str:
+    """处理 submit_gear 工具调用：校验并暂存装备规格。"""
+    assert name, "name 不能为空"
+    spec = _CraftGearSpec(name=name, description=description, **card)
+    results.append(spec)
+    logger.info(
+        f"[CraftGearItemActionSystem] submit_gear 执行:\n"
+        f"  name: {spec.name}\n"
+        f"  target_type: {spec.target_type}\n"
+        f"  damage: {spec.damage} / block: {spec.block} / cost: {spec.cost}"
+    )
+    return spec.model_dump_json(ensure_ascii=False)
 
 
 #######################################################################################################################################
 @prompt_builder
 def _build_craft_gear_prompt(materials: List[MaterialItem]) -> str:
-    """构建合成装备的 LLM 提示词。
-
-    Args:
-        materials: 参与合成的材料列表（已去重计数）
-
-    Returns:
-        完整提示词字符串
-    """
+    """构建合成装备的 LLM 提示词。"""
     material_lines = "\n".join(
         f"- **{m.name}**（数量 {m.count}）：{m.description}" for m in materials
     )
 
-    return (
-        f"""# 任务：根据材料创意合成一件装备
+    return f"""# 任务：根据材料创意合成一件装备
 
 ## 投入材料
 
@@ -81,113 +346,13 @@ def _build_craft_gear_prompt(materials: List[MaterialItem]) -> str:
 
 `card` 是这件装备在战斗中被转化为手牌时的完整卡牌规格。`card` 内不输出 `name`/`description`（由系统沿用装备的）；其余字段以下方说明为准，未提及即禁止。
 
-"""
-        + BUILD_CARD_FIELD_DESCRIPTION
-        + """
+{BUILD_CARD_FIELD_DESCRIPTION}
 
-## 示例
+## 工作流程
 
-以下示例仅演示字段与词缀的结构，具体内容请据材料自由发挥。
-
-**进攻装备**（`on_play_affixes` 出牌即时生效）：
-```json
-{
-  "name": "装备.名字",
-  "description": "对装备进行描述，突出装备特点",
-  "card": {
-    "on_play_affixes": ["[词缀名]:本次出牌产生何种即时效果"],
-    "on_hit_affixes": [],
-    "on_turn_end_affixes": [],
-    "playable": true,
-    "exhaust": false,
-    "retain": false,
-    "ethereal": false,
-    "transferable": false,
-    "cost": 1,
-    "damage": 3,
-    "hit_count": 1,
-    "block": 0,
-    "self_target": false,
-    "target_type": "single"
-  }
-}
-```
-
-**防御装备**（`block` 持有期格挡 + `on_hit_affixes` 受击触发 + `retain` 跨回合保留）：
-```json
-{
-  "name": "装备.名字",
-  "description": "对装备进行描述，突出装备特点",
-  "card": {
-    "on_play_affixes": [],
-    "on_hit_affixes": ["[词缀名]:持有者受到攻击命中时触发何种效果"],
-    "on_turn_end_affixes": [],
-    "playable": true,
-    "exhaust": false,
-    "retain": true,
-    "ethereal": false,
-    "transferable": false,
-    "cost": 1,
-    "damage": 0,
-    "hit_count": 1,
-    "block": 3,
-    "self_target": false,
-    "target_type": "single"
-  }
-}
-```
-
-**投掷/传染装备**（`transferable` 传给敌人 + `on_turn_end_affixes` 持续反噬，词缀用「非 source 者」指代新持有者）：
-```json
-{
-  "name": "装备.名字",
-  "description": "对装备进行描述，突出装备特点",
-  "card": {
-    "on_play_affixes": [],
-    "on_hit_affixes": [],
-    "on_turn_end_affixes": ["[词缀名]:回合结束时对非 source 者结算何种持续效果"],
-    "playable": true,
-    "exhaust": false,
-    "retain": true,
-    "ethereal": false,
-    "transferable": true,
-    "cost": 1,
-    "damage": 1,
-    "hit_count": 1,
-    "block": 0,
-    "self_target": false,
-    "target_type": "single"
-  }
-}
-```
-
-## 输出格式
-
-```json
-{
-  "name": "装备.XXX",
-  "description": "...",
-  "card": {
-    "on_play_affixes": [],
-    "on_hit_affixes": [],
-    "on_turn_end_affixes": [],
-    "playable": true,
-    "exhaust": false,
-    "retain": false,
-    "ethereal": false,
-    "transferable": false,
-    "cost": 1,
-    "damage": 0,
-    "hit_count": 1,
-    "block": 0,
-    "self_target": false,
-    "target_type": "single"
-  }
-}
-```
-
-严格按 JSON 格式输出，不要添加其他内容。"""
-    )
+1. 准备阶段：调用 `list_gear_examples` 纵览可用装备示例的索引，结合本次投入材料筛选最相关的示例；
+2. 精读阶段：如需，调用 `get_gear_example` 获取 1~2 个最相关示例的完整卡牌规格；
+3. 提交阶段：综合材料特性与示例约束，直接调用 `submit_gear` 提交本次合成的装备规格并结束对话；提交时无需在 content 中展开长篇推导，把分析过程浓缩在内心即可。"""
 
 
 #######################################################################################################################################
@@ -235,15 +400,84 @@ class CraftGearItemActionSystem(ReactiveProcessor):
         # 材料列表由 activate_craft_gear_item 预填充（count = 本次使用量）
         materials = action.material_items
 
-        # 调用 LLM 生成装备
-        result = await self._call_llm(entity, materials)
-        if result is None:
+        # 调用工坊 agent（agent_loop 工具调用模式）推理生成装备属性
+        prompt = _build_craft_gear_prompt(materials)
+
+        # 上下文隔离：仅取世界实体的首条 SystemMessage 作为「设定」，
+        # 传入全新列表（agent_loop 原地追加），结束后不写回宿主实体持久记忆。
+        agent_memory = self._game.get_agent_memory(entity)
+        assert agent_memory.messages, "工坊世界实体缺少首条 SystemMessage"
+        assert isinstance(
+            agent_memory.messages[0], SystemMessage
+        ), "工坊世界实体 AI 记忆的第一条消息必须是 SystemMessage"
+        messages: List[ChatMessage] = [agent_memory.messages[0]]
+
+        specs: List[_CraftGearSpec] = []
+
+        try:
+            # 调用 agent_loop 进行装备合成推理：准备阶段读示例 → 精读 → submit_gear 提交
+            success = await agent_loop(
+                name=entity.name,
+                prompt=prompt,
+                messages=messages,
+                tools=[
+                    LIST_GEAR_EXAMPLES_TOOL,
+                    GET_GEAR_EXAMPLE_TOOL,
+                    SUBMIT_GEAR_TOOL,
+                ],
+                handlers={
+                    "list_gear_examples": _handle_list_gear_examples,
+                    "get_gear_example": _handle_get_gear_example,
+                    "submit_gear": partial(_handle_submit_gear, specs),
+                },
+                max_rounds=8,
+                terminal_tools=[SUBMIT_GEAR_TOOL],
+            )
+        except Exception as e:
+            logger.error(f"[CraftGearItemActionSystem] agent_loop 异常: {e}")
             return
 
-        # 由 LLM 产出的卡牌规格构造完整 Card
-        card = self._build_card(result)
-        if card is None:
+        # 检查 agent_loop 是否成功返回
+        if not success:
+            logger.error("[CraftGearItemActionSystem] agent_loop 失败，中止")
             return
+
+        # 检查 LLM 是否返回了有效的装备规格
+        if not specs:
+            logger.error(
+                "[CraftGearItemActionSystem] LLM 已结束但未调用 submit_gear，中止"
+            )
+            return
+
+        result = specs[0]
+
+        # 由 LLM 产出的卡牌规格构造完整 Card；target_type 非法时中止
+        valid_target_types = {t.value for t in TargetType}
+        if result.target_type not in valid_target_types:
+            logger.error(
+                f"[CraftGearItemActionSystem] target_type 无效: {result.target_type!r}"
+            )
+            return
+
+        # 根据 LLM 返回的装备规格构造 Card 对象
+        card = Card(
+            name=result.name,
+            description=result.description,
+            on_play_affixes=result.on_play_affixes,
+            on_hit_affixes=result.on_hit_affixes,
+            on_turn_end_affixes=result.on_turn_end_affixes,
+            playable=result.playable,
+            exhaust=result.exhaust,
+            retain=result.retain,
+            ethereal=result.ethereal,
+            transferable=result.transferable,
+            cost=result.cost,
+            damage=result.damage,
+            hit_count=result.hit_count,
+            block=result.block,
+            self_target=result.self_target,
+            target_type=TargetType(result.target_type),
+        )
 
         # 更新 StorageComponent：扣减材料 + 追加成品
         new_item = GearItem(
@@ -257,82 +491,6 @@ class CraftGearItemActionSystem(ReactiveProcessor):
         logger.info(
             f"[CraftGearItemActionSystem] 合成完成: {new_item.name} "
             f"cards={new_item.cards}"
-        )
-
-    ####################################################################################################################################
-    async def _call_llm(
-        self,
-        entity: Entity,
-        materials: List[MaterialItem],
-    ) -> Optional[_CraftGearItemResponse]:
-        """调用工坊 agent 推理生成装备属性。"""
-
-        # 构建 LLM 提示并初始化 DeepSeekClient，用于与 LLM 进行交互
-        prompt = _build_craft_gear_prompt(materials)
-        chat_client = DeepSeekClient(
-            name=entity.name,
-            full_prompt=prompt,
-            messages=self._game.get_agent_memory(entity).messages,
-        )
-
-        # 发起 LLM 请求，捕获异常以防止整个流程崩溃
-        try:
-            await chat_client.chat()
-        except Exception as e:
-            logger.error(f"[CraftGearItemActionSystem] LLM 请求失败: {e}")
-            return None
-
-        # 检查 LLM 是否返回了有效的消息对象，如果为空则记录错误并返回 None
-        if chat_client.response_ai_message is None:
-            logger.error("[CraftGearItemActionSystem] LLM 回复消息为空")
-            return None
-
-        # 尝试从 LLM 的回复中提取 JSON 并解析为 _CraftGearItemResponse 对象
-        try:
-            json_str = extract_json(chat_client.response_content)
-            response = _CraftGearItemResponse.model_validate_json(json_str)
-            assert response.name, "LLM 返回的 name 不能为空"
-        except Exception as e:
-            logger.error(
-                f"[CraftGearItemActionSystem] 解析 LLM 响应失败: {e}\n原始内容:\n{chat_client.response_content}"
-            )
-            return None
-
-        # 再次检查解析后的 response 对象的 name 字段是否为空，确保 LLM 返回的内容有效
-        if not response.name:
-            logger.error("[CraftGearItemActionSystem] LLM 返回的 name 为空")
-            return None
-
-        # 返回解析成功的 response 对象，供调用方使用
-        return response
-
-    ####################################################################################################################################
-    def _build_card(self, result: _CraftGearItemResponse) -> Optional[Card]:
-        """将 LLM 产出的卡牌规格构造为完整 Card；target_type 非法时返回 None。"""
-        valid_target_types = {t.value for t in TargetType}
-        if result.card.target_type not in valid_target_types:
-            logger.error(
-                f"[CraftGearItemActionSystem] target_type 无效: {result.card.target_type!r}"
-            )
-            return None
-
-        return Card(
-            name=result.name,
-            description=result.description,
-            on_play_affixes=result.card.on_play_affixes,
-            on_hit_affixes=result.card.on_hit_affixes,
-            on_turn_end_affixes=result.card.on_turn_end_affixes,
-            playable=result.card.playable,
-            exhaust=result.card.exhaust,
-            retain=result.card.retain,
-            ethereal=result.card.ethereal,
-            transferable=result.card.transferable,
-            cost=result.card.cost,
-            damage=result.card.damage,
-            hit_count=result.card.hit_count,
-            block=result.card.block,
-            self_target=result.card.self_target,
-            target_type=TargetType(result.card.target_type),
         )
 
     ####################################################################################################################################

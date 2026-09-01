@@ -20,7 +20,7 @@ from demo import (
     create_ruins_blueprint,
     create_shrine_ruins_dungeon,
 )
-from demo.card_prototypes import CARD_PROTOTYPES
+from demo import CARD_PROTOTYPES
 from ai_rpg.pgsql import (
     pgsql_create_database,
     pgsql_drop_database,

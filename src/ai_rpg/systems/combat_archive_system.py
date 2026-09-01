@@ -21,19 +21,33 @@ from ..models import (
 
 #######################################################################################################################################
 @prompt_builder
-def _build_combat_summary_prompt(stage_name: str, total_rounds: int) -> str:
-    """返回用于生成第一人称战斗摘要的 LLM prompt。"""
-    return f"""# 战斗结束，归档这段记忆。
+def _build_combat_summary_prompt(
+    actor_name: str,
+    stage_name: str,
+    total_rounds: int,
+    result_text: str,
+) -> str:
+    """返回用于生成第一人称战斗摘要的 LLM prompt。
 
-你在 {stage_name} 完成了 {total_rounds} 回合的战斗。
-以第一人称写一段连续的战斗复盘，按顺序写明：进入（场景、我方成员、对手）、过程（关键行动与转折）、结果（胜利/撤退/失败，伤亡情况）。
-要求：客观简洁，不用修辞，整段不分段不空行，纯文本输出。"""
+    该摘要会替换战斗原始逐条记录，成为角色此后对这场战斗的唯一记忆，
+    因此必须事实忠实、克制，避免文学化渲染与凭空补充。
+    """
+    return f"""# 任务：压缩本次战斗记忆
+
+你是 {actor_name}。上方是你的战斗全程记录：你在 {stage_name} 经历了 {total_rounds} 回合战斗，最终结果为 {result_text}。
+
+请把它压缩成一段第一人称的连续复盘，作为你此后对这场战斗的唯一记忆（原始逐条记录将被移除）。按「进入 → 过程 → 结果」的顺序：
+- 进入：所在场景、我方成员与对手；
+- 过程：仅保留关键行动与转折，省略逐回合出牌细节与伤害数字；
+- 结果：伤亡情况，且必须与「{result_text}」一致，不得写作「战斗尚未结束」或编造记录之外的情节。
+
+约束：只使用上方记录中已出现的信息；客观、克制、事实化，禁止感官修饰与文学化渲染；整段不分段不空行，不含 Markdown 标记，控制在 150 字以内，纯文本输出。"""
 
 
 #######################################################################################################################################
 @final
 class CombatArchiveSystem(ExecuteProcessor):
-    """战斗结束后执行记忆压缩与事件派发。"""
+    """战斗结束后执行记忆压缩与归档（可插拔，不承担战斗状态转换）。"""
 
     def __init__(self, game: DBGGame) -> None:
         self._game: Final[DBGGame] = game
@@ -41,7 +55,7 @@ class CombatArchiveSystem(ExecuteProcessor):
     #######################################################################################################################################
     @override
     async def execute(self) -> None:
-        """每帧检查战斗是否结束；未结束则立即返回，结束则触发归档流程。"""
+        """每帧检查战斗是否结束；未结束则立即返回，结束则触发归档（记忆压缩）流程。"""
         if not self._game.current_dungeon_combat_room.combat.is_combat_completed:
             # 不是本阶段就直接返回, 如果过了，要么胜利，要么失败。
             return
@@ -51,11 +65,8 @@ class CombatArchiveSystem(ExecuteProcessor):
             or self._game.current_dungeon_combat_room.combat.is_lost
         ), "战斗结果状态异常！"
 
-        # 压缩总结战斗结果。
+        # 压缩总结战斗结果（仅负责记忆归档，战斗状态转换由 CombatPostCombatTransitionSystem 承担）。
         await self._archive_all_combat_records()
-
-        # 标记战斗已归档，触发后续流程（如记忆存储、场景过渡等）
-        self._game.current_dungeon_combat_room.combat.transition_to_post_combat()
 
     #######################################################################################################################################
     def _create_combat_summary_client(self, combat_actor: Entity) -> DeepSeekClient:
@@ -67,10 +78,15 @@ class CombatArchiveSystem(ExecuteProcessor):
             combat_stage_entity is not None
         ), f"无法获取角色 {combat_actor.name} 所在的场景实体！"
 
+        combat = self._game.current_dungeon_combat_room.combat
+        result_text = (
+            "撤退" if combat.retreated else ("胜利" if combat.is_won else "失败")
+        )
+
         return DeepSeekClient(
             name=combat_actor.name,
             full_prompt=_build_combat_summary_prompt(
-                combat_stage_entity.name, total_rounds
+                combat_actor.name, combat_stage_entity.name, total_rounds, result_text
             ),
             messages=self._game.get_agent_memory(combat_actor).messages,
         )

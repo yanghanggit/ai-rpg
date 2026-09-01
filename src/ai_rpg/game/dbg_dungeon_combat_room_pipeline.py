@@ -51,6 +51,9 @@ def create_dungeon_combat_room_pipeline(
     )
     from ..systems.turn_end_arbitration_system import TurnEndArbitrationSystem
     from ..systems.combat_archive_system import CombatArchiveSystem
+    from ..systems.combat_post_combat_transition_system import (
+        CombatPostCombatTransitionSystem,
+    )
     from ..systems.combat_loot_system import CombatLootSystem
     from ..systems.fill_draw_pile_system import FillDrawPileSystem
 
@@ -152,8 +155,11 @@ def create_dungeon_combat_room_pipeline(
     # 战斗掉落系统（胜利时为每头怪物推理掉落 MaterialItem，写入玩家 CombatLootComponent）
     processors.add(CombatLootSystem(dbg_game))
 
-    # 战斗归档系统（生成总结、压缩消息、触发记忆存储，内部有状态守卫）
+    # 战斗归档系统（生成总结、压缩消息、触发记忆存储，内部有状态守卫；可插拔）
     processors.add(CombatArchiveSystem(dbg_game))
+
+    # 战斗状态转换系统（COMPLETE -> POST_COMBAT，战斗状态机的关键步骤，必须常驻）
+    processors.add(CombatPostCombatTransitionSystem(dbg_game))
 
     # 牌库归还系统（战斗结束后将三个子堆自有牌归还 DeckComponent）
     processors.add(CombatPileTeardownSystem(dbg_game))

@@ -25,7 +25,7 @@ from ..models import (
 class DrawCardsActionSystem(ReactiveProcessor):
     """
     响应 DrawCardsAction，为每个存活角色填充 HandComponent。
-    优先取回 DrawPile.retained_cards 中的 retain 牌，再抽取本回合正常张数。
+    先取回 retain 牌，再按目标手牌张数补齐新牌：retain 牌占用名额，手牌不超目标张数。
     """
 
     def __init__(self, game: DBGGame) -> None:
@@ -105,20 +105,21 @@ class DrawCardsActionSystem(ReactiveProcessor):
             f"DrawCardsActionSystem: 处理 {len(entities)} 个实体的 DrawCardsAction"
         )
 
-        # 先取回 retain 牌（加法），再抽本回合正常张数（含 DiscardPile reshuffle 逻辑）；
-        # 本游戏不设置手牌上限，retain 牌不挤占正常抽牌张数。
+        # 先取回 retain 牌，再按目标手牌张数补齐新牌：
+        # retain 牌占用名额，保留越多、新抽越少，手牌不超目标张数。
         for entity in entities:
 
-            # 根据角色类型确定本回合最大抽牌数（PartyMember 和非 PartyMember 均为 3 张）
+            # 目标手牌张数（PartyMember 与非 PartyMember 均为 3 张）
             max_num_cards = 3 if entity.has(PartyMemberComponent) else 3
 
-            # 先取回 retain 牌，再抽本回合正常张数，合并为新的手牌
+            # 先取回 retain 牌（占用名额）
             retained = self._take_retained_cards(entity)
 
-            # 抽取本回合正常张数的牌
-            drawn = self._draw_from_pile(entity, max_num_cards)
+            # 按目标张数补齐新牌
+            draw_count = max(0, max_num_cards - len(retained))
+            drawn = self._draw_from_pile(entity, draw_count)
 
-            # 合并 retain 牌与新抽牌为新的手牌
+            # 合并 retain 牌与新抽牌为新的手牌（不超过目标张数）
             new_hand = retained + drawn
 
             logger.debug(

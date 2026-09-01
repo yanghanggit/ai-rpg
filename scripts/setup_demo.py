@@ -20,11 +20,13 @@ from demo import (
     create_ruins_blueprint,
     create_shrine_ruins_dungeon,
 )
+from demo.card_prototypes import CARD_PROTOTYPES
 from ai_rpg.pgsql import (
     pgsql_create_database,
     pgsql_drop_database,
     pgsql_ensure_database_tables,
     postgresql_config,
+    save_card_prototype,
 )
 from ai_rpg.pgsql.user_operations import has_user, save_user
 from ai_rpg.rag import add_documents
@@ -155,6 +157,27 @@ def _setup_rag() -> None:
     logger.success("✅ RAG系统初始化完成!")
 
 
+def _setup_card_prototypes() -> None:
+    """将卡牌原型刷入 PostgreSQL，供后续 Agent 检索「选择核心 + 润色」。"""
+    logger.info("🚀 初始化卡牌原型...")
+
+    for proto in CARD_PROTOTYPES:
+        save_card_prototype(
+            prototype_id=proto.meta.prototype_id,
+            archetype=proto.meta.archetype,
+            name=proto.meta.name,
+            summary=proto.meta.summary,
+            guide=proto.meta.guide,
+            card_json=proto.card.model_dump_json(),
+            tags=list(proto.meta.tags),
+        )
+        logger.info(
+            f"📥 卡牌原型已入库: {proto.meta.prototype_id}（{proto.meta.archetype}）"
+        )
+
+    logger.success(f"✅ 卡牌原型初始化完成（{len(CARD_PROTOTYPES)} 个）")
+
+
 ########################################################################################################
 ########################################################################################################
 ########################################################################################################
@@ -187,6 +210,9 @@ def main() -> None:
 
         logger.info("👤 设置PostgreSQL测试用户...")
         _setup_user()
+
+        logger.info("🎴 初始化卡牌原型...")
+        _setup_card_prototypes()
 
         logger.info("🚀 初始化RAG系统...")
         _setup_rag()

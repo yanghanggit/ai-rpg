@@ -93,6 +93,11 @@ class DrawCardsActionSystem(ReactiveProcessor):
         draw_pile.retained_cards.clear()
         return retained
 
+    ####################################################################################################################################
+    def _max_num_cards(self, entity: Entity) -> int:
+        """目标手牌张数（PartyMember 与非 PartyMember 均为 3 张）。"""
+        return 3 if entity.has(PartyMemberComponent) else 3
+
     ######################################################################################################################################
     @override
     async def react(self, entities: List[Entity]) -> None:
@@ -109,8 +114,8 @@ class DrawCardsActionSystem(ReactiveProcessor):
         # retain 牌占用名额，保留越多、新抽越少，手牌不超目标张数。
         for entity in entities:
 
-            # 目标手牌张数（PartyMember 与非 PartyMember 均为 3 张）
-            max_num_cards = 3 if entity.has(PartyMemberComponent) else 3
+            # 目标手牌张数
+            max_num_cards = self._max_num_cards(entity)
 
             # 先取回 retain 牌（占用名额）
             retained = self._take_retained_cards(entity)

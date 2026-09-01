@@ -21,6 +21,7 @@ from ..models import (
     TargetType,
 )
 from ..models.items import AnyItem, GearItem, ItemType, MaterialItem
+from ..pgsql import get_card_prototype, list_card_prototype_index
 from ..utils import prompt_builder
 
 
@@ -48,106 +49,6 @@ class _CraftGearSpec(BaseModel):
 
 
 #######################################################################################################################################
-@final
-class _GearExample(BaseModel):
-    """示例装备卡片（内容层）：纵览元数据 + 完整卡牌规格。"""
-
-    id: str
-    name: str
-    summary: str
-    tags: List[str] = []
-    spec: _CraftGearSpec
-
-
-#######################################################################################################################################
-def _example_index(example: _GearExample) -> Dict[str, Any]:
-    """将示例压缩为 index 纵览条目（不含完整 spec）。"""
-    return {
-        "id": example.id,
-        "name": example.name,
-        "summary": example.summary,
-        "tags": example.tags,
-    }
-
-
-#######################################################################################################################################
-_GEAR_EXAMPLES: Final[List[_GearExample]] = [
-    _GearExample(
-        id="offense",
-        name="进攻装备",
-        summary="出牌即时造成伤害，词缀集中在 on_play_affixes。",
-        tags=["on_play_affixes", "damage"],
-        spec=_CraftGearSpec(
-            name="装备.名字",
-            description="对装备进行描述，突出装备特点",
-            on_play_affixes=["[词缀名]:本次出牌产生何种即时效果"],
-            on_hit_affixes=[],
-            on_turn_end_affixes=[],
-            playable=True,
-            exhaust=False,
-            retain=False,
-            ethereal=False,
-            transferable=False,
-            cost=1,
-            damage=3,
-            hit_count=1,
-            block=0,
-            self_target=False,
-            target_type=TargetType.SINGLE,
-        ),
-    ),
-    _GearExample(
-        id="defense",
-        name="防御装备",
-        summary="持有期提供格挡，受击时触发词缀，跨回合保留。",
-        tags=["on_hit_affixes", "block", "retain"],
-        spec=_CraftGearSpec(
-            name="装备.名字",
-            description="对装备进行描述，突出装备特点",
-            on_play_affixes=[],
-            on_hit_affixes=["[词缀名]:持有者受到攻击命中时触发何种效果"],
-            on_turn_end_affixes=[],
-            playable=True,
-            exhaust=False,
-            retain=True,
-            ethereal=False,
-            transferable=False,
-            cost=1,
-            damage=0,
-            hit_count=1,
-            block=3,
-            self_target=False,
-            target_type=TargetType.SINGLE,
-        ),
-    ),
-    _GearExample(
-        id="contagion",
-        name="投掷/传染装备",
-        summary="出牌后转移给敌人，回合结束对非 source 者持续结算。",
-        tags=["transferable", "on_turn_end_affixes", "retain"],
-        spec=_CraftGearSpec(
-            name="装备.名字",
-            description="对装备进行描述，突出装备特点",
-            on_play_affixes=[],
-            on_hit_affixes=[],
-            on_turn_end_affixes=["[词缀名]:回合结束时对非 source 者结算何种持续效果"],
-            playable=True,
-            exhaust=False,
-            retain=True,
-            ethereal=False,
-            transferable=True,
-            cost=1,
-            damage=1,
-            hit_count=1,
-            block=0,
-            self_target=False,
-            target_type=TargetType.SINGLE,
-        ),
-    ),
-]
-
-
-#######################################################################################################################################
 LIST_GEAR_EXAMPLES_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="list_gear_examples",
@@ -167,7 +68,7 @@ GET_GEAR_EXAMPLE_TOOL: Final[ToolDefinition] = ToolDefinition(
             "properties": {
                 "example_id": {
                     "type": "string",
-                    "description": "示例 id，必须来自 list_gear_examples 返回的索引（如 offense / defense / contagion）",
+                    "description": "示例 id，必须来自 list_gear_examples 返回的索引（如 gear.offense / gear.defense / gear.contagion）",
                 },
             },
             "required": ["example_id"],
@@ -283,8 +184,16 @@ SUBMIT_GEAR_TOOL: Final[ToolDefinition] = ToolDefinition(
 
 #######################################################################################################################################
 def _handle_list_gear_examples() -> str:
-    """处理 list_gear_examples 工具调用：返回全部示例的 index 纵览。"""
-    index = [_example_index(e) for e in _GEAR_EXAMPLES]
+    """处理 list_gear_examples 工具调用：返回装备卡牌原型的 index 纵览。"""
+    index = [
+        {
+            "id": item["prototype_id"],
+            "name": item["name"],
+            "summary": item["summary"],
+            "tags": item["tags"],
+        }
+        for item in list_card_prototype_index(archetype="装备")
+    ]
     logger.info(
         f"[CraftGearItemActionSystem] list_gear_examples 执行: 共 {len(index)} 个示例"
     )
@@ -293,14 +202,25 @@ def _handle_list_gear_examples() -> str:
 
 #######################################################################################################################################
 def _handle_get_gear_example(example_id: str) -> str:
-    """处理 get_gear_example 工具调用：按 id 返回完整示例数据。"""
-    for example in _GEAR_EXAMPLES:
-        if example.id == example_id:
-            logger.info(
-                f"[CraftGearItemActionSystem] get_gear_example 执行: {example.id}"
-            )
-            return example.model_dump_json(ensure_ascii=False)
-    return f"错误：未知示例 id {example_id!r}，可用 id 请通过 list_gear_examples 查询。"
+    """处理 get_gear_example 工具调用：按 id 返回完整卡牌原型（含 card 规格）。"""
+    try:
+        proto = get_card_prototype(example_id)
+    except ValueError as e:
+        return f"错误：{e}。可用 id 请通过 list_gear_examples 查询。"
+    if proto.archetype != "装备":
+        return f"错误：{example_id!r} 不是装备卡牌原型，可用 id 请通过 list_gear_examples 查询。"
+    logger.info(f"[CraftGearItemActionSystem] get_gear_example 执行: {example_id}")
+    return json.dumps(
+        {
+            "id": proto.prototype_id,
+            "name": proto.name,
+            "summary": proto.summary,
+            "tags": json.loads(proto.tags_json),
+            "guide": proto.guide,
+            "card": json.loads(proto.card_json),
+        },
+        ensure_ascii=False,
+    )
 
 
 #######################################################################################################################################

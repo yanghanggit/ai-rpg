@@ -12,7 +12,7 @@ class CharacterStats(BaseModel):
     # 当前生命值
     hp: int = 0
     # 最大生命值
-    max_hp: int = 10
+    max_hp: int = 15
     # 攻击力
     attack: int = 3
     # 防御力

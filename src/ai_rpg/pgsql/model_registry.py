@@ -9,9 +9,11 @@ from loguru import logger
 
 # 导入所有数据库模型以确保它们被注册到Base.metadata中
 from .vector_document import VectorDocumentDB
+from .card_prototype import CardPrototypeDB
 
 __all__ = [
     "VectorDocumentDB",
+    "CardPrototypeDB",
     "register_all_models",
 ]
 
@@ -24,6 +26,4 @@ def register_all_models() -> None:
     """
 
     logger.debug("数据库模型注册完成")
-    logger.debug(f"已注册模型: VectorDocumentDB")
-
-    # 可以在这里添加其他模型的日志
+    logger.debug(f"已注册模型: VectorDocumentDB, CardPrototypeDB")

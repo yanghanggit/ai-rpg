@@ -345,6 +345,7 @@ def _build_craft_gear_prompt(materials: List[MaterialItem]) -> str:
 ## 卡牌规格（card）
 
 `card` 是这件装备在战斗中被转化为手牌时的完整卡牌规格。`card` 内不输出 `name`/`description`（由系统沿用装备的）；其余字段以下方说明为准，未提及即禁止。
+每个字段只表达自己的职责，不重复、不互相替代。
 
 {BUILD_CARD_FIELD_DESCRIPTION}
 

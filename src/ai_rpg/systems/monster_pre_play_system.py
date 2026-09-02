@@ -39,8 +39,22 @@ class _MonsterDecisionResponse(BaseModel):
 
 
 #######################################################################################################################################
+@final
+class _OpponentView(BaseModel):
+    """怪物出牌决策视角下的单个对手快照。"""
+
+    name: str
+    hp: int
+    max_hp: int
+    total_block: int  # 手牌 block 之和（持有即生效的总格挡）
+    hand_count: int  # 手牌总数（模糊概念，只亮出「带受击词缀 或 来源本怪物」的牌）
+    revealed_cards: List[Card]  # 手牌中「带受击词缀，或来源为本怪物」的卡牌
+
+
+#######################################################################################################################################
+@prompt_builder
 def _target_label(card: Card) -> str:
-    """返回卡牌目标约束的中文描述。"""
+    """返回卡牌目标约束的中文描述（出牌决策提示词的文本片段）。"""
     if card.self_target:
         return "自身"
     match card.target_type:
@@ -54,8 +68,9 @@ def _target_label(card: Card) -> str:
 
 
 #######################################################################################################################################
+@prompt_builder
 def _format_card(card: Card) -> str:
-    """将一张手牌格式化为紧凑、信息密度高的文本。"""
+    """将一张手牌格式化为紧凑、信息密度高的文本（出牌决策提示词的文本片段）。"""
     lines = [
         f"- 【{card.name}】{card.description}",
         f"  费用{card.cost} 伤害{card.damage}×{card.hit_count}段 格挡{card.block} "
@@ -83,18 +98,68 @@ def _format_card(card: Card) -> str:
 
 
 #######################################################################################################################################
+@prompt_builder
+def _format_revealed_opponent_card(card: Card, monster_name: str) -> str:
+    """格式化对手手牌中向怪物亮出的卡牌（带受击词缀，或来源为本怪物）。"""
+    tags = []
+    if card.on_hit_affixes:
+        tags.append(f"受击词缀:{'、'.join(card.on_hit_affixes)}")
+    if card.source == monster_name:
+        tags.append("来源你")
+    suffix = f"（{'；'.join(tags)}）" if tags else ""
+    return f"- 【{card.name}】{card.description}{suffix}"
+
+
+#######################################################################################################################################
+@prompt_builder
+def _format_opponent(view: _OpponentView, monster_name: str) -> str:
+    """格式化单个对手：HP / 总格挡 / 手牌总数，以及向怪物亮出的手牌。"""
+    lines = [
+        f"- {view.name}：HP {view.hp}/{view.max_hp} | 总格挡 {view.total_block} | 手牌 {view.hand_count} 张"
+    ]
+    if view.revealed_cards:
+        lines.append("  向你亮出的手牌（带受击词缀，或来源为你）：")
+        lines.extend(
+            "    " + _format_revealed_opponent_card(c, monster_name)
+            for c in view.revealed_cards
+        )
+    return "\n".join(lines)
+
+
+#######################################################################################################################################
+def _build_opponent_view(opponent: Entity, monster_name: str) -> _OpponentView:
+    """为单个对手构建决策视角快照（HP / 总格挡 / 手牌总数 / 亮出的手牌）。"""
+    stats = compute_character_stats(opponent)
+    hand = opponent.get(HandComponent) if opponent.has(HandComponent) else None
+    hand_cards = hand.cards if hand is not None else []
+    total_block = sum(c.block for c in hand_cards)
+    revealed_cards = [
+        c for c in hand_cards if c.on_hit_affixes or c.source == monster_name
+    ]
+    return _OpponentView(
+        name=opponent.name,
+        hp=stats.hp,
+        max_hp=stats.max_hp,
+        total_block=total_block,
+        hand_count=len(hand_cards),
+        revealed_cards=revealed_cards,
+    )
+
+
+#######################################################################################################################################
 def _affordable_playable_names(hand_cards: List[Card], energy: int) -> List[str]:
     """返回手牌中「可出且费用可支付（cost <= 剩余能量）」的卡牌名列表。"""
     return [c.name for c in hand_cards if c.playable and c.cost <= energy]
 
 
 #######################################################################################################################################
+@prompt_builder
 def _build_context_block(
     monster_name: str,
     stats: CharacterStats,
     energy: int,
     hand_cards: List[Card],
-    opponent_names: List[str],
+    opponents: List[_OpponentView],
     action_order: List[str],
     completed_actors: List[str],
 ) -> str:
@@ -105,8 +170,8 @@ def _build_context_block(
     )
     cards_lines = "\n".join(_format_card(c) for c in hand_cards)
     opponents_lines = (
-        "\n".join(f"- {name}" for name in opponent_names)
-        if opponent_names
+        "\n".join(_format_opponent(o, monster_name) for o in opponents)
+        if opponents
         else "- 无存活对手"
     )
 
@@ -145,7 +210,7 @@ def _build_monster_decision_prompt(
     monster_stats: CharacterStats,
     energy: int,
     hand_cards: List[Card],
-    opponent_names: List[str],
+    opponents: List[_OpponentView],
     action_order: List[str],
     completed_actors: List[str],
     current_round_number: int,
@@ -156,7 +221,7 @@ def _build_monster_decision_prompt(
         stats=monster_stats,
         energy=energy,
         hand_cards=hand_cards,
-        opponent_names=opponent_names,
+        opponents=opponents,
         action_order=action_order,
         completed_actors=completed_actors,
     )
@@ -179,6 +244,7 @@ def _build_monster_decision_prompt(
 - 每打出一张牌需支付其「费用 cost」点能量；你当前剩余能量为 {energy}，只能选择 cost ≤ {energy} 的牌。
 - 若所有「可出」牌的 cost 都大于剩余能量，则必须返回 pass_turn=true。
 - targets 从「存活对手」中选全名；目标为「自身」的牌可省略 targets。
+- 「存活对手」的「总格挡」为该对手手牌 block 之和（持有即生效），「手牌 N 张」为其当前手牌总数；「向你亮出的手牌」为带受击词缀的牌或来源你的牌——带受击词缀的牌会在你命中该对手时触发，可据此权衡命中收益与反噬风险。
 - SINGLE 填恰好 1 个目标；ALL/SPREAD 填恰好 1 个阵营锚点，系统自动展开为对应阵营的存活角色。
 - 若没有可执行的牌，返回 pass_turn=true，card_name/targets 可省略。
 
@@ -200,7 +266,7 @@ def _build_condensed_monster_decision_prompt(
     monster_stats: CharacterStats,
     energy: int,
     hand_cards: List[Card],
-    opponent_names: List[str],
+    opponents: List[_OpponentView],
     action_order: List[str],
     completed_actors: List[str],
     current_round_number: int,
@@ -211,7 +277,7 @@ def _build_condensed_monster_decision_prompt(
         stats=monster_stats,
         energy=energy,
         hand_cards=hand_cards,
-        opponent_names=opponent_names,
+        opponents=opponents,
         action_order=action_order,
         completed_actors=completed_actors,
     )
@@ -299,10 +365,12 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         monster_stats = compute_character_stats(entity)
         energy = get_energy(entity)
 
-        # 获取场上存活的队伍成员名称（对手，不传入血量）
+        # 获取场上存活的队伍成员（对手），构建决策视角快照（HP / 总格挡 / 来源本怪物的受击牌）
         alive_actors = get_alive_actors_in_stage(self._game, entity)
-        opponent_names: List[str] = [
-            actor.name for actor in alive_actors if actor.has(PartyMemberComponent)
+        opponents: List[_OpponentView] = [
+            _build_opponent_view(actor, monster_name=entity.name)
+            for actor in alive_actors
+            if actor.has(PartyMemberComponent)
         ]
 
         # 获取本回合行动顺序信息
@@ -323,7 +391,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
             monster_stats=monster_stats,
             energy=energy,
             hand_cards=hand_comp.cards,
-            opponent_names=opponent_names,
+            opponents=opponents,
             action_order=action_order,
             completed_actors=completed_actors,
             current_round_number=current_round_number,
@@ -335,7 +403,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
             monster_stats=monster_stats,
             energy=energy,
             hand_cards=hand_comp.cards,
-            opponent_names=opponent_names,
+            opponents=opponents,
             action_order=action_order,
             completed_actors=completed_actors,
             current_round_number=current_round_number,

@@ -24,6 +24,40 @@ from ..models.dungeon_generation import DungeonBlueprint
 from ..models.entity_factory import create_actor, create_stage
 
 
+def _make_attack_card() -> Card:
+    """创建基础攻击卡牌（damage 为卡牌自身值，填充牌库时叠加角色 attack）。"""
+    return Card(
+        name="攻击",
+        description="对单个敌人造成直接伤害。",
+        on_play_affixes=[],
+        playable=True,
+        exhaust=False,
+        cost=1,
+        damage=1,
+        hit_count=1,
+        block=0,
+        target_type=TargetType.SINGLE,
+        self_target=False,
+    )
+
+
+def _make_defense_card() -> Card:
+    """创建基础防御卡牌（block 为卡牌自身格挡值，填充牌库时叠加角色 defense）。"""
+    return Card(
+        name="防御",
+        description="为自身提供格挡值，持有时提升防御。",
+        on_play_affixes=[],
+        playable=True,
+        exhaust=False,
+        cost=1,
+        damage=0,
+        hit_count=1,
+        block=2,
+        target_type=TargetType.SINGLE,
+        self_target=True,
+    )
+
+
 ####################################################################################################################################
 @final
 class AssembleDungeonSystem(ReactiveProcessor):
@@ -165,16 +199,15 @@ class AssembleDungeonSystem(ReactiveProcessor):
                         character_stats=CharacterStats(),
                         campaign_setting=self._game._world.blueprint.campaign_setting,
                         system_rules=self._game._world.blueprint.system_rules,
-                        keywords=[],
+                        # keywords=[],
                         cards=[
-                            Card(
-                                name="袭击",
-                                description="对单个敌人造成直接伤害。",
-                                damage=1,  # 卡牌自身伤害；FillDrawPileSystem 会叠加角色 attack
-                                block=0,
-                                target_type=TargetType.SINGLE,
-                                self_target=False,
-                            )
+                            # 3 张基础攻击
+                            _make_attack_card(),
+                            _make_attack_card(),
+                            _make_attack_card(),
+                            # 2 张基础防御
+                            _make_defense_card(),
+                            _make_defense_card(),
                         ],
                     )
                     for actor_bp in room_bp.actors

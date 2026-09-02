@@ -254,10 +254,10 @@ def _make_armor_piercing_card() -> Card:
 def _make_thorns_card() -> Card:
     """创建带【反伤】受击词缀的卡牌（demo：持有期间，被攻击时对出牌者造成伤害，数值取 damage）。"""
     return Card(
-        name="纸刺",
-        description="贴身缠绕的纸刺，持有期间在被攻击时反噬对方。",
+        name="反伤",
+        description="持有期间在被攻击时反噬对方。",
         on_play_affixes=[],
-        on_hit_affixes=["[反伤]:受到攻击时，对出牌者造成伤害"],
+        on_hit_affixes=["[反伤]:受到攻击时，对出牌者造成伤害，造成 damage×1 倍的伤害"],
         playable=True,
         exhaust=False,
         retain=False,
@@ -306,7 +306,7 @@ def create_actor_paper_doll() -> Actor:
         character_stats=CharacterStats(),
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=SYSTEM_RULES,
-        keywords=[],
+        # keywords=[],
         cards=[
             # 3 张基础攻击
             _make_attack_card(),
@@ -315,9 +315,6 @@ def create_actor_paper_doll() -> Actor:
             # 2 张基础防御
             _make_defense_card(),
             _make_defense_card(),
-            # 2 张带【反伤】受击词缀的卡牌（demo：持有期间，被攻击时反噬出牌者）
-            # _make_thorns_card(),
-            # _make_thorns_card(),
         ],
     )
 
@@ -418,23 +415,15 @@ def create_wuming() -> Actor:
         character_stats=CharacterStats(),
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=SYSTEM_RULES,
-        keywords=[],
+        # keywords=[],
         cards=[
             # 3 张基础攻击
             _make_attack_card(),
             _make_attack_card(),
             _make_attack_card(),
-            # 2 张基础防御
+            # 测试用卡牌
             _make_defense_card(),
             _make_defense_card(),
-            # 1 张带 retain 的防御牌（demo：回合末保留在手牌中，不进入弃牌堆）
-            # _make_retain_card(),
-            # # 1 张带 ethereal（虚无）的攻击牌（demo：pass turn 时若仍在手牌则自动消耗）
-            # _make_ethereal_card(),
-            # # 1 张带【穿甲】即时词缀的攻击牌（demo：本次伤害无视目标防御）
-            # _make_armor_piercing_card(),
-            # # 1 张可传递的毒牌（demo：出牌时 copy 到目标手牌、从源手牌移除本体，回合结束时对非 source 者造成持续伤害）
-            # _make_dot_card(),
         ],
     )
 
@@ -458,7 +447,7 @@ def create_guzhiqiu() -> Actor:
         character_stats=CharacterStats(),
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=SYSTEM_RULES,
-        keywords=[],
+        # keywords=[],
         cards=[
             # 3 张基础攻击
             _make_attack_card(),

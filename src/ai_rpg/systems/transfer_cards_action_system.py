@@ -19,11 +19,7 @@ from ..models import (
 #######################################################################################################################################
 @final
 class TransferCardsActionSystem(ReactiveProcessor):
-    """可传递卡牌转移系统。
-
-    响应 PlayCardsAction 事件：把 transferable=True 的卡牌本体从出牌者手牌移除，
-    并为每个存活目标的手牌 copy 一份（副本 uuid 重新生成，source 保持原来源）。
-    """
+    """可传递卡牌转移系统。"""
 
     def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
@@ -63,13 +59,23 @@ class TransferCardsActionSystem(ReactiveProcessor):
             # 目标去重后，为每个存活且拥有手牌的目标 copy 一份（新 uuid）。
             for target_name in dict.fromkeys(play_cards_action.targets):
                 target = self._game.get_actor_entity(target_name)
-                if (
-                    target is None
-                    or target.has(DeathComponent)
-                    or not target.has(HandComponent)
-                ):
-                    continue
+                assert target is not None, f"目标 {target_name} 不存在"
+                assert target.has(HandComponent), f"目标 {target_name} 不存在手牌组件"
+                assert not target.has(DeathComponent), f"目标 {target_name} 已死亡"
+                # if (
+                #     target is None
+                #     or target.has(DeathComponent)
+                #     or not target.has(HandComponent)
+                # ):
+                #     continue
 
+                if target_name == play_cards_action.name:
+                    # 跳过将卡牌传递给自己
+                    logger.debug(
+                        f"transfer_card: 跳过将卡牌传递给自己（{target_name}）？这是什么打法？故意复制牌的？"
+                    )
+
+                # 将卡牌 copy 到目标手牌
                 copied = card.model_copy(deep=True)
                 copied.uuid = str(uuid4())
                 target.get(HandComponent).cards.append(copied)

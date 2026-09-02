@@ -11,7 +11,6 @@ from src.ai_rpg.game.dbg_game import DBGGame
 from src.ai_rpg.models import (
     ActorComponent,
     Card,
-    DeathComponent,
     HandComponent,
     PlayCardsAction,
     TargetType,
@@ -94,26 +93,26 @@ class TestTransferCardsActionSystem:
             assert copied.source == card.source
             assert copied.transferable is True
 
-    async def test_skips_dead_and_missing_target_but_still_removes_source(
-        self, context: Context, mock_game: MagicMock, system: TransferCardsActionSystem
-    ) -> None:
-        source = _make_actor(context, "角色.无名")
-        alive = _make_actor(context, "怪物.甲")
-        dead = _make_actor(context, "怪物.乙")
-        dead.add(DeathComponent, "怪物.乙")
-        _stub_actor_lookup(mock_game, {"怪物.甲": alive, "怪物.乙": dead})
+    # async def test_skips_dead_and_missing_target_but_still_removes_source(
+    #     self, context: Context, mock_game: MagicMock, system: TransferCardsActionSystem
+    # ) -> None:
+    #     source = _make_actor(context, "角色.无名")
+    #     alive = _make_actor(context, "怪物.甲")
+    #     dead = _make_actor(context, "怪物.乙")
+    #     dead.add(DeathComponent, "怪物.乙")
+    #     _stub_actor_lookup(mock_game, {"怪物.甲": alive, "怪物.乙": dead})
 
-        card = _make_card()
-        source.get(HandComponent).cards.append(card)
-        source.add(
-            PlayCardsAction, "角色.无名", card, ["怪物.甲", "怪物.乙", "不存在的人"]
-        )
+    #     card = _make_card()
+    #     source.get(HandComponent).cards.append(card)
+    #     source.add(
+    #         PlayCardsAction, "角色.无名", card, ["怪物.甲", "怪物.乙", "不存在的人"]
+    #     )
 
-        await system.react([source])
+    #     await system.react([source])
 
-        assert card not in source.get(HandComponent).cards
-        assert len(alive.get(HandComponent).cards) == 1
-        assert len(dead.get(HandComponent).cards) == 0
+    #     assert card not in source.get(HandComponent).cards
+    #     assert len(alive.get(HandComponent).cards) == 1
+    #     assert len(dead.get(HandComponent).cards) == 0
 
     async def test_dedups_repeated_targets(
         self, context: Context, mock_game: MagicMock, system: TransferCardsActionSystem

@@ -23,7 +23,7 @@ def create_actor(
     character_stats: CharacterStats,
     campaign_setting: str,
     system_rules: str,
-    keywords: List[str] = [],
+    # keywords: List[str] = [],
     cards: List[Card] = [],
 ) -> Actor:
     """

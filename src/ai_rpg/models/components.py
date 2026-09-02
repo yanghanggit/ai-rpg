@@ -1,6 +1,6 @@
 """ECS 组件定义。添加到实体后由对应系统读取处理。"""
 
-from typing import Final, List, final
+from typing import List, final
 
 from ..entitas.components import Component
 from .card import Card
@@ -11,7 +11,7 @@ from .registry import register_component_type
 ############################################################################################################
 # 每回合固定行动次数（能量）；由 CombatRoundTransitionSystem 用于初始化 RoundStatsComponent，
 # 目前所有角色恒定共用该值，不随角色或装备变化。
-DEFAULT_ROUND_ENERGY: Final[int] = 2
+# DEFAULT_ROUND_ENERGY: Final[int] = 2
 
 
 ############################################################################################################
@@ -299,6 +299,16 @@ class DeckComponent(Component):
 
     name: str
     cards: List[Card]
+
+
+############################################################################################################
+@final
+@register_component_type
+class CardPoolComponent(Component):
+    """卡池：待从中抽取的候选卡牌（默认 3 张，3 选 1）。"""
+
+    name: str
+    cards: List[Card]  # 候选卡；抽卡后由后续动作移入牌库并清空本组件
 
 
 ############################################################################################################

@@ -317,6 +317,16 @@ class InitializeDeckAction(Component):
 @final
 @register_action_component_type
 @register_component_type
+class GenerateCardPoolAction(Component):
+    """触发为角色生成卡池（抽卡候选）。"""
+
+    name: str
+
+
+############################################################################################################
+@final
+@register_action_component_type
+@register_component_type
 class FillDrawPileAction(Component):
     """触发从 DeckComponent 洗牌填充 DrawPileComponent，由 FillDrawPileSystem 响应处理。"""
 

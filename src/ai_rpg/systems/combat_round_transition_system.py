@@ -13,7 +13,7 @@ from ..game.dbg_combat_processor import get_energy
 from ..models import (
     CharacterStatsComponent,
     DeathComponent,
-    DEFAULT_ROUND_ENERGY,
+    # DEFAULT_ROUND_ENERGY,
     DungeonComponent,
     IdentityComponent,
     Round,
@@ -125,7 +125,7 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
                 RoundStatsComponent
             ), f"{actor.name} 已存在 RoundStatsComponent"
             assert not actor.has(DeathComponent), f"{actor.name} 已死亡，不应参与新回合"
-            actor.replace(RoundStatsComponent, actor.name, DEFAULT_ROUND_ENERGY)
+            actor.replace(RoundStatsComponent, actor.name, 2)
 
         return new_round
 

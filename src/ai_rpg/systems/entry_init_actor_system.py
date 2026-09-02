@@ -15,6 +15,7 @@ from ..models import (
     AppearanceComponent,
     CharacterStats,
     DeckComponent,
+    GenerateCardPoolAction,
     InitializeDeckAction,
     MonsterComponent,
     PartyMemberComponent,
@@ -126,6 +127,9 @@ class EntryInitActorSystem(ExecuteProcessor):
 
         # 为队伍成员触发牌库初始化（精确控制触发对象）
         self._add_initialize_deck_actions()
+
+        # 为队伍成员触发卡池生成（精确控制触发对象）
+        self._add_generate_card_pool_actions()
 
         # 状态守护：标记入口房间已完成初始化，避免重复触发
         entry_room.initialized = True
@@ -240,3 +244,22 @@ class EntryInitActorSystem(ExecuteProcessor):
         logger.info(
             f"[EntryInitActorSystem] 完成，已为 {count} 个队伍成员触发牌库初始化"
         )
+
+    ###################################################################################################################################################################
+    def _add_generate_card_pool_actions(self) -> None:
+        """为所有队伍成员添加卡池生成动作（精确控制触发对象）。"""
+        count = 0
+
+        party_entities = self._game.get_group(
+            Matcher(all_of=[PartyMemberComponent])
+        ).entities.copy()
+        for entity in party_entities:
+            assert entity.has(
+                PartyMemberComponent
+            ), f"角色 {entity.name} 缺少 PartyMemberComponent，不应被入口初始化选中！"
+
+            entity.replace(GenerateCardPoolAction, entity.name)
+            logger.debug(f"[{entity.name}] 已触发卡池生成（队伍）")
+            count += 1
+
+        logger.info(f"[EntryInitActorSystem] 完成，已为 {count} 个队伍成员触发卡池生成")

@@ -12,7 +12,7 @@ from ..models import (
     CharacterStats,
     CharacterStatsComponent,
     Combat,
-    DEFAULT_ROUND_ENERGY,
+    # DEFAULT_ROUND_ENERGY,
     DeathComponent,
     EntitySerialization,
     HandComponent,
@@ -105,19 +105,11 @@ def compute_effective_stats_for(
 def resolve_current_energy(
     entity: EntitySerialization, effective_stats: Optional[CharacterStats]
 ) -> int:
-    """解析实体本回合剩余可用 energy。
-
-    优先读取 `RoundStatsComponent.energy`——这是本回合真正剩余的行动次数，由
-    `CombatRoundTransitionSystem._start_new_round` 在回合开始时以固定常量
-    `DEFAULT_ROUND_ENERGY` 初始化，此后随出牌/装备/过牌等消耗动作实时递减。
-
-    若实体尚未挂载该组件（如 INITIALIZATION 阶段战斗尚未进入任何回合），退回 `DEFAULT_ROUND_ENERGY`
-    作为近似。
-    """
+    """解析实体本回合剩余可用 energy。"""
     round_stats_data = find_component_data(entity, RoundStatsComponent.__name__)
     if round_stats_data is not None:
         return RoundStatsComponent(**round_stats_data).energy
-    return DEFAULT_ROUND_ENERGY if effective_stats is not None else 0
+    return 0
 
 
 ###############################################################################################################################################

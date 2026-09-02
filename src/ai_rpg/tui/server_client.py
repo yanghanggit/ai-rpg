@@ -8,6 +8,8 @@ from ..models import (
     DungeonAdvanceStageRequest,
     DungeonAdvanceStageResponse,
     DungeonCombatDrawCardsRequest,
+    DungeonOpeningGenerateCardPoolRequest,
+    DungeonOpeningGenerateCardPoolResponse,
     DungeonOpeningInitRequest,
     DungeonOpeningInitResponse,
     DungeonCombatDrawCardsResponse,
@@ -368,7 +370,7 @@ async def dungeon_advance_stage(
 async def dungeon_opening_init(
     user_name: str, game_name: str
 ) -> DungeonOpeningInitResponse:
-    """触发开场房间初始化（叙事 + 牌库生成），返回后台任务ID。"""
+    """触发开场房间初始化（叙事 + 牌库初始化），返回后台任务ID。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
             server_config.base_url + "/api/dungeon/opening/init/v1/",
@@ -379,6 +381,22 @@ async def dungeon_opening_init(
         )
         response.raise_for_status()
         return DungeonOpeningInitResponse.model_validate(response.json())
+
+
+async def dungeon_opening_generate_card_pool(
+    user_name: str, game_name: str
+) -> DungeonOpeningGenerateCardPoolResponse:
+    """触发开场房间卡池生成（外部显式触发 GenerateCardPoolAction），返回后台任务ID。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.post(
+            server_config.base_url + "/api/dungeon/opening/generate_card_pool/v1/",
+            json=DungeonOpeningGenerateCardPoolRequest(
+                user_name=user_name,
+                game_name=game_name,
+            ).model_dump(),
+        )
+        response.raise_for_status()
+        return DungeonOpeningGenerateCardPoolResponse.model_validate(response.json())
 
 
 async def dungeon_combat_collect_loot(

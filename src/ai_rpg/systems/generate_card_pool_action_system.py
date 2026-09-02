@@ -34,7 +34,6 @@ from ..models import (
 from ..pgsql import get_card_prototype, list_card_prototype_index
 from ..utils import batch_run_boolean_tasks, prompt_builder
 
-
 #######################################################################################################################################
 CARD_POOL_SIZE: Final[int] = 3  # 卡池候选数量（3 选 1），未来可调
 
@@ -96,7 +95,7 @@ def _handle_submit_pool_card(
     """处理 submit_pool_card 工具调用：校验并暂存一张卡牌的叙事调整。"""
     assert uuid, "uuid 不能为空"
     edits.append(_CardPoolEdit(uuid=uuid, name=name, description=description))
-    logger.info(f"[CardPoolSystem] submit_pool_card: {uuid} → {name}")
+    logger.info(f"[GenerateCardPoolActionSystem] submit_pool_card: {uuid} → {name}")
     return "已记录该卡牌的叙事调整。"
 
 
@@ -167,7 +166,7 @@ def _build_card_pool_prompt(entity: Entity, cards: List[Card]) -> str:
 
 #######################################################################################################################################
 @final
-class CardPoolSystem(ReactiveProcessor):
+class GenerateCardPoolActionSystem(ReactiveProcessor):
     """响应卡池生成动作，为触发角色从原型库抽取候选卡、润色后装入卡池。"""
 
     def __init__(self, game: DBGGame) -> None:
@@ -196,11 +195,11 @@ class CardPoolSystem(ReactiveProcessor):
         try:
             index = list_card_prototype_index(card_type="手牌")
         except Exception as e:
-            logger.error(f"[CardPoolSystem] 拉取卡牌原型失败: {e}")
+            logger.error(f"[GenerateCardPoolActionSystem] 拉取卡牌原型失败: {e}")
             return
 
         if not index:
-            logger.error("[CardPoolSystem] 卡牌原型库为空，无法生成卡池")
+            logger.error("[GenerateCardPoolActionSystem] 卡牌原型库为空，无法生成卡池")
             return
 
         # 组装待生成卡池的任务（每个实体一个 agent_loop，并发执行）
@@ -235,10 +234,12 @@ class CardPoolSystem(ReactiveProcessor):
             tasks.append((entity.name, coro))
 
         if not tasks:
-            logger.debug("[CardPoolSystem] 无待生成卡池的角色")
+            logger.debug("[GenerateCardPoolActionSystem] 无待生成卡池的角色")
             return
 
-        logger.info(f"[CardPoolSystem] 为 {len(tasks)} 个角色并发生成卡池...")
+        logger.info(
+            f"[GenerateCardPoolActionSystem] 为 {len(tasks)} 个角色并发生成卡池..."
+        )
 
         # 并发执行
         outcomes = await batch_run_boolean_tasks(tasks)
@@ -251,7 +252,7 @@ class CardPoolSystem(ReactiveProcessor):
                 target_card = by_uuid.get(edit.uuid)
                 if target_card is None:
                     logger.warning(
-                        f"[CardPoolSystem] {entity.name} 提交了未知 uuid "
+                        f"[GenerateCardPoolActionSystem] {entity.name} 提交了未知 uuid "
                         f"{edit.uuid!r}，忽略"
                     )
                     continue
@@ -263,7 +264,7 @@ class CardPoolSystem(ReactiveProcessor):
             entity.replace(CardPoolComponent, entity.name, candidates)
 
             logger.info(
-                f"[CardPoolSystem] {entity.name}: 生成卡池 {len(candidates)} 张"
+                f"[GenerateCardPoolActionSystem] {entity.name}: 生成卡池 {len(candidates)} 张"
                 f"，应用叙事调整 {applied} 张（agent_loop 成功={ok}）"
             )
 
@@ -285,7 +286,7 @@ class CardPoolSystem(ReactiveProcessor):
                 card = Card.model_validate(json.loads(proto.card_json))
             except Exception as e:
                 logger.error(
-                    f"[CardPoolSystem] 获取/解析原型 {prototype_id!r} 失败: {e}"
+                    f"[GenerateCardPoolActionSystem] 获取/解析原型 {prototype_id!r} 失败: {e}"
                 )
                 continue
 

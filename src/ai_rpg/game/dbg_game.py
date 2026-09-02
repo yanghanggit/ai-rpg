@@ -70,7 +70,7 @@ class DBGGame(RPGGame):
             create_home_craft_pipeline(self)
         )
 
-        # 副本开场流程（叙事 + 牌库生成，无战斗）
+        # 副本开场流程（叙事 + 牌库初始化，无战斗；卡池生成由外部显式触发）
         self._dungeon_opening_room_pipeline: Final[RPGGameProcessPipeline] = (
             create_dungeon_opening_room_pipeline(self)
         )

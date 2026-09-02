@@ -34,6 +34,7 @@
   collect-loot    --snapshot PATH                               收战利品（胜利后）
   next-dungeon    --snapshot PATH                               下一关（胜利后，需存在下一关）
   exit-dungeon    --snapshot PATH                               退出副本 → 家园模式（无论胜负）
+  generate-card-pool --snapshot PATH                            生成卡池（开场房间初始化后）
 
 ==== 典型流程 ====
   家园：new → stages → advance(循环) / speak / switch-stage → enter-dungeon
@@ -106,6 +107,7 @@ from agent_game_combat import (
 )
 from agent_game_dungeon import (
     enter_dungeon_game,
+    generate_card_pool_game,
     next_dungeon_game,
     exit_dungeon_and_return_home_game,
 )
@@ -819,6 +821,38 @@ def retreat(snapshot: str) -> None:
     logger.info(f"本次存档目录：{_save_dir}")
 
     asyncio.run(retreat_game(world, player_session, _save_dir))
+
+
+###############################################################################################################################################
+@main.command("generate-card-pool")
+@click.option(
+    "--snapshot",
+    required=True,
+    help="存档目录路径",
+)
+def generate_card_pool(snapshot: str) -> None:
+    """为开场房间内的队伍成员生成卡池并归档。需开场已初始化（叙事 + 牌库）。"""
+
+    snapshot_path = Path(snapshot)
+    if not snapshot_path.exists():
+        raise click.BadParameter(
+            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+        )
+
+    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
+    _setup_logger(_log_file)
+
+    world, player_session = restore_world(snapshot_path)
+    _save_dir = (
+        WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
+    )
+
+    logger.info(f"本次运行日志文件：{_log_file}")
+    logger.info(f"读取存档：{snapshot_path}")
+    logger.info(f"本次存档目录：{_save_dir}")
+
+    asyncio.run(generate_card_pool_game(world, player_session, _save_dir))
 
 
 ###############################################################################################################################################

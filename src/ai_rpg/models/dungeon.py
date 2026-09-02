@@ -31,7 +31,7 @@ class OpeningRoom(DungeonRoom):
 
     type: Literal["opening"] = "opening"  # type: ignore[assignment]
     initialized: bool = (
-        False  # 是否已完成开场初始化（叙事 + 牌库生成），用于幂等状态守护
+        False  # 是否已完成开场初始化（叙事 + 牌库初始化），用于幂等状态守护；卡池生成由外部显式触发
     )
 
 

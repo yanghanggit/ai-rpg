@@ -9,8 +9,8 @@ from textual.widgets import Static
 from .base import BaseGameScreen
 from .server_client import fetch_dungeon_state
 from .combat_room import CombatRoomScreen
-from .dungeon_entry_room import DungeonEntryRoomScreen
-from ..models import CombatRoom, EntryRoom, DungeonRoom
+from .dungeon_opening_room import DungeonOpeningRoomScreen
+from ..models import CombatRoom, OpeningRoom, DungeonRoom
 
 
 @final
@@ -54,9 +54,9 @@ class DungeonRoomRouterRoom(BaseGameScreen):
         if isinstance(room, CombatRoom):
             logger.info("DungeonRoomRouterRoom._route: 路由至 CombatRoomScreen")
             self.app.switch_screen(CombatRoomScreen())
-        elif isinstance(room, EntryRoom):
-            logger.info("DungeonRoomRouterRoom._route: 路由至 EntryRoomScreen")
-            self.app.switch_screen(DungeonEntryRoomScreen())
+        elif isinstance(room, OpeningRoom):
+            logger.info("DungeonRoomRouterRoom._route: 路由至 OpeningRoomScreen")
+            self.app.switch_screen(DungeonOpeningRoomScreen())
         elif isinstance(room, DungeonRoom):
             logger.info(f"DungeonRoomRouterRoom._route: 未知基类房间 type={room.type}")
             self.query_one(Static).update(

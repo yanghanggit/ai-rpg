@@ -1,4 +1,4 @@
-"""EntryInitActorSystem 单元测试。"""
+"""OpeningInitActorSystem 单元测试。"""
 
 from unittest.mock import MagicMock
 
@@ -16,10 +16,10 @@ from src.ai_rpg.models import (
     PartyMemberComponent,
 )
 from src.ai_rpg.models.character_stats import CharacterStats
-from src.ai_rpg.systems.entry_init_actor_system import (
-    EntryInitActorSystem,
+from src.ai_rpg.systems.opening_init_actor_system import (
+    OpeningInitActorSystem,
     OtherActorInfo,
-    _build_entry_init_prompt,
+    _build_opening_init_prompt,
     _build_other_actors_info,
 )
 
@@ -65,8 +65,8 @@ def mock_game() -> MagicMock:
 
 
 @pytest.fixture()
-def system(mock_game: MagicMock) -> EntryInitActorSystem:
-    return EntryInitActorSystem(mock_game)
+def system(mock_game: MagicMock) -> OpeningInitActorSystem:
+    return OpeningInitActorSystem(mock_game)
 
 
 # ---------------------------------------------------------------------------
@@ -87,13 +87,13 @@ def test_format_other_actors_info_contains_name_camp_appearance() -> None:
 
 
 # ---------------------------------------------------------------------------
-# _build_entry_init_prompt
+# _build_opening_init_prompt
 # ---------------------------------------------------------------------------
 
 
-def test_build_entry_init_prompt_contains_key_fields() -> None:
+def test_build_opening_init_prompt_contains_key_fields() -> None:
     stats = CharacterStats(hp=8, max_hp=20, attack=6, defense=4)
-    result = _build_entry_init_prompt(
+    result = _build_opening_init_prompt(
         stage_name="入口石室",
         stage_description="潮湿阴冷的洞口",
         other_actors_info=[],
@@ -107,19 +107,19 @@ def test_build_entry_init_prompt_contains_key_fields() -> None:
 
 
 # ---------------------------------------------------------------------------
-# _inject_entry_scene_environment
+# _inject_opening_scene_environment
 # ---------------------------------------------------------------------------
 
 
-def test_inject_entry_scene_environment_injects_human_and_ai_messages(
-    context: Context, mock_game: MagicMock, system: EntryInitActorSystem
+def test_inject_opening_scene_environment_injects_human_and_ai_messages(
+    context: Context, mock_game: MagicMock, system: OpeningInitActorSystem
 ) -> None:
     actor_a = _make_actor(context, "勇者", is_ally=True)
     actor_b = _make_actor(context, "游侠", is_ally=True)
 
     mock_game.filter_messages.return_value = []
 
-    system._inject_entry_scene_environment(
+    system._inject_opening_scene_environment(
         actor_entities={actor_a, actor_b},
         stage_name="入口石室",
         stage_description="潮湿阴冷的洞口",
@@ -128,22 +128,22 @@ def test_inject_entry_scene_environment_injects_human_and_ai_messages(
     assert mock_game.add_human_message.call_count == 2
     assert mock_game.add_ai_message.call_count == 2
 
-    # 每条 human 消息都携带入口场景标记
+    # 每条 human 消息都携带开场场景标记
     for call in mock_game.add_human_message.call_args_list:
         human_message = call.kwargs["human_message"]
         assert human_message.content != ""
-        assert getattr(human_message, "entry_initialization", None) == "入口石室"
+        assert getattr(human_message, "opening_initialization", None) == "入口石室"
 
 
-def test_inject_entry_scene_environment_skips_already_injected_actor(
-    context: Context, mock_game: MagicMock, system: EntryInitActorSystem
+def test_inject_opening_scene_environment_skips_already_injected_actor(
+    context: Context, mock_game: MagicMock, system: OpeningInitActorSystem
 ) -> None:
     actor = _make_actor(context, "勇者", is_ally=True)
 
     # 已有同场景标记，应跳过注入
     mock_game.filter_messages.return_value = [object()]
 
-    system._inject_entry_scene_environment(
+    system._inject_opening_scene_environment(
         actor_entities={actor},
         stage_name="入口石室",
         stage_description="潮湿阴冷的洞口",
@@ -159,7 +159,7 @@ def test_inject_entry_scene_environment_skips_already_injected_actor(
 
 
 # def test_add_generate_deck_actions_adds_action_to_party_only(
-#     context: Context, mock_game: MagicMock, system: EntryInitActorSystem
+#     context: Context, mock_game: MagicMock, system: OpeningInitActorSystem
 # ) -> None:
 #     ally = _make_actor(context, "勇者", is_ally=True)
 #     monster = _make_actor(context, "哥布林", is_monster=True)

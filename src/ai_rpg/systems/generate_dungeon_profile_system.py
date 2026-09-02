@@ -33,7 +33,7 @@ PROFILE_TOOL: Final[ToolDefinition] = ToolDefinition(
                 "dungeon_room_count": {
                     "type": "integer",
                     "enum": [3, 4],
-                    "description": "副本房间总数（含 1 个入口房间），依规模与层次丰富程度选择",
+                    "description": "副本房间总数（含 1 个开场房间），依规模与层次丰富程度选择",
                 },
             },
             "required": ["name", "profile", "dungeon_room_count"],

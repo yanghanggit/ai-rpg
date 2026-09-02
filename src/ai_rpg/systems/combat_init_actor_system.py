@@ -134,7 +134,7 @@ class CombatInitActorSystem(ExecuteProcessor):
             actor_entity.replace(FillDrawPileAction, actor_entity.name)
             logger.debug(f"[{actor_entity.name}] 已添加 FillDrawPileAction")
 
-        # 所有参战角色都触发牌库初始化；幂等守卫会跳过已初始化者（如入口房已润色的队员）
+        # 所有参战角色都触发牌库初始化；幂等守卫会跳过已初始化者（如开场房已润色的队员）
         for actor_entity in actor_entities:
             actor_entity.replace(InitializeDeckAction, actor_entity.name)
             logger.debug(f"[{actor_entity.name}] 已触发牌库初始化")

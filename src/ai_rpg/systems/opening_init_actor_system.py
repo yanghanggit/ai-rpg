@@ -1,4 +1,4 @@
-"""副本入口初始化系统（角色侧）：为入口场景内的队伍成员注入场景环境信息，并为队伍成员触发牌库初始化（怪物牌库在各自战斗房间初始化）。"""
+"""副本开场初始化系统（角色侧）：为开场场景内的队伍成员注入场景环境信息，并为队伍成员触发牌库初始化（怪物牌库在各自战斗房间初始化）。"""
 
 from dataclasses import dataclass
 from typing import Final, List, Set, final, override
@@ -51,16 +51,16 @@ def _build_other_actors_info(other_actors_info: List[OtherActorInfo]) -> str:
 
 ###################################################################################################################################################################
 @prompt_builder
-def _build_entry_init_prompt(
+def _build_opening_init_prompt(
     stage_name: str,
     stage_description: str,
     other_actors_info: List[OtherActorInfo],
     actor_stats: CharacterStats,
 ) -> str:
-    """生成副本入口场景感知通知"""
+    """生成副本开场场景感知通知"""
     attrs_prompt = f"HP:{actor_stats.hp}/{actor_stats.max_hp} | 攻击:{actor_stats.attack} | 防御:{actor_stats.defense}"
 
-    return f"""# 副本入口场景感知通知
+    return f"""# 副本开场场景感知通知
 
 ## 场景叙事
 
@@ -77,8 +77,8 @@ def _build_entry_init_prompt(
 
 ###################################################################################################################################################################
 @final
-class EntryInitActorSystem(ExecuteProcessor):
-    """副本入口初始化系统（角色侧）：为入口场景内的队伍成员注入场景环境信息（无 LLM），并触发牌库初始化。"""
+class OpeningInitActorSystem(ExecuteProcessor):
+    """副本开场初始化系统（角色侧）：为开场场景内的队伍成员注入场景环境信息（无 LLM），并触发牌库初始化。"""
 
     def __init__(self, game: DBGGame) -> None:
         self._game: Final[DBGGame] = game
@@ -87,20 +87,20 @@ class EntryInitActorSystem(ExecuteProcessor):
     @override
     async def execute(self) -> None:
 
-        if not self._game.is_current_room_dungeon_entry:
-            logger.debug("当前副本房间非入口房间，跳过入口初始化（角色侧）")
+        if not self._game.is_current_room_dungeon_opening:
+            logger.debug("当前副本房间非开场房间，跳过开场初始化（角色侧）")
             return
 
-        entry_room = self._game.current_dungeon_entry_room
-        if entry_room.initialized:
-            logger.debug("当前入口房间已完成初始化，跳过入口初始化（角色侧）")
+        opening_room = self._game.current_dungeon_opening_room
+        if opening_room.initialized:
+            logger.debug("当前开场房间已完成初始化，跳过开场初始化（角色侧）")
             return
 
         logger.info(
-            "入口初始化（角色侧）开始：注入入口场景环境信息 + 为队伍成员触发牌库初始化..."
+            "开场初始化（角色侧）开始：注入开场场景环境信息 + 为队伍成员触发牌库初始化..."
         )
 
-        # 获取玩家实体，player 所在场景即入口场景
+        # 获取玩家实体，player 所在场景即开场场景
         player_entity = self._game.get_player_entity()
         assert player_entity is not None, "无法找到玩家实体！"
 
@@ -114,12 +114,12 @@ class EntryInitActorSystem(ExecuteProcessor):
         # 获取场景环境组件
         stage_description_comp = current_stage_entity.get(StageDescriptionComponent)
 
-        # 入口场景内仅有队伍成员（怪物分散在各战斗房间，不在此处注入场景环境信息）
+        # 开场场景内仅有队伍成员（怪物分散在各战斗房间，不在此处注入场景环境信息）
         actor_entities = get_alive_actors_in_stage(self._game, player_entity)
-        assert len(actor_entities) > 0, "入口场景内不可能没有队伍成员！"
+        assert len(actor_entities) > 0, "开场场景内不可能没有队伍成员！"
 
-        # 为每个角色注入入口场景环境信息（无 LLM 调用）
-        self._inject_entry_scene_environment(
+        # 为每个角色注入开场场景环境信息（无 LLM 调用）
+        self._inject_opening_scene_environment(
             actor_entities=actor_entities,
             stage_name=current_stage_entity.name,
             stage_description=stage_description_comp.narrative,
@@ -131,30 +131,30 @@ class EntryInitActorSystem(ExecuteProcessor):
         # 为队伍成员触发卡池生成（精确控制触发对象）
         self._add_generate_card_pool_actions()
 
-        # 状态守护：标记入口房间已完成初始化，避免重复触发
-        entry_room.initialized = True
+        # 状态守护：标记开场房间已完成初始化，避免重复触发
+        opening_room.initialized = True
 
     ###################################################################################################################################################################
-    def _inject_entry_scene_environment(
+    def _inject_opening_scene_environment(
         self,
         actor_entities: Set[Entity],
         stage_name: str,
         stage_description: str,
     ) -> None:
-        """为所有入口场景内的角色注入场景环境信息（human message + 模拟 AI 回应），无 LLM 调用。"""
+        """为所有开场场景内的角色注入场景环境信息（human message + 模拟 AI 回应），无 LLM 调用。"""
 
         for actor_entity in actor_entities:
 
-            # 幂等保护：同一场景内只注入一次，避免入口初始化任务被重复触发时重复写入场景环境信息
+            # 幂等保护：同一场景内只注入一次，避免开场初始化任务被重复触发时重复写入场景环境信息
             existing_messages = self._game.filter_messages(
                 entity=actor_entity,
                 predicate=lambda msg, index, messages: (
-                    getattr(msg, "entry_initialization", None) == stage_name
+                    getattr(msg, "opening_initialization", None) == stage_name
                 ),
             )
             if existing_messages:
                 logger.debug(
-                    f"[{actor_entity.name}] 已注入过 {stage_name} 的入口场景环境信息，跳过"
+                    f"[{actor_entity.name}] 已注入过 {stage_name} 的开场场景环境信息，跳过"
                 )
                 continue
 
@@ -193,20 +193,20 @@ class EntryInitActorSystem(ExecuteProcessor):
             # 计算角色有效属性（含装备加成）
             actor_stats = compute_character_stats(actor_entity)
 
-            # 生成入口场景环境提示词
-            entry_init_prompt = _build_entry_init_prompt(
+            # 生成开场场景环境提示词
+            opening_init_prompt = _build_opening_init_prompt(
                 stage_name=stage_name,
                 stage_description=stage_description,
                 other_actors_info=other_actors_info,
                 actor_stats=actor_stats,
             )
 
-            # 注入入口场景环境信息
+            # 注入开场场景环境信息
             self._game.add_human_message(
                 entity=actor_entity,
                 human_message=HumanMessage(
-                    content=entry_init_prompt,
-                    entry_initialization=stage_name,
+                    content=opening_init_prompt,
+                    opening_initialization=stage_name,
                 ),
             )
 
@@ -217,7 +217,7 @@ class EntryInitActorSystem(ExecuteProcessor):
             )
 
             logger.debug(
-                f"[{actor_entity.name}] 入口场景环境信息注入完成（无 LLM 推理）"
+                f"[{actor_entity.name}] 开场场景环境信息注入完成（无 LLM 推理）"
             )
 
     ###################################################################################################################################################################
@@ -231,7 +231,7 @@ class EntryInitActorSystem(ExecuteProcessor):
         for entity in party_entities:
             assert entity.has(
                 PartyMemberComponent
-            ), f"角色 {entity.name} 缺少 PartyMemberComponent，不应被入口初始化选中！"
+            ), f"角色 {entity.name} 缺少 PartyMemberComponent，不应被开场初始化选中！"
 
             assert entity.has(
                 DeckComponent
@@ -242,7 +242,7 @@ class EntryInitActorSystem(ExecuteProcessor):
             count += 1
 
         logger.info(
-            f"[EntryInitActorSystem] 完成，已为 {count} 个队伍成员触发牌库初始化"
+            f"[OpeningInitActorSystem] 完成，已为 {count} 个队伍成员触发牌库初始化"
         )
 
     ###################################################################################################################################################################
@@ -256,10 +256,12 @@ class EntryInitActorSystem(ExecuteProcessor):
         for entity in party_entities:
             assert entity.has(
                 PartyMemberComponent
-            ), f"角色 {entity.name} 缺少 PartyMemberComponent，不应被入口初始化选中！"
+            ), f"角色 {entity.name} 缺少 PartyMemberComponent，不应被开场初始化选中！"
 
             entity.replace(GenerateCardPoolAction, entity.name)
             logger.debug(f"[{entity.name}] 已触发卡池生成（队伍）")
             count += 1
 
-        logger.info(f"[EntryInitActorSystem] 完成，已为 {count} 个队伍成员触发卡池生成")
+        logger.info(
+            f"[OpeningInitActorSystem] 完成，已为 {count} 个队伍成员触发卡池生成"
+        )

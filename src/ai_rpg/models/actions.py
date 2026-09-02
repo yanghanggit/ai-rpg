@@ -187,7 +187,7 @@ class GenerateDungeonRoomsAction(Component):
     name: str
     dungeon_name: str
     dungeon_profile: str = ""
-    dungeon_room_count: int = 3  # 副本房间总数（含 1 个入口房间）
+    dungeon_room_count: int = 3  # 副本房间总数（含 1 个开场房间）
 
 
 ############################################################################################################

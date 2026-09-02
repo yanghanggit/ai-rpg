@@ -21,7 +21,7 @@ from ai_rpg.models import (
     Dungeon,
     DungeonDirectorComponent,
     DungeonGenerationComponent,
-    EntryRoom,
+    OpeningRoom,
     GearItem,
     GearWorkshopComponent,
     MaterialItem,
@@ -324,7 +324,7 @@ def create_actor_paper_doll() -> Actor:
 def create_shrine_ruins_dungeon() -> Dungeon:
     """创建坍塌庙祠副本。"""
 
-    # ── 入口叙事房间 ──
+    # ── 开场叙事房间 ──
     stage_shrine_entrance = create_stage(
         name="场景.庙祠入口",
         stage_type=StageType.DUNGEON,
@@ -354,7 +354,7 @@ def create_shrine_ruins_dungeon() -> Dungeon:
         name="副本.坍塌庙祠",
         profile="庙祠前院静得异常。碎裂的青石地面上散落着纸钱，纸钱的方孔在视线扫过时似乎都在微微调整方向。院角的纸扎残件与倾覆的香炉让这地方像一场进行到一半就被打断的仪式。殿内，神像正背对着你。",
         rooms=[
-            EntryRoom(stage=stage_shrine_entrance),
+            OpeningRoom(stage=stage_shrine_entrance),
             CombatRoom(stage=stage_shrine_courtyard),
         ],
     )

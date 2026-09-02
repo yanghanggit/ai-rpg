@@ -9,10 +9,10 @@ from pydantic import BaseModel
 class DungeonRoomData(BaseModel):
     """Step 2 中间数据：单个房间的类型、名称、环境描写与角色种类数量。"""
 
-    room_type: Literal["entry", "combat"]  # 房间类型：entry=叙事入口，combat=战斗
+    room_type: Literal["opening", "combat"]  # 房间类型：opening=开场叙事，combat=战斗
     room_name: str = ""
     profile: str = ""
-    actor_count: int = 0  # 角色种类数量（entry 房间固定为 0）
+    actor_count: int = 0  # 角色种类数量（opening 房间固定为 0）
 
 
 ####################################################################################################################################
@@ -43,7 +43,7 @@ class DungeonActorBlueprint(BaseModel):
 class DungeonRoomBlueprint(BaseModel):
     """副本单个房间实体创建所需的原始字段（包含配对的怪物蓝图）。供 assemble_dungeon_system 使用。"""
 
-    room_type: Literal["entry", "combat"]  # 房间类型
+    room_type: Literal["opening", "combat"]  # 房间类型
     room_name: str = ""
     profile: str = ""
     actors: List[DungeonActorBlueprint] = []

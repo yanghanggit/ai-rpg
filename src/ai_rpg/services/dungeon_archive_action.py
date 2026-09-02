@@ -229,7 +229,7 @@ def notify_dungeon_director_room_ended(
     dungeon: Dungeon,
     room: AnyDungeonRoom,
 ) -> None:
-    """房间结束时（任意房间类型，含入口房间），向副本导演追加该房间的事实记忆。
+    """房间结束时（任意房间类型，含开场房间），向副本导演追加该房间的事实记忆。
 
     找不到副本导演实体、或房间没有可记录实体时静默跳过，不阻断副本推进/退出流程。
     """

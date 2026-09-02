@@ -25,13 +25,13 @@ Step 0–3 之间不再写任何中间 JSON 文件，数据全在内存流转；
 
 **Step 0 — 世界导演指令**（`GenerateDungeonDirectiveSystem`）。世界导演推理一条创作指令，挂 `GenerateDungeonDirectiveAction`。
 
-**Step 1 — 副本设定生成**（`GenerateDungeonProfileSystem`）。单次 `agent_loop`（调用一次 `record_dungeon_profile` 工具）锁定副本名称、整体设定（`dungeon_profile`）与房间总数（`dungeon_room_count`，含 1 个入口房间）。设定刻意回避角色身份与评价性词汇，只呈现感官与情境细节。产物挂 `GenerateDungeonRoomsAction`。
+**Step 1 — 副本设定生成**（`GenerateDungeonProfileSystem`）。单次 `agent_loop`（调用一次 `record_dungeon_profile` 工具）锁定副本名称、整体设定（`dungeon_profile`）与房间总数（`dungeon_room_count`，含 1 个开场房间）。设定刻意回避角色身份与评价性词汇，只呈现感官与情境细节。产物挂 `GenerateDungeonRoomsAction`。
 
-**Step 2 — 房间设计**（`GenerateDungeonRoomsSystem`）。在 Step 1 的同一 agent 记忆内一次性生成全部房间。首房间强制为叙事入口（`room_type = "entry"`），纯氛围描写；其余为战斗房间（`room_type = "combat"`）。同记忆保证入口到深处的叙事递进。产物 `rooms: List[DungeonRoomData]` 挂 `GenerateDungeonActorsAction`。
+**Step 2 — 房间设计**（`GenerateDungeonRoomsSystem`）。在 Step 1 的同一 agent 记忆内一次性生成全部房间。首房间强制为开场（`room_type = "opening"`），纯氛围描写；其余为战斗房间（`room_type = "combat"`）。同记忆保证开场到深处的叙事递进。产物 `rooms: List[DungeonRoomData]` 挂 `GenerateDungeonActorsAction`。
 
 **Step 3 — 怪物生成**（`GenerateDungeonActorsSystem`）。单次 agent_loop：LLM 可在一个 response 内并行、也可分多次调用 `record_dungeon_actor`（每次创建一个怪物），每个怪物用 `room_name` 显式声明归属房间。handler 累积，代码严格校验「归属合法」且「每个 combat 房间数量 == `actor_count`」。产物组装为 `DungeonBlueprint`，挂 `AssembleDungeonAction`。
 
-**Step 4 — 实体组装**（`AssembleDungeonSystem`）。零 LLM 调用，纯确定性映射。根据 `room_type` 分发：`"entry"` → `EntryRoom`，`"combat"` → `CombatRoom`（含 Stage + Actor）。当前为所有怪物统一赋予一张预置卡牌「袭击」（单体伤害，伤害值在抽牌堆填充时叠加怪物攻击力）——框架层行为预设，与故事内容无关。
+**Step 4 — 实体组装**（`AssembleDungeonSystem`）。零 LLM 调用，纯确定性映射。根据 `room_type` 分发：`"opening"` → `OpeningRoom`，`"combat"` → `CombatRoom`（含 Stage + Actor）。当前为所有怪物统一赋予一张预置卡牌「袭击」（单体伤害，伤害值在抽牌堆填充时叠加怪物攻击力）——框架层行为预设，与故事内容无关。
 
 Step 5（场景插画）已实现但未接入主管道，不阻塞副本基础可用性。`AssembleDungeonSystem` 仍会挂 `IllustrateDungeonAction`，但因 `IllustrateDungeonActionSystem` 未注册，该动作会在当轮 `ActionCleanupSystem` 中被清除，无副作用。
 
@@ -62,7 +62,7 @@ Step 5（场景插画）已实现但未接入主管道，不阻塞副本基础�
 
 | 决策 | 理由 |
 | --- | --- |
-| 首房间强制为 entry 房间 | 副本入口需要叙事铺垫，与战斗房间职责分离 |
+| 首房间强制为 opening 房间 | 副本开场需要叙事铺垫，与战斗房间职责分离 |
 | room_type 显式声明房间类型 | 避免以 actor_count 等间接字段推断类型，扩展新房间类型只需加 Literal 值 |
 | 房间总数与角色数由 LLM 决定 | 硬编码会使不同规模的副本产出单一 |
 | Step 2 一次性生成全部房间 | 房间间的递进关系需要同一记忆 |
@@ -77,6 +77,6 @@ Step 5（场景插画）已实现但未接入主管道，不阻塞副本基础�
 
 | room_type | DungeonRoom 子类 | 说明 | 可扩展 |
 | --- | --- | --- | --- |
-| `entry` | `EntryRoom` | 叙事入口，无战斗，纯场景氛围 | — |
+| `opening` | `OpeningRoom` | 开场，无战斗，纯场景氛围 | — |
 | `combat` | `CombatRoom` | 战斗房间，含怪物与预置卡牌 | — |
 | *(future)* | *(TBD)* | 如 puzzle、treasure 等 | 新类型只需追加 Literal + DungeonRoom 子类 |

@@ -19,7 +19,7 @@ from ..models.dungeon_generation import DungeonRoomData
 def _build_rooms_tool(dungeon_room_count: int) -> ToolDefinition:
     """动态构建 record_dungeon_rooms 工具定义。
 
-    副本共 dungeon_room_count 个房间：首个为叙事入口（entry），
+    副本共 dungeon_room_count 个房间：首个为开场（opening），
     其余 dungeon_room_count - 1 个为战斗房间（combat）。
     """
     combat_room_count = dungeon_room_count - 1
@@ -27,7 +27,7 @@ def _build_rooms_tool(dungeon_room_count: int) -> ToolDefinition:
         function=ToolFunction(
             name="record_dungeon_rooms",
             description=(
-                f"记录副本全部 {dungeon_room_count} 个房间：首个为叙事入口（entry），"
+                f"记录副本全部 {dungeon_room_count} 个房间：首个为开场（opening），"
                 f"其余 {combat_room_count} 个为战斗房间（combat）。"
             ),
             parameters={
@@ -46,10 +46,10 @@ def _build_rooms_tool(dungeon_room_count: int) -> ToolDefinition:
                             "properties": {
                                 "room_type": {
                                     "type": "string",
-                                    "enum": ["entry", "combat"],
+                                    "enum": ["opening", "combat"],
                                     "description": (
-                                        "房间类型：'entry' = 叙事入口房间（无战斗，纯场景氛围描写），"
-                                        "'combat' = 战斗房间。第一个房间必须为 'entry'，其余必须为 'combat'"
+                                        "房间类型：'opening' = 开场房间（无战斗，纯场景氛围描写），"
+                                        "'combat' = 战斗房间。第一个房间必须为 'opening'，其余必须为 'combat'"
                                     ),
                                 },
                                 "room_name": {
@@ -63,7 +63,7 @@ def _build_rooms_tool(dungeon_room_count: int) -> ToolDefinition:
                                 "actor_count": {
                                     "type": "integer",
                                     "enum": [0, 1, 2],
-                                    "description": "角色种类数量。entry 房间填 0；combat 房间入口为 1，深处可为 2",
+                                    "description": "角色种类数量。opening 房间填 0；combat 房间为 1，深处可为 2",
                                 },
                             },
                             "required": [
@@ -98,8 +98,8 @@ def _build_dungeon_rooms_prompt(
 
 共计 {dungeon_room_count} 个房间，房间类型与顺序必须严格遵守：
 
-- **第 1 个房间**：叙事入口房间（room_type = "entry"），无战斗，actor_count = 0。
-  描写副本入口处的外部氛围——玩家站在副本门口的第一印象。
+- **第 1 个房间**：开场房间（room_type = "opening"），无战斗，actor_count = 0。
+  描写副本门口的外部氛围——玩家站在副本门口的第一印象。
   不涉及任何怪物，纯粹的场景氛围铺垫。
 
 - **第 2 ~ {dungeon_room_count} 个房间**：战斗房间（room_type = "combat"），共 {combat_room_count} 个，
@@ -210,16 +210,16 @@ class GenerateDungeonRoomsSystem(ReactiveProcessor):
 
         rooms = result.rooms
 
-        # 校验房间数量与类型顺序：总数必须匹配，第 1 个 entry，其余 combat
+        # 校验房间数量与类型顺序：总数必须匹配，第 1 个 opening，其余 combat
         if len(rooms) != dungeon_room_count:
             logger.error(
                 f"[GenerateDungeonRoomsSystem] 房间数量不符：期望 {dungeon_room_count}，"
                 f"实际 {len(rooms)}，中止"
             )
             return
-        if rooms and rooms[0].room_type != "entry":
+        if rooms and rooms[0].room_type != "opening":
             logger.error(
-                f"[GenerateDungeonRoomsSystem] 第一个房间 room_type 必须为 'entry'，"
+                f"[GenerateDungeonRoomsSystem] 第一个房间 room_type 必须为 'opening'，"
                 f"实际为 '{rooms[0].room_type}'，中止"
             )
             return

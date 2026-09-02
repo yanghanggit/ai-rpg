@@ -10,7 +10,7 @@ from .rpg_game_pipeline_manager import RPGGameProcessPipeline
 from .rpg_game import RPGGame
 from .dbg_home_pipeline import create_home_pipeline
 from .dbg_home_craft_pipeline import create_home_craft_pipeline
-from .dbg_dungeon_entry_room_pipeline import create_dungeon_entry_room_pipeline
+from .dbg_dungeon_opening_room_pipeline import create_dungeon_opening_room_pipeline
 from .dbg_dungeon_combat_room_pipeline import create_dungeon_combat_room_pipeline
 from .dbg_dungeon_generate_pipeline import create_dungeon_generate_pipeline
 from ..models import (
@@ -41,7 +41,7 @@ from ..models import (
     AnyItem,
     PlayerSession,
     CombatRoom,
-    EntryRoom,
+    OpeningRoom,
 )
 from ..entitas import Matcher, Entity
 
@@ -70,9 +70,9 @@ class DBGGame(RPGGame):
             create_home_craft_pipeline(self)
         )
 
-        # 副本入口流程（叙事 + 牌库生成，无战斗）
-        self._dungeon_entry_room_pipeline: Final[RPGGameProcessPipeline] = (
-            create_dungeon_entry_room_pipeline(self)
+        # 副本开场流程（叙事 + 牌库生成，无战斗）
+        self._dungeon_opening_room_pipeline: Final[RPGGameProcessPipeline] = (
+            create_dungeon_opening_room_pipeline(self)
         )
 
         # 副本战斗流程
@@ -88,7 +88,7 @@ class DBGGame(RPGGame):
         # 注册所有管道到管道管理器
         self.register_pipeline(self._home_pipeline)
         self.register_pipeline(self._home_craft_pipeline)
-        self.register_pipeline(self._dungeon_entry_room_pipeline)
+        self.register_pipeline(self._dungeon_opening_room_pipeline)
         self.register_pipeline(self._dungeon_combat_room_pipeline)
         self.register_pipeline(self._dungeon_generate_pipeline)
 
@@ -136,24 +136,24 @@ class DBGGame(RPGGame):
 
     ###############################################################################################################################################
     @property
-    def current_dungeon_entry_room(self) -> EntryRoom:
-        """断言当前处于入口房间中，返回入口房间"""
+    def current_dungeon_opening_room(self) -> OpeningRoom:
+        """断言当前处于开场房间中，返回开场房间"""
         assert self._world.dungeon is not None, "当前副本不存在"
         assert self._world.dungeon.current_room is not None, "当前副本房间不存在"
         assert isinstance(
-            self._world.dungeon.current_room, EntryRoom
-        ), "当前副本房间不是入口房间"
+            self._world.dungeon.current_room, OpeningRoom
+        ), "当前副本房间不是开场房间"
         return self._world.dungeon.current_room
 
     ###############################################################################################################################################
     @property
-    def is_current_room_dungeon_entry(self) -> bool:
-        """检查当前副本房间是否为入口房间"""
+    def is_current_room_dungeon_opening(self) -> bool:
+        """检查当前副本房间是否为开场房间"""
         if self._world.dungeon is None:
             return False
         if self._world.dungeon.current_room is None:
             return False
-        return isinstance(self._world.dungeon.current_room, EntryRoom)
+        return isinstance(self._world.dungeon.current_room, OpeningRoom)
 
     ###############################################################################################################################################
     def get_storage_entity(self) -> Optional[Entity]:

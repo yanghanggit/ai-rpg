@@ -145,7 +145,7 @@ def enter_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, str]:
     # 保底断言：pipeline 理应已清理完毕，此时不应存在残留战斗临时组件
     assert_no_residual_combat_state(dbg_game)
 
-    # 若是战斗房间则创建战斗实例并初始化；入口房间仅做场景传送，不创建战斗
+    # 若是战斗房间则创建战斗实例并初始化；开场房间仅做场景传送，不创建战斗
     if isinstance(current_room, CombatRoom):
         combat = Combat(name=stage_entity.name)
         combat.state = CombatState.INITIALIZATION

@@ -394,13 +394,13 @@ class DungeonCombatEquipGearItemResponse(BaseModel):
 
 
 @final
-class DungeonEntryInitRequest(BaseModel):
+class DungeonOpeningInitRequest(BaseModel):
     user_name: str
     game_name: str
 
 
 @final
-class DungeonEntryInitResponse(BaseModel):
+class DungeonOpeningInitResponse(BaseModel):
     task_id: str
     status: str
     message: str

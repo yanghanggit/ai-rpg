@@ -14,7 +14,7 @@ from ..models import (
     CombatRoom,
     Dungeon,
     DungeonRoom,
-    EntryRoom,
+    OpeningRoom,
     IllustrateDungeonAction,
     StageType,
     SystemMessage,
@@ -179,12 +179,12 @@ class AssembleDungeonSystem(ReactiveProcessor):
             )
 
             # 根据 room_type 创建对应的房间类型
-            if room_bp.room_type == "entry":
+            if room_bp.room_type == "opening":
                 stage.actors = []
-                rooms.append(EntryRoom(stage=stage))
+                rooms.append(OpeningRoom(stage=stage))
                 logger.info(
                     f"[AssembleDungeonSystem] Room {i}/{len(blueprint.rooms)} 构建完成:\n"
-                    f"  type:   entry\n"
+                    f"  type:   opening\n"
                     f"  stage:  {stage.name}"
                 )
             elif room_bp.room_type == "combat":

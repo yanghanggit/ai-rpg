@@ -26,19 +26,19 @@ class CombatRoom(DungeonRoom):
 
 ###############################################################################################################################################
 @final
-class EntryRoom(DungeonRoom):
-    """入口房间（非战斗叙事场景，用于副本开场铺垫）"""
+class OpeningRoom(DungeonRoom):
+    """开场房间（非战斗叙事场景，用于副本开场铺垫）"""
 
-    type: Literal["entry"] = "entry"  # type: ignore[assignment]
+    type: Literal["opening"] = "opening"  # type: ignore[assignment]
     initialized: bool = (
-        False  # 是否已完成入口初始化（叙事 + 牌库生成），用于幂等状态守护
+        False  # 是否已完成开场初始化（叙事 + 牌库生成），用于幂等状态守护
     )
 
 
 ###############################################################################################################################################
 # 判别联合类型：可基于 type 字段进行精确的反序列化
 AnyDungeonRoom = Annotated[
-    Union[DungeonRoom, EntryRoom, CombatRoom],
+    Union[DungeonRoom, OpeningRoom, CombatRoom],
     Field(discriminator="type"),
 ]
 

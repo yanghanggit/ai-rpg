@@ -216,7 +216,7 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
             if record.room_name not in combat_name_set:
                 logger.error(
                     f"[GenerateDungeonActorsSystem] actor '{record.actor_name}' "
-                    f"归属 entry 房间 '{record.room_name}'，中止"
+                    f"归属 opening 房间 '{record.room_name}'，中止"
                 )
                 return
             actors_by_room.setdefault(record.room_name, []).append(
@@ -242,7 +242,7 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
             profile=dungeon_profile,
         )
         for i, room in enumerate(rooms, start=1):
-            if room.room_type == "entry":
+            if room.room_type == "opening":
                 room_bp = DungeonRoomBlueprint(
                     room_type=room.room_type,
                     room_name=room.room_name,
@@ -251,7 +251,7 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
                 )
                 blueprint.rooms.append(room_bp)
                 logger.info(
-                    f"[GenerateDungeonActorsSystem] Entry room {i}/{len(rooms)} 写入 blueprint:\n"
+                    f"[GenerateDungeonActorsSystem] Opening room {i}/{len(rooms)} 写入 blueprint:\n"
                     f"  room_name: {room_bp.room_name}"
                 )
                 continue

@@ -1,7 +1,7 @@
 """背包与道具管理动作。
 
 包含所有与道具移动、外观更新、合成相关的游戏动作函数。
-（远征队 roster 相关已移至 agent_game_home.py）
+（队伍名单相关已移至 agent_game_home.py）
 """
 
 import os

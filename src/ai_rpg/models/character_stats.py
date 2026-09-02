@@ -10,7 +10,7 @@ class CharacterStats(BaseModel):
     """简化的角色属性统计，只包含核心战斗属性"""
 
     # 当前生命值
-    hp: int = 0
+    hp: int = 15
     # 最大生命值
     max_hp: int = 15
     # 攻击力

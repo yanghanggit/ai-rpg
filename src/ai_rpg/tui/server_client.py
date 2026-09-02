@@ -567,7 +567,7 @@ async def home_player_action(
 async def home_roster_add(
     user_name: str, game_name: str, member_name: str
 ) -> HomeRosterAddResponse:
-    """将成员加入远征队。"""
+    """将成员加入队伍。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
             server_config.base_url + "/api/home/roster/add/v1/",
@@ -584,7 +584,7 @@ async def home_roster_add(
 async def home_roster_remove(
     user_name: str, game_name: str, member_name: str
 ) -> HomeRosterRemoveResponse:
-    """将成员从远征队移除。"""
+    """将成员从队伍移除。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
             server_config.base_url + "/api/home/roster/remove/v1/",

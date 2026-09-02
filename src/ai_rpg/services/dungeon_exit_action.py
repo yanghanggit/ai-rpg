@@ -58,11 +58,11 @@ def exit_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, str]:
             logger.error("当前不处于战斗后状态，无法退出副本！必须先完成战斗。")
             return False, "战斗未结束，无法退出"
 
-    # 确保存在远征队成员
+    # 确保存在队伍成员
     party_member_entities = dbg_game.get_group(
         Matcher(all_of=[PartyMemberComponent])
     ).entities.copy()
-    assert len(party_member_entities) > 0, "没有找到远征队成员"
+    assert len(party_member_entities) > 0, "没有找到队伍成员"
 
     # 确保存在家园场景
     home_stages = dbg_game.get_group(Matcher(all_of=[HomeComponent])).entities.copy()
@@ -74,7 +74,7 @@ def exit_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, str]:
     # =========================================================================
     # 当前房间已结束（退出副本）：向副本导演追加该房间的事实记忆
     notify_dungeon_director_room_ended(dbg_game, dungeon, current_room)
-    # 传送远征队成员回家
+    # 传送队伍成员回家
     for party_member_entity in party_member_entities:
         dbg_game.add_human_message(
             party_member_entity,
@@ -85,7 +85,7 @@ def exit_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, str]:
         )
         stage_transition(dbg_game, {party_member_entity}, dest_stage)
 
-    # 恢复所有远征队成员状态
+    # 恢复所有队伍成员状态
     for party_member_entity in party_member_entities:
         if party_member_entity.has(DeathComponent):
             logger.info(f"移除死亡组件: {party_member_entity.name}")
@@ -99,7 +99,7 @@ def exit_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, str]:
 
         assert party_member_entity.has(PartyMemberComponent)
         party_member_entity.remove(PartyMemberComponent)
-        logger.info(f"从远征队移除: {party_member_entity.name}")
+        logger.info(f"从队伍移除: {party_member_entity.name}")
 
     # 离开战斗房间：保底断言 pipeline 已清理完毕，不应存在残留战斗临时组件
     if isinstance(current_room, CombatRoom):

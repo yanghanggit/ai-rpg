@@ -1,5 +1,5 @@
 """
-副本进入模块 —— 组建远征队并传送至副本第一关
+副本进入模块 —— 组建队伍并传送至副本第一关
 
 enter_dungeon 是进入副本的唯一入口。
 """
@@ -37,7 +37,7 @@ def _build_dungeon_enter_message(dungeon_name: str, stage_name: str) -> str:
 
 ###################################################################################################################################################################
 def enter_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, str]:
-    """组建远征队并传送至副本第一关，启动首个战斗序列。
+    """组建队伍并传送至副本第一关，启动首个战斗序列。
 
     流程分为两个阶段：
       1) 检查阶段 —— 仅读取、验证，不修改任何状态，允许早期返回。
@@ -86,45 +86,45 @@ def enter_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, str]:
         DungeonComponent
     ), f"{enter_room.stage.name} 没有 DungeonComponent 组件！"
 
-    # 确保此时不存在任何远征队标记（PartyMemberComponent）
+    # 确保此时不存在任何队伍标记（PartyMemberComponent）
     party_members = dbg_game.get_group(Matcher(all_of=[PartyMemberComponent])).entities
     assert (
         len(party_members) == 0
-    ), f"enter_dungeon 失败: 进入前已存在 {len(party_members)} 个远征队成员，请先退出当前副本"
+    ), f"enter_dungeon 失败: 进入前已存在 {len(party_members)} 个队伍成员，请先退出当前副本"
 
     # =========================================================================
     # 阶段 2：执行（不可中断，不回退）
     # =========================================================================
 
-    # 选择远征队成员并挂载 PartyMemberComponent
+    # 选择队伍成员并挂载 PartyMemberComponent
     player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
     party_member_entities: Set[Entity] = {player_entity}
-    logger.info(f"玩家 {player_entity.name} 将参与远征")
+    logger.info(f"玩家 {player_entity.name} 将参与本次副本")
     if player_entity.has(PartyRosterComponent):
         for member_name in player_entity.get(PartyRosterComponent).members:
             member_entity = dbg_game.get_actor_entity(member_name)
             assert (
                 member_entity is not None
-            ), f"远征队名单中的成员 {member_name!r} 不存在！"
+            ), f"队伍名单中的成员 {member_name!r} 不存在！"
             party_member_entities.add(member_entity)
-            logger.info(f"按名单将 {member_name} 加入远征队")
+            logger.info(f"按名单将 {member_name} 加入队伍")
     logger.info(
-        f"最终远征队成员 ({len(party_member_entities)}): "
+        f"最终队伍成员 ({len(party_member_entities)}): "
         f"{[e.name for e in party_member_entities]}"
     )
     for party_member in party_member_entities:
         party_member.replace(PartyMemberComponent, party_member.name)
         logger.debug(
-            f"将 {party_member.name} 添加 PartyMemberComponent 组件，标记为远征队成员"
+            f"将 {party_member.name} 添加 PartyMemberComponent 组件，标记为队伍成员"
         )
 
-    assert len(party_member_entities) > 0, "没有选择任何远征队成员，无法进入副本"
+    assert len(party_member_entities) > 0, "没有选择任何队伍成员，无法进入副本"
     for party_member in party_member_entities:
         assert not party_member.has(
             DeathComponent
-        ), f"远征队成员 {party_member.name} 已死亡，无法进入副本"
-        logger.info(f"远征队成员: {party_member.name}，目标副本：{dungeon.name}")
+        ), f"队伍成员 {party_member.name} 已死亡，无法进入副本"
+        logger.info(f"队伍成员: {party_member.name}，目标副本：{dungeon.name}")
 
     # 推进索引（-1 → 0）
     dungeon.current_room_index = 0

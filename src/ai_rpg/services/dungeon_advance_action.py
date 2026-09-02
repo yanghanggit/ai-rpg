@@ -73,11 +73,11 @@ async def advance_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, st
         DungeonComponent
     ), f"{next_room.stage.name} 没有 DungeonComponent 组件！"
 
-    # 确保存在远征队成员
+    # 确保存在队伍成员
     party_member_entities = dbg_game.get_group(
         Matcher(all_of=[PartyMemberComponent])
     ).entities.copy()
-    assert len(party_member_entities) > 0, "没有找到远征队成员"
+    assert len(party_member_entities) > 0, "没有找到队伍成员"
 
     # 当前房间若是战斗房间，必须处于战斗后且已胜利
     if isinstance(current_room, CombatRoom):

@@ -164,7 +164,7 @@ KNOWLEDGE_BASE: Final[Dict[str, List[str]]] = {
 def _make_attack_card() -> Card:
     """创建基础攻击卡牌（damage 为卡牌自身值，填充牌库时叠加角色 attack）。"""
     return Card(
-        name="纸刃",
+        name="攻击",
         description="对单个敌人造成直接伤害。",
         on_play_affixes=[],
         playable=True,
@@ -181,7 +181,7 @@ def _make_attack_card() -> Card:
 def _make_defense_card() -> Card:
     """创建基础防御卡牌（block 为卡牌自身格挡值，填充牌库时叠加角色 defense）。"""
     return Card(
-        name="纸盾",
+        name="防御",
         description="为自身提供格挡值，持有时提升防御。",
         on_play_affixes=[],
         playable=True,
@@ -316,8 +316,8 @@ def create_actor_paper_doll() -> Actor:
             _make_defense_card(),
             _make_defense_card(),
             # 2 张带【反伤】受击词缀的卡牌（demo：持有期间，被攻击时反噬出牌者）
-            _make_thorns_card(),
-            _make_thorns_card(),
+            # _make_thorns_card(),
+            # _make_thorns_card(),
         ],
     )
 
@@ -428,13 +428,13 @@ def create_wuming() -> Actor:
             _make_defense_card(),
             _make_defense_card(),
             # 1 张带 retain 的防御牌（demo：回合末保留在手牌中，不进入弃牌堆）
-            _make_retain_card(),
-            # 1 张带 ethereal（虚无）的攻击牌（demo：pass turn 时若仍在手牌则自动消耗）
-            _make_ethereal_card(),
-            # 1 张带【穿甲】即时词缀的攻击牌（demo：本次伤害无视目标防御）
-            _make_armor_piercing_card(),
-            # 1 张可传递的毒牌（demo：出牌时 copy 到目标手牌、从源手牌移除本体，回合结束时对非 source 者造成持续伤害）
-            _make_dot_card(),
+            # _make_retain_card(),
+            # # 1 张带 ethereal（虚无）的攻击牌（demo：pass turn 时若仍在手牌则自动消耗）
+            # _make_ethereal_card(),
+            # # 1 张带【穿甲】即时词缀的攻击牌（demo：本次伤害无视目标防御）
+            # _make_armor_piercing_card(),
+            # # 1 张可传递的毒牌（demo：出牌时 copy 到目标手牌、从源手牌移除本体，回合结束时对非 source 者造成持续伤害）
+            # _make_dot_card(),
         ],
     )
 

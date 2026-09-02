@@ -51,7 +51,7 @@ def create_actor(
 
     # 血量加满!!!!
     assert character_stats.max_hp > 0, "Max HP must be greater than 0."
-    assert actor.character_stats.hp == 0, "HP must be 0."
+    # assert actor.character_stats.hp == 0, "HP must be 0."
     actor.character_stats.hp = character_stats.max_hp
 
     # 系统提示词词

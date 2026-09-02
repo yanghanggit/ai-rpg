@@ -123,7 +123,7 @@ class NPCComponent(Component):
 @final
 @register_component_type
 class PartyMemberComponent(Component):
-    """标记角色为当前副本远征队活跃成员（NPCComponent 的子集，留守盟友不持有此组件）。"""
+    """标记角色为当前副本队伍活跃成员（NPCComponent 的子集，留守盟友不持有此组件）。"""
 
     name: str
 
@@ -132,10 +132,13 @@ class PartyMemberComponent(Component):
 @final
 @register_component_type
 class PartyRosterComponent(Component):
-    """挂载在玩家实体，记录本次远征预选同伴名单；为空时玩家独自冒险。"""
+    """挂载在玩家实体，记录本次副本预选同伴名单；为空时玩家独自冒险。
+
+    roster 即「名单」，对应 CLI 的 roster / roster-add / roster-remove 命令。
+    """
 
     name: str
-    members: List[str]  # 其他远征队员名称（不含玩家自身）
+    members: List[str]  # 其他队伍成员名称（不含玩家自身）
 
 
 ############################################################################################################

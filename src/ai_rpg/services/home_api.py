@@ -287,7 +287,7 @@ async def home_add_party_member(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=error_detail,
             )
-    return HomeRosterAddResponse(message=f"已将 {payload.member_name} 加入远征队")
+    return HomeRosterAddResponse(message=f"已将 {payload.member_name} 加入队伍")
 
 
 ###################################################################################################################################################################
@@ -314,7 +314,7 @@ async def home_remove_party_member(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=error_detail,
             )
-    return HomeRosterRemoveResponse(message=f"已将 {payload.member_name} 从远征队移除")
+    return HomeRosterRemoveResponse(message=f"已将 {payload.member_name} 从队伍移除")
 
 
 ###################################################################################################################################################################

@@ -74,7 +74,7 @@ def _build_alive_actor_lines(alive_actor_names: List[str]) -> str:
 def _camp_label(actor: Entity) -> str:
     """返回角色的阵营标签，帮助 LLM 判断「敌人/友方」目标。"""
     if actor.has(PartyMemberComponent):
-        return "远征队"
+        return "队伍"
     if actor.has(MonsterComponent):
         return "怪物"
     return "未知阵营"

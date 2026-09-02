@@ -298,7 +298,7 @@ class DungeonOverviewScreen(BaseGameScreen):
         log = self.query_one(RichLog)
         logger.info("_load_dungeons: 正在获取副本列表...")
 
-        # 显示远征队名单
+        # 显示队伍名单
         app = self.game_client
         if app.session is None:
             return
@@ -318,15 +318,15 @@ class DungeonOverviewScreen(BaseGameScreen):
                             break
                 roster = [player_actor] + members
                 log.write(
-                    "[bold yellow]── 当前远征队 ──────────────────────────────────────[/]"
+                    "[bold yellow]── 当前队伍 ──────────────────────────────────────[/]"
                 )
                 for member in roster:
                     tag = "  [bold magenta][玩家][/]" if member == player_actor else ""
                     log.write(f"  · [bold cyan]{display_name(member)}[/]{tag}")
                 log.write("")
-                logger.info(f"_load_dungeons: 远征队 roster={roster}")
+                logger.info(f"_load_dungeons: 队伍名单={roster}")
             except Exception as e:
-                logger.warning(f"_load_dungeons: 读取远征队失败 error={e}")
+                logger.warning(f"_load_dungeons: 读取队伍失败 error={e}")
 
         try:
             dungeons = await self._fetch_dungeons()

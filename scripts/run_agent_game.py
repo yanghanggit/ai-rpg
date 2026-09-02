@@ -12,9 +12,9 @@
   speak           --snapshot PATH --target NPC --content TEXT    与 NPC 对话
   switch-stage    --snapshot PATH --stage STAGE                  切换场景
   generate-dungeon --snapshot PATH                               LLM 动态生成副本
-  roster          --snapshot PATH                                查看远征队名单（只读）
-  roster-add      --snapshot PATH --member NPC                  添加远征队成员
-  roster-remove   --snapshot PATH --member NPC                  移除远征队成员
+  roster          --snapshot PATH                                查看队伍名单（只读）
+  roster-add      --snapshot PATH --member NPC                  添加队伍成员
+  roster-remove   --snapshot PATH --member NPC                  移除队伍成员
   storage-to-inventory  --snapshot PATH --item ITEM             储物箱→随身背包
   inventory-to-storage  --snapshot PATH --item ITEM             随身背包→储物箱
   wear-costume    --snapshot PATH --item ITEM --target ACTOR    穿时装
@@ -691,10 +691,10 @@ def generate_dungeon_cmd(snapshot: str) -> None:
 @click.option(
     "--member",
     required=True,
-    help="要加入远征队的盟友角色名称",
+    help="要加入队伍的盟友角色名称",
 )
 def roster_add(snapshot: str, member: str) -> None:
-    """将指定盟友加入远征队名单并归档。"""
+    """将指定盟友加入队伍名单并归档。"""
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
@@ -731,7 +731,7 @@ def roster_add(snapshot: str, member: str) -> None:
     help="要移除的盟友角色名称",
 )
 def roster_remove(snapshot: str, member: str) -> None:
-    """将指定盟友从远征队名单移除并归档。"""
+    """将指定盟友从队伍名单移除并归档。"""
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
@@ -763,7 +763,7 @@ def roster_remove(snapshot: str, member: str) -> None:
     help="存档目录路径",
 )
 def roster(snapshot: str) -> None:
-    """打印远征队名单（只读，不归档）。"""
+    """打印队伍名单（只读，不归档）。"""
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
@@ -782,7 +782,7 @@ def roster(snapshot: str) -> None:
 
     members = asyncio.run(get_party_roster_game(world, player_session))
     if members:
-        click.echo("\n远征队当前名单：")
+        click.echo("\n队伍当前名单：")
         for m in members:
             click.echo(f"  - {m}")
     else:

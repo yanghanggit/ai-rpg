@@ -141,7 +141,7 @@ class CombatArchiveSystem(ExecuteProcessor):
         # 获取场景上的所有角色（包括存活和死亡的）
         actors_in_stage = self._game.get_actors_in_stage(player_entity)
 
-        # 过滤出远征队成员
+        # 过滤出队伍成员
         ally_actors = [
             actor for actor in actors_in_stage if actor.has(PartyMemberComponent)
         ]

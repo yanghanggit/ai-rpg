@@ -87,7 +87,7 @@ def activate_all_card_draws(
     dbg_game: DBGGame,
 ) -> Tuple[bool, str]:
     """
-    为当前场景中所有存活的战斗角色（远征队成员 + 敌方）激活抽牌动作。
+    为当前场景中所有存活的战斗角色（队伍成员 + 敌方）激活抽牌动作。
     """
 
     # 检查当前是否在玩家所在的副本场景中
@@ -112,7 +112,7 @@ def activate_all_card_draws(
     player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "activate_all_card_draws: player_entity is None"
 
-    # 获取当前场景中所有存活的战斗角色，包括远征队成员和怪物
+    # 获取当前场景中所有存活的战斗角色，包括队伍成员和怪物
     all_entities = get_alive_party_members_in_stage(
         player_entity, dbg_game
     ) + get_alive_monsters_in_stage(player_entity, dbg_game)
@@ -143,12 +143,12 @@ async def activate_play_cards_specified(
     targets: List[str],
 ) -> Tuple[bool, str]:
     """
-    让指定远征队员打出指定名称的手牌。
+    让指定队伍成员打出指定名称的手牌。
     """
 
-    # 检查当前是否在远征阶段，如果不在则无法出牌。
+    # 检查当前是否在副本阶段，如果不在则无法出牌。
     if not dbg_game.is_player_in_dungeon_stage:
-        msg = "当前不在远征阶段，无法出牌"
+        msg = "当前不在副本阶段，无法出牌"
         logger.error(msg)
         return False, msg
 
@@ -164,7 +164,7 @@ async def activate_play_cards_specified(
         logger.error(f"activate_play_cards_specified: {error_msg}")
         return False, error_msg
 
-    assert entity.has(PartyMemberComponent), f"角色 {actor_name} 不是远征队员"
+    assert entity.has(PartyMemberComponent), f"角色 {actor_name} 不是队伍成员"
 
     # 获取角色的手牌组件，并尝试在手牌中找到指定名称的卡牌。
     hand_comp = entity.get(HandComponent)
@@ -255,7 +255,7 @@ def activate_retreat(
     dbg_game: DBGGame,
 ) -> Tuple[bool, str]:
     """
-    为所有远征队成员激活撤退动作。
+    为所有队伍成员激活撤退动作。
     """
 
     # 检查当前是否处于玩家的副本阶段，如果不是则无法激活撤退动作。
@@ -276,21 +276,21 @@ def activate_retreat(
         logger.error(error_msg)
         return False, error_msg
 
-    # 获取当前副本中所有远征队成员实体，用于为他们添加撤退动作组件。
+    # 获取当前副本中所有队伍成员实体，用于为他们添加撤退动作组件。
     party_member_entities = dbg_game.get_group(
         Matcher(all_of=[PartyMemberComponent])
     ).entities
     assert (
         len(party_member_entities) > 0
-    ), "激活撤退动作失败: 没有找到远征队成员, 至少有一个player"
+    ), "激活撤退动作失败: 没有找到队伍成员, 至少有一个player"
 
-    # 为每个远征队成员添加撤退动作组件
+    # 为每个队伍成员添加撤退动作组件
     for party_member_entity in party_member_entities:
         assert party_member_entity.has(
             PartyMemberComponent
         ), f"Entity {party_member_entity.name} must have PartyMemberComponent"
 
-        # 为每个远征队成员添加撤退动作组件，触发 RetreatActionSystem 的处理逻辑
+        # 为每个队伍成员添加撤退动作组件，触发 RetreatActionSystem 的处理逻辑
         party_member_entity.replace(
             RetreatAction,
             party_member_entity.name,
@@ -299,7 +299,7 @@ def activate_retreat(
 
     return (
         True,
-        f"成功为 {len(party_member_entities)} 个远征队成员激活撤退动作",
+        f"成功为 {len(party_member_entities)} 个队伍成员激活撤退动作",
     )
 
 

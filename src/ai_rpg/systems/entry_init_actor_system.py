@@ -1,4 +1,4 @@
-"""副本入口初始化系统（角色侧）：为入口场景内的远征队成员注入场景环境信息，并为远征队成员触发初始牌库生成（怪物牌库在各自战斗房间生成）。"""
+"""副本入口初始化系统（角色侧）：为入口场景内的队伍成员注入场景环境信息，并为队伍成员触发初始牌库生成（怪物牌库在各自战斗房间生成）。"""
 
 from dataclasses import dataclass
 from typing import Final, List, Set, final, override
@@ -75,7 +75,7 @@ def _build_entry_init_prompt(
 ###################################################################################################################################################################
 @final
 class EntryInitActorSystem(ExecuteProcessor):
-    """副本入口初始化系统（角色侧）：为入口场景内的远征队成员注入场景环境信息（无 LLM），并为远征队成员添加 GenerateDeckAction 触发初始牌库生成。"""
+    """副本入口初始化系统（角色侧）：为入口场景内的队伍成员注入场景环境信息（无 LLM），并为队伍成员添加 GenerateDeckAction 触发初始牌库生成。"""
 
     def __init__(self, game: DBGGame) -> None:
         self._game: Final[DBGGame] = game
@@ -94,7 +94,7 @@ class EntryInitActorSystem(ExecuteProcessor):
             return
 
         logger.info(
-            "入口初始化（角色侧）开始：注入入口场景环境信息 + 为远征队成员触发牌库生成..."
+            "入口初始化（角色侧）开始：注入入口场景环境信息 + 为队伍成员触发牌库生成..."
         )
 
         # 获取玩家实体，player 所在场景即入口场景
@@ -111,9 +111,9 @@ class EntryInitActorSystem(ExecuteProcessor):
         # 获取场景环境组件
         stage_description_comp = current_stage_entity.get(StageDescriptionComponent)
 
-        # 入口场景内仅有远征队成员（怪物分散在各战斗房间，不在此处注入场景环境信息）
+        # 入口场景内仅有队伍成员（怪物分散在各战斗房间，不在此处注入场景环境信息）
         actor_entities = get_alive_actors_in_stage(self._game, player_entity)
-        assert len(actor_entities) > 0, "入口场景内不可能没有远征队成员！"
+        assert len(actor_entities) > 0, "入口场景内不可能没有队伍成员！"
 
         # 为每个角色注入入口场景环境信息（无 LLM 调用）
         self._inject_entry_scene_environment(
@@ -122,7 +122,7 @@ class EntryInitActorSystem(ExecuteProcessor):
             stage_description=stage_description_comp.narrative,
         )
 
-        # 为远征队成员添加 GenerateDeckAction，触发初始牌库生成（怪物牌库在各自战斗房间生成）
+        # 为队伍成员添加 GenerateDeckAction，触发初始牌库生成（怪物牌库在各自战斗房间生成）
         # self._add_generate_deck_actions()
 
         # 状态守护：标记入口房间已完成初始化，避免重复触发
@@ -216,7 +216,7 @@ class EntryInitActorSystem(ExecuteProcessor):
 
     ###################################################################################################################################################################
     # def _add_generate_deck_actions(self) -> None:
-    #     """为所有远征队成员添加 GenerateDeckAction（每次进本追加新牌，牌库累积增长）。"""
+    #     """为所有队伍成员添加 GenerateDeckAction（每次进本追加新牌，牌库累积增长）。"""
     #     count = 0
 
     #     party_entities = self._game.get_group(
@@ -230,12 +230,12 @@ class EntryInitActorSystem(ExecuteProcessor):
     #         deck_comp = entity.get(DeckComponent)
     #         assert (
     #             deck_comp is not None
-    #         ), f"远征队成员 {entity.name} 缺少 DeckComponent！"
+    #         ), f"队伍成员 {entity.name} 缺少 DeckComponent！"
 
     #         entity.replace(GenerateDeckAction, entity.name)
-    #         logger.debug(f"[{entity.name}] 已添加 GenerateDeckAction（远征队）")
+    #         logger.debug(f"[{entity.name}] 已添加 GenerateDeckAction（队伍）")
     #         count += 1
 
     #     logger.info(
-    #         f"[EntryInitActorSystem] 完成，已为 {count} 个远征队成员添加 GenerateDeckAction"
+    #         f"[EntryInitActorSystem] 完成，已为 {count} 个队伍成员添加 GenerateDeckAction"
     #     )

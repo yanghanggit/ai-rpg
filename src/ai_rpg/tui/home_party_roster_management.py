@@ -1,4 +1,4 @@
-"""远征队管理 Screen"""
+"""队伍管理 Screen"""
 
 from typing import List, Set
 from loguru import logger
@@ -17,14 +17,14 @@ from .server_client import (
 from .utils import display_name
 
 ROSTER_HEADER = """\
-[bold cyan]── 远征队管理 ──────────────────────────────────────[/]
+[bold cyan]── 队伍管理 ──────────────────────────────────────[/]
 
 输入编号 toggle 成员（未在队 → 加入，在队 → 移除），[bold]0[/] 清屏，[bold]Escape[/] 返回。
 """
 
 
 class HomePartyRosterManagementScreen(BaseGameScreen):
-    """远征队管理 Screen：列出可加入的盟友，用编号 toggle 加入/移除远征队。"""
+    """队伍管理 Screen：列出可加入的盟友，用编号 toggle 加入/移除队伍。"""
 
     CSS = """
     HomePartyRosterManagementScreen {
@@ -136,7 +136,7 @@ class HomePartyRosterManagementScreen(BaseGameScreen):
     async def _fetch_current_roster(
         self, user_name: str, game_name: str, player_actor_name: str
     ) -> Set[str]:
-        """读取玩家实体的 PartyRosterComponent，取得当前远征队名单。"""
+        """读取玩家实体的 PartyRosterComponent，取得当前队伍名单。"""
         resp = await fetch_entities_details(user_name, game_name, [player_actor_name])
         for entity in resp.entities:
             for comp in entity.components:
@@ -146,9 +146,9 @@ class HomePartyRosterManagementScreen(BaseGameScreen):
 
     @work
     async def _refresh(self) -> None:
-        """通过实时 GET 重新拉取盟友列表与当前远征队名单并渲染，不做任何本地缓存。"""
+        """通过实时 GET 重新拉取盟友列表与当前队伍名单并渲染，不做任何本地缓存。"""
         log = self.query_one(RichLog)
-        log.write("[dim]正在加载远征队信息...[/]")
+        log.write("[dim]正在加载队伍信息...[/]")
 
         app = self.game_client
         if app.session is None:
@@ -168,7 +168,7 @@ class HomePartyRosterManagementScreen(BaseGameScreen):
             return
 
         if not npc_list:
-            log.write("[yellow]没有可加入远征队的盟友。[/]")
+            log.write("[yellow]没有可加入队伍的盟友。[/]")
             return
 
         try:
@@ -177,9 +177,9 @@ class HomePartyRosterManagementScreen(BaseGameScreen):
             )
         except Exception as e:
             logger.error(
-                f"HomePartyRosterManagementScreen._refresh: 查询当前远征队失败 error={e}"
+                f"HomePartyRosterManagementScreen._refresh: 查询当前队伍失败 error={e}"
             )
-            log.write(f"[bold red]❌ 读取当前远征队失败: {e}[/]")
+            log.write(f"[bold red]❌ 读取当前队伍失败: {e}[/]")
             return
 
         logger.info(
@@ -189,7 +189,7 @@ class HomePartyRosterManagementScreen(BaseGameScreen):
 
     @work
     async def _toggle_member(self, idx: int) -> None:
-        """根据编号切换成员的远征队状态；编号范围与在队状态均通过实时 GET 判定，不使用本地缓存。"""
+        """根据编号切换成员的队伍状态；编号范围与在队状态均通过实时 GET 判定，不使用本地缓存。"""
         log = self.query_one(RichLog)
 
         app = self.game_client
@@ -208,7 +208,7 @@ class HomePartyRosterManagementScreen(BaseGameScreen):
             return
 
         if not npc_list:
-            log.write("[yellow]没有可加入远征队的盟友。[/]")
+            log.write("[yellow]没有可加入队伍的盟友。[/]")
             return
 
         if idx < 0 or idx >= len(npc_list):
@@ -222,8 +222,8 @@ class HomePartyRosterManagementScreen(BaseGameScreen):
                 user_name, game_name, player_actor_name
             )
         except Exception as e:
-            logger.error(f"RosterScreen._toggle_member: 查询当前远征队失败 error={e}")
-            log.write(f"[bold red]❌ 读取当前远征队失败: {e}[/]")
+            logger.error(f"RosterScreen._toggle_member: 查询当前队伍失败 error={e}")
+            log.write(f"[bold red]❌ 读取当前队伍失败: {e}[/]")
             return
 
         inp = self.query_one(Input)
@@ -241,12 +241,12 @@ class HomePartyRosterManagementScreen(BaseGameScreen):
 
     async def _add_member(self, user_name: str, game_name: str, npc_name: str) -> None:
         log = self.query_one(RichLog)
-        log.write(f"[dim]▶ 正在将 {display_name(npc_name)} 加入远征队...[/]")
+        log.write(f"[dim]▶ 正在将 {display_name(npc_name)} 加入队伍...[/]")
         logger.info(f"RosterScreen._add_member: npc_name={npc_name}")
 
         try:
             await home_roster_add(user_name, game_name, npc_name)
-            log.write(f"[bold green]✅ {display_name(npc_name)} 已加入远征队[/]")
+            log.write(f"[bold green]✅ {display_name(npc_name)} 已加入队伍[/]")
             logger.info(f"RosterScreen._add_member: 成功 npc_name={npc_name}")
         except Exception as e:
             logger.error(
@@ -258,12 +258,12 @@ class HomePartyRosterManagementScreen(BaseGameScreen):
         self, user_name: str, game_name: str, npc_name: str
     ) -> None:
         log = self.query_one(RichLog)
-        log.write(f"[dim]▶ 正在将 {display_name(npc_name)} 从远征队移除...[/]")
+        log.write(f"[dim]▶ 正在将 {display_name(npc_name)} 从队伍移除...[/]")
         logger.info(f"RosterScreen._remove_member: npc_name={npc_name}")
 
         try:
             await home_roster_remove(user_name, game_name, npc_name)
-            log.write(f"[bold green]✅ {display_name(npc_name)} 已从远征队移除[/]")
+            log.write(f"[bold green]✅ {display_name(npc_name)} 已从队伍移除[/]")
             logger.info(f"RosterScreen._remove_member: 成功 npc_name={npc_name}")
         except Exception as e:
             logger.error(

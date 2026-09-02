@@ -120,7 +120,7 @@ def get_alive_actors_in_stage(game: DBGGame, entity: Entity) -> Set[Entity]:
 def get_alive_party_members_in_stage(
     anchor_entity: Entity, dbg_game: DBGGame
 ) -> List[Entity]:
-    """获取锚点实体所在场景中所有存活的远征队成员。"""
+    """获取锚点实体所在场景中所有存活的队伍成员。"""
     actor_entities = get_alive_actors_in_stage(dbg_game, anchor_entity)
     return [entity for entity in actor_entities if entity.has(PartyMemberComponent)]
 
@@ -156,7 +156,7 @@ def _expand_camp_members(
     if anchor_entity.has(MonsterComponent):
         return get_alive_monsters_in_stage(anchor_entity, dbg_game), ""
 
-    # 如果锚点实体既不属于远征队也不属于怪物阵营，则返回错误。
+    # 如果锚点实体既不属于队伍也不属于怪物阵营，则返回错误。
     return [], f"目标 '{anchor_target_name}' 不属于任何可识别阵营"
 
 

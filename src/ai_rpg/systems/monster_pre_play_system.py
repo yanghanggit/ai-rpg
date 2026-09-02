@@ -299,7 +299,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         monster_stats = compute_character_stats(entity)
         energy = get_energy(entity)
 
-        # 获取场上存活的远征队成员名称（对手，不传入血量）
+        # 获取场上存活的队伍成员名称（对手，不传入血量）
         alive_actors = get_alive_actors_in_stage(self._game, entity)
         opponent_names: List[str] = [
             actor.name for actor in alive_actors if actor.has(PartyMemberComponent)

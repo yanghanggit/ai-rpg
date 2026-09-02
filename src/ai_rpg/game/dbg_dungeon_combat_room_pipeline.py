@@ -50,6 +50,7 @@ def create_dungeon_combat_room_pipeline(
         UseConsumableItemArbitrationSystem,
     )
     from ..systems.turn_end_arbitration_system import TurnEndArbitrationSystem
+
     from ..systems.combat_archive_system import CombatArchiveSystem
     from ..systems.combat_post_combat_transition_system import (
         CombatPostCombatTransitionSystem,
@@ -57,7 +58,7 @@ def create_dungeon_combat_room_pipeline(
     from ..systems.combat_loot_system import CombatLootSystem
     from ..systems.fill_draw_pile_system import FillDrawPileSystem
 
-    # from ..systems.generate_deck_action_system import GenerateDeckActionSystem
+    from ..systems.generate_deck_action_system import GenerateDeckActionSystem
     from ..systems.combat_pile_teardown_system import CombatPileTeardownSystem
     from ..systems.stage_description_system import (
         StageDescriptionSystem,
@@ -93,9 +94,9 @@ def create_dungeon_combat_room_pipeline(
     processors.add(CombatInitStageSystem(dbg_game))
 
     # 怪物牌库生成系统：响应 GenerateDeckAction，为当前战斗房间的怪物生成初始牌库；
-    # 远征队牌库已在入口房间生成，此处因牌库非空被 filter 跳过
+    # 队伍牌库已在入口房间生成，此处因牌库非空被 filter 跳过
     # （临时停用：改用 Actor.cards 预置牌库）
-    # processors.add(GenerateDeckActionSystem(dbg_game))
+    processors.add(GenerateDeckActionSystem(dbg_game))
 
     # 抽牌堆填充系统（从 DeckComponent 填 DrawPileComponent，零 LLM）
     processors.add(FillDrawPileSystem(dbg_game))

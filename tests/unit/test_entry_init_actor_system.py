@@ -171,7 +171,7 @@ def test_inject_entry_scene_environment_skips_already_injected_actor(
 
 #     system._add_generate_deck_actions()
 
-#     # 只为远征队添加；怪物牌库改由战斗管道生成
+#     # 只为队伍添加；怪物牌库改由战斗管道生成
 #     assert ally.has(GenerateDeckAction)
 #     assert not monster.has(GenerateDeckAction)
 #     mock_game.get_group.assert_called_once()

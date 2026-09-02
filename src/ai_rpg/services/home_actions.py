@@ -179,46 +179,46 @@ def activate_plan_action(dbg_game: DBGGame, actor_names: List[str]) -> Tuple[boo
 ###################################################################################################################################################################
 def add_party_member(dbg_game: DBGGame, member_name: str) -> Tuple[bool, str]:
     """
-    将盟友加入远征队名单。
+    将盟友加入队伍名单。
     """
 
-    # 检查玩家是否在家园场景中，如果不在则无法修改远征队名单。
+    # 检查玩家是否在家园场景中，如果不在则无法修改队伍名单。
     if not dbg_game.is_player_in_home_stage:
-        error_detail = "玩家不在家园场景中，无法修改远征队名单"
-        logger.error(f"添加远征队成员失败: {error_detail}")
+        error_detail = "玩家不在家园场景中，无法修改队伍名单"
+        logger.error(f"添加队伍成员失败: {error_detail}")
         return False, error_detail
 
-    # 获取要加入远征队的角色实体，验证其存在且为 NPC。
+    # 获取要加入队伍的角色实体，验证其存在且为 NPC。
     member_entity = dbg_game.get_actor_entity(member_name)
     if member_entity is None:
         error_detail = f"角色 {member_name} 不存在"
-        logger.error(f"添加远征队成员失败: {error_detail}")
+        logger.error(f"添加队伍成员失败: {error_detail}")
         return False, error_detail
 
-    # 检查角色是否为 NPC，如果不是则无法加入远征队。
+    # 检查角色是否为 NPC，如果不是则无法加入队伍。
     if not member_entity.has(NPCComponent):
-        error_detail = f"角色 {member_name} 不是 NPC，无法加入远征队"
-        logger.error(f"添加远征队成员失败: {error_detail}")
+        error_detail = f"角色 {member_name} 不是 NPC，无法加入队伍"
+        logger.error(f"添加队伍成员失败: {error_detail}")
         return False, error_detail
 
-    # 检查角色是否为玩家自身，如果是则无法加入远征队。
+    # 检查角色是否为玩家自身，如果是则无法加入队伍。
     if member_entity.has(PlayerComponent):
-        error_detail = "不能将玩家自身加入远征队名单"
-        logger.error(f"添加远征队成员失败: {error_detail}")
+        error_detail = "不能将玩家自身加入队伍名单"
+        logger.error(f"添加队伍成员失败: {error_detail}")
         return False, error_detail
 
-    # 获取玩家实体，确保玩家实体存在，以便后续操作远征队名单。
+    # 获取玩家实体，确保玩家实体存在，以便后续操作队伍名单。
     player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
 
-    # 检查远征队名单中是否已存在该成员
+    # 检查队伍名单中是否已存在该成员
     if player_entity.has(PartyRosterComponent):
 
-        # 获取玩家实体当前的远征队成员列表，以便检查是否已经存在要添加的成员。
+        # 获取玩家实体当前的队伍成员列表，以便检查是否已经存在要添加的成员。
         existing_members = list(player_entity.get(PartyRosterComponent).members)
         if member_name in existing_members:
-            error_detail = f"{member_name} 已在远征队名单中"
-            logger.warning(f"添加远征队成员失败: {error_detail}")
+            error_detail = f"{member_name} 已在队伍名单中"
+            logger.warning(f"添加队伍成员失败: {error_detail}")
             return False, error_detail
 
         # 将新的成员列表添加到现有成员列表中，准备更新玩家实体的 PartyRosterComponent。
@@ -235,44 +235,44 @@ def add_party_member(dbg_game: DBGGame, member_name: str) -> Tuple[bool, str]:
         player_entity.name,
         new_members,
     )
-    logger.debug(f"将 {member_name} 加入远征队名单")
+    logger.debug(f"将 {member_name} 加入队伍名单")
     return True, ""
 
 
 ###################################################################################################################################################################
 def remove_party_member(dbg_game: DBGGame, member_name: str) -> Tuple[bool, str]:
     """
-    将盟友从远征队名单中移除。
+    将盟友从队伍名单中移除。
     """
 
-    # 检查玩家是否在家园场景中，如果不在则无法修改远征队名单。
+    # 检查玩家是否在家园场景中，如果不在则无法修改队伍名单。
     if not dbg_game.is_player_in_home_stage:
-        error_detail = "玩家不在家园场景中，无法修改远征队名单"
-        logger.error(f"移除远征队成员失败: {error_detail}")
+        error_detail = "玩家不在家园场景中，无法修改队伍名单"
+        logger.error(f"移除队伍成员失败: {error_detail}")
         return False, error_detail
 
-    # 获取玩家实体，确保玩家实体存在，以便后续操作远征队名单。
+    # 获取玩家实体，确保玩家实体存在，以便后续操作队伍名单。
     player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
 
     # 检查玩家实体是否拥有 PartyRosterComponent，如果没有则无法移除成员。
     if not player_entity.has(PartyRosterComponent):
-        error_detail = f"{member_name} 不在远征队名单中"
-        logger.warning(f"移除远征队成员失败: {error_detail}")
+        error_detail = f"{member_name} 不在队伍名单中"
+        logger.warning(f"移除队伍成员失败: {error_detail}")
         return False, error_detail
 
-    # 获取玩家实体当前的远征队成员列表，以便检查要移除的成员是否存在。
+    # 获取玩家实体当前的队伍成员列表，以便检查要移除的成员是否存在。
     roster = player_entity.get(PartyRosterComponent)
     if member_name not in roster.members:
-        error_detail = f"{member_name} 不在远征队名单中"
-        logger.warning(f"移除远征队成员失败: {error_detail}")
+        error_detail = f"{member_name} 不在队伍名单中"
+        logger.warning(f"移除队伍成员失败: {error_detail}")
         return False, error_detail
 
-    # 更新远征队名单，若移除后名单为空则移除 PartyRosterComponent
+    # 更新队伍名单，若移除后名单为空则移除 PartyRosterComponent
     new_members = [m for m in roster.members if m != member_name]
     if new_members:
 
-        # 如果移除成员后远征队名单仍有其他成员，则更新玩家实体的 PartyRosterComponent。
+        # 如果移除成员后队伍名单仍有其他成员，则更新玩家实体的 PartyRosterComponent。
         player_entity.replace(
             PartyRosterComponent,
             player_entity.name,
@@ -280,26 +280,26 @@ def remove_party_member(dbg_game: DBGGame, member_name: str) -> Tuple[bool, str]
         )
     else:
 
-        # 如果移除成员后远征队名单为空，则移除玩家实体的 PartyRosterComponent。
+        # 如果移除成员后队伍名单为空，则移除玩家实体的 PartyRosterComponent。
         player_entity.remove(PartyRosterComponent)
-        logger.debug(f"远征队名单为空，移除 PartyRosterComponent")
+        logger.debug(f"队伍名单为空，移除 PartyRosterComponent")
 
-    # 记录移除远征队成员的操作日志，并返回成功状态。
-    logger.debug(f"将 {member_name} 从远征队名单移除")
+    # 记录移除队伍成员的操作日志，并返回成功状态。
+    logger.debug(f"将 {member_name} 从队伍名单移除")
     return True, ""
 
 
 ###################################################################################################################################################################
 def get_party_roster(dbg_game: DBGGame) -> List[str]:
     """
-    查阅当前远征队名单（不含玩家自身）。
+    查阅当前队伍名单（不含玩家自身）。
     """
     player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "玩家实体不存在！"
     if not player_entity.has(PartyRosterComponent):
         return []  # 玩家实体没有 PartyRosterComponent，返回空列表
 
-    # 返回玩家实体当前的远征队成员列表（不含玩家自身）。
+    # 返回玩家实体当前的队伍成员列表（不含玩家自身）。
     return list(player_entity.get(PartyRosterComponent).members)
 
 

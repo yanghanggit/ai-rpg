@@ -62,7 +62,7 @@ class CombatOutcomeSystem(ExecuteProcessor):
         # 根据判定结果清理回合状态并广播战斗结果
         clear_round_state(self._game)
 
-        # 广播战斗结果给远征队成员
+        # 广播战斗结果给队伍成员
         self._broadcast_result_to_party_members(combat_result)
 
     ########################################################################################################################################################################
@@ -165,7 +165,7 @@ class CombatOutcomeSystem(ExecuteProcessor):
 
         for entity in actors_in_stage:
 
-            # 仅向远征队成员广播结果消息，非远征队成员（如敌人）不发送
+            # 仅向队伍成员广播结果消息，非队伍成员（如敌人）不发送
             if not entity.has(PartyMemberComponent):
                 continue
 

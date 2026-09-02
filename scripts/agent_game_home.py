@@ -1,7 +1,7 @@
 """家园模式动作。
 
 包含所有在家园模式（HomeComponent 场景）下执行的游戏动作函数，
-包括剧情推进、对话、场景切换、副本进入/生成，以及远征队 roster 编排。
+包括剧情推进、对话、场景切换、副本进入/生成，以及队伍名单编排。
 """
 
 import os
@@ -40,16 +40,16 @@ async def add_party_member_game(
     member_name: str,
     save_dir: Path,
 ) -> DBGGame:
-    """将指定盟友加入远征队名单并归档。"""
+    """将指定盟友加入队伍名单并归档。"""
     terminal_game = await restore_game(world, player_session)
 
     success, error_detail = add_party_member(terminal_game, member_name)
     if not success:
-        logger.error(f"添加远征队成员失败: {error_detail}")
+        logger.error(f"添加队伍成员失败: {error_detail}")
         return terminal_game
 
     store_game(terminal_game, save_dir)
-    logger.info(f"已将 {member_name} 加入远征队名单，存档: {save_dir}")
+    logger.info(f"已将 {member_name} 加入队伍名单，存档: {save_dir}")
     return terminal_game
 
 
@@ -60,16 +60,16 @@ async def remove_party_member_game(
     member_name: str,
     save_dir: Path,
 ) -> DBGGame:
-    """将指定盟友从远征队名单移除并归档。"""
+    """将指定盟友从队伍名单移除并归档。"""
     terminal_game = await restore_game(world, player_session)
 
     success, error_detail = remove_party_member(terminal_game, member_name)
     if not success:
-        logger.error(f"移除远征队成员失败: {error_detail}")
+        logger.error(f"移除队伍成员失败: {error_detail}")
         return terminal_game
 
     store_game(terminal_game, save_dir)
-    logger.info(f"已将 {member_name} 从远征队名单移除，存档: {save_dir}")
+    logger.info(f"已将 {member_name} 从队伍名单移除，存档: {save_dir}")
     return terminal_game
 
 
@@ -78,7 +78,7 @@ async def get_party_roster_game(
     world: WorldState,
     player_session: PlayerSession,
 ) -> List[str]:
-    """返回当前远征队名单（只读，不归档）。"""
+    """返回当前队伍名单（只读，不归档）。"""
     terminal_game = await restore_game(world, player_session)
     return get_party_roster(terminal_game)
 

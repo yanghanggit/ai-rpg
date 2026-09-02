@@ -13,7 +13,7 @@ from ..game.dbg_combat_processor import (
 )
 from ..models import (
     FillDrawPileAction,
-    GenerateDeckAction,
+    InitializeDeckAction,
     StageDescriptionComponent,
     DrawPileComponent,
     DiscardPileComponent,
@@ -134,7 +134,7 @@ class CombatInitActorSystem(ExecuteProcessor):
             actor_entity.replace(FillDrawPileAction, actor_entity.name)
             logger.debug(f"[{actor_entity.name}] 已添加 FillDrawPileAction")
 
-        # 怪物牌库已通过 blueprint/dungeon 的 cards 预置；GenerateDeckActionSystem 已临时停用
+        # 怪物牌库已通过 blueprint/dungeon 的 cards 预置；此处为怪物补充式触发牌库初始化
         for actor_entity in actor_entities:
             if not actor_entity.has(MonsterComponent):
                 continue
@@ -151,9 +151,8 @@ class CombatInitActorSystem(ExecuteProcessor):
                 deck_comp is not None and len(deck_comp.cards) > 0
             ), f"怪物 {actor_entity.name} 缺少预置牌库（DeckComponent）！"
 
-        # 牌库已预置，无需在此触发 LLM 生成
-        actor_entity.replace(GenerateDeckAction, actor_entity.name)
-        logger.debug(f"[{actor_entity.name}] 已添加 GenerateDeckAction（怪物）")
+            actor_entity.replace(InitializeDeckAction, actor_entity.name)
+            logger.debug(f"[{actor_entity.name}] 已触发牌库初始化（怪物）")
 
     ###################################################################################################################################################################
     def _initialize_piles(self, actor_entities: Set[Entity]) -> None:

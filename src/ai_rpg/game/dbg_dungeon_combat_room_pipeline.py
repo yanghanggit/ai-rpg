@@ -51,14 +51,14 @@ def create_dungeon_combat_room_pipeline(
     )
     from ..systems.turn_end_arbitration_system import TurnEndArbitrationSystem
 
-    from ..systems.combat_archive_system import CombatArchiveSystem
+    # from ..systems.combat_archive_system import CombatArchiveSystem  # 已拔掉：见下方注册处说明
     from ..systems.combat_post_combat_transition_system import (
         CombatPostCombatTransitionSystem,
     )
     from ..systems.combat_loot_system import CombatLootSystem
     from ..systems.fill_draw_pile_system import FillDrawPileSystem
 
-    from ..systems.generate_deck_action_system import GenerateDeckActionSystem
+    from ..systems.deck_initialization_system import DeckInitializationSystem
     from ..systems.combat_pile_teardown_system import CombatPileTeardownSystem
     from ..systems.stage_description_system import (
         StageDescriptionSystem,
@@ -87,16 +87,14 @@ def create_dungeon_combat_room_pipeline(
     # 战斗场景描述系统
     processors.add(StageDescriptionSystem(dbg_game))
 
-    # 战斗初始化系统（角色侧）：初始化战斗临时牌堆，为参战角色注入战场环境，添加 GenerateDeckAction
+    # 战斗初始化系统（角色侧）：初始化战斗临时牌堆，为参战角色注入战场环境
     processors.add(CombatInitActorSystem(dbg_game))
 
     # 战斗初始化系统（场景侧）：注入战斗专用规则、转换战斗状态为进行中
     processors.add(CombatInitStageSystem(dbg_game))
 
-    # 怪物牌库生成系统：响应 GenerateDeckAction，为当前战斗房间的怪物生成初始牌库；
-    # 队伍牌库已在入口房间生成，此处因牌库非空被 filter 跳过
-    # （临时停用：改用 Actor.cards 预置牌库）
-    processors.add(GenerateDeckActionSystem(dbg_game))
+    # 牌库初始化系统：回填空 source 卡牌并做叙事个人化（幂等，须在抽牌堆填充之前）
+    processors.add(DeckInitializationSystem(dbg_game))
 
     # 抽牌堆填充系统（从 DeckComponent 填 DrawPileComponent，零 LLM）
     processors.add(FillDrawPileSystem(dbg_game))
@@ -156,8 +154,8 @@ def create_dungeon_combat_room_pipeline(
     # 战斗掉落系统（胜利时为每头怪物推理掉落 MaterialItem，写入玩家 CombatLootComponent）
     processors.add(CombatLootSystem(dbg_game))
 
-    # 战斗归档系统（生成总结、压缩消息、触发记忆存储，内部有状态守卫；可插拔）
-    processors.add(CombatArchiveSystem(dbg_game))
+    # 战斗归档系统（生成总结、压缩消息、触发记忆存储，内部有状态守卫；可插拔，当前已拔掉）
+    # processors.add(CombatArchiveSystem(dbg_game))
 
     # 战斗状态转换系统（COMPLETE -> POST_COMBAT，战斗状态机的关键步骤，必须常驻）
     processors.add(CombatPostCombatTransitionSystem(dbg_game))

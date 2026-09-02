@@ -1,11 +1,11 @@
-"""副本入口初始化系统（角色侧）：为入口场景内的队伍成员注入场景环境信息，并为队伍成员触发初始牌库生成（怪物牌库在各自战斗房间生成）。"""
+"""副本入口初始化系统（角色侧）：为入口场景内的队伍成员注入场景环境信息，并为队伍成员触发牌库初始化（怪物牌库在各自战斗房间初始化）。"""
 
 from dataclasses import dataclass
 from typing import Final, List, Set, final, override
 
 from loguru import logger
 
-from ..entitas import Entity, ExecuteProcessor
+from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.dbg_combat_processor import (
     compute_character_stats,
     get_alive_actors_in_stage,
@@ -14,6 +14,8 @@ from ..game.dbg_game import DBGGame
 from ..models import (
     AppearanceComponent,
     CharacterStats,
+    DeckComponent,
+    InitializeDeckAction,
     MonsterComponent,
     PartyMemberComponent,
     StageDescriptionComponent,
@@ -75,7 +77,7 @@ def _build_entry_init_prompt(
 ###################################################################################################################################################################
 @final
 class EntryInitActorSystem(ExecuteProcessor):
-    """副本入口初始化系统（角色侧）：为入口场景内的队伍成员注入场景环境信息（无 LLM），并为队伍成员添加 GenerateDeckAction 触发初始牌库生成。"""
+    """副本入口初始化系统（角色侧）：为入口场景内的队伍成员注入场景环境信息（无 LLM），并触发牌库初始化。"""
 
     def __init__(self, game: DBGGame) -> None:
         self._game: Final[DBGGame] = game
@@ -94,7 +96,7 @@ class EntryInitActorSystem(ExecuteProcessor):
             return
 
         logger.info(
-            "入口初始化（角色侧）开始：注入入口场景环境信息 + 为队伍成员触发牌库生成..."
+            "入口初始化（角色侧）开始：注入入口场景环境信息 + 为队伍成员触发牌库初始化..."
         )
 
         # 获取玩家实体，player 所在场景即入口场景
@@ -122,8 +124,8 @@ class EntryInitActorSystem(ExecuteProcessor):
             stage_description=stage_description_comp.narrative,
         )
 
-        # 为队伍成员添加 GenerateDeckAction，触发初始牌库生成（怪物牌库在各自战斗房间生成）
-        # self._add_generate_deck_actions()
+        # 为队伍成员触发牌库初始化（精确控制触发对象）
+        self._add_initialize_deck_actions()
 
         # 状态守护：标记入口房间已完成初始化，避免重复触发
         entry_room.initialized = True
@@ -215,27 +217,26 @@ class EntryInitActorSystem(ExecuteProcessor):
             )
 
     ###################################################################################################################################################################
-    # def _add_generate_deck_actions(self) -> None:
-    #     """为所有队伍成员添加 GenerateDeckAction（每次进本追加新牌，牌库累积增长）。"""
-    #     count = 0
+    def _add_initialize_deck_actions(self) -> None:
+        """为所有队伍成员添加牌库初始化动作（精确控制触发对象）。"""
+        count = 0
 
-    #     party_entities = self._game.get_group(
-    #         Matcher(all_of=[PartyMemberComponent])
-    #     ).entities.copy()
-    #     for entity in party_entities:
-    #         assert entity.has(
-    #             PartyMemberComponent
-    #         ), f"角色 {entity.name} 缺少 PartyMemberComponent，不应被入口初始化选中！"
+        party_entities = self._game.get_group(
+            Matcher(all_of=[PartyMemberComponent])
+        ).entities.copy()
+        for entity in party_entities:
+            assert entity.has(
+                PartyMemberComponent
+            ), f"角色 {entity.name} 缺少 PartyMemberComponent，不应被入口初始化选中！"
 
-    #         deck_comp = entity.get(DeckComponent)
-    #         assert (
-    #             deck_comp is not None
-    #         ), f"队伍成员 {entity.name} 缺少 DeckComponent！"
+            assert entity.has(
+                DeckComponent
+            ), f"队伍成员 {entity.name} 缺少 DeckComponent！"
 
-    #         entity.replace(GenerateDeckAction, entity.name)
-    #         logger.debug(f"[{entity.name}] 已添加 GenerateDeckAction（队伍）")
-    #         count += 1
+            entity.replace(InitializeDeckAction, entity.name)
+            logger.debug(f"[{entity.name}] 已触发牌库初始化（队伍）")
+            count += 1
 
-    #     logger.info(
-    #         f"[EntryInitActorSystem] 完成，已为 {count} 个队伍成员添加 GenerateDeckAction"
-    #     )
+        logger.info(
+            f"[EntryInitActorSystem] 完成，已为 {count} 个队伍成员触发牌库初始化"
+        )

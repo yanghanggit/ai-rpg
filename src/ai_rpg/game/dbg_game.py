@@ -358,9 +358,6 @@ class DBGGame(RPGGame):
 
             # DBG 组件：牌组（DeckComponent）
             initial_cards = copy.deepcopy(actor_model.cards)
-            for card in initial_cards:
-                if not card.source:
-                    card.source = actor_entity.name
             actor_entity.replace(DeckComponent, actor_entity.name, initial_cards)
             logger.debug(
                 f"为 Actor 实体 {actor_entity.name} 挂载牌组（DeckComponent，{len(initial_cards)} 张）"

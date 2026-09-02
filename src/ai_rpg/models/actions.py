@@ -307,8 +307,8 @@ class EquipGearItemAction(Component):
 @final
 @register_action_component_type
 @register_component_type
-class GenerateDeckAction(Component):
-    """触发为角色生成战斗初始牌库，由 DeckGenerationSystem 响应处理。"""
+class InitializeDeckAction(Component):
+    """触发为角色回填牌库来源并做叙事个人化。"""
 
     name: str
 

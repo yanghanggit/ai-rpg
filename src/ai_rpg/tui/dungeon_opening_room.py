@@ -58,7 +58,7 @@ COMMANDS_MENU = """\
   [bold green]1[/]  初始化开场房间（叙事 + 牌库）
   [bold green]2[/]  生成卡池
   [bold green]3[/]  查阅牌组（我方）
-  [bold green]4[/]  查阅卡池（我方）
+  [bold green]4[/]  查阅卡池 / 挑卡（我方）
   [bold green]5[/]  查阅我方背包
   [bold green]6[/]  查阅指定实体信息（场景 / 角色）
   [bold green]7[/]  进入下一关

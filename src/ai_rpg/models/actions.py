@@ -327,6 +327,17 @@ class GenerateCardPoolAction(Component):
 @final
 @register_action_component_type
 @register_component_type
+class PickCardFromPoolAction(Component):
+    """触发角色从卡池（CardPoolComponent）挑选一张候选卡加入牌库（DeckComponent）。"""
+
+    name: str
+    card: Card  # 从 CardPoolComponent 中选中的卡牌（由 activate 层检索后填入）
+
+
+############################################################################################################
+@final
+@register_action_component_type
+@register_component_type
 class FillDrawPileAction(Component):
     """触发从 DeckComponent 洗牌填充 DrawPileComponent，由 FillDrawPileSystem 响应处理。"""
 

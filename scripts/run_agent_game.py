@@ -35,6 +35,7 @@
   next-dungeon    --snapshot PATH                               下一关（胜利后，需存在下一关）
   exit-dungeon    --snapshot PATH                               退出副本 → 家园模式（无论胜负）
   generate-card-pool --snapshot PATH                            生成卡池（开场房间初始化后）
+  pick-card-from-pool --snapshot PATH --actor A --card C        从卡池挑一张加入牌库
 
 ==== 典型流程 ====
   家园：new → stages → advance(循环) / speak / switch-stage → enter-dungeon
@@ -108,6 +109,7 @@ from agent_game_combat import (
 from agent_game_dungeon import (
     enter_dungeon_game,
     generate_card_pool_game,
+    pick_card_from_pool_game,
     next_dungeon_game,
     exit_dungeon_and_return_home_game,
 )
@@ -853,6 +855,48 @@ def generate_card_pool(snapshot: str) -> None:
     logger.info(f"本次存档目录：{_save_dir}")
 
     asyncio.run(generate_card_pool_game(world, player_session, _save_dir))
+
+
+###############################################################################################################################################
+@main.command("pick-card-from-pool")
+@click.option(
+    "--snapshot",
+    required=True,
+    help="存档目录路径",
+)
+@click.option(
+    "--actor",
+    required=True,
+    help="选卡角色全名（如 角色.某某）",
+)
+@click.option(
+    "--card",
+    required=True,
+    help="要选的卡牌名称（须存在于该角色卡池中）",
+)
+def pick_card_from_pool(snapshot: str, actor: str, card: str) -> None:
+    """从卡池挑选一张卡加入牌库并归档。需开场已初始化且已生成卡池。"""
+
+    snapshot_path = Path(snapshot)
+    if not snapshot_path.exists():
+        raise click.BadParameter(
+            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+        )
+
+    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
+    _setup_logger(_log_file)
+
+    world, player_session = restore_world(snapshot_path)
+    _save_dir = (
+        WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
+    )
+
+    logger.info(f"本次运行日志文件：{_log_file}")
+    logger.info(f"读取存档：{snapshot_path}")
+    logger.info(f"本次存档目录：{_save_dir}")
+
+    asyncio.run(pick_card_from_pool_game(world, player_session, actor, card, _save_dir))
 
 
 ###############################################################################################################################################

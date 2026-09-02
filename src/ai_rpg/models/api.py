@@ -419,6 +419,21 @@ class DungeonOpeningGenerateCardPoolResponse(BaseModel):
     message: str
 
 
+@final
+class DungeonOpeningPickCardFromPoolRequest(BaseModel):
+    user_name: str
+    game_name: str
+    actor_name: str
+    card_name: str
+
+
+@final
+class DungeonOpeningPickCardFromPoolResponse(BaseModel):
+    task_id: str
+    status: str
+    message: str
+
+
 ################################################################################################################
 ################################################################################################################
 ################################################################################################################

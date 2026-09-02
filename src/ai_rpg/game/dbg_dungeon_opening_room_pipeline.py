@@ -23,6 +23,9 @@ def create_dungeon_opening_room_pipeline(
     from ..systems.generate_card_pool_action_system import (
         GenerateCardPoolActionSystem,
     )
+    from ..systems.pick_card_from_pool_action_system import (
+        PickCardFromPoolActionSystem,
+    )
     from ..systems.deck_initialization_system import DeckInitializationSystem
     from ..systems.prologue_system import PrologueSystem
     from ..systems.stage_description_system import (
@@ -50,6 +53,9 @@ def create_dungeon_opening_room_pipeline(
 
     # 卡池系统：从原型库抽取候选卡并润色后装入卡池（响应 GenerateCardPoolAction）
     processors.add(GenerateCardPoolActionSystem(dbg_game))
+
+    # 从卡池挑选卡牌系统：选中卡加入牌库并清空卡池（响应 PickCardFromPoolAction）
+    processors.add(PickCardFromPoolActionSystem(dbg_game))
 
     # 清除动作相关的临时状态
     processors.add(ActionCleanupSystem(dbg_game))

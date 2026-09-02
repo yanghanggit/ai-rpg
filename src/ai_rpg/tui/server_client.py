@@ -12,6 +12,8 @@ from ..models import (
     DungeonOpeningGenerateCardPoolResponse,
     DungeonOpeningInitRequest,
     DungeonOpeningInitResponse,
+    DungeonOpeningPickCardFromPoolRequest,
+    DungeonOpeningPickCardFromPoolResponse,
     DungeonCombatDrawCardsResponse,
     DungeonCombatInitRequest,
     DungeonCombatInitResponse,
@@ -397,6 +399,24 @@ async def dungeon_opening_generate_card_pool(
         )
         response.raise_for_status()
         return DungeonOpeningGenerateCardPoolResponse.model_validate(response.json())
+
+
+async def dungeon_opening_pick_card_from_pool(
+    user_name: str, game_name: str, actor_name: str, card_name: str
+) -> DungeonOpeningPickCardFromPoolResponse:
+    """触发开场房间挑卡（外部显式触发 PickCardFromPoolAction），返回后台任务ID。"""
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.post(
+            server_config.base_url + "/api/dungeon/opening/pick_card_from_pool/v1/",
+            json=DungeonOpeningPickCardFromPoolRequest(
+                user_name=user_name,
+                game_name=game_name,
+                actor_name=actor_name,
+                card_name=card_name,
+            ).model_dump(),
+        )
+        response.raise_for_status()
+        return DungeonOpeningPickCardFromPoolResponse.model_validate(response.json())
 
 
 async def dungeon_combat_collect_loot(

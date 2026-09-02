@@ -14,6 +14,7 @@ from ..models import (
     DeckComponent,
     GenerateCardPoolAction,
     PartyMemberComponent,
+    PickCardFromPoolAction,
 )
 
 
@@ -87,3 +88,81 @@ def activate_generate_card_pool(
         True,
         f"成功为 {len(party_member_entities)} 个队伍成员激活卡池生成动作",
     )
+
+
+###################################################################################################################################################################
+def activate_pick_card_from_pool(
+    dbg_game: DBGGame,
+    actor_name: str,
+    card_name: str,
+) -> Tuple[bool, str]:
+    """
+    为指定队伍成员激活「从卡池挑选一张卡」动作（PickCardFromPoolAction）。
+
+    由外部入口（CLI / API）显式调用，随后推动 _dungeon_opening_room_pipeline.process()
+    让 PickCardFromPoolActionSystem 响应并把选中卡加入牌库。
+    """
+
+    # 检查当前是否在玩家的副本阶段
+    if not dbg_game.is_player_in_dungeon_stage:
+        error_msg = "从卡池挑卡失败：玩家不在副本场景中"
+        logger.error(error_msg)
+        return False, error_msg
+
+    # 检查当前副本房间是否为开场房间
+    if not dbg_game.is_current_room_dungeon_opening:
+        error_msg = "当前副本房间不是开场房间，无法从卡池挑卡"
+        logger.error(error_msg)
+        return False, error_msg
+
+    # 状态守卫：卡池依赖开场初始化（叙事 + 牌库初始化）已完成
+    if not dbg_game.current_dungeon_opening_room.initialized:
+        error_msg = "开场房间尚未初始化（叙事 + 牌库），无法从卡池挑卡"
+        logger.error(error_msg)
+        return False, error_msg
+
+    # 获取指定角色实体
+    actor_entity = dbg_game.get_actor_entity(actor_name)
+    if actor_entity is None:
+        error_msg = f"找不到角色：{actor_name}"
+        logger.error(error_msg)
+        return False, error_msg
+
+    # 必须是队伍成员，且持有牌库与卡池组件
+    if not actor_entity.has(PartyMemberComponent):
+        error_msg = f"角色 {actor_name} 不是队伍成员，无法从卡池挑卡"
+        logger.error(error_msg)
+        return False, error_msg
+
+    assert actor_entity.has(DeckComponent), f"队伍成员 {actor_name} 缺少 DeckComponent"
+
+    if not actor_entity.has(CardPoolComponent):
+        error_msg = f"角色 {actor_name} 尚无卡池（CardPoolComponent），请先生成卡池"
+        logger.error(error_msg)
+        return False, error_msg
+
+    if actor_entity.has(DeathComponent):
+        error_msg = f"角色 {actor_name} 已死亡，无法从卡池挑卡"
+        logger.error(error_msg)
+        return False, error_msg
+
+    # 从卡池中按名称检索选中的卡（3 选 1）
+    pool_comp = actor_entity.get(CardPoolComponent)
+    selected_card = next((c for c in pool_comp.cards if c.name == card_name), None)
+    if selected_card is None:
+        error_msg = (
+            f"角色 {actor_name} 卡池中找不到卡牌 '{card_name}'，"
+            f"当前卡池: {[c.name for c in pool_comp.cards]}"
+        )
+        logger.error(error_msg)
+        return False, error_msg
+
+    # 挂载挑卡动作组件
+    actor_entity.replace(
+        PickCardFromPoolAction,
+        actor_entity.name,
+        selected_card,
+    )
+    logger.debug(f"为角色 {actor_name} 添加挑卡动作组件（卡牌: {card_name}）")
+
+    return True, f"成功为角色 {actor_name} 激活挑卡动作（卡牌: {card_name}）"

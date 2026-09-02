@@ -35,9 +35,6 @@ async def dungeon_entry_init(
 ) -> DungeonEntryInitResponse:
     """
     副本入口房间初始化接口
-
-    触发入口房间流水线（叙事场景描述 + 队伍/怪物牌库生成）。
-    与战斗房间的 /api/dungeon/combat/init/v1/ 平级，入口房间仅需执行一次即可完成初始化。
     """
 
     logger.info(f"/api/dungeon/entry/init/v1/: user={payload.user_name}")

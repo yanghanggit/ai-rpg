@@ -126,7 +126,7 @@ async def enter_dungeon_game(
         logger.error(f"进入副本第一关失败: {error_detail}")
         return terminal_game
 
-    # 若是战斗房间则初始化战斗；入口房间运行入口管道（叙事 + 牌库生成）
+    # 战斗房间则初始化战斗；入口房间运行入口管道（叙事 + 牌库生成）
     if terminal_game.is_current_room_dungeon_combat:
         await terminal_game._dungeon_combat_room_pipeline.process()
     elif terminal_game.is_current_room_dungeon_entry:

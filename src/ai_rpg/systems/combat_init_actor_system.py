@@ -134,7 +134,12 @@ class CombatInitActorSystem(ExecuteProcessor):
             actor_entity.replace(FillDrawPileAction, actor_entity.name)
             logger.debug(f"[{actor_entity.name}] 已添加 FillDrawPileAction")
 
-        # 怪物牌库已通过 blueprint/dungeon 的 cards 预置；此处为怪物补充式触发牌库初始化
+        # 所有参战角色都触发牌库初始化；幂等守卫会跳过已初始化者（如入口房已润色的队员）
+        for actor_entity in actor_entities:
+            actor_entity.replace(InitializeDeckAction, actor_entity.name)
+            logger.debug(f"[{actor_entity.name}] 已触发牌库初始化")
+
+        # 怪物牌库预置校验（保留原有不变式，仅做断言）
         for actor_entity in actor_entities:
             if not actor_entity.has(MonsterComponent):
                 continue
@@ -150,9 +155,6 @@ class CombatInitActorSystem(ExecuteProcessor):
             assert (
                 deck_comp is not None and len(deck_comp.cards) > 0
             ), f"怪物 {actor_entity.name} 缺少预置牌库（DeckComponent）！"
-
-            actor_entity.replace(InitializeDeckAction, actor_entity.name)
-            logger.debug(f"[{actor_entity.name}] 已触发牌库初始化（怪物）")
 
     ###################################################################################################################################################################
     def _initialize_piles(self, actor_entities: Set[Entity]) -> None:

@@ -28,7 +28,6 @@ from ..models import (
     ComponentSerialization,
     ConsumableItem,
     CostumeItem,
-    # ArchetypeComponent,
     DeckComponent,
     DiscardPileComponent,
     DrawPileComponent,
@@ -178,7 +177,6 @@ def _mock_dungeon_actor(
         system_message="",
         character_stats=stats,
         custom_item=None,
-        # keywords=[],
     )
 
 
@@ -298,18 +296,14 @@ def _identity_components(name: str, order: int) -> List[ComponentSerialization]:
 
 ###############################################################################################################################################
 def _deck_component_serialization(
-    name: str, cards: List[Card], keywords: List[str]
+    name: str, cards: List[Card]
 ) -> List[ComponentSerialization]:
-    """构造 DeckComponent + ArchetypeComponent 序列化数据（战斗双方均持有牌库，用于「查阅牌组」命令）。"""
+    """构造 DeckComponent 序列化数据（战斗双方均持有牌库，用于「查阅牌组」命令）。"""
     return [
         ComponentSerialization(
             name=DeckComponent.__name__,
             data=DeckComponent(name=name, cards=cards).model_dump(),
         ),
-        # ComponentSerialization(
-        #     name=ArchetypeComponent.__name__,
-        #     data=ArchetypeComponent(name=name, keywords=keywords).model_dump(),
-        # ),
     ]
 
 
@@ -487,7 +481,6 @@ def build_mock_entities_details_response(
                         damage=0,
                     ),
                 ],
-                keywords=["剑术", "稳健"],
             ),
             _inventory_component_serialization(
                 MOCK_ACTOR_NAME,
@@ -583,7 +576,6 @@ def build_mock_entities_details_response(
                         damage=9,
                     ),
                 ],
-                keywords=["辅助", "法术"],
             ),
             *_ongoing_battle_pile_components(
                 MOCK_TEAMMATE_NAME,
@@ -621,7 +613,6 @@ def build_mock_entities_details_response(
                         damage=5,
                     ),
                 ],
-                keywords=["野蛮"],
             ),
             *_ongoing_battle_pile_components(
                 MOCK_MONSTER_1_NAME,
@@ -659,7 +650,6 @@ def build_mock_entities_details_response(
                         damage=4,
                     ),
                 ],
-                keywords=["野蛮"],
             ),
             *_ongoing_battle_pile_components(
                 MOCK_MONSTER_2_NAME,

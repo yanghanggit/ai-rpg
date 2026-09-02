@@ -10,7 +10,6 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..models import (
     ActorComponent,
-    # ArchetypeComponent,
     CharacterStatsComponent,
     DeathComponent,
     DeckComponent,
@@ -174,7 +173,6 @@ class GenerateDeckActionSystem(ReactiveProcessor):
         return (
             entity.has(GenerateDeckAction)
             and entity.has(ActorComponent)
-            # and entity.has(ArchetypeComponent)
             and entity.has(DeckComponent)
             and entity.has(CharacterStatsComponent)
             and not entity.has(DeathComponent)

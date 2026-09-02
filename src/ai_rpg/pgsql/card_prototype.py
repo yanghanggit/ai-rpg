@@ -17,13 +17,15 @@ class CardPrototypeDB(UUIDBase):
     )
 
     # 应用场景（手牌 / 装备），供按域检索（工坊合成按「装备」过滤）
-    domain: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
+    card_type: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
 
     # 三端大类（攻击端 / 防御端 / 运转端）
-    port: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
+    archetype: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
 
     # 三端小类（前端伤害 / 成长性伤害 / 铺垫性攻击支持 / 前端防御 / 成长性防御 / 特殊防御机制）
-    port_subtype: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
+    archetype_subtype: Mapped[str] = mapped_column(
+        String(50), index=True, nullable=False
+    )
 
     # 原型名（教学性文本，不耦合游戏内容）
     name: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -35,7 +37,7 @@ class CardPrototypeDB(UUIDBase):
     guide: Mapped[str] = mapped_column(Text, nullable=False)
 
     # 检索标签（JSON 数组字符串，如 ["装备", "on_play_affixes", "damage"]）
-    tags_json: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
+    keywords_json: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
 
     # 原型 Card 的完整字段快照（JSON），供「选择核心」后反序列化为 Card 再润色
     card_json: Mapped[str] = mapped_column(Text, nullable=False)

@@ -35,9 +35,6 @@ class Actor(BaseModel):
     system_message: str
     character_stats: CharacterStats
     custom_item: Optional[CostumeItem] = None  # 当前穿戴的时装，None 表示未穿戴任何时装
-    # #keywords: List[str] = (
-    #     []
-    # )  # 卡牌关键词约束列表，用于限制 LLM 生成卡牌的功能边界（规则层）；叙事主题由角色设定（profile）提炼
     cards: List[Card] = []  # 预置卡牌列表
 
 

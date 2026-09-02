@@ -199,7 +199,6 @@ class AssembleDungeonSystem(ReactiveProcessor):
                         character_stats=CharacterStats(),
                         campaign_setting=self._game._world.blueprint.campaign_setting,
                         system_rules=self._game._world.blueprint.system_rules,
-                        # keywords=[],
                         cards=[
                             # 3 张基础攻击
                             _make_attack_card(),

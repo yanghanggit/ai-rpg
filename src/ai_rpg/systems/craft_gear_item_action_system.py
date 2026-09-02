@@ -190,9 +190,9 @@ def _handle_list_gear_examples() -> str:
             "id": item["prototype_id"],
             "name": item["name"],
             "summary": item["summary"],
-            "tags": item["tags"],
+            "keywords": item["keywords"],
         }
-        for item in list_card_prototype_index(domain="装备")
+        for item in list_card_prototype_index(card_type="装备")
     ]
     logger.info(
         f"[CraftGearItemActionSystem] list_gear_examples 执行: 共 {len(index)} 个示例"
@@ -207,7 +207,7 @@ def _handle_get_gear_example(example_id: str) -> str:
         proto = get_card_prototype(example_id)
     except ValueError as e:
         return f"错误：{e}。可用 id 请通过 list_gear_examples 查询。"
-    if proto.domain != "装备":
+    if proto.card_type != "装备":
         return f"错误：{example_id!r} 不是装备卡牌原型，可用 id 请通过 list_gear_examples 查询。"
     logger.info(f"[CraftGearItemActionSystem] get_gear_example 执行: {example_id}")
     return json.dumps(
@@ -215,7 +215,7 @@ def _handle_get_gear_example(example_id: str) -> str:
             "id": proto.prototype_id,
             "name": proto.name,
             "summary": proto.summary,
-            "tags": json.loads(proto.tags_json),
+            "keywords": json.loads(proto.keywords_json),
             "guide": proto.guide,
             "card": json.loads(proto.card_json),
         },

@@ -23,7 +23,6 @@ def create_actor(
     character_stats: CharacterStats,
     campaign_setting: str,
     system_rules: str,
-    # keywords: List[str] = [],
     cards: List[Card] = [],
 ) -> Actor:
     """
@@ -45,7 +44,6 @@ def create_actor(
         base_body=base_body,
         system_message="",
         character_stats=character_stats,
-        # keywords=keywords,
         cards=cards,
     )
 

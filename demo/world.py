@@ -306,7 +306,6 @@ def create_actor_paper_doll() -> Actor:
         character_stats=CharacterStats(),
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=SYSTEM_RULES,
-        # keywords=[],
         cards=[
             # 3 张基础攻击
             _make_attack_card(),
@@ -415,7 +414,6 @@ def create_wuming() -> Actor:
         character_stats=CharacterStats(),
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=SYSTEM_RULES,
-        # keywords=[],
         cards=[
             # 3 张基础攻击
             _make_attack_card(),
@@ -447,7 +445,6 @@ def create_guzhiqiu() -> Actor:
         character_stats=CharacterStats(),
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=SYSTEM_RULES,
-        # keywords=[],
         cards=[
             # 3 张基础攻击
             _make_attack_card(),

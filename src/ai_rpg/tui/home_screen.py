@@ -12,7 +12,9 @@ from textual.widgets import Input, RichLog, Static
 from .base import BaseGameScreen
 from .cmd_advance import run_home_advance
 from .cmd_browse import build_entity_browser_text
+from .cmd_speak import speak_to
 from .cmd_stage import build_stage_view_text
+from .cmd_switch import switch_stage
 from .server_client import (
     fetch_session_messages,
     logout as server_logout,
@@ -73,6 +75,8 @@ BASE_COMMANDS = {
     "stage",
     "session",
     "advance",
+    "switch",
+    "speak",
 }
 
 
@@ -245,6 +249,67 @@ class HomeScreen(BaseGameScreen):
 
     def _cmd_advance(self, args: str) -> None:
         self._do_advance()
+
+    def _cmd_switch(self, args: str) -> None:
+        target = args.strip()
+        if not target:
+            self._write("[yellow]用法：/switch <场景名>[/]")
+            return
+        self._do_switch(target)
+
+    def _cmd_speak(self, args: str) -> None:
+        args = args.strip()
+        if not args.startswith("@"):
+            self._write("[yellow]用法：/speak @人名 对话内容[/]")
+            return
+        rest = args[1:].strip()
+        if not rest:
+            self._write("[yellow]用法：/speak @人名 对话内容[/]")
+            return
+        parts = rest.split(maxsplit=1)
+        target = parts[0]
+        content = parts[1].strip() if len(parts) > 1 else ""
+        if not content:
+            self._write("[yellow]对话内容不能为空，用法：/speak @人名 对话内容[/]")
+            return
+        self._do_speak(target, content)
+
+    @work
+    async def _do_speak(self, target: str, content: str) -> None:
+        app = self.game_client
+        if app.session is None:
+            return
+        self._write(f"[dim]▶ 发送对话：{target} ← 「{content}」...[/]")
+        try:
+            text = await speak_to(
+                app.session.user_name,
+                app.session.game_name,
+                app.session.actor_name,
+                target,
+                content,
+            )
+            self._write(text)
+        except Exception as e:
+            logger.error(f"_do_speak: 发送对话失败 error={e}")
+            self._write(f"[bold red]❌ 发送对话失败: {e}[/]")
+
+    @work
+    async def _do_switch(self, target: str) -> None:
+        app = self.game_client
+        if app.session is None:
+            return
+        self._write(f"[dim]▶ 正在切换到场景：{target}...[/]")
+        try:
+            text = await switch_stage(
+                app.session.user_name,
+                app.session.game_name,
+                app.session.actor_name,
+                target,
+            )
+            self._write(text)
+        except Exception as e:
+            logger.error(f"_do_switch: 场景切换请求失败 error={e}")
+            self._write(f"[bold red]❌ 场景切换请求失败: {e}[/]")
 
     @work
     async def _do_advance(self) -> None:

@@ -22,12 +22,15 @@ INTRO_TEXT = """\
 
 # 命令定义：(完整命令, 简写, 说明)，顺序即 /help 展示顺序
 COMMAND_DEFS: List[Tuple[str, str, str]] = [
-    ("help", "h", "显示本帮助"),
     ("server", "s", "获取服务器信息"),
     ("new", "n", "开始新游戏"),
+    ("help", "h", "显示本帮助"),
     ("clear", "c", "清空正文区"),
     ("quit", "q", "退出游戏"),
 ]
+
+# 通用命令：固定在命令列表底部展示
+COMMON_COMMANDS = {"help", "clear", "quit"}
 
 # 命令名（完整或简写）→ 完整命令名
 COMMAND_ALIASES: Dict[str, str] = {
@@ -37,7 +40,11 @@ COMMAND_ALIASES: Dict[str, str] = {
 
 def _build_help_text() -> str:
     lines = ["[bold yellow]可用命令：[/]", ""]
+    separated = False
     for full, short, desc in COMMAND_DEFS:
+        if not separated and full in COMMON_COMMANDS:
+            lines.append("")
+            separated = True
         lines.append(f"  [bold green]/{full}[/] [dim](/{short})[/]  {desc}")
     lines.append("")
     lines.append("[dim]直接输入 [bold]/[/] 亦可显示本帮助。[/]")

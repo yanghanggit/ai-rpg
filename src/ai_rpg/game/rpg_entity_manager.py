@@ -2,6 +2,7 @@ from typing import Dict, List, Optional, Set, override
 from ..entitas import Context, Entity, Matcher
 from ..models import (
     COMPONENT_TYPES,
+    resolve_component_type,
     ActorComponent,
     ComponentSerialization,
     EntitySerialization,
@@ -87,10 +88,9 @@ class RPGEntityManager(Context):
 
             for comp_serialization in entity_serialization.components:
 
-                comp_class = COMPONENT_TYPES.get(comp_serialization.name)
-                assert (
-                    comp_class is not None
-                ), f"Component class not found for {comp_serialization.name}"
+                comp_class = resolve_component_type(
+                    comp_serialization.name, comp_serialization.data
+                )
 
                 # 使用 Pydantic 的方式直接从字典创建实例
                 restore_comp = comp_class(**comp_serialization.data)

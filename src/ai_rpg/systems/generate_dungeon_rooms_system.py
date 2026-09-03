@@ -16,6 +16,25 @@ from ..models.dungeon_generation import DungeonRoomData
 
 
 ####################################################################################################################################
+def _validate_room_code_names(rooms: List[DungeonRoomData]) -> Optional[str]:
+    """校验房间 code_name：非空、合法 Python 标识符、全副本唯一。
+
+    返回错误描述；全部合法时返回 None。
+    """
+    seen: set[str] = set()
+    for room in rooms:
+        code_name = room.code_name.strip()
+        if not code_name:
+            return f"房间 '{room.room_name}' 的 code_name 为空"
+        if not code_name.isidentifier():
+            return f"房间 '{room.room_name}' 的 code_name 不是合法标识符: '{room.code_name}'"
+        if code_name in seen:
+            return f"房间 '{room.room_name}' 的 code_name 重复: '{code_name}'"
+        seen.add(code_name)
+    return None
+
+
+####################################################################################################################################
 def _build_rooms_tool(dungeon_room_count: int) -> ToolDefinition:
     """动态构建 record_dungeon_rooms 工具定义。
 
@@ -56,6 +75,10 @@ def _build_rooms_tool(dungeon_room_count: int) -> ToolDefinition:
                                     "type": "string",
                                     "description": "房间全名，采用「房间.XXXX」命名格式，体现该局部区域的核心特征，所有房间名称不重复",
                                 },
+                                "code_name": {
+                                    "type": "string",
+                                    "description": "房间英文代号，采用 snake_case（如 shrine_entrance），仅小写字母/数字/下划线，全副本唯一，用于程序内部标识",
+                                },
                                 "profile": {
                                     "type": "string",
                                     "description": "该房间的感官环境描写，50-100字，只描述「这里有什么」，避免直接点出具体角色身份/阵营名称与威胁评价性词汇",
@@ -69,6 +92,7 @@ def _build_rooms_tool(dungeon_room_count: int) -> ToolDefinition:
                             "required": [
                                 "room_type",
                                 "room_name",
+                                "code_name",
                                 "profile",
                                 "actor_count",
                             ],
@@ -105,6 +129,8 @@ def _build_dungeon_rooms_prompt(
 - **第 2 ~ {dungeon_room_count} 个房间**：战斗房间（room_type = "combat"），共 {combat_room_count} 个，
   从入口区域逐步深入到副本最深处，actor_count = 1 或 2。
 
+- **每个房间的 code_name**：一个可读的英文 snake_case 代号（仅小写字母/数字/下划线，如 shrine_entrance、shrine_courtyard），全副本内不重复，用于程序内部标识，禁止中文、空格、点号或连字符。
+
 工作流程：调用 record_dungeon_rooms 写入全部房间数据，确认无误后结束本次对话。"""
 
 
@@ -129,6 +155,7 @@ def _handle_record_dungeon_rooms(
             f"[GenerateDungeonRoomsSystem] Room {i}/{len(room_items)}:\n"
             f"  room_type:    {room.room_type}\n"
             f"  room_name:    {room.room_name}\n"
+            f"  code_name:    {room.code_name}\n"
             f"  actor_count:  {room.actor_count}\n"
             f"  profile:      {room.profile}"
         )
@@ -230,6 +257,14 @@ class GenerateDungeonRoomsSystem(ReactiveProcessor):
                     f"实际为 '{room.room_type}'，中止"
                 )
                 return
+
+        # 校验 code_name：非空、合法标识符、全副本唯一
+        code_name_error = _validate_room_code_names(rooms)
+        if code_name_error is not None:
+            logger.error(
+                f"[GenerateDungeonRoomsSystem] code_name 校验失败: {code_name_error}，中止"
+            )
+            return
 
         logger.info(
             f"[GenerateDungeonRoomsSystem] Step 2 完成:\n"

@@ -27,6 +27,7 @@ from ..models import (
     HomeComponent,
     IdentityComponent,
     PlayerComponent,
+    resolve_component_type,
     StorageComponent,
     Stage,
     StageComponent,
@@ -365,6 +366,18 @@ class DBGGame(RPGGame):
                     stage_entity.add(HomeComponent, stage_model.name)
                 case _:
                     assert False, f"未知的 StageType: {stage_model.type}"
+
+            # 特殊组件，根据 stage_model.components 数据驱动动态添加
+            # （含每个 Stage 的唯一标记组件，跨进程反序列化时惰性重建）
+            for comp_serialization in stage_model.components:
+                comp_class = resolve_component_type(
+                    comp_serialization.name, comp_serialization.data
+                )
+                restore_comp = comp_class(**comp_serialization.data)
+                logger.debug(
+                    f"为 Stage 实体 {stage_entity.name} 添加 {comp_serialization.name}"
+                )
+                stage_entity.set(comp_class, restore_comp)
 
             ## 重新设置Actor和stage的关系
             for actor_model in stage_model.actors:

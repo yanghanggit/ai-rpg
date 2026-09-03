@@ -36,6 +36,7 @@ from ai_rpg.models import (
     WorldDirectorComponent,
     WornCostumeComponent,
     create_actor,
+    create_component_type,
     create_stage,
     create_world,
 )
@@ -334,12 +335,38 @@ def create_actor_paper_doll() -> Actor:
 
 
 ########################################################################################################################
+def _make_stage_component_class_name(code_name: str) -> str:
+    """以策划指定的英文代号为基准，生成可读的动态组件类名。"""
+    return f"StageTag_{code_name}"
+
+
+########################################################################################################################
+def _attach_stage_component(stage: Stage) -> Stage:
+    """为场景挂载唯一组件：动态创建组件类，并把中文名存入组件字段。"""
+    assert (
+        stage.code_name.isidentifier()
+    ), f"Stage {stage.name!r} 的 code_name 必须是合法 Python 标识符: {stage.code_name!r}"
+
+    class_name = _make_stage_component_class_name(stage.code_name)
+    component_cls = create_component_type(class_name, name=(str, ...))
+
+    stage.components.append(
+        ComponentSerialization(
+            name=class_name,
+            data=component_cls.model_validate({"name": stage.name}).model_dump(),
+        )
+    )
+    return stage
+
+
+########################################################################################################################
 def create_shrine_ruins_dungeon() -> Dungeon:
     """创建坍塌庙祠副本。"""
 
     # ── 开场叙事房间 ──
     stage_shrine_entrance = create_stage(
         name="场景.庙祠入口",
+        code_name="shrine_entrance",
         stage_type=StageType.DUNGEON,
         profile="""你是一条被荒草半掩的碎石小径，尽头立着一座坍塌过半的庙祠。
 天色是介于黄昏与夜晚之间的那种灰蓝，四下无风，但路旁的枯草丛偶尔簌簌作响，像有什么极轻的东西从其间穿行。
@@ -349,9 +376,12 @@ def create_shrine_ruins_dungeon() -> Dungeon:
         system_rules=SYSTEM_RULES,
     )
 
+    _attach_stage_component(stage_shrine_entrance)
+
     # ── 战斗房间 ──
     stage_shrine_courtyard = create_stage(
         name="场景.破败殿前",
+        code_name="shrine_courtyard",
         stage_type=StageType.DUNGEON,
         profile="""你是一座坍塌庙祠的前院。青石地面已大面积龟裂，裂缝中长出灰白色的干枯苔藓，踩上去发出细碎的脆响。
 正前方是殿门，门扇只剩一扇半掩着，门楣上的匾额歪斜悬挂，字迹已模糊不可辨。殿内隐约可见一尊神像的背影——它面向后墙，而非殿门。
@@ -359,6 +389,8 @@ def create_shrine_ruins_dungeon() -> Dungeon:
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=SYSTEM_RULES,
     )
+
+    _attach_stage_component(stage_shrine_courtyard)
 
     actor_paper_doll = create_actor_paper_doll()
     stage_shrine_courtyard.actors = [actor_paper_doll]
@@ -377,39 +409,45 @@ def create_shrine_ruins_dungeon() -> Dungeon:
 def create_wuming_room() -> Stage:
     """创建无名卧室场景实例。"""
 
-    return create_stage(
+    stage = create_stage(
         name="场景.二楼卧室",
+        code_name="wuming_room",
         stage_type=StageType.HOME,
         profile="""你是司氏宅邸二楼的一间卧室，久无人住。一张铁架床靠墙而放，被褥半旧，叠得并不整齐；床头一个歪斜的矮柜，柜面落着一层薄灰。一扇木窗正对庭院，窗外荒草没膝，一直蔓延到远处的锈蚀铁门，更远处是终年不散的灰白雾气。墙纸受潮卷边，露出灰褐的底子；天花板一角有水渍晕痕。房门虚掩，门外是铺着旧地毯的走廊，静得能听见灰尘落下的声音。空气里有旧木、积尘与轻微霉味混合的气息。""",
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=SYSTEM_RULES,
     )
+    return _attach_stage_component(stage)
 
 
 #######################################################################################################################
 def create_guzhiqiu_room() -> Stage:
     """创建顾知秋客房场景实例。"""
 
-    return create_stage(
+    stage = create_stage(
         name="场景.一楼客房",
+        code_name="guzhiqiu_room",
         stage_type=StageType.HOME,
         profile="""你是司氏宅邸一楼的一间客房，比二楼的卧室稍大，靠墙立着衣柜与梳妆台，镜面蒙尘，照不清人脸。床铺整洁，被角被细心掖好，显然近期有人住过。窗朝西，黄昏时能望见荒草尽头的天光。地上铺着褪色的旧地毯，桌上有半截燃过的蜡烛和一摞旧书。房门关着，门外走廊偶尔传来极轻的脚步声——像是住在这里的人在走动，又像是风。""",
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=SYSTEM_RULES,
     )
+    return _attach_stage_component(stage)
 
 
 #######################################################################################################################
 def create_entrance_hall() -> Stage:
     """创建门厅场景实例。"""
 
-    return create_stage(
+    stage = create_stage(
         name="场景.门厅",
+        code_name="entrance_hall",
         stage_type=StageType.HOME,
         profile="""你是司氏宅邸的门厅，两层通高，一道弧形楼梯通向二楼。地面铺着黑白相间的大理石，踩上去有回音。正中悬着一盏落满灰的水晶吊灯，早已不亮。两侧墙上挂着几幅蒙尘的旧油画，画中人面目在昏暗里看不真切。大门紧闭，门缝透不进一丝风，门外听不见任何声音——仿佛整座洋馆被从世界其余部分切了下来。门厅一侧有扇虚掩的门通向客厅，另一侧是一条通向里间的走廊，隐入暗处。""",
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=SYSTEM_RULES,
     )
+    return _attach_stage_component(stage)
 
 
 #######################################################################################################################

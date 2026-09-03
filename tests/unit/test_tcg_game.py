@@ -118,6 +118,7 @@ def _make_stage_model(
 ) -> Stage:
     return Stage(
         name=name,
+        code_name=name,
         type=stage_type,
         profile="",
         system_message=f"{name} is a stage.",

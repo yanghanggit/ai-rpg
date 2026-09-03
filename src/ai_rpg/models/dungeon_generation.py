@@ -11,6 +11,7 @@ class DungeonRoomData(BaseModel):
 
     room_type: Literal["opening", "combat"]  # 房间类型：opening=开场叙事，combat=战斗
     room_name: str = ""
+    code_name: str = ""  # 房间英文代号（snake_case），全副本唯一
     profile: str = ""
     actor_count: int = 0  # 角色种类数量（opening 房间固定为 0）
 
@@ -45,6 +46,7 @@ class DungeonRoomBlueprint(BaseModel):
 
     room_type: Literal["opening", "combat"]  # 房间类型
     room_name: str = ""
+    code_name: str = ""  # 房间英文代号（snake_case），透传给 create_stage
     profile: str = ""
     actors: List[DungeonActorBlueprint] = []
 

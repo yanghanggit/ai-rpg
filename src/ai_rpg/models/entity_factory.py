@@ -75,6 +75,7 @@ def create_actor(
 #######################################################################################################################################
 def create_stage(
     name: str,
+    code_name: str,
     stage_type: StageType,
     profile: str,
     campaign_setting: str,
@@ -85,6 +86,10 @@ def create_stage(
     """
 
     assert name.strip() != "", "DBG 游戏要求必须有场景名称(name)"
+    assert code_name.strip() != "", "DBG 游戏要求必须有场景英文代号(code_name)"
+    assert (
+        code_name.isidentifier()
+    ), f"DBG 游戏要求 code_name 必须是合法 Python 标识符: {code_name!r}"
     assert profile.strip() != "", "DBG 游戏要求必须有场景设定(profile)"
     assert (
         campaign_setting.strip() != ""
@@ -94,6 +99,7 @@ def create_stage(
     # 创建场景实例
     stage = Stage(
         name=name,
+        code_name=code_name,
         type=stage_type,
         profile=profile,
         system_message="",

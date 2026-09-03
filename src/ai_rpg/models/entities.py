@@ -39,6 +39,7 @@ class Actor(BaseModel):
 @final
 class Stage(BaseModel):
     name: str
+    code_name: str  # 策划指定的英文代号（作为该场景动态组件类名的基准），必填
     type: StageType
     profile: str
     system_message: str

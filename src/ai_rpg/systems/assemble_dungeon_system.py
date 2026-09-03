@@ -163,6 +163,7 @@ class AssembleDungeonSystem(ReactiveProcessor):
         """将 DungeonBlueprint 组装为完整 Dungeon 实体树（纯数据，无 LLM 调用）。"""
         seen_room_names: set[str] = set()
         seen_actor_names: set[str] = set()
+        seen_code_names: set[str] = set()
         rooms: List[DungeonRoom] = []
 
         # 组装每个 room 对应的房间
@@ -170,10 +171,13 @@ class AssembleDungeonSystem(ReactiveProcessor):
 
             # 处理 room_name 重复问题
             room_name = self._deduplicate_name(seen_room_names, room_bp.room_name)
+            # 防御：code_name 同样去重，防止手搓蓝图绕过 Step 2 校验
+            code_name = self._deduplicate_name(seen_code_names, room_bp.code_name)
 
             # 创建 Stage 实体
             stage = create_stage(
                 name=room_name,
+                code_name=code_name,
                 stage_type=StageType.DUNGEON,
                 profile=room_bp.profile,
                 campaign_setting=self._game._world.blueprint.campaign_setting,

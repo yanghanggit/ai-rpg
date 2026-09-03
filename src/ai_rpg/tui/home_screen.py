@@ -10,6 +10,8 @@ from textual.containers import Horizontal
 from textual.widgets import Input, RichLog, Static
 
 from .base import BaseGameScreen
+from .cmd_browse import build_entity_browser_text
+from .cmd_stage import build_stage_view_text
 from .server_client import logout as server_logout
 from .utils import display_name
 
@@ -56,7 +58,7 @@ COMMAND_ALIASES: Dict[str, str] = {
 }
 
 # 已实现的基础命令
-BASE_COMMANDS = {"help", "clear", "quit", "info", "logout"}
+BASE_COMMANDS = {"help", "clear", "quit", "info", "logout", "browse", "stage"}
 
 
 def _build_help_text() -> str:
@@ -176,6 +178,44 @@ class HomeScreen(BaseGameScreen):
 
     def _cmd_quit(self, args: str) -> None:
         self.app.exit()
+
+    def _cmd_browse(self, args: str) -> None:
+        self._do_browse()
+
+    def _cmd_stage(self, args: str) -> None:
+        self._do_stage()
+
+    @work
+    async def _do_stage(self) -> None:
+        app = self.game_client
+        if app.session is None:
+            return
+        try:
+            text = await build_stage_view_text(
+                app.session.user_name,
+                app.session.game_name,
+                app.session.actor_name,
+            )
+            self._write(text)
+        except Exception as e:
+            logger.error(f"_do_stage: 获取当前场景失败 error={e}")
+            self._write(f"[bold red]❌ 获取当前场景失败: {e}[/]")
+
+    @work
+    async def _do_browse(self) -> None:
+        app = self.game_client
+        if app.session is None:
+            return
+        try:
+            text = await build_entity_browser_text(
+                app.session.user_name,
+                app.session.game_name,
+                app.session.actor_name,
+            )
+            self._write(text)
+        except Exception as e:
+            logger.error(f"_do_browse: 获取实体列表失败 error={e}")
+            self._write(f"[bold red]❌ 实体列表加载失败: {e}[/]")
 
     def _cmd_logout(self, args: str) -> None:
         self._do_logout()

@@ -8,11 +8,6 @@ from .character_stats import CharacterStats
 from .items import AnyItem, CostumeItem, GearItem
 from .registry import register_component_type
 
-############################################################################################################
-# 每回合固定行动次数（能量）；由 CombatRoundTransitionSystem 用于初始化 RoundStatsComponent，
-# 目前所有角色恒定共用该值，不随角色或装备变化。
-# DEFAULT_ROUND_ENERGY: Final[int] = 2
-
 
 ############################################################################################################
 @final

@@ -12,7 +12,6 @@ from ai_rpg.models import (
     Card,
     CharacterStats,
     CombatRoom,
-    COMPONENT_TYPES,
     ComponentSerialization,
     ConsumableArbitratorComponent,
     ConsumableItem,
@@ -37,9 +36,9 @@ from ai_rpg.models import (
     WorldDirectorComponent,
     WornCostumeComponent,
     create_actor,
-    create_component_type,
     create_stage,
     create_world,
+    attach_stage_component,
 )
 
 # ---------------------------------------------------------------------------
@@ -336,27 +335,6 @@ def create_actor_paper_doll() -> Actor:
 
 
 ########################################################################################################################
-def _attach_stage_component(stage: Stage) -> Stage:
-    """为场景挂载唯一组件：以 code_name 作为动态组件类名，并把中文名存入组件字段。"""
-    assert (
-        stage.code_name.isidentifier()
-    ), f"Stage {stage.name!r} 的 code_name 必须是合法 Python 标识符: {stage.code_name!r}"
-    assert (
-        stage.code_name not in COMPONENT_TYPES
-    ), f"Stage {stage.name!r} 的 code_name 与已有组件类型重名: {stage.code_name!r}"
-
-    component_cls = create_component_type(stage.code_name, name=(str, ...))
-
-    stage.components.append(
-        ComponentSerialization(
-            name=stage.code_name,
-            data=component_cls.model_validate({"name": stage.name}).model_dump(),
-        )
-    )
-    return stage
-
-
-########################################################################################################################
 def create_shrine_ruins_dungeon() -> Dungeon:
     """创建坍塌庙祠副本。"""
 
@@ -373,7 +351,7 @@ def create_shrine_ruins_dungeon() -> Dungeon:
         system_rules=SYSTEM_RULES,
     )
 
-    _attach_stage_component(stage_shrine_entrance)
+    attach_stage_component(stage_shrine_entrance)
 
     # ── 战斗房间 ──
     stage_shrine_courtyard = create_stage(
@@ -387,7 +365,7 @@ def create_shrine_ruins_dungeon() -> Dungeon:
         system_rules=SYSTEM_RULES,
     )
 
-    _attach_stage_component(stage_shrine_courtyard)
+    attach_stage_component(stage_shrine_courtyard)
 
     actor_paper_doll = create_actor_paper_doll()
     stage_shrine_courtyard.actors = [actor_paper_doll]
@@ -414,7 +392,7 @@ def create_wuming_room() -> Stage:
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=SYSTEM_RULES,
     )
-    return _attach_stage_component(stage)
+    return attach_stage_component(stage)
 
 
 #######################################################################################################################
@@ -429,7 +407,7 @@ def create_guzhiqiu_room() -> Stage:
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=SYSTEM_RULES,
     )
-    return _attach_stage_component(stage)
+    return attach_stage_component(stage)
 
 
 #######################################################################################################################
@@ -444,7 +422,7 @@ def create_entrance_hall() -> Stage:
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=SYSTEM_RULES,
     )
-    return _attach_stage_component(stage)
+    return attach_stage_component(stage)
 
 
 #######################################################################################################################

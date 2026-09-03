@@ -29,6 +29,7 @@ from src.ai_rpg.models import (
     StageType,
     create_component_type,
     resolve_component_type,
+    attach_stage_component,
 )
 
 # demo.world 内部使用 `ai_rpg.models`（而非 `src.ai_rpg.models`）导入，静态导入会
@@ -170,7 +171,7 @@ class TestDemoStageComponentHelpers:
             actors=[],
         )
 
-        result = _demo_world._attach_stage_component(stage)
+        result = attach_stage_component(stage)
 
         assert result is stage
         assert len(stage.components) == 1
@@ -188,7 +189,7 @@ class TestDemoStageComponentHelpers:
         )
 
         with pytest.raises(AssertionError, match="code_name"):
-            _demo_world._attach_stage_component(stage)
+            attach_stage_component(stage)
 
     def test_attach_stage_component_rejects_duplicate_code_name(self) -> None:
         first = Stage(
@@ -199,7 +200,7 @@ class TestDemoStageComponentHelpers:
             system_message="场景.A",
             actors=[],
         )
-        _demo_world._attach_stage_component(first)
+        attach_stage_component(first)
 
         second = Stage(
             name="场景.B",
@@ -211,7 +212,7 @@ class TestDemoStageComponentHelpers:
         )
 
         with pytest.raises(AssertionError, match="重名"):
-            _demo_world._attach_stage_component(second)
+            attach_stage_component(second)
 
 
 ############################################################################################################

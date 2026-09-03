@@ -18,12 +18,14 @@ from ai_rpg.models import (
     ConsumableWorkshopComponent,
     CostumeItem,
     CostumeWorkshopComponent,
+    DeckComponent,
     Dungeon,
     DungeonDirectorComponent,
     DungeonGenerationComponent,
     OpeningRoom,
     GearItem,
     GearWorkshopComponent,
+    InventoryComponent,
     MaterialItem,
     PlayerActionAuditComponent,
     Stage,
@@ -32,6 +34,7 @@ from ai_rpg.models import (
     TargetType,
     World,
     WorldDirectorComponent,
+    WornCostumeComponent,
     create_actor,
     create_stage,
     create_world,
@@ -307,16 +310,25 @@ def create_actor_paper_doll() -> Actor:
         character_stats=CharacterStats(),
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=SYSTEM_RULES,
-        cards=[
-            # 3 张基础攻击
-            _make_attack_card(),
-            _make_attack_card(),
-            _make_attack_card(),
-            # 2 张基础防御
-            _make_defense_card(),
-            _make_defense_card(),
-        ],
     )
+
+    paper_doll.components = [
+        ComponentSerialization(
+            name=DeckComponent.__name__,
+            data=DeckComponent(
+                name=paper_doll.name,
+                cards=[
+                    # 3 张基础攻击
+                    _make_attack_card(),
+                    _make_attack_card(),
+                    _make_attack_card(),
+                    # 2 张基础防御
+                    _make_defense_card(),
+                    _make_defense_card(),
+                ],
+            ).model_dump(),
+        )
+    ]
 
     return paper_doll
 
@@ -415,16 +427,90 @@ def create_wuming() -> Actor:
         character_stats=CharacterStats(),
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=SYSTEM_RULES,
-        cards=[
-            # 3 张基础攻击
-            _make_attack_card(),
-            _make_attack_card(),
-            _make_attack_card(),
-            # 测试用卡牌
-            _make_defense_card(),
-            _make_defense_card(),
-        ],
     )
+
+    actor.components = [
+        ComponentSerialization(
+            name=DeckComponent.__name__,
+            data=DeckComponent(
+                name=actor.name,
+                cards=[
+                    # 3 张基础攻击
+                    _make_attack_card(),
+                    _make_attack_card(),
+                    _make_attack_card(),
+                    # 测试用卡牌
+                    _make_defense_card(),
+                    _make_defense_card(),
+                ],
+            ).model_dump(),
+        ),
+        ComponentSerialization(
+            name=WornCostumeComponent.__name__,
+            data=WornCostumeComponent(
+                name=actor.name,
+                item=CostumeItem(
+                    name="时装.旧长衫",
+                    description="一件洗至发硬的旧长衫，袖口与领口已微微起毛。穿在身上像一件被反复浆洗过的旧衣——干净，但带着洗不掉的时间痕迹。",
+                ),
+            ).model_dump(),
+        ),
+        ComponentSerialization(
+            name=InventoryComponent.__name__,
+            data=InventoryComponent(
+                name=actor.name,
+                items=[
+                    GearItem(
+                        name="装备.缠麻短刃",
+                        description="一柄由旧铁剪反复磨砺而成的短刃，刃身仍留着暗红锈斑，握柄裹着泛黄的麻绳。挥动时刃口会拖出一道若有若无的暗红残影，仿佛把周遭的光都裁开一线；贴近刃脊处有极轻的嗡鸣，像每一次出鞘都藏着比伤口更深的念想。",
+                        cards=[
+                            Card(
+                                name="装备.缠麻短刃",
+                                description="一柄由旧铁剪反复磨砺而成的短刃，刃身仍留着暗红锈斑，握柄裹着泛黄的麻绳。挥动时刃口会拖出一道若有若无的暗红残影，仿佛把周遭的光都裁开一线；贴近刃脊处有极轻的嗡鸣，像每一次出鞘都藏着比伤口更深的念想。",
+                                on_play_affixes=[
+                                    "[血锈游丝]:出牌时刃身锈迹化为一缕暗红游丝先一步缠向目标，令本次攻击的创口更诡谲、痛感更绵长",
+                                ],
+                                cost=1,
+                                damage=3,
+                                hit_count=1,
+                                target_type=TargetType.SINGLE,
+                            ),
+                        ],
+                    ),
+                    GearItem(
+                        name="装备.缠麻护具",
+                        description="由多层泛黄麻绳与旧纱布反复衬叠而成的护具，表面缝着几道几近褪尽的暗红符痕，像被谁以禁制之法重新绞合过。穿上后衣料之间会发出极轻的窸窣声，仿佛有看不见的丝线贴着躯干缓缓游走，将迫近的寒意都缓去半拍。",
+                        cards=[
+                            Card(
+                                name="装备.缠麻护具",
+                                description="由多层泛黄麻绳与旧纱布反复衬叠而成的护具，表面缝着几道几近褪尽的暗红符痕，像被谁以禁制之法重新绞合过。穿上后衣料之间会发出极轻的窸窣声，仿佛有看不见的丝线贴着躯干缓缓游走，将迫近的寒意都缓去半拍。",
+                                on_hit_affixes=[
+                                    "[缠麻回护]:持有期间受到攻击时旧纱如活物般自行收紧，暗红符痕微微发亮，将佩戴者的动作稳稳托住并透出一股绵韧回护之力",
+                                ],
+                                retain=True,
+                                cost=1,
+                                block=3,
+                            ),
+                        ],
+                    ),
+                    ConsumableItem(
+                        name="消耗品.吗啡针剂",
+                        description="一支从洋馆药柜里找到的玻璃针剂，液体呈淡琥珀色。针管上有细小裂纹但封口尚好。注射后迅速镇痛止血，但会留下短暂的眩晕感。",
+                        count=1,
+                        on_use_prompt=["注射后迅速镇痛止血：使单个目标恢复 4 点 HP。"],
+                    ),
+                    ConsumableItem(
+                        name="消耗品.纸钱爆散",
+                        description="一叠写满朱砂字的纸钱，折叠成团后用香灰填塞。用力掘向地面后会爆散，纸片与香灰横飞，对场上所有敌人造成伤害。某些东西格外惧怕这个。",
+                        count=1,
+                        on_use_prompt=[
+                            "用力掘向地面，纸钱与香灰爆散：对目标造成 2 点伤害。"
+                        ],
+                    ),
+                ],
+            ).model_dump(),
+        ),
+    ]
 
     return actor
 
@@ -446,16 +532,35 @@ def create_guzhiqiu() -> Actor:
         character_stats=CharacterStats(),
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=SYSTEM_RULES,
-        cards=[
-            # 3 张基础攻击
-            _make_attack_card(),
-            _make_attack_card(),
-            _make_attack_card(),
-            # 2 张基础防御
-            _make_defense_card(),
-            _make_defense_card(),
-        ],
     )
+
+    actor.components = [
+        ComponentSerialization(
+            name=DeckComponent.__name__,
+            data=DeckComponent(
+                name=actor.name,
+                cards=[
+                    # 3 张基础攻击
+                    _make_attack_card(),
+                    _make_attack_card(),
+                    _make_attack_card(),
+                    # 2 张基础防御
+                    _make_defense_card(),
+                    _make_defense_card(),
+                ],
+            ).model_dump(),
+        ),
+        ComponentSerialization(
+            name=WornCostumeComponent.__name__,
+            data=WornCostumeComponent(
+                name=actor.name,
+                item=CostumeItem(
+                    name="时装.灰布长衫",
+                    description="一件半旧的深灰色棉布长衫，袖口微微磨损，右袖外侧有一块洗不掉的墨渍。剪裁合身但不束缚，方便在书案与画台间俯身劳作。穿在身上整洁素净，透着修书人特有的利落。",
+                ),
+            ).model_dump(),
+        ),
+    ]
 
     return actor
 
@@ -466,16 +571,7 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
 
     # 创建角色
     actor_wuming = create_wuming()
-    actor_wuming.custom_item = CostumeItem(
-        name="时装.旧长衫",
-        description="一件洗至发硬的旧长衫，袖口与领口已微微起毛。穿在身上像一件被反复浆洗过的旧衣——干净，但带着洗不掉的时间痕迹。",
-    )
-
     actor_guzhiqiu = create_guzhiqiu()
-    actor_guzhiqiu.custom_item = CostumeItem(
-        name="时装.灰布长衫",
-        description="一件半旧的深灰色棉布长衫，袖口微微磨损，右袖外侧有一块洗不掉的墨渍。剪裁合身但不束缚，方便在书案与画台间俯身劳作。穿在身上整洁素净，透着修书人特有的利落。",
-    )
 
     # 创建场景
     stage_wuming_room = create_wuming_room()
@@ -506,53 +602,6 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
             create_dungeon_director(),
             create_world_director(),
             create_storage(),
-        ],
-        inventory=[
-            GearItem(
-                name="装备.缠麻短刃",
-                description="一柄由旧铁剪反复磨砺而成的短刃，刃身仍留着暗红锈斑，握柄裹着泛黄的麻绳。挥动时刃口会拖出一道若有若无的暗红残影，仿佛把周遭的光都裁开一线；贴近刃脊处有极轻的嗡鸣，像每一次出鞘都藏着比伤口更深的念想。",
-                cards=[
-                    Card(
-                        name="装备.缠麻短刃",
-                        description="一柄由旧铁剪反复磨砺而成的短刃，刃身仍留着暗红锈斑，握柄裹着泛黄的麻绳。挥动时刃口会拖出一道若有若无的暗红残影，仿佛把周遭的光都裁开一线；贴近刃脊处有极轻的嗡鸣，像每一次出鞘都藏着比伤口更深的念想。",
-                        on_play_affixes=[
-                            "[血锈游丝]:出牌时刃身锈迹化为一缕暗红游丝先一步缠向目标，令本次攻击的创口更诡谲、痛感更绵长",
-                        ],
-                        cost=1,
-                        damage=3,
-                        hit_count=1,
-                        target_type=TargetType.SINGLE,
-                    ),
-                ],
-            ),
-            GearItem(
-                name="装备.缠麻护具",
-                description="由多层泛黄麻绳与旧纱布反复衬叠而成的护具，表面缝着几道几近褪尽的暗红符痕，像被谁以禁制之法重新绞合过。穿上后衣料之间会发出极轻的窸窣声，仿佛有看不见的丝线贴着躯干缓缓游走，将迫近的寒意都缓去半拍。",
-                cards=[
-                    Card(
-                        name="装备.缠麻护具",
-                        description="由多层泛黄麻绳与旧纱布反复衬叠而成的护具，表面缝着几道几近褪尽的暗红符痕，像被谁以禁制之法重新绞合过。穿上后衣料之间会发出极轻的窸窣声，仿佛有看不见的丝线贴着躯干缓缓游走，将迫近的寒意都缓去半拍。",
-                        on_hit_affixes=[
-                            "[缠麻回护]:持有期间受到攻击时旧纱如活物般自行收紧，暗红符痕微微发亮，将佩戴者的动作稳稳托住并透出一股绵韧回护之力",
-                        ],
-                        retain=True,
-                        cost=1,
-                        block=3,
-                    ),
-                ],
-            ),
-            ConsumableItem(
-                name="消耗品.吗啡针剂",
-                description="一支从洋馆药柜里找到的玻璃针剂，液体呈淡琥珀色。针管上有细小裂纹但封口尚好。注射后迅速镇痛止血，但会留下短暂的眩晕感。",
-                count=1,
-                on_use_prompt=["注射后迅速镇痛止血：使单个目标恢复 4 点 HP。"],
-            ),
-            ConsumableItem(
-                name="消耗品.纸钱爆散",
-                description="一叠写满朱砂字的纸钱，折叠成团后用香灰填塞。用力掘向地面后会爆散，纸片与香灰横飞，对场上所有敌人造成伤害。某些东西格外惧怕这个。",
-                count=1,
-                on_use_prompt=["用力掘向地面，纸钱与香灰爆散：对目标造成 2 点伤害。"],
-            ),
         ],
     )
 

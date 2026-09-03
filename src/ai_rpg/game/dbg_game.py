@@ -21,13 +21,11 @@ from ..models import (
     AppearanceComponent,
     CharacterStatsComponent,
     COMPONENT_TYPES,
-    DeckComponent,
     Dungeon,
     DungeonComponent,
     MonsterComponent,
     HomeComponent,
     IdentityComponent,
-    InventoryComponent,
     PlayerComponent,
     StorageComponent,
     Stage,
@@ -36,7 +34,6 @@ from ..models import (
     WorldState,
     WorldComponent,
     World,
-    WornCostumeComponent,
     SystemMessage,
     PlayerSession,
     CombatRoom,
@@ -202,18 +199,6 @@ class DBGGame(RPGGame):
             f"玩家: {self._player_session.name} 选择控制: {self._player_session.actor}"
         )
 
-        ## 第5步，添加 InventoryComponent 到玩家角色实体
-        assert not player_actor_entity.has(
-            InventoryComponent
-        ), "玩家角色实体不应该已经有 InventoryComponent"
-        initial_inventory = copy.deepcopy(self._world.blueprint.inventory)
-        player_actor_entity.replace(
-            InventoryComponent, player_actor_entity.name, initial_inventory
-        )
-        logger.debug(
-            f"为玩家角色实体 {player_actor_entity.name} 添加 InventoryComponent，初始道具 {len(initial_inventory)} 件"
-        )
-
         return self
 
     ###############################################################################################################################################
@@ -326,23 +311,17 @@ class DBGGame(RPGGame):
                 case _:
                     assert False, f"未知的 ActorType: {actor_model.type}"
 
-            # DBG 组件：牌组（DeckComponent）
-            initial_cards = copy.deepcopy(actor_model.cards)
-            actor_entity.replace(DeckComponent, actor_entity.name, initial_cards)
-            logger.debug(
-                f"为 Actor 实体 {actor_entity.name} 挂载牌组（DeckComponent，{len(initial_cards)} 张）"
-            )
-
-            # DBG 组件：初始时装（CostumeComponent），如果 actor_model.custom_item 不为 None，则挂载 CostumeComponent，初始时装来源于 actor_model.custom_item
-            if actor_model.custom_item is not None:
-                actor_entity.replace(
-                    WornCostumeComponent,
-                    actor_entity.name,
-                    copy.deepcopy(actor_model.custom_item),
-                )
+            # 特殊组件，根据 actor_model.components 数据驱动动态添加
+            for comp_serialization in actor_model.components:
+                comp_class = COMPONENT_TYPES.get(comp_serialization.name)
+                assert (
+                    comp_class is not None
+                ), f"未知组件类型: {comp_serialization.name}"
+                restore_comp = comp_class(**comp_serialization.data)
                 logger.debug(
-                    f"为 Actor 实体 {actor_entity.name} 添加初始时装 {actor_model.custom_item.name}"
+                    f"为 Actor 实体 {actor_entity.name} 添加 {comp_serialization.name}"
                 )
+                actor_entity.set(comp_class, restore_comp)
 
             # 添加到返回值
             actor_entities.append(actor_entity)

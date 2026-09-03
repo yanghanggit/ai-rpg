@@ -2,8 +2,6 @@
 游戏实体工厂模块。
 """
 
-from typing import List
-from .card import Card
 from . import (
     Actor,
     ActorType,
@@ -23,7 +21,6 @@ def create_actor(
     character_stats: CharacterStats,
     campaign_setting: str,
     system_rules: str,
-    cards: List[Card] = [],
 ) -> Actor:
     """
     创建一个游戏角色(Actor)实例。
@@ -44,7 +41,6 @@ def create_actor(
         base_body=base_body,
         system_message="",
         character_stats=character_stats,
-        cards=cards,
     )
 
     # 血量加满!!!!

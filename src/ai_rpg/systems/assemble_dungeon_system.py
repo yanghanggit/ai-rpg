@@ -12,6 +12,8 @@ from ..models import (
     Card,
     CharacterStats,
     CombatRoom,
+    ComponentSerialization,
+    DeckComponent,
     Dungeon,
     DungeonRoom,
     OpeningRoom,
@@ -188,8 +190,9 @@ class AssembleDungeonSystem(ReactiveProcessor):
                     f"  stage:  {stage.name}"
                 )
             elif room_bp.room_type == "combat":
-                actors = [
-                    create_actor(
+                actors = []
+                for actor_bp in room_bp.actors:
+                    actor = create_actor(
                         name=self._deduplicate_name(
                             seen_actor_names, actor_bp.actor_name
                         ),
@@ -199,18 +202,25 @@ class AssembleDungeonSystem(ReactiveProcessor):
                         character_stats=CharacterStats(),
                         campaign_setting=self._game._world.blueprint.campaign_setting,
                         system_rules=self._game._world.blueprint.system_rules,
-                        cards=[
-                            # 3 张基础攻击
-                            _make_attack_card(),
-                            _make_attack_card(),
-                            _make_attack_card(),
-                            # 2 张基础防御
-                            _make_defense_card(),
-                            _make_defense_card(),
-                        ],
                     )
-                    for actor_bp in room_bp.actors
-                ]
+                    actor.components = [
+                        ComponentSerialization(
+                            name=DeckComponent.__name__,
+                            data=DeckComponent(
+                                name=actor.name,
+                                cards=[
+                                    # 3 张基础攻击
+                                    _make_attack_card(),
+                                    _make_attack_card(),
+                                    _make_attack_card(),
+                                    # 2 张基础防御
+                                    _make_defense_card(),
+                                    _make_defense_card(),
+                                ],
+                            ).model_dump(),
+                        )
+                    ]
+                    actors.append(actor)
                 stage.actors = actors
                 rooms.append(CombatRoom(stage=stage))
                 logger.info(

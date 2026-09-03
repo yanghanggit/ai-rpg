@@ -190,7 +190,6 @@ def _mock_dungeon_actor(
         base_body="",
         system_message="",
         character_stats=stats,
-        custom_item=None,
     )
 
 

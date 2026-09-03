@@ -4,60 +4,21 @@ from pathlib import Path
 from typing import Dict, Final, List, final, override, Optional, Set
 from loguru import logger
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..game.config import DEBUG_CACHE_DIR, DUNGEONS_DIR
+from ..game.config import DEBUG_CACHE_DIR
 from ..game.dbg_game import DBGGame
 from ..models import (
     ActorType,
     AssembleDungeonAction,
-    Card,
+    AssembleDeckAction,
     CharacterStats,
     CombatRoom,
-    ComponentSerialization,
-    DeckComponent,
     Dungeon,
     DungeonRoom,
     OpeningRoom,
-    IllustrateDungeonAction,
     StageType,
-    SystemMessage,
-    TargetType,
 )
 from ..models.dungeon_generation import DungeonBlueprint
 from ..models.entity_factory import create_actor, create_stage
-
-
-def _make_attack_card() -> Card:
-    """创建基础攻击卡牌（damage 为卡牌自身值，填充牌库时叠加角色 attack）。"""
-    return Card(
-        name="攻击",
-        description="对单个敌人造成直接伤害。",
-        on_play_affixes=[],
-        playable=True,
-        exhaust=False,
-        cost=1,
-        damage=1,
-        hit_count=1,
-        block=0,
-        target_type=TargetType.SINGLE,
-        self_target=False,
-    )
-
-
-def _make_defense_card() -> Card:
-    """创建基础防御卡牌（block 为卡牌自身格挡值，填充牌库时叠加角色 defense）。"""
-    return Card(
-        name="防御",
-        description="为自身提供格挡值，持有时提升防御。",
-        on_play_affixes=[],
-        playable=True,
-        exhaust=False,
-        cost=1,
-        damage=0,
-        hit_count=1,
-        block=2,
-        target_type=TargetType.SINGLE,
-        self_target=True,
-    )
 
 
 ####################################################################################################################################
@@ -100,22 +61,10 @@ class AssembleDungeonSystem(ReactiveProcessor):
             )
             return
 
-        # 组装 Dungeon 实体树
+        # 组装 Dungeon 实体树（牌库由后置的 AssembleDeckSystem 负责填充）
         dungeon = self._build_dungeon(blueprint)
         if dungeon is None:
             return
-
-        # 写入最终 Dungeon JSON
-        dungeon_path: Path = DUNGEONS_DIR / f"{dungeon.name}.json"
-        dungeon_path.write_text(dungeon.model_dump_json(indent=4), encoding="utf-8")
-        logger.info(
-            f"[AssembleDungeonSystem] Dungeon 已保存: {dungeon_path}\n"
-            f"  rooms ({len(dungeon.rooms)}): "
-            + ", ".join(
-                f"{room.stage.name}({room.stage.actors[0].name if room.stage.actors else 'no actor'})"
-                for room in dungeon.rooms
-            )
-        )
 
         # 保存 DungeonBlueprint 副本到 DEBUG_CACHE_DIR（便于调试）
         debug_path: Path = DEBUG_CACHE_DIR / f"{dungeon_name}.blueprint.json"
@@ -124,22 +73,11 @@ class AssembleDungeonSystem(ReactiveProcessor):
             f"[AssembleDungeonSystem] DungeonBlueprint 已保存（调试）: {debug_path}"
         )
 
-        # 触发插图生成
-        entity.replace(IllustrateDungeonAction, entity.name, dungeon_name)
+        # 衔接 Step 4.5：怪物牌库组建（随后由其写 Dungeon JSON / 发插图 / 重置 memory）
+        entity.replace(AssembleDeckAction, entity.name, dungeon)
         logger.info(
-            f"[AssembleDungeonSystem] 添加 IllustrateDungeonAction: dungeon={dungeon_name}"
+            f"[AssembleDungeonSystem] 添加 AssembleDeckAction: dungeon={dungeon_name}"
         )
-
-        # 副本生成完成：重置副本生成系统实体（WorldComponent + DungeonGenerationComponent）
-        # 的 agent memory，仅保留首条 system prompt，清除其余全部对话
-        agent_memory = self._game.get_agent_memory(entity)
-        del agent_memory.messages[1:]
-        logger.info(
-            f"[AssembleDungeonSystem] 已重置 agent memory，保留 {len(agent_memory.messages)} 条消息"
-        )
-        assert isinstance(
-            agent_memory.messages[0], SystemMessage
-        ), "首条消息不是 SystemMessage"
 
     ####################################################################################################################################
     @staticmethod
@@ -207,23 +145,7 @@ class AssembleDungeonSystem(ReactiveProcessor):
                         campaign_setting=self._game._world.blueprint.campaign_setting,
                         system_rules=self._game._world.blueprint.system_rules,
                     )
-                    actor.components = [
-                        ComponentSerialization(
-                            name=DeckComponent.__name__,
-                            data=DeckComponent(
-                                name=actor.name,
-                                cards=[
-                                    # 3 张基础攻击
-                                    _make_attack_card(),
-                                    _make_attack_card(),
-                                    _make_attack_card(),
-                                    # 2 张基础防御
-                                    _make_defense_card(),
-                                    _make_defense_card(),
-                                ],
-                            ).model_dump(),
-                        )
-                    ]
+                    # 牌库由 AssembleDeckSystem 后续从卡牌原型库组建并润色
                     actors.append(actor)
                 stage.actors = actors
                 rooms.append(CombatRoom(stage=stage))

@@ -26,6 +26,7 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..models import (
     ActorComponent,
+    BUILD_CARD_FIELD_DESCRIPTION,
     Card,
     CardPoolComponent,
     DeathComponent,
@@ -150,6 +151,10 @@ def _build_card_pool_prompt(entity: Entity, cards: List[Card]) -> str:
 ## 待润色卡牌清单
 
 {card_lines}
+
+## 卡牌是什么（字段语义，只读背景）
+
+{BUILD_CARD_FIELD_DESCRIPTION}
 
 ## 硬性约束
 

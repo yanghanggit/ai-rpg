@@ -3,6 +3,7 @@
 from typing import Dict, List, final
 from ..entitas.components import Component
 from .card import Card
+from .dungeon import Dungeon
 from .dungeon_generation import DungeonBlueprint, DungeonRoomData
 from .items import ConsumableItem, CostumeItem, GearItem, MaterialItem
 from .registry import register_action_component_type, register_component_type
@@ -137,15 +138,16 @@ class MonsterTurnAction(Component):
 
 
 ############################################################################################################
-# ── 副本生成流程（Step 0-4）内部衔接 Action ──────────────────────────────────────────────────────────
+# ── 副本生成流程（Step 0-4.5）内部衔接 Action ──────────────────────────────────────────────────────────
 # 触发链（全部在同一次 dungeon_generate_pipeline.process() 内顺序完成）：
 #   GenerateDungeonAction
-#     → GenerateDungeonDirectiveSystem (Step 0) → GenerateDungeonDirectiveAction
-#     → GenerateDungeonProfileSystem    (Step 1) → GenerateDungeonRoomsAction
-#     → GenerateDungeonRoomsSystem     (Step 2) → GenerateDungeonActorsAction
-#     → GenerateDungeonActorsSystem    (Step 3) → AssembleDungeonAction
-#     → AssembleDungeonSystem          (Step 4) → IllustrateDungeonAction
-#     → IllustrateDungeonActionSystem  (Step 5)
+#     → GenerateDungeonDirectiveSystem (Step 0)   → GenerateDungeonDirectiveAction
+#     → GenerateDungeonProfileSystem    (Step 1)   → GenerateDungeonRoomsAction
+#     → GenerateDungeonRoomsSystem     (Step 2)   → GenerateDungeonActorsAction
+#     → GenerateDungeonActorsSystem    (Step 3)   → AssembleDungeonAction
+#     → AssembleDungeonSystem          (Step 4)   → AssembleDeckAction
+#     → AssembleDeckSystem      (Step 4.5)（当前终点）
+#     → IllustrateDungeonActionSystem  (Step 5)（暂注释禁用）
 ############################################################################################################
 @final
 @register_action_component_type
@@ -225,11 +227,27 @@ class AssembleDungeonAction(Component):
 @final
 @register_action_component_type
 @register_component_type
-class IllustrateDungeonAction(Component):
-    """Step 4→5 衔接：由 AssembleDungeonSystem 添加，触发副本封面与 Stage 插图的并发生成。"""
+class AssembleDeckAction(Component):
+    """Step 4→4.5 衔接：由 AssembleDungeonSystem 添加，携带已组装的 Dungeon（牌库待填）。
+
+    触发 AssembleDeckSystem（Step 4.5），其并发为每个角色从卡牌原型库
+    组建并润色牌库，随后写盘 Dungeon JSON（Step 5 插图暂注释禁用）。
+    """
 
     name: str
-    dungeon_name: str  # 副本全名，用于定位磁盘上的 .dungeons/{dungeon_name}.json
+    dungeon: Dungeon
+
+
+# 暂注释禁用：Step 5 插图生成（IllustrateDungeonAction / IllustrateDungeonActionSystem）
+# ############################################################################################################
+# @final
+# @register_action_component_type
+# @register_component_type
+# class IllustrateDungeonAction(Component):
+#     """Step 4.5→5 衔接：由 AssembleDeckSystem 添加，触发副本封面与 Stage 插图的并发生成。"""
+#
+#     name: str
+#     dungeon_name: str  # 副本全名，用于定位磁盘上的 .dungeons/{dungeon_name}.json
 
 
 ############################################################################################################

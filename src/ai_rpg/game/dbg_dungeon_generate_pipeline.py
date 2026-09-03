@@ -19,6 +19,7 @@ def create_dungeon_generate_pipeline(
     from ..systems.generate_dungeon_rooms_system import GenerateDungeonRoomsSystem
     from ..systems.generate_dungeon_actors_system import GenerateDungeonActorsSystem
     from ..systems.assemble_dungeon_system import AssembleDungeonSystem
+    from ..systems.assemble_deck_system import AssembleDeckSystem
 
     # from ..systems.illustrate_dungeon_action_system import IllustrateDungeonActionSystem
     from ..systems.epilogue_system import EpilogueSystem
@@ -32,12 +33,15 @@ def create_dungeon_generate_pipeline(
     # 起始系统
     processors.add(PrologueSystem(dbg_game))
 
-    # 副本生成流程（Steps 0-4，在同一次 pipeline.process() 内顺序触发）
+    # 副本生成流程（Steps 0-4.5，在同一次 pipeline.process() 内顺序触发）
     processors.add(GenerateDungeonDirectiveSystem(dbg_game))  # Step 0: 世界导演创作指令
     processors.add(GenerateDungeonProfileSystem(dbg_game))  # Step 1: 副本设定生成
     processors.add(GenerateDungeonRoomsSystem(dbg_game))  # Step 2: 房间批量生成
     processors.add(GenerateDungeonActorsSystem(dbg_game))  # Step 3: 怪物并发生成
     processors.add(AssembleDungeonSystem(dbg_game))  # Step 4: 实体树组装
+    processors.add(
+        AssembleDeckSystem(dbg_game)
+    )  # Step 4.5: 牌库组建（原型选卡 + 润色）
 
     # 副本图片生成系统（Step 5）
     # processors.add(IllustrateDungeonActionSystem(dbg_game))

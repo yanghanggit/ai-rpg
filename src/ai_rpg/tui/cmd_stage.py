@@ -79,6 +79,22 @@ async def build_stage_view_text(
             else "    [dim]（未持有 AppearanceComponent）[/]"
         )
 
+    # 补充其他场景的名称及场景内角色列表
+    lines.append("")
+    lines.append("[bold yellow]── 其他场景 ──────────────────────────────────────[/]")
+    other_stages = [
+        (name, actors)
+        for name, actors in stages_resp.mapping.items()
+        if name != stage_name
+    ]
+    if not other_stages:
+        lines.append("  [dim]（无其他场景）[/]")
+    for name, actors in other_stages:
+        actors_str = (
+            "、".join(display_name(a) for a in actors) if actors else "[dim]（空）[/]"
+        )
+        lines.append(f"  [bold cyan]{display_name(name)}[/] → {actors_str}")
+
     logger.info(
         f"build_stage_view_text: 成功 stage_name={stage_name} actors={len(actor_names)}"
     )

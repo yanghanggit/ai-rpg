@@ -33,7 +33,7 @@ from src.ai_rpg.game.rpg_stage_transition import (
 def _make_stage(game: Any, stage_name: str) -> Entity:
     """在 game 中创建一个带 StageComponent 的场景实体。"""
     entity: Entity = game._create_entity(stage_name)
-    entity.add(StageComponent, stage_name)
+    entity.add(StageComponent, stage_name, stage_name)
     return entity
 
 

@@ -43,7 +43,7 @@ def _make_game(player_name: str = "player", actor_name: str = "hero") -> DBGGame
 
 def _make_stage(game: Any, name: str) -> Entity:
     entity: Entity = cast(Entity, game._create_entity(name))
-    entity.add(StageComponent, name)
+    entity.add(StageComponent, name, name)
     entity.add(DungeonComponent, name)
     return entity
 

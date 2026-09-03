@@ -12,6 +12,7 @@ from ai_rpg.models import (
     Card,
     CharacterStats,
     CombatRoom,
+    COMPONENT_TYPES,
     ComponentSerialization,
     ConsumableArbitratorComponent,
     ConsumableItem,
@@ -335,24 +336,20 @@ def create_actor_paper_doll() -> Actor:
 
 
 ########################################################################################################################
-def _make_stage_component_class_name(code_name: str) -> str:
-    """以策划指定的英文代号为基准，生成可读的动态组件类名。"""
-    return f"StageTag_{code_name}"
-
-
-########################################################################################################################
 def _attach_stage_component(stage: Stage) -> Stage:
-    """为场景挂载唯一组件：动态创建组件类，并把中文名存入组件字段。"""
+    """为场景挂载唯一组件：以 code_name 作为动态组件类名，并把中文名存入组件字段。"""
     assert (
         stage.code_name.isidentifier()
     ), f"Stage {stage.name!r} 的 code_name 必须是合法 Python 标识符: {stage.code_name!r}"
+    assert (
+        stage.code_name not in COMPONENT_TYPES
+    ), f"Stage {stage.name!r} 的 code_name 与已有组件类型重名: {stage.code_name!r}"
 
-    class_name = _make_stage_component_class_name(stage.code_name)
-    component_cls = create_component_type(class_name, name=(str, ...))
+    component_cls = create_component_type(stage.code_name, name=(str, ...))
 
     stage.components.append(
         ComponentSerialization(
-            name=class_name,
+            name=stage.code_name,
             data=component_cls.model_validate({"name": stage.name}).model_dump(),
         )
     )

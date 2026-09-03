@@ -33,7 +33,7 @@ from src.ai_rpg.models.messages import HumanMessage, SystemMessage
 def _make_stage(game: Any, stage_name: str) -> Entity:
     """创建带 StageComponent 的场景实体。"""
     entity: Entity = game._create_entity(stage_name)
-    entity.add(StageComponent, stage_name)
+    entity.add(StageComponent, stage_name, stage_name)
     return entity
 
 

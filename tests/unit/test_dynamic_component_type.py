@@ -4,7 +4,7 @@
 - registry.create_component_type 动态创建组件类（含幂等与字段定义）
 - registry.resolve_component_type 惰性重建动态组件（含按 data 推断字段）
 - Stage.code_name 必填字段与序列化
-- demo.world 唯一组件类名生成与挂载辅助函数
+- demo.world 唯一组件挂载辅助函数
 - DBGGame.create_stage_entities 挂载 Stage.components
 - RPGEntityManager.deserialize_entities 跨进程重建动态组件
 """
@@ -51,7 +51,6 @@ def _clean_dynamic_component_types() -> Iterator[None]:
 ############################################################################################################
 def _make_stage_model(name: str, code_name: str) -> Stage:
     """构造一个挂载了指定英文代号对应动态组件的 Stage 模型。"""
-    tag_class_name = f"StageTag_{code_name}"
     return Stage(
         name=name,
         code_name=code_name,
@@ -59,7 +58,7 @@ def _make_stage_model(name: str, code_name: str) -> Stage:
         profile="测试场景",
         system_message=f"{name} 的系统消息",
         actors=[],
-        components=[ComponentSerialization(name=tag_class_name, data={"name": name})],
+        components=[ComponentSerialization(name=code_name, data={"name": name})],
     )
 
 
@@ -153,7 +152,7 @@ class TestStageCodeName:
         restored = Stage.model_validate(stage.model_dump())
 
         assert restored.code_name == "test_room"
-        assert restored.components[0].name == "StageTag_test_room"
+        assert restored.components[0].name == "test_room"
         assert restored.components[0].data == {"name": "场景.测试房"}
 
 
@@ -161,19 +160,6 @@ class TestStageCodeName:
 # demo.world 唯一组件辅助函数
 ############################################################################################################
 class TestDemoStageComponentHelpers:
-    def test_class_name_is_readable(self) -> None:
-        name = _demo_world._make_stage_component_class_name("wuming_room")
-
-        assert name == "StageTag_wuming_room"
-
-    def test_class_names_are_unique_per_stage(self) -> None:
-        names = {
-            _demo_world._make_stage_component_class_name(n)
-            for n in ["wuming_room", "guzhiqiu_room", "entrance_hall"]
-        }
-
-        assert len(names) == 3
-
     def test_attach_stage_component(self) -> None:
         stage = Stage(
             name="场景.测试",
@@ -188,7 +174,7 @@ class TestDemoStageComponentHelpers:
 
         assert result is stage
         assert len(stage.components) == 1
-        assert stage.components[0].name == "StageTag_test_room"
+        assert stage.components[0].name == "test_room"
         assert stage.components[0].data == {"name": "场景.测试"}
 
     def test_attach_stage_component_rejects_invalid_code_name(self) -> None:
@@ -204,6 +190,29 @@ class TestDemoStageComponentHelpers:
         with pytest.raises(AssertionError, match="code_name"):
             _demo_world._attach_stage_component(stage)
 
+    def test_attach_stage_component_rejects_duplicate_code_name(self) -> None:
+        first = Stage(
+            name="场景.A",
+            code_name="dup_room",
+            type=StageType.HOME,
+            profile="p",
+            system_message="场景.A",
+            actors=[],
+        )
+        _demo_world._attach_stage_component(first)
+
+        second = Stage(
+            name="场景.B",
+            code_name="dup_room",
+            type=StageType.HOME,
+            profile="p",
+            system_message="场景.B",
+            actors=[],
+        )
+
+        with pytest.raises(AssertionError, match="重名"):
+            _demo_world._attach_stage_component(second)
+
 
 ############################################################################################################
 # demo 蓝图/副本的 Stage 唯一标记
@@ -217,7 +226,7 @@ class TestDemoBlueprintUniqueTags:
         assert len(set(code_names)) == len(code_names)
         for stage in blueprint.stages:
             assert len(stage.components) == 1
-            assert stage.components[0].name == f"StageTag_{stage.code_name}"
+            assert stage.components[0].name == stage.code_name
             assert stage.components[0].data == {"name": stage.name}
 
     def test_all_dungeon_stages_have_unique_tags(self) -> None:
@@ -234,7 +243,7 @@ class TestDemoBlueprintUniqueTags:
 ############################################################################################################
 class TestCreateStageEntitiesDynamicComponent:
     def test_attaches_dynamic_component(self, sample_game: Any) -> None:
-        tag_name = "StageTag_integration_001"
+        tag_name = "integration_001"
         tag_cls = create_component_type(tag_name, name=(str, ...))
         stage_model = _make_stage_model("场景.测试房", "integration_001")
 
@@ -248,8 +257,8 @@ class TestCreateStageEntitiesDynamicComponent:
         assert stage_entity.get(tag_cls).model_dump() == {"name": "场景.测试房"}
 
     def test_each_stage_gets_its_own_unique_component(self, sample_game: Any) -> None:
-        cls_a = create_component_type("StageTag_integration_a", name=(str, ...))
-        cls_b = create_component_type("StageTag_integration_b", name=(str, ...))
+        cls_a = create_component_type("integration_a", name=(str, ...))
+        cls_b = create_component_type("integration_b", name=(str, ...))
 
         entities = sample_game.create_stage_entities(
             [
@@ -272,7 +281,7 @@ class TestCreateStageEntitiesDynamicComponent:
 ############################################################################################################
 class TestDeserializeEntitiesDynamicComponent:
     def test_rebuilds_dynamic_component_from_serialization(self) -> None:
-        tag_name = "StageTag_deser_001"
+        tag_name = "deser_001"
         tag_cls = create_component_type(tag_name, name=(str, ...))
 
         source = RPGEntityManager()

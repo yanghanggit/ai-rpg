@@ -350,7 +350,7 @@ class DBGGame(RPGGame):
             )
 
             # 必要组件: StageComponent，包含场景名称，方便后续访问和识别
-            stage_entity.add(StageComponent, stage_model.name)
+            stage_entity.add(StageComponent, stage_model.name, stage_model.code_name)
 
             # 必要组件：系统消息
             assert stage_model.name in stage_model.system_message

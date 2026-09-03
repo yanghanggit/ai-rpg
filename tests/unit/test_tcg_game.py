@@ -61,14 +61,14 @@ def _make_game(
 
 def _make_home_stage_entity(game: Any, name: str) -> Entity:
     entity: Entity = cast(Entity, game._create_entity(name))
-    entity.add(StageComponent, name)
+    entity.add(StageComponent, name, name)
     entity.add(HomeComponent, name)
     return entity
 
 
 def _make_dungeon_stage_entity(game: Any, name: str) -> Entity:
     entity: Entity = cast(Entity, game._create_entity(name))
-    entity.add(StageComponent, name)
+    entity.add(StageComponent, name, name)
     entity.add(DungeonComponent, name)
     return entity
 

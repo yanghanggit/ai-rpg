@@ -433,7 +433,9 @@ def build_mock_entities_details_response(
             *_identity_components(MOCK_STAGE_NAME, 0),
             ComponentSerialization(
                 name=StageComponent.__name__,
-                data=StageComponent(name=MOCK_STAGE_NAME).model_dump(),
+                data=StageComponent(
+                    name=MOCK_STAGE_NAME, code_name="mock_dungeon_room"
+                ).model_dump(),
             ),
             ComponentSerialization(
                 name=DungeonComponent.__name__,

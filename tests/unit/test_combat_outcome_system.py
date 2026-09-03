@@ -54,7 +54,7 @@ def _make_actor(
 def _make_stage(context: Context, name: str) -> Entity:
     entity = context.create_entity()
     entity._name = name
-    entity.add(StageComponent, name)
+    entity.add(StageComponent, name, name)
     return entity
 
 

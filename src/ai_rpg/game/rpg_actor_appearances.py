@@ -4,7 +4,7 @@
 """
 
 from typing import Dict
-from ..entitas import Entity
+from ..entitas import Entity, Matcher
 from ..models import AppearanceComponent
 from .rpg_game import RPGGame
 
@@ -13,10 +13,11 @@ from .rpg_game import RPGGame
 def get_actor_appearances_in_stage(game: RPGGame, entity: Entity) -> Dict[str, str]:
     """获取场景上 Actor 的外观信息映射。"""
     ret: Dict[str, str] = {}
-    for actor in game.get_actors_in_stage(entity):
-        if actor.has(AppearanceComponent):
-            final_appearance = actor.get(AppearanceComponent)
-            ret.setdefault(final_appearance.name, final_appearance.appearance)
+    for actor in game.get_actors_in_stage(
+        entity, Matcher(all_of=[AppearanceComponent])
+    ):
+        final_appearance = actor.get(AppearanceComponent)
+        ret.setdefault(final_appearance.name, final_appearance.appearance)
     return ret
 
 

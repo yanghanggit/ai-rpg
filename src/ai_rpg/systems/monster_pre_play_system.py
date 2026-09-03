@@ -7,7 +7,7 @@ from ..deepseek import DeepSeekClient, batch_chat
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_combat_processor import (
     compute_character_stats,
-    get_alive_actors_in_stage,
+    get_alive_party_members_in_stage,
     get_energy,
     resolve_targets,
 )
@@ -20,7 +20,6 @@ from ..models import (
     HumanMessage,
     MonsterComponent,
     MonsterTurnAction,
-    PartyMemberComponent,
     PassTurnAction,
     PlayCardsAction,
     TargetType,
@@ -366,11 +365,10 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         energy = get_energy(entity)
 
         # 获取场上存活的队伍成员（对手），构建决策视角快照（HP / 总格挡 / 来源本怪物的受击牌）
-        alive_actors = get_alive_actors_in_stage(self._game, entity)
+        alive_party_members = get_alive_party_members_in_stage(entity, self._game)
         opponents: List[_OpponentView] = [
             _build_opponent_view(actor, monster_name=entity.name)
-            for actor in alive_actors
-            if actor.has(PartyMemberComponent)
+            for actor in alive_party_members
         ]
 
         # 获取本回合行动顺序信息

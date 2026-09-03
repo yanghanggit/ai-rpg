@@ -112,8 +112,7 @@ def get_current_turn_actor(game: DBGGame, round: Round) -> Optional[str]:
 #################################################################################################################################################
 def get_alive_actors_in_stage(game: DBGGame, entity: Entity) -> Set[Entity]:
     """获取指定场景上存活的 Actor 实体。"""
-    ret = game.get_actors_in_stage(entity)
-    return {actor for actor in ret if not actor.has(DeathComponent)}
+    return game.get_actors_in_stage(entity, Matcher(none_of=[DeathComponent]))
 
 
 #################################################################################################################################################
@@ -121,8 +120,12 @@ def get_alive_party_members_in_stage(
     anchor_entity: Entity, dbg_game: DBGGame
 ) -> List[Entity]:
     """获取锚点实体所在场景中所有存活的队伍成员。"""
-    actor_entities = get_alive_actors_in_stage(dbg_game, anchor_entity)
-    return [entity for entity in actor_entities if entity.has(PartyMemberComponent)]
+    return list(
+        dbg_game.get_actors_in_stage(
+            anchor_entity,
+            Matcher(all_of=[PartyMemberComponent], none_of=[DeathComponent]),
+        )
+    )
 
 
 #################################################################################################################################################
@@ -130,8 +133,11 @@ def get_alive_monsters_in_stage(
     anchor_entity: Entity, dbg_game: DBGGame
 ) -> List[Entity]:
     """获取锚点实体所在场景中所有存活的怪物。"""
-    actor_entities = get_alive_actors_in_stage(dbg_game, anchor_entity)
-    return [entity for entity in actor_entities if entity.has(MonsterComponent)]
+    return list(
+        dbg_game.get_actors_in_stage(
+            anchor_entity, Matcher(all_of=[MonsterComponent], none_of=[DeathComponent])
+        )
+    )
 
 
 #################################################################################################################################################

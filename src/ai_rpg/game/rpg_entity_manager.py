@@ -170,28 +170,45 @@ class RPGEntityManager(Context):
         return next(iter(player_entities), None)
 
     ###############################################################################################################################################
-    def get_actors_in_stage(self, entity: Entity) -> Set[Entity]:
-        """获取指定场景上的所有 Actor 实体。"""
+    def get_actors_in_stage(
+        self, entity: Entity, matcher: Optional[Matcher] = None
+    ) -> Set[Entity]:
+        """获取指定场景上匹配 matcher 的 Actor 实体（未传 matcher 时返回全部 Actor）。"""
 
         stage_entity = self.resolve_stage_entity(entity)
         assert stage_entity is not None, f"entity = {entity}"
 
+        # 补全 all_of 条件，确保其中包含 ActorComponent
+        all_of = list(matcher.all_of) if matcher is not None and matcher.all_of else []
+
+        # 确保 all_of 条件中包含 ActorComponent，以便只匹配 Actor 实体
+        if ActorComponent not in all_of:
+            all_of.append(ActorComponent)
+
+        # 构建用于匹配 Actor 的 Matcher，确保包含 ActorComponent
+        actor_matcher = Matcher(
+            all_of=all_of,
+            any_of=matcher.any_of if matcher is not None else None,
+            none_of=matcher.none_of if matcher is not None else None,
+        )
+
         # 直接在这里构建stage到actor的映射
         ret: Set[Entity] = set()
 
-        actor_entities: Set[Entity] = self.get_group(
-            Matcher(all_of=[ActorComponent])
-        ).entities
+        # 获取所有候选的 Actor 实体，这些实体满足 actor_matcher 的条件
+        candidate_entities: Set[Entity] = self.get_group(actor_matcher).entities
 
         # 以stage为key，actor为value
-        for actor_entity in actor_entities:
-            actor_stage_entity = self.resolve_stage_entity(actor_entity)
-            assert actor_stage_entity is not None, f"actor_entity = {actor_entity}"
-            if actor_stage_entity != stage_entity:
+        for candidate_entity in candidate_entities:
+            candidate_stage_entity = self.resolve_stage_entity(candidate_entity)
+            assert (
+                candidate_stage_entity is not None
+            ), f"candidate_entity = {candidate_entity}"
+            if candidate_stage_entity != stage_entity:
                 # 不同的stage不算在内
                 continue
 
-            ret.add(actor_entity)
+            ret.add(candidate_entity)
 
         return ret
 
@@ -209,16 +226,7 @@ class RPGEntityManager(Context):
 
     ###############################################################################################################################################
     def is_actor_in_dungeon_stage(self, actor_entity: Entity) -> bool:
-        """判断 Actor 是否在副本场景中。
-
-        检查 Actor 所在的 Stage 是否具有 DungeonComponent。
-
-        Args:
-            actor_entity: Actor 实体
-
-        Returns:
-            bool: 在副本场景中返回 True，否则返回 False
-        """
+        """判断 Actor 是否在副本场景中。"""
         assert actor_entity.has(ActorComponent), "actor_entity must have ActorComponent"
         stage_entity = self.resolve_stage_entity(actor_entity)
         assert stage_entity is not None, "stage_entity is None"

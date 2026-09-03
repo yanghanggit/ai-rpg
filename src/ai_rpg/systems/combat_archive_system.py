@@ -6,7 +6,7 @@ from loguru import logger
 from overrides import override
 
 from ..deepseek import DeepSeekClient, batch_chat
-from ..entitas import Entity, ExecuteProcessor
+from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.dbg_game import DBGGame
 from ..utils import prompt_builder
 from ..models import (
@@ -138,13 +138,12 @@ class CombatArchiveSystem(ExecuteProcessor):
         current_stage_entity = self._game.resolve_stage_entity(player_entity)
         assert current_stage_entity is not None, "无法获取当前场景实体！"
 
-        # 获取场景上的所有角色（包括存活和死亡的）
-        actors_in_stage = self._game.get_actors_in_stage(player_entity)
-
-        # 过滤出队伍成员
-        ally_actors = [
-            actor for actor in actors_in_stage if actor.has(PartyMemberComponent)
-        ]
+        # 获取场景上的队伍成员（包括存活和死亡的）
+        ally_actors = list(
+            self._game.get_actors_in_stage(
+                player_entity, Matcher(all_of=[PartyMemberComponent])
+            )
+        )
 
         # 创建聊天客户端
         chat_clients = [

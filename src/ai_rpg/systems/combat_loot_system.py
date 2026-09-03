@@ -7,7 +7,7 @@ from overrides import override
 from pydantic import BaseModel
 
 from ..deepseek import DeepSeekClient, batch_chat
-from ..entitas import Entity, ExecuteProcessor
+from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.dbg_game import DBGGame
 from ..models import (
     AppearanceComponent,
@@ -133,8 +133,11 @@ class CombatLootSystem(ExecuteProcessor):
         ), "玩家实体缺少 PartyMemberComponent"
 
         # 获取当前战斗场景中的所有怪物实体
-        actors = self._game.get_actors_in_stage(player_entity)
-        monsters = [e for e in actors if e.has(MonsterComponent)]
+        monsters = list(
+            self._game.get_actors_in_stage(
+                player_entity, Matcher(all_of=[MonsterComponent])
+            )
+        )
 
         # 为每头怪物创建 LLM 客户端并推理掉落，解析结果后写入玩家 CombatLootComponent
         clients = [self._create_loot_client(m) for m in monsters]

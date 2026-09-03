@@ -31,9 +31,7 @@ COMMAND_DEFS: List[Tuple[str, str, str]] = [
 
 # 命令名（完整或简写）→ 完整命令名
 COMMAND_ALIASES: Dict[str, str] = {
-    alias: full
-    for full, short, _ in COMMAND_DEFS
-    for alias in (full, short)
+    alias: full for full, short, _ in COMMAND_DEFS for alias in (full, short)
 }
 
 

@@ -1,7 +1,7 @@
 """游戏主场景 Screen（Home 状态）：正文区 + 输入区，支持斜杠命令。"""
 
 import asyncio
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from loguru import logger
 from textual import on, work
@@ -10,10 +10,15 @@ from textual.containers import Horizontal
 from textual.widgets import Input, RichLog, Static
 
 from .base import BaseGameScreen
+from .cmd_advance import run_home_advance
 from .cmd_browse import build_entity_browser_text
 from .cmd_stage import build_stage_view_text
-from .server_client import logout as server_logout
-from .utils import display_name
+from .server_client import (
+    fetch_session_messages,
+    logout as server_logout,
+    stream_session_messages,
+)
+from .utils import display_name, format_agent_event
 
 INTRO_TEXT = """\
 [bold cyan]── 游戏主场景 ──[/]
@@ -58,7 +63,17 @@ COMMAND_ALIASES: Dict[str, str] = {
 }
 
 # 已实现的基础命令
-BASE_COMMANDS = {"help", "clear", "quit", "info", "logout", "browse", "stage"}
+BASE_COMMANDS = {
+    "help",
+    "clear",
+    "quit",
+    "info",
+    "logout",
+    "browse",
+    "stage",
+    "session",
+    "advance",
+}
 
 
 def _build_help_text() -> str:
@@ -93,6 +108,12 @@ class HomeScreen(BaseGameScreen):
         padding: 0 1;
     }
 
+    #notify {
+        height: 1;
+        content-align: left middle;
+        padding: 0 1;
+    }
+
     #input-row {
         height: 3;
         dock: bottom;
@@ -112,6 +133,7 @@ class HomeScreen(BaseGameScreen):
 
     def compose(self) -> ComposeResult:
         yield RichLog(id="body", highlight=True, markup=True, wrap=True)
+        yield Static("", id="notify")
         with Horizontal(id="input-row"):
             yield Static("> ", id="prompt")
             yield Input(
@@ -122,6 +144,7 @@ class HomeScreen(BaseGameScreen):
     def on_mount(self) -> None:
         self._write(INTRO_TEXT)
         self.query_one("#command-input", Input).focus()
+        self._watch_notifications()
 
     def _write(self, text: str) -> None:
         """把信息追加写入正文区。"""
@@ -216,6 +239,118 @@ class HomeScreen(BaseGameScreen):
         except Exception as e:
             logger.error(f"_do_browse: 获取实体列表失败 error={e}")
             self._write(f"[bold red]❌ 实体列表加载失败: {e}[/]")
+
+    def _cmd_session(self, args: str) -> None:
+        self._do_view_messages(args)
+
+    def _cmd_advance(self, args: str) -> None:
+        self._do_advance()
+
+    @work
+    async def _do_advance(self) -> None:
+        app = self.game_client
+        if app.session is None:
+            return
+        self._write(
+            "[bold yellow]── 推进家园 ──────────────────────────────────────[/]"
+        )
+        self._write("[dim]▶ 正在推进...[/]")
+        try:
+            text = await run_home_advance(app.session.user_name, app.session.game_name)
+            self._write(text)
+        except Exception as e:
+            logger.error(f"_do_advance: 推进请求失败 error={e}")
+            self._write(f"[bold red]❌ 推进请求失败: {e}[/]")
+
+    @work
+    async def _do_view_messages(self, raw: str) -> None:
+        raw = raw.strip()
+        start_seq: Optional[int] = None
+        if raw:
+            try:
+                start_seq = int(raw)
+            except ValueError:
+                self._write(f"[bold red]❌ 无效的 sequence_id：{raw}，已取消[/]")
+                return
+            self._write(f"[dim]▶ 拉取 sequence_id > {start_seq} 的消息...[/]")
+        else:
+            self._write("[dim]▶ 拉取最新未读消息...[/]")
+
+        count = await self._pull_messages(start_seq)
+        if count == 0:
+            self._write("[dim](没有更多消息)[/]")
+
+    async def _pull_messages(self, start_sequence_id: Optional[int] = None) -> int:
+        app = self.game_client
+        if app.session is None:
+            return 0
+        since = (
+            start_sequence_id
+            if start_sequence_id is not None
+            else app.session.last_sequence_id
+        )
+        try:
+            resp = await fetch_session_messages(
+                app.session.user_name, app.session.game_name, since
+            )
+        except Exception as e:
+            logger.warning(f"_pull_messages: 拉取失败 error={e}")
+            return 0
+
+        count = 0
+        for msg in resp.session_messages:
+            if app.session is None:
+                break
+            if msg.sequence_id > app.session.last_sequence_id:
+                app.session.last_sequence_id = msg.sequence_id
+            if msg.agent_event is None:
+                continue
+            self._write(format_agent_event(msg.agent_event))
+            self._write("--------------------------------------")
+            count += 1
+            logger.debug(f"_pull_messages: 写入消息 seq={msg.sequence_id}")
+        self._update_notify_badge()
+        return count
+
+    def _update_notify_badge(self) -> None:
+        app = self.game_client
+        badge = self.query_one("#notify", Static)
+        if app.session is None:
+            badge.update("")
+            return
+        last_seq = app.session.last_sequence_id
+        notify_seq = app.session.notify_last_sequence_id
+        unread = max(0, notify_seq - last_seq)
+        seq_info = f"[dim]（本地:{last_seq} / 服务器:{notify_seq}）[/]"
+        if unread > 0:
+            badge.update(
+                f"[bold yellow]🔔 有 {unread} 条新消息[/] {seq_info}"
+                f" —— 输入 [bold green]/session[/] 查看"
+            )
+        else:
+            badge.update(seq_info)
+
+    @work(exclusive=True)
+    async def _watch_notifications(self) -> None:
+        app = self.game_client
+        if app.session is None:
+            return
+        user_name = app.session.user_name
+        game_name = app.session.game_name
+        app.session.notify_last_sequence_id = app.session.last_sequence_id
+        logger.info(f"_watch_notifications: 启动通知监听 user_name={user_name}")
+        try:
+            async for msg in stream_session_messages(
+                user_name, game_name, app.session.notify_last_sequence_id
+            ):
+                if app.session is None:
+                    break
+                if msg.sequence_id > app.session.notify_last_sequence_id:
+                    app.session.notify_last_sequence_id = msg.sequence_id
+                self._update_notify_badge()
+        except Exception as e:
+            logger.warning(f"_watch_notifications: 通知流中断 error={e}")
+        logger.info(f"_watch_notifications: 通知流已停止 user_name={user_name}")
 
     def _cmd_logout(self, args: str) -> None:
         self._do_logout()

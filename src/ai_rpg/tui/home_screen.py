@@ -12,6 +12,11 @@ from textual.widgets import Input, RichLog, Static
 from .base import BaseGameScreen
 from .cmd_advance import run_home_advance
 from .cmd_browse import build_entity_browser_text
+from .cmd_roster import (
+    add_roster_member,
+    build_roster_list_text,
+    remove_roster_member,
+)
 from .cmd_speak import speak_to
 from .cmd_stage import build_stage_view_text
 from .cmd_switch import switch_stage
@@ -34,9 +39,12 @@ COMMAND_DEFS: List[Tuple[str, str, str]] = [
     ("browse", "b", "实体浏览器：列出全部场景与角色"),
     ("stage", "st", "查看当前所在场景描述与角色外观"),
     ("session", "ss", "查看消息（可带 sequence_id）"),
-    # 副本与队伍
+    # 副本
     ("dungeon", "d", "副本预览并可进入副本"),
-    ("roster", "r", "管理队伍：加入/移除队伍成员"),
+    # 队伍
+    ("list-roster", "lr", "查看队伍与盟友列表"),
+    ("add-roster", "ar", "将盟友加入队伍：/add-roster @人名"),
+    ("remove-roster", "rr", "将盟友移出队伍：/remove-roster @人名"),
     # 角色行动
     ("speak", "sp", "与当前场景 NPC 对话"),
     ("switch", "sw", "切换到其他场景"),
@@ -56,8 +64,8 @@ COMMAND_DEFS: List[Tuple[str, str, str]] = [
     ("quit", "q", "退出游戏"),
 ]
 
-# 通用命令：固定在命令列表底部展示
-COMMON_COMMANDS = {"help", "clear", "quit"}
+# 命令列表展示时，在这些命令前插入空行作为分组分隔
+GROUP_BREAK_BEFORE = {"list-roster", "speak", "help"}
 
 # 命令名（完整或简写）→ 完整命令名
 COMMAND_ALIASES: Dict[str, str] = {
@@ -77,16 +85,17 @@ BASE_COMMANDS = {
     "advance",
     "switch",
     "speak",
+    "list-roster",
+    "add-roster",
+    "remove-roster",
 }
 
 
 def _build_help_text() -> str:
     lines = ["[bold yellow]可用命令：[/]", ""]
-    separated = False
     for full, short, desc in COMMAND_DEFS:
-        if not separated and full in COMMON_COMMANDS:
+        if full in GROUP_BREAK_BEFORE and lines[-1] != "":
             lines.append("")
-            separated = True
         lines.append(f"  [bold green]/{full}[/] [dim](/{short})[/]  {desc}")
     lines.append("")
     lines.append("[dim]直接输入 [bold]/[/] 亦可显示本帮助。[/]")
@@ -183,7 +192,7 @@ class HomeScreen(BaseGameScreen):
         # 空行分隔每条命令产生的输出
         self._write("")
         if canonical in BASE_COMMANDS:
-            handler = getattr(self, f"_cmd_{canonical}")
+            handler = getattr(self, f"_cmd_{canonical.replace('-', '_')}")
             handler(args)
         else:
             self._placeholder(canonical, args)
@@ -416,6 +425,63 @@ class HomeScreen(BaseGameScreen):
         except Exception as e:
             logger.warning(f"_watch_notifications: 通知流中断 error={e}")
         logger.info(f"_watch_notifications: 通知流已停止 user_name={user_name}")
+
+    def _cmd_list_roster(self, args: str) -> None:
+        self._do_list_roster()
+
+    def _cmd_add_roster(self, args: str) -> None:
+        target = args.strip()
+        if target.startswith("@"):
+            target = target[1:].strip()
+        if not target:
+            self._write("[yellow]用法：/add-roster @人名[/]")
+            return
+        self._do_add_roster(target)
+
+    def _cmd_remove_roster(self, args: str) -> None:
+        target = args.strip()
+        if target.startswith("@"):
+            target = target[1:].strip()
+        if not target:
+            self._write("[yellow]用法：/remove-roster @人名[/]")
+            return
+        self._do_remove_roster(target)
+
+    @work
+    async def _do_list_roster(self) -> None:
+        app = self.game_client
+        if app.session is None:
+            return
+        text = await build_roster_list_text(
+            app.session.user_name,
+            app.session.game_name,
+            app.session.actor_name,
+        )
+        self._write(text)
+
+    @work
+    async def _do_add_roster(self, target: str) -> None:
+        app = self.game_client
+        if app.session is None:
+            return
+        text = await add_roster_member(
+            app.session.user_name,
+            app.session.game_name,
+            target,
+        )
+        self._write(text)
+
+    @work
+    async def _do_remove_roster(self, target: str) -> None:
+        app = self.game_client
+        if app.session is None:
+            return
+        text = await remove_roster_member(
+            app.session.user_name,
+            app.session.game_name,
+            target,
+        )
+        self._write(text)
 
     def _cmd_logout(self, args: str) -> None:
         self._do_logout()

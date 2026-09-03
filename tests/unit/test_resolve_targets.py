@@ -29,7 +29,6 @@ def _make_game(player_name: str = "player", actor_name: str = "hero") -> DBGGame
         knowledge_base={},
         stages=[],
         world_entities=[],
-        storage_entity="世界储物箱",
     )
     world = WorldState(
         entity_counter=0,

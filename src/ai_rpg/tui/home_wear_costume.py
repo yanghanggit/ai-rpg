@@ -1,7 +1,7 @@
 """穿戴时装 Screen：指令驱动。"""
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Literal, Optional, Tuple
+from typing import Dict, List, Literal, Optional, Tuple
 
 from loguru import logger
 from textual import on, work
@@ -13,7 +13,7 @@ from .base import BaseGameScreen
 from .combat_data_access import (
     get_entities_details,
     get_stages_state,
-    get_storage_entity_name,
+    get_storage_component,
     submit_wear_costume,
     submit_remove_costume,
 )
@@ -23,7 +23,6 @@ from ..models import (
     ComponentSerialization,
     CostumeItem,
     WornCostumeComponent,
-    StorageComponent,
 )
 
 WEAR_COSTUME_HEADER = """\
@@ -239,16 +238,14 @@ class HomeWearCostumeScreen(BaseGameScreen):
 
     ########################################################################################################################
     async def _fetch_storage_costume_items(
-        self, log: RichLog, storage_entity_name: str
-    ) -> Optional[List[CostumeItem]]:
-        """一次性临时 GET：拉取储物箱实体的 StorageComponent，提取其中全部 CostumeItem。
+        self, log: RichLog
+    ) -> Optional[Tuple[str, List[CostumeItem]]]:
+        """获取储物箱 StorageComponent，提取其中全部 CostumeItem。
 
-        失败或找不到 StorageComponent 时返回 None（错误信息已写入 log）；
-        储物箱中没有时装时返回空列表。"""
+        失败时返回 None（错误信息已写入 log）；成功返回 (储物箱实体名, 时装列表)，
+        储物箱中没有时装时列表为空。"""
         try:
-            storage_details_resp = await get_entities_details(
-                self.game_client, [storage_entity_name]
-            )
+            storage_component = await get_storage_component(self.game_client)
         except Exception as e:
             logger.error(
                 f"WearCostumeScreen._fetch_storage_costume_items: 获取储物箱失败 error={e}"
@@ -256,22 +253,10 @@ class HomeWearCostumeScreen(BaseGameScreen):
             log.write(f"[bold red]❌ 获取储物箱失败: {e}[/]")
             return None
 
-        storage_data: Optional[Dict[str, Any]] = None
-        for entity in storage_details_resp.entities:
-            if entity.name != storage_entity_name:
-                continue
-            for comp in entity.components:
-                if comp.name == StorageComponent.__name__:
-                    storage_data = comp.data
-
-        if storage_data is None:
-            log.write(
-                f"[yellow]未找到储物箱实体或其 StorageComponent: {storage_entity_name}[/]"
-            )
-            return None
-
-        storage_comp = StorageComponent(**storage_data)
-        return [item for item in storage_comp.items if isinstance(item, CostumeItem)]
+        costume_items = [
+            item for item in storage_component.items if isinstance(item, CostumeItem)
+        ]
+        return storage_component.name, costume_items
 
     ########################################################################################################################
     async def _fetch_costume_wearer_map(self, log: RichLog) -> Optional[Dict[str, str]]:
@@ -327,13 +312,10 @@ class HomeWearCostumeScreen(BaseGameScreen):
             "[bold yellow]── 储物箱时装 ───────────────────────────────────────────────[/]"
         )
 
-        storage_entity_name = get_storage_entity_name(self.game_client)
-
-        costume_items = await self._fetch_storage_costume_items(
-            log, storage_entity_name
-        )
-        if costume_items is None:
+        result = await self._fetch_storage_costume_items(log)
+        if result is None:
             return
+        storage_entity_name, costume_items = result
         if not costume_items:
             log.write("[dim]（储物箱中暂无时装）[/]")
             return
@@ -429,13 +411,11 @@ class HomeWearCostumeScreen(BaseGameScreen):
         actor_name = self._flow.selected_actor
         assert actor_name is not None
 
-        storage_entity_name = get_storage_entity_name(self.game_client)
-        costume_items = await self._fetch_storage_costume_items(
-            log, storage_entity_name
-        )
-        if costume_items is None:
+        result = await self._fetch_storage_costume_items(log)
+        if result is None:
             self._flow = _WearFlowState()
             return
+        _, costume_items = result
 
         try:
             details_resp = await get_entities_details(self.game_client, [actor_name])

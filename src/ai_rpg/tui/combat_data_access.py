@@ -13,6 +13,7 @@ from ..models import (
     DungeonStateResponse,
     EntitiesDetailsResponse,
     StagesStateResponse,
+    StorageComponent,
 )
 from .app import GameClient
 from .mock_data import (
@@ -24,6 +25,7 @@ from .mock_data import (
     build_mock_dungeon_state_response,
     build_mock_entities_details_response,
     build_mock_stages_state_response,
+    get_mock_storage_component,
     simulate_mock_wear_costume,
     simulate_mock_remove_costume,
 )
@@ -31,6 +33,7 @@ from .server_client import (
     fetch_dungeon_room,
     fetch_dungeon_state,
     fetch_entities_details,
+    fetch_entities_group,
     fetch_stages_state,
     home_wear_costume,
     home_remove_costume,
@@ -93,13 +96,53 @@ async def get_entities_details(
 
 
 ###############################################################################################################################################
-def get_storage_entity_name(game_client: GameClient) -> str:
-    """获取当前会话对应的全局储物箱实体名；mock 模式下使用固定值。"""
+async def resolve_storage_entity(game_client: GameClient) -> str:
+    """解析当前会话对应的全局储物箱实体名。
+
+    通过 /entities/.../group 按组件签名（WorldComponent + StorageComponent）发现，
+    解析结果缓存到 session，避免重复网络往返；mock 模式下使用固定值。
+    """
     if is_mock_mode(game_client):
         return MOCK_STORAGE_NAME
+
     session = game_client.session
     assert session is not None
-    return session.storage_entity
+
+    if session._storage_entity_name:
+        return session._storage_entity_name
+
+    user_name, game_name, _ = resolve_identity(game_client)
+    resp = await fetch_entities_group(
+        user_name,
+        game_name,
+        all_of=["WorldComponent", "StorageComponent"],
+        any_of=[],
+        none_of=[],
+    )
+    assert len(resp.entities) == 1, "储物箱实体应恰好一个"
+    session._storage_entity_name = resp.entities[0].name
+    return session._storage_entity_name
+
+
+###############################################################################################################################################
+async def get_storage_component(game_client: GameClient) -> StorageComponent:
+    """获取全局储物箱的 StorageComponent（含 name 与全部道具）。"""
+    if is_mock_mode(game_client):
+        return get_mock_storage_component()
+
+    user_name, game_name, _ = resolve_identity(game_client)
+    resp = await fetch_entities_group(
+        user_name,
+        game_name,
+        all_of=["WorldComponent", "StorageComponent"],
+        any_of=[],
+        none_of=[],
+    )
+    assert len(resp.entities) == 1, "储物箱实体应恰好一个"
+    for comp in resp.entities[0].components:
+        if comp.name == StorageComponent.__name__:
+            return StorageComponent(**comp.data)
+    raise RuntimeError("储物箱实体缺少 StorageComponent")
 
 
 ###############################################################################################################################################

@@ -8,11 +8,11 @@ from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.widgets import Input, RichLog, Static
 
-from ..models import Card, StorageComponent
+from ..models import GearItem, MaterialItem
 from .base import BaseGameScreen
+from .combat_data_access import get_storage_component
 from .server_client import (
     TaskFailedError,
-    fetch_entities_details,
     home_craft_gear_item,
     watch_task_until_done,
 )
@@ -199,29 +199,15 @@ class CraftGearItemScreen(BaseGameScreen):
             log.write("[red]⚠ 无法取得会话信息。[/]")
             return
 
-        user_name = app.session.user_name
-        game_name = app.session.game_name
-        storage_entity = app.session.storage_entity
-
         try:
-            details_resp = await fetch_entities_details(
-                user_name, game_name, [storage_entity]
-            )
+            storage_component = await get_storage_component(app)
             materials: List[Dict[str, object]] = []
             known: Set[str] = set()
-            for entity in details_resp.entities:
-                for comp in entity.components:
-                    if comp.name == StorageComponent.__name__:
-                        for item in comp.data.get("items", []):
-                            if item.get("type") == "MaterialItem":
-                                materials.append(
-                                    {
-                                        "name": item["name"],
-                                        "count": item.get("count", 1),
-                                    }
-                                )
-                            elif item.get("type") == "GearItem":
-                                known.add(str(item.get("name", "")))
+            for item in storage_component.items:
+                if isinstance(item, MaterialItem):
+                    materials.append({"name": item.name, "count": item.count})
+                elif isinstance(item, GearItem):
+                    known.add(item.name)
             self._material_list = materials
             self._known_gear_names = known
         except Exception as e:
@@ -241,7 +227,6 @@ class CraftGearItemScreen(BaseGameScreen):
 
         user_name = app.session.user_name
         game_name = app.session.game_name
-        storage_entity = app.session.storage_entity
         materials = list(self._selected)
 
         log = self.query_one(RichLog)
@@ -273,7 +258,7 @@ class CraftGearItemScreen(BaseGameScreen):
             await watch_task_until_done(task_id)
             log.write("[bold green]✅ 锻造完成[/]")
             logger.info(f"CraftGearItemScreen._do_craft: 任务完成 task_id={task_id}")
-            await self._show_craft_result(log, user_name, game_name, storage_entity)
+            await self._show_craft_result(log)
         except TaskFailedError as e:
             log.write(f"[bold red]❌ 锻造失败: {e}[/]")
             logger.error(
@@ -288,18 +273,10 @@ class CraftGearItemScreen(BaseGameScreen):
         inp.disabled = False
         inp.focus()
 
-    async def _show_craft_result(
-        self,
-        log: RichLog,
-        user_name: str,
-        game_name: str,
-        storage_entity: str,
-    ) -> None:
+    async def _show_craft_result(self, log: RichLog) -> None:
         """重新加载储物箱，展示本次新锻造的装备详情。"""
         try:
-            result_resp = await fetch_entities_details(
-                user_name, game_name, [storage_entity]
-            )
+            storage_component = await get_storage_component(self.game_client)
         except Exception as e:
             logger.warning(
                 f"CraftGearItemScreen._show_craft_result: 获取储物箱失败 error={e}"
@@ -308,41 +285,25 @@ class CraftGearItemScreen(BaseGameScreen):
             return
 
         shown = False
-        for entity in result_resp.entities:
-            for comp in entity.components:
-                if comp.name != StorageComponent.__name__:
-                    continue
-                for item in comp.data.get("items", []):
-                    if item.get("type") != "GearItem":
-                        continue
-                    name = str(item.get("name", ""))
-                    if name in self._known_gear_names:
-                        continue
-                    if not shown:
-                        log.write(
-                            "[bold yellow]── 锻造结果 ──────────────────────────────────────────────[/]"
-                        )
-                        shown = True
-                    desc = str(item.get("description", ""))
-                    cards = item.get("cards") or []
-                    log.write(f"  [bold magenta]装备[/]：{display_name(name)}")
-                    if desc:
-                        log.write(f"  [dim]{desc}[/]")
-                    for card_data in cards:
-                        if not isinstance(card_data, dict):
-                            continue
-                        try:
-                            card = Card.model_validate(card_data)
-                        except Exception as e:
-                            logger.warning(
-                                f"CraftGearItemScreen._show_craft_result: 解析卡牌失败 error={e}"
-                            )
-                            log.write("  [dim]（卡牌规格解析失败）[/]")
-                            continue
-                        log.write("  [cyan]卡牌规格[/]：")
-                        for line in render_card(card).split("\n"):
-                            log.write(line)
-                    log.write("")
+        for item in storage_component.items:
+            if not isinstance(item, GearItem):
+                continue
+            name = item.name
+            if name in self._known_gear_names:
+                continue
+            if not shown:
+                log.write(
+                    "[bold yellow]── 锻造结果 ──────────────────────────────────────────────[/]"
+                )
+                shown = True
+            log.write(f"  [bold magenta]装备[/]：{display_name(name)}")
+            if item.description:
+                log.write(f"  [dim]{item.description}[/]")
+            for card in item.cards:
+                log.write("  [cyan]卡牌规格[/]：")
+                for line in render_card(card).split("\n"):
+                    log.write(line)
+            log.write("")
 
         if not shown:
             log.write("[dim]（已入库储物箱，请查看装备列表）[/]")

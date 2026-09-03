@@ -507,7 +507,6 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
             create_world_director(),
             create_storage(),
         ],
-        storage_entity="世界储物箱",
         inventory=[
             GearItem(
                 name="装备.缠麻短刃",

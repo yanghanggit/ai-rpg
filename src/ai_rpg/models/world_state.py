@@ -31,7 +31,6 @@ class WorldState(BaseModel):
             knowledge_base={},
             stages=[],
             world_entities=[],
-            storage_entity="",
         )
     )
     agent_memories: Dict[str, AgentMemory] = {}

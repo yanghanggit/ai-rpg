@@ -47,7 +47,6 @@ def _make_game(
             knowledge_base={},
             stages=[],
             world_entities=[],
-            storage_entity="世界储物箱",
         )
     world = WorldState(
         entity_counter=0,
@@ -201,7 +200,6 @@ class TestBuildFromBlueprint:
             knowledge_base={},
             stages=[home],
             world_entities=[],
-            storage_entity="世界储物箱",
         )
 
     def _make_game_for_build(self) -> DBGGame:

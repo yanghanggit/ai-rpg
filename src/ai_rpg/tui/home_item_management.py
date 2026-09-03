@@ -8,6 +8,7 @@ from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.widgets import Input, RichLog, Static
 from .base import BaseGameScreen
+from .combat_data_access import resolve_storage_entity
 from .server_client import (
     fetch_entities_details,
     home_item_move_to_inventory,
@@ -198,7 +199,7 @@ class HomeItemManagementScreen(BaseGameScreen):
         user_name = app.session.user_name
         game_name = app.session.game_name
         player_actor = app.session.actor_name
-        storage_entity = app.session.storage_entity
+        storage_entity = await resolve_storage_entity(app)
 
         try:
             all_items = await self._fetch_all_items(
@@ -225,7 +226,7 @@ class HomeItemManagementScreen(BaseGameScreen):
         user_name = app.session.user_name
         game_name = app.session.game_name
         player_actor = app.session.actor_name
-        storage_entity = app.session.storage_entity
+        storage_entity = await resolve_storage_entity(app)
 
         try:
             all_items = await self._fetch_all_items(

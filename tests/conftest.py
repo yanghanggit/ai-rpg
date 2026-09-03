@@ -43,7 +43,6 @@ def sample_game() -> Any:
         knowledge_base={},
         stages=[],
         world_entities=[],
-        storage_entity="世界储物箱",
     )
     dungeon = Dungeon(name="", rooms=[], profile="")
     world = WorldState(

@@ -70,7 +70,7 @@ MOCK_MONSTER_1_NAME: Final[str] = "哥布林-甲"
 MOCK_MONSTER_2_NAME: Final[str] = "哥布林-乙"
 
 MOCK_STORAGE_NAME: Final[str] = (
-    "全局储物箱"  # 对应 session.storage_entity（mock 模式下的固定替代）
+    "全局储物箱"  # mock 模式下储物箱实体名（resolve_storage_entity / get_storage_component 固定替代）
 )
 
 MOCK_COMBAT_NAME: Final[str] = f"{MOCK_STAGE_NAME}-combat"
@@ -110,6 +110,20 @@ def get_mock_worn_costume(actor_name: str) -> Optional[CostumeItem]:
 
 def get_mock_storage_costume_items() -> List[CostumeItem]:
     return list(_mock_storage_costume_items)
+
+
+def get_mock_storage_component() -> StorageComponent:
+    """构造 mock 全局储物箱的 StorageComponent（名称 + 全部道具）。"""
+    return StorageComponent(
+        name=MOCK_STORAGE_NAME,
+        items=[
+            *get_mock_storage_costume_items(),
+            MaterialItem(
+                name="哥布林牙",
+                description="哥布林掉落的牙齿，可用于合成。",
+            ),
+        ],
+    )
 
 
 def simulate_mock_wear_costume(actor_name: str, item_name: str) -> None:
@@ -677,16 +691,7 @@ def build_mock_entities_details_response(
             *_identity_components(MOCK_STORAGE_NAME, 5),
             ComponentSerialization(
                 name=StorageComponent.__name__,
-                data=StorageComponent(
-                    name=MOCK_STORAGE_NAME,
-                    items=[
-                        *get_mock_storage_costume_items(),
-                        MaterialItem(
-                            name="哥布林牙",
-                            description="哥布林掉落的牙齿，可用于合成。",
-                        ),
-                    ],
-                ).model_dump(),
+                data=get_mock_storage_component().model_dump(),
             ),
         ],
     )

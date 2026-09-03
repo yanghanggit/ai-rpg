@@ -9,14 +9,14 @@ from textual.containers import Horizontal
 from textual.widgets import Input, RichLog, Static
 
 from .base import BaseGameScreen
+from .combat_data_access import get_storage_component
 from .server_client import (
     TaskFailedError,
-    fetch_entities_details,
     home_craft_item,
     watch_task_until_done,
 )
 from .utils import display_name
-from ..models import StorageComponent
+from ..models import ConsumableItem, MaterialItem
 
 CRAFT_CONSUMABLE_HEADER = """\
 [bold cyan]── 消耗品工坊 ──────────────────────────────────────[/]
@@ -199,29 +199,15 @@ class CraftConsumableItemScreen(BaseGameScreen):
             log.write("[red]⚠ 无法取得会话信息。[/]")
             return
 
-        user_name = app.session.user_name
-        game_name = app.session.game_name
-        storage_entity = app.session.storage_entity
-
         try:
-            details_resp = await fetch_entities_details(
-                user_name, game_name, [storage_entity]
-            )
+            storage_component = await get_storage_component(app)
             materials: List[Dict[str, object]] = []
             known: Set[str] = set()
-            for entity in details_resp.entities:
-                for comp in entity.components:
-                    if comp.name == StorageComponent.__name__:
-                        for item in comp.data.get("items", []):
-                            if item.get("type") == "MaterialItem":
-                                materials.append(
-                                    {
-                                        "name": item["name"],
-                                        "count": item.get("count", 1),
-                                    }
-                                )
-                            elif item.get("type") == "ConsumableItem":
-                                known.add(str(item.get("name", "")))
+            for item in storage_component.items:
+                if isinstance(item, MaterialItem):
+                    materials.append({"name": item.name, "count": item.count})
+                elif isinstance(item, ConsumableItem):
+                    known.add(item.name)
             self._material_list = materials
             self._known_consumable_names = known
         except Exception as e:
@@ -245,7 +231,6 @@ class CraftConsumableItemScreen(BaseGameScreen):
 
         user_name = app.session.user_name
         game_name = app.session.game_name
-        storage_entity = app.session.storage_entity
         materials = list(self._selected)
 
         log = self.query_one(RichLog)
@@ -281,7 +266,7 @@ class CraftConsumableItemScreen(BaseGameScreen):
             logger.info(
                 f"CraftConsumableItemScreen._do_craft: 任务完成 task_id={task_id}"
             )
-            await self._show_craft_result(log, user_name, game_name, storage_entity)
+            await self._show_craft_result(log)
         except TaskFailedError as e:
             log.write(f"[bold red]❌ 合成失败: {e}[/]")
             logger.error(
@@ -296,18 +281,10 @@ class CraftConsumableItemScreen(BaseGameScreen):
         inp.disabled = False
         inp.focus()
 
-    async def _show_craft_result(
-        self,
-        log: RichLog,
-        user_name: str,
-        game_name: str,
-        storage_entity: str,
-    ) -> None:
+    async def _show_craft_result(self, log: RichLog) -> None:
         """重新加载储物箱，展示本次新合成的消耗品详情。"""
         try:
-            result_resp = await fetch_entities_details(
-                user_name, game_name, [storage_entity]
-            )
+            storage_component = await get_storage_component(self.game_client)
         except Exception as e:
             logger.warning(
                 f"CraftConsumableItemScreen._show_craft_result: 获取储物箱失败 error={e}"
@@ -316,31 +293,23 @@ class CraftConsumableItemScreen(BaseGameScreen):
             return
 
         shown = False
-        for entity in result_resp.entities:
-            for comp in entity.components:
-                if comp.name != StorageComponent.__name__:
-                    continue
-                for item in comp.data.get("items", []):
-                    if item.get("type") != "ConsumableItem":
-                        continue
-                    name = str(item.get("name", ""))
-                    if name in self._known_consumable_names:
-                        continue
-                    if not shown:
-                        log.write(
-                            "[bold yellow]── 合成结果 ──────────────────────────────────────────────[/]"
-                        )
-                        shown = True
-                    desc = str(item.get("description", ""))
-                    on_use_prompt: List[str] = [
-                        str(p) for p in item.get("on_use_prompt", [])
-                    ]
-                    log.write(f"  [bold magenta]道具[/]：{display_name(name)}")
-                    if desc:
-                        log.write(f"  [dim]{desc}[/]")
-                    if on_use_prompt:
-                        log.write(f"  [cyan]效果提示[/]：{on_use_prompt[0]}")
-                    log.write("")
+        for item in storage_component.items:
+            if not isinstance(item, ConsumableItem):
+                continue
+            name = item.name
+            if name in self._known_consumable_names:
+                continue
+            if not shown:
+                log.write(
+                    "[bold yellow]── 合成结果 ──────────────────────────────────────────────[/]"
+                )
+                shown = True
+            log.write(f"  [bold magenta]道具[/]：{display_name(name)}")
+            if item.description:
+                log.write(f"  [dim]{item.description}[/]")
+            if item.on_use_prompt:
+                log.write(f"  [cyan]效果提示[/]：{item.on_use_prompt[0]}")
+            log.write("")
 
         if not shown:
             log.write("[dim]（已入库储物箱，请查看消耗品列表）[/]")

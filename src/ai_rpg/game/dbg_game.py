@@ -38,7 +38,6 @@ from ..models import (
     World,
     WornCostumeComponent,
     SystemMessage,
-    AnyItem,
     PlayerSession,
     CombatRoom,
     OpeningRoom,
@@ -177,12 +176,8 @@ class DBGGame(RPGGame):
             )
             return self
 
-        ## 第1步，创建world
+        ## 第1步，创建world（含全局储物箱世界实体，其 StorageComponent 由 world_entities 数据驱动挂载）
         self._create_world_entities(self._world.blueprint.world_entities)
-
-        ## 第1.5步，创建全局储物箱实体（挂载在 WorldComponent）
-        initial_items = copy.deepcopy(self._world.blueprint.storage)
-        self._create_storage_entity(initial_items)
 
         ## 第2步，创建actor（含牌组与关键词组件挂载）
         self.create_actor_entities(
@@ -220,31 +215,6 @@ class DBGGame(RPGGame):
         )
 
         return self
-
-    ###############################################################################################################################################
-    def _create_storage_entity(self, items: List[AnyItem]) -> Entity:
-        """创建全局唯一储物箱实体（WorldComponent + StorageComponent）。"""
-
-        storage_entity = self._world.blueprint.storage_entity
-        assert storage_entity != "", "storage_entity 不能为空"
-
-        storage_entity_entity = self._create_entity(storage_entity)
-        assert (
-            storage_entity_entity is not None
-        ), f"创建storage_entity失败: {storage_entity}"
-
-        self._world.entity_counter += 1
-        storage_entity_entity.add(
-            IdentityComponent,
-            storage_entity,
-            self._world.entity_counter,
-            str(uuid.uuid4()),
-        )
-        storage_entity_entity.add(WorldComponent, storage_entity)
-        storage_entity_entity.add(StorageComponent, storage_entity, items)
-
-        logger.debug(f"创建全局储物箱实体 {storage_entity}，初始道具 {len(items)} 件")
-        return storage_entity_entity
 
     ###############################################################################################################################################
     def _create_world_entities(

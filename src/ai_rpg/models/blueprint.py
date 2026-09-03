@@ -17,7 +17,6 @@ class Blueprint(BaseModel):
     stages: List[Stage]
     world_entities: List[World]
     storage_entity: str  # 全局储物箱实体名
-    storage: List[AnyItem] = []  # 蓝图初始储物箱道具库
     inventory: List[AnyItem] = []  # 蓝图初始玩家背包道具库
     artifacts: List[Artifact] = []  # 蓝图初始世界神器/古物库
 

@@ -36,6 +36,7 @@ class Actor(BaseModel):
     character_stats: CharacterStats
     custom_item: Optional[CostumeItem] = None  # 当前穿戴的时装，None 表示未穿戴任何时装
     cards: List[Card] = []  # 预置卡牌列表
+    components: List[ComponentSerialization] = []
 
 
 ###############################################################################################################################################
@@ -46,6 +47,7 @@ class Stage(BaseModel):
     profile: str
     system_message: str
     actors: List[Actor]
+    components: List[ComponentSerialization] = []
 
 
 ###############################################################################################################################################

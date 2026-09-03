@@ -28,6 +28,7 @@ from ai_rpg.models import (
     PlayerActionAuditComponent,
     Stage,
     StageType,
+    StorageComponent,
     TargetType,
     World,
     WorldDirectorComponent,
@@ -504,71 +505,9 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
             create_consumable_arbitrator(),
             create_dungeon_director(),
             create_world_director(),
+            create_storage(),
         ],
         storage_entity="世界储物箱",
-        storage=[
-            ConsumableItem(
-                name="消耗品.止血药粉",
-                description="一小纸包灰白色粉末，闻起来有股辛辣的草药味。洒在伤口上会引起短暂刺痛，随后迅速止血。",
-                count=2,
-                on_use_prompt=[
-                    "将药粉洒在伤口上迅速止血：使单个友方目标恢复 3 点 HP。"
-                ],
-            ),
-            ConsumableItem(
-                name="消耗品.香灰投掷包",
-                description="道观废墟中收集的冷灰色香灰，用旧报纸卷成小包。掷向单个敌人可造成灼烧伤害，香灰对某些东西格外有效。",
-                count=2,
-                on_use_prompt=[
-                    "将香灰包掷向单个敌人，香灰灼烧其躯体：对该目标造成 3 点伤害。"
-                ],
-            ),
-            MaterialItem(
-                name="材料.符纸残片",
-                description="几张残破的黄色符纸，朱砂字迹已模糊不可辨认。在暗处指尖触碰时有微微发热的感觉。",
-                count=3,
-            ),
-            MaterialItem(
-                name="材料.旧麻绳",
-                description="洋馆地窖的一捆旧麻绳，已泛黄，但韧劲仍在。可用于绑扎或简单防护。",
-                count=2,
-            ),
-            MaterialItem(
-                name="材料.锈铁剪",
-                description="洋馆杂物间里的一把旧铁剪，刃口锈迹斑斑却仍锋利。经打磨可改制成短刃。",
-                count=2,
-            ),
-            MaterialItem(
-                name="材料.香灰",
-                description="从坍塌道观的香炉中收集的灰烬，呈反常的冷灰色。干燥时触感冰凉，遇水会产生微量热量。",
-                count=3,
-            ),
-            MaterialItem(
-                name="材料.司命甲片",
-                description="猎杀上位存在脱落的碎片，成分与火山玻璃相似，在光线下折射出不自然的深红色光泽。",
-                count=2,
-            ),
-            MaterialItem(
-                name="材料.靛蓝布料",
-                description="从旧式长衫上裁下的靛蓝色棉布，颜色经过反复浆洗已变为沉稳的灰蓝。质地柔软，适合缝制衣物或衬里。",
-                count=3,
-            ),
-            MaterialItem(
-                name="材料.铜质纽扣",
-                description="从旧衣物上拆下的铜制纽扣，表面氧化后呈深绿色但结构完好。可作为装备连接件或饰品零件。",
-                count=2,
-            ),
-            MaterialItem(
-                name="材料.旧纱布",
-                description="洋馆杂物间的一卷旧纱布，已微微泛黄。透气性好，适合做绷带或轻质内衬。",
-                count=3,
-            ),
-            MaterialItem(
-                name="材料.逆流晶砂",
-                description="从一条逆流河岸边收集的细砂，在掌心静置时会缓慢地逆向滚动，违背肉眼可辨的物理直觉。",
-                count=2,
-            ),
-        ],
         inventory=[
             GearItem(
                 name="装备.缠麻短刃",
@@ -959,6 +898,98 @@ def create_world_director() -> World:
             name=WorldDirectorComponent.__name__,
             data=WorldDirectorComponent(name=world.name).model_dump(),
         )
+    ]
+
+    return world
+
+
+###############################################################################################################################
+def create_storage() -> World:
+    """创建全局储物箱世界实体。
+
+    与其他世界实体保持一致，统一走 create_world 工厂；
+    初始道具通过 StorageComponent 承载，随 world_entities 由引擎数据驱动挂载。
+    """
+
+    world = create_world(
+        name="世界储物箱",
+        campaign_setting=CAMPAIGN_SETTING,
+        system_rules=SYSTEM_RULES,
+        role_rules="""## 储物箱职责
+
+你是游戏世界的全局储物箱，负责保管角色存放的各类道具（材料、消耗品、装备、时装）。你不主动参与叙事，也不与角色对话；仅作为库存数据的载体，供合成、穿装、移动等系统读写。当被询问库存时，你只如实呈现当前库存内容，不虚构不存在的道具。""",
+    )
+
+    world.components = [
+        ComponentSerialization(
+            name=StorageComponent.__name__,
+            data=StorageComponent(
+                name=world.name,
+                items=[
+                    ConsumableItem(
+                        name="消耗品.止血药粉",
+                        description="一小纸包灰白色粉末，闻起来有股辛辣的草药味。洒在伤口上会引起短暂刺痛，随后迅速止血。",
+                        count=2,
+                        on_use_prompt=[
+                            "将药粉洒在伤口上迅速止血：使单个友方目标恢复 3 点 HP。"
+                        ],
+                    ),
+                    ConsumableItem(
+                        name="消耗品.香灰投掷包",
+                        description="道观废墟中收集的冷灰色香灰，用旧报纸卷成小包。掷向单个敌人可造成灼烧伤害，香灰对某些东西格外有效。",
+                        count=2,
+                        on_use_prompt=[
+                            "将香灰包掷向单个敌人，香灰灼烧其躯体：对该目标造成 3 点伤害。"
+                        ],
+                    ),
+                    MaterialItem(
+                        name="材料.符纸残片",
+                        description="几张残破的黄色符纸，朱砂字迹已模糊不可辨认。在暗处指尖触碰时有微微发热的感觉。",
+                        count=3,
+                    ),
+                    MaterialItem(
+                        name="材料.旧麻绳",
+                        description="洋馆地窖的一捆旧麻绳，已泛黄，但韧劲仍在。可用于绑扎或简单防护。",
+                        count=2,
+                    ),
+                    MaterialItem(
+                        name="材料.锈铁剪",
+                        description="洋馆杂物间里的一把旧铁剪，刃口锈迹斑斑却仍锋利。经打磨可改制成短刃。",
+                        count=2,
+                    ),
+                    MaterialItem(
+                        name="材料.香灰",
+                        description="从坍塌道观的香炉中收集的灰烬，呈反常的冷灰色。干燥时触感冰凉，遇水会产生微量热量。",
+                        count=3,
+                    ),
+                    MaterialItem(
+                        name="材料.司命甲片",
+                        description="猎杀上位存在脱落的碎片，成分与火山玻璃相似，在光线下折射出不自然的深红色光泽。",
+                        count=2,
+                    ),
+                    MaterialItem(
+                        name="材料.靛蓝布料",
+                        description="从旧式长衫上裁下的靛蓝色棉布，颜色经过反复浆洗已变为沉稳的灰蓝。质地柔软，适合缝制衣物或衬里。",
+                        count=3,
+                    ),
+                    MaterialItem(
+                        name="材料.铜质纽扣",
+                        description="从旧衣物上拆下的铜制纽扣，表面氧化后呈深绿色但结构完好。可作为装备连接件或饰品零件。",
+                        count=2,
+                    ),
+                    MaterialItem(
+                        name="材料.旧纱布",
+                        description="洋馆杂物间的一卷旧纱布，已微微泛黄。透气性好，适合做绷带或轻质内衬。",
+                        count=3,
+                    ),
+                    MaterialItem(
+                        name="材料.逆流晶砂",
+                        description="从一条逆流河岸边收集的细砂，在掌心静置时会缓慢地逆向滚动，违背肉眼可辨的物理直觉。",
+                        count=2,
+                    ),
+                ],
+            ).model_dump(),
+        ),
     ]
 
     return world

@@ -19,6 +19,12 @@ from .cmd_costume import (
     wear_costume,
 )
 from .cmd_craft import craft_consumable, craft_costume, craft_gear
+from .cmd_dungeon import (
+    build_dungeon_detail_text,
+    build_dungeon_list_text,
+    enter_dungeon,
+    generate_dungeon,
+)
 from .cmd_items import (
     build_items_list_text,
     move_item_to_inventory,
@@ -32,9 +38,10 @@ from .cmd_roster import (
 from .cmd_speak import speak_to
 from .cmd_stage import build_stage_view_text
 from .cmd_switch import switch_stage
+from .dungeon_room_router_room import DungeonRoomRouterRoom
 from .server_client import (
     fetch_session_messages,
-    logout as server_logout,
+    logout,
     stream_session_messages,
 )
 from .utils import display_name, format_agent_event
@@ -46,21 +53,23 @@ INTRO_TEXT = """\
 
 # 命令定义：(完整命令, 简写, 说明)，顺序即 /help 展示顺序
 COMMAND_DEFS: List[Tuple[str, str, str]] = [
-    # 查看（系统级 / 幂等）
+    # 查看（只读信息）
     ("info", "i", "查看蓝图与玩家信息"),
     ("browse", "b", "实体浏览器：列出全部场景与角色"),
     ("stage", "st", "查看当前所在场景描述与角色外观"),
     ("session", "ss", "查看消息（可带 sequence_id）"),
-    # 副本
-    ("dungeon", "d", "副本预览并可进入副本"),
     # 队伍
     ("list-roster", "lr", "查看队伍与盟友列表"),
     ("add-roster", "ar", "将盟友加入队伍：/add-roster @人名"),
     ("remove-roster", "rr", "将盟友移出队伍：/remove-roster @人名"),
-    # 角色行动
+    # 副本
+    ("list-dungeons", "ld", "列出可用副本与当前队伍"),
+    ("dungeon", "d", "查看副本详情：/dungeon @副本名"),
+    ("enter-dungeon", "ed", "进入副本：/enter-dungeon @副本名"),
+    ("generate-dungeon", "gd", "生成新副本"),
+    # 家园行动
     ("speak", "sp", "与当前场景 NPC 对话：/speak @人名 对话内容"),
     ("switch", "sw", "切换到其他场景：/switch @场景名"),
-    # 核心行动
     ("advance", "a", "推进家园：让所有 NPC 角色触发规划与行动"),
     # 时装
     ("list-worn", "lw", "列出已穿戴时装的角色（含外观）"),
@@ -84,9 +93,11 @@ COMMAND_DEFS: List[Tuple[str, str, str]] = [
 # 命令列表展示时，在这些命令前插入空行作为分组分隔
 GROUP_BREAK_BEFORE = {
     "list-roster",
+    "list-dungeons",
     "speak",
     "list-worn",
     "list-items",
+    "logout",
     "help",
 }
 
@@ -120,6 +131,10 @@ BASE_COMMANDS = {
     "craft-consumable",
     "craft-gear",
     "craft-costume",
+    "list-dungeons",
+    "dungeon",
+    "enter-dungeon",
+    "generate-dungeon",
 }
 
 
@@ -697,9 +712,7 @@ class HomeScreen(BaseGameScreen):
         app = self.game_client
         if app.session is None:
             return
-        text = await craft_gear(
-            app.session.user_name, app.session.game_name, materials
-        )
+        text = await craft_gear(app.session.user_name, app.session.game_name, materials)
         self._write(text)
 
     @work
@@ -710,6 +723,67 @@ class HomeScreen(BaseGameScreen):
         text = await craft_costume(
             app.session.user_name, app.session.game_name, materials
         )
+        self._write(text)
+
+    def _cmd_list_dungeons(self, args: str) -> None:
+        self._do_list_dungeons()
+
+    def _cmd_dungeon(self, args: str) -> None:
+        name = args.strip()
+        if name.startswith("@"):
+            name = name[1:].strip()
+        if not name:
+            self._write("[yellow]用法：/dungeon @副本名[/]")
+            return
+        self._do_dungeon(name)
+
+    def _cmd_enter_dungeon(self, args: str) -> None:
+        name = args.strip()
+        if name.startswith("@"):
+            name = name[1:].strip()
+        if not name:
+            self._write("[yellow]用法：/enter-dungeon @副本名[/]")
+            return
+        self._do_enter_dungeon(name)
+
+    def _cmd_generate_dungeon(self, args: str) -> None:
+        self._do_generate_dungeon()
+
+    @work
+    async def _do_list_dungeons(self) -> None:
+        app = self.game_client
+        if app.session is None:
+            return
+        text = await build_dungeon_list_text(
+            app.session.user_name,
+            app.session.game_name,
+            app.session.actor_name,
+        )
+        self._write(text)
+
+    @work
+    async def _do_dungeon(self, name: str) -> None:
+        text = await build_dungeon_detail_text(name)
+        self._write(text)
+
+    @work
+    async def _do_enter_dungeon(self, name: str) -> None:
+        app = self.game_client
+        if app.session is None:
+            return
+        ok, text = await enter_dungeon(
+            app.session.user_name, app.session.game_name, name
+        )
+        self._write(text)
+        if ok:
+            self.app.push_screen(DungeonRoomRouterRoom())
+
+    @work
+    async def _do_generate_dungeon(self) -> None:
+        app = self.game_client
+        if app.session is None:
+            return
+        text = await generate_dungeon(app.session.user_name, app.session.game_name)
         self._write(text)
 
     def _cmd_logout(self, args: str) -> None:
@@ -726,7 +800,7 @@ class HomeScreen(BaseGameScreen):
         self._write("[dim]正在登出...[/]")
         logger.info(f"_do_logout: 开始登出 user_name={user_name} game_name={game_name}")
         try:
-            msg = await server_logout(user_name, game_name)
+            msg = await logout(user_name, game_name)
             self._write(f"[bold green]✅ {msg}[/]")
             logger.info(
                 f"_do_logout: 登出成功 user_name={user_name} msg={msg} → 清空会话状态 + pop_screen"

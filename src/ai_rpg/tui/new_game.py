@@ -144,15 +144,26 @@ class NewGameScreen(BaseGameScreen):
         self._write(HELP_TEXT)
 
     def _cmd_info(self, args: str) -> None:
-        self._fetch_blueprints()
+        self._do_info()
 
     def _cmd_start(self, args: str) -> None:
+        self._do_start()
+
+    @work
+    async def _do_info(self) -> None:
+        await self._load_blueprints()
+
+    @work
+    async def _do_start(self) -> None:
         if self._starting:
             return
-        if not self._blueprints:
-            self._write("[yellow]⚠ 尚未获取蓝图信息，请先输入 /info。[/]")
-            return
         self._starting = True
+        if not self._blueprints:
+            self._write("[dim]尚未获取蓝图信息，正在自动获取...[/]")
+            await self._load_blueprints()
+            if not self._blueprints:
+                self._starting = False
+                return
         self._start_new_game(self._auto_player_id, self._blueprints[0].name)
 
     def _cmd_clear(self, args: str) -> None:
@@ -164,9 +175,8 @@ class NewGameScreen(BaseGameScreen):
 
     # ── 后台任务 ──
 
-    @work
-    async def _fetch_blueprints(self) -> None:
-        logger.info("_fetch_blueprints: 正在获取蓝图列表...")
+    async def _load_blueprints(self) -> None:
+        logger.info("_load_blueprints: 正在获取蓝图列表...")
         try:
             resp = await fetch_blueprint_list()
             self._blueprints = resp.blueprints
@@ -216,10 +226,10 @@ class NewGameScreen(BaseGameScreen):
             else:
                 self._write("[red]❌ 服务器暂无可用蓝图，无法开始游戏。[/]")
             logger.info(
-                f"_fetch_blueprints: 获取成功，共 {len(self._blueprints)} 个蓝图"
+                f"_load_blueprints: 获取成功，共 {len(self._blueprints)} 个蓝图"
             )
         except Exception as e:
-            logger.error(f"_fetch_blueprints: 获取失败 error={e}")
+            logger.error(f"_load_blueprints: 获取失败 error={e}")
             self._write(f"[red]❌ 蓝图列表获取失败：{e}[/]")
 
     @work

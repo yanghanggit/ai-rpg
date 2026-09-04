@@ -21,9 +21,7 @@ async def _submit_craft(
     verb: str,
 ) -> str:
     """提交合成请求并等待后台任务完成，返回成功或失败文本。"""
-    logger.info(
-        f"{verb}: 提交 user_name={user_name} materials={materials}"
-    )
+    logger.info(f"{verb}: 提交 user_name={user_name} materials={materials}")
     try:
         resp = await craft_fn(user_name, game_name, materials)
         await watch_task_until_done(resp.task_id)
@@ -35,27 +33,21 @@ async def _submit_craft(
     return f"[bold green]✅ {verb}完成，结果见 /list-items。[/]"
 
 
-async def craft_consumable(
-    user_name: str, game_name: str, materials: List[str]
-) -> str:
+async def craft_consumable(user_name: str, game_name: str, materials: List[str]) -> str:
     """合成消耗品，返回成功或失败文本。"""
     return await _submit_craft(
         user_name, game_name, materials, home_craft_item, "合成消耗品"
     )
 
 
-async def craft_gear(
-    user_name: str, game_name: str, materials: List[str]
-) -> str:
+async def craft_gear(user_name: str, game_name: str, materials: List[str]) -> str:
     """锻造装备，返回成功或失败文本。"""
     return await _submit_craft(
         user_name, game_name, materials, home_craft_gear_item, "锻造装备"
     )
 
 
-async def craft_costume(
-    user_name: str, game_name: str, materials: List[str]
-) -> str:
+async def craft_costume(user_name: str, game_name: str, materials: List[str]) -> str:
     """制作时装，返回成功或失败文本。"""
     return await _submit_craft(
         user_name, game_name, materials, home_craft_costume_item, "制作时装"

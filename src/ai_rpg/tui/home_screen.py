@@ -33,7 +33,7 @@ from .server_client import (
 from .utils import display_name, format_agent_event
 
 INTRO_TEXT = """\
-[bold cyan]── 游戏主场景 ──[/]
+[bold cyan]── 家园模式 ──[/]
 [dim]输入 [bold]/[/] 查看可用命令。[/]
 """
 
@@ -51,15 +51,15 @@ COMMAND_DEFS: List[Tuple[str, str, str]] = [
     ("add-roster", "ar", "将盟友加入队伍：/add-roster @人名"),
     ("remove-roster", "rr", "将盟友移出队伍：/remove-roster @人名"),
     # 角色行动
-    ("speak", "sp", "与当前场景 NPC 对话"),
-    ("switch", "sw", "切换到其他场景"),
+    ("speak", "sp", "与当前场景 NPC 对话：/speak @人名 对话内容"),
+    ("switch", "sw", "切换到其他场景：/switch @场景名"),
     # 核心行动
     ("advance", "a", "推进家园：让所有 NPC 角色触发规划与行动"),
     ("wear", "w", "穿戴时装：为目标安装/移除时装"),
     # 道具与工坊
     ("list-items", "li", "列出随身背包与储物箱道具"),
-    ("to-inventory", "ti", "储物箱→随身背包：/to-inventory 道具名"),
-    ("to-storage", "ts", "随身背包→储物箱：/to-storage 道具名"),
+    ("to-inventory", "ti", "储物箱→随身背包：/to-inventory @道具名"),
+    ("to-storage", "ts", "随身背包→储物箱：/to-storage @道具名"),
     ("craft-consumable", "cc", "消耗品工坊：合成消耗品"),
     ("craft-gear", "cg", "装备工坊：用材料锻造装备"),
     ("craft-costume", "cf", "时装工坊：用材料制作时装"),
@@ -122,7 +122,7 @@ HELP_TEXT = _build_help_text()
 
 
 class HomeScreen(BaseGameScreen):
-    """游戏主场景 Screen：正文区累加展示信息，输入区接收斜杠命令。
+    """家园模式 Screen：正文区累加展示信息，输入区接收斜杠命令。
 
     当前为第一步：命令已列出，输入命令后仅写入日志，具体功能后续逐步接入。
     """
@@ -277,8 +277,10 @@ class HomeScreen(BaseGameScreen):
 
     def _cmd_switch(self, args: str) -> None:
         target = args.strip()
+        if target.startswith("@"):
+            target = target[1:].strip()
         if not target:
-            self._write("[yellow]用法：/switch <场景名>[/]")
+            self._write("[yellow]用法：/switch @场景名[/]")
             return
         self._do_switch(target)
 
@@ -504,15 +506,19 @@ class HomeScreen(BaseGameScreen):
 
     def _cmd_to_inventory(self, args: str) -> None:
         item_name = args.strip()
+        if item_name.startswith("@"):
+            item_name = item_name[1:].strip()
         if not item_name:
-            self._write("[yellow]用法：/to-inventory 道具名[/]")
+            self._write("[yellow]用法：/to-inventory @道具名[/]")
             return
         self._do_to_inventory(item_name)
 
     def _cmd_to_storage(self, args: str) -> None:
         item_name = args.strip()
+        if item_name.startswith("@"):
+            item_name = item_name[1:].strip()
         if not item_name:
-            self._write("[yellow]用法：/to-storage 道具名[/]")
+            self._write("[yellow]用法：/to-storage @道具名[/]")
             return
         self._do_to_storage(item_name)
 

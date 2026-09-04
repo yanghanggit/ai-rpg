@@ -35,7 +35,8 @@ from .combat_post_combat import CombatPostCombatScreen
 from .combat_round_history import CombatRoundHistoryScreen
 from .combat_use_consumable import CombatUseConsumableScreen
 from .combat_equip_gear import CombatEquipGearScreen
-from .home_main import HomeMainScreen
+
+# from .home_main import HomeMainScreen
 from .server_client import (
     TaskFailedError,
     dungeon_combat_pass_turn,
@@ -396,7 +397,7 @@ class CombatOngoingScreen(BaseGameScreen):
         log.write("[bold green]✅ 撤退成功[/]")
         logger.info("CombatOngoingScreen._do_retreat: 撤退成功，返回家园")
 
-        self.app.switch_screen(HomeMainScreen())
+        # self.app.switch_screen(HomeMainScreen())
 
     ########################################################################################################################
     @work

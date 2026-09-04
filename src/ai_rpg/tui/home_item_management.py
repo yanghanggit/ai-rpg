@@ -1,304 +1,304 @@
-"""道具管理 Screen：显示背包与储物箱道具，并支持在两者之间移动。"""
+# """道具管理 Screen：显示背包与储物箱道具，并支持在两者之间移动。"""
 
-from typing import List, Literal, Tuple
-from loguru import logger
-from pydantic import TypeAdapter
-from textual import on, work
-from textual.app import ComposeResult
-from textual.containers import Horizontal
-from textual.widgets import Input, RichLog, Static
-from .base import BaseGameScreen
-from .combat_data_access import resolve_storage_entity
-from .server_client import (
-    fetch_entities_details,
-    home_item_move_to_inventory,
-    home_item_move_to_storage,
-)
-from ..models import InventoryComponent, StorageComponent
-from ..models.items import AnyItem, CostumeItem
-from .utils import display_name, render_item
+# from typing import List, Literal, Tuple
+# from loguru import logger
+# from pydantic import TypeAdapter
+# from textual import on, work
+# from textual.app import ComposeResult
+# from textual.containers import Horizontal
+# from textual.widgets import Input, RichLog, Static
+# from .base import BaseGameScreen
+# from .combat_data_access import resolve_storage_entity
+# from .server_client import (
+#     fetch_entities_details,
+#     home_item_move_to_inventory,
+#     home_item_move_to_storage,
+# )
+# from ..models import InventoryComponent, StorageComponent
+# from ..models.items import AnyItem, CostumeItem
+# from .utils import display_name, render_item
 
-_ITEM_ADAPTER: TypeAdapter[AnyItem] = TypeAdapter(AnyItem)
+# _ITEM_ADAPTER: TypeAdapter[AnyItem] = TypeAdapter(AnyItem)
 
-ITEM_MGMT_HEADER = """\
-[bold cyan]── 道具管理 ──────────────────────────────────────[/]
+# ITEM_MGMT_HEADER = """\
+# [bold cyan]── 道具管理 ──────────────────────────────────────[/]
 
-[dim]背包（随身携带） vs 储物箱（备用库存）[/]
-输入编号将该道具移到另一侧，[bold]0[/] 清屏刷新，[bold]Escape[/] 返回。
-"""
+# [dim]背包（随身携带） vs 储物箱（备用库存）[/]
+# 输入编号将该道具移到另一侧，[bold]0[/] 清屏刷新，[bold]Escape[/] 返回。
+# """
 
-# (location, item)
-_ItemEntry = Tuple[Literal["inventory", "storage", "equipped"], AnyItem]
+# # (location, item)
+# _ItemEntry = Tuple[Literal["inventory", "storage", "equipped"], AnyItem]
 
 
-class HomeItemManagementScreen(BaseGameScreen):
-    """道具管理 Screen：列出全部道具并支持在背包与储物箱之间移动。"""
+# class HomeItemManagementScreen(BaseGameScreen):
+#     """道具管理 Screen：列出全部道具并支持在背包与储物箱之间移动。"""
 
-    CSS = """
-    HomeItemManagementScreen {
-        align: center middle;
-    }
+#     CSS = """
+#     HomeItemManagementScreen {
+#         align: center middle;
+#     }
 
-    #item-log {
-        border: solid $primary;
-        padding: 0 1;
-        height: 1fr;
-    }
+#     #item-log {
+#         border: solid $primary;
+#         padding: 0 1;
+#         height: 1fr;
+#     }
 
-    #item-input-row {
-        height: 3;
-        dock: bottom;
-    }
+#     #item-input-row {
+#         height: 3;
+#         dock: bottom;
+#     }
 
-    #item-prompt {
-        width: 6;
-        height: 3;
-        content-align: left middle;
-        color: $success;
-    }
+#     #item-prompt {
+#         width: 6;
+#         height: 3;
+#         content-align: left middle;
+#         color: $success;
+#     }
 
-    #item-input {
-        width: 1fr;
-    }
-    """
+#     #item-input {
+#         width: 1fr;
+#     }
+#     """
 
-    BINDINGS = [
-        ("escape", "go_back", "Back"),
-    ]
+#     BINDINGS = [
+#         ("escape", "go_back", "Back"),
+#     ]
 
-    def __init__(self) -> None:
-        super().__init__()
+#     def __init__(self) -> None:
+#         super().__init__()
 
-    def compose(self) -> ComposeResult:
-        yield RichLog(id="item-log", highlight=True, markup=True, wrap=True)
-        with Horizontal(id="item-input-row"):
-            yield Static("> ", id="item-prompt")
-            yield Input(placeholder="输入编号移动道具...", id="item-input")
+#     def compose(self) -> ComposeResult:
+#         yield RichLog(id="item-log", highlight=True, markup=True, wrap=True)
+#         with Horizontal(id="item-input-row"):
+#             yield Static("> ", id="item-prompt")
+#             yield Input(placeholder="输入编号移动道具...", id="item-input")
 
-    def on_mount(self) -> None:
-        log = self.query_one(RichLog)
-        log.write(ITEM_MGMT_HEADER)
-        self._load_items()
-        self.query_one(Input).focus()
+#     def on_mount(self) -> None:
+#         log = self.query_one(RichLog)
+#         log.write(ITEM_MGMT_HEADER)
+#         self._load_items()
+#         self.query_one(Input).focus()
 
-    def action_go_back(self) -> None:
-        self.app.pop_screen()
+#     def action_go_back(self) -> None:
+#         self.app.pop_screen()
 
-    def _render_list(self, log: RichLog, all_items: List[_ItemEntry]) -> None:
-        log.write("[bold yellow]── 道具列表 ──────────────────────────────────────[/]")
+#     def _render_list(self, log: RichLog, all_items: List[_ItemEntry]) -> None:
+#         log.write("[bold yellow]── 道具列表 ──────────────────────────────────────[/]")
 
-        inventory_items = [
-            (i, item) for i, (loc, item) in enumerate(all_items) if loc == "inventory"
-        ]
-        storage_items = [
-            (i, item)
-            for i, (loc, item) in enumerate(all_items)
-            if loc == "storage" and not isinstance(item, CostumeItem)
-        ]
-        costume_items = [
-            (i, item)
-            for i, (loc, item) in enumerate(all_items)
-            if loc == "storage" and isinstance(item, CostumeItem)
-        ]
-        if inventory_items:
-            log.write("[bold green]  ▍随身背包[/]")
-            for global_idx, item in inventory_items:
-                log.write(
-                    f"  [bold green]{global_idx + 1}.[/] [cyan]【背包】[/] {render_item(item)}"
-                )
-        else:
-            log.write("[bold green]  ▍随身背包[/] [dim]（空）[/]")
+#         inventory_items = [
+#             (i, item) for i, (loc, item) in enumerate(all_items) if loc == "inventory"
+#         ]
+#         storage_items = [
+#             (i, item)
+#             for i, (loc, item) in enumerate(all_items)
+#             if loc == "storage" and not isinstance(item, CostumeItem)
+#         ]
+#         costume_items = [
+#             (i, item)
+#             for i, (loc, item) in enumerate(all_items)
+#             if loc == "storage" and isinstance(item, CostumeItem)
+#         ]
+#         if inventory_items:
+#             log.write("[bold green]  ▍随身背包[/]")
+#             for global_idx, item in inventory_items:
+#                 log.write(
+#                     f"  [bold green]{global_idx + 1}.[/] [cyan]【背包】[/] {render_item(item)}"
+#                 )
+#         else:
+#             log.write("[bold green]  ▍随身背包[/] [dim]（空）[/]")
 
-        log.write("")
+#         log.write("")
 
-        if storage_items:
-            log.write("[bold blue]  ▍储物箱[/]")
-            for global_idx, item in storage_items:
-                log.write(
-                    f"  [bold blue]{global_idx + 1}.[/] [dim]【储物】[/] {render_item(item)}"
-                )
-        else:
-            log.write("[bold blue]  ▍储物箱[/] [dim]（空）[/]")
+#         if storage_items:
+#             log.write("[bold blue]  ▍储物箱[/]")
+#             for global_idx, item in storage_items:
+#                 log.write(
+#                     f"  [bold blue]{global_idx + 1}.[/] [dim]【储物】[/] {render_item(item)}"
+#                 )
+#         else:
+#             log.write("[bold blue]  ▍储物箱[/] [dim]（空）[/]")
 
-        log.write("")
+#         log.write("")
 
-        if costume_items:
-            log.write(
-                "[bold magenta]  ▍时装收藏[/] [dim]（只读，无法移动，通过外观更新功能使用）[/]"
-            )
-            for global_idx, item in costume_items:
-                log.write(
-                    f"  [bold magenta]{global_idx + 1}.[/] [magenta]【时装】[/] {render_item(item)}"
-                )
-            log.write("")
+#         if costume_items:
+#             log.write(
+#                 "[bold magenta]  ▍时装收藏[/] [dim]（只读，无法移动，通过外观更新功能使用）[/]"
+#             )
+#             for global_idx, item in costume_items:
+#                 log.write(
+#                     f"  [bold magenta]{global_idx + 1}.[/] [magenta]【时装】[/] {render_item(item)}"
+#                 )
+#             log.write("")
 
-        log.write("[dim]输入编号移动道具（背包 ↔ 储物箱）：[/]")
+#         log.write("[dim]输入编号移动道具（背包 ↔ 储物箱）：[/]")
 
-    @on(Input.Submitted, "#item-input")
-    def handle_input(self, event: Input.Submitted) -> None:
-        raw = event.value.strip()
-        event.input.clear()
-        log = self.query_one(RichLog)
+#     @on(Input.Submitted, "#item-input")
+#     def handle_input(self, event: Input.Submitted) -> None:
+#         raw = event.value.strip()
+#         event.input.clear()
+#         log = self.query_one(RichLog)
 
-        if not raw:
-            return
+#         if not raw:
+#             return
 
-        if raw == "0":
-            log.clear()
-            log.write(ITEM_MGMT_HEADER)
-            self._load_items()
-            return
+#         if raw == "0":
+#             log.clear()
+#             log.write(ITEM_MGMT_HEADER)
+#             self._load_items()
+#             return
 
-        if not raw.isdigit():
-            log.write("[red]请输入有效的编号。[/]")
-            return
+#         if not raw.isdigit():
+#             log.write("[red]请输入有效的编号。[/]")
+#             return
 
-        self._select_item(int(raw) - 1)
+#         self._select_item(int(raw) - 1)
 
-    async def _fetch_all_items(
-        self, user_name: str, game_name: str, player_actor: str, storage_entity: str
-    ) -> List[_ItemEntry]:
-        """通过实时 GET 获取背包与储物箱道具列表，不做任何本地缓存。"""
-        resp = await fetch_entities_details(
-            user_name,
-            game_name,
-            [player_actor, storage_entity],
-        )
+#     async def _fetch_all_items(
+#         self, user_name: str, game_name: str, player_actor: str, storage_entity: str
+#     ) -> List[_ItemEntry]:
+#         """通过实时 GET 获取背包与储物箱道具列表，不做任何本地缓存。"""
+#         resp = await fetch_entities_details(
+#             user_name,
+#             game_name,
+#             [player_actor, storage_entity],
+#         )
 
-        inventory_items: List[AnyItem] = []
-        storage_items: List[AnyItem] = []
+#         inventory_items: List[AnyItem] = []
+#         storage_items: List[AnyItem] = []
 
-        for entity in resp.entities:
-            for comp in entity.components:
-                if comp.name == InventoryComponent.__name__:
-                    inventory_items = [
-                        _ITEM_ADAPTER.validate_python(d)
-                        for d in comp.data.get("items", [])
-                    ]
-                elif comp.name == StorageComponent.__name__:
-                    storage_items = [
-                        _ITEM_ADAPTER.validate_python(d)
-                        for d in comp.data.get("items", [])
-                    ]
+#         for entity in resp.entities:
+#             for comp in entity.components:
+#                 if comp.name == InventoryComponent.__name__:
+#                     inventory_items = [
+#                         _ITEM_ADAPTER.validate_python(d)
+#                         for d in comp.data.get("items", [])
+#                     ]
+#                 elif comp.name == StorageComponent.__name__:
+#                     storage_items = [
+#                         _ITEM_ADAPTER.validate_python(d)
+#                         for d in comp.data.get("items", [])
+#                     ]
 
-        return [("inventory", item) for item in inventory_items] + [
-            ("storage", item) for item in storage_items
-        ]
+#         return [("inventory", item) for item in inventory_items] + [
+#             ("storage", item) for item in storage_items
+#         ]
 
-    @work
-    async def _load_items(self) -> None:
-        """从服务器获取玩家实体，解析背包与储物箱道具列表并渲染，不做本地缓存。"""
-        log = self.query_one(RichLog)
-        log.write("[dim]正在加载道具信息...[/]")
+#     @work
+#     async def _load_items(self) -> None:
+#         """从服务器获取玩家实体，解析背包与储物箱道具列表并渲染，不做本地缓存。"""
+#         log = self.query_one(RichLog)
+#         log.write("[dim]正在加载道具信息...[/]")
 
-        app = self.game_client
-        if app.session is None:
-            log.write("[red]⚠ 无法取得会话信息。[/]")
-            return
+#         app = self.game_client
+#         if app.session is None:
+#             log.write("[red]⚠ 无法取得会话信息。[/]")
+#             return
 
-        user_name = app.session.user_name
-        game_name = app.session.game_name
-        player_actor = app.session.actor_name
-        storage_entity = await resolve_storage_entity(app)
+#         user_name = app.session.user_name
+#         game_name = app.session.game_name
+#         player_actor = app.session.actor_name
+#         storage_entity = await resolve_storage_entity(app)
 
-        try:
-            all_items = await self._fetch_all_items(
-                user_name, game_name, player_actor, storage_entity
-            )
-        except Exception as e:
-            logger.error(f"ItemManagementScreen._load_items: 查询失败 error={e}")
-            log.write(f"[bold red]❌ 读取道具列表失败: {e}[/]")
-            return
+#         try:
+#             all_items = await self._fetch_all_items(
+#                 user_name, game_name, player_actor, storage_entity
+#             )
+#         except Exception as e:
+#             logger.error(f"ItemManagementScreen._load_items: 查询失败 error={e}")
+#             log.write(f"[bold red]❌ 读取道具列表失败: {e}[/]")
+#             return
 
-        logger.info(f"ItemManagementScreen._load_items: 共 {len(all_items)} 件道具")
-        self._render_list(log, all_items)
+#         logger.info(f"ItemManagementScreen._load_items: 共 {len(all_items)} 件道具")
+#         self._render_list(log, all_items)
 
-    @work
-    async def _select_item(self, idx: int) -> None:
-        """根据编号选择道具并触发移动；道具列表与编号范围均通过实时 GET 判定，不使用本地缓存。"""
-        log = self.query_one(RichLog)
+#     @work
+#     async def _select_item(self, idx: int) -> None:
+#         """根据编号选择道具并触发移动；道具列表与编号范围均通过实时 GET 判定，不使用本地缓存。"""
+#         log = self.query_one(RichLog)
 
-        app = self.game_client
-        if app.session is None:
-            log.write("[red]⚠ 无法取得会话信息。[/]")
-            return
+#         app = self.game_client
+#         if app.session is None:
+#             log.write("[red]⚠ 无法取得会话信息。[/]")
+#             return
 
-        user_name = app.session.user_name
-        game_name = app.session.game_name
-        player_actor = app.session.actor_name
-        storage_entity = await resolve_storage_entity(app)
+#         user_name = app.session.user_name
+#         game_name = app.session.game_name
+#         player_actor = app.session.actor_name
+#         storage_entity = await resolve_storage_entity(app)
 
-        try:
-            all_items = await self._fetch_all_items(
-                user_name, game_name, player_actor, storage_entity
-            )
-        except Exception as e:
-            logger.error(f"ItemManagementScreen._select_item: 查询失败 error={e}")
-            log.write(f"[bold red]❌ 读取道具列表失败: {e}[/]")
-            return
+#         try:
+#             all_items = await self._fetch_all_items(
+#                 user_name, game_name, player_actor, storage_entity
+#             )
+#         except Exception as e:
+#             logger.error(f"ItemManagementScreen._select_item: 查询失败 error={e}")
+#             log.write(f"[bold red]❌ 读取道具列表失败: {e}[/]")
+#             return
 
-        if not all_items:
-            log.write("[yellow]道具列表为空。[/]")
-            return
+#         if not all_items:
+#             log.write("[yellow]道具列表为空。[/]")
+#             return
 
-        if idx < 0 or idx >= len(all_items):
-            log.write(f"[red]编号超出范围，请输入 1 ~ {len(all_items)}。[/]")
-            return
+#         if idx < 0 or idx >= len(all_items):
+#             log.write(f"[red]编号超出范围，请输入 1 ~ {len(all_items)}。[/]")
+#             return
 
-        location, item = all_items[idx]
-        item_name = item.name
+#         location, item = all_items[idx]
+#         item_name = item.name
 
-        if isinstance(item, CostumeItem):
-            log.write(
-                f"[yellow]⚠ 时装「{item_name}」不可移动，请通过外观更新功能使用。[/]"
-            )
-            return
+#         if isinstance(item, CostumeItem):
+#             log.write(
+#                 f"[yellow]⚠ 时装「{item_name}」不可移动，请通过外观更新功能使用。[/]"
+#             )
+#             return
 
-        inp = self.query_one(Input)
-        inp.disabled = True
-        try:
-            if location == "inventory":
-                await self._move_to_storage(user_name, game_name, item_name)
-            else:
-                await self._move_to_inventory(user_name, game_name, item_name)
-        finally:
-            inp.disabled = False
-            inp.focus()
+#         inp = self.query_one(Input)
+#         inp.disabled = True
+#         try:
+#             if location == "inventory":
+#                 await self._move_to_storage(user_name, game_name, item_name)
+#             else:
+#                 await self._move_to_inventory(user_name, game_name, item_name)
+#         finally:
+#             inp.disabled = False
+#             inp.focus()
 
-        self._load_items()
+#         self._load_items()
 
-    async def _move_to_inventory(
-        self, user_name: str, game_name: str, item_name: str
-    ) -> None:
-        log = self.query_one(RichLog)
-        log.write(f"[dim]▶ 正在将 {display_name(item_name)} 移入背包...[/]")
-        logger.info(f"ItemManagementScreen._move_to_inventory: item={item_name}")
+#     async def _move_to_inventory(
+#         self, user_name: str, game_name: str, item_name: str
+#     ) -> None:
+#         log = self.query_one(RichLog)
+#         log.write(f"[dim]▶ 正在将 {display_name(item_name)} 移入背包...[/]")
+#         logger.info(f"ItemManagementScreen._move_to_inventory: item={item_name}")
 
-        try:
-            await home_item_move_to_inventory(user_name, game_name, [item_name])
-            log.write(f"[bold green]✅ {display_name(item_name)} 已移入随身背包[/]")
-            logger.info(
-                f"ItemManagementScreen._move_to_inventory: 成功 item={item_name}"
-            )
-        except Exception as e:
-            logger.error(
-                f"ItemManagementScreen._move_to_inventory: 失败 item={item_name} error={e}"
-            )
-            log.write(f"[bold red]❌ 移动失败: {e}[/]")
+#         try:
+#             await home_item_move_to_inventory(user_name, game_name, [item_name])
+#             log.write(f"[bold green]✅ {display_name(item_name)} 已移入随身背包[/]")
+#             logger.info(
+#                 f"ItemManagementScreen._move_to_inventory: 成功 item={item_name}"
+#             )
+#         except Exception as e:
+#             logger.error(
+#                 f"ItemManagementScreen._move_to_inventory: 失败 item={item_name} error={e}"
+#             )
+#             log.write(f"[bold red]❌ 移动失败: {e}[/]")
 
-    async def _move_to_storage(
-        self, user_name: str, game_name: str, item_name: str
-    ) -> None:
-        log = self.query_one(RichLog)
-        log.write(f"[dim]▶ 正在将 {display_name(item_name)} 移入储物箱...[/]")
-        logger.info(f"ItemManagementScreen._move_to_storage: item={item_name}")
+#     async def _move_to_storage(
+#         self, user_name: str, game_name: str, item_name: str
+#     ) -> None:
+#         log = self.query_one(RichLog)
+#         log.write(f"[dim]▶ 正在将 {display_name(item_name)} 移入储物箱...[/]")
+#         logger.info(f"ItemManagementScreen._move_to_storage: item={item_name}")
 
-        try:
-            await home_item_move_to_storage(user_name, game_name, [item_name])
-            log.write(f"[bold green]✅ {display_name(item_name)} 已移入储物箱[/]")
-            logger.info(f"ItemManagementScreen._move_to_storage: 成功 item={item_name}")
-        except Exception as e:
-            logger.error(
-                f"ItemManagementScreen._move_to_storage: 失败 item={item_name} error={e}"
-            )
-            log.write(f"[bold red]❌ 移动失败: {e}[/]")
+#         try:
+#             await home_item_move_to_storage(user_name, game_name, [item_name])
+#             log.write(f"[bold green]✅ {display_name(item_name)} 已移入储物箱[/]")
+#             logger.info(f"ItemManagementScreen._move_to_storage: 成功 item={item_name}")
+#         except Exception as e:
+#             logger.error(
+#                 f"ItemManagementScreen._move_to_storage: 失败 item={item_name} error={e}"
+#             )
+#             log.write(f"[bold red]❌ 移动失败: {e}[/]")

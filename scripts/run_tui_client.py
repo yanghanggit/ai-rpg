@@ -25,7 +25,8 @@ from ai_rpg.tui.config import server_config
 from ai_rpg.tui.launch import LaunchScreen
 from ai_rpg.tui.combat_room import CombatRoomScreen
 from ai_rpg.tui.combat_post_combat import CombatPostCombatScreen
-from ai_rpg.tui.home_wear_costume import HomeWearCostumeScreen
+
+# from ai_rpg.tui.home_wear_costume import HomeWearCostumeScreen
 from textual.screen import Screen
 
 # PyInstaller frozen bundle 检测：打包后 sys.frozen = True
@@ -119,8 +120,8 @@ def main(
             launch_screen = CombatPostCombatScreen
         elif dev_screen == "combat-room":
             launch_screen = CombatRoomScreen
-        elif dev_screen == "wear-costume":
-            launch_screen = HomeWearCostumeScreen
+        # elif dev_screen == "wear-costume":
+        #     launch_screen = HomeWearCostumeScreen
         else:
             launch_screen = LaunchScreen
 

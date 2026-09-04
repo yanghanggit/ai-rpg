@@ -37,9 +37,15 @@ logger.remove()
 logger.add(
     LOGS_DIR / f"tui_client_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log",
     rotation="10 MB",
-    # retention=3,
+    retention=3,
     level="DEBUG",
     encoding="utf-8",
+    format=(
+        "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
+        "<level>{level: <8}</level> | "
+        "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
+        "<level>{message}</level>"
+    ),
 )
 
 

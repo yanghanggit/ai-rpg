@@ -18,7 +18,7 @@ from .server_client import (
 )
 from .server_client import home_generate_dungeon as server_home_generate_dungeon
 from .utils import display_name
-from .dungeon_room_router_room import DungeonRoomRouterRoom
+from .dungeon_room_preparation import DungeonRoomPreparationScreen
 
 MENU_TEXT = """\
 [bold cyan]── 副本总览 ──────────────────────────────────────[/]
@@ -223,7 +223,7 @@ class DungeonOverviewScreen(BaseGameScreen):
                 f"DungeonOverviewScreen._do_enter_dungeon: 进入成功 dungeon={dungeon_name}"
             )
 
-            self.app.push_screen(DungeonRoomRouterRoom())
+            self.app.push_screen(DungeonRoomPreparationScreen())
         except Exception as e:
             logger.error(f"DungeonOverviewScreen._do_enter_dungeon: 进入失败 error={e}")
             log.write(f"[bold red]❌ 进入副本失败: {e}[/]")

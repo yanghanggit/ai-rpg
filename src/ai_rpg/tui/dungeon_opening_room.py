@@ -333,9 +333,9 @@ class DungeonOpeningRoomScreen(BaseGameScreen):
 
             # 回到副本房间路由，让其重新根据当前房间类型分发到对应 Screen
             # 注：延迟导入避免循环引用（dungeon_room_router_room → opening_room）
-            from .dungeon_room_router_room import DungeonRoomRouterRoom
+            from .dungeon_room_preparation import DungeonRoomPreparationScreen
 
-            self.app.switch_screen(DungeonRoomRouterRoom())
+            self.app.switch_screen(DungeonRoomPreparationScreen())
         except Exception as e:
             logger.error(f"OpeningRoomScreen._advance_stage: 推进失败 error={e}")
             output.write(f"[bold red]❌ 进入下一关失败：{e}[/]")

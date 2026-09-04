@@ -332,6 +332,6 @@ class CombatPostCombatScreen(BaseGameScreen):
         # dungeon_room_router_room.py 会 import combat_room.py，combat_room.py 又
         # import combat_ongoing.py，combat_ongoing.py 又 import 本模块
         # （CombatPostCombatScreen），顶层导入会形成循环导入。
-        from .dungeon_room_router_room import DungeonRoomRouterRoom
+        from .dungeon_room_preparation import DungeonRoomPreparationScreen
 
-        self.app.switch_screen(DungeonRoomRouterRoom())
+        self.app.switch_screen(DungeonRoomPreparationScreen())

@@ -38,7 +38,7 @@ from .cmd_roster import (
 from .cmd_speak import speak_to
 from .cmd_stage import build_stage_view_text
 from .cmd_switch import switch_stage
-from .dungeon_room_router_room import DungeonRoomRouterRoom
+from .dungeon_room_preparation import DungeonRoomPreparationScreen
 from .server_client import (
     fetch_session_messages,
     logout,
@@ -776,7 +776,7 @@ class HomeScreen(BaseGameScreen):
         )
         self._write(text)
         if ok:
-            self.app.push_screen(DungeonRoomRouterRoom())
+            self.app.push_screen(DungeonRoomPreparationScreen())
 
     @work
     async def _do_generate_dungeon(self) -> None:

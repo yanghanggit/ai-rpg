@@ -5,7 +5,7 @@ from typing import List, Tuple
 from loguru import logger
 from pydantic import TypeAdapter
 
-from ..models import InventoryComponent, StorageComponent
+from ..models import InventoryComponent, StorageComponent, WorldComponent
 from ..models.items import AnyItem, CostumeItem
 from .server_client import (
     fetch_entities_details,
@@ -23,7 +23,7 @@ async def _resolve_storage_entity(user_name: str, game_name: str) -> str:
     resp = await fetch_entities_group(
         user_name,
         game_name,
-        all_of=["WorldComponent", "StorageComponent"],
+        all_of=[WorldComponent.__name__, StorageComponent.__name__],
         any_of=[],
         none_of=[],
     )

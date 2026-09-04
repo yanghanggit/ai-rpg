@@ -9,7 +9,13 @@ from .base import BaseGameScreen
 import asyncio
 from loguru import logger
 
-from ..models import StagesStateResponse, StageDescriptionComponent, AppearanceComponent
+from ..models import (
+    ActorComponent,
+    AppearanceComponent,
+    PlayerComponent,
+    StageDescriptionComponent,
+    StagesStateResponse,
+)
 from .server_client import (
     fetch_session_messages,
     stream_session_messages,
@@ -485,8 +491,8 @@ class HomeMainScreen(BaseGameScreen):
                 user_name,
                 game_name,
                 all_of=[],
-                any_of=["ActorComponent"],
-                none_of=["PlayerComponent"],
+                any_of=[ActorComponent.__name__],
+                none_of=[PlayerComponent.__name__],
             )
             names = [entity.name for entity in resp.entities]
             log.write(
@@ -502,7 +508,7 @@ class HomeMainScreen(BaseGameScreen):
             resp = await fetch_entities_group(
                 user_name,
                 game_name,
-                all_of=["ActorComponent"],
+                all_of=[ActorComponent.__name__],
                 any_of=[],
                 none_of=[],
             )

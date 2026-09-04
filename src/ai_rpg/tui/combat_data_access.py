@@ -14,6 +14,7 @@ from ..models import (
     EntitiesDetailsResponse,
     StagesStateResponse,
     StorageComponent,
+    WorldComponent,
 )
 from .app import GameClient
 from .mock_data import (
@@ -115,7 +116,7 @@ async def resolve_storage_entity(game_client: GameClient) -> str:
     resp = await fetch_entities_group(
         user_name,
         game_name,
-        all_of=["WorldComponent", "StorageComponent"],
+        all_of=[WorldComponent.__name__, StorageComponent.__name__],
         any_of=[],
         none_of=[],
     )
@@ -134,7 +135,7 @@ async def get_storage_component(game_client: GameClient) -> StorageComponent:
     resp = await fetch_entities_group(
         user_name,
         game_name,
-        all_of=["WorldComponent", "StorageComponent"],
+        all_of=[WorldComponent.__name__, StorageComponent.__name__],
         any_of=[],
         none_of=[],
     )

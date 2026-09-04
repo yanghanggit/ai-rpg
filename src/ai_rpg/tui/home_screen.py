@@ -12,6 +12,11 @@ from textual.widgets import Input, RichLog, Static
 from .base import BaseGameScreen
 from .cmd_advance import run_home_advance
 from .cmd_browse import build_entity_browser_text
+from .cmd_costume import (
+    build_worn_list_text,
+    remove_costume,
+    wear_costume,
+)
 from .cmd_items import (
     build_items_list_text,
     move_item_to_inventory,
@@ -55,7 +60,10 @@ COMMAND_DEFS: List[Tuple[str, str, str]] = [
     ("switch", "sw", "切换到其他场景：/switch @场景名"),
     # 核心行动
     ("advance", "a", "推进家园：让所有 NPC 角色触发规划与行动"),
-    ("wear", "w", "穿戴时装：为目标安装/移除时装"),
+    # 时装
+    ("list-worn", "lw", "列出已穿戴时装的角色（含外观）"),
+    ("wear", "w", "为目标穿戴时装：/wear @角色名 @时装名"),
+    ("unwear", "uw", "卸下目标当前时装：/unwear @角色名"),
     # 道具与工坊
     ("list-items", "li", "列出随身背包与储物箱道具"),
     ("to-inventory", "ti", "储物箱→随身背包：/to-inventory @道具名"),
@@ -75,6 +83,7 @@ COMMAND_DEFS: List[Tuple[str, str, str]] = [
 GROUP_BREAK_BEFORE = {
     "list-roster",
     "speak",
+    "list-worn",
     "list-items",
     "craft-consumable",
     "help",
@@ -104,6 +113,9 @@ BASE_COMMANDS = {
     "list-items",
     "to-inventory",
     "to-storage",
+    "list-worn",
+    "wear",
+    "unwear",
 }
 
 
@@ -555,6 +567,71 @@ class HomeScreen(BaseGameScreen):
             app.session.user_name,
             app.session.game_name,
             item_name,
+        )
+        self._write(text)
+
+    def _cmd_list_worn(self, args: str) -> None:
+        self._do_list_worn()
+
+    def _cmd_wear(self, args: str) -> None:
+        parts = args.strip().split()
+        if len(parts) < 2:
+            self._write("[yellow]用法：/wear @角色名 @时装名[/]")
+            return
+        actor = parts[0]
+        costume = " ".join(parts[1:])
+        if not actor.startswith("@") or not costume.startswith("@"):
+            self._write("[yellow]用法：/wear @角色名 @时装名[/]")
+            return
+        actor = actor[1:]
+        costume = costume[1:]
+        if not actor or not costume:
+            self._write("[yellow]用法：/wear @角色名 @时装名[/]")
+            return
+        self._do_wear(actor, costume)
+
+    def _cmd_unwear(self, args: str) -> None:
+        actor = args.strip()
+        if actor.startswith("@"):
+            actor = actor[1:].strip()
+        if not actor:
+            self._write("[yellow]用法：/unwear @角色名[/]")
+            return
+        self._do_unwear(actor)
+
+    @work
+    async def _do_list_worn(self) -> None:
+        app = self.game_client
+        if app.session is None:
+            return
+        text = await build_worn_list_text(
+            app.session.user_name,
+            app.session.game_name,
+        )
+        self._write(text)
+
+    @work
+    async def _do_wear(self, actor: str, costume: str) -> None:
+        app = self.game_client
+        if app.session is None:
+            return
+        text = await wear_costume(
+            app.session.user_name,
+            app.session.game_name,
+            actor,
+            costume,
+        )
+        self._write(text)
+
+    @work
+    async def _do_unwear(self, actor: str) -> None:
+        app = self.game_client
+        if app.session is None:
+            return
+        text = await remove_costume(
+            app.session.user_name,
+            app.session.game_name,
+            actor,
         )
         self._write(text)
 

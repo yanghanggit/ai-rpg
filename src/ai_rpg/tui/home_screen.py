@@ -12,6 +12,11 @@ from textual.widgets import Input, RichLog, Static
 from .base import BaseGameScreen
 from .cmd_advance import run_home_advance
 from .cmd_browse import build_entity_browser_text
+from .cmd_items import (
+    build_items_list_text,
+    move_item_to_inventory,
+    move_item_to_storage,
+)
 from .cmd_roster import (
     add_roster_member,
     build_roster_list_text,
@@ -52,7 +57,9 @@ COMMAND_DEFS: List[Tuple[str, str, str]] = [
     ("advance", "a", "推进家园：让所有 NPC 角色触发规划与行动"),
     ("wear", "w", "穿戴时装：为目标安装/移除时装"),
     # 道具与工坊
-    ("items", "it", "道具管理：背包与储物箱道具移动"),
+    ("list-items", "li", "列出随身背包与储物箱道具"),
+    ("to-inventory", "ti", "储物箱→随身背包：/to-inventory 道具名"),
+    ("to-storage", "ts", "随身背包→储物箱：/to-storage 道具名"),
     ("craft-consumable", "cc", "消耗品工坊：合成消耗品"),
     ("craft-gear", "cg", "装备工坊：用材料锻造装备"),
     ("craft-costume", "cf", "时装工坊：用材料制作时装"),
@@ -65,7 +72,13 @@ COMMAND_DEFS: List[Tuple[str, str, str]] = [
 ]
 
 # 命令列表展示时，在这些命令前插入空行作为分组分隔
-GROUP_BREAK_BEFORE = {"list-roster", "speak", "help"}
+GROUP_BREAK_BEFORE = {
+    "list-roster",
+    "speak",
+    "list-items",
+    "craft-consumable",
+    "help",
+}
 
 # 命令名（完整或简写）→ 完整命令名
 COMMAND_ALIASES: Dict[str, str] = {
@@ -88,6 +101,9 @@ BASE_COMMANDS = {
     "list-roster",
     "add-roster",
     "remove-roster",
+    "list-items",
+    "to-inventory",
+    "to-storage",
 }
 
 
@@ -480,6 +496,59 @@ class HomeScreen(BaseGameScreen):
             app.session.user_name,
             app.session.game_name,
             target,
+        )
+        self._write(text)
+
+    def _cmd_list_items(self, args: str) -> None:
+        self._do_list_items()
+
+    def _cmd_to_inventory(self, args: str) -> None:
+        item_name = args.strip()
+        if not item_name:
+            self._write("[yellow]用法：/to-inventory 道具名[/]")
+            return
+        self._do_to_inventory(item_name)
+
+    def _cmd_to_storage(self, args: str) -> None:
+        item_name = args.strip()
+        if not item_name:
+            self._write("[yellow]用法：/to-storage 道具名[/]")
+            return
+        self._do_to_storage(item_name)
+
+    @work
+    async def _do_list_items(self) -> None:
+        app = self.game_client
+        if app.session is None:
+            return
+        text = await build_items_list_text(
+            app.session.user_name,
+            app.session.game_name,
+            app.session.actor_name,
+        )
+        self._write(text)
+
+    @work
+    async def _do_to_inventory(self, item_name: str) -> None:
+        app = self.game_client
+        if app.session is None:
+            return
+        text = await move_item_to_inventory(
+            app.session.user_name,
+            app.session.game_name,
+            item_name,
+        )
+        self._write(text)
+
+    @work
+    async def _do_to_storage(self, item_name: str) -> None:
+        app = self.game_client
+        if app.session is None:
+            return
+        text = await move_item_to_storage(
+            app.session.user_name,
+            app.session.game_name,
+            item_name,
         )
         self._write(text)
 

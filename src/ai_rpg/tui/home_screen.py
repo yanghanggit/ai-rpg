@@ -1,6 +1,7 @@
 """游戏主场景 Screen（Home 状态）：正文区 + 输入区，支持斜杠命令。"""
 
 import asyncio
+import re
 from typing import Dict, List, Optional, Tuple
 
 from loguru import logger
@@ -17,6 +18,7 @@ from .cmd_costume import (
     remove_costume,
     wear_costume,
 )
+from .cmd_craft import craft_consumable, craft_costume, craft_gear
 from .cmd_items import (
     build_items_list_text,
     move_item_to_inventory,
@@ -68,9 +70,9 @@ COMMAND_DEFS: List[Tuple[str, str, str]] = [
     ("list-items", "li", "列出随身背包与储物箱道具"),
     ("to-inventory", "ti", "储物箱→随身背包：/to-inventory @道具名"),
     ("to-storage", "ts", "随身背包→储物箱：/to-storage @道具名"),
-    ("craft-consumable", "cc", "消耗品工坊：合成消耗品"),
-    ("craft-gear", "cg", "装备工坊：用材料锻造装备"),
-    ("craft-costume", "cf", "时装工坊：用材料制作时装"),
+    ("craft-consumable", "cc", "消耗品工坊：/craft-consumable @材料[×N] ..."),
+    ("craft-gear", "cg", "装备工坊：/craft-gear @材料[×N] ..."),
+    ("craft-costume", "cf", "时装工坊：/craft-costume @材料[×N] ..."),
     # 系统
     ("logout", "lo", "登出并返回主菜单"),
     # 通用命令（固定在底部）
@@ -85,7 +87,6 @@ GROUP_BREAK_BEFORE = {
     "speak",
     "list-worn",
     "list-items",
-    "craft-consumable",
     "help",
 }
 
@@ -116,6 +117,9 @@ BASE_COMMANDS = {
     "list-worn",
     "wear",
     "unwear",
+    "craft-consumable",
+    "craft-gear",
+    "craft-costume",
 }
 
 
@@ -632,6 +636,79 @@ class HomeScreen(BaseGameScreen):
             app.session.user_name,
             app.session.game_name,
             actor,
+        )
+        self._write(text)
+
+    def _parse_materials(self, args: str) -> Optional[List[str]]:
+        """解析 @材料[×N] 参数列表，返回展开后的材料名列表；非法时返回 None。"""
+        tokens = args.strip().split()
+        if not tokens:
+            return None
+        materials: List[str] = []
+        for token in tokens:
+            if not token.startswith("@") or len(token) == 1:
+                return None
+            body = token[1:]
+            m = re.match(r"^(.*?)[×x](\d+)$", body)
+            if m:
+                name = m.group(1)
+                count = int(m.group(2))
+            else:
+                name = body
+                count = 1
+            if not name or count < 1:
+                return None
+            materials.extend([name] * count)
+        return materials
+
+    def _cmd_craft_consumable(self, args: str) -> None:
+        materials = self._parse_materials(args)
+        if materials is None:
+            self._write("[yellow]用法：/craft-consumable @材料[×N] ...[/]")
+            return
+        self._do_craft_consumable(materials)
+
+    def _cmd_craft_gear(self, args: str) -> None:
+        materials = self._parse_materials(args)
+        if materials is None:
+            self._write("[yellow]用法：/craft-gear @材料[×N] ...[/]")
+            return
+        self._do_craft_gear(materials)
+
+    def _cmd_craft_costume(self, args: str) -> None:
+        materials = self._parse_materials(args)
+        if materials is None:
+            self._write("[yellow]用法：/craft-costume @材料[×N] ...[/]")
+            return
+        self._do_craft_costume(materials)
+
+    @work
+    async def _do_craft_consumable(self, materials: List[str]) -> None:
+        app = self.game_client
+        if app.session is None:
+            return
+        text = await craft_consumable(
+            app.session.user_name, app.session.game_name, materials
+        )
+        self._write(text)
+
+    @work
+    async def _do_craft_gear(self, materials: List[str]) -> None:
+        app = self.game_client
+        if app.session is None:
+            return
+        text = await craft_gear(
+            app.session.user_name, app.session.game_name, materials
+        )
+        self._write(text)
+
+    @work
+    async def _do_craft_costume(self, materials: List[str]) -> None:
+        app = self.game_client
+        if app.session is None:
+            return
+        text = await craft_costume(
+            app.session.user_name, app.session.game_name, materials
         )
         self._write(text)
 

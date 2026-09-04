@@ -1,7 +1,8 @@
 """开场房间 Screen：正文区 + 输入区，支持斜杠命令。"""
 
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
+from loguru import logger
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
@@ -18,6 +19,8 @@ from .cmd_opening import (
     init_opening,
     pick_card,
 )
+from .server_client import fetch_session_messages, stream_session_messages
+from .utils import format_agent_event
 
 INTRO_TEXT = """\
 [bold cyan]── 开场房间 ──[/]
@@ -31,6 +34,7 @@ COMMAND_DEFS: List[Tuple[str, str, str]] = [
     ("deck", "dk", "查阅我方牌组"),
     ("card-pool", "cp", "查阅我方卡池"),
     ("inventory", "inv", "查阅我方背包"),
+    ("session", "ss", "查看消息（可带 sequence_id）"),
     # 操作
     ("init", "in", "初始化开场房间（叙事 + 牌库）"),
     ("generate-pool", "gp", "生成卡池"),
@@ -78,6 +82,12 @@ class DungeonOpeningRoomScreen(BaseGameScreen):
         padding: 0 1;
     }
 
+    #notify {
+        height: 1;
+        content-align: left middle;
+        padding: 0 1;
+    }
+
     #input-row {
         height: 3;
         dock: bottom;
@@ -97,6 +107,7 @@ class DungeonOpeningRoomScreen(BaseGameScreen):
 
     def compose(self) -> ComposeResult:
         yield RichLog(id="body", highlight=True, markup=True, wrap=True)
+        yield Static("", id="notify")
         with Horizontal(id="input-row"):
             yield Static("> ", id="prompt")
             yield Input(
@@ -107,6 +118,7 @@ class DungeonOpeningRoomScreen(BaseGameScreen):
     def on_mount(self) -> None:
         self._write(INTRO_TEXT)
         self.query_one("#command-input", Input).focus()
+        self._watch_notifications()
 
     def _write(self, text: str) -> None:
         """把信息追加写入正文区。"""
@@ -167,6 +179,9 @@ class DungeonOpeningRoomScreen(BaseGameScreen):
 
     def _cmd_inventory(self, args: str) -> None:
         self._do_inventory()
+
+    def _cmd_session(self, args: str) -> None:
+        self._do_view_messages(args)
 
     def _cmd_init(self, args: str) -> None:
         self._do_init()
@@ -241,6 +256,10 @@ class DungeonOpeningRoomScreen(BaseGameScreen):
         app = self.game_client
         if app.session is None:
             return
+        self._write(
+            "[bold yellow]── 初始化开场房间 ──────────────────────────────────────[/]"
+        )
+        self._write("[dim]▶ 正在初始化（叙事 + 牌库）...[/]")
         text = await init_opening(app.session.user_name, app.session.game_name)
         self._write(text)
 
@@ -249,6 +268,10 @@ class DungeonOpeningRoomScreen(BaseGameScreen):
         app = self.game_client
         if app.session is None:
             return
+        self._write(
+            "[bold yellow]── 生成卡池 ──────────────────────────────────────[/]"
+        )
+        self._write("[dim]▶ 正在生成卡池...[/]")
         text = await generate_card_pool(app.session.user_name, app.session.game_name)
         self._write(text)
 
@@ -257,6 +280,7 @@ class DungeonOpeningRoomScreen(BaseGameScreen):
         app = self.game_client
         if app.session is None:
             return
+        self._write(f"[dim]▶ 正在从 {actor} 的卡池挑选「{card}」...[/]")
         text = await pick_card(
             app.session.user_name, app.session.game_name, actor, card
         )
@@ -267,6 +291,7 @@ class DungeonOpeningRoomScreen(BaseGameScreen):
         app = self.game_client
         if app.session is None:
             return
+        self._write("[dim]▶ 正在进入下一关...[/]")
         ok, text = await advance_stage(app.session.user_name, app.session.game_name)
         self._write(text)
         if ok:
@@ -274,3 +299,93 @@ class DungeonOpeningRoomScreen(BaseGameScreen):
             from .dungeon_room_preparation import DungeonRoomPreparationScreen
 
             self.app.switch_screen(DungeonRoomPreparationScreen())
+
+    @work
+    async def _do_view_messages(self, raw: str) -> None:
+        raw = raw.strip()
+        start_seq: Optional[int] = None
+        if raw:
+            try:
+                start_seq = int(raw)
+            except ValueError:
+                self._write(f"[bold red]❌ 无效的 sequence_id：{raw}，已取消[/]")
+                return
+            self._write(f"[dim]▶ 拉取 sequence_id > {start_seq} 的消息...[/]")
+        else:
+            self._write("[dim]▶ 拉取最新未读消息...[/]")
+
+        count = await self._pull_messages(start_seq)
+        if count == 0:
+            self._write("[dim](没有更多消息)[/]")
+
+    async def _pull_messages(self, start_sequence_id: Optional[int] = None) -> int:
+        app = self.game_client
+        if app.session is None:
+            return 0
+        since = (
+            start_sequence_id
+            if start_sequence_id is not None
+            else app.session.last_sequence_id
+        )
+        try:
+            resp = await fetch_session_messages(
+                app.session.user_name, app.session.game_name, since
+            )
+        except Exception as e:
+            logger.warning(f"_pull_messages: 拉取失败 error={e}")
+            return 0
+
+        count = 0
+        for msg in resp.session_messages:
+            if app.session is None:
+                break
+            if msg.sequence_id > app.session.last_sequence_id:
+                app.session.last_sequence_id = msg.sequence_id
+            if msg.agent_event is None:
+                continue
+            self._write(format_agent_event(msg.agent_event))
+            self._write("--------------------------------------")
+            count += 1
+            logger.debug(f"_pull_messages: 写入消息 seq={msg.sequence_id}")
+        self._update_notify_badge()
+        return count
+
+    def _update_notify_badge(self) -> None:
+        app = self.game_client
+        badge = self.query_one("#notify", Static)
+        if app.session is None:
+            badge.update("")
+            return
+        last_seq = app.session.last_sequence_id
+        notify_seq = app.session.notify_last_sequence_id
+        unread = max(0, notify_seq - last_seq)
+        seq_info = f"[dim]（本地:{last_seq} / 服务器:{notify_seq}）[/]"
+        if unread > 0:
+            badge.update(
+                f"[bold yellow]🔔 有 {unread} 条新消息[/] {seq_info}"
+                f" —— 输入 [bold green]/session[/] 查看"
+            )
+        else:
+            badge.update(seq_info)
+
+    @work(exclusive=True)
+    async def _watch_notifications(self) -> None:
+        app = self.game_client
+        if app.session is None:
+            return
+        user_name = app.session.user_name
+        game_name = app.session.game_name
+        app.session.notify_last_sequence_id = app.session.last_sequence_id
+        logger.info(f"_watch_notifications: 启动通知监听 user_name={user_name}")
+        try:
+            async for msg in stream_session_messages(
+                user_name, game_name, app.session.notify_last_sequence_id
+            ):
+                if app.session is None:
+                    break
+                if msg.sequence_id > app.session.notify_last_sequence_id:
+                    app.session.notify_last_sequence_id = msg.sequence_id
+                self._update_notify_badge()
+        except Exception as e:
+            logger.warning(f"_watch_notifications: 通知流中断 error={e}")
+        logger.info(f"_watch_notifications: 通知流已停止 user_name={user_name}")

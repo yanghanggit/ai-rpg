@@ -23,7 +23,7 @@ from config import LOGS_DIR
 from ai_rpg.tui import GameClient
 from ai_rpg.tui.config import server_config
 from ai_rpg.tui.launch import LaunchScreen
-from ai_rpg.tui.combat_room import CombatRoomScreen
+from ai_rpg.tui.combat_init import CombatInitScreen
 from ai_rpg.tui.combat_post_combat import CombatPostCombatScreen
 
 # from ai_rpg.tui.home_wear_costume import HomeWearCostumeScreen
@@ -125,7 +125,7 @@ def main(
         if dev_screen == "combat-post-combat":
             launch_screen = CombatPostCombatScreen
         elif dev_screen == "combat-room":
-            launch_screen = CombatRoomScreen
+            launch_screen = CombatInitScreen
         # elif dev_screen == "wear-costume":
         #     launch_screen = HomeWearCostumeScreen
         else:

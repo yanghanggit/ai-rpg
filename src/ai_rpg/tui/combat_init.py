@@ -1,4 +1,4 @@
-"""战斗房间 Screen（CombatRoomScreen）
+"""战斗初始化 Screen（CombatInitScreen）
 
 对应 CombatState.NONE / INITIALIZATION 阶段：正文区 + 输入区，支持斜杠命令。
 战斗开始（/start）成功后切换到 CombatOngoingScreen。
@@ -25,7 +25,7 @@ from .server_client import fetch_session_messages, stream_session_messages
 from .utils import format_agent_event, strip_markup
 
 INTRO_TEXT = """\
-[bold cyan]── 战斗房间 ──[/]
+[bold cyan]── 战斗初始化（INITIALIZATION） ──[/]
 [dim]输入 [bold]/[/] 查看可用命令。[/]
 """
 
@@ -68,11 +68,11 @@ def _build_help_text() -> str:
 HELP_TEXT = _build_help_text()
 
 
-class CombatRoomScreen(BaseGameScreen):
-    """战斗房间 Screen：NONE / INITIALIZATION 阶段，正文区累加展示信息。"""
+class CombatInitScreen(BaseGameScreen):
+    """战斗初始化 Screen：NONE / INITIALIZATION 阶段，正文区累加展示信息。"""
 
     CSS = """
-    CombatRoomScreen {
+    CombatInitScreen {
         align: center middle;
     }
 

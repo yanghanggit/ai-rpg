@@ -1,4 +1,4 @@
-"""CombatRoomScreen 与 CombatOngoingScreen 共用的渲染 / 查找辅助函数。
+"""CombatInitScreen 与 CombatOngoingScreen 共用的渲染 / 查找辅助函数。
 
 纯函数集合，不依赖 Screen 实例，便于两个页面复用同一套「战斗宏观状态」与
 「场景内角色有效属性」渲染逻辑，避免重复实现。

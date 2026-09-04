@@ -30,10 +30,10 @@ async def route_to_current_room(app: GameClient) -> None:
 
     if isinstance(room, CombatRoom):
         # 延迟导入，避免在模块顶层形成 import 环
-        from .combat_room import CombatRoomScreen
+        from .combat_init import CombatInitScreen
 
         logger.info(f"route_to_current_room: 进入战斗房间 stage={room.stage.name}")
-        app.switch_screen(CombatRoomScreen())
+        app.switch_screen(CombatInitScreen())
     elif isinstance(room, OpeningRoom):
         from .dungeon_opening_room import DungeonOpeningRoomScreen
 

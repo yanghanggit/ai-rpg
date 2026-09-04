@@ -1,7 +1,7 @@
 """战斗房间本地调试用固定 Mock 数据。
 
 服务器尚未启动时（`--dev-screen combat-room` 跳过登录，`session is None`），
-`CombatRoomScreen` 使用本模块构造的固定 2v2（玩家+队友 vs 怪物x2）数据，
+`CombatInitScreen` 使用本模块构造的固定 2v2（玩家+队友 vs 怪物x2）数据，
 数据形状与真实服务端响应（DungeonRoomResponse / StagesStateResponse /
 EntitiesDetailsResponse）严格一致，均通过真实 Pydantic 模型构造而非裸 dict，
 保证 schema 变化时能第一时间在此处报错。

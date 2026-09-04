@@ -30,6 +30,7 @@ from .combat_loot_view import CombatLootViewScreen
 from .combat_round_history import CombatRoundHistoryScreen
 from .mock_data import set_mock_combat_state, set_mock_current_room_index
 from .server_client import dungeon_advance_stage, dungeon_exit, watch_task_until_done
+from .dungeon_room_router import route_to_current_room
 
 # from .home_main import HomeMainScreen
 
@@ -327,11 +328,5 @@ class CombatPostCombatScreen(BaseGameScreen):
             f"game_name={game_name} message={resp.message}"
         )
 
-        # 切换到副本房间路由屏幕，进入下一关
-        # 注：此处必须在方法内部延迟导入 DungeonRoomRouterRoom，不能提到模块顶层：
-        # dungeon_room_router_room.py 会 import combat_room.py，combat_room.py 又
-        # import combat_ongoing.py，combat_ongoing.py 又 import 本模块
-        # （CombatPostCombatScreen），顶层导入会形成循环导入。
-        from .dungeon_room_preparation import DungeonRoomPreparationScreen
-
-        self.app.switch_screen(DungeonRoomPreparationScreen())
+        # 进入下一关：按当前房间类型直接路由到对应页面
+        await route_to_current_room(self.game_client)

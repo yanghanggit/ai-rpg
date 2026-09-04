@@ -10,7 +10,7 @@ from loguru import logger
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
-from textual.widgets import Input, RichLog, Static
+from textual.widgets import Input, Static, TextArea
 
 from .base import BaseGameScreen
 from .cmd_combat import (
@@ -22,7 +22,7 @@ from .cmd_combat import (
 )
 from .combat_ongoing import CombatOngoingScreen
 from .server_client import fetch_session_messages, stream_session_messages
-from .utils import format_agent_event
+from .utils import format_agent_event, strip_markup
 
 INTRO_TEXT = """\
 [bold cyan]── 战斗房间 ──[/]
@@ -79,6 +79,7 @@ class CombatRoomScreen(BaseGameScreen):
     #body {
         height: 1fr;
         padding: 0 1;
+        border: none;
     }
 
     #notify {
@@ -105,7 +106,12 @@ class CombatRoomScreen(BaseGameScreen):
     """
 
     def compose(self) -> ComposeResult:
-        yield RichLog(id="body", highlight=True, markup=True, wrap=True)
+        yield TextArea(
+            id="body",
+            read_only=True,
+            soft_wrap=True,
+            show_cursor=False,
+        )
         yield Static("", id="notify")
         with Horizontal(id="input-row"):
             yield Static("> ", id="prompt")
@@ -120,8 +126,10 @@ class CombatRoomScreen(BaseGameScreen):
         self._watch_notifications()
 
     def _write(self, text: str) -> None:
-        """把信息追加写入正文区。"""
-        self.query_one("#body", RichLog).write(text)
+        """把信息追加写入正文区（剥离 markup，纯文本）。"""
+        body = self.query_one("#body", TextArea)
+        body.text = body.text + strip_markup(text) + "\n"
+        body.scroll_end(animate=False)
 
     @on(Input.Submitted, "#command-input")
     def _on_submit(self, event: Input.Submitted) -> None:
@@ -161,7 +169,7 @@ class CombatRoomScreen(BaseGameScreen):
         self._write(HELP_TEXT)
 
     def _cmd_clear(self, args: str) -> None:
-        self.query_one("#body", RichLog).clear()
+        self.query_one("#body", TextArea).text = ""
         self._write(INTRO_TEXT)
 
     def _cmd_quit(self, args: str) -> None:

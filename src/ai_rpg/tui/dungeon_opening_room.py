@@ -6,7 +6,7 @@ from loguru import logger
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
-from textual.widgets import Input, RichLog, Static
+from textual.widgets import Input, Static, TextArea
 
 from .base import BaseGameScreen
 from .cmd_opening import (
@@ -19,8 +19,9 @@ from .cmd_opening import (
     init_opening,
     pick_card,
 )
+from .dungeon_room_router import route_to_current_room
 from .server_client import fetch_session_messages, stream_session_messages
-from .utils import format_agent_event
+from .utils import format_agent_event, strip_markup
 
 INTRO_TEXT = """\
 [bold cyan]── 开场房间 ──[/]
@@ -80,6 +81,7 @@ class DungeonOpeningRoomScreen(BaseGameScreen):
     #body {
         height: 1fr;
         padding: 0 1;
+        border: none;
     }
 
     #notify {
@@ -106,7 +108,12 @@ class DungeonOpeningRoomScreen(BaseGameScreen):
     """
 
     def compose(self) -> ComposeResult:
-        yield RichLog(id="body", highlight=True, markup=True, wrap=True)
+        yield TextArea(
+            id="body",
+            read_only=True,
+            soft_wrap=True,
+            show_cursor=False,
+        )
         yield Static("", id="notify")
         with Horizontal(id="input-row"):
             yield Static("> ", id="prompt")
@@ -121,8 +128,10 @@ class DungeonOpeningRoomScreen(BaseGameScreen):
         self._watch_notifications()
 
     def _write(self, text: str) -> None:
-        """把信息追加写入正文区。"""
-        self.query_one("#body", RichLog).write(text)
+        """把信息追加写入正文区（剥离 markup，纯文本）。"""
+        body = self.query_one("#body", TextArea)
+        body.text = body.text + strip_markup(text) + "\n"
+        body.scroll_end(animate=False)
 
     @on(Input.Submitted, "#command-input")
     def _on_submit(self, event: Input.Submitted) -> None:
@@ -162,7 +171,7 @@ class DungeonOpeningRoomScreen(BaseGameScreen):
         self._write(HELP_TEXT)
 
     def _cmd_clear(self, args: str) -> None:
-        self.query_one("#body", RichLog).clear()
+        self.query_one("#body", TextArea).text = ""
         self._write(INTRO_TEXT)
 
     def _cmd_quit(self, args: str) -> None:
@@ -295,10 +304,7 @@ class DungeonOpeningRoomScreen(BaseGameScreen):
         ok, text = await advance_stage(app.session.user_name, app.session.game_name)
         self._write(text)
         if ok:
-            # 延迟导入，避免 dungeon_opening_room ↔ dungeon_room_preparation 循环引用
-            from .dungeon_room_preparation import DungeonRoomPreparationScreen
-
-            self.app.switch_screen(DungeonRoomPreparationScreen())
+            await route_to_current_room(self.game_client)
 
     @work
     async def _do_view_messages(self, raw: str) -> None:

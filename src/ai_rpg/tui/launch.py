@@ -4,16 +4,15 @@ import json
 from typing import Dict, List, Tuple
 
 from loguru import logger
-from rich.console import RenderableType
-from rich.syntax import Syntax
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.screen import Screen
-from textual.widgets import Input, RichLog, Static
+from textual.widgets import Input, Static, TextArea
 
 from .config import server_config
 from .server_client import fetch_server_info
+from .utils import strip_markup
 
 INTRO_TEXT = """\
 [bold cyan]测试TUI用客户端 v0.0.1[/]
@@ -65,6 +64,7 @@ class LaunchScreen(Screen[None]):
     #body {
         height: 1fr;
         padding: 0 1;
+        border: none;
     }
 
     #input-row {
@@ -85,7 +85,12 @@ class LaunchScreen(Screen[None]):
     """
 
     def compose(self) -> ComposeResult:
-        yield RichLog(id="body", highlight=True, markup=True, wrap=True)
+        yield TextArea(
+            id="body",
+            read_only=True,
+            soft_wrap=True,
+            show_cursor=False,
+        )
         with Horizontal(id="input-row"):
             yield Static("> ", id="prompt")
             yield Input(
@@ -97,9 +102,11 @@ class LaunchScreen(Screen[None]):
         self._write(INTRO_TEXT)
         self.query_one("#command-input", Input).focus()
 
-    def _write(self, text: RenderableType) -> None:
-        """把信息追加写入正文区。"""
-        self.query_one("#body", RichLog).write(text)
+    def _write(self, text: str) -> None:
+        """把信息追加写入正文区（剥离 markup，纯文本）。"""
+        body = self.query_one("#body", TextArea)
+        body.text = body.text + strip_markup(text) + "\n"
+        body.scroll_end(animate=False)
 
     @on(Input.Submitted, "#command-input")
     def _on_submit(self, event: Input.Submitted) -> None:
@@ -147,7 +154,7 @@ class LaunchScreen(Screen[None]):
         self.app.push_screen(NewGameScreen())
 
     def _cmd_clear(self, args: str) -> None:
-        self.query_one("#body", RichLog).clear()
+        self.query_one("#body", TextArea).text = ""
         self._write(INTRO_TEXT)
 
     def _cmd_quit(self, args: str) -> None:
@@ -164,7 +171,7 @@ class LaunchScreen(Screen[None]):
             logger.info(f"fetch_server_info: 成功 url={server_config.base_url}")
             self._write("[bold green]✅ 服务器信息：[/]")
             info_json = json.dumps(info, indent=2, ensure_ascii=False)
-            self._write(Syntax(info_json, "json", theme="ansi_dark", word_wrap=True))
+            self._write(info_json)
         except Exception as e:
             logger.error(
                 f"fetch_server_info: 失败 url={server_config.base_url} error={e}"

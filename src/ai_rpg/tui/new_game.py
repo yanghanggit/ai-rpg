@@ -7,12 +7,12 @@ from loguru import logger
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
-from textual.widgets import Input, RichLog, Static
+from textual.widgets import Input, Static, TextArea
 
 from ..models import Blueprint
 from .base import BaseGameScreen
 from .server_client import fetch_blueprint_list, login, new_game
-from .utils import display_name
+from .utils import display_name, strip_markup
 
 INTRO_TEXT = """\
 [bold cyan]── 开始新游戏 ──[/]
@@ -64,6 +64,7 @@ class NewGameScreen(BaseGameScreen):
     #body {
         height: 1fr;
         padding: 0 1;
+        border: none;
     }
 
     #input-row {
@@ -90,7 +91,12 @@ class NewGameScreen(BaseGameScreen):
         self._starting = False
 
     def compose(self) -> ComposeResult:
-        yield RichLog(id="body", highlight=True, markup=True, wrap=True)
+        yield TextArea(
+            id="body",
+            read_only=True,
+            soft_wrap=True,
+            show_cursor=False,
+        )
         with Horizontal(id="input-row"):
             yield Static("> ", id="prompt")
             yield Input(
@@ -103,8 +109,10 @@ class NewGameScreen(BaseGameScreen):
         self.query_one("#command-input", Input).focus()
 
     def _write(self, text: str) -> None:
-        """把信息追加写入正文区。"""
-        self.query_one("#body", RichLog).write(text)
+        """把信息追加写入正文区（剥离 markup，纯文本）。"""
+        body = self.query_one("#body", TextArea)
+        body.text = body.text + strip_markup(text) + "\n"
+        body.scroll_end(animate=False)
 
     @on(Input.Submitted, "#command-input")
     def _on_submit(self, event: Input.Submitted) -> None:
@@ -167,7 +175,7 @@ class NewGameScreen(BaseGameScreen):
         self._start_new_game(self._auto_player_id, self._blueprints[0].name)
 
     def _cmd_clear(self, args: str) -> None:
-        self.query_one("#body", RichLog).clear()
+        self.query_one("#body", TextArea).text = ""
         self._write(INTRO_TEXT)
 
     def _cmd_quit(self, args: str) -> None:

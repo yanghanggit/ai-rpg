@@ -10,9 +10,9 @@ from .launch import LaunchScreen
 class GameClient(App[None]):
     """游戏客户端主应用。启动后推入 launch_screen 指定的 Screen（由调用方决定）。"""
 
-    BINDINGS = [
-        ("ctrl+c", "quit", "Quit"),
-    ]
+    # 不要重新绑定 ctrl+c：Textual 默认将其用于"复制选中文本"，
+    # 覆盖为 quit 会导致鼠标选中文本后按 ctrl+c 直接退出游戏而非复制。
+    # 退出请使用 Textual 默认绑定的 ctrl+q。
 
     # ── 会话状态：登录后写入，登出后清空 ──
     session: Optional[ClientSession] = None

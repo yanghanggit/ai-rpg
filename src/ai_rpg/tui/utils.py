@@ -1,6 +1,8 @@
 """无状态工具方法"""
 
 from typing import List, Dict, Final
+
+from rich.text import Text
 from ..models import (
     AnyItem,
     CostumeItem,
@@ -32,6 +34,18 @@ TARGET_MAP: Final[Dict[str, str]] = {
 def display_name(full_name: str) -> str:
     """从实体全名中提取 UI 显示名。"""
     return full_name
+
+
+def strip_markup(text: str) -> str:
+    """把 Rich markup 字符串转成纯文本（供 TextArea 等不支持 markup 的控件使用）。
+
+    TextArea 会原样显示 [bold] 这类标签，因此写入前统一剥离 markup；
+    若文本不是合法 markup（含未转义方括号等），则原样返回。
+    """
+    try:
+        return Text.from_markup(text).plain
+    except Exception:
+        return text
 
 
 def render_item(item: AnyItem) -> str:

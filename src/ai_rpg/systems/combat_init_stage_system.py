@@ -38,7 +38,7 @@ class CombatInitStageSystem(ExecuteProcessor):
             StageDescriptionComponent
         ), "当前场景实体缺少 StageDescriptionComponent 组件！"
 
-        # 设置战斗为进行中（第一回合将由 CombatRoundTransitionSystem 创建）
+        # 设置战斗为进行中（第一回合将由 DrawCardsAction 触发的 CombatRoundStartSystem 创建）
         self._game.current_dungeon_combat_room.combat.transition_to_ongoing()
         assert (
             self._game.current_dungeon_combat_room.combat.is_ongoing

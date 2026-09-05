@@ -1,12 +1,12 @@
 """
-战斗回合过渡系统
+战斗回合开始系统
 """
 
 from enum import StrEnum, unique
 import random
-from typing import Final, List, Set, final, override
+from typing import Dict, Final, List, Set, final, override
 from loguru import logger
-from ..entitas import Entity, ExecuteProcessor
+from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import get_alive_actors_in_stage
 from ..game.dbg_combat_processor import get_energy
@@ -14,6 +14,7 @@ from ..models import (
     CharacterStatsComponent,
     DeathComponent,
     # DEFAULT_ROUND_ENERGY,
+    DrawCardsAction,
     DungeonComponent,
     IdentityComponent,
     Round,
@@ -33,9 +34,11 @@ class ActionOrderStrategy(StrEnum):
 
 
 @final
-class CombatRoundTransitionSystem(ExecuteProcessor):
+class CombatRoundStartSystem(ReactiveProcessor):
     """
-    战斗回合过渡系统。
+    战斗回合开始系统：监听 DrawCardsAction，在需要时创建并开启新回合。
+
+    必须在 DrawCardsActionSystem 之前注册（顺序即因果链：先开回合，后抓牌）。
     """
 
     ############################################################################################################
@@ -44,26 +47,40 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
         game: DBGGame,
         strategy: ActionOrderStrategy = ActionOrderStrategy.RANDOM,
     ) -> None:
+        super().__init__(game)
         self._game: Final[DBGGame] = game
         self._strategy: Final[ActionOrderStrategy] = strategy
 
     ############################################################################################################
     @override
-    async def execute(self) -> None:
-        # 状态守护：战斗未进行中 / 最新回合未完成 → 静默跳过
+    def get_trigger(self) -> Dict[Matcher, GroupEvent]:
+        """监听 DrawCardsAction 的添加事件，作为创建新回合的唯一触发源。"""
+        return {Matcher(DrawCardsAction): GroupEvent.ADDED}
+
+    ############################################################################################################
+    @override
+    def filter(self, entity: Entity) -> bool:
+        return entity.has(DrawCardsAction)
+
+    ############################################################################################################
+    @override
+    async def react(self, entities: List[Entity]) -> None:
+        logger.debug(
+            f"CombatRoundStartSystem: 收到 {len(entities)} 个 DrawCardsAction 实体"
+        )
+
+        # 状态守卫①：战斗未进行中 → 静默跳过
         if not self._game.current_dungeon_combat_room.combat.is_ongoing:
             logger.debug("当前战斗状态非 ONGOING，跳过回合创建")
             return
 
-        logger.debug("检查战斗回合状态，判断是否需要创建新回合...")
+        # 状态守卫②：已有进行中的回合（未完成）→ 不重复创建
+        latest_round = self._game.current_dungeon_combat_room.combat.latest_round
+        if latest_round is not None and not latest_round.is_completed:
+            logger.debug("当前已有未完成回合，跳过回合创建")
+            return
 
-        current_rounds = self._game.current_dungeon_combat_room.combat.rounds or []
-
-        if len(current_rounds) > 0:
-            last_round = self._game.current_dungeon_combat_room.combat.latest_round
-            assert last_round is not None, "latest_round is None"
-            if not last_round.is_completed:
-                return
+        logger.debug("DrawCardsAction 触发，开始创建新回合...")
 
         # 玩家角色
         player_entity = self._game.get_player_entity()
@@ -85,7 +102,7 @@ class CombatRoundTransitionSystem(ExecuteProcessor):
         assert stage_entity is not None, "stage_entity is None"
         assert stage_entity.has(DungeonComponent), "stage_entity 没有 DungeonComponent"
 
-        round_number = len(current_rounds) + 1
+        round_number = len(self._game.current_dungeon_combat_room.combat.rounds) + 1
         new_round = self._start_new_round(actors_in_stage)
 
         # 快照必须在 start_new_round 之后构建，此时 RoundStatsComponent 已按新回合重置

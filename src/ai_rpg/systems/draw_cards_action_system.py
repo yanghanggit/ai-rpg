@@ -106,6 +106,15 @@ class DrawCardsActionSystem(ReactiveProcessor):
             logger.debug("当前战斗状态非 ONGOING，DrawCardsActionSystem 不执行")
             return
 
+        # 状态守卫：本回合已抽牌 → 拒绝重复抽牌（一个回合每个存活参与者只能抓一次）
+        last_round = self._game.current_dungeon_combat_room.combat.latest_round
+        assert last_round is not None, "DrawCardsActionSystem: 无法获取当前回合信息！"
+        if last_round.draw_completed:
+            logger.debug(
+                f"DrawCardsActionSystem: 第 {len(self._game.current_dungeon_combat_room.combat.rounds)} 回合已抽牌，跳过重复抽牌"
+            )
+            return
+
         logger.debug(
             f"DrawCardsActionSystem: 处理 {len(entities)} 个实体的 DrawCardsAction"
         )
@@ -133,9 +142,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
             )
             entity.replace(HandComponent, entity.name, new_hand)
 
-        # 标记本回合 DRAW 阶段已完成（后续 PostDrawCardsSystem 可能仍会异步调整手牌数值）
-        last_round = self._game.current_dungeon_combat_room.combat.latest_round
-        assert last_round is not None, "无法获取当前回合信息！"
+        # 标记本回合 DRAW 阶段已完成
         last_round.draw_completed = True
 
     #######################################################################################################################################

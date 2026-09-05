@@ -188,10 +188,14 @@ class CombatOngoingScreen(BaseGameScreen):
             # 6（战斗中撤退）仅在 ONGOING 阶段出现
             menu += RETREAT_COMMAND_LINE
 
-            # 7（抽牌 / 出牌 / 推进怪物回合）仅在 ONGOING 阶段出现，依最新回合
-            # draw_completed 及当前 turn 角色阵营而变；entities_resp 已在上方拉取，
-            # 复用它判断阵营，无需额外发起网络请求。
-            if latest_round is not None and not latest_round.draw_completed:
+            # 7（抽牌 / 出牌 / 推进怪物回合）仅在 ONGOING 阶段出现，依「是否需要抽牌」
+            # 及当前 turn 角色阵营而变；entities_resp 已在上方拉取，复用它判断阵营。
+            needs_draw = (
+                latest_round is None
+                or latest_round.is_completed
+                or not latest_round.draw_completed
+            )
+            if needs_draw:
                 menu += DRAW_CARDS_COMMAND_LINE
             else:
                 entities_map = {e.name: e for e in entities_resp.entities}
@@ -283,20 +287,24 @@ class CombatOngoingScreen(BaseGameScreen):
             self.app.push_screen(CombatRoundHistoryScreen(combat.rounds))
             return
 
-        # 10（过牌）仅在 ONGOING 阶段、当前回合未结束时可用（详见服务端校验）
+        # 10（过牌）仅在 ONGOING 阶段、当前回合未结束且已抽牌时可用（详见服务端校验）
         latest_round = combat.latest_round
-        assert (
-            latest_round is not None
-        ), "进入到本阶段就意味着至少有一个回合已开始，latest_round 不应为 None"
 
         if raw == "10":
             if combat.state == CombatState.ONGOING:
-                current_actor = latest_round.current_actor
-                assert (
-                    current_actor is not None
-                ), "当前回合未结束时，current_actor 不应为 None, 服务器来保证"
+                if (
+                    latest_round is None
+                    or latest_round.is_completed
+                    or not latest_round.draw_completed
+                ):
+                    log.write("[yellow]当前没有可过牌的回合（请先抽牌）[/]")
+                else:
+                    current_actor = latest_round.current_actor
+                    assert (
+                        current_actor is not None
+                    ), "当前回合未结束时，current_actor 不应为 None, 服务器来保证"
 
-                self._do_pass_turn(current_actor)
+                    self._do_pass_turn(current_actor)
 
             return
 
@@ -326,9 +334,20 @@ class CombatOngoingScreen(BaseGameScreen):
             self.app.push_screen(CombatHandStatusViewScreen(participant_names))
         elif raw == "7":
             if combat.state == CombatState.ONGOING:
-                if latest_round.draw_completed:
+                needs_draw = (
+                    latest_round is None
+                    or latest_round.is_completed
+                    or not latest_round.draw_completed
+                )
+                if needs_draw:
+                    # 需要抽牌（无回合 / 上一回合已完成 / 本回合未抽牌）→ 进入抽牌页
+                    self.app.push_screen(CombatDrawCardsScreen(participant_names))
+                else:
                     # 抽牌完成：需要先判断当前 turn 角色阵营，怪物回合与我方回合
                     # 分别路由到不同的专用页面。
+                    assert (
+                        latest_round is not None
+                    ), "抽牌已完成时，latest_round 不应为 None，服务器来保证"
                     current_actor = latest_round.current_actor
                     assert (
                         current_actor is not None
@@ -348,9 +367,6 @@ class CombatOngoingScreen(BaseGameScreen):
                         self.app.push_screen(CombatMonsterTurnScreen())
                     else:
                         self.app.push_screen(CombatPlayCardsScreen())
-                else:
-                    # 没抽牌，就会进入抽牌页，
-                    self.app.push_screen(CombatDrawCardsScreen(participant_names))
             else:
                 log.write(f"[yellow]还没有实现。[/]")
 

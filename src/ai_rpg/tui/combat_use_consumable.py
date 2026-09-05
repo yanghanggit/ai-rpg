@@ -236,8 +236,7 @@ class CombatUseConsumableScreen(BaseGameScreen):
         }
 
         latest_round = combat.latest_round
-        assert latest_round is not None, "当前战斗没有最新回合快照"
-        current_actor = latest_round.current_actor
+        current_actor = latest_round.current_actor if latest_round is not None else None
         current_actor_entity = (
             entities_map.get(current_actor) if current_actor else None
         )
@@ -271,8 +270,12 @@ class CombatUseConsumableScreen(BaseGameScreen):
             player_name=actor_name,
             current_actor=current_actor,
             current_actor_is_party=current_actor_is_party,
-            draw_completed=latest_round.draw_completed,
-            consumable_use_count=latest_round.consumable_use_count,
+            draw_completed=(
+                latest_round.draw_completed if latest_round is not None else False
+            ),
+            consumable_use_count=(
+                latest_round.consumable_use_count if latest_round is not None else 0
+            ),
             consumable_items=consumable_items,
         )
         return True, ""

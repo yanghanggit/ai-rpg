@@ -65,8 +65,8 @@ def create_dungeon_combat_room_pipeline(
     )
     from ..systems.combat_round_cleanup_system import CombatRoundCleanupSystem
     from ..systems.death_system import DeathSystem
-    from ..systems.combat_round_transition_system import (
-        CombatRoundTransitionSystem,
+    from ..systems.combat_round_start_system import (
+        CombatRoundStartSystem,
         ActionOrderStrategy,
     )
     from ..systems.combat_round_completion_system import CombatRoundCompletionSystem
@@ -100,6 +100,11 @@ def create_dungeon_combat_room_pipeline(
     processors.add(FillDrawPileSystem(dbg_game))
 
     # 战斗核心动作处理相关的系统
+    # 注意：CombatRoundStartSystem 与 DrawCardsActionSystem 相邻、顺序不可对调：
+    # 前者监听 DrawCardsAction 开启新回合，后者抓牌，顺序即因果链（先开回合，后抓牌）。
+    processors.add(
+        CombatRoundStartSystem(dbg_game, strategy=ActionOrderStrategy.CREATION_ORDER)
+    )
     processors.add(DrawCardsActionSystem(dbg_game))
     # processors.add(
     #     MonsterMemoryProbeSystem(dbg_game)
@@ -143,13 +148,6 @@ def create_dungeon_combat_room_pipeline(
 
     # 检查战斗结果系统（必须在死亡标记之后，才能在同一周期内根据最终存活情况判定胜负）
     processors.add(CombatOutcomeSystem(dbg_game))
-
-    # 战斗回合过渡系统（创建新回合 + 生成 action_order）
-    processors.add(
-        CombatRoundTransitionSystem(
-            dbg_game, strategy=ActionOrderStrategy.CREATION_ORDER
-        )
-    )
 
     # 战斗掉落系统（胜利时为每头怪物推理掉落 MaterialItem，写入玩家 CombatLootComponent）
     processors.add(CombatLootSystem(dbg_game))

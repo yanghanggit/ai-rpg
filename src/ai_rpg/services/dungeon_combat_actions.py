@@ -49,6 +49,10 @@ def _validate_play_turn(
     if latest_round is None:
         return None, "当前没有进行中的回合"
 
+    # 校验抽牌阶段已完成：抓牌是新回合内一切行动的前置
+    if not latest_round.draw_completed:
+        return None, "本回合尚未抽牌，无法行动"
+
     # 获取当前回合的行动顺序，确保该角色在其中，以验证其是否有资格出牌。
     action_order = latest_round.action_order
 
@@ -105,6 +109,17 @@ def activate_all_card_draws(
     # 检查当前副本是否处于进行中的战斗状态
     if not dbg_game.current_dungeon_combat_room.combat.is_ongoing:
         error_msg = "只能在战斗中使用is_ongoing"
+        logger.error(error_msg)
+        return False, error_msg
+
+    # 状态守卫：本回合已抽牌 → 拒绝重复抽牌（一个回合每个存活参与者只能抓一次）
+    latest_round = dbg_game.current_dungeon_combat_room.combat.latest_round
+    if (
+        latest_round is not None
+        and not latest_round.is_completed
+        and latest_round.draw_completed
+    ):
+        error_msg = "本回合已抽牌，无法重复抽牌"
         logger.error(error_msg)
         return False, error_msg
 

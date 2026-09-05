@@ -391,7 +391,11 @@ async def dungeon_combat_play_cards(
 
         # 验证当前回合是否存在且未完成
         last_round = rpg_game.current_dungeon_combat_room.combat.latest_round
-        if last_round is None or last_round.is_completed:
+        if (
+            last_round is None
+            or last_round.is_completed
+            or not last_round.draw_completed
+        ):
             logger.error(f"玩家 {payload.user_name} 出牌失败: 当前没有未完成的回合")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -486,7 +490,11 @@ async def dungeon_combat_pass_turn(
 
         # 验证当前回合是否存在且未完成
         last_round = rpg_game.current_dungeon_combat_room.combat.latest_round
-        if last_round is None or last_round.is_completed:
+        if (
+            last_round is None
+            or last_round.is_completed
+            or not last_round.draw_completed
+        ):
             logger.error(f"玩家 {payload.user_name} 过牌失败: 当前没有未完成的回合")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -578,7 +586,11 @@ async def dungeon_combat_use_consumable(
 
         # 验证当前回合是否存在且未完成
         last_round = rpg_game.current_dungeon_combat_room.combat.latest_round
-        if last_round is None or last_round.is_completed:
+        if (
+            last_round is None
+            or last_round.is_completed
+            or not last_round.draw_completed
+        ):
             logger.error(
                 f"玩家 {payload.user_name} 使用消耗品失败: 当前没有未完成的回合"
             )
@@ -674,7 +686,11 @@ async def dungeon_combat_equip_gear(
 
         # 验证当前回合是否存在且未完成
         last_round = rpg_game.current_dungeon_combat_room.combat.latest_round
-        if last_round is None or last_round.is_completed:
+        if (
+            last_round is None
+            or last_round.is_completed
+            or not last_round.draw_completed
+        ):
             logger.error(f"玩家 {payload.user_name} 使用装备失败: 当前没有未完成的回合")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

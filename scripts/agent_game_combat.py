@@ -107,8 +107,8 @@ async def play_cards_specified_game(
         return terminal_game
 
     last_round = terminal_game.current_dungeon_combat_room.combat.latest_round
-    if last_round is None or last_round.is_completed:
-        logger.error("play-cards-specified 当前没有未完成的回合可供打牌")
+    if last_round is None or last_round.is_completed or not last_round.draw_completed:
+        logger.error("play-cards-specified 当前没有未完成且已抽牌的回合可供打牌")
         return terminal_game
 
     actor_entity = terminal_game.get_actor_entity(actor)
@@ -154,8 +154,8 @@ async def use_consumable_game(
         return terminal_game
 
     last_round = terminal_game.current_dungeon_combat_room.combat.latest_round
-    if last_round is None or last_round.is_completed:
-        logger.error("use-consumable 当前没有未完成的回合可供使用消耗品")
+    if last_round is None or last_round.is_completed or not last_round.draw_completed:
+        logger.error("use-consumable 当前没有未完成且已抽牌的回合可供使用消耗品")
         return terminal_game
 
     success, message = activate_use_consumable(terminal_game, item, list(targets))
@@ -188,8 +188,8 @@ async def equip_gear_game(
         return terminal_game
 
     last_round = terminal_game.current_dungeon_combat_room.combat.latest_round
-    if last_round is None or last_round.is_completed:
-        logger.error("equip-gear 当前没有未完成的回合可供装备")
+    if last_round is None or last_round.is_completed or not last_round.draw_completed:
+        logger.error("equip-gear 当前没有未完成且已抽牌的回合可供装备")
         return terminal_game
 
     success, message = activate_equip_gear(terminal_game, item)
@@ -222,8 +222,8 @@ async def pass_turn_game(
         return terminal_game
 
     last_round = terminal_game.current_dungeon_combat_room.combat.latest_round
-    if last_round is None or last_round.is_completed:
-        logger.error("pass-turn 当前没有未完成的回合可供过牌")
+    if last_round is None or last_round.is_completed or not last_round.draw_completed:
+        logger.error("pass-turn 当前没有未完成且已抽牌的回合可供过牌")
         return terminal_game
 
     success, message = activate_pass_turn(terminal_game, actor)

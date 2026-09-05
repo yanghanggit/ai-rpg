@@ -9,7 +9,7 @@
 
 开发用（跳过登录直接进入指定页面）：
     uv run python scripts/run_tui_client.py --server-host <HOST> --server-port <PORT> \\
-        --dev-screen combat-room | combat-post-combat | wear-costume
+        --dev-screen combat-init | combat-post-combat | wear-costume
 """
 
 import sys
@@ -81,9 +81,9 @@ logger.add(
 )
 @click.option(
     "--dev-screen",
-    type=click.Choice(["combat-room", "combat-post-combat", "wear-costume"]),
+    type=click.Choice(["combat-init", "combat-post-combat", "wear-costume"]),
     default=None,
-    help="[开发用] 跳过登录流程，启动后直接进入指定页面（combat-room / combat-post-combat）",
+    help="[开发用] 跳过登录流程，启动后直接进入指定页面（combat-init / combat-post-combat）",
 )
 def main(
     server_host: str,
@@ -124,7 +124,7 @@ def main(
         launch_screen: Type[Screen[None]]
         if dev_screen == "combat-post-combat":
             launch_screen = CombatPostCombatScreen
-        elif dev_screen == "combat-room":
+        elif dev_screen == "combat-init":
             launch_screen = CombatInitScreen
         # elif dev_screen == "wear-costume":
         #     launch_screen = HomeWearCostumeScreen

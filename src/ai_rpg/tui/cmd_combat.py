@@ -15,35 +15,43 @@ from ..models import (
     InventoryComponent,
     compute_effective_stats,
 )
+from .app import GameClient
 from .combat_common import (
     find_component_data,
     find_stage_of_actor,
     resolve_current_energy,
     role_label,
 )
+from .combat_data_access import (
+    get_dungeon_room,
+    get_entities_details,
+    get_stages_state,
+    is_mock_mode,
+    resolve_identity,
+)
+from .mock_data import set_mock_combat_state
 from .server_client import (
     TaskFailedError,
     dungeon_combat_init,
-    fetch_dungeon_room,
-    fetch_entities_details,
-    fetch_stages_state,
     watch_task_until_done,
 )
 from .utils import display_name, render_card, render_item
 
 
-async def build_combat_info_text(
-    user_name: str, game_name: str, player_actor: str
-) -> str:
+async def build_combat_info_text(game_client: GameClient) -> str:
     """战斗宏观状态 + 场景角色有效属性，返回可写入正文区的富文本字符串。"""
-    logger.info(f"build_combat_info_text: user_name={user_name} game_name={game_name}")
+    _, _, player_actor = resolve_identity(game_client)
+    logger.info(
+        f"build_combat_info_text: mock={is_mock_mode(game_client)} "
+        f"actor={player_actor}"
+    )
     try:
-        room_resp = await fetch_dungeon_room(user_name, game_name)
+        room_resp = await get_dungeon_room(game_client)
         room = room_resp.room
         assert isinstance(room, CombatRoom), f"当前房间不是战斗房间：type={room.type}"
         combat = room.combat
 
-        stages_resp = await fetch_stages_state(user_name, game_name)
+        stages_resp = await get_stages_state(game_client)
         stage_name = find_stage_of_actor(stages_resp.mapping, player_actor)
         assert (
             stage_name is not None
@@ -51,7 +59,7 @@ async def build_combat_info_text(
         participant_names = list(stages_resp.mapping[stage_name])
         entity_names = [stage_name, *participant_names]
 
-        entities_resp = await fetch_entities_details(user_name, game_name, entity_names)
+        entities_resp = await get_entities_details(game_client, entity_names)
     except Exception as e:
         logger.error(f"build_combat_info_text: 加载失败 error={e}")
         return f"[bold red]❌ 加载战斗信息失败: {e}[/]"
@@ -108,11 +116,14 @@ async def build_combat_info_text(
     return "\n".join(lines)
 
 
-async def build_deck_text(user_name: str, game_name: str, player_actor: str) -> str:
+async def build_deck_text(game_client: GameClient) -> str:
     """查阅战斗双方牌组（DeckComponent），返回可写入正文区的富文本字符串。"""
-    logger.info(f"build_deck_text: user_name={user_name} game_name={game_name}")
+    _, _, player_actor = resolve_identity(game_client)
+    logger.info(
+        f"build_deck_text: mock={is_mock_mode(game_client)} actor={player_actor}"
+    )
     try:
-        stages_resp = await fetch_stages_state(user_name, game_name)
+        stages_resp = await get_stages_state(game_client)
         stage_name = find_stage_of_actor(stages_resp.mapping, player_actor)
         assert (
             stage_name is not None
@@ -120,7 +131,7 @@ async def build_deck_text(user_name: str, game_name: str, player_actor: str) -> 
         participant_names = list(stages_resp.mapping[stage_name])
         if not participant_names:
             return "[yellow]场景内暂无参战者。[/]"
-        resp = await fetch_entities_details(user_name, game_name, participant_names)
+        resp = await get_entities_details(game_client, participant_names)
     except Exception as e:
         logger.error(f"build_deck_text: 加载失败 error={e}")
         return f"[bold red]❌ 加载牌组失败: {e}[/]"
@@ -147,13 +158,14 @@ async def build_deck_text(user_name: str, game_name: str, player_actor: str) -> 
     return "\n".join(lines)
 
 
-async def build_inventory_text(
-    user_name: str, game_name: str, player_actor: str
-) -> str:
+async def build_inventory_text(game_client: GameClient) -> str:
     """查阅我方背包（玩家 InventoryComponent），返回可写入正文区的富文本字符串。"""
-    logger.info(f"build_inventory_text: user_name={user_name} game_name={game_name}")
+    _, _, player_actor = resolve_identity(game_client)
+    logger.info(
+        f"build_inventory_text: mock={is_mock_mode(game_client)} actor={player_actor}"
+    )
     try:
-        resp = await fetch_entities_details(user_name, game_name, [player_actor])
+        resp = await get_entities_details(game_client, [player_actor])
     except Exception as e:
         logger.error(f"build_inventory_text: 加载失败 error={e}")
         return f"[bold red]❌ 加载背包失败: {e}[/]"
@@ -179,13 +191,14 @@ async def build_inventory_text(
     return "\n".join(lines)
 
 
-async def build_entity_inspect_text(
-    user_name: str, game_name: str, entity_name: str
-) -> str:
+async def build_entity_inspect_text(game_client: GameClient, entity_name: str) -> str:
     """查阅单个实体的全部组件原始序列化数据，返回可写入正文区的富文本字符串。"""
-    logger.info(f"build_entity_inspect_text: entity_name={entity_name}")
+    logger.info(
+        f"build_entity_inspect_text: mock={is_mock_mode(game_client)} "
+        f"entity_name={entity_name}"
+    )
     try:
-        resp = await fetch_entities_details(user_name, game_name, [entity_name])
+        resp = await get_entities_details(game_client, [entity_name])
     except Exception as e:
         logger.error(f"build_entity_inspect_text: 查询失败 error={e}")
         return f"[bold red]❌ 查询失败: {e}[/]"
@@ -206,8 +219,14 @@ async def build_entity_inspect_text(
     return "\n".join(lines)
 
 
-async def start_combat(user_name: str, game_name: str) -> Tuple[bool, str]:
+async def start_combat(game_client: GameClient) -> Tuple[bool, str]:
     """触发战斗初始化，返回 (是否成功, 展示文本)。成功后由调用方导航到 ONGOING 页。"""
+    if is_mock_mode(game_client):
+        logger.info("start_combat: mock 模式，直接切换战斗状态为 ONGOING")
+        set_mock_combat_state(CombatState.ONGOING)
+        return True, "[bold green]✅ 战斗初始化完成（mock：状态已置为 ONGOING）[/]"
+
+    user_name, game_name, _ = resolve_identity(game_client)
     logger.info(f"start_combat: user_name={user_name} game_name={game_name}")
     try:
         resp = await dungeon_combat_init(user_name, game_name)

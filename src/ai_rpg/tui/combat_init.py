@@ -20,6 +20,7 @@ from .cmd_combat import (
     build_inventory_text,
     start_combat,
 )
+from .combat_data_access import is_mock_mode
 from .combat_ongoing import CombatOngoingScreen
 from .server_client import fetch_session_messages, stream_session_messages
 from .utils import format_agent_event, strip_markup
@@ -122,6 +123,8 @@ class CombatInitScreen(BaseGameScreen):
 
     def on_mount(self) -> None:
         self._write(INTRO_TEXT)
+        if is_mock_mode(self.game_client):
+            self._write("[dim]（mock 模式：未检测到登录会话，使用固定调试数据）[/]")
         self.query_one("#command-input", Input).focus()
         self._watch_notifications()
 
@@ -205,60 +208,41 @@ class CombatInitScreen(BaseGameScreen):
 
     @work
     async def _do_info(self) -> None:
-        app = self.game_client
-        if app.session is None:
-            return
-        text = await build_combat_info_text(
-            app.session.user_name, app.session.game_name, app.session.actor_name
-        )
+        text = await build_combat_info_text(self.game_client)
         self._write(text)
 
     @work
     async def _do_deck(self) -> None:
-        app = self.game_client
-        if app.session is None:
-            return
-        text = await build_deck_text(
-            app.session.user_name, app.session.game_name, app.session.actor_name
-        )
+        text = await build_deck_text(self.game_client)
         self._write(text)
 
     @work
     async def _do_inventory(self) -> None:
-        app = self.game_client
-        if app.session is None:
-            return
-        text = await build_inventory_text(
-            app.session.user_name, app.session.game_name, app.session.actor_name
-        )
+        text = await build_inventory_text(self.game_client)
         self._write(text)
 
     @work
     async def _do_inspect(self, entity_name: str) -> None:
-        app = self.game_client
-        if app.session is None:
-            return
-        text = await build_entity_inspect_text(
-            app.session.user_name, app.session.game_name, entity_name
-        )
+        text = await build_entity_inspect_text(self.game_client, entity_name)
         self._write(text)
 
     @work
     async def _do_start(self) -> None:
-        app = self.game_client
-        if app.session is None:
-            return
         self._write(
             "[bold yellow]── 开始战斗 ──────────────────────────────────────[/]"
         )
         self._write("[dim]▶ 正在初始化战斗...[/]")
-        ok, text = await start_combat(app.session.user_name, app.session.game_name)
+        ok, text = await start_combat(self.game_client)
         self._write(text)
         if ok:
             self.app.switch_screen(CombatOngoingScreen())
 
     @work
     async def _do_view_messages(self, raw: str) -> None:
+        if is_mock_mode(self.game_client):
+            self._write("[dim]mock 模式：无会话消息流，/session 不可用。[/]")
+            return
+
         raw = raw.strip()
         start_seq: Optional[int] = None
         if raw:
@@ -311,7 +295,7 @@ class CombatInitScreen(BaseGameScreen):
         app = self.game_client
         badge = self.query_one("#notify", Static)
         if app.session is None:
-            badge.update("")
+            badge.update("[dim]（mock 模式）[/]")
             return
         last_seq = app.session.last_sequence_id
         notify_seq = app.session.notify_last_sequence_id

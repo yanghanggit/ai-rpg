@@ -23,12 +23,18 @@ from ..models import (
     DungeonCombatEquipGearItemResponse,
     DungeonCombatCollectLootRequest,
     DungeonCombatCollectLootResponse,
+    MonsterComponent,
     TaskStatus,
 )
 from .dungeon_lifecycle_api import _validate_dungeon_prerequisites
 from .dungeon_combat_actions import (
     activate_all_card_draws,
+    activate_equip_gear,
+    activate_monster_play_trigger,
+    activate_pass_turn,
+    activate_play_cards_specified,
     activate_retreat,
+    activate_use_consumable,
     collect_combat_loot,
 )
 from .dungeon_combat_tasks import (
@@ -392,15 +398,29 @@ async def dungeon_combat_play_cards(
                 detail="当前没有未完成的回合可供打牌",
             )
 
+        # 同步激活动作出牌（怪物由 MonsterPrePlaySystem 自动决策，玩家按指定卡牌出牌）
+        actor_entity = rpg_game.get_actor_entity(payload.actor_name)
+        if actor_entity is not None and actor_entity.has(MonsterComponent):
+            success, message = activate_monster_play_trigger(
+                rpg_game, payload.actor_name
+            )
+        else:
+            success, message = await activate_play_cards_specified(
+                rpg_game, payload.actor_name, payload.card_name, payload.targets
+            )
+        if not success:
+            logger.error(f"玩家 {payload.user_name} 出牌失败: {message}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"出牌失败: {message}",
+            )
+
     # 在锁外创建后台 task，让任务在后台独立持锁执行
     play_cards_task = game_server.create_task()
     asyncio.create_task(
         execute_play_cards_task(
             play_cards_task.task_id,
             payload.user_name,
-            payload.actor_name,
-            payload.card_name,
-            payload.targets,
             game_server,
         )
     )
@@ -473,13 +493,21 @@ async def dungeon_combat_pass_turn(
                 detail="当前没有未完成的回合可供过牌",
             )
 
+        # 同步激活过牌动作
+        success, message = activate_pass_turn(rpg_game, payload.actor_name)
+        if not success:
+            logger.error(f"玩家 {payload.user_name} 过牌失败: {message}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"过牌失败: {message}",
+            )
+
     # 在锁外创建后台 task，让任务在后台独立持锁执行
     pass_turn_task = game_server.create_task()
     asyncio.create_task(
         execute_pass_turn_task(
             pass_turn_task.task_id,
             payload.user_name,
-            payload.actor_name,
             game_server,
         )
     )
@@ -559,14 +587,23 @@ async def dungeon_combat_use_consumable(
                 detail="当前没有未完成的回合",
             )
 
+        # 同步激活使用消耗品动作
+        success, message = activate_use_consumable(
+            rpg_game, payload.item_name, payload.targets
+        )
+        if not success:
+            logger.error(f"玩家 {payload.user_name} 使用消耗品失败: {message}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"使用消耗品失败: {message}",
+            )
+
     # 在锁外创建后台 task，让任务在后台独立持锁执行
     use_consumable_task = game_server.create_task()
     asyncio.create_task(
         execute_use_consumable_task(
             use_consumable_task.task_id,
             payload.user_name,
-            payload.item_name,
-            payload.targets,
             game_server,
         )
     )
@@ -644,13 +681,21 @@ async def dungeon_combat_equip_gear(
                 detail="当前没有未完成的回合",
             )
 
+        # 同步激活使用装备动作
+        success, message = activate_equip_gear(rpg_game, payload.item_name)
+        if not success:
+            logger.error(f"玩家 {payload.user_name} 使用装备失败: {message}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"使用装备失败: {message}",
+            )
+
     # 在锁外创建后台 task，让任务在后台独立持锁执行
     equip_gear_task = game_server.create_task()
     asyncio.create_task(
         execute_equip_gear_task(
             equip_gear_task.task_id,
             payload.user_name,
-            payload.item_name,
             game_server,
         )
     )

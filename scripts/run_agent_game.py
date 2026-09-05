@@ -22,27 +22,30 @@
   craft-item      --snapshot PATH --materials M1 [--materials M2 ...]  合成消耗品
   craft-gear      --snapshot PATH --materials M1 [--materials M2 ...]  锻造装备
   craft-costume   --snapshot PATH --materials M1 [--materials M2 ...]  制作时装
-  enter-dungeon   --snapshot PATH --dungeon NAME                进入副本第一关 → 副本模式
+  enter-dungeon   --snapshot PATH --dungeon NAME                进入副本第一关（仅进入，不初始化房间）→ 副本模式
 
 ==== 副本模式命令 ====
+  combat-init     --snapshot PATH                               战斗房间初始化（INITIALIZATION → ONGOING）
+  opening-init    --snapshot PATH                               开场房间初始化（叙事 + 牌库）
   draw-cards      --snapshot PATH                               全员抽牌
   play-cards-specified --snapshot PATH --actor A --card C [--targets T...]  指定角色出牌（怪物 AI 自动出牌）
   pass-turn       --snapshot PATH --actor A                     跳过出牌
   use-consumable  --snapshot PATH --item I [--targets T...]  使用消耗品
-  equip-gear      --snapshot PATH --actor A --item I [--targets T...]  装备 GearItem
+  equip-gear      --snapshot PATH --item I                      装备 GearItem
   retreat         --snapshot PATH                               主动撤退（结算为失败，成员死亡）
   collect-loot    --snapshot PATH                               收战利品（胜利后）
-  next-dungeon    --snapshot PATH                               下一关（胜利后，需存在下一关）
+  next-dungeon    --snapshot PATH                               下一关（仅推进，不初始化新房间）
   exit-dungeon    --snapshot PATH                               退出副本 → 家园模式（无论胜负）
   generate-card-pool --snapshot PATH                            生成卡池（开场房间初始化后）
   pick-card-from-pool --snapshot PATH --actor A --card C        从卡池挑一张加入牌库
 
 ==== 典型流程 ====
   家园：new → stages → advance(循环) / speak / switch-stage → enter-dungeon
-  副本：enter-dungeon → draw-cards → play-cards-specified(循环至战斗结束)
-        胜利 → collect-loot → next-dungeon 或 exit-dungeon
+  副本（战斗房间）：enter-dungeon → combat-init → draw-cards → play-cards-specified(循环至战斗结束)
+        胜利 → collect-loot → next-dungeon → combat-init（或 opening-init，视新房间类型）
         失败 → exit-dungeon
-        战斗中途撤退 → retreat → exit-dungeon"""
+        战斗中途撤退 → retreat → exit-dungeon
+  副本（开场房间）：enter-dungeon → opening-init → generate-card-pool → pick-card-from-pool"""
 
 import os
 import sys
@@ -99,6 +102,7 @@ from agent_game_home import (
 )
 from agent_game_combat import (
     draw_cards_game,
+    init_combat_game,
     play_cards_specified_game,
     pass_turn_game,
     use_consumable_game,
@@ -108,10 +112,13 @@ from agent_game_combat import (
 )
 from agent_game_dungeon import (
     enter_dungeon_game,
-    generate_card_pool_game,
-    pick_card_from_pool_game,
     next_dungeon_game,
     exit_dungeon_and_return_home_game,
+)
+from agent_game_opening import (
+    init_opening_game,
+    generate_card_pool_game,
+    pick_card_from_pool_game,
 )
 from agent_game_items import (
     move_item_to_inventory_game,
@@ -328,7 +335,7 @@ def switch_stage(snapshot: str, stage: str) -> None:
     help="副本名称（对应 DUNGEONS_DIR 下的 JSON 文件名，如 Dungeon1）",
 )
 def enter_dungeon(snapshot: str, dungeon: str) -> None:
-    """进入指定副本第一关并归档。执行后进入副本模式，下一步用 draw-cards。"""
+    """进入指定副本第一关并归档（仅传送，不初始化房间）。下一步用 combat-init（战斗房间）或 opening-init（开场房间）。"""
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
@@ -350,6 +357,38 @@ def enter_dungeon(snapshot: str, dungeon: str) -> None:
     logger.info(f"本次存档目录：{_save_dir}")
 
     asyncio.run(enter_dungeon_game(world, player_session, dungeon, _save_dir))
+
+
+###############################################################################################################################################
+@main.command("combat-init")
+@click.option(
+    "--snapshot",
+    required=True,
+    help="存档目录路径",
+)
+def combat_init(snapshot: str) -> None:
+    """初始化战斗房间（INITIALIZATION → ONGOING）并归档。需进入战斗房间后、抽牌前使用。"""
+
+    snapshot_path = Path(snapshot)
+    if not snapshot_path.exists():
+        raise click.BadParameter(
+            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+        )
+
+    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
+    _setup_logger(_log_file)
+
+    world, player_session = restore_world(snapshot_path)
+    _save_dir = (
+        WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
+    )
+
+    logger.info(f"本次运行日志文件：{_log_file}")
+    logger.info(f"读取存档：{snapshot_path}")
+    logger.info(f"本次存档目录：{_save_dir}")
+
+    asyncio.run(init_combat_game(world, player_session, _save_dir))
 
 
 ###############################################################################################################################################
@@ -597,7 +636,7 @@ def exit_dungeon(snapshot: str) -> None:
     help="存档目录路径",
 )
 def next_dungeon(snapshot: str) -> None:
-    """进入副本下一关并归档。需前一关已胜利且存在下一关。"""
+    """进入副本下一关并归档（仅推进，不初始化新房间）。需前一关已胜利且存在下一关；下一步用 combat-init 或 opening-init。"""
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
@@ -823,6 +862,38 @@ def retreat(snapshot: str) -> None:
     logger.info(f"本次存档目录：{_save_dir}")
 
     asyncio.run(retreat_game(world, player_session, _save_dir))
+
+
+###############################################################################################################################################
+@main.command("opening-init")
+@click.option(
+    "--snapshot",
+    required=True,
+    help="存档目录路径",
+)
+def opening_init(snapshot: str) -> None:
+    """初始化开场房间（叙事 + 牌库）并归档。需进入开场房间后、生成卡池前使用。"""
+
+    snapshot_path = Path(snapshot)
+    if not snapshot_path.exists():
+        raise click.BadParameter(
+            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+        )
+
+    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
+    _setup_logger(_log_file)
+
+    world, player_session = restore_world(snapshot_path)
+    _save_dir = (
+        WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
+    )
+
+    logger.info(f"本次运行日志文件：{_log_file}")
+    logger.info(f"读取存档：{snapshot_path}")
+    logger.info(f"本次存档目录：{_save_dir}")
+
+    asyncio.run(init_opening_game(world, player_session, _save_dir))
 
 
 ###############################################################################################################################################

@@ -34,6 +34,31 @@ from agent_game_core import restore_game
 
 
 ###############################################################################
+async def init_combat_game(
+    world: WorldState,
+    player_session: PlayerSession,
+    save_dir: Path,
+) -> DBGGame:
+    """初始化战斗房间（INITIALIZATION → ONGOING）并归档。需进入战斗房间后、抽牌前使用。"""
+
+    terminal_game = await restore_game(world, player_session)
+
+    if not terminal_game.is_current_room_dungeon_combat:
+        logger.error("combat-init 只能在战斗房间中使用")
+        return terminal_game
+
+    # 状态守卫：只能在战斗初始化阶段使用
+    if not terminal_game.current_dungeon_combat_room.combat.is_initializing:
+        logger.error("combat-init 只能在战斗初始化阶段使用")
+        return terminal_game
+
+    await terminal_game._dungeon_combat_room_pipeline.process()
+
+    store_game(terminal_game, save_dir)
+    return terminal_game
+
+
+###############################################################################
 async def draw_cards_game(
     world: WorldState,
     player_session: PlayerSession,
@@ -240,6 +265,11 @@ async def retreat_game(
     logger.info(f"撤退动作激活成功: {message}")
 
     await terminal_game._dungeon_combat_room_pipeline.execute()
+
+    # 与 API 对齐：撤退流程执行后必须已进入 post_combat 状态
+    if not terminal_game.current_dungeon_combat_room.combat.is_post_combat:
+        logger.error("撤退流程异常：战斗管线执行后未进入 post_combat 状态")
+        return terminal_game
 
     # 最后归档
     store_game(terminal_game, save_dir)

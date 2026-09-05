@@ -95,7 +95,8 @@ async def advance_game(
 
     success, error_detail = activate_plan_action(terminal_game, actor_names)
     if not success:
-        logger.debug(f"激活行动计划失败: {error_detail}")
+        logger.error(f"激活行动计划失败: {error_detail}")
+        return terminal_game
 
     await terminal_game._home_pipeline.process()
 

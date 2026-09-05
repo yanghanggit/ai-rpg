@@ -3,19 +3,11 @@
 """
 
 from datetime import datetime
-from typing import List
 from loguru import logger
 from ..game.dbg_game import DBGGame
 from ..game.dbg_store import store_game
 from ..game.game_server import GameServer
-from ..models import MonsterComponent, TaskStatus
-from .dungeon_combat_actions import (
-    activate_monster_play_trigger,
-    activate_play_cards_specified,
-    activate_pass_turn,
-    activate_equip_gear,
-    activate_use_consumable,
-)
+from ..models import TaskStatus
 
 
 ###################################################################################################################################################################
@@ -204,9 +196,6 @@ async def execute_draw_cards_task(
 async def execute_play_cards_task(
     task_id: str,
     user_name: str,
-    actor_name: str,
-    card_name: str,
-    targets: List[str],
     game_server: GameServer,
 ) -> None:
     """后台执行出牌任务"""
@@ -231,21 +220,6 @@ async def execute_play_cards_task(
             # 验证战斗状态
             if not rpg_game.current_dungeon_combat_room.combat.is_ongoing:
                 raise ValueError("战斗未在进行中")
-
-            # 根据 actor_name 判断是玩家角色还是怪物，分别处理出牌逻辑
-            actor_entity = rpg_game.get_actor_entity(actor_name)
-            if actor_entity is not None and actor_entity.has(MonsterComponent):
-                # 如果是怪物，则触发怪物的出牌逻辑
-                success, message = activate_monster_play_trigger(rpg_game, actor_name)
-            else:
-                # 如果是玩家角色，则处理玩家的出牌逻辑
-                success, message = await activate_play_cards_specified(
-                    rpg_game, actor_name, card_name, targets
-                )
-
-            # 验证出牌是否成功
-            if not success:
-                raise ValueError(f"出牌失败: {message}")
 
             # 推进战斗流程处理出牌
             await rpg_game._dungeon_combat_room_pipeline.process()
@@ -278,7 +252,6 @@ async def execute_play_cards_task(
 async def execute_pass_turn_task(
     task_id: str,
     user_name: str,
-    actor_name: str,
     game_server: GameServer,
 ) -> None:
     """后台执行过牌任务"""
@@ -303,11 +276,6 @@ async def execute_pass_turn_task(
             # 验证战斗状态
             if not rpg_game.current_dungeon_combat_room.combat.is_ongoing:
                 raise ValueError("战斗未在进行中")
-
-            # 执行过牌逻辑
-            success, message = activate_pass_turn(rpg_game, actor_name)
-            if not success:
-                raise ValueError(f"过牌失败: {message}")
 
             # 处理战斗流水线
             await rpg_game._dungeon_combat_room_pipeline.process()
@@ -340,8 +308,6 @@ async def execute_pass_turn_task(
 async def execute_use_consumable_task(
     task_id: str,
     user_name: str,
-    item_name: str,
-    targets: List[str],
     game_server: GameServer,
 ) -> None:
     """后台执行使用消耗品任务"""
@@ -367,11 +333,6 @@ async def execute_use_consumable_task(
             # 验证战斗状态
             if not rpg_game.current_dungeon_combat_room.combat.is_ongoing:
                 raise ValueError("战斗未在进行中")
-
-            # 执行使用消耗品逻辑
-            success, message = activate_use_consumable(rpg_game, item_name, targets)
-            if not success:
-                raise ValueError(f"使用消耗品失败: {message}")
 
             # 处理战斗流水线
             await rpg_game._dungeon_combat_room_pipeline.process()
@@ -405,7 +366,6 @@ async def execute_use_consumable_task(
 async def execute_equip_gear_task(
     task_id: str,
     user_name: str,
-    item_name: str,
     game_server: GameServer,
 ) -> None:
     """后台执行使用装备任务"""
@@ -431,11 +391,6 @@ async def execute_equip_gear_task(
             # 验证战斗状态
             if not rpg_game.current_dungeon_combat_room.combat.is_ongoing:
                 raise ValueError("战斗未在进行中")
-
-            # 执行使用装备逻辑
-            success, message = activate_equip_gear(rpg_game, item_name)
-            if not success:
-                raise ValueError(f"使用装备失败: {message}")
 
             # 处理战斗流水线
             await rpg_game._dungeon_combat_room_pipeline.process()

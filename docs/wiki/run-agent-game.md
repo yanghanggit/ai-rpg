@@ -24,7 +24,7 @@
 
 ## CLI 与动作逻辑的分层
 
-`run_agent_game.py` 只负责 Click 层：参数解析、日志初始化、世界恢复与存档路径构造。“存档复位 → 触发动作 → pipeline 推进 → 归档新存档”这套流程按游戏模式拆分到五个动作模块：`agent_game_core.py`（游戏实例创建/复位等共享基础设施）、`agent_game_home.py`（家园剧情推进、对话、场景切换、副本生成、队伍名单）、`agent_game_dungeon.py`（副本生命周期：进入/下一关/退出）、`agent_game_combat.py`（副本战斗动作）、`agent_game_items.py`（背包道具移动、合成、时装）。
+`run_agent_game.py` 只负责 Click 层：参数解析、日志初始化、世界恢复与存档路径构造。“存档复位 → 触发动作 → pipeline 推进 → 归档新存档”这套流程按游戏模式拆分到六个动作模块：`agent_game_core.py`（游戏实例创建/复位等共享基础设施）、`agent_game_home.py`（家园剧情推进、对话、场景切换、副本生成、队伍名单）、`agent_game_dungeon.py`（副本生命周期：进入/下一关/退出）、`agent_game_opening.py`（副本开场房间：初始化、卡池生成与挑卡）、`agent_game_combat.py`（副本战斗动作，含战斗房间初始化）、`agent_game_items.py`（背包道具移动、合成、时装）。
 
 这些动作模块本身只是薄封装，真正的游戏规则校验与 ECS 动作触发集中在 `ai_rpg.services.*`（如 `home_actions.py`、`dungeon_combat_actions.py`，以及副本生命周期按阶段拆分的 `dungeon_setup_action.py` / `dungeon_enter_action.py` / `dungeon_advance_action.py` / `dungeon_exit_action.py` / `dungeon_teardown_action.py` / `dungeon_archive_action.py`）。这一层与 CLI 完全解耦,同时被面向 TUI 客户端的游戏服务端(`home_api.py`、`dungeon_lifecycle_api.py`、`dungeon_combat_api.py`、`dungeon_combat_tasks.py`)及测试套件直接复用--真正的复用边界在 `services` 层,而非 CLI 脚本本身。
 
@@ -35,7 +35,12 @@
 脚本的命令集对应游戏的**两种模式**，命令本身即是状态机的边界声明：
 
 - **家园模式**：`advance` / `speak` / `switch-stage` / `enter-dungeon` 等
-- **副本模式**：`draw-cards` / `play-cards-specified` / `use-consumable` / `equip-gear` / `exit-dungeon` 等
+- **副本模式**：`combat-init` / `opening-init` / `draw-cards` / `play-cards-specified` / `use-consumable` / `equip-gear` / `exit-dungeon` 等
+
+其中副本房间的推进严格对齐服务端 API 的两步式调用：
+
+1. `enter-dungeon` / `next-dungeon` 只负责**传送/推进房间**（对应 `/api/home/enter_dungeon/v1/` 与 `/api/dungeon/progress/advance_stage/v1/`），不初始化新房间；
+2. 房间初始化需由代理根据新房间类型再显式发起一步：战斗房间用 `combat-init`（对应 `/api/dungeon/combat/init/v1/`），开场房间用 `opening-init`（对应 `/api/dungeon/opening/init/v1/`）。
 
 AI 代理无需感知内部游戏对象，只需根据当前存档的模式选择合法命令；`services` 层的前置条件校验失败时直接返回错误，动作模块据此提前 return，不会调用归档、不产出损坏存档。
 

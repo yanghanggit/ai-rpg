@@ -98,13 +98,12 @@ async def new_game(
     assert (
         len(room._dbg_game._world.entities) == 0
     ), "测试阶段，游戏中不应该有实体数据！"
-    #
+    room._dbg_game.build_from_blueprint()
 
     # 执行游戏初始化逻辑，确保游戏状态正确设置，准备好接受玩家的操作
     await room._dbg_game.initialize()
 
     # 存档初始世界状态，便于调试和回放
-    room._dbg_game.build_from_blueprint()
     store_game(room._dbg_game)
 
     # 返回成功响应

@@ -218,7 +218,7 @@ async def init_opening(user_name: str, game_name: str) -> str:
     logger.info(f"init_opening: user_name={user_name} game_name={game_name}")
     try:
         resp = await dungeon_opening_init(user_name, game_name)
-        await watch_task_until_done(resp.task_id)
+        await watch_task_until_done(resp.job_id)
     except TaskFailedError as e:
         logger.error(f"init_opening: 任务失败 error={e}")
         return f"[bold red]❌ 开场房间初始化失败: {e}[/]"
@@ -233,7 +233,7 @@ async def generate_card_pool(user_name: str, game_name: str) -> str:
     logger.info(f"generate_card_pool: user_name={user_name} game_name={game_name}")
     try:
         resp = await dungeon_opening_generate_card_pool(user_name, game_name)
-        await watch_task_until_done(resp.task_id)
+        await watch_task_until_done(resp.job_id)
     except TaskFailedError as e:
         logger.error(f"generate_card_pool: 任务失败 error={e}")
         return f"[bold red]❌ 卡池生成失败: {e}[/]"
@@ -252,7 +252,7 @@ async def pick_card(
         resp = await dungeon_opening_pick_card_from_pool(
             user_name, game_name, actor_name, card_name
         )
-        await watch_task_until_done(resp.task_id)
+        await watch_task_until_done(resp.job_id)
     except TaskFailedError as e:
         logger.error(f"pick_card: 任务失败 error={e}")
         return f"[bold red]❌ 挑卡失败: {e}[/]"

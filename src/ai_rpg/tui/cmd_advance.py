@@ -49,23 +49,23 @@ async def run_home_advance(user_name: str, game_name: str) -> str:
         return "[bold red]❌ 当前没有可推进的角色[/]"
 
     resp = await home_advance(user_name, game_name, actor_names)
-    task_id = resp.task_id
-    logger.info(f"run_home_advance: 任务已创建 task_id={task_id}")
+    job_id = resp.job_id
+    logger.info(f"run_home_advance: 任务已创建 job_id={job_id}")
 
-    lines: List[str] = [f"[dim]任务已创建：{task_id}[/]"]
+    lines: List[str] = [f"[dim]任务已创建：{job_id}[/]"]
 
     try:
-        await watch_task_until_done(task_id)
-        logger.info(f"run_home_advance: 任务完成 task_id={task_id}")
-        lines.append(f"[bold green]✅ 任务完成 task_id={task_id}[/]")
+        await watch_task_until_done(job_id)
+        logger.info(f"run_home_advance: 任务完成 job_id={job_id}")
+        lines.append(f"[bold green]✅ 任务完成 job_id={job_id}[/]")
     except TaskFailedError as e:
-        logger.error(f"run_home_advance: 任务失败 task_id={task_id} error={e}")
+        logger.error(f"run_home_advance: 任务失败 job_id={job_id} error={e}")
         lines.append(f"[bold red]❌ 推进失败: {e}[/]")
     except TimeoutError:
-        logger.warning(f"run_home_advance: 任务轮询超时 task_id={task_id}")
+        logger.warning(f"run_home_advance: 任务轮询超时 job_id={job_id}")
         lines.append("[bold yellow]⚠️ 推进超时，请检查服务器状态[/]")
     except Exception as e:
-        logger.warning(f"run_home_advance: 等待任务失败 task_id={task_id} error={e}")
+        logger.warning(f"run_home_advance: 等待任务失败 job_id={job_id} error={e}")
         lines.append(f"[bold red]❌ 等待任务失败: {e}[/]")
 
     return "\n".join(lines)

@@ -2,26 +2,29 @@
 副本战斗后台任务模块
 """
 
-from datetime import datetime
+from procrastinate import JobContext
 from loguru import logger
 from ..game.dbg_game import DBGGame
 from ..game.dbg_store import store_game
-from ..game.game_server import GameServer
-from ..models import TaskStatus
+from ..pgsql import procrastinate_app, save_task_error
+from .game_server_dependencies import get_game_server
 
 
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
+@procrastinate_app.task(queue="game", pass_context=True)
 async def execute_init_combat_task(
-    task_id: str,
+    context: JobContext,
     user_name: str,
-    game_server: GameServer,
 ) -> None:
     """后台执行战斗初始化任务"""
+    job_id = str(context.job.id)
     try:
 
-        logger.info(f"🚀 战斗初始化任务开始: task_id={task_id}, user={user_name}")
+        logger.info(f"🚀 战斗初始化任务开始: job_id={job_id}, user={user_name}")
+
+        game_server = get_game_server()
 
         # 获取房间并用每玩家锁避免并发状态竞争
         current_room = game_server.get_room(user_name)
@@ -48,39 +51,31 @@ async def execute_init_combat_task(
             # 存储战斗初始化后的世界状态，便于调试和回放
             store_game(rpg_game)
 
-        # 保存结果
-        task_record = game_server.get_task(task_id)
-        if task_record is not None:
-            task_record.status = TaskStatus.COMPLETED
-            task_record.end_time = datetime.now().isoformat()
-
-        logger.info(f"✅ 战斗初始化任务完成: task_id={task_id}, user={user_name}")
+        logger.info(f"✅ 战斗初始化任务完成: job_id={job_id}, user={user_name}")
 
     except Exception as e:
         logger.error(
-            f"❌ 战斗初始化任务失败: task_id={task_id}, user={user_name}, error={e}"
+            f"❌ 战斗初始化任务失败: job_id={job_id}, user={user_name}, error={e}"
         )
-
-        # 保存失败结果
-        task_record = game_server.get_task(task_id)
-        if task_record is not None:
-            task_record.status = TaskStatus.FAILED
-            task_record.error = str(e)
-            task_record.end_time = datetime.now().isoformat()
+        save_task_error(job_id, str(e))
+        raise
 
 
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
+@procrastinate_app.task(queue="game", pass_context=True)
 async def execute_retreat_task(
-    task_id: str,
+    context: JobContext,
     user_name: str,
-    game_server: GameServer,
 ) -> None:
     """后台执行撤退任务"""
+    job_id = str(context.job.id)
     try:
 
-        logger.info(f"🚀 撤退任务开始: task_id={task_id}, user={user_name}")
+        logger.info(f"🚀 撤退任务开始: job_id={job_id}, user={user_name}")
+
+        game_server = get_game_server()
 
         # 获取房间并用每玩家锁避免并发状态竞争
         current_room = game_server.get_room(user_name)
@@ -109,40 +104,32 @@ async def execute_retreat_task(
             # 存储撤退后进入 post_combat 状态的世界状态，便于调试和回放
             store_game(rpg_game)
 
-        # 保存结果
-        task_record = game_server.get_task(task_id)
-        if task_record is not None:
-            task_record.status = TaskStatus.COMPLETED
-            task_record.end_time = datetime.now().isoformat()
-
         logger.info(
-            f"✅ 撤退任务完成: task_id={task_id}, user={user_name}, "
+            f"✅ 撤退任务完成: job_id={job_id}, user={user_name}, "
             f"战斗已标记为失败。请调用 /api/dungeon/exit/v1/ 返回家园。"
         )
 
     except Exception as e:
-        logger.error(f"❌ 撤退任务失败: task_id={task_id}, user={user_name}, error={e}")
-
-        # 保存失败结果
-        task_record = game_server.get_task(task_id)
-        if task_record is not None:
-            task_record.status = TaskStatus.FAILED
-            task_record.error = str(e)
-            task_record.end_time = datetime.now().isoformat()
+        logger.error(f"❌ 撤退任务失败: job_id={job_id}, user={user_name}, error={e}")
+        save_task_error(job_id, str(e))
+        raise
 
 
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
+@procrastinate_app.task(queue="game", pass_context=True)
 async def execute_draw_cards_task(
-    task_id: str,
+    context: JobContext,
     user_name: str,
-    game_server: GameServer,
 ) -> None:
     """后台执行抽卡任务"""
+    job_id = str(context.job.id)
     try:
 
-        logger.info(f"🚀 抽卡任务开始: task_id={task_id}, user={user_name}")
+        logger.info(f"🚀 抽卡任务开始: job_id={job_id}, user={user_name}")
+
+        game_server = get_game_server()
 
         # 获取房间并用每玩家锁避免并发状态竞争
         current_room = game_server.get_room(user_name)
@@ -164,43 +151,33 @@ async def execute_draw_cards_task(
                 raise ValueError("战斗未在进行中")
 
             # 推进战斗流程处理抽牌
-            # 注意: 这里会阻塞当前协程直到战斗流程处理完成
-            # 但因为使用了 asyncio.create_task，这个阻塞只影响后台任务，不影响 API 响应
             await rpg_game._dungeon_combat_room_pipeline.process()
 
             # 存储抽牌后的世界状态，便于调试和回放
             store_game(rpg_game)
 
-        # 保存结果
-        task_record = game_server.get_task(task_id)
-        if task_record is not None:
-            task_record.status = TaskStatus.COMPLETED
-            task_record.end_time = datetime.now().isoformat()
-
-        logger.info(f"✅ 抽卡任务完成: task_id={task_id}, user={user_name}")
+        logger.info(f"✅ 抽卡任务完成: job_id={job_id}, user={user_name}")
 
     except Exception as e:
-        logger.error(f"❌ 抽卡任务失败: task_id={task_id}, user={user_name}, error={e}")
-
-        # 保存失败结果
-        task_record = game_server.get_task(task_id)
-        if task_record is not None:
-            task_record.status = TaskStatus.FAILED
-            task_record.error = str(e)
-            task_record.end_time = datetime.now().isoformat()
+        logger.error(f"❌ 抽卡任务失败: job_id={job_id}, user={user_name}, error={e}")
+        save_task_error(job_id, str(e))
+        raise
 
 
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
+@procrastinate_app.task(queue="game", pass_context=True)
 async def execute_play_cards_task(
-    task_id: str,
+    context: JobContext,
     user_name: str,
-    game_server: GameServer,
 ) -> None:
     """后台执行出牌任务"""
+    job_id = str(context.job.id)
     try:
-        logger.info(f"🚀 出牌任务开始: task_id={task_id}, user={user_name}")
+        logger.info(f"🚀 出牌任务开始: job_id={job_id}, user={user_name}")
+
+        game_server = get_game_server()
 
         # 获取房间并用每玩家锁避免并发状态竞争
         current_room = game_server.get_room(user_name)
@@ -227,36 +204,28 @@ async def execute_play_cards_task(
             # 存储出牌后的世界状态，便于调试和回放
             store_game(rpg_game)
 
-        # 保存结果
-        task_record = game_server.get_task(task_id)
-        if task_record is not None:
-            task_record.status = TaskStatus.COMPLETED
-            task_record.end_time = datetime.now().isoformat()
-
-        logger.info(f"✅ 出牌任务完成: task_id={task_id}, user={user_name}")
+        logger.info(f"✅ 出牌任务完成: job_id={job_id}, user={user_name}")
 
     except Exception as e:
-
-        # 保存失败结果
-        logger.error(f"❌ 出牌任务失败: task_id={task_id}, user={user_name}, error={e}")
-        task_record = game_server.get_task(task_id)
-        if task_record is not None:
-            task_record.status = TaskStatus.FAILED
-            task_record.error = str(e)
-            task_record.end_time = datetime.now().isoformat()
+        logger.error(f"❌ 出牌任务失败: job_id={job_id}, user={user_name}, error={e}")
+        save_task_error(job_id, str(e))
+        raise
 
 
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
+@procrastinate_app.task(queue="game", pass_context=True)
 async def execute_pass_turn_task(
-    task_id: str,
+    context: JobContext,
     user_name: str,
-    game_server: GameServer,
 ) -> None:
     """后台执行过牌任务"""
+    job_id = str(context.job.id)
     try:
-        logger.info(f"🚀 过牌任务开始: task_id={task_id}, user={user_name}")
+        logger.info(f"🚀 过牌任务开始: job_id={job_id}, user={user_name}")
+
+        game_server = get_game_server()
 
         # 获取房间并用每玩家锁避免并发状态竞争
         current_room = game_server.get_room(user_name)
@@ -283,37 +252,29 @@ async def execute_pass_turn_task(
             # 存储过牌后的世界状态，便于调试和回放
             store_game(rpg_game)
 
-        # 保存结果
-        task_record = game_server.get_task(task_id)
-        if task_record is not None:
-            task_record.status = TaskStatus.COMPLETED
-            task_record.end_time = datetime.now().isoformat()
-
-        logger.info(f"✅ 过牌任务完成: task_id={task_id}, user={user_name}")
+        logger.info(f"✅ 过牌任务完成: job_id={job_id}, user={user_name}")
 
     except Exception as e:
-
-        # 保存失败结果
-        logger.error(f"❌ 过牌任务失败: task_id={task_id}, user={user_name}, error={e}")
-        task_record = game_server.get_task(task_id)
-        if task_record is not None:
-            task_record.status = TaskStatus.FAILED
-            task_record.error = str(e)
-            task_record.end_time = datetime.now().isoformat()
+        logger.error(f"❌ 过牌任务失败: job_id={job_id}, user={user_name}, error={e}")
+        save_task_error(job_id, str(e))
+        raise
 
 
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
+@procrastinate_app.task(queue="game", pass_context=True)
 async def execute_use_consumable_task(
-    task_id: str,
+    context: JobContext,
     user_name: str,
-    game_server: GameServer,
 ) -> None:
     """后台执行使用消耗品任务"""
+    job_id = str(context.job.id)
     try:
 
-        logger.info(f"🚀 使用消耗品任务开始: task_id={task_id}, user={user_name}")
+        logger.info(f"🚀 使用消耗品任务开始: job_id={job_id}, user={user_name}")
+
+        game_server = get_game_server()
 
         # 获取房间并用每玩家锁避免并发状态竞争
         current_room = game_server.get_room(user_name)
@@ -340,38 +301,30 @@ async def execute_use_consumable_task(
             # 存储使用消耗品后的世界状态，便于调试和回放
             store_game(rpg_game)
 
-        # 保存结果
-        task_record = game_server.get_task(task_id)
-        if task_record is not None:
-            task_record.status = TaskStatus.COMPLETED
-            task_record.end_time = datetime.now().isoformat()
-
-        logger.info(f"✅ 使用消耗品任务完成: task_id={task_id}, user={user_name}")
+        logger.info(f"✅ 使用消耗品任务完成: job_id={job_id}, user={user_name}")
 
     except Exception as e:
-
-        # 保存失败结果
         logger.error(
-            f"❌ 使用消耗品任务失败: task_id={task_id}, user={user_name}, error={e}"
+            f"❌ 使用消耗品任务失败: job_id={job_id}, user={user_name}, error={e}"
         )
-        task_record = game_server.get_task(task_id)
-        if task_record is not None:
-            task_record.status = TaskStatus.FAILED
-            task_record.error = str(e)
-            task_record.end_time = datetime.now().isoformat()
+        save_task_error(job_id, str(e))
+        raise
 
 
 ###################################################################################################################################################################
 ###################################################################################################################################################################
+@procrastinate_app.task(queue="game", pass_context=True)
 async def execute_equip_gear_task(
-    task_id: str,
+    context: JobContext,
     user_name: str,
-    game_server: GameServer,
 ) -> None:
     """后台执行使用装备任务"""
+    job_id = str(context.job.id)
     try:
 
-        logger.info(f"🚀 使用装备任务开始: task_id={task_id}, user={user_name}")
+        logger.info(f"🚀 使用装备任务开始: job_id={job_id}, user={user_name}")
+
+        game_server = get_game_server()
 
         # 获取房间并用每玩家锁避免并发状态竞争
         current_room = game_server.get_room(user_name)
@@ -398,25 +351,14 @@ async def execute_equip_gear_task(
             # 存储使用装备后的世界状态，便于调试和回放
             store_game(rpg_game)
 
-        # 保存结果
-        task_record = game_server.get_task(task_id)
-        if task_record is not None:
-            task_record.status = TaskStatus.COMPLETED
-            task_record.end_time = datetime.now().isoformat()
-
-        logger.info(f"✅ 使用装备任务完成: task_id={task_id}, user={user_name}")
+        logger.info(f"✅ 使用装备任务完成: job_id={job_id}, user={user_name}")
 
     except Exception as e:
-
-        # 保存失败结果
         logger.error(
-            f"❌ 使用装备任务失败: task_id={task_id}, user={user_name}, error={e}"
+            f"❌ 使用装备任务失败: job_id={job_id}, user={user_name}, error={e}"
         )
-        task_record = game_server.get_task(task_id)
-        if task_record is not None:
-            task_record.status = TaskStatus.FAILED
-            task_record.error = str(e)
-            task_record.end_time = datetime.now().isoformat()
+        save_task_error(job_id, str(e))
+        raise
 
 
 ###################################################################################################################################################################

@@ -159,7 +159,7 @@ async def submit_wear_costume(
         return
     user_name, game_name, _ = resolve_identity(game_client)
     resp = await home_wear_costume(user_name, game_name, item_name, target_name)
-    await watch_task_until_done(resp.task_id)
+    await watch_task_until_done(resp.job_id)
 
 
 ###############################################################################################################################################
@@ -173,4 +173,4 @@ async def submit_remove_costume(game_client: GameClient, target_name: str) -> No
         return
     user_name, game_name, _ = resolve_identity(game_client)
     resp = await home_remove_costume(user_name, game_name, target_name)
-    await watch_task_until_done(resp.task_id)
+    await watch_task_until_done(resp.job_id)

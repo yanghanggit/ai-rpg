@@ -152,8 +152,8 @@ class CombatCardPoolViewScreen(BaseGameScreen):
             resp = await dungeon_opening_pick_card_from_pool(
                 user_name, game_name, actor_name, card_name
             )
-            log.write(f"[dim]任务已提交：{resp.task_id}，等待完成...[/]")
-            record = await watch_task_until_done(resp.task_id)
+            log.write(f"[dim]任务已提交：{resp.job_id}，等待完成...[/]")
+            record = await watch_task_until_done(resp.job_id)
             log.write(f"[bold green]✅ 挑卡完成：{record.status}[/]")
             log.write(f"[dim]已把「{card_name}」加入牌库。[/]")
             self._refresh()

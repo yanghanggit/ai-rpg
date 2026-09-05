@@ -7,8 +7,8 @@ from pydantic import BaseModel
 
 @final
 @unique
-class TaskStatus(StrEnum):
-    """任务状态枚举"""
+class BackgroundTaskStatus(StrEnum):
+    """后台任务状态枚举"""
 
     RUNNING = "running"
     COMPLETED = "completed"
@@ -16,11 +16,9 @@ class TaskStatus(StrEnum):
 
 
 @final
-class TaskRecord(BaseModel):
-    """任务记录模型"""
+class TaskStatusView(BaseModel):
+    """后台任务状态视图：每次查询时由 Procrastinate 的 job 状态 + 失败错误表现算得出，本身不被持久化"""
 
-    task_id: str
-    status: TaskStatus
-    start_time: str
-    end_time: Optional[str] = None
+    job_id: str
+    status: BackgroundTaskStatus
     error: Optional[str] = None

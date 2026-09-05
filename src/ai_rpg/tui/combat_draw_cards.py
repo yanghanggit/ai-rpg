@@ -87,8 +87,8 @@ class CombatDrawCardsScreen(BaseGameScreen):
         try:
             user_name, game_name, _ = resolve_identity(self.game_client)
             resp = await dungeon_combat_draw_cards(user_name, game_name)
-            log.write(f"[dim]任务已提交：{resp.task_id}，等待完成...[/]")
-            await watch_task_until_done(resp.task_id)
+            log.write(f"[dim]任务已提交：{resp.job_id}，等待完成...[/]")
+            await watch_task_until_done(resp.job_id)
         except TaskFailedError as e:
             logger.error(
                 f"CombatDrawCardsScreen._do_draw_cards: 抽牌任务失败 error={e}"

@@ -66,9 +66,9 @@ from ..models import (
     NewGameResponse,
     SessionMessageResponse,
     StagesStateResponse,
-    TaskRecord,
+    TaskStatusView,
     TasksStatusResponse,
-    TaskStatus,
+    BackgroundTaskStatus,
     SessionMessage,
 )
 from .config import server_config
@@ -234,32 +234,34 @@ async def fetch_dungeon_list() -> DungeonListResponse:
         return DungeonListResponse.model_validate(response.json())
 
 
-async def fetch_tasks_status(task_ids: List[str]) -> TasksStatusResponse:
+async def fetch_tasks_status(job_ids: List[str]) -> TasksStatusResponse:
     """批量查询后台任务状态。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.get(
             server_config.base_url + "/api/tasks/v1/status",
-            params={"task_ids": task_ids},
+            params={"job_ids": job_ids},
         )
         response.raise_for_status()
         return TasksStatusResponse.model_validate(response.json())
 
 
-async def watch_task_until_done(task_id: str, timeout_seconds: int = 120) -> TaskRecord:
-    """通过 SSE 等待后台任务完成，返回终态 TaskRecord。
+async def watch_task_until_done(
+    job_id: str, timeout_seconds: int = 120
+) -> TaskStatusView:
+    """通过 SSE 等待后台任务完成，返回终态 TaskStatusView。
 
     Args:
-        task_id: 要监听的任务 ID
+        job_id: 要监听的任务 ID
         timeout_seconds: 最大等待秒数（同时透传给服务端 SSE 生成器）
 
     Returns:
-        TaskRecord: 状态为 COMPLETED 的任务记录
+        TaskStatusView: 状态为 COMPLETED 的任务状态视图
 
     Raises:
         TaskFailedError: 任务失败（status=FAILED 或服务端返回 error 字段）
         TimeoutError: 等待超时
     """
-    url = server_config.base_url + f"/api/tasks/v1/watch/{task_id}"
+    url = server_config.base_url + f"/api/tasks/v1/watch/{job_id}"
     params = {"timeout_seconds": timeout_seconds}
     timeout = httpx.Timeout(
         connect=10.0,
@@ -277,12 +279,12 @@ async def watch_task_until_done(task_id: str, timeout_seconds: int = 120) -> Tas
                 if not payload:
                     continue
                 data = json.loads(payload)
-                record = TaskRecord.model_validate(data)
-                if record.status == TaskStatus.FAILED:
+                record = TaskStatusView.model_validate(data)
+                if record.status == BackgroundTaskStatus.FAILED:
                     raise TaskFailedError(record.error or "未知错误")
-                if record.status == TaskStatus.COMPLETED:
+                if record.status == BackgroundTaskStatus.COMPLETED:
                     return record
-    raise TimeoutError(f"任务 {task_id} 等待超时")
+    raise TimeoutError(f"任务 {job_id} 等待超时")
 
 
 async def home_advance(

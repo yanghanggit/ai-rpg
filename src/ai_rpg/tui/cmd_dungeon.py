@@ -126,20 +126,20 @@ async def generate_dungeon(user_name: str, game_name: str) -> str:
     )
     try:
         resp = await home_generate_dungeon(user_name, game_name)
-        task_id = resp.task_id
+        job_id = resp.job_id
     except Exception as e:
         logger.error(f"generate_dungeon: 请求失败 error={e}")
         return f"[bold red]❌ 副本生成请求失败: {e}[/]"
 
     try:
-        await watch_task_until_done(task_id)
-        logger.info(f"generate_dungeon: 完成 task_id={task_id}")
+        await watch_task_until_done(job_id)
+        logger.info(f"generate_dungeon: 完成 job_id={job_id}")
         return "[bold green]✅ 副本生成完成，见 /list-dungeons。[/]"
     except TaskFailedError as e:
-        logger.error(f"generate_dungeon: 失败 task_id={task_id} error={e}")
+        logger.error(f"generate_dungeon: 失败 job_id={job_id} error={e}")
         return f"[bold red]❌ 副本生成失败: {e}[/]"
     except TimeoutError:
-        logger.warning(f"generate_dungeon: 超时 task_id={task_id}")
+        logger.warning(f"generate_dungeon: 超时 job_id={job_id}")
         return "[bold yellow]⚠️ 副本生成超时，请检查服务器状态[/]"
     except Exception as e:
         logger.warning(f"generate_dungeon: 等待任务失败 error={e}")

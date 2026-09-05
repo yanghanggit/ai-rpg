@@ -254,8 +254,8 @@ class CombatPostCombatScreen(BaseGameScreen):
             user_name, game_name, _ = resolve_identity(self.game_client)
             resp = await dungeon_exit(user_name, game_name)
 
-            log.write(f"[dim]任务已提交：{resp.task_id}，等待完成...[/]")
-            await watch_task_until_done(resp.task_id)
+            log.write(f"[dim]任务已提交：{resp.job_id}，等待完成...[/]")
+            await watch_task_until_done(resp.job_id)
         except Exception as e:
             logger.error(f"CombatPostCombatScreen._do_exit_dungeon: 退出失败 error={e}")
             log.write(f"[bold red]❌ 退出副本失败：{e}[/]")

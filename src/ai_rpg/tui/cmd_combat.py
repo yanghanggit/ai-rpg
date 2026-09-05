@@ -211,7 +211,7 @@ async def start_combat(user_name: str, game_name: str) -> Tuple[bool, str]:
     logger.info(f"start_combat: user_name={user_name} game_name={game_name}")
     try:
         resp = await dungeon_combat_init(user_name, game_name)
-        record = await watch_task_until_done(resp.task_id)
+        record = await watch_task_until_done(resp.job_id)
     except TaskFailedError as e:
         logger.error(f"start_combat: 任务失败 error={e}")
         return False, f"[bold red]❌ 战斗初始化失败：{e}[/]"

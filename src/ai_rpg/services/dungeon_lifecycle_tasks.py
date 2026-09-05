@@ -1,11 +1,11 @@
 """副本生命周期后台任务模块"""
 
-from datetime import datetime
+from procrastinate import JobContext
 from loguru import logger
 from ..game.dbg_game import DBGGame
 from ..game.dbg_store import store_game
-from ..game.game_server import GameServer
-from ..models import TaskStatus
+from ..pgsql import procrastinate_app, save_task_error
+from .game_server_dependencies import get_game_server
 from .dungeon_archive_action import (
     archive_dungeon,
 )
@@ -20,15 +20,18 @@ from .dungeon_teardown_action import (
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
+@procrastinate_app.task(queue="game", pass_context=True)
 async def execute_exit_dungeon_task(
-    task_id: str,
+    context: JobContext,
     user_name: str,
-    game_server: GameServer,
 ) -> None:
     """后台执行退出副本任务（返回家园 + 副本导演归档 + 实体销毁）。"""
+    job_id = str(context.job.id)
     try:
 
-        logger.info(f"🚀 退出副本任务开始: task_id={task_id}, user={user_name}")
+        logger.info(f"🚀 退出副本任务开始: job_id={job_id}, user={user_name}")
+
+        game_server = get_game_server()
 
         # 获取房间并用每玩家锁避免并发状态竞争
         current_room = game_server.get_room(user_name)
@@ -56,25 +59,14 @@ async def execute_exit_dungeon_task(
             # 存储退出后的世界状态，便于调试和回放
             store_game(rpg_game)
 
-        # 保存结果
-        task_record = game_server.get_task(task_id)
-        if task_record is not None:
-            task_record.status = TaskStatus.COMPLETED
-            task_record.end_time = datetime.now().isoformat()
-
-        logger.info(f"✅ 退出副本任务完成: task_id={task_id}, user={user_name}")
+        logger.info(f"✅ 退出副本任务完成: job_id={job_id}, user={user_name}")
 
     except Exception as e:
-
-        # 保存失败结果
         logger.error(
-            f"❌ 退出副本任务失败: task_id={task_id}, user={user_name}, error={e}"
+            f"❌ 退出副本任务失败: job_id={job_id}, user={user_name}, error={e}"
         )
-        task_record = game_server.get_task(task_id)
-        if task_record is not None:
-            task_record.status = TaskStatus.FAILED
-            task_record.error = str(e)
-            task_record.end_time = datetime.now().isoformat()
+        save_task_error(job_id, str(e))
+        raise
 
 
 ###################################################################################################################################################################

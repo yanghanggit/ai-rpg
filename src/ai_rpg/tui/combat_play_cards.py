@@ -543,8 +543,8 @@ class CombatPlayCardsScreen(BaseGameScreen):
             resp = await dungeon_combat_play_cards(
                 user_name, game_name, actor_name, card.name, targets
             )
-            log.write(f"[dim]任务已提交：{resp.task_id}，等待完成...[/]")
-            await watch_task_until_done(resp.task_id)
+            log.write(f"[dim]任务已提交：{resp.job_id}，等待完成...[/]")
+            await watch_task_until_done(resp.job_id)
         except TaskFailedError as e:
             logger.error(
                 f"CombatPlayCardsScreen._confirm_and_play: 出牌任务失败 error={e}"

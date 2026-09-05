@@ -2,12 +2,12 @@
 副本开场房间后台任务模块
 """
 
-from datetime import datetime
+from procrastinate import JobContext
 from loguru import logger
 from ..game.dbg_game import DBGGame
 from ..game.dbg_store import store_game
-from ..game.game_server import GameServer
-from ..models import TaskStatus
+from ..pgsql import procrastinate_app, save_task_error
+from .game_server_dependencies import get_game_server
 from .dungeon_opening_actions import (
     activate_generate_card_pool,
     activate_pick_card_from_pool,
@@ -17,15 +17,18 @@ from .dungeon_opening_actions import (
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
+@procrastinate_app.task(queue="game", pass_context=True)
 async def execute_opening_room_init_task(
-    task_id: str,
+    context: JobContext,
     user_name: str,
-    game_server: GameServer,
 ) -> None:
     """后台执行副本开场房间初始化任务（叙事 + 牌库初始化，无战斗）"""
+    job_id = str(context.job.id)
     try:
 
-        logger.info(f"🚀 开场房间初始化任务开始: task_id={task_id}, user={user_name}")
+        logger.info(f"🚀 开场房间初始化任务开始: job_id={job_id}, user={user_name}")
+
+        game_server = get_game_server()
 
         # 获取房间并用每玩家锁避免并发状态竞争
         current_room = game_server.get_room(user_name)
@@ -52,39 +55,31 @@ async def execute_opening_room_init_task(
             # 存储开场房间初始化后的世界状态，便于调试和回放
             store_game(rpg_game)
 
-        # 保存结果
-        task_record = game_server.get_task(task_id)
-        if task_record is not None:
-            task_record.status = TaskStatus.COMPLETED
-            task_record.end_time = datetime.now().isoformat()
-
-        logger.info(f"✅ 开场房间初始化任务完成: task_id={task_id}, user={user_name}")
+        logger.info(f"✅ 开场房间初始化任务完成: job_id={job_id}, user={user_name}")
 
     except Exception as e:
         logger.error(
-            f"❌ 开场房间初始化任务失败: task_id={task_id}, user={user_name}, error={e}"
+            f"❌ 开场房间初始化任务失败: job_id={job_id}, user={user_name}, error={e}"
         )
-
-        # 保存失败结果
-        task_record = game_server.get_task(task_id)
-        if task_record is not None:
-            task_record.status = TaskStatus.FAILED
-            task_record.error = str(e)
-            task_record.end_time = datetime.now().isoformat()
+        save_task_error(job_id, str(e))
+        raise
 
 
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
+@procrastinate_app.task(queue="game", pass_context=True)
 async def execute_generate_card_pool_task(
-    task_id: str,
+    context: JobContext,
     user_name: str,
-    game_server: GameServer,
 ) -> None:
     """后台执行卡池生成任务（外部触发 GenerateCardPoolAction 后推动开场管道处理）"""
+    job_id = str(context.job.id)
     try:
 
-        logger.info(f"🚀 卡池生成任务开始: task_id={task_id}, user={user_name}")
+        logger.info(f"🚀 卡池生成任务开始: job_id={job_id}, user={user_name}")
+
+        game_server = get_game_server()
 
         # 获取房间并用每玩家锁避免并发状态竞争
         current_room = game_server.get_room(user_name)
@@ -112,44 +107,36 @@ async def execute_generate_card_pool_task(
             # 存储卡池生成后的世界状态，便于调试和回放
             store_game(rpg_game)
 
-        # 保存结果
-        task_record = game_server.get_task(task_id)
-        if task_record is not None:
-            task_record.status = TaskStatus.COMPLETED
-            task_record.end_time = datetime.now().isoformat()
-
-        logger.info(f"✅ 卡池生成任务完成: task_id={task_id}, user={user_name}")
+        logger.info(f"✅ 卡池生成任务完成: job_id={job_id}, user={user_name}")
 
     except Exception as e:
         logger.error(
-            f"❌ 卡池生成任务失败: task_id={task_id}, user={user_name}, error={e}"
+            f"❌ 卡池生成任务失败: job_id={job_id}, user={user_name}, error={e}"
         )
-
-        # 保存失败结果
-        task_record = game_server.get_task(task_id)
-        if task_record is not None:
-            task_record.status = TaskStatus.FAILED
-            task_record.error = str(e)
-            task_record.end_time = datetime.now().isoformat()
+        save_task_error(job_id, str(e))
+        raise
 
 
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
+@procrastinate_app.task(queue="game", pass_context=True)
 async def execute_pick_card_from_pool_task(
-    task_id: str,
+    context: JobContext,
     user_name: str,
     actor_name: str,
     card_name: str,
-    game_server: GameServer,
 ) -> None:
     """后台执行从卡池挑选一张卡牌任务（外部触发 PickCardFromPoolAction 后推动开场管道处理）"""
+    job_id = str(context.job.id)
     try:
 
         logger.info(
-            f"🚀 挑卡任务开始: task_id={task_id}, user={user_name}, "
+            f"🚀 挑卡任务开始: job_id={job_id}, user={user_name}, "
             f"actor={actor_name}, card={card_name}"
         )
+
+        game_server = get_game_server()
 
         # 获取房间并用每玩家锁避免并发状态竞争
         current_room = game_server.get_room(user_name)
@@ -179,23 +166,12 @@ async def execute_pick_card_from_pool_task(
             # 存储挑卡后的世界状态，便于调试和回放
             store_game(rpg_game)
 
-        # 保存结果
-        task_record = game_server.get_task(task_id)
-        if task_record is not None:
-            task_record.status = TaskStatus.COMPLETED
-            task_record.end_time = datetime.now().isoformat()
-
-        logger.info(f"✅ 挑卡任务完成: task_id={task_id}, user={user_name}")
+        logger.info(f"✅ 挑卡任务完成: job_id={job_id}, user={user_name}")
 
     except Exception as e:
-        logger.error(f"❌ 挑卡任务失败: task_id={task_id}, user={user_name}, error={e}")
-
-        # 保存失败结果
-        task_record = game_server.get_task(task_id)
-        if task_record is not None:
-            task_record.status = TaskStatus.FAILED
-            task_record.error = str(e)
-            task_record.end_time = datetime.now().isoformat()
+        logger.error(f"❌ 挑卡任务失败: job_id={job_id}, user={user_name}, error={e}")
+        save_task_error(job_id, str(e))
+        raise
 
 
 ###################################################################################################################################################################

@@ -572,8 +572,8 @@ class CombatUseConsumableScreen(BaseGameScreen):
             resp = await dungeon_combat_use_consumable(
                 user_name, game_name, item.name, targets
             )
-            log.write(f"[dim]任务已提交：{resp.task_id}，等待完成...[/]")
-            await watch_task_until_done(resp.task_id)
+            log.write(f"[dim]任务已提交：{resp.job_id}，等待完成...[/]")
+            await watch_task_until_done(resp.job_id)
         except TaskFailedError as e:
             logger.error(
                 f"CombatUseConsumableScreen._confirm_and_use: 使用任务失败 error={e}"

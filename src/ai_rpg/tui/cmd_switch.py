@@ -52,23 +52,23 @@ async def switch_stage(
         HomePlayerActionType.SWITCH_STAGE,
         {"stage_name": target_stage},
     )
-    task_id = resp.task_id
-    logger.info(f"switch_stage: 任务已创建 task_id={task_id}")
+    job_id = resp.job_id
+    logger.info(f"switch_stage: 任务已创建 job_id={job_id}")
 
-    lines: List[str] = [f"[dim]任务已创建：{task_id}[/]"]
+    lines: List[str] = [f"[dim]任务已创建：{job_id}[/]"]
 
     try:
-        await watch_task_until_done(task_id)
-        logger.info(f"switch_stage: 任务完成 task_id={task_id}")
+        await watch_task_until_done(job_id)
+        logger.info(f"switch_stage: 任务完成 job_id={job_id}")
         lines.append("[bold green]✅ 场景切换完成[/]")
     except TaskFailedError as e:
-        logger.error(f"switch_stage: 任务失败 task_id={task_id} error={e}")
+        logger.error(f"switch_stage: 任务失败 job_id={job_id} error={e}")
         lines.append(f"[bold red]❌ 场景切换失败: {e}[/]")
     except TimeoutError:
-        logger.warning(f"switch_stage: 轮询超时 task_id={task_id}")
+        logger.warning(f"switch_stage: 轮询超时 job_id={job_id}")
         lines.append("[bold yellow]⚠️ 等待超时，请检查服务器状态[/]")
     except Exception as e:
-        logger.warning(f"switch_stage: 等待任务失败 task_id={task_id} error={e}")
+        logger.warning(f"switch_stage: 等待任务失败 job_id={job_id} error={e}")
         lines.append(f"[bold red]❌ 等待任务失败: {e}[/]")
 
     return "\n".join(lines)

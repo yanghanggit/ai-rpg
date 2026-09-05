@@ -2,13 +2,14 @@
 家园后台任务模块
 """
 
-from datetime import datetime
+from procrastinate import JobContext
 from fastapi import HTTPException, status
 from loguru import logger
 from ..game.dbg_game import DBGGame
 from ..game.dbg_store import store_game
 from ..game.game_server import GameServer
-from ..models import TaskStatus
+from ..pgsql import procrastinate_app, save_task_error
+from .game_server_dependencies import get_game_server
 
 
 ###################################################################################################################################################################
@@ -52,16 +53,19 @@ async def _validate_player_at_home(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
+@procrastinate_app.task(queue="game", pass_context=True)
 async def execute_dungeon_generate_pipeline_task(
-    task_id: str,
+    context: JobContext,
     user_name: str,
-    game_server: GameServer,
 ) -> None:
     """后台执行 dungeon generate pipeline 任务"""
+    job_id = str(context.job.id)
     try:
         logger.info(
-            f"🚀 dungeon generate pipeline 任务开始: task_id={task_id}, user={user_name}"
+            f"🚀 dungeon generate pipeline 任务开始: job_id={job_id}, user={user_name}"
         )
+
+        game_server = get_game_server()
 
         current_room = game_server.get_room(user_name)
         if current_room is None:
@@ -77,37 +81,32 @@ async def execute_dungeon_generate_pipeline_task(
             # 存档当前世界状态，便于调试和回放
             store_game(rpg_game)
 
-        task_record = game_server.get_task(task_id)
-        if task_record is not None:
-            task_record.status = TaskStatus.COMPLETED
-            task_record.end_time = datetime.now().isoformat()
-
         logger.info(
-            f"✅ dungeon generate pipeline 任务完成: task_id={task_id}, user={user_name}"
+            f"✅ dungeon generate pipeline 任务完成: job_id={job_id}, user={user_name}"
         )
 
     except Exception as e:
         logger.error(
-            f"❌ dungeon generate pipeline 任务失败: task_id={task_id}, user={user_name}, error={e}"
+            f"❌ dungeon generate pipeline 任务失败: job_id={job_id}, user={user_name}, error={e}"
         )
-        task_record = game_server.get_task(task_id)
-        if task_record is not None:
-            task_record.status = TaskStatus.FAILED
-            task_record.error = str(e)
-            task_record.end_time = datetime.now().isoformat()
+        save_task_error(job_id, str(e))
+        raise
 
 
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
+@procrastinate_app.task(queue="game", pass_context=True)
 async def execute_home_pipeline_task(
-    task_id: str,
+    context: JobContext,
     user_name: str,
-    game_server: GameServer,
 ) -> None:
     """后台执行 home pipeline 任务"""
+    job_id = str(context.job.id)
     try:
-        logger.info(f"🚀 home pipeline 任务开始: task_id={task_id}, user={user_name}")
+        logger.info(f"🚀 home pipeline 任务开始: job_id={job_id}, user={user_name}")
+
+        game_server = get_game_server()
 
         current_room = game_server.get_room(user_name)
         if current_room is None:
@@ -123,37 +122,32 @@ async def execute_home_pipeline_task(
             # 存档当前世界状态，便于调试和回放
             store_game(rpg_game)
 
-        task_record = game_server.get_task(task_id)
-        if task_record is not None:
-            task_record.status = TaskStatus.COMPLETED
-            task_record.end_time = datetime.now().isoformat()
-
-        logger.info(f"✅ home pipeline 任务完成: task_id={task_id}, user={user_name}")
+        logger.info(f"✅ home pipeline 任务完成: job_id={job_id}, user={user_name}")
 
     except Exception as e:
         logger.error(
-            f"❌ home pipeline 任务失败: task_id={task_id}, user={user_name}, error={e}"
+            f"❌ home pipeline 任务失败: job_id={job_id}, user={user_name}, error={e}"
         )
-        task_record = game_server.get_task(task_id)
-        if task_record is not None:
-            task_record.status = TaskStatus.FAILED
-            task_record.error = str(e)
-            task_record.end_time = datetime.now().isoformat()
+        save_task_error(job_id, str(e))
+        raise
 
 
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
+@procrastinate_app.task(queue="game", pass_context=True)
 async def execute_home_craft_pipeline_task(
-    task_id: str,
+    context: JobContext,
     user_name: str,
-    game_server: GameServer,
 ) -> None:
     """后台执行 home craft pipeline 任务"""
+    job_id = str(context.job.id)
     try:
         logger.info(
-            f"🚀 home craft pipeline 任务开始: task_id={task_id}, user={user_name}"
+            f"🚀 home craft pipeline 任务开始: job_id={job_id}, user={user_name}"
         )
+
+        game_server = get_game_server()
 
         current_room = game_server.get_room(user_name)
         if current_room is None:
@@ -169,24 +163,16 @@ async def execute_home_craft_pipeline_task(
             # 存档当前世界状态，便于调试和回放
             store_game(rpg_game)
 
-        task_record = game_server.get_task(task_id)
-        if task_record is not None:
-            task_record.status = TaskStatus.COMPLETED
-            task_record.end_time = datetime.now().isoformat()
-
         logger.info(
-            f"✅ home craft pipeline 任务完成: task_id={task_id}, user={user_name}"
+            f"✅ home craft pipeline 任务完成: job_id={job_id}, user={user_name}"
         )
 
     except Exception as e:
         logger.error(
-            f"❌ home craft pipeline 任务失败: task_id={task_id}, user={user_name}, error={e}"
+            f"❌ home craft pipeline 任务失败: job_id={job_id}, user={user_name}, error={e}"
         )
-        task_record = game_server.get_task(task_id)
-        if task_record is not None:
-            task_record.status = TaskStatus.FAILED
-            task_record.error = str(e)
-            task_record.end_time = datetime.now().isoformat()
+        save_task_error(job_id, str(e))
+        raise
 
 
 ###################################################################################################################################################################

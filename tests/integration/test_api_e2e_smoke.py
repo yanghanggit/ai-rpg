@@ -137,11 +137,11 @@ def _get(
     return r.status_code, data
 
 
-def _poll_task(client: httpx.Client, task_id: str, timeout: float = 300.0) -> str:
+def _poll_task(client: httpx.Client, job_id: str, timeout: float = 300.0) -> str:
     """轮询后台任务直到终态，返回 'completed' / 'failed'，超时则失败。"""
     deadline = time.time() + timeout
     while time.time() < deadline:
-        code, data = _get(client, "/api/tasks/v1/status", params={"task_ids": task_id})
+        code, data = _get(client, "/api/tasks/v1/status", params={"job_ids": job_id})
         if code == 200:
             tasks = data.get("tasks", [])
             if tasks:
@@ -151,7 +151,7 @@ def _poll_task(client: httpx.Client, task_id: str, timeout: float = 300.0) -> st
                 if status == "failed":
                     pytest.fail(f"后台任务失败: {tasks[0].get('error')}")
         time.sleep(1)
-    pytest.fail(f"后台任务 {task_id} 轮询超时")
+    pytest.fail(f"后台任务 {job_id} 轮询超时")
 
 
 def _get_hand_cards(
@@ -200,8 +200,8 @@ def test_api_e2e_smoke(game_server_url: str) -> None:
         client, "/api/dungeon/opening/init/v1/", {"user_name": user, "game_name": GAME}
     )
     assert code == 200
-    assert data.get("task_id")
-    _poll_task(client, data["task_id"])
+    assert data.get("job_id")
+    _poll_task(client, data["job_id"])
 
     # 5. 推进到战斗房间
     code, _ = _post(
@@ -216,8 +216,8 @@ def test_api_e2e_smoke(game_server_url: str) -> None:
         client, "/api/dungeon/combat/init/v1/", {"user_name": user, "game_name": GAME}
     )
     assert code == 200
-    assert data.get("task_id")
-    _poll_task(client, data["task_id"])
+    assert data.get("job_id")
+    _poll_task(client, data["job_id"])
 
     # 7. 全员抽牌
     code, data = _post(
@@ -226,8 +226,8 @@ def test_api_e2e_smoke(game_server_url: str) -> None:
         {"user_name": user, "game_name": GAME},
     )
     assert code == 200
-    assert data.get("task_id")
-    _poll_task(client, data["task_id"])
+    assert data.get("job_id")
+    _poll_task(client, data["job_id"])
 
     # 8. 查询玩家手牌
     hand_cards = _get_hand_cards(client, user, player_actor)
@@ -265,5 +265,5 @@ def test_api_e2e_smoke(game_server_url: str) -> None:
         },
     )
     assert code == 200, f"合法出牌应返回 200，实际 {code}: {data}"
-    assert data.get("task_id")
-    _poll_task(client, data["task_id"])
+    assert data.get("job_id")
+    _poll_task(client, data["job_id"])

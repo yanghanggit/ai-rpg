@@ -2,9 +2,6 @@
 
 from typing import Dict, Optional
 from .player_room import PlayerRoom
-from ..models import TaskRecord, TaskStatus
-import uuid
-from datetime import datetime
 
 
 ###############################################################################################################################################
@@ -15,7 +12,6 @@ class GameServer:
         self,
     ) -> None:
         self._rooms: Dict[str, PlayerRoom] = {}
-        self._background_task_store: Dict[str, TaskRecord] = {}
 
     ###############################################################################################################################################
     def has_room(self, user_name: str) -> bool:
@@ -42,27 +38,5 @@ class GameServer:
         user_name = room._username
         assert user_name in self._rooms
         self._rooms.pop(user_name, None)
-
-    ###############################################################################################################################################
-    def create_task(self) -> TaskRecord:
-        """创建并添加一个新的后台任务记录"""
-
-        task_id = str(uuid.uuid4())
-        task_record = TaskRecord(
-            task_id=task_id,
-            status=TaskStatus.RUNNING,
-            start_time=datetime.now().isoformat(),
-        )
-
-        # 不可能出现重复ID！
-        assert task_id not in self._background_task_store
-        self._background_task_store[task_id] = task_record
-
-        return task_record
-
-    ###############################################################################################################################################
-    def get_task(self, task_id: str) -> Optional[TaskRecord]:
-        """获取指定的后台任务记录"""
-        return self._background_task_store.get(task_id, None)
 
     ###############################################################################################################################################

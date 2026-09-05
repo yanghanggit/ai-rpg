@@ -3,6 +3,7 @@
 开发环境初始化脚本
 """
 
+import asyncio
 import os
 import sys
 from typing import Final, final, List, Dict
@@ -26,6 +27,7 @@ from ai_rpg.pgsql import (
     pgsql_drop_database,
     pgsql_ensure_database_tables,
     postgresql_config,
+    procrastinate_app,
     save_card_prototype,
 )
 from ai_rpg.pgsql.user_operations import has_user, save_user
@@ -85,6 +87,15 @@ def _setup_blueprints() -> None:
     path_game1 = BLUEPRINTS_DIR / f"{GAME_1}.json"
     path_game1.write_text(blueprint_game1.model_dump_json(indent=4), encoding="utf-8")
     logger.success(f"✅ {GAME_1}.json 已保存至 {path_game1.absolute()}")
+
+
+########################################################################################################
+########################################################################################################
+########################################################################################################
+async def _apply_procrastinate_schema() -> None:
+    """创建 Procrastinate 任务队列所需的表结构"""
+    async with procrastinate_app.open_async():
+        await procrastinate_app.schema_manager.apply_schema_async()
 
 
 ########################################################################################################
@@ -211,7 +222,10 @@ def main() -> None:
         logger.info("📋 创建数据库表结构...")
         pgsql_ensure_database_tables()
 
-        logger.info("👤 设置PostgreSQL测试用户...")
+        logger.info("�️ 创建 Procrastinate 任务队列表结构...")
+        asyncio.run(_apply_procrastinate_schema())
+
+        logger.info("�👤 设置PostgreSQL测试用户...")
         _setup_user()
 
         logger.info("🎴 初始化卡牌原型...")

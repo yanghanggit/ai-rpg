@@ -115,7 +115,7 @@ async def wear_costume(
             )
 
         resp = await home_wear_costume(user_name, game_name, costume_name, actor_name)
-        await watch_task_until_done(resp.task_id)
+        await watch_task_until_done(resp.job_id)
     except Exception as e:
         logger.error(f"wear_costume: 失败 actor={actor_name} error={e}")
         return f"[bold red]❌ 穿戴失败: {e}[/]"
@@ -153,7 +153,7 @@ async def remove_costume(user_name: str, game_name: str, actor_name: str) -> str
             return f"[yellow]{display_name(actor_name)} 当前未穿戴时装。[/]"
 
         resp = await home_remove_costume(user_name, game_name, actor_name)
-        await watch_task_until_done(resp.task_id)
+        await watch_task_until_done(resp.job_id)
     except Exception as e:
         logger.error(f"remove_costume: 失败 actor={actor_name} error={e}")
         return f"[bold red]❌ 卸下失败: {e}[/]"

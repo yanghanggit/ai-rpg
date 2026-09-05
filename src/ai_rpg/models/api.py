@@ -5,7 +5,7 @@ from .session_message import SessionMessage
 from .dungeon import Dungeon, AnyDungeonRoom
 from .player_session import PlayerSession
 from .serialization import EntitySerialization
-from .task import TaskRecord
+from .task import TaskStatusView
 from .blueprint import Blueprint
 
 
@@ -67,7 +67,7 @@ class HomeAdvanceRequest(BaseModel):
 
 @final
 class HomeAdvanceResponse(BaseModel):
-    task_id: str
+    job_id: str
     status: str
     message: str
 
@@ -100,7 +100,7 @@ class HomeGenerateDungeonRequest(BaseModel):
 
 @final
 class HomeGenerateDungeonResponse(BaseModel):
-    task_id: str
+    job_id: str
     status: str
     message: str
 
@@ -178,7 +178,7 @@ class HomeWearCostumeRequest(BaseModel):
 
 @final
 class HomeWearCostumeResponse(BaseModel):
-    task_id: str
+    job_id: str
     status: str
     message: str
 
@@ -195,7 +195,7 @@ class HomeRemoveCostumeRequest(BaseModel):
 
 @final
 class HomeRemoveCostumeResponse(BaseModel):
-    task_id: str
+    job_id: str
     status: str
     message: str
 
@@ -212,7 +212,7 @@ class HomeCraftItemRequest(BaseModel):
 
 @final
 class HomeCraftItemResponse(BaseModel):
-    task_id: str
+    job_id: str
     status: str
     message: str
 
@@ -228,7 +228,7 @@ class DungeonExitRequest(BaseModel):
 
 @final
 class DungeonExitResponse(BaseModel):
-    task_id: str
+    job_id: str
     status: str
     message: str
 
@@ -267,7 +267,7 @@ class HomePlayerActionRequest(BaseModel):
 
 @final
 class HomePlayerActionResponse(BaseModel):
-    task_id: str
+    job_id: str
     status: str
     message: str
 
@@ -285,7 +285,7 @@ class DungeonCombatRetreatRequest(BaseModel):
 
 @final
 class DungeonCombatRetreatResponse(BaseModel):
-    task_id: str
+    job_id: str
     status: str
     message: str
 
@@ -319,7 +319,7 @@ class DungeonCombatInitRequest(BaseModel):
 
 @final
 class DungeonCombatInitResponse(BaseModel):
-    task_id: str
+    job_id: str
     status: str
     message: str
 
@@ -340,7 +340,7 @@ class DungeonCombatPlayCardsRequest(BaseModel):
 
 @final
 class DungeonCombatPlayCardsResponse(BaseModel):
-    task_id: str
+    job_id: str
     status: str
     message: str
 
@@ -354,7 +354,7 @@ class DungeonCombatPassTurnRequest(BaseModel):
 
 @final
 class DungeonCombatPassTurnResponse(BaseModel):
-    task_id: str
+    job_id: str
     status: str
     message: str
 
@@ -369,7 +369,7 @@ class DungeonCombatUseConsumableItemRequest(BaseModel):
 
 @final
 class DungeonCombatUseConsumableItemResponse(BaseModel):
-    task_id: str
+    job_id: str
     status: str
     message: str
 
@@ -383,7 +383,7 @@ class DungeonCombatEquipGearItemRequest(BaseModel):
 
 @final
 class DungeonCombatEquipGearItemResponse(BaseModel):
-    task_id: str
+    job_id: str
     status: str
     message: str
 
@@ -401,7 +401,7 @@ class DungeonOpeningInitRequest(BaseModel):
 
 @final
 class DungeonOpeningInitResponse(BaseModel):
-    task_id: str
+    job_id: str
     status: str
     message: str
 
@@ -414,7 +414,7 @@ class DungeonOpeningGenerateCardPoolRequest(BaseModel):
 
 @final
 class DungeonOpeningGenerateCardPoolResponse(BaseModel):
-    task_id: str
+    job_id: str
     status: str
     message: str
 
@@ -429,7 +429,7 @@ class DungeonOpeningPickCardFromPoolRequest(BaseModel):
 
 @final
 class DungeonOpeningPickCardFromPoolResponse(BaseModel):
-    task_id: str
+    job_id: str
     status: str
     message: str
 
@@ -447,7 +447,7 @@ class DungeonCombatDrawCardsRequest(BaseModel):
 
 @final
 class DungeonCombatDrawCardsResponse(BaseModel):
-    task_id: str
+    job_id: str
     status: str
     message: str
 
@@ -509,14 +509,14 @@ class SessionMessageResponse(BaseModel):
 
 @final
 class TaskTriggerResponse(BaseModel):
-    task_id: str
+    job_id: str
     status: str
     message: str
 
 
 @final
 class TasksStatusResponse(BaseModel):
-    tasks: List[TaskRecord]
+    tasks: List[TaskStatusView]
 
 
 ################################################################################################################

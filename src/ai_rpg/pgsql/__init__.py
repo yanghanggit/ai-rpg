@@ -14,7 +14,10 @@ from .card_prototype_operations import (
     list_card_prototype_index,
     get_card_prototype,
 )
+from .task_error import TaskErrorDB
+from .task_error_operations import save_task_error, get_task_error
 from .config import PostgreSQLConfig, postgresql_config
+from .procrastinate_app import procrastinate_app
 
 
 __all__: List[str] = [
@@ -37,4 +40,11 @@ __all__: List[str] = [
     "save_card_prototype",
     "list_card_prototype_index",
     "get_card_prototype",
+    # Task error models
+    "TaskErrorDB",
+    # Task error operations
+    "save_task_error",
+    "get_task_error",
+    # Procrastinate task queue app
+    "procrastinate_app",
 ]

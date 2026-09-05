@@ -24,7 +24,7 @@ async def _submit_craft(
     logger.info(f"{verb}: 提交 user_name={user_name} materials={materials}")
     try:
         resp = await craft_fn(user_name, game_name, materials)
-        await watch_task_until_done(resp.task_id)
+        await watch_task_until_done(resp.job_id)
     except Exception as e:
         logger.error(f"{verb}: 失败 materials={materials} error={e}")
         return f"[bold red]❌ {verb}失败: {e}[/]"

@@ -2,8 +2,6 @@
 副本生命周期 API 路由模块（进入、关卡推进、退出等与具体房间类型无关的流程接口）
 """
 
-import asyncio
-
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from ..game.dbg_game import DBGGame
@@ -15,7 +13,7 @@ from ..models import (
     DungeonExitResponse,
     HomeEnterDungeonRequest,
     HomeEnterDungeonResponse,
-    TaskStatus,
+    BackgroundTaskStatus,
 )
 from .dungeon_advance_action import (
     advance_dungeon,
@@ -206,23 +204,17 @@ async def dungeon_exit(
                     detail="只能在战斗结束后回家",
                 )
 
-    # 创建退出副本后台任务（在锁外创建，让任务在后台独立持锁执行）
-    exit_task = game_server.create_task()
-    asyncio.create_task(
-        execute_exit_dungeon_task(
-            exit_task.task_id,
-            payload.user_name,
-            game_server,
-        )
+    # 在锁外派发退出副本后台任务，让任务在后台独立持锁执行
+    deferred_job_id = await execute_exit_dungeon_task.defer_async(
+        user_name=payload.user_name
     )
-    logger.info(
-        f"📝 创建退出副本任务: task_id={exit_task.task_id}, user={payload.user_name}"
-    )
+    job_id = str(deferred_job_id)
+    logger.info(f"📝 创建退出副本任务: job_id={job_id}, user={payload.user_name}")
 
     # 返回退出副本任务启动成功的响应
     return DungeonExitResponse(
-        task_id=exit_task.task_id,
-        status=TaskStatus.RUNNING.value,
+        job_id=job_id,
+        status=BackgroundTaskStatus.RUNNING.value,
         message="退出副本任务已启动，请通过会话消息查询结果",
     )
 

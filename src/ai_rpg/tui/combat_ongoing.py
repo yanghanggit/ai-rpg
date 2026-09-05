@@ -395,8 +395,8 @@ class CombatOngoingScreen(BaseGameScreen):
         try:
             user_name, game_name, _ = resolve_identity(self.game_client)
             resp = await dungeon_combat_retreat(user_name, game_name)
-            log.write(f"[dim]任务已提交：{resp.task_id}，等待完成...[/]")
-            await watch_task_until_done(resp.task_id)
+            log.write(f"[dim]任务已提交：{resp.job_id}，等待完成...[/]")
+            await watch_task_until_done(resp.job_id)
         except TaskFailedError as e:
             logger.error(f"CombatOngoingScreen._do_retreat: 撤退任务失败 error={e}")
             log.write(f"[bold red]❌ 撤退失败：{e}[/]")
@@ -438,8 +438,8 @@ class CombatOngoingScreen(BaseGameScreen):
         try:
             user_name, game_name, _ = resolve_identity(self.game_client)
             resp = await dungeon_combat_pass_turn(user_name, game_name, actor_name)
-            log.write(f"[dim]任务已提交：{resp.task_id}，等待完成...[/]")
-            await watch_task_until_done(resp.task_id)
+            log.write(f"[dim]任务已提交：{resp.job_id}，等待完成...[/]")
+            await watch_task_until_done(resp.job_id)
         except TaskFailedError as e:
             logger.error(f"CombatOngoingScreen._do_pass_turn: 过牌任务失败 error={e}")
             log.write(f"[bold red]❌ 过牌失败：{e}[/]")

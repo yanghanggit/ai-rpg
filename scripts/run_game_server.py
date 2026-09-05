@@ -1,6 +1,8 @@
+import asyncio
+import contextlib
 import os
 import sys
-from typing import Any, Dict
+from typing import Any, AsyncIterator, Dict
 
 # 将 src 目录添加到模块搜索路径
 sys.path.insert(
@@ -9,11 +11,13 @@ sys.path.insert(
 # 将 scripts 目录添加到模块搜索路径
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+from contextlib import asynccontextmanager
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
 from config import GAME_SERVER_PORT
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from ai_rpg.pgsql import procrastinate_app
 from ai_rpg.services.dungeon_lifecycle_api import (
     dungeon_lifecycle_api_router,
 )
@@ -40,7 +44,23 @@ from ai_rpg.replicate import (
     GENERATED_IMAGES_URL_PREFIX,
 )
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    """在 FastAPI 生命周期内打开 Procrastinate 并嵌入运行 worker（与 GameServer 单例同进程/同事件循环）"""
+    async with procrastinate_app.open_async():
+        worker_task = asyncio.create_task(
+            procrastinate_app.run_worker_async(install_signal_handlers=False)
+        )
+        try:
+            yield
+        finally:
+            worker_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await asyncio.wait_for(worker_task, timeout=10)
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 @app.get(path="/")

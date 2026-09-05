@@ -6,7 +6,6 @@
 与 combat room API 平级设计，开场房间只需一次 process() 调用完成初始化。
 """
 
-import asyncio
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from .game_server_dependencies import CurrentGameServer
@@ -17,7 +16,7 @@ from ..models import (
     DungeonOpeningInitResponse,
     DungeonOpeningPickCardFromPoolRequest,
     DungeonOpeningPickCardFromPoolResponse,
-    TaskStatus,
+    BackgroundTaskStatus,
 )
 from .dungeon_lifecycle_api import _validate_dungeon_prerequisites
 from .dungeon_opening_tasks import (
@@ -82,23 +81,17 @@ async def dungeon_opening_init(
                 detail="开场房间已初始化",
             )
 
-    # 创建开场房间初始化后台任务（在锁外创建，让任务在后台独立持锁执行）
-    opening_init_task = game_server.create_task()
-    asyncio.create_task(
-        execute_opening_room_init_task(
-            opening_init_task.task_id,
-            payload.user_name,
-            game_server,
-        )
+    # 在锁外派发开场房间初始化后台任务，让任务在后台独立持锁执行
+    deferred_job_id = await execute_opening_room_init_task.defer_async(
+        user_name=payload.user_name
     )
-    logger.info(
-        f"📝 创建开场房间初始化任务: task_id={opening_init_task.task_id}, user={payload.user_name}"
-    )
+    job_id = str(deferred_job_id)
+    logger.info(f"📝 创建开场房间初始化任务: job_id={job_id}, user={payload.user_name}")
 
     # 返回开场房间初始化任务启动成功的响应
     return DungeonOpeningInitResponse(
-        task_id=opening_init_task.task_id,
-        status=TaskStatus.RUNNING.value,
+        job_id=job_id,
+        status=BackgroundTaskStatus.RUNNING.value,
         message="开场房间初始化任务已启动，请通过会话消息查询结果",
     )
 
@@ -156,23 +149,17 @@ async def dungeon_opening_generate_card_pool(
                 detail="开场房间尚未初始化（叙事 + 牌库），请先调用开场初始化接口",
             )
 
-    # 创建卡池生成后台任务（在锁外创建，让任务在后台独立持锁执行）
-    generate_card_pool_task = game_server.create_task()
-    asyncio.create_task(
-        execute_generate_card_pool_task(
-            generate_card_pool_task.task_id,
-            payload.user_name,
-            game_server,
-        )
+    # 在锁外派发卡池生成后台任务，让任务在后台独立持锁执行
+    deferred_job_id = await execute_generate_card_pool_task.defer_async(
+        user_name=payload.user_name
     )
-    logger.info(
-        f"📝 创建卡池生成任务: task_id={generate_card_pool_task.task_id}, user={payload.user_name}"
-    )
+    job_id = str(deferred_job_id)
+    logger.info(f"📝 创建卡池生成任务: job_id={job_id}, user={payload.user_name}")
 
     # 返回卡池生成任务启动成功的响应
     return DungeonOpeningGenerateCardPoolResponse(
-        task_id=generate_card_pool_task.task_id,
-        status=TaskStatus.RUNNING.value,
+        job_id=job_id,
+        status=BackgroundTaskStatus.RUNNING.value,
         message="卡池生成任务已启动，请通过会话消息查询结果",
     )
 
@@ -229,25 +216,19 @@ async def dungeon_opening_pick_card_from_pool(
                 detail="开场房间尚未初始化（叙事 + 牌库），请先调用开场初始化接口",
             )
 
-    # 创建挑卡后台任务（在锁外创建，让任务在后台独立持锁执行）
-    pick_card_task = game_server.create_task()
-    asyncio.create_task(
-        execute_pick_card_from_pool_task(
-            pick_card_task.task_id,
-            payload.user_name,
-            payload.actor_name,
-            payload.card_name,
-            game_server,
-        )
+    # 在锁外派发挑卡后台任务，让任务在后台独立持锁执行
+    deferred_job_id = await execute_pick_card_from_pool_task.defer_async(
+        user_name=payload.user_name,
+        actor_name=payload.actor_name,
+        card_name=payload.card_name,
     )
-    logger.info(
-        f"📝 创建挑卡任务: task_id={pick_card_task.task_id}, user={payload.user_name}"
-    )
+    job_id = str(deferred_job_id)
+    logger.info(f"📝 创建挑卡任务: job_id={job_id}, user={payload.user_name}")
 
     # 返回挑卡任务启动成功的响应
     return DungeonOpeningPickCardFromPoolResponse(
-        task_id=pick_card_task.task_id,
-        status=TaskStatus.RUNNING.value,
+        job_id=job_id,
+        status=BackgroundTaskStatus.RUNNING.value,
         message="挑卡任务已启动，请通过会话消息查询结果",
     )
 

@@ -26,16 +26,20 @@ test:
 	uv run pytest tests/ -v
 
 # 运行类型检查
+# 注意：scripts/ 与 src/ai_rpg 共享同一套 ai_rpg.* 模块命名空间，
+# 若 4 个目录共用一个 .mypy_cache 增量缓存，mypy 1.13 在写缓存时会
+# 因跨目录模块名冲突而崩溃（write_cache 抛 AttributeError）。
+# 因此每个目录使用独立的 --cache-dir，互不干扰。
 lint:
 	@echo "🔍 运行类型检查..."
 	@echo "📁 检查 scripts/ 目录..."
-	uv run mypy --strict scripts/
+	uv run mypy --strict --cache-dir=.mypy_cache/scripts scripts/
 	@echo "📁 检查 src/ 目录..."
-	uv run mypy --strict src/
+	uv run mypy --strict --cache-dir=.mypy_cache/src src/
 	@echo "📁 检查 tests/ 目录..."
-	uv run mypy --strict tests/
+	uv run mypy --strict --cache-dir=.mypy_cache/tests tests/
 	@echo "📁 检查 demo/ 目录..."
-	uv run mypy --strict demo/
+	uv run mypy --strict --cache-dir=.mypy_cache/demo demo/
 
 # 格式化代码
 format:

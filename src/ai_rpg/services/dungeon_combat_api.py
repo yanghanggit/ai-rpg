@@ -2,7 +2,6 @@
 副本战斗玩法服务模块（战斗房间内的专属接口）
 """
 
-import asyncio
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from .game_server_dependencies import CurrentGameServer
@@ -24,7 +23,7 @@ from ..models import (
     DungeonCombatCollectLootRequest,
     DungeonCombatCollectLootResponse,
     MonsterComponent,
-    TaskStatus,
+    BackgroundTaskStatus,
 )
 from .dungeon_lifecycle_api import _validate_dungeon_prerequisites
 from .dungeon_combat_actions import (
@@ -110,23 +109,17 @@ async def dungeon_combat_retreat(
         # 激活撤退动作成功
         logger.info(f"玩家 {payload.user_name} 撤退动作激活成功: {message}")
 
-    # 在锁外创建后台 task，让任务在后台独立持锁执行
-    retreat_task = game_server.create_task()
-    asyncio.create_task(
-        execute_retreat_task(
-            retreat_task.task_id,
-            payload.user_name,
-            game_server,
-        )
+    # 在锁外派发后台任务，让任务在后台独立持锁执行
+    deferred_job_id = await execute_retreat_task.defer_async(
+        user_name=payload.user_name
     )
-    logger.info(
-        f"📝 创建撤退任务: task_id={retreat_task.task_id}, user={payload.user_name}"
-    )
+    job_id = str(deferred_job_id)
+    logger.info(f"📝 创建撤退任务: job_id={job_id}, user={payload.user_name}")
 
     # 返回撤退任务启动成功的响应
     return DungeonCombatRetreatResponse(
-        task_id=retreat_task.task_id,
-        status=TaskStatus.RUNNING.value,
+        job_id=job_id,
+        status=BackgroundTaskStatus.RUNNING.value,
         message="撤退任务已启动，请通过会话消息查询结果",
     )
 
@@ -181,23 +174,17 @@ async def dungeon_combat_init(
                 detail="战斗未处于开始阶段",
             )
 
-    # 创建战斗初始化后台任务（在锁外创建，让任务在后台独立持锁执行）
-    init_combat_task = game_server.create_task()
-    asyncio.create_task(
-        execute_init_combat_task(
-            init_combat_task.task_id,
-            payload.user_name,
-            game_server,
-        )
+    # 派发战斗初始化后台任务（在锁外派发，让任务在后台独立持锁执行）
+    deferred_job_id = await execute_init_combat_task.defer_async(
+        user_name=payload.user_name
     )
-    logger.info(
-        f"📝 创建战斗初始化任务: task_id={init_combat_task.task_id}, user={payload.user_name}"
-    )
+    job_id = str(deferred_job_id)
+    logger.info(f"📝 创建战斗初始化任务: job_id={job_id}, user={payload.user_name}")
 
     # 返回战斗初始化任务启动成功的响应
     return DungeonCombatInitResponse(
-        task_id=init_combat_task.task_id,
-        status=TaskStatus.RUNNING.value,
+        job_id=job_id,
+        status=BackgroundTaskStatus.RUNNING.value,
         message="战斗初始化任务已启动，请通过会话消息查询结果",
     )
 
@@ -319,23 +306,17 @@ async def dungeon_combat_draw_cards(
                 detail=f"激活全员抽牌动作失败: {message}",
             )
 
-    # 创建后台任务（在锁外创建，让任务在后台独立持锁执行）
-    draw_task = game_server.create_task()
-    asyncio.create_task(
-        execute_draw_cards_task(
-            draw_task.task_id,
-            payload.user_name,
-            game_server,
-        )
+    # 派发后台任务（在锁外派发，让任务在后台独立持锁执行）
+    deferred_job_id = await execute_draw_cards_task.defer_async(
+        user_name=payload.user_name
     )
-    logger.info(
-        f"📝 创建全员抽卡任务: task_id={draw_task.task_id}, user={payload.user_name}"
-    )
+    job_id = str(deferred_job_id)
+    logger.info(f"📝 创建全员抽卡任务: job_id={job_id}, user={payload.user_name}")
 
     # 返回全员抽卡任务启动成功的响应
     return DungeonCombatDrawCardsResponse(
-        task_id=draw_task.task_id,
-        status=TaskStatus.RUNNING.value,
+        job_id=job_id,
+        status=BackgroundTaskStatus.RUNNING.value,
         message="全员抽卡任务已启动，请通过会话消息查询结果",
     )
 
@@ -419,24 +400,18 @@ async def dungeon_combat_play_cards(
                 detail=f"出牌失败: {message}",
             )
 
-    # 在锁外创建后台 task，让任务在后台独立持锁执行
-    play_cards_task = game_server.create_task()
-    asyncio.create_task(
-        execute_play_cards_task(
-            play_cards_task.task_id,
-            payload.user_name,
-            game_server,
-        )
+    # 在锁外派发后台任务，让任务在后台独立持锁执行
+    deferred_job_id = await execute_play_cards_task.defer_async(
+        user_name=payload.user_name
     )
+    job_id = str(deferred_job_id)
 
-    logger.info(
-        f"📝 创建出牌后台任务: task_id={play_cards_task.task_id}, user={payload.user_name}"
-    )
+    logger.info(f"📝 创建出牌后台任务: job_id={job_id}, user={payload.user_name}")
 
     # 返回出牌任务启动成功的响应
     return DungeonCombatPlayCardsResponse(
-        task_id=play_cards_task.task_id,
-        status=TaskStatus.RUNNING.value,
+        job_id=job_id,
+        status=BackgroundTaskStatus.RUNNING.value,
         message="出牌任务已启动，请通过会话消息查询结果",
     )
 
@@ -510,24 +485,18 @@ async def dungeon_combat_pass_turn(
                 detail=f"过牌失败: {message}",
             )
 
-    # 在锁外创建后台 task，让任务在后台独立持锁执行
-    pass_turn_task = game_server.create_task()
-    asyncio.create_task(
-        execute_pass_turn_task(
-            pass_turn_task.task_id,
-            payload.user_name,
-            game_server,
-        )
+    # 在锁外派发后台任务，让任务在后台独立持锁执行
+    deferred_job_id = await execute_pass_turn_task.defer_async(
+        user_name=payload.user_name
     )
+    job_id = str(deferred_job_id)
 
-    logger.info(
-        f"📝 创建过牌后台任务: task_id={pass_turn_task.task_id}, user={payload.user_name}"
-    )
+    logger.info(f"📝 创建过牌后台任务: job_id={job_id}, user={payload.user_name}")
 
     # 返回过牌任务启动成功的响应
     return DungeonCombatPassTurnResponse(
-        task_id=pass_turn_task.task_id,
-        status=TaskStatus.RUNNING.value,
+        job_id=job_id,
+        status=BackgroundTaskStatus.RUNNING.value,
         message="过牌任务已启动，请通过会话消息查询结果",
     )
 
@@ -610,24 +579,18 @@ async def dungeon_combat_use_consumable(
                 detail=f"使用消耗品失败: {message}",
             )
 
-    # 在锁外创建后台 task，让任务在后台独立持锁执行
-    use_consumable_task = game_server.create_task()
-    asyncio.create_task(
-        execute_use_consumable_task(
-            use_consumable_task.task_id,
-            payload.user_name,
-            game_server,
-        )
+    # 在锁外派发后台任务，让任务在后台独立持锁执行
+    deferred_job_id = await execute_use_consumable_task.defer_async(
+        user_name=payload.user_name
     )
+    job_id = str(deferred_job_id)
 
-    logger.info(
-        f"📝 创建使用消耗品后台任务: task_id={use_consumable_task.task_id}, user={payload.user_name}"
-    )
+    logger.info(f"📝 创建使用消耗品后台任务: job_id={job_id}, user={payload.user_name}")
 
     # 返回使用消耗品任务启动成功的响应
     return DungeonCombatUseConsumableItemResponse(
-        task_id=use_consumable_task.task_id,
-        status=TaskStatus.RUNNING.value,
+        job_id=job_id,
+        status=BackgroundTaskStatus.RUNNING.value,
         message="使用消耗品任务已启动，请通过会话消息查询结果",
     )
 
@@ -706,24 +669,18 @@ async def dungeon_combat_equip_gear(
                 detail=f"使用装备失败: {message}",
             )
 
-    # 在锁外创建后台 task，让任务在后台独立持锁执行
-    equip_gear_task = game_server.create_task()
-    asyncio.create_task(
-        execute_equip_gear_task(
-            equip_gear_task.task_id,
-            payload.user_name,
-            game_server,
-        )
+    # 在锁外派发后台任务，让任务在后台独立持锁执行
+    deferred_job_id = await execute_equip_gear_task.defer_async(
+        user_name=payload.user_name
     )
+    job_id = str(deferred_job_id)
 
-    logger.info(
-        f"📝 创建使用装备后台任务: task_id={equip_gear_task.task_id}, user={payload.user_name}"
-    )
+    logger.info(f"📝 创建使用装备后台任务: job_id={job_id}, user={payload.user_name}")
 
     # 返回使用装备任务启动成功的响应
     return DungeonCombatEquipGearItemResponse(
-        task_id=equip_gear_task.task_id,
-        status=TaskStatus.RUNNING.value,
+        job_id=job_id,
+        status=BackgroundTaskStatus.RUNNING.value,
         message="使用装备任务已启动，请通过会话消息查询结果",
     )
 

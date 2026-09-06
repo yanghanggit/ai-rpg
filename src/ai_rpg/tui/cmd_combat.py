@@ -7,6 +7,7 @@ from loguru import logger
 
 from ..models import (
     CharacterStatsComponent,
+    Combat,
     CombatRoom,
     CombatState,
     DeathComponent,
@@ -29,7 +30,7 @@ from .combat_data_access import (
     is_mock_mode,
     resolve_identity,
 )
-from .mock_data import set_mock_combat_state
+from .mock_data import reset_mock_combat_rounds, set_mock_combat_state
 from .server_client import (
     TaskFailedError,
     dungeon_combat_init,
@@ -38,57 +39,55 @@ from .server_client import (
 from .utils import display_name, render_card, render_item
 
 
-async def build_combat_info_text(game_client: GameClient) -> str:
-    """战斗宏观状态 + 场景角色有效属性，返回可写入正文区的富文本字符串。"""
+async def load_combat_overview(
+    game_client: GameClient,
+) -> Tuple[Combat, str, List[str], List[str]]:
+    """加载并渲染「战斗宏观状态」与「场景角色有效属性（含死亡标记）」。
+
+    返回 (combat, stage_name, macro_lines, actor_lines)。两个 /info 页面共用，
+    保证宏观信息与参战角色属性展示逻辑一致。
+    """
     _, _, player_actor = resolve_identity(game_client)
-    logger.info(
-        f"build_combat_info_text: mock={is_mock_mode(game_client)} "
-        f"actor={player_actor}"
+
+    room_resp = await get_dungeon_room(game_client)
+    room = room_resp.room
+    assert isinstance(room, CombatRoom), f"当前房间不是战斗房间：type={room.type}"
+    combat = room.combat
+
+    stages_resp = await get_stages_state(game_client)
+    stage_name = find_stage_of_actor(stages_resp.mapping, player_actor)
+    assert (
+        stage_name is not None
+    ), f"未能在场景映射中找到玩家角色所在场景：actor={player_actor}"
+    participant_names = list(stages_resp.mapping[stage_name])
+    entity_names = [stage_name, *participant_names]
+
+    entities_resp = await get_entities_details(game_client, entity_names)
+
+    macro_lines: List[str] = []
+    macro_lines.append(
+        "[bold yellow]── 战斗宏观状态 ─────────────────────────────────[/]"
     )
-    try:
-        room_resp = await get_dungeon_room(game_client)
-        room = room_resp.room
-        assert isinstance(room, CombatRoom), f"当前房间不是战斗房间：type={room.type}"
-        combat = room.combat
+    macro_lines.append(f"  名称：   [bold]{combat.name}[/]")
+    macro_lines.append(f"  状态：   [cyan]{combat.state.name}[/]")
+    macro_lines.append(f"  结果：   [magenta]{combat.result.name}[/]")
+    macro_lines.append(
+        f"  已撤退： {'[red]是[/]' if combat.retreated else '[green]否[/]'}"
+    )
 
-        stages_resp = await get_stages_state(game_client)
-        stage_name = find_stage_of_actor(stages_resp.mapping, player_actor)
-        assert (
-            stage_name is not None
-        ), f"未能在场景映射中找到玩家角色所在场景：actor={player_actor}"
-        participant_names = list(stages_resp.mapping[stage_name])
-        entity_names = [stage_name, *participant_names]
-
-        entities_resp = await get_entities_details(game_client, entity_names)
-    except Exception as e:
-        logger.error(f"build_combat_info_text: 加载失败 error={e}")
-        return f"[bold red]❌ 加载战斗信息失败: {e}[/]"
-
-    lines: List[str] = []
-    lines.append("[bold yellow]── 战斗宏观状态 ─────────────────────────────────[/]")
-    lines.append(f"  名称：   [bold]{combat.name}[/]")
-    lines.append(f"  状态：   [cyan]{combat.state.name}[/]")
-    lines.append(f"  结果：   [magenta]{combat.result.name}[/]")
-    lines.append(f"  已撤退： {'[red]是[/]' if combat.retreated else '[green]否[/]'}")
-    lines.append("")
-
-    if combat.state == CombatState.INITIALIZATION:
-        lines.append("[dim]下一步：输入 /start 开始战斗[/]")
-        lines.append("")
-    elif combat.state == CombatState.NONE:
-        lines.append("[dim]战斗尚未初始化（NONE）[/]")
-        lines.append("")
-
-    lines.append(f"[bold yellow]── 场景：{display_name(stage_name)} ─────────────[/]")
+    actor_lines: List[str] = []
+    actor_lines.append(
+        f"[bold yellow]── 场景：{display_name(stage_name)} ─────────────[/]"
+    )
 
     actor_entities = [e for e in entities_resp.entities if e.name != stage_name]
     if not actor_entities:
-        lines.append("  [dim]（场景内暂无角色）[/]")
+        actor_lines.append("  [dim]（场景内暂无角色）[/]")
     else:
         for entity in actor_entities:
             stats_data = find_component_data(entity, CharacterStatsComponent.__name__)
             if stats_data is None:
-                lines.append(
+                actor_lines.append(
                     f"  [dim]{display_name(entity.name)}：缺少属性组件，跳过[/]"
                 )
                 continue
@@ -111,8 +110,29 @@ async def build_combat_info_text(game_client: GameClient) -> str:
             )
             if hand_component is not None:
                 line += f"  手牌:{len(hand_component.cards)}"
-            lines.append(line)
+            actor_lines.append(line)
 
+    return combat, stage_name, macro_lines, actor_lines
+
+
+async def build_combat_info_text(game_client: GameClient) -> str:
+    """战斗宏观状态 + 场景角色有效属性，返回可写入正文区的富文本字符串。"""
+    logger.info(f"build_combat_info_text: mock={is_mock_mode(game_client)}")
+    try:
+        combat, _, macro_lines, actor_lines = await load_combat_overview(game_client)
+    except Exception as e:
+        logger.error(f"build_combat_info_text: 加载失败 error={e}")
+        return f"[bold red]❌ 加载战斗信息失败: {e}[/]"
+
+    lines: List[str] = [*macro_lines]
+    if combat.state == CombatState.INITIALIZATION:
+        lines.append("")
+        lines.append("[dim]下一步：输入 /begin 开始执行回合[/]")
+    elif combat.state == CombatState.NONE:
+        lines.append("")
+        lines.append("[dim]战斗尚未初始化（NONE）[/]")
+    lines.append("")
+    lines.extend(actor_lines)
     return "\n".join(lines)
 
 
@@ -224,6 +244,7 @@ async def start_combat(game_client: GameClient) -> Tuple[bool, str]:
     if is_mock_mode(game_client):
         logger.info("start_combat: mock 模式，直接切换战斗状态为 ONGOING")
         set_mock_combat_state(CombatState.ONGOING)
+        reset_mock_combat_rounds()
         return True, "[bold green]✅ 战斗初始化完成（mock：状态已置为 ONGOING）[/]"
 
     user_name, game_name, _ = resolve_identity(game_client)

@@ -1,7 +1,7 @@
-"""战斗初始化 Screen（CombatInitScreen）
+"""战斗回合开始 Screen（CombatRoundStartScreen）
 
-对应 CombatState.NONE / INITIALIZATION 阶段：正文区 + 输入区，支持斜杠命令。
-开始执行回合（/begin）成功后切换到战斗主页面（待开发）。
+对应 CombatState.ONGOING 下「开启新回合 + 抓牌」阶段：正文区 + 输入区，支持斜杠命令。
+抓牌（/draw）成功后停留本页，可用 /info /hand /inspect 等查看最新状态。
 """
 
 from typing import Dict, List, Optional, Tuple
@@ -14,31 +14,37 @@ from textual.widgets import Input, Static, TextArea
 
 from .base import BaseGameScreen
 from .cmd_combat import (
-    build_combat_info_text,
     build_deck_text,
     build_entity_inspect_text,
     build_inventory_text,
-    start_combat,
+)
+from .cmd_round import (
+    build_hand_text,
+    build_round_detail_text,
+    build_round_start_info_text,
+    draw_cards,
 )
 from .combat_data_access import is_mock_mode
 from .server_client import fetch_session_messages, stream_session_messages
 from .utils import format_agent_event, strip_markup
 
 INTRO_TEXT = """\
-[bold cyan]── 战斗初始化（INITIALIZATION） ──[/]
-[dim]输入 [bold]/[/] 查看可用命令。[/]
+[bold cyan]── 开启新回合（ONGOING） ──[/]
+[dim]输入 [bold]/[/] 查看可用命令；输入 [bold]/draw[/] 开新回合并抓牌。[/]
 """
 
 # 命令定义：(完整命令, 简写, 说明)，顺序即 /help 展示顺序
 COMMAND_DEFS: List[Tuple[str, str, str]] = [
     # 查询（只读）
-    ("info", "i", "战斗宏观状态 + 场景角色有效属性"),
+    ("info", "i", "战斗宏观状态 + 回合/抓牌状态"),
+    ("hand", "hd", "双方手牌 + 能量 + 抽牌/弃牌/消耗堆"),
     ("deck", "dk", "查阅牌组（双方）"),
     ("inventory", "inv", "查阅我方背包"),
     ("inspect", "insp", "查阅指定实体：/inspect @实体名"),
     ("session", "ss", "查看消息（可带 sequence_id）"),
+    ("round", "r", "查阅指定回合完整信息：/round <回合序号>"),
     # 改变
-    ("begin", "b", "开始执行回合（INITIALIZATION → ONGOING）"),
+    ("draw", "d", "抓牌（开启新回合 + 填手牌）"),
     # 通用命令（固定在底部）
     ("help", "h", "显示本帮助"),
     ("clear", "c", "清空正文区"),
@@ -46,7 +52,7 @@ COMMAND_DEFS: List[Tuple[str, str, str]] = [
 ]
 
 # 命令列表展示时，在这些命令前插入空行作为分组分隔
-GROUP_BREAK_BEFORE = {"begin", "help"}
+GROUP_BREAK_BEFORE = {"draw", "help"}
 
 # 命令名（完整或简写）→ 完整命令名
 COMMAND_ALIASES: Dict[str, str] = {
@@ -68,11 +74,11 @@ def _build_help_text() -> str:
 HELP_TEXT = _build_help_text()
 
 
-class CombatInitScreen(BaseGameScreen):
-    """战斗初始化 Screen：NONE / INITIALIZATION 阶段，正文区累加展示信息。"""
+class CombatRoundStartScreen(BaseGameScreen):
+    """战斗 ONGOING 下「开启新回合 + 抓牌」阶段 Screen。"""
 
     CSS = """
-    CombatInitScreen {
+    CombatRoundStartScreen {
         align: center middle;
     }
 
@@ -180,6 +186,9 @@ class CombatInitScreen(BaseGameScreen):
     def _cmd_info(self, args: str) -> None:
         self._do_info()
 
+    def _cmd_hand(self, args: str) -> None:
+        self._do_hand()
+
     def _cmd_deck(self, args: str) -> None:
         self._do_deck()
 
@@ -200,14 +209,31 @@ class CombatInitScreen(BaseGameScreen):
     def _cmd_session(self, args: str) -> None:
         self._do_view_messages(args)
 
-    def _cmd_begin(self, args: str) -> None:
-        self._do_begin()
+    def _cmd_round(self, args: str) -> None:
+        raw = args.strip()
+        if not raw:
+            self._write("[yellow]用法：/round <回合序号>[/]")
+            return
+        try:
+            round_number = int(raw)
+        except ValueError:
+            self._write(f"[bold red]❌ 无效的回合序号：{raw}，请输入数字。[/]")
+            return
+        self._do_round(round_number)
+
+    def _cmd_draw(self, args: str) -> None:
+        self._do_draw()
 
     # ── 后台任务 ──
 
     @work
     async def _do_info(self) -> None:
-        text = await build_combat_info_text(self.game_client)
+        text = await build_round_start_info_text(self.game_client)
+        self._write(text)
+
+    @work
+    async def _do_hand(self) -> None:
+        text = await build_hand_text(self.game_client)
         self._write(text)
 
     @work
@@ -226,16 +252,19 @@ class CombatInitScreen(BaseGameScreen):
         self._write(text)
 
     @work
-    async def _do_begin(self) -> None:
-        self._write(
-            "[bold yellow]── 开始执行回合 ──────────────────────────────────────[/]"
-        )
-        self._write("[dim]▶ 正在初始化战斗...[/]")
-        ok, text = await start_combat(self.game_client)
+    async def _do_round(self, round_number: int) -> None:
+        text = await build_round_detail_text(self.game_client, round_number)
         self._write(text)
-        if ok:
-            # TODO: 战斗主页面（ONGOING 回合执行主页面）尚未开发，后续切换到新的 Screen。
-            self._write("[dim]（战斗主页面待开发，暂停留本页。）[/]")
+
+    @work
+    async def _do_draw(self) -> None:
+        self._write(
+            "[bold yellow]── 抓牌（开启新回合） ──────────────────────────────────────[/]"
+        )
+        self._write("[dim]▶ 正在抓牌...[/]")
+        ok, text = await draw_cards(self.game_client)
+        self._write(text)
+        # 成功后停留本页，用户可用 /info /hand /inspect 等查看最新状态
 
     @work
     async def _do_view_messages(self, raw: str) -> None:

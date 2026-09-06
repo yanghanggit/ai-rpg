@@ -7,7 +7,7 @@ EntitiesDetailsResponse）严格一致，均通过真实 Pydantic 模型构造�
 保证 schema 变化时能第一时间在此处报错。
 """
 
-from typing import Dict, Final, List, Optional
+from typing import Dict, Final, List, Optional, Tuple
 
 from ..models import (
     Actor as DungeonActor,
@@ -49,6 +49,7 @@ from ..models import (
     PartyMemberComponent,
     PlayerComponent,
     Round,
+    RoundStatsComponent,
     StageComponent,
     StagesStateResponse,
     StageType,
@@ -80,6 +81,10 @@ MOCK_NEXT_STAGE_NAME: Final[str] = "回廊-副本-次关"
 
 # ── 可变 mock 战斗状态（仅开发调试用：模拟服务端状态推进，例如确认开始战斗后置为 ONGOING）──
 _mock_combat_state: CombatState = CombatState.INITIALIZATION
+
+# ── 可变 mock 战斗回合列表（仅开发调试用：模拟 CombatRoundStartSystem 创建的新回合，
+# 作为 build_mock_dungeon_room_response 中 combat.rounds 的唯一数据源）──
+_mock_rounds: List[Round] = []
 
 # ── 可变 mock 副本房间索引（仅开发调试用：模拟"进入下一关"后 current_room_index 前进）──
 _mock_current_room_index: int = 0
@@ -178,6 +183,40 @@ def get_mock_current_room_index() -> int:
     return _mock_current_room_index
 
 
+def reset_mock_combat_rounds() -> None:
+    """开发调试用：清空 mock 战斗回合（进入 ONGOING 但尚未开新回合时调用）。"""
+    _mock_rounds.clear()
+
+
+def simulate_mock_draw_cards() -> Tuple[bool, str]:
+    """开发调试用：模拟 `/draw`（DrawCardsAction → CombatRoundStartSystem 创建
+    新回合 + DrawCardsActionSystem 填手牌并置 draw_completed）。"""
+    if _mock_combat_state != CombatState.ONGOING:
+        return False, "[yellow]当前战斗未在 ONGOING 状态，无法抓牌。[/]"
+
+    latest = _mock_rounds[-1] if _mock_rounds else None
+    if latest is not None and not latest.is_completed and latest.draw_completed:
+        return False, "[yellow]本回合已抽牌，无法重复抽牌。[/]"
+
+    _mock_rounds.append(
+        Round(
+            completed_actors=[],
+            action_order=[
+                MOCK_ACTOR_NAME,
+                MOCK_TEAMMATE_NAME,
+                MOCK_MONSTER_1_NAME,
+                MOCK_MONSTER_2_NAME,
+            ],
+            current_actor=MOCK_ACTOR_NAME,
+            is_completed=False,
+            draw_completed=True,
+        )
+    )
+    return True, (
+        f"[bold green]✅ 已开新回合并抓牌完成（第 {len(_mock_rounds)} 回合）。[/]"
+    )
+
+
 ###############################################################################################################################################
 def _mock_dungeon_actor(
     name: str, actor_type: ActorType, stats: CharacterStats
@@ -231,20 +270,7 @@ def build_mock_dungeon_room_response() -> DungeonRoomResponse:
         state=_mock_combat_state,
         result=CombatResult.NONE,
         retreated=False,
-        rounds=[
-            Round(
-                completed_actors=[],
-                action_order=[
-                    MOCK_ACTOR_NAME,
-                    MOCK_TEAMMATE_NAME,
-                    MOCK_MONSTER_1_NAME,
-                    MOCK_MONSTER_2_NAME,
-                ],
-                current_actor=MOCK_ACTOR_NAME,
-                is_completed=False,
-                draw_completed=True,
-            )
-        ],
+        rounds=list(_mock_rounds),
     )
 
     room = CombatRoom(stage=stage, combat=combat, image=GeneratedImage())
@@ -387,6 +413,29 @@ def _appearance_and_costume_components(
 
 
 ###############################################################################################################################################
+def _mock_has_round() -> bool:
+    """是否已存在战斗回合（CombatRoundStartSystem 已创建新回合）。"""
+    return bool(_mock_rounds)
+
+
+def _mock_has_drawn() -> bool:
+    """本回合是否已抓牌（DrawCardsActionSystem 已填手牌并置 draw_completed）。"""
+    return bool(_mock_rounds) and _mock_rounds[-1].draw_completed
+
+
+def _round_stats_components(name: str) -> List[ComponentSerialization]:
+    """有回合时给存活角色挂 RoundStatsComponent（energy=2）。"""
+    if not _mock_has_round():
+        return []
+    return [
+        ComponentSerialization(
+            name=RoundStatsComponent.__name__,
+            data=RoundStatsComponent(name=name, energy=2).model_dump(),
+        ),
+    ]
+
+
+###############################################################################################################################################
 def _ongoing_battle_pile_components(
     name: str,
     hand_cards: List[Card],
@@ -394,11 +443,10 @@ def _ongoing_battle_pile_components(
     exhaust_cards: List[Card],
     discard_cards: List[Card],
 ) -> List[ComponentSerialization]:
-    """构造 ONGOING 阶段才存在的手牌/抽牌堆/消耗堆/弃牌堆组件。
+    """构造抓牌后才存在的手牌/抽牌堆/消耗堆/弃牌堆组件。
 
-    INITIALIZATION 阶段返回空列表，与真实 ECS 行为一致（这些子堆仅在
-    CombatRoundInitSystem/DeckGenerationSystem 等战斗内系统运行后才会创建）。"""
-    if _mock_combat_state != CombatState.ONGOING:
+    未抓牌（尚无回合 / 回合未抽牌）时返回空列表，与真实 ECS 行为一致。"""
+    if not _mock_has_drawn():
         return []
     return [
         ComponentSerialization(
@@ -465,6 +513,7 @@ def build_mock_entities_details_response(
                     name=CharacterStatsComponent.__name__,
                     data=CharacterStatsComponent(name=name, stats=stats).model_dump(),
                 ),
+                *_round_stats_components(name),
                 *role_components,
             ],
         )

@@ -9,25 +9,30 @@
 
 开发用（跳过登录直接进入指定页面）：
     uv run python scripts/run_tui_client.py --server-host <HOST> --server-port <PORT> \\
-        --dev-screen combat-init | combat-post-combat | wear-costume
+        --dev-screen combat-init | combat-round-start | combat-post-combat | wear-costume
 """
 
-import sys
 import os
+import sys
 from datetime import datetime
 from typing import Optional, Type
-from textual_serve.server import Server
+
 import click
-from loguru import logger
 from config import LOGS_DIR
-from ai_rpg.tui import GameClient
-from ai_rpg.tui.config import server_config
-from ai_rpg.tui.launch import LaunchScreen
-from ai_rpg.tui.combat_init import CombatInitScreen
-from ai_rpg.tui.combat_post_combat import CombatPostCombatScreen
+from loguru import logger
 
 # from ai_rpg.tui.home_wear_costume import HomeWearCostumeScreen
 from textual.screen import Screen
+from textual_serve.server import Server
+
+from ai_rpg.models import CombatState
+from ai_rpg.tui import GameClient
+from ai_rpg.tui.combat_init import CombatInitScreen
+from ai_rpg.tui.combat_post_combat import CombatPostCombatScreen
+from ai_rpg.tui.combat_round_start import CombatRoundStartScreen
+from ai_rpg.tui.config import server_config
+from ai_rpg.tui.launch import LaunchScreen
+from ai_rpg.tui.mock_data import reset_mock_combat_rounds, set_mock_combat_state
 
 # PyInstaller frozen bundle 检测：打包后 sys.frozen = True
 _IS_FROZEN: bool = getattr(sys, "frozen", False)
@@ -81,9 +86,11 @@ logger.add(
 )
 @click.option(
     "--dev-screen",
-    type=click.Choice(["combat-init", "combat-post-combat", "wear-costume"]),
+    type=click.Choice(
+        ["combat-init", "combat-round-start", "combat-post-combat", "wear-costume"]
+    ),
     default=None,
-    help="[开发用] 跳过登录流程，启动后直接进入指定页面（combat-init / combat-post-combat）",
+    help="[开发用] 跳过登录流程，启动后直接进入指定页面（combat-init / combat-round-start / combat-post-combat）",
 )
 def main(
     server_host: str,
@@ -126,6 +133,11 @@ def main(
             launch_screen = CombatPostCombatScreen
         elif dev_screen == "combat-init":
             launch_screen = CombatInitScreen
+        elif dev_screen == "combat-round-start":
+            launch_screen = CombatRoundStartScreen
+            # mock 预置：本页语义为 ONGOING 下的「开启新回合」，且尚未开过回合
+            set_mock_combat_state(CombatState.ONGOING)
+            reset_mock_combat_rounds()
         # elif dev_screen == "wear-costume":
         #     launch_screen = HomeWearCostumeScreen
         else:

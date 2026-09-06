@@ -9,7 +9,7 @@
 
 开发用（跳过登录直接进入指定页面）：
     uv run python scripts/run_tui_client.py --server-host <HOST> --server-port <PORT> \\
-        --dev-screen combat-init | combat-round-start | combat-post-combat | wear-costume
+        --dev-screen combat-init | combat-round-start | combat-turn-actor | combat-post | wear-costume
 """
 
 import os
@@ -28,12 +28,13 @@ from textual_serve.server import Server
 from ai_rpg.models import CombatState
 from ai_rpg.tui import GameClient
 from ai_rpg.tui.combat_init import CombatInitScreen
-from ai_rpg.tui.combat_post_combat import CombatPostCombatScreen
+from ai_rpg.tui.combat_post import CombatPostScreen
 from ai_rpg.tui.combat_round_start import CombatRoundStartScreen
 from ai_rpg.tui.combat_turn_actor import CombatTurnActorScreen
 from ai_rpg.tui.config import server_config
 from ai_rpg.tui.launch import LaunchScreen
 from ai_rpg.tui.mock_data import (
+    prepare_mock_post_combat,
     reset_mock_combat_rounds,
     set_mock_combat_state,
     simulate_mock_draw_cards,
@@ -96,12 +97,12 @@ logger.add(
             "combat-init",
             "combat-round-start",
             "combat-turn-actor",
-            "combat-post-combat",
+            "combat-post",
             "wear-costume",
         ]
     ),
     default=None,
-    help="[开发用] 跳过登录流程，启动后直接进入指定页面（combat-init / combat-round-start / combat-turn-actor / combat-post-combat）",
+    help="[开发用] 跳过登录流程，启动后直接进入指定页面（combat-init / combat-round-start / combat-turn-actor / combat-post）",
 )
 def main(
     server_host: str,
@@ -140,8 +141,9 @@ def main(
 
         # 分叉逻辑。
         launch_screen: Type[Screen[None]]
-        if dev_screen == "combat-post-combat":
-            launch_screen = CombatPostCombatScreen
+        if dev_screen == "combat-post":
+            launch_screen = CombatPostScreen
+            prepare_mock_post_combat()
         elif dev_screen == "combat-init":
             launch_screen = CombatInitScreen
         elif dev_screen == "combat-round-start":

@@ -82,12 +82,38 @@ MOCK_NEXT_STAGE_NAME: Final[str] = "回廊-副本-次关"
 # ── 可变 mock 战斗状态（仅开发调试用：模拟服务端状态推进，例如确认开始战斗后置为 ONGOING）──
 _mock_combat_state: CombatState = CombatState.INITIALIZATION
 
+# ── 可变 mock 战斗结果（仅开发调试用：POST_COMBAT 结算态下展示胜负结果）──
+_mock_combat_result: CombatResult = CombatResult.NONE
+
 # ── 可变 mock 战斗回合列表（仅开发调试用：模拟 CombatRoundStartSystem 创建的新回合，
 # 作为 build_mock_dungeon_room_response 中 combat.rounds 的唯一数据源）──
 _mock_rounds: List[Round] = []
 
 # ── 可变 mock 副本房间索引（仅开发调试用：模拟"进入下一关"后 current_room_index 前进）──
 _mock_current_room_index: int = 0
+
+# ── 可变 mock 背包 / 战利品（仅开发调试用：模拟 collect_loot 把战利品转入背包）──
+_mock_inventory_items: List[AnyItem] = [
+    ConsumableItem(name="治疗药水", description="恢复少量生命值。"),
+    ConsumableItem(name="力量药剂", description="短暂提升攻击力。"),
+    GearItem(
+        name="淬炼长剑",
+        description="一把普通但锐利的长剑，适合新手冒险者。",
+        cards=[
+            Card(
+                name="淬炼长剑",
+                description="一把普通但锐利的长剑，适合新手冒险者。",
+                cost=1,
+                damage=5,
+            ),
+        ],
+    ),
+]
+
+_mock_loot_items: List[AnyItem] = [
+    MaterialItem(name="哥布林牙", description="哥布林掉落的牙齿，可用于合成。"),
+    MaterialItem(name="哥布林皮", description="哥布林掉落的皮革，可用于合成。"),
+]
 
 # ── 可变 mock 时装穿戴状态（仅开发调试用：模拟「穿戴时装」指令的储物箱 ⇄ 已穿戴状态转移，
 # 初始值与「艾伦已穿戴旅者披风 / 储物箱持有学者长袍与沙丘游侠斗篷」这一固定叙事保持一致）──
@@ -171,6 +197,16 @@ def set_mock_combat_state(state: CombatState) -> None:
 
 def get_mock_combat_state() -> CombatState:
     return _mock_combat_state
+
+
+def set_mock_combat_result(result: CombatResult) -> None:
+    """开发调试用：切换 mock 战斗结果（如 POST_COMBAT 结算态下置为 WIN）。"""
+    global _mock_combat_result
+    _mock_combat_result = result
+
+
+def get_mock_combat_result() -> CombatResult:
+    return _mock_combat_result
 
 
 def set_mock_current_room_index(index: int) -> None:
@@ -362,6 +398,58 @@ def simulate_mock_advance_monster_turn() -> Tuple[bool, str]:
     return True, "\n".join(lines)
 
 
+def simulate_mock_collect_loot() -> Tuple[bool, str]:
+    """开发调试用：模拟收取战利品（战利品转入背包并清空 CombatLootComponent）。"""
+    if not _mock_loot_items:
+        return False, "[yellow]（mock）当前没有可收取的战利品。[/]"
+    count = len(_mock_loot_items)
+    _mock_inventory_items.extend(_mock_loot_items)
+    _mock_loot_items.clear()
+    return True, f"[bold green]✅ 已收取 {count} 件战利品到背包（mock）[/]"
+
+
+def simulate_mock_exit_dungeon() -> Tuple[bool, str]:
+    """开发调试用：模拟退出副本（无真实会话，仅返回提示）。"""
+    return True, "[bold green]✅ 已退出副本（mock）[/]"
+
+
+def simulate_mock_advance_stage() -> Tuple[bool, str]:
+    """开发调试用：模拟进入下一关（current_room_index +1，战斗状态回 INITIALIZATION）。"""
+    set_mock_current_room_index(get_mock_current_room_index() + 1)
+    set_mock_combat_state(CombatState.INITIALIZATION)
+    return True, "[bold green]✅ 已推进到下一关（mock）[/]"
+
+
+def prepare_mock_post_combat() -> None:
+    """开发调试用：预置 POST_COMBAT 结算态（一局已完成回合 + 胜利结果 + 战利品）。"""
+    set_mock_combat_state(CombatState.POST_COMBAT)
+    set_mock_combat_result(CombatResult.WIN)
+    reset_mock_combat_rounds()
+    _mock_rounds.append(
+        Round(
+            completed_actors=[
+                MOCK_ACTOR_NAME,
+                MOCK_TEAMMATE_NAME,
+                MOCK_MONSTER_1_NAME,
+                MOCK_MONSTER_2_NAME,
+            ],
+            action_order=[
+                MOCK_ACTOR_NAME,
+                MOCK_TEAMMATE_NAME,
+                MOCK_MONSTER_1_NAME,
+                MOCK_MONSTER_2_NAME,
+            ],
+            current_actor=None,
+            is_completed=True,
+            draw_completed=True,
+            cards_combat_log=[
+                f"{MOCK_ACTOR_NAME} 使用『刺击』对 {MOCK_MONSTER_1_NAME} 造成 5 点伤害。"
+            ],
+            cards_narrative=[f"{MOCK_ACTOR_NAME} 打出『刺击』，一击命中！"],
+        )
+    )
+
+
 ###############################################################################################################################################
 def _mock_dungeon_actor(
     name: str, actor_type: ActorType, stats: CharacterStats
@@ -413,7 +501,7 @@ def build_mock_dungeon_room_response() -> DungeonRoomResponse:
     combat = Combat(
         name=MOCK_COMBAT_NAME,
         state=_mock_combat_state,
-        result=CombatResult.NONE,
+        result=_mock_combat_result,
         retreated=False,
         rounds=list(_mock_rounds),
     )
@@ -513,6 +601,13 @@ def _combat_loot_component_serialization(
         name=CombatLootComponent.__name__,
         data=CombatLootComponent(name=name, items=list(items)).model_dump(),
     )
+
+
+def _mock_combat_loot_components() -> List[ComponentSerialization]:
+    """有战利品时返回 CombatLootComponent 序列化；空则返回空列表（与真实 ECS 一致）。"""
+    if not _mock_loot_items:
+        return []
+    return [_combat_loot_component_serialization(MOCK_ACTOR_NAME, _mock_loot_items)]
 
 
 ###############################################################################################################################################
@@ -693,36 +788,8 @@ def build_mock_entities_details_response(
                     ),
                 ],
             ),
-            _inventory_component_serialization(
-                MOCK_ACTOR_NAME,
-                [
-                    ConsumableItem(name="治疗药水", description="恢复少量生命值。"),
-                    ConsumableItem(name="力量药剂", description="短暂提升攻击力。"),
-                    GearItem(
-                        name="淬炼长剑",
-                        description="一把普通但锐利的长剑，适合新手冒险者。",
-                        cards=[
-                            Card(
-                                name="淬炼长剑",
-                                description="一把普通但锐利的长剑，适合新手冒险者。",
-                                cost=1,
-                                damage=5,
-                            ),
-                        ],
-                    ),
-                ],
-            ),
-            _combat_loot_component_serialization(
-                MOCK_ACTOR_NAME,
-                [
-                    MaterialItem(
-                        name="哥布林牙", description="哥布林掉落的牙齿，可用于合成。"
-                    ),
-                    MaterialItem(
-                        name="哥布林皮", description="哥布林掉落的皮革，可用于合成。"
-                    ),
-                ],
-            ),
+            _inventory_component_serialization(MOCK_ACTOR_NAME, _mock_inventory_items),
+            *_mock_combat_loot_components(),
             *_ongoing_battle_pile_components(
                 MOCK_ACTOR_NAME,
                 hand_cards=[

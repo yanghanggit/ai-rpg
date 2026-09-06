@@ -257,9 +257,9 @@ class CombatTurnActorScreen(BaseGameScreen):
         self._locked = False
 
         if target == TO_POST_COMBAT:
-            from .combat_post_combat import CombatPostCombatScreen
+            from .combat_post import CombatPostScreen
 
-            self.app.switch_screen(CombatPostCombatScreen())
+            self.app.switch_screen(CombatPostScreen())
         elif target == TO_ROUND_START:
             from .combat_round_start import CombatRoundStartScreen
 

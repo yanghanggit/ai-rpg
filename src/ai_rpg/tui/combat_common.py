@@ -11,8 +11,6 @@ from textual.widgets import RichLog
 from ..models import (
     CharacterStats,
     CharacterStatsComponent,
-    Combat,
-    # DEFAULT_ROUND_ENERGY,
     DeathComponent,
     EntitySerialization,
     HandComponent,
@@ -75,12 +73,6 @@ def classify_faction(entity: Optional[EntitySerialization]) -> str:
     if find_component_data(entity, MonsterComponent.__name__) is not None:
         return "monster"
     return "unknown"
-
-
-###############################################################################################################################################
-def is_alive(entity: EntitySerialization) -> bool:
-    """实体是否存活（未挂载 DeathComponent）。"""
-    return find_component_data(entity, DeathComponent.__name__) is None
 
 
 ###############################################################################################################################################
@@ -148,69 +140,6 @@ def write_actor_detail(
             log.write(render_card(card))
     else:
         log.write("    手牌： [dim]（无）[/]")
-
-
-###############################################################################################################################################
-def render_combat_summary(
-    log: RichLog,
-    name: str,
-    state_name: str,
-    result_name: str,
-    retreated: bool,
-    total_rounds: Optional[int] = None,
-) -> None:
-    """渲染战斗宏观信息。
-
-    total_rounds: 不为 None 时附加显示总局数（len(combat.rounds)）；用于战斗已
-    结束的页面（如 CombatPostCombatScreen），此时不再展示「当前回合」细节，仅需
-    知道总共打了多少局即可。ONGOING 阶段的页面通常单独渲染当前回合详情，无需
-    传入此参数。
-    """
-    log.write("[bold yellow]── 战斗宏观状态 ─────────────────────────────────[/]")
-    log.write(f"  名称：   [bold]{name}[/]")
-    log.write(f"  状态：   [cyan]{state_name}[/]")
-    log.write(f"  结果：   [magenta]{result_name}[/]")
-    log.write(f"  已撤退： {'[red]是[/]' if retreated else '[green]否[/]'}")
-    if total_rounds is not None:
-        log.write(f"  总局数： [bold]{total_rounds}[/]")
-    log.write("")
-
-
-###############################################################################################################################################
-def render_round_info(log: RichLog, combat: Combat) -> None:
-    """渲染当前局数 + 最新一局的基本信息。"""
-    round_count = len(combat.rounds)
-    log.write("[bold yellow]── 回合信息 ─────────────────────────────────────[/]")
-    log.write(f"  当前局数：   [bold]{round_count}[/]")
-
-    latest = combat.latest_round
-    if latest is None:
-        log.write("  [dim]（尚无回合数据）[/]")
-        log.write("")
-        return
-
-    completed_str = (
-        "、".join(latest.completed_actors)
-        if latest.completed_actors
-        else "[dim]（无）[/]"
-    )
-    order_str = (
-        "  →  ".join(latest.action_order) if latest.action_order else "[dim]（无）[/]"
-    )
-    current_actor_str = latest.current_actor or "[dim]（无）[/]"
-
-    log.write(f"  已出手角色： {completed_str}")
-    log.write(f"  行动顺序：   {order_str}")
-    log.write(f"  当前 turn：  [bold yellow]{current_actor_str}[/]")
-    log.write(
-        f"  回合已结束： {'[green]是[/]' if latest.is_completed else '[yellow]否[/]'}"
-    )
-    log.write(
-        f"  抽牌已完成： {'[green]是[/]' if latest.draw_completed else '[yellow]否[/]'}"
-    )
-    log.write(f"  消耗品使用次数： [bold]{latest.consumable_use_count}[/]")
-    log.write(f"  装备使用次数：   [bold]{latest.gear_equip_count}[/]")
-    log.write("")
 
 
 ###############################################################################################################################################

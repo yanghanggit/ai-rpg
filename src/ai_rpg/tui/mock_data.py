@@ -217,6 +217,151 @@ def simulate_mock_draw_cards() -> Tuple[bool, str]:
     )
 
 
+def _mock_current_round() -> Optional[Round]:
+    return _mock_rounds[-1] if _mock_rounds else None
+
+
+def _mock_validate_turn() -> Tuple[bool, str, Optional[Round]]:
+    """校验 mock 回合行动前置条件，返回 (是否可行动, 错误文本, 当前回合)。"""
+    if _mock_combat_state != CombatState.ONGOING:
+        return False, "[yellow]当前战斗未在 ONGOING 状态，无法行动。[/]", None
+    latest = _mock_current_round()
+    if latest is None:
+        return False, "[yellow]当前没有进行中的回合。[/]", None
+    if latest.is_completed:
+        return False, "[yellow]本回合已完成。[/]", None
+    if not latest.draw_completed:
+        return False, "[yellow]本回合尚未抓牌。[/]", None
+    if latest.current_actor is None:
+        return False, "[yellow]当前没有行动角色。[/]", None
+    return True, "", latest
+
+
+def _mock_advance_turn(latest: Round) -> Optional[str]:
+    """把 current_actor 追加进 completed_actors，并推进到下一个未行动角色；
+    全员过完则置 is_completed。返回下一个行动角色名（无则 None）。"""
+    actor = latest.current_actor
+    assert actor is not None
+    latest.completed_actors.append(actor)
+    completed = set(latest.completed_actors)
+    next_actor = None
+    for name in latest.action_order:
+        if name not in completed:
+            next_actor = name
+            break
+    latest.current_actor = next_actor
+    if next_actor is None:
+        latest.is_completed = True
+    return next_actor
+
+
+def simulate_mock_play_cards(card_name: str, targets: List[str]) -> Tuple[bool, str]:
+    """开发调试用：模拟出牌（仅追加日志/叙事，不推进 turn）。"""
+    ok, err, latest = _mock_validate_turn()
+    if not ok:
+        return False, err
+    assert latest is not None
+    actor = latest.current_actor
+    assert actor is not None
+    target_label = "、".join(targets) if targets else "（自动目标）"
+    combat_log = f"{actor} 使用『{card_name}』对 {target_label} 造成伤害。"
+    narrative = f"{actor} 打出『{card_name}』，命中目标！"
+    latest.cards_combat_log.append(combat_log)
+    latest.cards_narrative.append(narrative)
+    text = (
+        "[bold green]✅ 出牌完成[/]\n"
+        "[bold yellow]── 出牌结果 ─────────────────────────────────[/]\n"
+        f"  [dim]战斗：[/] {combat_log}\n"
+        f"  [dim]叙事：[/] {narrative}"
+    )
+    return True, text
+
+
+def simulate_mock_use_consumable(
+    item_name: str, targets: List[str]
+) -> Tuple[bool, str]:
+    """开发调试用：模拟使用消耗品（仅追加日志/叙事，不推进 turn）。"""
+    ok, err, latest = _mock_validate_turn()
+    if not ok:
+        return False, err
+    assert latest is not None
+    target_label = "、".join(targets) if targets else "（自动目标）"
+    combat_log = f"使用『{item_name}』对 {target_label} 生效。"
+    narrative = f"一股暖流涌入体内，『{item_name}』的效力发挥了作用。"
+    latest.consumable_combat_log.append(combat_log)
+    latest.consumable_narrative.append(narrative)
+    latest.consumable_use_count += 1
+    text = (
+        "[bold green]✅ 使用完成[/]\n"
+        "[bold yellow]── 使用结果 ─────────────────────────────────[/]\n"
+        f"  [dim]战斗：[/] {combat_log}\n"
+        f"  [dim]叙事：[/] {narrative}"
+    )
+    return True, text
+
+
+def simulate_mock_equip_gear(item_name: str) -> Tuple[bool, str]:
+    """开发调试用：模拟使用装备（仅追加日志/叙事，不推进 turn）。"""
+    ok, err, latest = _mock_validate_turn()
+    if not ok:
+        return False, err
+    assert latest is not None
+    combat_log = f"将『{item_name}』转化为手牌。"
+    narrative = f"装备『{item_name}』已就绪。"
+    latest.gear_combat_log.append(combat_log)
+    latest.gear_narrative.append(narrative)
+    latest.gear_equip_count += 1
+    text = (
+        "[bold green]✅ 使用完成[/]\n"
+        "[bold yellow]── 使用结果 ─────────────────────────────────[/]\n"
+        f"  [dim]战斗：[/] {combat_log}\n"
+        f"  [dim]叙事：[/] {narrative}"
+    )
+    return True, text
+
+
+def simulate_mock_pass_turn() -> Tuple[bool, str]:
+    """开发调试用：模拟过牌（推进 turn）。"""
+    ok, err, latest = _mock_validate_turn()
+    if not ok:
+        return False, err
+    assert latest is not None
+    actor = latest.current_actor
+    next_actor = _mock_advance_turn(latest)
+    lines = [f"[bold green]✅ {actor} 过牌完成[/]"]
+    if next_actor is not None:
+        lines.append(f"[dim]轮到下一个角色：{next_actor}[/]")
+    else:
+        lines.append("[dim]所有存活角色均已行动，本回合结束[/]")
+    return True, "\n".join(lines)
+
+
+def simulate_mock_advance_monster_turn() -> Tuple[bool, str]:
+    """开发调试用：模拟怪物回合（自动出牌一次 + 推进 turn）。"""
+    ok, err, latest = _mock_validate_turn()
+    if not ok:
+        return False, err
+    assert latest is not None
+    actor = latest.current_actor
+    assert actor is not None
+    combat_log = f"{actor} 自动出牌，造成若干伤害。"
+    narrative = f"{actor} 发起了攻击！"
+    latest.cards_combat_log.append(combat_log)
+    latest.cards_narrative.append(narrative)
+    next_actor = _mock_advance_turn(latest)
+    lines = [
+        "[bold green]✅ 怪物回合推进完成[/]",
+        "[bold yellow]── 回合结果 ─────────────────────────[/]",
+        f"  [dim]战斗：[/] {combat_log}",
+        f"  [dim]叙事：[/] {narrative}",
+    ]
+    if next_actor is not None:
+        lines.append(f"[dim]轮到下一个角色：{next_actor}[/]")
+    else:
+        lines.append("[dim]所有存活角色均已行动，本回合结束[/]")
+    return True, "\n".join(lines)
+
+
 ###############################################################################################################################################
 def _mock_dungeon_actor(
     name: str, actor_type: ActorType, stats: CharacterStats

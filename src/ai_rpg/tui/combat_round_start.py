@@ -12,6 +12,7 @@ from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.widgets import Input, Static, TextArea
 
+from ..models import CombatRoom, CombatState
 from .base import BaseGameScreen
 from .cmd_combat import (
     build_deck_text,
@@ -23,13 +24,13 @@ from .cmd_round import (
     build_round_detail_text,
     build_round_start_info_text,
 )
-from .combat_data_access import is_mock_mode
+from .combat_data_access import get_dungeon_room, is_mock_mode
 from .server_client import fetch_session_messages, stream_session_messages
 from .utils import format_agent_event, strip_markup
 
 INTRO_TEXT = """\
 [bold cyan]── 开启新回合（ONGOING） ──[/]
-[dim]输入 [bold]/[/] 查看可用命令；输入 [bold]/draw[/] 开新回合并抓牌。[/]
+[dim]输入 [bold]/[/] 查看可用命令；[bold]/draw[/] 开新回合并抓牌，[bold]/turn[/] 进入当前行动者的回合。[/]
 """
 
 # 命令定义：(完整命令, 简写, 说明)，顺序即 /help 展示顺序
@@ -44,6 +45,7 @@ COMMAND_DEFS: List[Tuple[str, str, str]] = [
     ("round", "r", "查阅指定回合完整信息：/round <回合序号>"),
     # 改变
     ("draw", "d", "抓牌（开启新回合 + 填手牌）"),
+    ("turn", "t", "进入当前行动者的回合（出牌局）"),
     # 通用命令（固定在底部）
     ("help", "h", "显示本帮助"),
     ("clear", "c", "清空正文区"),
@@ -223,6 +225,9 @@ class CombatRoundStartScreen(BaseGameScreen):
     def _cmd_draw(self, args: str) -> None:
         self._do_draw()
 
+    def _cmd_turn(self, args: str) -> None:
+        self._do_turn()
+
     # ── 后台任务 ──
 
     @work
@@ -264,6 +269,41 @@ class CombatRoundStartScreen(BaseGameScreen):
         ok, text = await draw_cards(self.game_client)
         self._write(text)
         # 成功后停留本页，用户可用 /info /hand /inspect 等查看最新状态
+
+    @work
+    async def _do_turn(self) -> None:
+        try:
+            room_resp = await get_dungeon_room(self.game_client)
+            room = room_resp.room
+            assert isinstance(
+                room, CombatRoom
+            ), f"当前房间不是战斗房间：type={room.type}"
+            combat = room.combat
+        except Exception as e:
+            logger.error(f"_do_turn: 校验战斗状态失败 error={e}")
+            self._write(f"[bold red]❌ 校验战斗状态失败：{e}[/]")
+            return
+
+        if combat.state != CombatState.ONGOING:
+            self._write("[yellow]当前战斗不在 ONGOING 状态，无法进入回合行动。[/]")
+            return
+        latest = combat.latest_round
+        if latest is None:
+            self._write("[yellow]当前还没有回合，请先 /draw 开新回合并抓牌。[/]")
+            return
+        if not latest.draw_completed:
+            self._write("[yellow]本回合尚未抓牌，请先 /draw。[/]")
+            return
+        if latest.is_completed:
+            self._write("[yellow]本回合已完成，请 /draw 开新回合。[/]")
+            return
+        if latest.current_actor is None:
+            self._write("[yellow]当前没有行动角色。[/]")
+            return
+
+        from .combat_turn_actor import CombatTurnActorScreen
+
+        self.app.switch_screen(CombatTurnActorScreen())
 
     @work
     async def _do_view_messages(self, raw: str) -> None:

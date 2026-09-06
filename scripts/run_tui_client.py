@@ -30,9 +30,14 @@ from ai_rpg.tui import GameClient
 from ai_rpg.tui.combat_init import CombatInitScreen
 from ai_rpg.tui.combat_post_combat import CombatPostCombatScreen
 from ai_rpg.tui.combat_round_start import CombatRoundStartScreen
+from ai_rpg.tui.combat_turn_actor import CombatTurnActorScreen
 from ai_rpg.tui.config import server_config
 from ai_rpg.tui.launch import LaunchScreen
-from ai_rpg.tui.mock_data import reset_mock_combat_rounds, set_mock_combat_state
+from ai_rpg.tui.mock_data import (
+    reset_mock_combat_rounds,
+    set_mock_combat_state,
+    simulate_mock_draw_cards,
+)
 
 # PyInstaller frozen bundle 检测：打包后 sys.frozen = True
 _IS_FROZEN: bool = getattr(sys, "frozen", False)
@@ -87,10 +92,16 @@ logger.add(
 @click.option(
     "--dev-screen",
     type=click.Choice(
-        ["combat-init", "combat-round-start", "combat-post-combat", "wear-costume"]
+        [
+            "combat-init",
+            "combat-round-start",
+            "combat-turn-actor",
+            "combat-post-combat",
+            "wear-costume",
+        ]
     ),
     default=None,
-    help="[开发用] 跳过登录流程，启动后直接进入指定页面（combat-init / combat-round-start / combat-post-combat）",
+    help="[开发用] 跳过登录流程，启动后直接进入指定页面（combat-init / combat-round-start / combat-turn-actor / combat-post-combat）",
 )
 def main(
     server_host: str,
@@ -138,6 +149,12 @@ def main(
             # mock 预置：本页语义为 ONGOING 下的「开启新回合」，且尚未开过回合
             set_mock_combat_state(CombatState.ONGOING)
             reset_mock_combat_rounds()
+        elif dev_screen == "combat-turn-actor":
+            launch_screen = CombatTurnActorScreen
+            # mock 预置：ONGOING + 已抓牌的一回合（current_actor=艾伦）
+            set_mock_combat_state(CombatState.ONGOING)
+            reset_mock_combat_rounds()
+            simulate_mock_draw_cards()
         # elif dev_screen == "wear-costume":
         #     launch_screen = HomeWearCostumeScreen
         else:

@@ -117,8 +117,7 @@ class CombatHandStatusViewScreen(BaseGameScreen):
         hand_comp = HandComponent(**hand_data) if hand_data is not None else None
 
         effective_stats = compute_effective_stats(
-            CharacterStatsComponent(**stats_data).stats,
-            hand_comp,
+            CharacterStatsComponent(**stats_data).stats
         )
 
         death_mark = (

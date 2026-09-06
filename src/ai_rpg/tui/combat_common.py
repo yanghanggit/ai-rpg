@@ -87,18 +87,12 @@ def is_alive(entity: EntitySerialization) -> bool:
 def compute_effective_stats_for(
     entity: EntitySerialization,
 ) -> Optional[CharacterStats]:
-    """计算实体的有效属性（聚合已装备加成）；缺少 CharacterStatsComponent 时返回 None。"""
+    """计算实体的基础属性；缺少 CharacterStatsComponent 时返回 None。"""
     stats_data = find_component_data(entity, CharacterStatsComponent.__name__)
     if stats_data is None:
         return None
 
-    hand_data = find_component_data(entity, HandComponent.__name__)
-    hand_component = HandComponent(**hand_data) if hand_data is not None else None
-
-    return compute_effective_stats(
-        CharacterStatsComponent(**stats_data).stats,
-        hand_component,
-    )
+    return compute_effective_stats(CharacterStatsComponent(**stats_data).stats)
 
 
 ###############################################################################################################################################
@@ -250,7 +244,7 @@ def render_stage_actors(
         hand_data = find_component_data(entity, HandComponent.__name__)
         hand_component = HandComponent(**hand_data) if hand_data is not None else None
 
-        effective_stats = compute_effective_stats(base_stats, hand_component)
+        effective_stats = compute_effective_stats(base_stats)
         current_energy = resolve_current_energy(entity, effective_stats)
         label = role_label(entity)
         is_dead = find_component_data(entity, DeathComponent.__name__) is not None

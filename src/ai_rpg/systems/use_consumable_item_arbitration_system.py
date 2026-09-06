@@ -17,6 +17,7 @@ from pydantic import BaseModel, Field
 from ..deepseek import ToolDefinition, ToolFunction, agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_combat_processor import (
+    compute_character_hand_block,
     compute_character_stats,
     get_alive_actors_in_stage,
     set_character_hp,
@@ -40,7 +41,6 @@ from .arbitration_prompt_builders import (
     build_arbitration_broadcast,
     build_stats_update_notification,
 )
-
 
 ###########################################################################################################################################
 # 仲裁提示词构建器
@@ -120,7 +120,7 @@ def _build_consumable_arbitration_prompt(
 GET_ENTITY_STATS_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="get_entity_stats",
-        description="读取指定战斗角色的最终有效属性（HP/最大HP/攻击/防御）。其中 DEF 已是最终有效防御（已含手牌 block 之和），直接用于结算，无需再叠加 block。用于获取发起者与目标当前状态。",
+        description="读取指定战斗角色的当前生命值（HP/最大HP）与格挡（BLOCK，手牌 block 之和）。用于获取发起者与目标当前状态。",
         parameters={
             "type": "object",
             "properties": {
@@ -197,16 +197,14 @@ class _ArbitrationContext(BaseModel):
 
 ###########################################################################################################################################
 def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
-    """处理 get_entity_stats 工具调用：返回角色的最终有效属性。"""
+    """处理 get_entity_stats 工具调用：返回角色的 HP 与格挡。"""
     entity = game.get_actor_entity(entity_name)
     if entity is None:
         return f"错误：找不到战斗角色 {entity_name}"
 
     stats = compute_character_stats(entity)
-    return (
-        f"{entity_name}: HP {stats.hp}/{stats.max_hp} | "
-        f"ATK {stats.attack} | DEF {stats.defense}（最终有效防御，已含手牌 block，直接使用）"
-    )
+    hand_block = compute_character_hand_block(entity)
+    return f"{entity_name}: HP {stats.hp}/{stats.max_hp} | " f"BLOCK {hand_block}"
 
 
 def _handle_set_entity_hp(

@@ -12,7 +12,6 @@ from ..models import (
     CombatState,
     DeathComponent,
     DeckComponent,
-    HandComponent,
     InventoryComponent,
     compute_effective_stats,
 )
@@ -20,7 +19,6 @@ from .app import GameClient
 from .combat_common import (
     find_component_data,
     find_stage_of_actor,
-    resolve_current_energy,
     role_label,
 )
 from .combat_data_access import (
@@ -93,23 +91,15 @@ async def load_combat_overview(
                 continue
 
             base_stats = CharacterStatsComponent(**stats_data).stats
-            hand_data = find_component_data(entity, HandComponent.__name__)
-            hand_component = (
-                HandComponent(**hand_data) if hand_data is not None else None
-            )
-            effective_stats = compute_effective_stats(base_stats, hand_component)
-            current_energy = resolve_current_energy(entity, effective_stats)
+            effective_stats = compute_effective_stats(base_stats)
             label = role_label(entity)
             is_dead = find_component_data(entity, DeathComponent.__name__) is not None
             death_mark = "  [bold red]（已战死）[/]" if is_dead else ""
             line = (
                 f"  {label} [bold]{display_name(entity.name)}[/]{death_mark}  "
                 f"HP:[yellow]{effective_stats.hp}/{effective_stats.max_hp}[/]  "
-                f"攻:{effective_stats.attack}  防:{effective_stats.defense}  "
-                f"能量:{current_energy}"
+                f"攻:{effective_stats.attack}  防:{effective_stats.defense}"
             )
-            if hand_component is not None:
-                line += f"  手牌:{len(hand_component.cards)}"
             actor_lines.append(line)
 
     return combat, stage_name, macro_lines, actor_lines

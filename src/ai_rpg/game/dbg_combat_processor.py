@@ -21,23 +21,27 @@ from ..models import (
     RoundStatsComponent,
     TargetType,
     compute_effective_stats,
+    compute_hand_block,
 )
 from .dbg_game import DBGGame
 
 
 #################################################################################################################################################
 def compute_character_stats(entity: Entity) -> CharacterStats:
-    """计算角色的最终有效属性，聚合基础属性与手牌格挡。"""
+    """返回角色的基础属性（CharacterStats），不含手牌 block 加成。"""
     assert entity.has(ActorComponent), f"{entity.name} 缺少 ActorComponent"
     assert entity.has(
         CharacterStatsComponent
     ), f"{entity.name} 缺少 CharacterStatsComponent"
 
     stats_comp = entity.get(CharacterStatsComponent)
-    return compute_effective_stats(
-        stats_comp.stats,
-        entity.get(HandComponent) if entity.has(HandComponent) else None,
-    )
+    return compute_effective_stats(stats_comp.stats)
+
+
+def compute_character_hand_block(entity: Entity) -> int:
+    """计算角色手牌提供的总格挡（block 之和）。"""
+    hand = entity.get(HandComponent) if entity.has(HandComponent) else None
+    return compute_hand_block(hand)
 
 
 #################################################################################################################################################

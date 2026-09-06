@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 from ..deepseek import ToolDefinition, ToolFunction, agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_combat_processor import (
+    compute_character_hand_block,
     compute_character_stats,
     set_character_hp,
 )
@@ -37,7 +38,6 @@ from .arbitration_prompt_builders import (
     build_stats_update_notification,
 )
 
-
 ###########################################################################################################################################
 # 仲裁提示词构建器（play_cards 专属）
 ###########################################################################################################################################
@@ -52,7 +52,7 @@ ON_HIT_AFFIX_RULES: Final[
     str
 ] = """## 受击词缀
 
-get_entity_stats 返回的「受击卡牌」仅列出带受击词缀（on_hit_affixes）的卡牌，用于结算受击效果；它**不是**完整手牌清单，其中展示的 block（如有）已包含在 `DEF` 字段内，不得重复累加。
+get_entity_stats 返回的「受击卡牌」仅列出带受击词缀（on_hit_affixes）的卡牌，用于结算受击效果；它**不是**完整手牌清单，其中展示的 block 为该卡牌自身的格挡值，角色总格挡以 `BLOCK` 字段为准。
 「受击词缀」仅在**该实体是本次出牌的目标**时触发；出牌者自身的受击词缀不触发（除非出牌者也同时是目标）。依词缀描述结算（如 [反伤] 对出牌者造成伤害），受击词缀的数值以该卡牌在 get_entity_stats 中返回的 damage 字段为准，不引入词缀未提及的新机制。"""
 
 
@@ -213,7 +213,7 @@ def _build_combat_arbitration_broadcast(
 GET_ENTITY_STATS_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="get_entity_stats",
-        description="读取指定战斗角色的最终有效属性（HP/最大HP/攻击/防御）与其手牌中带受击词缀的卡牌（含这些卡牌的 source/damage/hit_count/block 等数据）。其中 DEF 已是最终有效防御（已含手牌 block 之和），直接用于结算，无需再叠加 block。用于获取发起者与目标当前状态。",
+        description="读取指定战斗角色的当前生命值（HP/最大HP）与格挡（BLOCK，手牌 block 之和）及其手牌中带受击词缀的卡牌（含这些卡牌的 source/damage/hit_count/block 等数据）。用于获取发起者与目标当前状态。",
         parameters={
             "type": "object",
             "properties": {
@@ -299,13 +299,13 @@ def _collect_hand_on_hit_cards(entity: Entity) -> List[Card]:
 
 ###########################################################################################################################################
 def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
-    """处理 get_entity_stats 工具调用：返回 stats + 参与受击仲裁的手牌卡牌数据。"""
+    """处理 get_entity_stats 工具调用：返回 HP/格挡 + 参与受击仲裁的手牌卡牌数据。"""
     entity = game.get_actor_entity(entity_name)
     if entity is None:
         return f"错误：找不到战斗角色 {entity_name}"
 
-    # 计算角色的基础属性（HP、攻击力、防御力等）
     stats = compute_character_stats(entity)
+    hand_block = compute_character_hand_block(entity)
 
     # 收集角色手牌中所有带受击词缀的卡牌（持有期间参与受击仲裁）
     hit_cards = _collect_hand_on_hit_cards(entity)
@@ -318,10 +318,9 @@ def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
     else:
         cards_str = "无"
 
-    # 返回角色的基础属性和受击卡牌信息
     return (
         f"{entity_name}: HP {stats.hp}/{stats.max_hp} | "
-        f"ATK {stats.attack} | DEF {stats.defense}（最终有效防御，已含手牌 block，直接使用） | "
+        f"BLOCK {hand_block} | "
         f"受击卡牌（仅含带受击词缀的卡牌，非完整手牌）: {cards_str}"
     )
 

@@ -7,9 +7,9 @@ from loguru import logger
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
-from textual.screen import Screen
 from textual.widgets import Input, Static, TextArea
 
+from .base import BaseGameScreen
 from .config import server_config
 from .server_client import fetch_server_info
 from .utils import strip_markup
@@ -53,7 +53,7 @@ def _build_help_text() -> str:
 HELP_TEXT = _build_help_text()
 
 
-class LaunchScreen(Screen[None]):
+class LaunchScreen(BaseGameScreen):
     """启动 Screen：正文区累加展示信息，输入区接收斜杠命令。"""
 
     CSS = """
@@ -151,7 +151,7 @@ class LaunchScreen(Screen[None]):
     def _cmd_new(self, args: str) -> None:
         from .new_game import NewGameScreen
 
-        self.app.push_screen(NewGameScreen())
+        self.app.switch_screen(NewGameScreen())
 
     def _cmd_clear(self, args: str) -> None:
         self.query_one("#body", TextArea).text = ""

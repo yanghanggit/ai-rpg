@@ -45,6 +45,8 @@ python scripts/setup_demo.py
 pm2 start ecosystem.config.js
 ```
 
+> 开发用测试客户端（TUI）见 [src/ai_rpg/tui/README.md](src/ai_rpg/tui/README.md)。
+
 ## 🔧 开发常用命令
 
 见 `Makefile`。

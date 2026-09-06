@@ -1,10 +1,11 @@
 """AI RPG 游戏客户端主应用（Textual TUI）"""
 
 from typing import Callable, Optional
+
 from textual.app import App, ComposeResult
 from textual.screen import Screen
+
 from .session import ClientSession
-from .launch import LaunchScreen
 
 
 class GameClient(App[None]):
@@ -18,11 +19,20 @@ class GameClient(App[None]):
     session: Optional[ClientSession] = None
 
     def __init__(
-        self, *, launch_screen: Callable[[], "Screen[None]"] = LaunchScreen
+        self,
+        *,
+        launch_screen: Optional[Callable[[], "Screen[None]"]] = None,
     ) -> None:
-        """launch_screen：启动时 push 的初始 Screen 工厂函数，默认 LaunchScreen
-        （正常登录流程）。由调用方（如 scripts/run_tui_client.py）根据命令行参数决定
-        传入哪个 Screen，方便开发时跳过登录流程直接进入指定页面调试。"""
+        """launch_screen：启动时 push 的初始 Screen 工厂函数；None 时默认
+        LaunchScreen（正常登录流程）。由调用方（如 scripts/run_tui_client.py）根据
+        命令行参数决定传入哪个 Screen，方便开发时跳过登录流程直接进入指定页面调试。
+
+        LaunchScreen 采用惰性导入，避免 app → launch → base → app 的循环导入。
+        """
+        if launch_screen is None:
+            from .launch import LaunchScreen
+
+            launch_screen = LaunchScreen
         super().__init__()
         self._launch_screen = launch_screen
 

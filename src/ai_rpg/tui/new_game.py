@@ -266,7 +266,7 @@ class NewGameScreen(BaseGameScreen):
             logger.info(
                 f"_start_new_game: 游戏创建成功 user_name={user_name} game_name={game_name} → 进入 HomeScreen"
             )
-            from .home_screen import HomeScreen
+            from .home import HomeScreen
             from .session import ClientSession
 
             app = self.game_client

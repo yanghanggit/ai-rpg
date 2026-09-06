@@ -51,7 +51,7 @@ COMMAND_DEFS: List[Tuple[str, str, str]] = [
     # 改变
     ("collect", "cl", "收取战利品（转入随身背包）"),
     ("exit", "x", "退出副本，返回家园"),
-    ("advance", "adv", "进入下一关（房间）"),
+    ("advance", "a", "进入下一关（房间）"),
     # 通用命令（固定在底部）
     ("help", "h", "显示本帮助"),
     ("clear", "c", "清空正文区"),

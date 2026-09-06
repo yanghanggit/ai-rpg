@@ -1,7 +1,7 @@
 """战斗房间命令：info / deck / inventory / inspect / start。"""
 
 import json
-from typing import List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from loguru import logger
 
@@ -12,15 +12,14 @@ from ..models import (
     CombatState,
     DeathComponent,
     DeckComponent,
+    EntitySerialization,
     InventoryComponent,
+    MonsterComponent,
+    NPCComponent,
+    PlayerComponent,
     compute_effective_stats,
 )
 from .app import GameClient
-from .combat_common import (
-    find_component_data,
-    find_stage_of_actor,
-    role_label,
-)
 from .combat_data_access import (
     get_dungeon_room,
     get_entities_details,
@@ -37,6 +36,55 @@ from .server_client import (
 from .utils import display_name, render_card, render_item
 
 
+###############################################################################################################################################
+def find_component_data(
+    entity: EntitySerialization, component_name: str
+) -> Optional[Dict[str, Any]]:
+    """在实体的组件序列化列表中按类名查找组件数据。"""
+    for component in entity.components:
+        if component.name == component_name:
+            return component.data
+    return None
+
+
+###############################################################################################################################################
+def find_stage_of_actor(
+    mapping: Dict[str, List[str]], actor_name: str
+) -> Optional[str]:
+    """在场景映射中查找玩家控制角色所在的场景名。"""
+    for stage_name, names in mapping.items():
+        if actor_name in names:
+            return stage_name
+    return None
+
+
+###############################################################################################################################################
+def role_label(entity: EntitySerialization) -> str:
+    """依据实体挂载的阵营标记组件返回展示标签。"""
+    if find_component_data(entity, PlayerComponent.__name__) is not None:
+        return "[bold green]👑玩家[/]"
+    if find_component_data(entity, NPCComponent.__name__) is not None:
+        return "[bold cyan]🤝队友[/]"
+    if find_component_data(entity, MonsterComponent.__name__) is not None:
+        return "[bold red]👹怪物[/]"
+    return "[dim]？[/]"
+
+
+###############################################################################################################################################
+def classify_faction(entity: Optional[EntitySerialization]) -> str:
+    """依据阵营标记组件返回 "party"（玩家 + 队友）/ "monster"（怪物）/ "unknown"。"""
+    if entity is None:
+        return "unknown"
+    if find_component_data(entity, PlayerComponent.__name__) is not None:
+        return "party"
+    if find_component_data(entity, NPCComponent.__name__) is not None:
+        return "party"
+    if find_component_data(entity, MonsterComponent.__name__) is not None:
+        return "monster"
+    return "unknown"
+
+
+###############################################################################################################################################
 async def load_combat_overview(
     game_client: GameClient,
 ) -> Tuple[Combat, str, List[str], List[str]]:

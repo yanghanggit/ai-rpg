@@ -15,7 +15,7 @@ from ..models import (
     compute_hand_block,
 )
 from .app import GameClient
-from .combat_common import (
+from .cmd_combat import (
     find_component_data,
     find_stage_of_actor,
     role_label,

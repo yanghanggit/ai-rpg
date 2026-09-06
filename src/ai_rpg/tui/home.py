@@ -811,11 +811,13 @@ class HomeScreen(BaseGameScreen):
             msg = await logout(user_name, game_name)
             self._write(f"[bold green]✅ {msg}[/]")
             logger.info(
-                f"_do_logout: 登出成功 user_name={user_name} msg={msg} → 清空会话状态 + pop_screen"
+                f"_do_logout: 登出成功 user_name={user_name} msg={msg} → 清空会话状态 + 返回主菜单"
             )
             app.clear_session()
             await asyncio.sleep(0.5)
-            self.app.pop_screen()
+            from .launch import LaunchScreen
+
+            self.app.switch_screen(LaunchScreen())
         except Exception as e:
             logger.error(f"_do_logout: 登出失败 user_name={user_name} error={e}")
             self._write(f"[bold red]❌ 登出失败: {e}[/]")

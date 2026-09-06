@@ -23,7 +23,7 @@ from ..models import (
     compute_effective_stats,
 )
 from .app import GameClient
-from .combat_common import (
+from .cmd_combat import (
     classify_faction,
     find_component_data,
     find_stage_of_actor,

@@ -115,3 +115,26 @@ def get_card_prototype(prototype_id: str) -> CardPrototypeDB:
         return proto
     finally:
         db.close()
+
+
+############################################################################################################
+def get_card_prototype_by_name(
+    name: str,
+    card_type: Optional[str] = None,
+) -> CardPrototypeDB:
+    """按 name 获取单个卡牌原型（含 guide 与 card_json）。"""
+
+    db = SessionLocal()
+    try:
+        query = db.query(CardPrototypeDB).filter(CardPrototypeDB.name == name)
+        if card_type:
+            query = query.filter(CardPrototypeDB.card_type == card_type)
+        proto = query.first()
+        if proto is None:
+            raise ValueError(
+                f"卡牌原型 '{name}' 不存在"
+                + (f"（card_type={card_type!r}）" if card_type else "")
+            )
+        return proto
+    finally:
+        db.close()

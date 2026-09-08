@@ -252,6 +252,46 @@ FLEETING_PROTOTYPE: Final[Card] = Card(
 )
 
 
+DEADLINE_PROTOTYPE: Final[Card] = Card(
+    name="限时终结",
+    description="虚无且消耗：本回合不用即消失，打出后永久消耗。",
+    on_play_affixes=[],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[],
+    playable=True,
+    exhaust=True,
+    retain=False,
+    ethereal=True,
+    transferable=False,
+    cost=2,
+    damage=4,
+    hit_count=1,
+    block=0,
+    target_type=TargetType.SINGLE,
+    self_target=False,
+)
+
+
+FINISHER_PROTOTYPE: Final[Card] = Card(
+    name="蓄力终结",
+    description="跨回合保留的大招，一旦打出永久消耗。",
+    on_play_affixes=[],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[],
+    playable=True,
+    exhaust=True,
+    retain=True,
+    ethereal=False,
+    transferable=False,
+    cost=3,
+    damage=6,
+    hit_count=1,
+    block=0,
+    target_type=TargetType.SINGLE,
+    self_target=False,
+)
+
+
 DOT_PROTOTYPE: Final[Card] = Card(
     name="持续减益传染",
     description="打出后转嫁给目标，每回合末持续受损。",
@@ -261,6 +301,26 @@ DOT_PROTOTYPE: Final[Card] = Card(
     playable=True,
     exhaust=False,
     retain=True,
+    ethereal=False,
+    transferable=True,
+    cost=1,
+    damage=1,
+    hit_count=1,
+    block=0,
+    target_type=TargetType.SINGLE,
+    self_target=False,
+)
+
+
+THROW_PROTOTYPE: Final[Card] = Card(
+    name="一次性投掷",
+    description="打出后本体永久消耗，副本投递目标手牌并每回合末持续受损。",
+    on_play_affixes=[],
+    on_hit_affixes=[],
+    on_turn_end_affixes=["[中毒]:回合结束时对非 source 者结算持续伤害"],
+    playable=True,
+    exhaust=True,
+    retain=False,
     ethereal=False,
     transferable=True,
     cost=1,
@@ -374,6 +434,26 @@ PASSIVE_PROTOTYPE: Final[Card] = Card(
 )
 
 
+PLATE_PROTOTYPE: Final[Card] = Card(
+    name="常驻护甲",
+    description="不可出的纯防御状态，跨回合持有提供格挡。",
+    on_play_affixes=[],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[],
+    playable=False,
+    exhaust=False,
+    retain=True,
+    ethereal=False,
+    transferable=False,
+    cost=1,
+    damage=0,
+    hit_count=1,
+    block=4,
+    target_type=TargetType.SINGLE,
+    self_target=True,
+)
+
+
 SUPPORT_PROTOTYPE: Final[Card] = Card(
     name="支援分发",
     description="打出后把增益副本分发给队友。",
@@ -389,6 +469,26 @@ SUPPORT_PROTOTYPE: Final[Card] = Card(
     damage=0,
     hit_count=1,
     block=0,
+    target_type=TargetType.SINGLE,
+    self_target=False,
+)
+
+
+SHIELD_TRANSFER_PROTOTYPE: Final[Card] = Card(
+    name="格挡支援",
+    description="打出后把格挡副本分发给队友。",
+    on_play_affixes=[],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[],
+    playable=True,
+    exhaust=False,
+    retain=False,
+    ethereal=False,
+    transferable=True,
+    cost=1,
+    damage=0,
+    hit_count=1,
+    block=3,
     target_type=TargetType.SINGLE,
     self_target=False,
 )
@@ -593,6 +693,38 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
         ),
     ),
     CardPrototype(
+        card=DEADLINE_PROTOTYPE,
+        meta=CardPrototypeMeta(
+            prototype_id="proto.deadline",
+            card_type="手牌",
+            archetype="攻击端",
+            archetype_subtype="前端伤害",
+            name="限时终结",
+            summary="虚无 + 消耗：用或弃都永久消失。",
+            guide=(
+                "字段：ethereal=True、exhaust=True。二者不互斥：ethereal 管「留手」、"
+                "exhaust 管「打出后」，叠加即「用或弃都永久消失」，双重期限压力。"
+            ),
+            keywords=("ethereal", "exhaust"),
+        ),
+    ),
+    CardPrototype(
+        card=FINISHER_PROTOTYPE,
+        meta=CardPrototypeMeta(
+            prototype_id="proto.finisher",
+            card_type="手牌",
+            archetype="攻击端",
+            archetype_subtype="前端伤害",
+            name="蓄力终结",
+            summary="保留 + 消耗：跨回合蓄力，打出后永久离场。",
+            guide=(
+                "字段：retain=True、exhaust=True。retain 跨回合蓄力等时机，exhaust 保证"
+                "打出后永久离场；二者作用于「留手」与「打出」两个互斥情境，不冲突。"
+            ),
+            keywords=("retain", "exhaust"),
+        ),
+    ),
+    CardPrototype(
         card=AOE_PROTOTYPE,
         meta=CardPrototypeMeta(
             prototype_id="proto.aoe",
@@ -620,6 +752,23 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
                 "副本落在目标手牌，每回合末对非 source 者持续结算。"
             ),
             keywords=("transferable", "retain", "on_turn_end_affixes"),
+        ),
+    ),
+    CardPrototype(
+        card=THROW_PROTOTYPE,
+        meta=CardPrototypeMeta(
+            prototype_id="proto.throw",
+            card_type="手牌",
+            archetype="攻击端",
+            archetype_subtype="成长性伤害",
+            name="一次性投掷",
+            summary="出牌即消耗本体，副本进目标手牌持续受损。",
+            guide=(
+                "字段：transferable=True、exhaust=True、on_turn_end_affixes=[中毒]。"
+                "本体打出后进 ExhaustPile；副本进目标手牌且继承 exhaust=True（目标日后打出"
+                "副本同样消耗），实现一次性传染。"
+            ),
+            keywords=("transferable", "exhaust", "on_turn_end_affixes"),
         ),
     ),
     # 手牌 / 攻击端 / 铺垫性攻击支持
@@ -723,6 +872,22 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             keywords=("playable", "retain", "on_turn_end_affixes"),
         ),
     ),
+    CardPrototype(
+        card=PLATE_PROTOTYPE,
+        meta=CardPrototypeMeta(
+            prototype_id="proto.plate",
+            card_type="手牌",
+            archetype="防御端",
+            archetype_subtype="成长性防御",
+            name="常驻护甲",
+            summary="不可出 + 格挡 + 保留，纯被动防御。",
+            guide=(
+                "字段：playable=False、block=4、retain=True。不可出但持有期计入总防御，"
+                "retain 跨回合存续；playable=False 与 retain/block 组合即纯被动护甲。"
+            ),
+            keywords=("playable", "block", "retain"),
+        ),
+    ),
     # 手牌 / 防御端 / 特殊防御机制
     CardPrototype(
         card=THORNS_PROTOTYPE,
@@ -754,6 +919,22 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
                 "目标由 target_type 决定，传友分发增益（状态保护/支援）。"
             ),
             keywords=("transferable", "on_turn_end_affixes"),
+        ),
+    ),
+    CardPrototype(
+        card=SHIELD_TRANSFER_PROTOTYPE,
+        meta=CardPrototypeMeta(
+            prototype_id="proto.shield_transfer",
+            card_type="手牌",
+            archetype="防御端",
+            archetype_subtype="特殊防御机制",
+            name="格挡支援",
+            summary="出牌把确定性格挡副本分发给队友。",
+            guide=(
+                "字段：transferable=True、block=3。副本携带确定性格挡进目标手牌，"
+                "持有期计入目标总防御；与「支援分发」的区别在于用确定性 block 而非词缀承载支援。"
+            ),
+            keywords=("transferable", "block"),
         ),
     ),
     CardPrototype(

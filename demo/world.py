@@ -4,6 +4,7 @@
 """
 
 from typing import Dict, Final, List
+from uuid import uuid4
 
 from ai_rpg.models import (
     Actor,
@@ -31,7 +32,6 @@ from ai_rpg.models import (
     Stage,
     StageType,
     StorageComponent,
-    TargetType,
     World,
     WorldDirectorComponent,
     WornCostumeComponent,
@@ -39,6 +39,13 @@ from ai_rpg.models import (
     create_stage,
     create_world,
     attach_stage_component,
+)
+
+from .card_prototypes import (
+    ATTACK_PROTOTYPE,
+    DEFENSE_PROTOTYPE,
+    GEAR_OFFENSE_PROTOTYPE,
+    GEAR_DEFENSE_PROTOTYPE,
 )
 
 # ---------------------------------------------------------------------------
@@ -166,137 +173,43 @@ KNOWLEDGE_BASE: Final[Dict[str, List[str]]] = {
 }
 
 
+def _copy_prototype(card: Card) -> Card:
+    """复制卡牌原型并重新生成 uuid（原型 uuid 是共享常量，副本必须各自唯一）。"""
+    copied = card.model_copy(deep=True)
+    copied.uuid = str(uuid4())
+    return copied
+
+
 def _make_attack_card() -> Card:
-    """创建基础攻击卡牌（damage 为卡牌自身值，填充牌库时叠加角色 attack）。"""
-    return Card(
-        name="攻击",
-        description="对单个敌人造成直接伤害。",
-        on_play_affixes=[],
-        playable=True,
-        exhaust=False,
-        cost=1,
-        damage=1,
-        hit_count=1,
-        block=0,
-        target_type=TargetType.SINGLE,
-        self_target=False,
-    )
+    """基础攻击原型副本（机械字段与 demo/card_prototypes.py 的「基础攻击」一致）。"""
+    return _copy_prototype(ATTACK_PROTOTYPE)
 
 
 def _make_defense_card() -> Card:
-    """创建基础防御卡牌（block 为卡牌自身格挡值，填充牌库时叠加角色 defense）。"""
-    return Card(
-        name="防御",
-        description="为自身提供格挡值，持有时提升防御。",
-        on_play_affixes=[],
-        playable=True,
-        exhaust=False,
-        cost=1,
-        damage=0,
-        hit_count=1,
-        block=2,
-        target_type=TargetType.SINGLE,
-        self_target=True,
-    )
+    """基础防御原型副本（机械字段与 demo/card_prototypes.py 的「基础防御」一致）。"""
+    return _copy_prototype(DEFENSE_PROTOTYPE)
 
 
-def _make_retain_card() -> Card:
-    """创建带 retain 的防御卡牌（demo：回合末保留在手牌中，不进入弃牌堆）。"""
-    return Card(
-        name="纸盾·护",
-        description="为自身提供格挡值，持有时提升防御，且不会在回合末离开手牌。",
-        on_play_affixes=[],
-        playable=True,
-        exhaust=False,
-        retain=True,
-        cost=1,
-        damage=0,
-        hit_count=1,
-        block=2,
-        target_type=TargetType.SINGLE,
-        self_target=True,
-    )
+def _make_gear_offense_card() -> Card:
+    """缠麻短刃卡牌：机械字段沿用 GEAR_OFFENSE_PROTOTYPE，仅改写叙事与词缀。"""
+    card = _copy_prototype(GEAR_OFFENSE_PROTOTYPE)
+    card.name = "装备.缠麻短刃"
+    card.description = "一柄由旧铁剪反复磨砺而成的短刃，刃身仍留着暗红锈斑，握柄裹着泛黄的麻绳。挥动时刃口会拖出一道若有若无的暗红残影，仿佛把周遭的光都裁开一线；贴近刃脊处有极轻的嗡鸣，像每一次出鞘都藏着比伤口更深的念想。"
+    card.on_play_affixes = [
+        "[血锈游丝]:出牌时刃身锈迹化为一缕暗红游丝先一步缠向目标，令本次攻击的创口更诡谲、痛感更绵长"
+    ]
+    return card
 
 
-def _make_ethereal_card() -> Card:
-    """创建带 ethereal（虚无）词缀的攻击卡牌（demo：pass turn 时若仍在手牌则自动消耗）。"""
-    return Card(
-        name="纸刃·虚",
-        description="对单个敌人造成直接伤害。若未及时打出，纸刃将自行燃尽消散。",
-        on_play_affixes=[],
-        playable=True,
-        exhaust=False,
-        retain=False,
-        ethereal=True,
-        cost=1,
-        damage=2,
-        hit_count=1,
-        block=0,
-        target_type=TargetType.SINGLE,
-        self_target=False,
-    )
-
-
-def _make_armor_piercing_card() -> Card:
-    """创建带【穿甲】即时词缀的攻击卡牌（demo：本次伤害无视目标防御）。"""
-    return Card(
-        name="纸刃·穿",
-        description="对单个敌人造成直接伤害。纸刃借势贯穿，无视目标防御。",
-        on_play_affixes=["[穿甲]:本次伤害无视目标防御"],
-        playable=True,
-        exhaust=False,
-        retain=False,
-        ethereal=False,
-        cost=1,
-        damage=1,
-        hit_count=1,
-        block=0,
-        target_type=TargetType.SINGLE,
-        self_target=False,
-    )
-
-
-def _make_thorns_card() -> Card:
-    """创建带【反伤】受击词缀的卡牌（demo：持有期间，被攻击时对出牌者造成伤害，数值取 damage）。"""
-    return Card(
-        name="反伤",
-        description="持有期间在被攻击时反噬对方。",
-        on_play_affixes=[],
-        on_hit_affixes=["[反伤]:受到攻击时，对出牌者造成伤害，造成 damage×1 倍的伤害"],
-        playable=True,
-        exhaust=False,
-        retain=False,
-        ethereal=False,
-        cost=1,
-        damage=2,
-        hit_count=1,
-        block=0,
-        target_type=TargetType.SINGLE,
-        self_target=True,
-    )
-
-
-def _make_dot_card() -> Card:
-    """创建带回合结束词缀的可传递毒牌（demo：无名打出后 copy 到目标手牌、从源手牌移除本体，
-    回合结束时对非 source 者造成持续伤害）。"""
-    return Card(
-        name="蚀纸毒",
-        description="一种腐蚀纸质的毒素，抹在纸人身上会持续侵蚀其纸骨与朱砂。",
-        on_play_affixes=[],
-        on_hit_affixes=[],
-        on_turn_end_affixes=["[中毒]:回合结束时对非 source 者造成 damage×2 倍的伤害"],
-        playable=True,
-        exhaust=False,
-        retain=True,
-        ethereal=False,
-        transferable=True,
-        cost=1,
-        damage=1,
-        hit_count=1,
-        block=0,
-        target_type=TargetType.SINGLE,
-        self_target=False,
-    )
+def _make_gear_defense_card() -> Card:
+    """缠麻护具卡牌：机械字段沿用 GEAR_DEFENSE_PROTOTYPE，仅改写叙事与词缀。"""
+    card = _copy_prototype(GEAR_DEFENSE_PROTOTYPE)
+    card.name = "装备.缠麻护具"
+    card.description = "由多层泛黄麻绳与旧纱布反复衬叠而成的护具，表面缝着几道几近褪尽的暗红符痕，像被谁以禁制之法重新绞合过。穿上后衣料之间会发出极轻的窸窣声，仿佛有看不见的丝线贴着躯干缓缓游走，将迫近的寒意都缓去半拍。"
+    card.on_hit_affixes = [
+        "[缠麻回护]:持有期间受到攻击时旧纱如活物般自行收紧，暗红符痕微微发亮，将佩戴者的动作稳稳托住并透出一股绵韧回护之力"
+    ]
+    return card
 
 
 ########################################################################################################################
@@ -476,35 +389,12 @@ def create_wuming() -> Actor:
                     GearItem(
                         name="装备.缠麻短刃",
                         description="一柄由旧铁剪反复磨砺而成的短刃，刃身仍留着暗红锈斑，握柄裹着泛黄的麻绳。挥动时刃口会拖出一道若有若无的暗红残影，仿佛把周遭的光都裁开一线；贴近刃脊处有极轻的嗡鸣，像每一次出鞘都藏着比伤口更深的念想。",
-                        cards=[
-                            Card(
-                                name="装备.缠麻短刃",
-                                description="一柄由旧铁剪反复磨砺而成的短刃，刃身仍留着暗红锈斑，握柄裹着泛黄的麻绳。挥动时刃口会拖出一道若有若无的暗红残影，仿佛把周遭的光都裁开一线；贴近刃脊处有极轻的嗡鸣，像每一次出鞘都藏着比伤口更深的念想。",
-                                on_play_affixes=[
-                                    "[血锈游丝]:出牌时刃身锈迹化为一缕暗红游丝先一步缠向目标，令本次攻击的创口更诡谲、痛感更绵长",
-                                ],
-                                cost=1,
-                                damage=3,
-                                hit_count=1,
-                                target_type=TargetType.SINGLE,
-                            ),
-                        ],
+                        cards=[_make_gear_offense_card()],
                     ),
                     GearItem(
                         name="装备.缠麻护具",
                         description="由多层泛黄麻绳与旧纱布反复衬叠而成的护具，表面缝着几道几近褪尽的暗红符痕，像被谁以禁制之法重新绞合过。穿上后衣料之间会发出极轻的窸窣声，仿佛有看不见的丝线贴着躯干缓缓游走，将迫近的寒意都缓去半拍。",
-                        cards=[
-                            Card(
-                                name="装备.缠麻护具",
-                                description="由多层泛黄麻绳与旧纱布反复衬叠而成的护具，表面缝着几道几近褪尽的暗红符痕，像被谁以禁制之法重新绞合过。穿上后衣料之间会发出极轻的窸窣声，仿佛有看不见的丝线贴着躯干缓缓游走，将迫近的寒意都缓去半拍。",
-                                on_hit_affixes=[
-                                    "[缠麻回护]:持有期间受到攻击时旧纱如活物般自行收紧，暗红符痕微微发亮，将佩戴者的动作稳稳托住并透出一股绵韧回护之力",
-                                ],
-                                retain=True,
-                                cost=1,
-                                block=3,
-                            ),
-                        ],
+                        cards=[_make_gear_defense_card()],
                     ),
                     ConsumableItem(
                         name="消耗品.吗啡针剂",

@@ -29,56 +29,37 @@ from ..models import (
     ComponentSerialization,
     DeckComponent,
     SystemMessage,
-    TargetType,
 )
-from ..pgsql import get_card_prototype, list_card_prototype_index
+from ..pgsql import (
+    get_card_prototype,
+    get_card_prototype_by_name,
+    list_card_prototype_index,
+)
 from ..utils import batch_run_boolean_tasks, prompt_builder
 
 
 ####################################################################################################################################
-def _make_attack_card() -> Card:
-    """创建基础攻击卡牌（damage 为卡牌自身值，填充牌库时叠加角色 attack）。"""
-    return Card(
-        name="攻击",
-        description="对单个敌人造成直接伤害。",
-        on_play_affixes=[],
-        playable=True,
-        exhaust=False,
-        cost=1,
-        damage=1,
-        hit_count=1,
-        block=0,
-        target_type=TargetType.SINGLE,
-        self_target=False,
-    )
-
-
-def _make_defense_card() -> Card:
-    """创建基础防御卡牌（block 为卡牌自身格挡值，填充牌库时叠加角色 defense）。"""
-    return Card(
-        name="防御",
-        description="为自身提供格挡值，持有时提升防御。",
-        on_play_affixes=[],
-        playable=True,
-        exhaust=False,
-        cost=1,
-        damage=0,
-        hit_count=1,
-        block=2,
-        target_type=TargetType.SINGLE,
-        self_target=True,
-    )
+def _materialize_prototype_card(name: str) -> Card:
+    """按原型名从 pgsql 取出卡牌原型并物化为独立 Card（新 uuid，source 留空）。"""
+    proto = get_card_prototype_by_name(name, card_type="手牌")
+    card = Card.model_validate(json.loads(proto.card_json))
+    card.uuid = str(uuid4())
+    return card
 
 
 def make_default_deck_cards() -> List[Card]:
-    """默认牌库：3 攻 + 2 防（source 留空，战斗初始化时回填并润色）。"""
-    return [
-        _make_attack_card(),
-        _make_attack_card(),
-        _make_attack_card(),
-        _make_defense_card(),
-        _make_defense_card(),
-    ]
+    """默认牌库：3 攻击 + 2 防御（source 留空，战斗初始化时回填并润色）。
+
+    原型一律取自 pgsql（由 demo/card_prototypes.py 经 setup_demo 初始化入库），
+    卡牌定义不再在此硬编码。
+    """
+    attack = _materialize_prototype_card("基础攻击")
+    defense = _materialize_prototype_card("基础防御")
+    cards = [attack.model_copy(deep=True) for _ in range(3)]
+    cards += [defense.model_copy(deep=True) for _ in range(2)]
+    for card in cards:
+        card.uuid = str(uuid4())
+    return cards
 
 
 ####################################################################################################################################

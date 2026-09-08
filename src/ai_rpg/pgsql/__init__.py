@@ -13,6 +13,7 @@ from .card_prototype_operations import (
     save_card_prototype,
     list_card_prototype_index,
     get_card_prototype,
+    get_card_prototype_by_name,
 )
 from .task_error import TaskErrorDB
 from .task_error_operations import save_task_error, get_task_error
@@ -40,6 +41,7 @@ __all__: List[str] = [
     "save_card_prototype",
     "list_card_prototype_index",
     "get_card_prototype",
+    "get_card_prototype_by_name",
     # Task error models
     "TaskErrorDB",
     # Task error operations

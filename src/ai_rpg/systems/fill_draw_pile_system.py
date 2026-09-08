@@ -17,6 +17,7 @@ from ..models import (
     DeckComponent,
     DrawPileComponent,
     FillDrawPileAction,
+    apply_stats_to_card,
 )
 
 
@@ -79,10 +80,7 @@ class FillDrawPileSystem(ReactiveProcessor):
             copied = card.model_copy(deep=True)
 
             # 属性叠加（加法）：卡牌自身值非 0 时，叠加角色基础属性。
-            if copied.damage != 0:
-                copied.damage += actor_stats.attack
-            if copied.block != 0:
-                copied.block += actor_stats.defense
+            apply_stats_to_card(copied, actor_stats)
 
             adjusted_cards.append(copied)
 

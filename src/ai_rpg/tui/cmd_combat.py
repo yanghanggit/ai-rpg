@@ -146,7 +146,7 @@ async def load_combat_overview(
             line = (
                 f"  {label} [bold]{display_name(entity.name)}[/]{death_mark}  "
                 f"HP:[yellow]{effective_stats.hp}/{effective_stats.max_hp}[/]  "
-                f"攻:{effective_stats.attack}  防:{effective_stats.defense}"
+                f"ATK:{effective_stats.attack}  DEF:{effective_stats.defense}"
             )
             actor_lines.append(line)
 

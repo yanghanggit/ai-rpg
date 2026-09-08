@@ -18,6 +18,7 @@ from ..models import (
     HandComponent,
     InventoryComponent,
     PartyMemberComponent,
+    apply_stats_to_card,
 )
 from ..utils import prompt_builder
 
@@ -162,10 +163,7 @@ class EquipGearItemActionSystem(ReactiveProcessor):
             card.retain = True
 
             # 沿用 fill_draw_pile_system 的思路：卡牌自身值非 0 时，叠加当前行动者属性
-            if card.damage != 0:
-                card.damage += actor_stats.attack
-            if card.block != 0:
-                card.block += actor_stats.defense
+            apply_stats_to_card(card, actor_stats)
 
             cards.append(card)
 

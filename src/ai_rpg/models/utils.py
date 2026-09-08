@@ -5,6 +5,7 @@
 
 from typing import Optional
 
+from .card import Card
 from .character_stats import CharacterStats
 from .components import HandComponent
 
@@ -25,3 +26,15 @@ def compute_hand_block(hand_component: Optional[HandComponent]) -> int:
     if hand_component is None:
         return 0
     return sum(card.block for card in hand_component.cards)
+
+
+def apply_stats_to_card(card: Card, stats: CharacterStats) -> Card:
+    """将角色属性叠加到卡牌上并返回该卡牌（原地修改）。
+
+    规则：卡牌自身 damage/block 非 0 时，分别叠加角色的 attack/defense。
+    """
+    if card.damage != 0:
+        card.damage += stats.attack
+    if card.block != 0:
+        card.block += stats.defense
+    return card

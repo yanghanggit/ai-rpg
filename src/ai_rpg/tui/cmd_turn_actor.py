@@ -196,7 +196,7 @@ def _append_actor_summary_lines(lines: List[str], entity: EntitySerialization) -
     lines.append(
         f"  {label} [bold]{display_name(entity.name)}[/]{death_mark}  "
         f"HP:[yellow]{stats.hp}/{stats.max_hp}[/]  "
-        f"攻:{stats.attack}  防:{stats.defense}"
+        f"ATK:{stats.attack}  DEF:{stats.defense}"
     )
 
 

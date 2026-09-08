@@ -32,7 +32,7 @@ class _CraftConsumableResponse(BaseModel):
 CONSUMABLE_ON_USE_CAPABILITY: Final[
     str
 ] = """消耗品的「使用效果提示词」会交给战斗结算 agent 执行，该 agent 仅能：
-- 读取发起者与目标的 HP/攻击/防御；
+- 读取发起者与目标的 HP/格挡(BLOCK)；
 - 修改受影响角色的 HP（0 ≤ HP ≤ 最大 HP）；
 - 提交战斗日志、演出叙事与场景环境快照。
 

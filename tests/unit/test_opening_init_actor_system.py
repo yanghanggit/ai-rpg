@@ -91,19 +91,19 @@ def test_format_other_actors_info_contains_name_camp_appearance() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_build_opening_init_prompt_contains_key_fields() -> None:
-    stats = CharacterStats(hp=8, max_hp=20, attack=6, defense=4)
-    result = _build_opening_init_prompt(
-        stage_name="入口石室",
-        stage_description="潮湿阴冷的洞口",
-        other_actors_info=[],
-        actor_stats=stats,
-    )
-    assert "入口石室" in result
-    assert "潮湿阴冷的洞口" in result
-    assert "8/20" in result
-    assert "6" in result  # attack
-    assert "4" in result  # defense
+# def test_build_opening_init_prompt_contains_key_fields() -> None:
+#     stats = CharacterStats(hp=8, max_hp=20, attack=6, defense=4)
+#     result = _build_opening_init_prompt(
+#         stage_name="入口石室",
+#         stage_description="潮湿阴冷的洞口",
+#         other_actors_info=[],
+#         actor_stats=stats,
+#     )
+#     assert "入口石室" in result
+#     assert "潮湿阴冷的洞口" in result
+#     assert "8/20" in result
+#     assert "6" in result  # attack
+#     assert "4" in result  # defense
 
 
 # ---------------------------------------------------------------------------

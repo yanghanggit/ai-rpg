@@ -116,17 +116,23 @@ def test_get_balance() -> None:
 
 
 async def test_cache_tokens() -> None:
-    """测试缓存命中 token 统计"""
-    print("\n=== 测试 prompt_cache_hit/miss_tokens ===")
+    """测试缓存命中 token 统计与上下文占比计算"""
+    print("\n=== 测试 usage / context_usage_ratio ===")
     client = DeepSeekClient(
         name="test_cache",
         full_prompt="请用一句话解释什么是缓存。",
         messages=[_SYSTEM],
     )
     await client.chat()
-    # print(f"缓存命中 tokens : {client.prompt_cache_hit_tokens}")
-    # print(f"缓存未命中 tokens: {client.prompt_cache_miss_tokens}")
+    assert client.usage is not None, "预期 chat() 后 usage 不为 None"
     print(f"回复: {client.response_content}")
+    print(f"prompt_tokens      : {client.usage.prompt_tokens}")
+    print(f"completion_tokens  : {client.usage.completion_tokens}")
+    print(f"total_tokens       : {client.usage.total_tokens}")
+    print(f"缓存命中 tokens     : {client.usage.prompt_cache_hit_tokens}")
+    print(f"缓存未命中 tokens   : {client.usage.prompt_cache_miss_tokens}")
+    print(f"上下文长度上限      : {client.context_window}")
+    print(f"上下文占比          : {client.context_usage_ratio:.6%}")
 
 
 async def test_model_matrix() -> None:

@@ -5,18 +5,29 @@
 import datetime
 import json
 import shutil
-from typing import Optional, Tuple, Dict
 from pathlib import Path
+from typing import Any, Dict, Optional, Tuple, cast
+
+from loguru import logger
 from pydantic import TypeAdapter
-from ..models import get_buffer_string, AgentMemory, PlayerSession, Dungeon, WorldState
+
+from ..models import AgentMemory, Dungeon, PlayerSession, WorldState, get_buffer_string
 from ..models.blueprint import Blueprint
 from ..models.messages import ChatMessage
 from ..models.serialization import EntitySerialization
 from ..models.session_message import SessionMessage
-from loguru import logger
 
 # TypeAdapter 用于将 JSON 字符串转换为 ChatMessage 对象
 _message_adapter: TypeAdapter[ChatMessage] = TypeAdapter(ChatMessage)
+
+
+###############################################################################################################################################
+def _load_agent_memory_meta(memories_dir: Path, agent_name: str) -> dict[str, Any]:
+    """读取单个 agent 的记忆元数据（memories/{agent_name}.meta.json），缺失时返回空 dict。"""
+    meta_path = memories_dir / f"{agent_name}.meta.json"
+    if not meta_path.exists():
+        return {}
+    return cast(dict[str, Any], json.loads(meta_path.read_text(encoding="utf-8")))
 
 
 ###############################################################################################################################################
@@ -60,7 +71,9 @@ def restore_world(snapshot_dir: Path) -> Tuple[WorldState, PlayerSession]:
                 if line.strip():
                     memory_messages.append(_message_adapter.validate_json(line))
             agent_memories[agent_name] = AgentMemory(
-                name=agent_name, messages=memory_messages
+                name=agent_name,
+                messages=memory_messages,
+                **_load_agent_memory_meta(memories_dir, agent_name),
             )
 
     # 将 agent_memories 赋值给 world
@@ -227,6 +240,12 @@ def _dump_agent_memories(
         message_lines = [msg.model_dump_json() for msg in agent_memory.messages]
         (memory_dir / f"{agent_name}.jsonl").write_text(
             "\n".join(message_lines) + "\n", encoding="utf-8"
+        )
+
+        # 写 agent_name.meta.json（记忆元数据，如 context_usage_ratio）
+        meta = agent_memory.model_dump(exclude={"name", "messages"})
+        (memory_dir / f"{agent_name}.meta.json").write_text(
+            json.dumps(meta, ensure_ascii=False), encoding="utf-8"
         )
 
         # 写 agent_name_buffer.txt

@@ -1,4 +1,9 @@
 from typing import Callable, List, Sequence
+
+from loguru import logger
+
+from ..entitas import Entity
+from ..models import AgentMemory, WorldState
 from ..models.messages import (
     AIMessage,
     BaseMessage,
@@ -7,10 +12,6 @@ from ..models.messages import (
     SystemMessage,
     ToolMessage,
 )
-from loguru import logger
-from ..entitas import Entity
-from ..models import AgentMemory, WorldState
-
 
 MessagePredicate = Callable[[BaseMessage, int, Sequence[ChatMessage]], bool]
 
@@ -64,6 +65,10 @@ class RPGAgentMemory:
         assert ai_message.content != "", "ai_message content should not be empty"
         # 最后添加到记忆中。
         agent_memory = self.get_agent_memory(entity)
+        # 同步最新一次 LLM 调用的上下文占比到 AgentMemory（若消息携带该信息）
+        context_usage_ratio = getattr(ai_message, "context_usage_ratio", None)
+        if context_usage_ratio is not None:
+            agent_memory.context_usage_ratio = context_usage_ratio
         agent_memory.messages.append(ai_message)
 
     ###############################################################################################################################################

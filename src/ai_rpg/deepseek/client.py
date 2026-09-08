@@ -32,7 +32,7 @@ from ..models.messages import (
     get_buffer_string,
 )
 from . import config
-from .config import CHAT_DUMP_DIR, MODEL_FLASH
+from .config import CHAT_DUMP_DIR, MODEL_FLASH, MODEL_PRO
 
 load_dotenv()
 
@@ -47,6 +47,13 @@ _ROLE_MAP: Final[Dict[str, str]] = {
     "human": "user",
     "ai": "assistant",
     "tool": "tool",
+}
+
+
+# 各模型的上下文长度上限（输入 + 输出 token 总数），取值见 DeepSeek 定价文档
+CONTEXT_WINDOW_TOKENS: Final[Dict[str, int]] = {
+    MODEL_FLASH: 1_000_000,
+    MODEL_PRO: 1_000_000,
 }
 
 
@@ -78,6 +85,18 @@ class ToolCall(BaseModel):
     id: str  # 本次调用的唯一 ID，需在 ToolMessage 中回传
     type: str = "function"  # 固定为 "function"
     function: Function  # 函数调用信息
+
+
+############################################################################################################
+class Usage(BaseModel):
+    """响应中的 token 用量统计（对应 DeepSeek/OpenAI usage 字段）"""
+
+    prompt_tokens: int  # 本次请求上下文（输入）消耗的 token 数
+    completion_tokens: int  # 本次生成（输出）消耗的 token 数
+    total_tokens: int  # 输入 + 输出的 token 总数
+    prompt_cache_hit_tokens: int  # 命中 KVCache 的输入 token 数
+    prompt_cache_miss_tokens: int  # 未命中 KVCache 的输入 token 数
+    reasoning_tokens: int = 0  # 思考过程消耗的 token 数；非思考模式响应中不返回该字段
 
 
 ############################################################################################################
@@ -216,6 +235,7 @@ class DeepSeekClient:
         self._response_ai_message: Optional[AIMessage] = None
         self._finish_reason: str = ""
         self._tool_calls: List[ToolCall] = []
+        self._usage: Optional[Usage] = None
 
     ################################################################################################################################################################################
     @property
@@ -269,6 +289,26 @@ class DeepSeekClient:
     def tool_calls(self) -> List[ToolCall]:
         """最近一次响应中 LLM 发起的 tool 调用列表；无 tool call 时为空列表"""
         return self._tool_calls
+
+    ################################################################################################################################################################################
+    @property
+    def usage(self) -> Optional[Usage]:
+        """最近一次响应的 token 用量统计；调用 chat() 前为 None"""
+        return self._usage
+
+    ################################################################################################################################################################################
+    @property
+    def context_window(self) -> int:
+        """当前模型的上下文长度上限（输入 + 输出 token 总数）"""
+        return CONTEXT_WINDOW_TOKENS.get(self._model, 1_000_000)
+
+    ################################################################################################################################################################################
+    @property
+    def context_usage_ratio(self) -> float:
+        """最近一次响应 total_tokens 占模型上下文长度的比例；调用 chat() 前为 0.0"""
+        if self._usage is None:
+            return 0.0
+        return self._usage.total_tokens / self.context_window
 
     ################################################################################################################################################################################
     def _build_payload(self) -> Dict[str, Any]:
@@ -370,10 +410,24 @@ class DeepSeekClient:
         else:
             self._tool_calls = []
 
-        # 构建 AIMessage 对象，包含 content 和 additional_kwargs
+        # 解析 token 用量统计（response 顶层字段，与 choices 平级）
+        usage_data = data.get("usage")
+        assert usage_data is not None, "usage_data should not be None"
+        completion_tokens_details = usage_data.get("completion_tokens_details") or {}
+        self._usage = Usage(
+            prompt_tokens=usage_data["prompt_tokens"],
+            completion_tokens=usage_data["completion_tokens"],
+            total_tokens=usage_data["total_tokens"],
+            prompt_cache_hit_tokens=usage_data.get("prompt_cache_hit_tokens", 0),
+            prompt_cache_miss_tokens=usage_data.get("prompt_cache_miss_tokens", 0),
+            reasoning_tokens=completion_tokens_details.get("reasoning_tokens", 0),
+        )
+
+        # 构建 AIMessage 对象，包含 content、additional_kwargs 与上下文占比
         self._response_ai_message = AIMessage(
             content=content,
             additional_kwargs=additional_kwargs,
+            context_usage_ratio=self.context_usage_ratio,
         )
 
     ################################################################################################################################################################################

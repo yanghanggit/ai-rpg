@@ -2,7 +2,6 @@ from typing import Dict, Final, List, final
 
 from loguru import logger
 from overrides import override
-from pydantic import BaseModel
 
 from ..deepseek import DeepSeekClient, batch_chat
 from ..entitas import Entity, ExecuteProcessor, Matcher
@@ -14,17 +13,8 @@ from ..models import (
 )
 from ..models.messages import HumanMessage
 from ..utils import (
-    extract_json,
     prompt_builder,
 )
-
-
-#######################################################################################################################################
-@final
-class StageDescriptionResponse(BaseModel):
-    """场景描述系统的 AI 响应格式。"""
-
-    description: str = ""
 
 
 #######################################################################################################################################
@@ -41,7 +31,7 @@ def _build_condensed_stage_description_prompt(
     if len(actor_appearances_in_stage_info) == 0:
         actor_appearances_in_stage_info.append("无")
 
-    return f"""# 请你输出你的场景描述。并以 JSON 格式输出。
+    return f"""# 请你输出你的场景描述。
 
 ## 场景内角色外观（用于推断环境影响）
 
@@ -66,7 +56,7 @@ def _build_stage_description_prompt(
     if len(actor_appearances_in_stage_info) == 0:
         actor_appearances_in_stage_info.append("无")
 
-    return f"""# 请你输出你的场景描述。并以 JSON 格式输出。
+    return f"""# 请你输出你的场景描述。
 
 ## 场景内角色外观（用于推断环境影响）
 
@@ -74,20 +64,12 @@ def _build_stage_description_prompt(
 
 {"\n\n".join(actor_appearances_in_stage_info)}
 
-## 输出格式(JSON)
-
-```json
-{{
-  "description": "场景内的环境描述"
-}}
-```
-
 **约束规则**：
 
 - 若角色外观会对环境产生直接影响（例如：持火把者照亮黑暗空间、发光生物映亮洞壁），须将该**环境影响效果**纳入场景描述
 - 无论角色是否对环境产生影响，最终描述中均**不得提及**任何角色本身（不得出现角色名称、角色形态或角色行为）
 - 所有输出必须为第三人称视角
-- 严格按上述JSON格式输出"""
+- 直接输出一段纯文本的环境描述，不要使用 JSON 或 Markdown 标记"""
 
 
 #######################################################################################################################################
@@ -164,13 +146,12 @@ class StageDescriptionSystem(ExecuteProcessor):
             stage_entity is not None
         ), f"stage_entity is None, name={chat_client.name}"
 
-        # 尝试解析 AI 响应的 JSON 内容，构建 StageDescriptionResponse 对象。
-        try:
-            format_response = StageDescriptionResponse.model_validate_json(
-                extract_json(chat_client.response_content)
+        # 直接取 LLM 返回的纯文本作为场景描述（去除首尾空白）。
+        description = chat_client.response_content.strip()
+        if not description:
+            logger.warning(
+                f"StageDescriptionSystem: AI 返回空文本，name={chat_client.name}"
             )
-        except Exception as e:
-            logger.error(f"Exception: {e}")
             return False
 
         # 添加消息。
@@ -198,7 +179,7 @@ class StageDescriptionSystem(ExecuteProcessor):
         stage_entity.replace(
             StageDescriptionComponent,
             stage_entity.name,
-            format_response.description,
+            description,
         )
 
         return True

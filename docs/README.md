@@ -47,6 +47,7 @@
 | [手牌（HandComponent）](wiki/hand.md) | 手牌的双重身份：作为出牌者的行动选择集、作为被命中者的当前状态，及其与牌堆/仲裁/装备的关联 |
 | [DBG 核心概念定义与逻辑关系总结](<wiki/DBG 核心概念定义与逻辑关系总结.md>) | Modifiers（对局级规则）与 Affixes（一次性效果词缀）二者的定义、归属与逻辑关系：宏观-微观模型 |
 | [公共知识检索系统（RAG）](wiki/rag-knowledge-base.md) | 公共记忆与私人记忆的二元分离、Blueprint.knowledge_base 的编排约束、pgvector 两阶段生命周期、query 工具即时回流 |
+| [上下文窗口管理（Context Window Management）](wiki/context-window-management.md) | 应对 agent 记忆膨胀的三种手段：精简提示词、战斗记忆归档、上下文占比度量（两种减量 + 一种探针） |
 | [家园规划系统（Home Plan Action）](wiki/home-plan-action.md) | PlanAction 信号驱动的行动规划：工具调用式决策、query 先查后决策、玩家影子工具轨迹对齐 |
 | [新故事设计草稿：《大渊》](wiki/新故事设计草稿.md) | 作者头脑风暴草稿（不进入正式设计/demo）：双重世界、核心冲突、角色与玩法方向 |
 | [战役设定与全局规则（CAMPAIGN_SETTING / SYSTEM_RULES）](wiki/campaign-setting-rules-bridge.md) | 战役大背景与全局规则的分层（均封存在 demo/）、抽象设定的惰性知识问题、事件级引用提示的桥接方案 |

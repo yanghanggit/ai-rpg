@@ -51,7 +51,7 @@ def create_dungeon_combat_room_pipeline(
     )
     from ..systems.turn_end_arbitration_system import TurnEndArbitrationSystem
 
-    # from ..systems.combat_archive_system import CombatArchiveSystem  # 已拔掉：见下方注册处说明
+    from ..systems.combat_archive_system import CombatArchiveSystem
     from ..systems.combat_post_combat_transition_system import (
         CombatPostCombatTransitionSystem,
     )
@@ -153,7 +153,7 @@ def create_dungeon_combat_room_pipeline(
     processors.add(CombatLootSystem(dbg_game))
 
     # 战斗归档系统（生成总结、压缩消息、触发记忆存储，内部有状态守卫；可插拔，当前已拔掉）
-    # processors.add(CombatArchiveSystem(dbg_game))
+    processors.add(CombatArchiveSystem(dbg_game))
 
     # 战斗状态转换系统（COMPLETE -> POST_COMBAT，战斗状态机的关键步骤，必须常驻）
     processors.add(CombatPostCombatTransitionSystem(dbg_game))

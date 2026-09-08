@@ -8,6 +8,7 @@ from overrides import override
 from ..deepseek import DeepSeekClient, batch_chat
 from ..entitas import ExecuteProcessor
 from ..game.dbg_game import DBGGame
+from ..models import HumanMessage, get_buffer_string
 from ..utils import prompt_builder
 
 
@@ -77,5 +78,18 @@ class ContextCompactionSystem(ExecuteProcessor):
                 )
                 continue
 
-            self._game.compact_agent_memory(chat_client.name, summary)
+            entity = self._game.get_entity_by_name(chat_client.name)
+            assert entity is not None, f"无法找到实体：{chat_client.name}"
+
+            # 提取被压缩的原始历史为整字符串，附在摘要消息上留痕
+            agent_memory = self._game.get_agent_memory(entity)
+            removed_buffer = get_buffer_string(agent_memory.messages[1:])
+
+            self._game.compact_agent_memory(
+                entity,
+                HumanMessage(
+                    content=summary,
+                    removed_messages_content=removed_buffer,
+                ),
+            )
             logger.debug(f"ContextCompactionSystem: 已压缩 {chat_client.name} 的记忆")

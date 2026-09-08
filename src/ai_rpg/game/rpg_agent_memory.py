@@ -96,12 +96,13 @@ class RPGAgentMemory:
                 return
 
     ###############################################################################################################################################
-    def compact_agent_memory(self, agent_name: str, summary: str) -> None:
-        """将 agent 记忆中除首条 system 消息外的全部消息压缩为一条摘要，并重置上下文占比。"""
-        agent_memory = self._world.agent_memories.get(agent_name)
-        if agent_memory is None:
-            return
-        agent_memory.messages[1:] = [HumanMessage(content=summary)]
+    def compact_agent_memory(self, entity: Entity, human_message: HumanMessage) -> None:
+        """将 agent 记忆中除首条 system 消息外的全部消息压缩为一条摘要，并重置上下文占比。
+
+        human_message 由调用方构造，content 为摘要，可附加原始历史字符串留痕。
+        """
+        agent_memory = self.get_agent_memory(entity)
+        agent_memory.messages[1:] = [human_message]
         agent_memory.context_usage_ratio = 0.0
 
     ###############################################################################################################################################

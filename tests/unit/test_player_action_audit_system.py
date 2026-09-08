@@ -7,14 +7,16 @@ import pytest
 from src.ai_rpg.entitas.context import Context
 from src.ai_rpg.entitas.entity import Entity
 from src.ai_rpg.game.dbg_game import DBGGame
-from src.ai_rpg.models.actions import AnnounceAction, SpeakAction, WhisperAction
-from src.ai_rpg.models.components import (
+from src.ai_rpg.models import (
+    AnnounceAction,
+    SpeakAction,
+    WhisperAction,
     PlayerActionAuditComponent,
     PlayerComponent,
     WorldComponent,
+    SystemMessage,
+    AgentMemory,
 )
-from src.ai_rpg.models.messages import SystemMessage
-from src.ai_rpg.models.world_state import AgentMemory
 from src.ai_rpg.systems.player_action_audit_system import (
     ContentAuditResponse,
     PlayerActionAuditSystem,

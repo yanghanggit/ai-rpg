@@ -1,5 +1,6 @@
 from .actions import *
 from .agent_event import *
+from .agent_memory import *
 from .image import *
 from .api import *
 from .target_type import *

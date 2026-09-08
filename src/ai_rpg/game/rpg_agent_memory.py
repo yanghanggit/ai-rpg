@@ -1,4 +1,4 @@
-from typing import Callable, List, Sequence
+from typing import Callable, Dict, List, Sequence
 
 from loguru import logger
 
@@ -36,6 +36,11 @@ class RPGAgentMemory:
         )
 
     ###############################################################################################################################################
+    def get_all_agent_memories(self) -> Dict[str, AgentMemory]:
+        """返回所有 agent 的 LLM 记忆（名称 → AgentMemory）。"""
+        return self._world.agent_memories
+
+    ###############################################################################################################################################
     def remove_agent_memory(self, entity: Entity) -> None:
         """从 agent_memories 中移除实体的LLM记忆（若存在）"""
         if entity.name in self._world.agent_memories:
@@ -66,10 +71,38 @@ class RPGAgentMemory:
         # 最后添加到记忆中。
         agent_memory = self.get_agent_memory(entity)
         # 同步最新一次 LLM 调用的上下文占比到 AgentMemory（若消息携带该信息）
+        self._sync_context_usage_ratio(agent_memory, ai_message)
+        agent_memory.messages.append(ai_message)
+
+    ###############################################################################################################################################
+    def _sync_context_usage_ratio(
+        self, agent_memory: AgentMemory, ai_message: AIMessage
+    ) -> None:
+        """若 AI 消息携带上下文占比，则同步到 AgentMemory。"""
         context_usage_ratio = getattr(ai_message, "context_usage_ratio", None)
         if context_usage_ratio is not None:
             agent_memory.context_usage_ratio = context_usage_ratio
-        agent_memory.messages.append(ai_message)
+
+    ###############################################################################################################################################
+    def sync_latest_context_usage_ratio(self, entity: Entity) -> None:
+        """从记忆中最新的 AI 消息同步上下文占比到 AgentMemory。
+
+        供绕过 add_ai_message 直接追加 AI 消息的路径使用（如 agent_loop 工具调用循环）。
+        """
+        agent_memory = self.get_agent_memory(entity)
+        for message in reversed(agent_memory.messages):
+            if isinstance(message, AIMessage):
+                self._sync_context_usage_ratio(agent_memory, message)
+                return
+
+    ###############################################################################################################################################
+    def compact_agent_memory(self, agent_name: str, summary: str) -> None:
+        """将 agent 记忆中除首条 system 消息外的全部消息压缩为一条摘要，并重置上下文占比。"""
+        agent_memory = self._world.agent_memories.get(agent_name)
+        if agent_memory is None:
+            return
+        agent_memory.messages[1:] = [HumanMessage(content=summary)]
+        agent_memory.context_usage_ratio = 0.0
 
     ###############################################################################################################################################
     def filter_messages(

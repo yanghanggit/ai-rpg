@@ -10,6 +10,7 @@ def create_home_craft_pipeline(game: BaseGame) -> RPGGameProcessPipeline:
 
     ### 不这样就循环引用
     from .dbg_game import DBGGame
+    from ..systems.context_compaction_system import ContextCompactionSystem
     from ..systems.destroy_entity_system import DestroyEntitySystem
 
     from ..systems.appearance_initialization_system import (
@@ -50,6 +51,9 @@ def create_home_craft_pipeline(game: BaseGame) -> RPGGameProcessPipeline:
 
     # 动作处理后，可能清理。
     processors.add(DestroyEntitySystem(dbg_game))
+
+    # 上下文压缩系统：上下文占比超阈值时压缩记忆
+    processors.add(ContextCompactionSystem(dbg_game))
 
     # 收尾系统。
     processors.add(EpilogueSystem(dbg_game))

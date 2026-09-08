@@ -25,6 +25,7 @@ def create_dungeon_generate_pipeline(
     from ..systems.epilogue_system import EpilogueSystem
     from ..systems.prologue_system import PrologueSystem
     from ..systems.action_cleanup_system import ActionCleanupSystem
+    from ..systems.context_compaction_system import ContextCompactionSystem
     from ..systems.destroy_entity_system import DestroyEntitySystem
 
     dbg_game = cast(DBGGame, game)
@@ -51,6 +52,9 @@ def create_dungeon_generate_pipeline(
 
     # 动作处理后，可能清理。
     processors.add(DestroyEntitySystem(dbg_game))
+
+    # 上下文压缩系统：上下文占比超阈值时压缩记忆
+    processors.add(ContextCompactionSystem(dbg_game))
 
     # 收尾系统
     processors.add(EpilogueSystem(dbg_game))

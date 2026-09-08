@@ -19,6 +19,7 @@ def create_dungeon_combat_room_pipeline(
     from ..systems.appearance_initialization_system import (
         AppearanceInitializationSystem,
     )
+    from ..systems.context_compaction_system import ContextCompactionSystem
     from ..systems.destroy_entity_system import DestroyEntitySystem
     from ..systems.draw_cards_action_system import (
         DrawCardsActionSystem,
@@ -166,6 +167,9 @@ def create_dungeon_combat_room_pipeline(
 
     # 是否需要销毁实体
     processors.add(DestroyEntitySystem(dbg_game))
+
+    # 上下文压缩系统：上下文占比超阈值时压缩记忆
+    processors.add(ContextCompactionSystem(dbg_game))
 
     # 收尾系统。
     processors.add(EpilogueSystem(dbg_game))

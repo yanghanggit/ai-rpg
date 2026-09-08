@@ -98,6 +98,10 @@ class HomeNpcPlanSystem(ReactiveProcessor):
             terminal_tools=[submit_tool],
             max_rounds=5,
         )
+
+        # agent_loop 直接原地追加 AI 消息（绕过 add_ai_message），需手动同步最新上下文占比
+        self._game.sync_latest_context_usage_ratio(entity)
+
         return ok and result.submitted
 
     #######################################################################################################################################

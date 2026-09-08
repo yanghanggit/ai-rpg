@@ -3,7 +3,8 @@
 from typing import Final, List, final
 from uuid import uuid4
 
-from pydantic import BaseModel, Field
+from loguru import logger
+from pydantic import BaseModel, Field, model_validator
 
 from .target_type import TargetType
 
@@ -44,6 +45,26 @@ class Card(BaseModel):
     source: str = ""  # 卡牌来源（生成/注入者）名称；空字符串表示来源未知
     uuid: str = Field(default_factory=lambda: str(uuid4()))  # 全局唯一标识符
 
+    @model_validator(mode="after")
+    def _warn_flag_conflicts(self) -> "Card":
+        """报警（不拦截）：检测布尔标志的互斥/死组合，仅记录告警日志。"""
+        if self.retain and self.ethereal:
+            logger.warning(
+                f"Card「{self.name}」同时开启 retain 与 ethereal：二者互斥，"
+                f"pass turn 时 ethereal 会先于回合末 retain 生效，retain 永不触发。"
+            )
+        if not self.playable and self.transferable:
+            logger.warning(
+                f"Card「{self.name}」playable=false 但 transferable=true："
+                f"牌不可出，transferable 永不触发，属无效组合。"
+            )
+        if not self.playable and self.exhaust:
+            logger.warning(
+                f"Card「{self.name}」playable=false 但 exhaust=true："
+                f"牌不可出，exhaust 永不触发，属无效组合。"
+            )
+        return self
+
 
 ###############################################################################################################################################
 
@@ -74,6 +95,11 @@ BUILD_CARD_FIELD_DESCRIPTION: Final[
 | `block` | 手牌持有期间提供的格挡；默认 0 |
 | `self_target` | 锁定出牌者自身；true 时无需 targets |
 | `target_type` | 目标类型（见下表）；`self_target=true` 时忽略 |
+
+## 布尔标志的互斥与依赖
+
+- `retain` 与 `ethereal` 互斥，禁止同时为 true：二者同属「回合边界手中牌去向」的两极，同时开启时 ethereal（pass turn 即消耗）先于 retain（回合末保留）生效，retain 失效。
+- `transferable` 与 `exhaust` 均为「被打出时」结算，故为 true 时要求 `playable=true`；`playable=false` 时牌不可出，二者永不触发，属无效组合。
 
 ## 目标类型（target_type）
 

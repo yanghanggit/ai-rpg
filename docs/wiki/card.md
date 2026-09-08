@@ -30,7 +30,7 @@
 
 ## 生命周期流转（计算端消费）
 
-`playable` / `exhaust` / `retain` / `ethereal` / `transferable` 控制牌在牌堆间的确定性流转，每个标志单一职责、互不叠加语义：
+`playable` / `exhaust` / `retain` / `ethereal` / `transferable` 控制牌在牌堆间的确定性流转，每个标志单一职责：
 
 - `playable`：不可出时在出牌执行端拦截。
 - `exhaust`：出牌后永久离场，不进弃牌循环。
@@ -38,7 +38,9 @@
 - `ethereal`：pass turn 时若仍在手牌则自动离场。
 - `transferable`：出牌时从源手牌移除本体，并 copy 一份到每个解析目标的手牌。
 
-组合这些标志即可表达「一次性爆发」「常驻被动」「传染型持续效果」等玩法。
+组合这些标志即可表达「一次性爆发」「常驻被动」「传染型持续效果」等玩法。但并非任意组合都成立：`retain` 与 `ethereal` 同属「回合边界手中牌去向」这一语义轴的两极，互斥，同时开启时 ethereal 先于 retain 生效、后者失效；`transferable` 与 `exhaust` 都是「被打出时」结算，设为 true 的前提是 `playable=true`，否则永不触发。
+
+→ 参见：[卡牌设计指南（Card Design）](card-design.md)（互斥与依赖的硬约束）
 
 ---
 

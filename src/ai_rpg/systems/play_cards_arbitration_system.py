@@ -12,6 +12,8 @@ from pydantic import BaseModel, Field
 from ..deepseek import ToolDefinition, ToolFunction, agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_combat_processor import (
+    build_artifact_modifiers_section,
+    build_combat_camp_info_section,
     compute_character_hand_block,
     compute_character_stats,
     set_character_hp,
@@ -136,6 +138,8 @@ def _build_combat_arbitration_tool_prompt(
     action_order: List[str] | None = None,
     completed_actors: List[str] | None = None,
     current_actor: str | None = None,
+    camp_info: str = "",
+    artifact_modifiers: str = "",
 ) -> str:
     unique_targets = list(dict.fromkeys(targets))
     target_names = "、".join(unique_targets) if unique_targets else "无"
@@ -167,6 +171,10 @@ def _build_combat_arbitration_tool_prompt(
 
 {round_action_info}
 
+{camp_info}
+
+{artifact_modifiers}
+
 {CALC_RULES_SECTION}
 
 {ON_PLAY_AFFIX_RULES}
@@ -179,7 +187,7 @@ def _build_combat_arbitration_tool_prompt(
 
 1. 调用 get_entity_stats 读取「出牌者」与所有「目标」的当前属性与受击词缀（可在同一次回复中并发调用多个）。
 2. 依据「计算规则」结算，得出每个受影响角色的最终 HP。
-3. 对每个受影响角色（含出牌者与所有目标）调用 set_entity_hp 写入最终 HP（可在同一次回复中并发调用多个）。
+3. 对每个受影响角色（含出牌者、所有目标，以及「场景神器修正规则」指定的其他角色）调用 set_entity_hp 写入最终 HP（可在同一次回复中并发调用多个）。
 4. 调用 submit_arbitration 提交最终结果，结束本次仲裁。
 
 ## submit_arbitration 字段说明
@@ -419,6 +427,10 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             StageDescriptionComponent
         ).narrative
 
+        # 仲裁提示词补充：实时存活阵营清单 + 场景神器修正规则
+        camp_info = build_combat_camp_info_section(self._game, stage_entity)
+        artifact_modifiers = build_artifact_modifiers_section(stage_entity)
+
         # 生成工具化仲裁提示消息（完整版，供 LLM 首轮使用）
         message = _build_combat_arbitration_tool_prompt(
             actor_entity.name,
@@ -429,6 +441,8 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             round_action_order,
             round_completed_actors,
             round_current_actor,
+            camp_info=camp_info,
+            artifact_modifiers=artifact_modifiers,
         )
 
         # 仲裁结果容器：handler 通过 partial 绑定写入，避免闭包。

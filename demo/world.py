@@ -9,6 +9,7 @@ from uuid import uuid4
 from ai_rpg.models import (
     Actor,
     ActorType,
+    Artifact,
     Blueprint,
     Card,
     CharacterStats,
@@ -30,6 +31,7 @@ from ai_rpg.models import (
     MaterialItem,
     PlayerActionAuditComponent,
     Stage,
+    StageArtifactComponent,
     StageType,
     StorageComponent,
     World,
@@ -279,6 +281,27 @@ def create_shrine_ruins_dungeon() -> Dungeon:
     )
 
     attach_stage_component(stage_shrine_courtyard)
+
+    # 战斗场景神器：注入一条第 2 回合强制友方全灭的仲裁修正规则
+    stage_shrine_courtyard.components.append(
+        ComponentSerialization(
+            name=StageArtifactComponent.__name__,
+            data=StageArtifactComponent(
+                name=stage_shrine_courtyard.name,
+                artifacts=[
+                    Artifact(
+                        name="纸钱方孔",
+                        description="散落满院的纸钱，其方孔总像在暗中调转方向；据说被它们「看过」第二回合的人，会在一瞬间失了全部气力。",
+                        modifiers=[
+                            "【第 2 回合强制规则】若本次出牌仲裁发生在第 2 回合：无视本次卡牌结算，"
+                            "将「场上阵营」中的全部友方角色 HP 设为 0——对每个友方角色各调用一次 set_entity_hp；"
+                            "combat_log 与 narrative 必须体现友方全灭，不得偏离。",
+                        ],
+                    ),
+                ],
+            ).model_dump(),
+        )
+    )
 
     actor_paper_doll = create_actor_paper_doll()
     stage_shrine_courtyard.actors = [actor_paper_doll]

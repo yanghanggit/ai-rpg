@@ -19,6 +19,7 @@ from ..models import (
     PartyMemberComponent,
     Round,
     RoundStatsComponent,
+    StageArtifactComponent,
     TargetType,
     compute_effective_stats,
     compute_hand_block,
@@ -142,6 +143,40 @@ def get_alive_monsters_in_stage(
             anchor_entity, Matcher(all_of=[MonsterComponent], none_of=[DeathComponent])
         )
     )
+
+
+#################################################################################################################################################
+def build_combat_camp_info_section(game: DBGGame, stage_entity: Entity) -> str:
+    """构建仲裁任务提示词中的「场上阵营」段落（仅当前存活角色，按阵营分组）。"""
+    party_members = get_alive_party_members_in_stage(stage_entity, game)
+    monsters = get_alive_monsters_in_stage(stage_entity, game)
+
+    party_names = "、".join(e.name for e in party_members) if party_members else "无"
+    monster_names = "、".join(e.name for e in monsters) if monsters else "无"
+
+    return (
+        "## 场上阵营（当前存活）\n\n"
+        f"- 友方：{party_names}\n"
+        f"- 敌方：{monster_names}"
+    )
+
+
+#################################################################################################################################################
+def build_artifact_modifiers_section(stage_entity: Entity) -> str:
+    """构建仲裁任务提示词中的「场景神器修正规则」段落；无修饰符时返回空串。"""
+    if not stage_entity.has(StageArtifactComponent):
+        return ""
+
+    modifiers = [
+        modifier
+        for artifact in stage_entity.get(StageArtifactComponent).artifacts
+        for modifier in artifact.modifiers
+    ]
+    if not modifiers:
+        return ""
+
+    lines = "\n".join(f"- {m}" for m in modifiers)
+    return f"## 场景神器修正规则（本场仲裁必须遵守）\n\n{lines}"
 
 
 #################################################################################################################################################

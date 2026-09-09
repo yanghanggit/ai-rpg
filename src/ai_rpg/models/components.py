@@ -3,6 +3,7 @@
 from typing import List, final
 
 from ..entitas.components import Component
+from .artifacts import Artifact
 from .card import Card
 from .character_stats import CharacterStats
 from .items import AnyItem, CostumeItem, GearItem
@@ -57,6 +58,16 @@ class StageDescriptionComponent(Component):
 
     name: str
     narrative: str  # 叙述性描述文本
+
+
+############################################################################################################
+@final
+@register_component_type
+class StageArtifactComponent(Component):
+    """挂载在（战斗）场景实体，承载该场景携带的神器及其修正规则（modifiers 注入仲裁提示词）。"""
+
+    name: str
+    artifacts: List[Artifact] = []
 
 
 ############################################################################################################

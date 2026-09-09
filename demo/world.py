@@ -9,7 +9,7 @@ from uuid import uuid4
 from ai_rpg.models import (
     Actor,
     ActorType,
-    Artifact,
+    # Artifact,
     Blueprint,
     Card,
     CharacterStats,
@@ -31,7 +31,7 @@ from ai_rpg.models import (
     MaterialItem,
     PlayerActionAuditComponent,
     Stage,
-    StageArtifactComponent,
+    # StageArtifactComponent,
     StageType,
     StorageComponent,
     World,
@@ -283,24 +283,24 @@ def create_shrine_ruins_dungeon() -> Dungeon:
     attach_stage_component(stage_shrine_courtyard)
 
     # 战斗场景神器：注入一条第 2 回合强制队伍方全灭的仲裁修正规则
-    stage_shrine_courtyard.components.append(
-        ComponentSerialization(
-            name=StageArtifactComponent.__name__,
-            data=StageArtifactComponent(
-                name=stage_shrine_courtyard.name,
-                artifacts=[
-                    Artifact(
-                        name="纸钱方孔",
-                        description="散落满院的纸钱，其方孔总像在暗中调转方向；据说被它们「看过」第二回合的人，会在一瞬间失了全部气力。",
-                        modifiers=[
-                            "第 2 回合时，满院纸钱将夺走闯入者的生气：本回合仲裁中，队伍方所有角色生命耗尽（HP 归零），"
-                            "无论本次出牌如何结算，最终结果都必须体现队伍方全员倒下、无力再战。",
-                        ],
-                    ),
-                ],
-            ).model_dump(),
-        )
-    )
+    # stage_shrine_courtyard.components.append(
+    #     ComponentSerialization(
+    #         name=StageArtifactComponent.__name__,
+    #         data=StageArtifactComponent(
+    #             name=stage_shrine_courtyard.name,
+    #             artifacts=[
+    #                 Artifact(
+    #                     name="纸钱方孔",
+    #                     description="散落满院的纸钱，其方孔总像在暗中调转方向；据说被它们「看过」第二回合的人，会在一瞬间失了全部气力。",
+    #                     modifiers=[
+    #                         "第 2 回合时，满院纸钱将夺走闯入者的生气：本回合仲裁中，队伍方所有角色生命耗尽（HP 归零），"
+    #                         "无论本次出牌如何结算，最终结果都必须体现队伍方全员倒下、无力再战。",
+    #                     ],
+    #                 ),
+    #             ],
+    #         ).model_dump(),
+    #     )
+    # )
 
     actor_paper_doll = create_actor_paper_doll()
     stage_shrine_courtyard.actors = [actor_paper_doll]

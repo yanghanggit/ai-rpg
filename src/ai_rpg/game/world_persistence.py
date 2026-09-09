@@ -1,5 +1,5 @@
-"""世界存储模块
-提供游戏世界数据的持久化与调试输出功能。
+"""世界持久化模块
+提供游戏存档（WorldState + PlayerSession）的保存与还原功能。
 """
 
 import datetime
@@ -31,11 +31,11 @@ def _load_agent_memory_meta(memories_dir: Path, agent_name: str) -> dict[str, An
 
 
 ###############################################################################################################################################
-def restore_world(snapshot_dir: Path) -> Tuple[WorldState, PlayerSession]:
+def restore_world(save_dir: Path) -> Tuple[WorldState, PlayerSession]:
     """从存档目录中读取并还原 WorldState 与 PlayerSession。
 
     Args:
-        snapshot_dir: 存档目录路径，即含有 world_state.json 与 player_session.jsonl 的目录
+        save_dir: 存档目录路径，即含有 world_state.json 与 player_session.jsonl 的目录
                       （例如 .worlds/{username}/{game}/{timestamp}/）
 
     Returns:
@@ -45,9 +45,9 @@ def restore_world(snapshot_dir: Path) -> Tuple[WorldState, PlayerSession]:
         FileNotFoundError: 若 world_state.json 或 player_session.jsonl 不存在
     """
 
-    # 检查 snapshot_dir 是否存在
-    world_path = snapshot_dir / "world_state.json"
-    session_path = snapshot_dir / "player_session.jsonl"
+    # 检查 save_dir 是否存在
+    world_path = save_dir / "world_state.json"
+    session_path = save_dir / "player_session.jsonl"
 
     # 检查文件是否存在
     if not world_path.exists():
@@ -62,7 +62,7 @@ def restore_world(snapshot_dir: Path) -> Tuple[WorldState, PlayerSession]:
 
     # 从 memories/ 目录重建 agent_memories
     agent_memories: Dict[str, AgentMemory] = {}
-    memories_dir = snapshot_dir / "memories"
+    memories_dir = save_dir / "memories"
     if memories_dir.exists():
         for memory_file in memories_dir.glob("*.jsonl"):
             agent_name = memory_file.stem
@@ -81,7 +81,7 @@ def restore_world(snapshot_dir: Path) -> Tuple[WorldState, PlayerSession]:
 
     # 从 entities/ 目录重建 entities
     entities_list: list[EntitySerialization] = []
-    entities_dir = snapshot_dir / "entities"
+    entities_dir = save_dir / "entities"
     if entities_dir.exists():
         for ent_file in entities_dir.glob("*.json"):
             entities_list.append(
@@ -94,7 +94,7 @@ def restore_world(snapshot_dir: Path) -> Tuple[WorldState, PlayerSession]:
     world.entities = entities_list
 
     # 从 dungeon/ 目录重建 dungeon
-    dungeon_dir = snapshot_dir / "dungeon"
+    dungeon_dir = save_dir / "dungeon"
     if dungeon_dir.exists():
         for dun_file in dungeon_dir.glob("*.json"):
             world.dungeon = Dungeon.model_validate_json(
@@ -103,7 +103,7 @@ def restore_world(snapshot_dir: Path) -> Tuple[WorldState, PlayerSession]:
             break
 
     # 从 blueprint/ 目录重建 blueprint
-    blueprint_dir = snapshot_dir / "blueprint"
+    blueprint_dir = save_dir / "blueprint"
     if blueprint_dir.exists():
         for bp_file in blueprint_dir.glob("*.json"):
             world.blueprint = Blueprint.model_validate_json(
@@ -133,18 +133,18 @@ def restore_world(snapshot_dir: Path) -> Tuple[WorldState, PlayerSession]:
     )
 
     # 返回
-    logger.debug(f"世界已还原: {snapshot_dir}")
+    logger.debug(f"世界已还原: {save_dir}")
     return world, player_session
 
 
 ###############################################################################################################################################
-def archive_world(
+def save_world(
     world: WorldState,
     player_session: PlayerSession,
     worlds_dir: Path,
     save_dir: Optional[Path] = None,
 ) -> bool:
-    """持久化游戏世界数据到存档目录。
+    """保存游戏世界与玩家会话到存档目录。
 
     存档目录结构：
         {save_dir}/
@@ -152,7 +152,7 @@ def archive_world(
             ├── player_session.jsonl    # JSONL 格式，首行为元数据，后续每行一个事件
             ├── blueprint/{blueprint_name}.json
             ├── entities/{entity}.json ...
-            ├── memories/{agent}.jsonl, {agent}_buffer.txt ...
+            ├── memories/{agent}.jsonl, {agent}.meta.json, {agent}_buffer.txt ...
             ├── dungeon/{dungeon_name}.json
     """
 
@@ -222,12 +222,12 @@ def archive_world(
 
 ###############################################################################################################################################
 def _dump_agent_memories(
-    debug_dir: Path, world: WorldState, should_write_buffer_string: bool = True
+    save_dir: Path, world: WorldState, should_write_buffer_string: bool = True
 ) -> None:
     """写入每个 agent 的记忆 JSONL 和 buffer.txt 文件到 memories/ 目录"""
 
     # 写memories/目录
-    memory_dir = debug_dir / "memories"
+    memory_dir = save_dir / "memories"
     memory_dir.mkdir(parents=True, exist_ok=True)
 
     # 实体记忆块之间的长分割线
@@ -267,11 +267,11 @@ def _dump_agent_memories(
 
 
 ###############################################################################################################################################
-def _dump_entities(debug_dir: Path, world: WorldState) -> None:
+def _dump_entities(save_dir: Path, world: WorldState) -> None:
     """写入每个实体的 JSON 文件到 entities/ 目录"""
 
     # 写entities/目录
-    entities_dir = debug_dir / "entities"
+    entities_dir = save_dir / "entities"
     if entities_dir.exists():
         shutil.rmtree(entities_dir)
 
@@ -285,11 +285,11 @@ def _dump_entities(debug_dir: Path, world: WorldState) -> None:
 
 
 ###############################################################################################################################################
-def _dump_dungeon(debug_dir: Path, dungeon: Dungeon) -> None:
+def _dump_dungeon(save_dir: Path, dungeon: Dungeon) -> None:
     """写入 dungeon 的 JSON 文件到 dungeon/ 目录"""
 
     # 写dungeon/目录
-    dungeon_dir = debug_dir / "dungeon"
+    dungeon_dir = save_dir / "dungeon"
     dungeon_dir.mkdir(parents=True, exist_ok=True)
     (dungeon_dir / f"{dungeon.name}.json").write_text(
         dungeon.model_dump_json(), encoding="utf-8"
@@ -297,11 +297,11 @@ def _dump_dungeon(debug_dir: Path, dungeon: Dungeon) -> None:
 
 
 ###############################################################################################################################################
-def _dump_blueprint(debug_dir: Path, blueprint: Blueprint) -> None:
+def _dump_blueprint(save_dir: Path, blueprint: Blueprint) -> None:
     """写入 blueprint 的 JSON 文件到 blueprint/ 目录"""
 
     # 写blueprint/目录
-    blueprint_dir = debug_dir / "blueprint"
+    blueprint_dir = save_dir / "blueprint"
     blueprint_dir.mkdir(parents=True, exist_ok=True)
     (blueprint_dir / f"{blueprint.name}.json").write_text(
         blueprint.model_dump_json(), encoding="utf-8"

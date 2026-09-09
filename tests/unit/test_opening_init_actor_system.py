@@ -19,7 +19,6 @@ from src.ai_rpg.models.character_stats import CharacterStats
 from src.ai_rpg.systems.opening_init_actor_system import (
     OpeningInitActorSystem,
     OtherActorInfo,
-    _build_opening_init_prompt,
     _build_other_actors_info,
 )
 

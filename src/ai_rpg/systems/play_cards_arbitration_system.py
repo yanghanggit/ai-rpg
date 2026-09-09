@@ -12,10 +12,10 @@ from pydantic import BaseModel, Field
 from ..deepseek import ToolDefinition, ToolFunction, agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_combat_processor import (
-    build_artifact_modifiers_section,
-    build_combat_camp_info_section,
     compute_character_hand_block,
     compute_character_stats,
+    get_alive_monsters_in_stage,
+    get_alive_party_members_in_stage,
     set_character_hp,
 )
 from ..game.dbg_game import DBGGame
@@ -28,6 +28,7 @@ from ..models import (
     HumanMessage,
     PlayCardsAction,
     RoundStatsComponent,
+    StageArtifactComponent,
     StageDescriptionComponent,
     TargetType,
 )
@@ -40,31 +41,10 @@ from .arbitration_prompt_builders import (
     build_stats_update_notification,
 )
 
+
 ###########################################################################################################################################
 # 仲裁提示词构建器（play_cards 专属）
 ###########################################################################################################################################
-ON_PLAY_AFFIX_RULES: Final[
-    str
-] = """## 即时词缀
-
-若列出即时词缀，须确保其被实际执行；可与结算规则泛化结合，但不引入词缀未提及的新机制。"""
-
-
-ON_HIT_AFFIX_RULES: Final[
-    str
-] = """## 受击词缀
-
-get_entity_stats 返回的「受击卡牌」仅列出带受击词缀（on_hit_affixes）的卡牌，用于结算受击效果；它**不是**完整手牌清单，其中展示的 block 为该卡牌自身的格挡值，角色总格挡以 `BLOCK` 字段为准。
-「受击词缀」仅在**该实体是本次出牌的目标**时触发；出牌者自身的受击词缀不触发（除非出牌者也同时是目标）。依词缀描述结算（如 [反伤] 对出牌者造成伤害），受击词缀的数值以该卡牌在 get_entity_stats 中返回的 damage 字段为准，不引入词缀未提及的新机制。"""
-
-
-SOURCE_FIELD_RULES: Final[
-    str
-] = """## source 字段
-
-`source` 为卡牌的来源（生成/注入者名称），空字符串表示来源未知；出牌卡牌与 get_entity_stats 返回的受击卡牌都会携带各自的 `source`。"""
-
-
 @dataclass
 class _SpreadSections:
     """SPREAD 专属 prompt 片段"""
@@ -138,8 +118,6 @@ def _build_combat_arbitration_tool_prompt(
     action_order: List[str] | None = None,
     completed_actors: List[str] | None = None,
     current_actor: str | None = None,
-    camp_info: str = "",
-    artifact_modifiers: str = "",
 ) -> str:
     unique_targets = list(dict.fromkeys(targets))
     target_names = "、".join(unique_targets) if unique_targets else "无"
@@ -171,24 +149,28 @@ def _build_combat_arbitration_tool_prompt(
 
 {round_action_info}
 
-{camp_info}
-
-{artifact_modifiers}
-
 {CALC_RULES_SECTION}
 
-{ON_PLAY_AFFIX_RULES}
+## 即时词缀
 
-{ON_HIT_AFFIX_RULES}
+若列出即时词缀，须确保其被实际执行；可与结算规则泛化结合，但不引入词缀未提及的新机制。
 
-{SOURCE_FIELD_RULES}
+## 受击词缀
+
+get_entity_stats 返回的「受击卡牌」仅列出带受击词缀（on_hit_affixes）的卡牌，用于结算受击效果；它**不是**完整手牌清单，其中展示的 block 为该卡牌自身的格挡值，角色总格挡以 `BLOCK` 字段为准。
+「受击词缀」仅在**该实体是本次出牌的目标**时触发；出牌者自身的受击词缀不触发（除非出牌者也同时是目标）。依词缀描述结算（如 [反伤] 对出牌者造成伤害），受击词缀的数值以该卡牌在 get_entity_stats 中返回的 damage 字段为准，不引入词缀未提及的新机制。
+
+## source 字段
+
+`source` 为卡牌的来源（生成/注入者名称），空字符串表示来源未知；出牌卡牌与 get_entity_stats 返回的受击卡牌都会携带各自的 `source`。
 
 ## 工具使用流程
 
-1. 调用 get_entity_stats 读取「出牌者」与所有「目标」的当前属性与受击词缀（可在同一次回复中并发调用多个）。
-2. 依据「计算规则」结算，得出每个受影响角色的最终 HP。
-3. 对每个受影响角色（含出牌者、所有目标，以及「场景神器修正规则」指定的其他角色）调用 set_entity_hp 写入最终 HP（可在同一次回复中并发调用多个）。
-4. 调用 submit_arbitration 提交最终结果，结束本次仲裁。
+1. 先调用 get_stage_stats 检查本场景自身状态（场上阵营与携带神器及其修正规则），若存在场景修正规则必须遵守。
+2. 调用 get_entity_stats 读取「出牌者」与所有「目标」的当前属性与受击词缀（可在同一次回复中并发调用多个）。
+3. 依据「计算规则」与场景修正规则结算，得出每个受影响角色的最终 HP。
+4. 对每个受影响角色（含出牌者、所有目标，以及场景修正规则指定的其他角色）调用 set_entity_hp 写入最终 HP（可在同一次回复中并发调用多个）。
+5. 调用 submit_arbitration 提交最终结果，结束本次仲裁。
 
 ## submit_arbitration 字段说明
 
@@ -218,6 +200,15 @@ def _build_combat_arbitration_broadcast(
 ###########################################################################################################################################
 # 仲裁工具定义
 ###########################################################################################################################################
+GET_STAGE_STATS_TOOL: Final[ToolDefinition] = ToolDefinition(
+    function=ToolFunction(
+        name="get_stage_stats",
+        description="读取当前战斗场景（仲裁者自身）的状态：场上存活阵营清单，以及场景携带的神器（name/description/modifiers）。结算前应先调用一次，以确认是否有需要遵守的场景级修正规则。",
+        parameters={"type": "object", "properties": {}},
+    )
+)
+
+
 GET_ENTITY_STATS_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="get_entity_stats",
@@ -333,6 +324,38 @@ def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
     )
 
 
+def _handle_get_stage_stats(game: DBGGame, stage_entity: Entity) -> str:
+    """处理 get_stage_stats 工具调用：返回场景自身状态（场上阵营 + 携带神器）。"""
+    party_members = get_alive_party_members_in_stage(stage_entity, game)
+    monsters = get_alive_monsters_in_stage(stage_entity, game)
+
+    party_names = "、".join(e.name for e in party_members) if party_members else "无"
+    monster_names = "、".join(e.name for e in monsters) if monsters else "无"
+
+    lines = [
+        "## 场上阵营（当前存活）",
+        f"- 队伍方：{party_names}",
+        f"- 怪物方：{monster_names}",
+        "",
+        "## 携带神器",
+    ]
+
+    artifacts = (
+        stage_entity.get(StageArtifactComponent).artifacts
+        if stage_entity.has(StageArtifactComponent)
+        else []
+    )
+    if artifacts:
+        for artifact in artifacts:
+            lines.append(f"- **{artifact.name}**：{artifact.description}")
+            for modifier in artifact.modifiers:
+                lines.append(f"  - {modifier}")
+    else:
+        lines.append("- 无")
+
+    return "\n".join(lines)
+
+
 def _handle_set_entity_hp(
     game: DBGGame, ctx: _ArbitrationContext, entity_name: str, hp: int
 ) -> str:
@@ -427,10 +450,6 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             StageDescriptionComponent
         ).narrative
 
-        # 仲裁提示词补充：实时存活阵营清单 + 场景神器修正规则
-        camp_info = build_combat_camp_info_section(self._game, stage_entity)
-        artifact_modifiers = build_artifact_modifiers_section(stage_entity)
-
         # 生成工具化仲裁提示消息（完整版，供 LLM 首轮使用）
         message = _build_combat_arbitration_tool_prompt(
             actor_entity.name,
@@ -441,8 +460,6 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             round_action_order,
             round_completed_actors,
             round_current_actor,
-            camp_info=camp_info,
-            artifact_modifiers=artifact_modifiers,
         )
 
         # 仲裁结果容器：handler 通过 partial 绑定写入，避免闭包。
@@ -454,11 +471,15 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                 prompt=message,
                 messages=self._game.get_agent_memory(stage_entity).messages,
                 tools=[
+                    GET_STAGE_STATS_TOOL,
                     GET_ENTITY_STATS_TOOL,
                     SET_ENTITY_HP_TOOL,
                     SUBMIT_ARBITRATION_TOOL,
                 ],
                 handlers={
+                    "get_stage_stats": partial(
+                        _handle_get_stage_stats, self._game, stage_entity
+                    ),
                     "get_entity_stats": partial(_handle_get_entity_stats, self._game),
                     "set_entity_hp": partial(_handle_set_entity_hp, self._game, ctx),
                     "submit_arbitration": partial(_handle_submit_arbitration, ctx),

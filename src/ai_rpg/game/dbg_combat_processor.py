@@ -1,7 +1,7 @@
 """战斗流程处理模块"""
 
 import random
-from typing import Dict, List, Optional, Sequence, Set, Tuple
+from typing import List, Optional, Sequence, Set, Tuple
 
 from loguru import logger
 
@@ -19,7 +19,6 @@ from ..models import (
     PartyMemberComponent,
     Round,
     RoundStatsComponent,
-    StageArtifactComponent,
     TargetType,
     compute_effective_stats,
     compute_hand_block,
@@ -39,6 +38,7 @@ def compute_character_stats(entity: Entity) -> CharacterStats:
     return compute_effective_stats(stats_comp.stats)
 
 
+#################################################################################################################################################
 def compute_character_hand_block(entity: Entity) -> int:
     """计算角色手牌提供的总格挡（block 之和）。"""
     hand = entity.get(HandComponent) if entity.has(HandComponent) else None
@@ -46,16 +46,16 @@ def compute_character_hand_block(entity: Entity) -> int:
 
 
 #################################################################################################################################################
-def collect_target_character_stats(
-    game: DBGGame, target_names: Sequence[str]
-) -> Dict[str, CharacterStats]:
-    """按目标名去重保序收集目标最终属性。"""
-    target_stats: Dict[str, CharacterStats] = {}
-    for target_name in dict.fromkeys(target_names):
-        target_entity = game.get_entity_by_name(target_name)
-        assert target_entity is not None, f"无法找到目标实体: {target_name}"
-        target_stats[target_name] = compute_character_stats(target_entity)
-    return target_stats
+# def collect_target_character_stats(
+#     game: DBGGame, target_names: Sequence[str]
+# ) -> Dict[str, CharacterStats]:
+#     """按目标名去重保序收集目标最终属性。"""
+#     target_stats: Dict[str, CharacterStats] = {}
+#     for target_name in dict.fromkeys(target_names):
+#         target_entity = game.get_entity_by_name(target_name)
+#         assert target_entity is not None, f"无法找到目标实体: {target_name}"
+#         target_stats[target_name] = compute_character_stats(target_entity)
+#     return target_stats
 
 
 #################################################################################################################################################
@@ -143,40 +143,6 @@ def get_alive_monsters_in_stage(
             anchor_entity, Matcher(all_of=[MonsterComponent], none_of=[DeathComponent])
         )
     )
-
-
-#################################################################################################################################################
-def build_combat_camp_info_section(game: DBGGame, stage_entity: Entity) -> str:
-    """构建仲裁任务提示词中的「场上阵营」段落（仅当前存活角色，按阵营分组）。"""
-    party_members = get_alive_party_members_in_stage(stage_entity, game)
-    monsters = get_alive_monsters_in_stage(stage_entity, game)
-
-    party_names = "、".join(e.name for e in party_members) if party_members else "无"
-    monster_names = "、".join(e.name for e in monsters) if monsters else "无"
-
-    return (
-        "## 场上阵营（当前存活）\n\n"
-        f"- 友方：{party_names}\n"
-        f"- 敌方：{monster_names}"
-    )
-
-
-#################################################################################################################################################
-def build_artifact_modifiers_section(stage_entity: Entity) -> str:
-    """构建仲裁任务提示词中的「场景神器修正规则」段落；无修饰符时返回空串。"""
-    if not stage_entity.has(StageArtifactComponent):
-        return ""
-
-    modifiers = [
-        modifier
-        for artifact in stage_entity.get(StageArtifactComponent).artifacts
-        for modifier in artifact.modifiers
-    ]
-    if not modifiers:
-        return ""
-
-    lines = "\n".join(f"- {m}" for m in modifiers)
-    return f"## 场景神器修正规则（本场仲裁必须遵守）\n\n{lines}"
 
 
 #################################################################################################################################################

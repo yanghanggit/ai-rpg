@@ -66,6 +66,7 @@ def create_dungeon_combat_room_pipeline(
     )
     from ..systems.combat_round_cleanup_system import CombatRoundCleanupSystem
     from ..systems.death_system import DeathSystem
+    from ..systems.pre_combat_outcome_system import PreCombatOutcomeSystem
     from ..systems.combat_round_start_system import (
         CombatRoundStartSystem,
         ActionOrderStrategy,
@@ -146,6 +147,9 @@ def create_dungeon_combat_room_pipeline(
 
     # 战斗回合清理系统（清除旧回合手牌状态）
     processors.add(CombatRoundCleanupSystem(dbg_game))
+
+    # 战斗结果判定前系统（必须在 CombatOutcomeSystem 之前：超时强制判负的死亡标记先于胜负判定）
+    processors.add(PreCombatOutcomeSystem(dbg_game))
 
     # 检查战斗结果系统（必须在死亡标记之后，才能在同一周期内根据最终存活情况判定胜负）
     processors.add(CombatOutcomeSystem(dbg_game))

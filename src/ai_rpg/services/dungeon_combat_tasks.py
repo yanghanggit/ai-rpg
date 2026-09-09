@@ -5,7 +5,7 @@
 from procrastinate import JobContext
 from loguru import logger
 from ..game.dbg_game import DBGGame
-from ..game.dbg_store import store_game
+from ..game.dbg_store import store_game_async
 from ..pgsql import procrastinate_app, save_task_error
 from .game_server_dependencies import get_game_server
 
@@ -49,7 +49,7 @@ async def execute_init_combat_task(
             await rpg_game._dungeon_combat_room_pipeline.process()
 
             # 存储战斗初始化后的世界状态，便于调试和回放
-            store_game(rpg_game)
+            await store_game_async(rpg_game)
 
         logger.info(f"✅ 战斗初始化任务完成: job_id={job_id}, user={user_name}")
 
@@ -102,7 +102,7 @@ async def execute_retreat_task(
                 )
 
             # 存储撤退后进入 post_combat 状态的世界状态，便于调试和回放
-            store_game(rpg_game)
+            await store_game_async(rpg_game)
 
         logger.info(
             f"✅ 撤退任务完成: job_id={job_id}, user={user_name}, "
@@ -154,7 +154,7 @@ async def execute_draw_cards_task(
             await rpg_game._dungeon_combat_room_pipeline.process()
 
             # 存储抽牌后的世界状态，便于调试和回放
-            store_game(rpg_game)
+            await store_game_async(rpg_game)
 
         logger.info(f"✅ 抽卡任务完成: job_id={job_id}, user={user_name}")
 
@@ -202,7 +202,7 @@ async def execute_play_cards_task(
             await rpg_game._dungeon_combat_room_pipeline.process()
 
             # 存储出牌后的世界状态，便于调试和回放
-            store_game(rpg_game)
+            await store_game_async(rpg_game)
 
         logger.info(f"✅ 出牌任务完成: job_id={job_id}, user={user_name}")
 
@@ -250,7 +250,7 @@ async def execute_pass_turn_task(
             await rpg_game._dungeon_combat_room_pipeline.process()
 
             # 存储过牌后的世界状态，便于调试和回放
-            store_game(rpg_game)
+            await store_game_async(rpg_game)
 
         logger.info(f"✅ 过牌任务完成: job_id={job_id}, user={user_name}")
 
@@ -299,7 +299,7 @@ async def execute_use_consumable_task(
             await rpg_game._dungeon_combat_room_pipeline.process()
 
             # 存储使用消耗品后的世界状态，便于调试和回放
-            store_game(rpg_game)
+            await store_game_async(rpg_game)
 
         logger.info(f"✅ 使用消耗品任务完成: job_id={job_id}, user={user_name}")
 
@@ -349,7 +349,7 @@ async def execute_equip_gear_task(
             await rpg_game._dungeon_combat_room_pipeline.process()
 
             # 存储使用装备后的世界状态，便于调试和回放
-            store_game(rpg_game)
+            await store_game_async(rpg_game)
 
         logger.info(f"✅ 使用装备任务完成: job_id={job_id}, user={user_name}")
 

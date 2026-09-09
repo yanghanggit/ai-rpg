@@ -5,7 +5,7 @@
 from procrastinate import JobContext
 from loguru import logger
 from ..game.dbg_game import DBGGame
-from ..game.dbg_store import store_game
+from ..game.dbg_store import store_game_async
 from ..pgsql import procrastinate_app, save_task_error
 from .game_server_dependencies import get_game_server
 from .dungeon_opening_actions import (
@@ -53,7 +53,7 @@ async def execute_opening_room_init_task(
             await rpg_game._dungeon_opening_room_pipeline.process()
 
             # 存储开场房间初始化后的世界状态，便于调试和回放
-            store_game(rpg_game)
+            await store_game_async(rpg_game)
 
         logger.info(f"✅ 开场房间初始化任务完成: job_id={job_id}, user={user_name}")
 
@@ -105,7 +105,7 @@ async def execute_generate_card_pool_task(
             await rpg_game._dungeon_opening_room_pipeline.process()
 
             # 存储卡池生成后的世界状态，便于调试和回放
-            store_game(rpg_game)
+            await store_game_async(rpg_game)
 
         logger.info(f"✅ 卡池生成任务完成: job_id={job_id}, user={user_name}")
 
@@ -164,7 +164,7 @@ async def execute_pick_card_from_pool_task(
             await rpg_game._dungeon_opening_room_pipeline.process()
 
             # 存储挑卡后的世界状态，便于调试和回放
-            store_game(rpg_game)
+            await store_game_async(rpg_game)
 
         logger.info(f"✅ 挑卡任务完成: job_id={job_id}, user={user_name}")
 

@@ -17,7 +17,7 @@ from loguru import logger
 from ai_rpg.models import PlayerSession, CombatState
 from ai_rpg.game.dbg_game import DBGGame
 from ai_rpg.models import WorldState, MonsterComponent
-from ai_rpg.game.dbg_store import store_game
+from ai_rpg.game.dbg_store import store_game_async
 from ai_rpg.services.dungeon_combat_actions import (
     activate_all_card_draws,
     activate_play_cards_specified,
@@ -54,7 +54,7 @@ async def init_combat_game(
 
     await terminal_game._dungeon_combat_room_pipeline.process()
 
-    store_game(terminal_game, save_dir)
+    await store_game_async(terminal_game, save_dir)
     return terminal_game
 
 
@@ -82,7 +82,7 @@ async def draw_cards_game(
 
     await terminal_game._dungeon_combat_room_pipeline.process()
 
-    store_game(terminal_game, save_dir)
+    await store_game_async(terminal_game, save_dir)
     return terminal_game
 
 
@@ -130,7 +130,7 @@ async def play_cards_specified_game(
     ):
         logger.debug("在本次处理中战斗已结束，进入后处理阶段")
 
-    store_game(terminal_game, save_dir)
+    await store_game_async(terminal_game, save_dir)
     return terminal_game
 
 
@@ -165,7 +165,7 @@ async def use_consumable_game(
 
     await terminal_game._dungeon_combat_room_pipeline.process()
 
-    store_game(terminal_game, save_dir)
+    await store_game_async(terminal_game, save_dir)
     return terminal_game
 
 
@@ -199,7 +199,7 @@ async def equip_gear_game(
 
     await terminal_game._dungeon_combat_room_pipeline.process()
 
-    store_game(terminal_game, save_dir)
+    await store_game_async(terminal_game, save_dir)
     return terminal_game
 
 
@@ -233,7 +233,7 @@ async def pass_turn_game(
 
     await terminal_game._dungeon_combat_room_pipeline.process()
 
-    store_game(terminal_game, save_dir)
+    await store_game_async(terminal_game, save_dir)
     return terminal_game
 
 
@@ -272,7 +272,7 @@ async def retreat_game(
         return terminal_game
 
     # 最后归档
-    store_game(terminal_game, save_dir)
+    await store_game_async(terminal_game, save_dir)
     return terminal_game
 
 
@@ -294,6 +294,6 @@ async def collect_loot_game(
         logger.warning(f"collect-loot 未归档：{msg}")
         return terminal_game
 
-    store_game(terminal_game, save_dir)
+    await store_game_async(terminal_game, save_dir)
     logger.info(f"战利品收取完成：{msg}，存档: {save_dir}")
     return terminal_game

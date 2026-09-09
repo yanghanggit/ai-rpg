@@ -6,7 +6,7 @@ from procrastinate import JobContext
 from fastapi import HTTPException, status
 from loguru import logger
 from ..game.dbg_game import DBGGame
-from ..game.dbg_store import store_game
+from ..game.dbg_store import store_game_async
 from ..game.game_server import GameServer
 from ..pgsql import procrastinate_app, save_task_error
 from .game_server_dependencies import get_game_server
@@ -79,7 +79,7 @@ async def execute_dungeon_generate_pipeline_task(
             await rpg_game._dungeon_generate_pipeline.process()
 
             # 存档当前世界状态，便于调试和回放
-            store_game(rpg_game)
+            await store_game_async(rpg_game)
 
         logger.info(
             f"✅ dungeon generate pipeline 任务完成: job_id={job_id}, user={user_name}"
@@ -120,7 +120,7 @@ async def execute_home_pipeline_task(
             await rpg_game._home_pipeline.process()
 
             # 存档当前世界状态，便于调试和回放
-            store_game(rpg_game)
+            await store_game_async(rpg_game)
 
         logger.info(f"✅ home pipeline 任务完成: job_id={job_id}, user={user_name}")
 
@@ -161,7 +161,7 @@ async def execute_home_craft_pipeline_task(
             await rpg_game._home_craft_pipeline.process()
 
             # 存档当前世界状态，便于调试和回放
-            store_game(rpg_game)
+            await store_game_async(rpg_game)
 
         logger.info(
             f"✅ home craft pipeline 任务完成: job_id={job_id}, user={user_name}"

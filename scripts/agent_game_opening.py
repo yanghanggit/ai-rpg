@@ -18,7 +18,7 @@ from loguru import logger
 from ai_rpg.models import PlayerSession
 from ai_rpg.game.dbg_game import DBGGame
 from ai_rpg.models import WorldState
-from ai_rpg.game.dbg_store import store_game
+from ai_rpg.game.dbg_store import store_game_async
 from ai_rpg.services.dungeon_opening_actions import (
     activate_generate_card_pool,
     activate_pick_card_from_pool,
@@ -52,7 +52,7 @@ async def init_opening_game(
     await terminal_game._dungeon_opening_room_pipeline.process()
 
     # 最后归档
-    store_game(terminal_game, save_dir)
+    await store_game_async(terminal_game, save_dir)
     return terminal_game
 
 
@@ -87,7 +87,7 @@ async def generate_card_pool_game(
     await terminal_game._dungeon_opening_room_pipeline.process()
 
     # 最后归档
-    store_game(terminal_game, save_dir)
+    await store_game_async(terminal_game, save_dir)
     return terminal_game
 
 
@@ -124,5 +124,5 @@ async def pick_card_from_pool_game(
     await terminal_game._dungeon_opening_room_pipeline.process()
 
     # 最后归档
-    store_game(terminal_game, save_dir)
+    await store_game_async(terminal_game, save_dir)
     return terminal_game

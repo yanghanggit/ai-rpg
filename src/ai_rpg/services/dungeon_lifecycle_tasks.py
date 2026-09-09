@@ -3,7 +3,7 @@
 from procrastinate import JobContext
 from loguru import logger
 from ..game.dbg_game import DBGGame
-from ..game.dbg_store import store_game
+from ..game.dbg_store import store_game_async
 from ..pgsql import procrastinate_app, save_task_error
 from .game_server_dependencies import get_game_server
 from .dungeon_archive_action import (
@@ -57,7 +57,7 @@ async def execute_exit_dungeon_task(
             teardown_dungeon(rpg_game, rpg_game._world.dungeon)
 
             # 存储退出后的世界状态，便于调试和回放
-            store_game(rpg_game)
+            await store_game_async(rpg_game)
 
         logger.info(f"✅ 退出副本任务完成: job_id={job_id}, user={user_name}")
 

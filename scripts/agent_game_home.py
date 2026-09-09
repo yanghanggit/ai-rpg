@@ -19,7 +19,7 @@ from typing import Dict, List
 from ai_rpg.models import PlayerSession
 from ai_rpg.game.dbg_game import DBGGame
 from ai_rpg.models import WorldState
-from ai_rpg.game.dbg_store import store_game
+from ai_rpg.game.dbg_store import store_game_async
 from ai_rpg.services.home_actions import (
     activate_plan_action,
     activate_speak_action,
@@ -48,7 +48,7 @@ async def add_party_member_game(
         logger.error(f"添加队伍成员失败: {error_detail}")
         return terminal_game
 
-    store_game(terminal_game, save_dir)
+    await store_game_async(terminal_game, save_dir)
     logger.info(f"已将 {member_name} 加入队伍名单，存档: {save_dir}")
     return terminal_game
 
@@ -68,7 +68,7 @@ async def remove_party_member_game(
         logger.error(f"移除队伍成员失败: {error_detail}")
         return terminal_game
 
-    store_game(terminal_game, save_dir)
+    await store_game_async(terminal_game, save_dir)
     logger.info(f"已将 {member_name} 从队伍名单移除，存档: {save_dir}")
     return terminal_game
 
@@ -100,7 +100,7 @@ async def advance_game(
 
     await terminal_game._home_pipeline.process()
 
-    store_game(terminal_game, save_dir)
+    await store_game_async(terminal_game, save_dir)
     return terminal_game
 
 
@@ -136,7 +136,7 @@ async def speak_game(
 
     await terminal_game._home_pipeline.process()
 
-    store_game(terminal_game, save_dir)
+    await store_game_async(terminal_game, save_dir)
     return terminal_game
 
 
@@ -160,7 +160,7 @@ async def switch_stage_game(
 
     await terminal_game._home_pipeline.process()
 
-    store_game(terminal_game, save_dir)
+    await store_game_async(terminal_game, save_dir)
     return terminal_game
 
 
@@ -180,5 +180,5 @@ async def generate_dungeon_game(
 
     await terminal_game._dungeon_generate_pipeline.process()
 
-    store_game(terminal_game, save_dir)
+    await store_game_async(terminal_game, save_dir)
     return terminal_game

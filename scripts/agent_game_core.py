@@ -21,7 +21,7 @@ from ai_rpg.game.config import (
 from ai_rpg.models import PlayerSession
 from ai_rpg.game.dbg_game import DBGGame
 from ai_rpg.models import Blueprint, Dungeon, WorldState
-from ai_rpg.game.dbg_store import store_game
+from ai_rpg.game.dbg_store import store_game_async
 from pathlib import Path
 
 
@@ -81,7 +81,7 @@ async def create_and_initialize_game(
     )
 
     # 持久化游戏世界数据到存档目录，并启用 gzip 快照功能
-    store_game(terminal_game, save_dir)
+    await store_game_async(terminal_game, save_dir)
 
     # 返回游戏实例
     return terminal_game

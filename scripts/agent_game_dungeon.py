@@ -17,7 +17,7 @@ from loguru import logger
 from ai_rpg.models import PlayerSession
 from ai_rpg.game.dbg_game import DBGGame
 from ai_rpg.models import WorldState
-from ai_rpg.game.dbg_store import store_game
+from ai_rpg.game.dbg_store import store_game_async
 from ai_rpg.services.dungeon_advance_action import (
     advance_dungeon,
 )
@@ -96,7 +96,7 @@ async def next_dungeon_game(
         return terminal_game
 
     # 最后归档
-    store_game(terminal_game, save_dir)
+    await store_game_async(terminal_game, save_dir)
 
     # 返回更新后的游戏实例
     return terminal_game
@@ -142,7 +142,7 @@ async def enter_dungeon_game(
         return terminal_game
 
     # 最后归档
-    store_game(terminal_game, save_dir)
+    await store_game_async(terminal_game, save_dir)
 
     # 返回更新后的游戏实例
     return terminal_game
@@ -182,7 +182,7 @@ async def exit_dungeon_and_return_home_game(
     teardown_dungeon(terminal_game, terminal_game._world.dungeon)
 
     # 最后归档
-    store_game(terminal_game, save_dir)
+    await store_game_async(terminal_game, save_dir)
 
     # 返回更新后的游戏实例
     return terminal_game

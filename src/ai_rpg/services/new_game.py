@@ -14,7 +14,7 @@ from ..models import (
 )
 from .game_server_dependencies import CurrentGameServer
 from ..game.config import BLUEPRINTS_DIR
-from ..game.dbg_store import store_game
+from ..game.dbg_store import store_game_async
 
 ###################################################################################################################################################################
 new_game_api_router = APIRouter()
@@ -104,7 +104,7 @@ async def new_game(
     await room._dbg_game.initialize()
 
     # 存档初始世界状态，便于调试和回放
-    store_game(room._dbg_game)
+    await store_game_async(room._dbg_game)
 
     # 返回成功响应
     return NewGameResponse(

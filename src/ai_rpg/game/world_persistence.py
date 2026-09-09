@@ -201,16 +201,19 @@ def save_world(
         )
 
         # entities/
-        _dump_entities(save_dir, world)
+        _write_entities(save_dir, world)
 
-        # memories/
-        _dump_agent_memories(save_dir, world)
+        # memories/（正式存档数据）
+        _write_agent_memories(save_dir, world)
+
+        # memories/（可读 buffer 调试产物）
+        _write_agent_buffers(save_dir, world)
 
         # blueprint/
-        _dump_blueprint(save_dir, world.blueprint)
+        _write_blueprint(save_dir, world.blueprint)
 
         # dungeon/
-        _dump_dungeon(save_dir, world.dungeon)
+        _write_dungeon(save_dir, world.dungeon)
 
         logger.debug(f"存档成功: {save_dir}")
         return True
@@ -221,19 +224,14 @@ def save_world(
 
 
 ###############################################################################################################################################
-def _dump_agent_memories(
-    save_dir: Path, world: WorldState, should_write_buffer_string: bool = True
-) -> None:
-    """写入每个 agent 的记忆 JSONL 和 buffer.txt 文件到 memories/ 目录"""
+def _write_agent_memories(save_dir: Path, world: WorldState) -> None:
+    """写入每个 agent 的记忆数据（.jsonl 与 .meta.json）到 memories/ 目录"""
 
-    # 写memories/目录
+    # 写 memories/ 目录
     memory_dir = save_dir / "memories"
     memory_dir.mkdir(parents=True, exist_ok=True)
 
-    # 实体记忆块之间的长分割线
-    sep: str = "-" * 100
-
-    # 写每个 agent 的记忆 JSONL 和 buffer.txt
+    # 写每个 agent 的记忆 JSONL 与 meta.json
     for agent_name, agent_memory in world.agent_memories.items():
 
         # 写 agent_name.jsonl（每行一条消息）
@@ -248,26 +246,38 @@ def _dump_agent_memories(
             json.dumps(meta, ensure_ascii=False), encoding="utf-8"
         )
 
-        # 写 agent_name_buffer.txt
-        if should_write_buffer_string:
 
-            # 构建 agent 的 buffer 字符串
-            buffer_str = get_buffer_string(
-                agent_memory.messages,
-                system_prefix="\n" + sep + "\nSystem",
-                human_prefix="\n" + sep + "\nHuman",
-                ai_prefix="\n" + sep + f"\nAI({agent_name})",
-                tool_prefix="\n" + sep + f"\nTool({agent_name})",
-            )
+###############################################################################################################################################
+def _write_agent_buffers(save_dir: Path, world: WorldState) -> None:
+    """写入每个 agent 的可读 buffer.txt（调试/日志用）到 memories/ 目录"""
 
-            # 写入 agent_name_buffer.txt 文件
-            (memory_dir / f"{agent_name}_buffer.txt").write_text(
-                buffer_str, encoding="utf-8"
-            )
+    # 写 memories/ 目录
+    memory_dir = save_dir / "memories"
+    memory_dir.mkdir(parents=True, exist_ok=True)
+
+    # 记忆块之间的长分割线
+    sep: str = "-" * 100
+
+    # 写每个 agent 的 buffer.txt
+    for agent_name, agent_memory in world.agent_memories.items():
+
+        # 构建 agent 的 buffer 字符串
+        buffer_str = get_buffer_string(
+            agent_memory.messages,
+            system_prefix="\n" + sep + "\nSystem",
+            human_prefix="\n" + sep + "\nHuman",
+            ai_prefix="\n" + sep + f"\nAI({agent_name})",
+            tool_prefix="\n" + sep + f"\nTool({agent_name})",
+        )
+
+        # 写入 agent_name_buffer.txt 文件
+        (memory_dir / f"{agent_name}_buffer.txt").write_text(
+            buffer_str, encoding="utf-8"
+        )
 
 
 ###############################################################################################################################################
-def _dump_entities(save_dir: Path, world: WorldState) -> None:
+def _write_entities(save_dir: Path, world: WorldState) -> None:
     """写入每个实体的 JSON 文件到 entities/ 目录"""
 
     # 写entities/目录
@@ -285,7 +295,7 @@ def _dump_entities(save_dir: Path, world: WorldState) -> None:
 
 
 ###############################################################################################################################################
-def _dump_dungeon(save_dir: Path, dungeon: Dungeon) -> None:
+def _write_dungeon(save_dir: Path, dungeon: Dungeon) -> None:
     """写入 dungeon 的 JSON 文件到 dungeon/ 目录"""
 
     # 写dungeon/目录
@@ -297,7 +307,7 @@ def _dump_dungeon(save_dir: Path, dungeon: Dungeon) -> None:
 
 
 ###############################################################################################################################################
-def _dump_blueprint(save_dir: Path, blueprint: Blueprint) -> None:
+def _write_blueprint(save_dir: Path, blueprint: Blueprint) -> None:
     """写入 blueprint 的 JSON 文件到 blueprint/ 目录"""
 
     # 写blueprint/目录

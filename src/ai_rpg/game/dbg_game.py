@@ -39,6 +39,8 @@ from ..models import (
     PlayerSession,
     CombatRoom,
     OpeningRoom,
+    InventoryComponent,
+    DeckComponent,
 )
 from ..entitas import Matcher, Entity
 
@@ -186,8 +188,8 @@ class DBGGame(RPGGame):
         self.create_stage_entities(self._world.blueprint.stages)
 
         ## 第4步，分配玩家控制的actor
-        assert self._player_session.name != "", "玩家名字不能为空"
-        assert self._player_session.actor != "", "玩家角色不能为空"
+        assert self._player_session.name.strip() != "", "玩家名字不能为空"
+        assert self._player_session.actor.strip() != "", "玩家角色不能为空"
         player_actor_entity = self.get_actor_entity(self._player_session.actor)
         assert (
             player_actor_entity is not None
@@ -199,6 +201,9 @@ class DBGGame(RPGGame):
         logger.info(
             f"玩家: {self._player_session.name} 选择控制: {self._player_session.actor}"
         )
+        assert player_actor_entity.has(
+            InventoryComponent
+        ), "玩家角色实体必须有 InventoryComponent"
 
         return self
 
@@ -323,6 +328,9 @@ class DBGGame(RPGGame):
                     f"为 Actor 实体 {actor_entity.name} 添加 {comp_serialization.name}"
                 )
                 actor_entity.set(comp_class, restore_comp)
+
+            # 做一些判断
+            assert actor_entity.has(DeckComponent), "玩家角色实体必须有 DeckComponent"
 
             # 添加到返回值
             actor_entities.append(actor_entity)

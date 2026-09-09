@@ -1,7 +1,8 @@
 from typing import Dict, List, final
 from pydantic import BaseModel
 from .entities import Stage, World
-from .artifacts import Artifact
+
+# from .artifacts import Artifact
 
 
 ###############################################################################################################################################################
@@ -15,7 +16,7 @@ class Blueprint(BaseModel):
     knowledge_base: Dict[str, List[str]]  # 蓝图关联的 RAG 知识库（按分类组织）
     stages: List[Stage]
     world_entities: List[World]
-    artifacts: List[Artifact] = []  # 蓝图初始世界神器/古物库
+    # artifacts: List[Artifact] = []  # 蓝图初始世界神器/古物库
 
 
 ###############################################################################################################################################

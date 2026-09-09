@@ -481,8 +481,8 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
     stage_guzhiqiu_room = create_guzhiqiu_room()
     stage_entrance_hall = create_entrance_hall()
 
-    stage_wuming_room.actors = [actor_wuming]
-    stage_entrance_hall.actors = [actor_guzhiqiu]
+    # 将角色放入入口大厅，确保玩家从入口进入时能看到所有主要角色
+    stage_entrance_hall.actors = [actor_guzhiqiu, actor_wuming]
 
     return Blueprint(
         name=game_name,

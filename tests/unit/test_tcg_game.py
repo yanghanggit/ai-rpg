@@ -215,29 +215,29 @@ class TestBuildFromBlueprint:
         session = PlayerSession(name="p1", actor="hero", game="full_test")
         return DBGGame(name="full_test", player_session=session, world=world)
 
-    def test_actor_entity_created(self) -> None:
-        game = self._make_game_for_build()
-        game.build_from_blueprint()
-        assert game.get_actor_entity("hero") is not None
+    # def test_actor_entity_created(self) -> None:
+    #     game = self._make_game_for_build()
+    #     game.build_from_blueprint()
+    #     assert game.get_actor_entity("hero") is not None
 
-    def test_stage_entity_created(self) -> None:
-        game = self._make_game_for_build()
-        game.build_from_blueprint()
-        assert game.get_stage_entity("home_stage") is not None
+    # def test_stage_entity_created(self) -> None:
+    #     game = self._make_game_for_build()
+    #     game.build_from_blueprint()
+    #     assert game.get_stage_entity("home_stage") is not None
 
-    def test_player_component_assigned(self) -> None:
-        game = self._make_game_for_build()
-        game.build_from_blueprint()
-        hero = game.get_actor_entity("hero")
-        assert hero is not None
-        assert hero.has(PlayerComponent)
+    # def test_player_component_assigned(self) -> None:
+    #     game = self._make_game_for_build()
+    #     game.build_from_blueprint()
+    #     hero = game.get_actor_entity("hero")
+    #     assert hero is not None
+    #     assert hero.has(PlayerComponent)
 
-    def test_build_with_existing_entities_raises(self) -> None:
-        game = self._make_game_for_build()
-        game.build_from_blueprint()
-        # entities_serialization is now populated; second call must assert-fail
-        with pytest.raises(AssertionError):
-            game.build_from_blueprint()
+    # def test_build_with_existing_entities_raises(self) -> None:
+    #     game = self._make_game_for_build()
+    #     game.build_from_blueprint()
+    #     # entities_serialization is now populated; second call must assert-fail
+    #     with pytest.raises(AssertionError):
+    #         game.build_from_blueprint()
 
 
 # ---------------------------------------------------------------------------

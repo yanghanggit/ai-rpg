@@ -13,6 +13,7 @@ from textual.widgets import Input, Static, TextArea
 from .base import BaseGameScreen
 from .cmd_advance import run_home_advance
 from .cmd_browse import build_entity_browser_text
+from .cmd_compact import compact_target
 from .cmd_costume import (
     build_worn_list_text,
     remove_costume,
@@ -83,6 +84,7 @@ COMMAND_DEFS: List[Tuple[str, str, str]] = [
     ("craft-gear", "cg", "装备工坊：/craft-gear @材料[×N] ..."),
     ("craft-costume", "cf", "时装工坊：/craft-costume @材料[×N] ..."),
     # 系统
+    ("compact", "cp", "手动压缩指定实体记忆：/compact @实体名"),
     ("logout", "lo", "登出并返回主菜单"),
     # 通用命令（固定在底部）
     ("help", "h", "显示本帮助"),
@@ -131,6 +133,7 @@ BASE_COMMANDS = {
     "craft-consumable",
     "craft-gear",
     "craft-costume",
+    "compact",
     "list-dungeons",
     "dungeon",
     "enter-dungeon",
@@ -793,6 +796,32 @@ class HomeScreen(BaseGameScreen):
             return
         text = await generate_dungeon(app.session.user_name, app.session.game_name)
         self._write(text)
+
+    def _cmd_compact(self, args: str) -> None:
+        target = args.strip()
+        if target.startswith("@"):
+            target = target[1:].strip()
+        if not target:
+            self._write("[yellow]用法：/compact @实体名[/]")
+            return
+        self._do_compact(target)
+
+    @work
+    async def _do_compact(self, target: str) -> None:
+        app = self.game_client
+        if app.session is None:
+            return
+        self._write(f"[dim]▶ 正在压缩 {target} 的记忆...[/]")
+        try:
+            text = await compact_target(
+                app.session.user_name,
+                app.session.game_name,
+                target,
+            )
+            self._write(text)
+        except Exception as e:
+            logger.error(f"_do_compact: 上下文压缩请求失败 error={e}")
+            self._write(f"[bold red]❌ 上下文压缩请求失败: {e}[/]")
 
     def _cmd_logout(self, args: str) -> None:
         self._do_logout()

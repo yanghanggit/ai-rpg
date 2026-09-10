@@ -11,6 +11,7 @@
   advance         --snapshot PATH --actors A [--actors B ...]   推进一轮剧情
   speak           --snapshot PATH --target NPC --content TEXT    与 NPC 对话
   switch-stage    --snapshot PATH --stage STAGE                  切换场景
+  compact-context --snapshot PATH --target ENTITY               手动压缩指定实体的 LLM 记忆
   generate-dungeon --snapshot PATH                               LLM 动态生成副本
   roster          --snapshot PATH                                查看队伍名单（只读）
   roster-add      --snapshot PATH --member NPC                  添加队伍成员
@@ -60,18 +61,19 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import asyncio
 import datetime
 import sys
-import click
-from loguru import logger
-from ai_rpg.game.config import (
-    WORLDS_DIR,
-)
-from config import LOGS_DIR
-from ai_rpg.game import restore_world
 from pathlib import Path
 from typing import Final, Tuple
 
+import click
+from config import LOGS_DIR
+from loguru import logger
+
 # 仅在本 CLI 运行时启用 chat dump（调试用途）
 import ai_rpg.deepseek.config
+from ai_rpg.game import restore_world
+from ai_rpg.game.config import (
+    WORLDS_DIR,
+)
 
 ai_rpg.deepseek.config.CHAT_DUMP_ENABLED = True
 
@@ -89,45 +91,46 @@ def _setup_logger(log_file_path: Path) -> None:
     logger.info(f"日志配置: 级别={LOG_LEVEL}, 文件路径={log_file_path}")
 
 
-from agent_game_core import create_and_initialize_game
-from agent_game_home import (
-    advance_game,
-    speak_game,
-    switch_stage_game,
-    generate_dungeon_game,
-    stages_game,
-    add_party_member_game,
-    remove_party_member_game,
-    get_party_roster_game,
-)
 from agent_game_combat import (
-    draw_cards_game,
-    init_combat_game,
-    play_cards_specified_game,
-    pass_turn_game,
-    use_consumable_game,
-    equip_gear_game,
-    retreat_game,
     collect_loot_game,
+    draw_cards_game,
+    equip_gear_game,
+    init_combat_game,
+    pass_turn_game,
+    play_cards_specified_game,
+    retreat_game,
+    use_consumable_game,
 )
+from agent_game_compact import compact_context_game
+from agent_game_core import create_and_initialize_game
 from agent_game_dungeon import (
     enter_dungeon_game,
-    next_dungeon_game,
     exit_dungeon_and_return_home_game,
+    next_dungeon_game,
 )
-from agent_game_opening import (
-    init_opening_game,
-    generate_card_pool_game,
-    pick_card_from_pool_game,
+from agent_game_home import (
+    add_party_member_game,
+    advance_game,
+    generate_dungeon_game,
+    get_party_roster_game,
+    remove_party_member_game,
+    speak_game,
+    stages_game,
+    switch_stage_game,
 )
 from agent_game_items import (
+    craft_consumable_game,
+    craft_costume_game,
+    craft_gear_item_game,
     move_item_to_inventory_game,
     move_item_to_storage_game,
-    wear_costume_game,
     remove_costume_game,
-    craft_consumable_game,
-    craft_gear_item_game,
-    craft_costume_game,
+    wear_costume_game,
+)
+from agent_game_opening import (
+    generate_card_pool_game,
+    init_opening_game,
+    pick_card_from_pool_game,
 )
 
 
@@ -283,6 +286,43 @@ def speak(snapshot: str, target: str, content: str) -> None:
     logger.info(f"本次存档目录：{_save_dir}")
 
     asyncio.run(speak_game(world, player_session, target, content, _save_dir))
+
+
+###############################################################################################################################################
+@main.command("compact-context")
+@click.option(
+    "--snapshot",
+    required=True,
+    help="存档目录路径",
+)
+@click.option(
+    "--target",
+    required=True,
+    help="要压缩的目标实体名（角色/怪物/场景/世界，如 角色.顾知秋）",
+)
+def compact_context(snapshot: str, target: str) -> None:
+    """手动压缩指定实体的 LLM 记忆并归档。与场景状态无关。"""
+
+    snapshot_path = Path(snapshot)
+    if not snapshot_path.exists():
+        raise click.BadParameter(
+            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+        )
+
+    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
+    _setup_logger(_log_file)
+
+    world, player_session = restore_world(snapshot_path)
+    _save_dir = (
+        WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
+    )
+
+    logger.info(f"本次运行日志文件：{_log_file}")
+    logger.info(f"读取存档：{snapshot_path}")
+    logger.info(f"本次存档目录：{_save_dir}")
+
+    asyncio.run(compact_context_game(world, player_session, target, _save_dir))
 
 
 ###############################################################################################################################################

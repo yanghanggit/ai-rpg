@@ -12,37 +12,39 @@ sys.path.insert(
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from contextlib import asynccontextmanager
-from fastapi.staticfiles import StaticFiles
-from loguru import logger
-from config import GAME_SERVER_PORT
+from datetime import datetime
+
+from config import GAME_SERVER_PORT, LOGS_DIR
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from loguru import logger
+
 from ai_rpg.pgsql import procrastinate_app
-from ai_rpg.services.dungeon_lifecycle_api import (
-    dungeon_lifecycle_api_router,
-)
-from ai_rpg.services.dungeon_combat_api import (
-    dungeon_combat_api_router,
-)
-from ai_rpg.services.dungeon_opening_api import (
-    dungeon_opening_api_router,
-)
-from ai_rpg.services.home_api import home_api_router
-from ai_rpg.services.login import login_api_router
-from ai_rpg.services.new_game import new_game_api_router
-from datetime import datetime
-from ai_rpg.services.entity_details import (
-    entity_details_api_router,
-)
-from ai_rpg.services.dungeon_state import dungeon_state_api_router
-from ai_rpg.services.stages_state import stages_state_api_router
-from ai_rpg.services.background_tasks import background_tasks_api_router
-from ai_rpg.services.player_session import player_session_api_router
-from config import LOGS_DIR
 from ai_rpg.replicate import (
     GENERATED_IMAGES_OUTPUT_DIR,
     GENERATED_IMAGES_URL_PREFIX,
 )
+from ai_rpg.services.background_tasks import background_tasks_api_router
+from ai_rpg.services.compact_api import compact_api_router
+from ai_rpg.services.dungeon_combat_api import (
+    dungeon_combat_api_router,
+)
+from ai_rpg.services.dungeon_lifecycle_api import (
+    dungeon_lifecycle_api_router,
+)
+from ai_rpg.services.dungeon_opening_api import (
+    dungeon_opening_api_router,
+)
+from ai_rpg.services.dungeon_state import dungeon_state_api_router
+from ai_rpg.services.entity_details import (
+    entity_details_api_router,
+)
+from ai_rpg.services.home_api import home_api_router
+from ai_rpg.services.login import login_api_router
+from ai_rpg.services.new_game import new_game_api_router
+from ai_rpg.services.player_session import player_session_api_router
+from ai_rpg.services.stages_state import stages_state_api_router
 
 
 @asynccontextmanager
@@ -120,6 +122,7 @@ app.include_router(router=background_tasks_api_router)
 app.include_router(router=login_api_router)
 app.include_router(router=new_game_api_router)
 app.include_router(router=home_api_router)
+app.include_router(router=compact_api_router)
 app.include_router(router=dungeon_lifecycle_api_router)
 app.include_router(router=dungeon_combat_api_router)
 app.include_router(router=dungeon_opening_api_router)

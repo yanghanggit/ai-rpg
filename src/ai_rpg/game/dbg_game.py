@@ -5,44 +5,47 @@ DBG 游戏核心实现
 import copy
 import uuid
 from typing import Final, List, Optional
+
 from loguru import logger
-from .rpg_game_pipeline_manager import RPGGameProcessPipeline
-from .rpg_game import RPGGame
-from .dbg_home_pipeline import create_home_pipeline
-from .dbg_home_craft_pipeline import create_home_craft_pipeline
-from .dbg_dungeon_opening_room_pipeline import create_dungeon_opening_room_pipeline
-from .dbg_dungeon_combat_room_pipeline import create_dungeon_combat_room_pipeline
-from .dbg_dungeon_generate_pipeline import create_dungeon_generate_pipeline
+
+from ..entitas import Entity, Matcher
 from ..models import (
+    COMPONENT_TYPES,
     Actor,
     ActorComponent,
     ActorType,
-    NPCComponent,
     AppearanceComponent,
     CharacterStatsComponent,
-    COMPONENT_TYPES,
+    CombatRoom,
+    DeckComponent,
     Dungeon,
     DungeonComponent,
-    MonsterComponent,
     HomeComponent,
     IdentityComponent,
+    InventoryComponent,
+    MonsterComponent,
+    NPCComponent,
+    OpeningRoom,
     PlayerComponent,
-    resolve_component_type,
-    StorageComponent,
+    PlayerSession,
     Stage,
     StageComponent,
     StageType,
-    WorldState,
-    WorldComponent,
-    World,
+    StorageComponent,
     SystemMessage,
-    PlayerSession,
-    CombatRoom,
-    OpeningRoom,
-    InventoryComponent,
-    DeckComponent,
+    World,
+    WorldComponent,
+    WorldState,
+    resolve_component_type,
 )
-from ..entitas import Matcher, Entity
+from .dbg_compact_pipeline import create_compact_pipeline
+from .dbg_dungeon_combat_room_pipeline import create_dungeon_combat_room_pipeline
+from .dbg_dungeon_generate_pipeline import create_dungeon_generate_pipeline
+from .dbg_dungeon_opening_room_pipeline import create_dungeon_opening_room_pipeline
+from .dbg_home_craft_pipeline import create_home_craft_pipeline
+from .dbg_home_pipeline import create_home_pipeline
+from .rpg_game import RPGGame
+from .rpg_game_pipeline_manager import RPGGameProcessPipeline
 
 
 #################################################################################################################################################
@@ -84,12 +87,18 @@ class DBGGame(RPGGame):
             create_dungeon_generate_pipeline(self)
         )
 
+        # 上下文压缩流程（仅处理手动触发的 CompactContextAction，与场景状态无关）
+        self._compact_pipeline: Final[RPGGameProcessPipeline] = create_compact_pipeline(
+            self
+        )
+
         # 注册所有管道到管道管理器
         self.register_pipeline(self._home_pipeline)
         self.register_pipeline(self._home_craft_pipeline)
         self.register_pipeline(self._dungeon_opening_room_pipeline)
         self.register_pipeline(self._dungeon_combat_room_pipeline)
         self.register_pipeline(self._dungeon_generate_pipeline)
+        self.register_pipeline(self._compact_pipeline)
 
     ###############################################################################################################################################
     @property

@@ -1,12 +1,14 @@
 from enum import StrEnum, unique
 from typing import Dict, List, final
+
 from pydantic import BaseModel
-from .session_message import SessionMessage
-from .dungeon import Dungeon, AnyDungeonRoom
+
+from .blueprint import Blueprint
+from .dungeon import AnyDungeonRoom, Dungeon
 from .player_session import PlayerSession
 from .serialization import EntitySerialization
+from .session_message import SessionMessage
 from .task import TaskStatusView
-from .blueprint import Blueprint
 
 
 @final
@@ -537,3 +539,20 @@ class BlueprintListResponse(BaseModel):
 @final
 class DungeonListResponse(BaseModel):
     dungeons: List[Dungeon]
+
+
+################################################################################################################
+################################################################################################################
+################################################################################################################
+@final
+class CompactContextRequest(BaseModel):
+    user_name: str
+    game_name: str
+    target_name: str
+
+
+@final
+class CompactContextResponse(BaseModel):
+    job_id: str
+    status: str
+    message: str

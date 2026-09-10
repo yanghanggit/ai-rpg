@@ -1,6 +1,7 @@
 """游戏动作组件。添加到实体后由对应系统处理执行。"""
 
 from typing import Dict, List, final
+
 from ..entitas.components import Component
 from .card import Card
 from .dungeon import Dungeon
@@ -15,6 +16,20 @@ from .registry import register_action_component_type, register_component_type
 @register_component_type
 class PlanAction(Component):
     """触发角色在家园场景中生成 AI 行动规划。"""
+
+    name: str
+
+
+############################################################################################################
+@final
+@register_action_component_type
+@register_component_type
+class CompactContextAction(Component):
+    """触发对指定 agent 的记忆进行手动上下文压缩。
+
+    动作挂载在被压缩实体自身，name 即该实体名；由
+    CompactContextActionSystem 响应 ADDED 事件执行压缩。
+    """
 
     name: str
 

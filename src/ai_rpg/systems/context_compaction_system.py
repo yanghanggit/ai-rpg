@@ -9,26 +9,7 @@ from ..deepseek import DeepSeekClient, batch_chat
 from ..entitas import ExecuteProcessor
 from ..game.dbg_game import DBGGame
 from ..models import HumanMessage, get_buffer_string
-from ..utils import prompt_builder
-
-
-#######################################################################################################################################
-@prompt_builder
-def _build_compaction_prompt(agent_name: str) -> str:
-    """返回用于生成第一人称记忆摘要的 LLM prompt。
-
-    该摘要会替换 agent 记忆（除首条 system 消息外）的全部历史，
-    成为其此后对过去的唯一记忆，因此必须事实忠实、克制。
-    """
-    return f"""# 任务：压缩记忆
-
-你是 {agent_name}。上方是你的完整记忆记录。现在需要把这些记忆压缩成一段第一人称的连续摘要，作为你此后对过去的唯一记忆（原始逐条记录将被移除）。
-
-要求：
-- 按时间顺序覆盖关键事实：身份、重要关系、发生过的事件与结果、当前状态与未完成事项；
-- 只使用上方记录中已出现的信息，客观、克制、事实化，禁止文学化渲染与凭空补充；
-- 保留对未来行动与决策有影响的关键信息（目标、承诺、线索、恩怨）；
-- 整段不分段不空行，不含 Markdown 标记，控制在 300 字以内，纯文本输出。"""
+from .context_compaction_prompt_builders import build_compaction_prompt
 
 
 #######################################################################################################################################
@@ -60,7 +41,7 @@ class ContextCompactionSystem(ExecuteProcessor):
         chat_clients: List[DeepSeekClient] = [
             DeepSeekClient(
                 name=memory.name,
-                full_prompt=_build_compaction_prompt(memory.name),
+                full_prompt=build_compaction_prompt(memory.name),
                 messages=memory.messages,
             )
             for memory in over_threshold

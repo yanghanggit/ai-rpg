@@ -1,75 +1,79 @@
 """游戏服务器 HTTP 客户端（TUI 客户端专用）"""
 
 import json
-from typing import Any, Dict, List, cast, AsyncGenerator
+from typing import Any, AsyncGenerator, Dict, List, cast
+
 import httpx
+
 from ..models import (
+    BackgroundTaskStatus,
     BlueprintListResponse,
+    CompactContextRequest,
+    CompactContextResponse,
     DungeonAdvanceStageRequest,
     DungeonAdvanceStageResponse,
+    DungeonCombatCollectLootRequest,
+    DungeonCombatCollectLootResponse,
     DungeonCombatDrawCardsRequest,
+    DungeonCombatDrawCardsResponse,
+    DungeonCombatEquipGearItemRequest,
+    DungeonCombatEquipGearItemResponse,
+    DungeonCombatInitRequest,
+    DungeonCombatInitResponse,
+    DungeonCombatPassTurnRequest,
+    DungeonCombatPassTurnResponse,
+    DungeonCombatPlayCardsRequest,
+    DungeonCombatPlayCardsResponse,
+    DungeonCombatRetreatRequest,
+    DungeonCombatRetreatResponse,
+    DungeonCombatUseConsumableItemRequest,
+    DungeonCombatUseConsumableItemResponse,
+    DungeonExitRequest,
+    DungeonExitResponse,
+    DungeonListResponse,
     DungeonOpeningGenerateCardPoolRequest,
     DungeonOpeningGenerateCardPoolResponse,
     DungeonOpeningInitRequest,
     DungeonOpeningInitResponse,
     DungeonOpeningPickCardFromPoolRequest,
     DungeonOpeningPickCardFromPoolResponse,
-    DungeonCombatDrawCardsResponse,
-    DungeonCombatInitRequest,
-    DungeonCombatInitResponse,
-    DungeonCombatPlayCardsRequest,
-    DungeonCombatPlayCardsResponse,
-    DungeonCombatPassTurnRequest,
-    DungeonCombatPassTurnResponse,
-    DungeonCombatUseConsumableItemRequest,
-    DungeonCombatUseConsumableItemResponse,
-    DungeonCombatEquipGearItemRequest,
-    DungeonCombatEquipGearItemResponse,
-    DungeonCombatRetreatRequest,
-    DungeonCombatRetreatResponse,
-    DungeonExitRequest,
-    DungeonExitResponse,
-    DungeonCombatCollectLootRequest,
-    DungeonCombatCollectLootResponse,
-    DungeonListResponse,
     DungeonRoomResponse,
     DungeonStateResponse,
     EntitiesDetailsResponse,
     HomeAdvanceRequest,
     HomeAdvanceResponse,
+    HomeCraftItemRequest,
+    HomeCraftItemResponse,
     HomeEnterDungeonRequest,
     HomeEnterDungeonResponse,
     HomeGenerateDungeonRequest,
     HomeGenerateDungeonResponse,
-    HomePlayerActionRequest,
-    HomePlayerActionResponse,
-    HomePlayerActionType,
-    HomeRosterAddRequest,
-    HomeRosterAddResponse,
-    HomeRosterRemoveRequest,
-    HomeRosterRemoveResponse,
     HomeItemMoveToInventoryRequest,
     HomeItemMoveToInventoryResponse,
     HomeItemMoveToStorageRequest,
     HomeItemMoveToStorageResponse,
-    HomeWearCostumeRequest,
-    HomeWearCostumeResponse,
+    HomePlayerActionRequest,
+    HomePlayerActionResponse,
+    HomePlayerActionType,
     HomeRemoveCostumeRequest,
     HomeRemoveCostumeResponse,
-    HomeCraftItemRequest,
-    HomeCraftItemResponse,
+    HomeRosterAddRequest,
+    HomeRosterAddResponse,
+    HomeRosterRemoveRequest,
+    HomeRosterRemoveResponse,
+    HomeWearCostumeRequest,
+    HomeWearCostumeResponse,
     LoginRequest,
     LoginResponse,
     LogoutRequest,
     LogoutResponse,
     NewGameRequest,
     NewGameResponse,
+    SessionMessage,
     SessionMessageResponse,
     StagesStateResponse,
-    TaskStatusView,
     TasksStatusResponse,
-    BackgroundTaskStatus,
-    SessionMessage,
+    TaskStatusView,
 )
 from .config import server_config
 
@@ -756,3 +760,20 @@ async def home_craft_costume_item(
         )
         response.raise_for_status()
         return HomeCraftItemResponse.model_validate(response.json())
+
+
+async def compact_context(
+    user_name: str, game_name: str, target_name: str
+) -> CompactContextResponse:
+    """手动压缩指定实体的 LLM 记忆，返回后台任务ID。"""
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.post(
+            server_config.base_url + "/api/compact_context/v1/",
+            json=CompactContextRequest(
+                user_name=user_name,
+                game_name=game_name,
+                target_name=target_name,
+            ).model_dump(),
+        )
+        response.raise_for_status()
+        return CompactContextResponse.model_validate(response.json())

@@ -302,7 +302,7 @@ def simulate_mock_play_cards(card_name: str, targets: List[str]) -> Tuple[bool, 
     target_label = "、".join(targets) if targets else "（自动目标）"
     combat_log = f"{actor} 使用『{card_name}』对 {target_label} 造成伤害。"
     narrative = f"{actor} 打出『{card_name}』，命中目标！"
-    latest.cards_combat_log.append(combat_log)
+    latest.cards_log.append(combat_log)
     latest.cards_narrative.append(narrative)
     text = (
         "[bold green]✅ 出牌完成[/]\n"
@@ -324,7 +324,7 @@ def simulate_mock_use_consumable(
     target_label = "、".join(targets) if targets else "（自动目标）"
     combat_log = f"使用『{item_name}』对 {target_label} 生效。"
     narrative = f"一股暖流涌入体内，『{item_name}』的效力发挥了作用。"
-    latest.consumable_combat_log.append(combat_log)
+    latest.consumable_log.append(combat_log)
     latest.consumable_narrative.append(narrative)
     latest.consumable_use_count += 1
     text = (
@@ -344,7 +344,7 @@ def simulate_mock_equip_gear(item_name: str) -> Tuple[bool, str]:
     assert latest is not None
     combat_log = f"将『{item_name}』转化为手牌。"
     narrative = f"装备『{item_name}』已就绪。"
-    latest.gear_combat_log.append(combat_log)
+    latest.gear_log.append(combat_log)
     latest.gear_narrative.append(narrative)
     latest.gear_equip_count += 1
     text = (
@@ -382,7 +382,7 @@ def simulate_mock_advance_monster_turn() -> Tuple[bool, str]:
     assert actor is not None
     combat_log = f"{actor} 自动出牌，造成若干伤害。"
     narrative = f"{actor} 发起了攻击！"
-    latest.cards_combat_log.append(combat_log)
+    latest.cards_log.append(combat_log)
     latest.cards_narrative.append(narrative)
     next_actor = _mock_advance_turn(latest)
     lines = [
@@ -442,7 +442,7 @@ def prepare_mock_post_combat() -> None:
             current_actor=None,
             is_completed=True,
             draw_completed=True,
-            cards_combat_log=[
+            cards_log=[
                 f"{MOCK_ACTOR_NAME} 使用『刺击』对 {MOCK_MONSTER_1_NAME} 造成 5 点伤害。"
             ],
             cards_narrative=[f"{MOCK_ACTOR_NAME} 打出『刺击』，一击命中！"],

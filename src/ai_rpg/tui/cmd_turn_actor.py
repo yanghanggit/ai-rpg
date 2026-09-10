@@ -290,9 +290,9 @@ async def play_cards(
     lines: List[str] = ["[bold green]✅ 出牌完成[/]"]
     lines.extend(
         _diff_result_text(
-            baseline_round.cards_combat_log if baseline_round is not None else [],
+            baseline_round.cards_log if baseline_round is not None else [],
             baseline_round.cards_narrative if baseline_round is not None else [],
-            result_round.cards_combat_log if result_round is not None else [],
+            result_round.cards_log if result_round is not None else [],
             result_round.cards_narrative if result_round is not None else [],
             "出牌结果",
         )
@@ -338,9 +338,9 @@ async def use_consumable(
     lines: List[str] = ["[bold green]✅ 使用完成[/]"]
     lines.extend(
         _diff_result_text(
-            baseline_round.consumable_combat_log if baseline_round is not None else [],
+            baseline_round.consumable_log if baseline_round is not None else [],
             baseline_round.consumable_narrative if baseline_round is not None else [],
-            result_round.consumable_combat_log if result_round is not None else [],
+            result_round.consumable_log if result_round is not None else [],
             result_round.consumable_narrative if result_round is not None else [],
             "使用结果",
         )
@@ -382,9 +382,9 @@ async def equip_gear(game_client: GameClient, item_name: str) -> TurnActionResul
     lines: List[str] = ["[bold green]✅ 使用完成[/]"]
     lines.extend(
         _diff_result_text(
-            baseline_round.gear_combat_log if baseline_round is not None else [],
+            baseline_round.gear_log if baseline_round is not None else [],
             baseline_round.gear_narrative if baseline_round is not None else [],
-            result_round.gear_combat_log if result_round is not None else [],
+            result_round.gear_log if result_round is not None else [],
             result_round.gear_narrative if result_round is not None else [],
             "使用结果",
         )
@@ -473,9 +473,9 @@ async def advance_monster_turn(game_client: GameClient) -> TurnActionResult:
     lines: List[str] = ["[bold green]✅ 怪物回合推进完成[/]"]
     lines.extend(
         _diff_result_text(
-            baseline_round.cards_combat_log if baseline_round is not None else [],
+            baseline_round.cards_log if baseline_round is not None else [],
             baseline_round.cards_narrative if baseline_round is not None else [],
-            result_round.cards_combat_log if result_round is not None else [],
+            result_round.cards_log if result_round is not None else [],
             result_round.cards_narrative if result_round is not None else [],
             "回合结果",
         )

@@ -125,11 +125,11 @@ async def build_round_detail_text(game_client: GameClient, round_number: int) ->
             lines.append("  [dim]（无）[/]")
         lines.append("")
 
-    _render_list("出牌日志", round_obj.cards_combat_log)
+    _render_list("出牌日志", round_obj.cards_log)
     _render_list("出牌叙事", round_obj.cards_narrative)
-    _render_list("消耗品日志", round_obj.consumable_combat_log)
+    _render_list("消耗品日志", round_obj.consumable_log)
     _render_list("消耗品叙事", round_obj.consumable_narrative)
-    _render_list("装备日志", round_obj.gear_combat_log)
+    _render_list("装备日志", round_obj.gear_log)
     _render_list("装备叙事", round_obj.gear_narrative)
 
     return "\n".join(lines)

@@ -9,7 +9,7 @@ from uuid import uuid4
 from ai_rpg.models import (
     Actor,
     ActorType,
-    # Artifact,
+    ArtifactArbitratorComponent,
     Blueprint,
     Card,
     CharacterStats,
@@ -31,7 +31,6 @@ from ai_rpg.models import (
     MaterialItem,
     PlayerActionAuditComponent,
     Stage,
-    # StageArtifactComponent,
     StageType,
     StorageComponent,
     World,
@@ -282,26 +281,6 @@ def create_shrine_ruins_dungeon() -> Dungeon:
 
     attach_stage_component(stage_shrine_courtyard)
 
-    # 战斗场景神器：注入一条第 2 回合强制队伍方全灭的仲裁修正规则
-    # stage_shrine_courtyard.components.append(
-    #     ComponentSerialization(
-    #         name=StageArtifactComponent.__name__,
-    #         data=StageArtifactComponent(
-    #             name=stage_shrine_courtyard.name,
-    #             artifacts=[
-    #                 Artifact(
-    #                     name="纸钱方孔",
-    #                     description="散落满院的纸钱，其方孔总像在暗中调转方向；据说被它们「看过」第二回合的人，会在一瞬间失了全部气力。",
-    #                     modifiers=[
-    #                         "第 2 回合时，满院纸钱将夺走闯入者的生气：本回合仲裁中，队伍方所有角色生命耗尽（HP 归零），"
-    #                         "无论本次出牌如何结算，最终结果都必须体现队伍方全员倒下、无力再战。",
-    #                     ],
-    #                 ),
-    #             ],
-    #         ).model_dump(),
-    #     )
-    # )
-
     actor_paper_doll = create_actor_paper_doll()
     stage_shrine_courtyard.actors = [actor_paper_doll]
 
@@ -524,6 +503,7 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
             create_consumable_workshop(),
             create_costume_workshop(),
             create_consumable_arbitrator(),
+            create_artifact_arbitrator(),
             create_dungeon_director(),
             create_world_director(),
             create_storage(),
@@ -789,6 +769,39 @@ def create_consumable_arbitrator() -> World:
         ComponentSerialization(
             name=ConsumableArbitratorComponent.__name__,
             data=ConsumableArbitratorComponent(name=world.name).model_dump(),
+        )
+    ]
+
+    return world
+
+
+###############################################################################################################################
+def create_artifact_arbitrator() -> World:
+    """创建场景神器仲裁世界（临时 agent 宿主：结算场景神器修正规则）。"""
+
+    world = create_world(
+        name="世界.神器仲裁",
+        campaign_setting=CAMPAIGN_SETTING,
+        system_rules=SYSTEM_RULES,
+        role_rules="""## 神器仲裁职责
+
+你是游戏世界的神器修正规则仲裁者。当一次出牌或消耗品使用的仲裁完成后，你被临时唤醒，作为该场景神器修正规则的裁决者。
+
+你只能在系统提供的工具边界内行动：读取角色的当前属性、写入角色的最终生命值、提交本次仲裁的最终结果（战斗日志、演出叙事、场景环境快照）。
+
+## 结算原则
+
+- 严格依据本次任务提示词中的「神器修正规则」结算，规则未写明的效果不得凭空添加。
+- 只有当规则的触发条件满足（例如「第 N 回合」且当前回合数恰为 N）时才执行；条件不满足则不产生 HP 变更。
+- 数值计算保持克制与合理，不超出修正规则的语义范围。
+- 演出叙事必须植根于当前世界观与场景环境，用感官描写呈现，不出现游戏机制术语。
+- 只裁决本次神器修正，不越界改动无关角色或场景以外的任何状态。""",
+    )
+
+    world.components = [
+        ComponentSerialization(
+            name=ArtifactArbitratorComponent.__name__,
+            data=ArtifactArbitratorComponent(name=world.name).model_dump(),
         )
     ]
 

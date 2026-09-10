@@ -3,7 +3,6 @@
 from typing import List, final
 
 from ..entitas.components import Component
-from .artifacts import Artifact
 from .card import Card
 from .character_stats import CharacterStats
 from .items import AnyItem, CostumeItem, GearItem
@@ -58,16 +57,6 @@ class StageDescriptionComponent(Component):
 
     name: str
     narrative: str  # 叙述性描述文本
-
-
-############################################################################################################
-@final
-@register_component_type
-class StageArtifactComponent(Component):
-    """挂载在（战斗）场景实体，承载该场景携带的神器及其修正规则（modifiers 注入仲裁提示词）。"""
-
-    name: str
-    artifacts: List[Artifact] = []
 
 
 ############################################################################################################
@@ -243,6 +232,15 @@ class CostumeWorkshopComponent(Component):
 @register_component_type
 class ConsumableArbitratorComponent(Component):
     """标记世界实体具有消耗品使用仲裁职责（LLM 驱动，作为临时 agent 结算消耗品效果）。"""
+
+    name: str
+
+
+############################################################################################################
+@final
+@register_component_type
+class ArtifactArbitratorComponent(Component):
+    """标记世界实体具有场景神器仲裁职责（LLM 驱动，作为临时 agent 结算神器修正规则）。"""
 
     name: str
 

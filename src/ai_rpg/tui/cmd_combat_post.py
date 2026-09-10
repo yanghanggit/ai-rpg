@@ -126,27 +126,27 @@ def _append_round_lines(
     lines.append(f"    消耗品使用次数： [bold]{round_.consumable_use_count}[/]")
     lines.append(f"    装备使用次数：   [bold]{round_.gear_equip_count}[/]")
 
-    if round_.cards_combat_log or round_.cards_narrative:
+    if round_.cards_log or round_.cards_narrative:
         lines.append("    [bold]出牌记录：[/]")
         for j, (combat_log, narrative) in enumerate(
-            zip_longest(round_.cards_combat_log, round_.cards_narrative), start=1
+            zip_longest(round_.cards_log, round_.cards_narrative), start=1
         ):
             lines.append(f"      [{j}] [dim]战斗：[/] {combat_log or '[dim]（无）[/]'}")
             lines.append(f"          [dim]叙事：[/] {narrative or '[dim]（无）[/]'}")
 
-    if round_.consumable_combat_log or round_.consumable_narrative:
+    if round_.consumable_log or round_.consumable_narrative:
         lines.append("    [bold]消耗品记录：[/]")
         for j, (combat_log, narrative) in enumerate(
-            zip_longest(round_.consumable_combat_log, round_.consumable_narrative),
+            zip_longest(round_.consumable_log, round_.consumable_narrative),
             start=1,
         ):
             lines.append(f"      [{j}] [dim]战斗：[/] {combat_log or '[dim]（无）[/]'}")
             lines.append(f"          [dim]叙事：[/] {narrative or '[dim]（无）[/]'}")
 
-    if round_.gear_combat_log or round_.gear_narrative:
+    if round_.gear_log or round_.gear_narrative:
         lines.append("    [bold]装备记录：[/]")
         for j, (combat_log, narrative) in enumerate(
-            zip_longest(round_.gear_combat_log, round_.gear_narrative), start=1
+            zip_longest(round_.gear_log, round_.gear_narrative), start=1
         ):
             lines.append(f"      [{j}] [dim]战斗：[/] {combat_log or '[dim]（无）[/]'}")
             lines.append(f"          [dim]叙事：[/] {narrative or '[dim]（无）[/]'}")

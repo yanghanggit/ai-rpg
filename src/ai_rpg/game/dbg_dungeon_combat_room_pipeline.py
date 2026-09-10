@@ -50,9 +50,9 @@ def create_dungeon_combat_room_pipeline(
     from ..systems.use_consumable_item_arbitration_system import (
         UseConsumableItemArbitrationSystem,
     )
+    from ..systems.artifact_arbitration_system import ArtifactArbitrationSystem
     from ..systems.turn_end_arbitration_system import TurnEndArbitrationSystem
 
-    from ..systems.combat_archive_system import CombatArchiveSystem
     from ..systems.combat_post_combat_transition_system import (
         CombatPostCombatTransitionSystem,
     )
@@ -136,6 +136,9 @@ def create_dungeon_combat_room_pipeline(
     processors.add(PlayCardsArbitrationSystem(dbg_game))
     processors.add(UseConsumableItemArbitrationSystem(dbg_game))
 
+    # 场景神器仲裁系统：在出牌/消耗品仲裁之后，由「世界.神器仲裁」临时 agent 落实场景神器修正规则
+    processors.add(ArtifactArbitrationSystem(dbg_game))
+
     # 回合结束仲裁系统（监视 PassTurnAction，扫全场持有回合结束词缀卡牌的角色并并发仲裁）
     processors.add(TurnEndArbitrationSystem(dbg_game))
 
@@ -158,7 +161,7 @@ def create_dungeon_combat_room_pipeline(
     processors.add(CombatLootSystem(dbg_game))
 
     # 战斗归档系统（生成总结、压缩消息、触发记忆存储，内部有状态守卫；可插拔，当前已拔掉）
-    processors.add(CombatArchiveSystem(dbg_game))
+    # processors.add(CombatArchiveSystem(dbg_game))
 
     # 战斗状态转换系统（COMPLETE -> POST_COMBAT，战斗状态机的关键步骤，必须常驻）
     processors.add(CombatPostCombatTransitionSystem(dbg_game))

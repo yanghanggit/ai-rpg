@@ -459,7 +459,7 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
         # 将本回合的战斗日志和叙事内容添加到当前回合的记录中
         latest_round = self._game.current_dungeon_combat_room.combat.latest_round
         assert latest_round is not None, "current_rounds 不应为 None"
-        latest_round.cards_combat_log.append(combat_log)
+        latest_round.cards_log.append(combat_log)
         latest_round.cards_narrative.append(narrative)
 
     #######################################################################################################################################

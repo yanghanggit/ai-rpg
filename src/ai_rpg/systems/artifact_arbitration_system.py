@@ -1,11 +1,12 @@
-"""使用消耗品仲裁系统模块。
+"""场景神器仲裁系统模块。
 
-借世界实体「世界.消耗品仲裁」作为临时 agent（LLM），在工具边界内结算消耗品使用效果：
-读取属性 → 依效果提示词结算 → 写入 HP → 提交仲裁结果（战斗日志/叙事）。
-注意：本系统借用世界实体作为临时 agent，不直接改写场景的环境快照（StageDescriptionComponent）；
-仅把「发生了什么」写入场景实体记忆，由场景自身后续推理更新。
+借世界实体「世界.神器仲裁」作为临时 agent（LLM），在一次出牌/消耗品仲裁完成后，
+依本场景神器的修正规则（modifiers）做覆盖式结算：
+读取属性 → 判定规则是否触发（如「第 N 回合」）→ 写入 HP → 提交仲裁结果（战斗日志/叙事）。
 
 临时 agent 的对话上下文仅在本次结算过程中累积，结束后不写回宿主世界实体的持久记忆。
+注意：本系统借用世界实体作为临时 agent，不直接改写场景的环境快照（StageDescriptionComponent）；
+仅把「发生了什么」写入场景实体记忆，由场景自身后续推理更新。
 """
 
 import json
@@ -21,17 +22,19 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_combat_processor import (
     compute_character_hand_block,
     compute_character_stats,
-    get_alive_actors_in_stage,
+    get_alive_monsters_in_stage,
+    get_alive_party_members_in_stage,
     set_character_hp,
 )
 from ..game.dbg_game import DBGGame
 from ..models import (
     AIMessage,
+    Artifact,
+    ArtifactArbitratorComponent,
     CharacterStatsComponent,
     CombatArbitrationEvent,
-    ConsumableArbitratorComponent,
-    ConsumableItem,
     HumanMessage,
+    PlayCardsAction,
     StageDescriptionComponent,
     UseConsumableItemAction,
     WorldComponent,
@@ -43,48 +46,62 @@ from .arbitration_prompt_builders import (
     build_stats_update_notification,
 )
 
+
+###########################################################################################################################################
+# 硬编码神器（数据注入落地前的临时承载；后续改为从场景/副本数据读取）
+###########################################################################################################################################
+_HARDCODED_ARTIFACTS: Final[List[Artifact]] = [
+    Artifact(
+        name="纸钱方孔",
+        description="散落满院的纸钱，其方孔总像在暗中调转方向；据说被它们「看过」第二回合的人，会在一瞬间失了全部气力。",
+        modifiers=[
+            "第 2 回合时，满院纸钱将夺走闯入者的生气：本回合仲裁中，队伍方所有角色生命耗尽（HP 归零），"
+            "无论本次出牌如何结算，最终结果都必须体现队伍方全员倒下、无力再战。",
+        ],
+    ),
+]
+
+
 ###########################################################################################################################################
 # 仲裁提示词构建器
 ###########################################################################################################################################
+def _build_artifact_lines(artifacts: List[Artifact]) -> str:
+    """把神器清单格式化为提示词片段。"""
+    if not artifacts:
+        return "无"
+    lines: List[str] = []
+    for artifact in artifacts:
+        lines.append(f"- **{artifact.name}**：{artifact.description}")
+        for modifier in artifact.modifiers:
+            lines.append(f"  - 修正规则：{modifier}")
+    return "\n".join(lines)
 
 
 @prompt_builder
-def _build_consumable_arbitration_prompt(
-    actor_name: str,
-    item: ConsumableItem,
-    targets: List[str],
+def _build_artifact_arbitration_prompt(
     current_round_number: int,
+    artifacts: List[Artifact],
+    party_names: str,
+    monster_names: str,
     current_stage_description: str,
-    stage_actor_names: List[str],
 ) -> str:
-    """构建消耗品仲裁提示词：发起人/目标/场景描述/场景内参与人员/效果提示词全部注入。"""
-    target_names = "、".join(targets) if targets else "无"
-    stage_actors = "、".join(stage_actor_names) if stage_actor_names else "无"
-    effect_prompt = (
-        item.on_use_prompt[0]
-        if item.on_use_prompt
-        else "（未提供额外效果提示，仅依据物品描述合理推断）"
-    )
+    """构建神器仲裁提示词：回合数/神器修正规则/场上阵营/场景环境全部注入。"""
+    return f"""# 第 {current_round_number} 回合：场景神器修正结算（工具调用模式）
 
-    return f"""# 第 {current_round_number} 回合：消耗品使用结算（工具调用模式）
+你是一次出牌/消耗品仲裁完成之后被临时唤醒的场景神器仲裁者，负责落实本场景神器的修正规则。
 
-## 使用发起人
+## 当前回合数
 
-{actor_name}
+第 {current_round_number} 回合
 
-## 消耗品
+## 当前场景神器
 
-- 名称：{item.name}
-- 描述：{item.description}
-- 效果提示：{effect_prompt}
+{_build_artifact_lines(artifacts)}
 
-## 目标
+## 场上阵营（当前存活）
 
-{target_names}
-
-## 场景内参与人员
-
-{stage_actors}
+- 队伍方：{party_names}
+- 怪物方：{monster_names}
 
 ## 当前场景环境
 
@@ -93,14 +110,15 @@ def _build_consumable_arbitration_prompt(
 ## 结算规则
 
 - 你只能通过下方工具读取/写入数据，禁止引入工具未提供的机制。
-- 严格依据「效果提示」与物品「描述」结算本次使用；效果提示未写明的效果不得凭空添加。
-- 对每个受影响角色（至少包含发起人与所有目标，即使 HP 无变化也保持原值）调用 set_entity_hp 写入最终 HP。
+- 严格依据各神器的「修正规则」结算；规则未写明的效果不得凭空添加。
+- 只有当规则的触发条件满足时（例如「第 N 回合」且当前回合数恰为 N）才执行该规则；条件不满足则本回合不产生任何 HP 变更。
+- 对每个受影响角色调用 set_entity_hp 写入最终 HP。
 - 目标 HP = max(0, min(计算后 HP, 最大 HP))。
 
 ## 工具使用流程
 
-1. 调用 get_entity_stats 读取「发起人」与「目标」的当前属性（可在同一次回复中并发调用多个）。
-2. 依据「效果提示」「描述」结算，得出每个受影响角色的最终 HP。
+1. 调用 get_entity_stats 读取所有可能受影响角色的当前属性（可在同一次回复中并发调用多个）。
+2. 依据各神器「修正规则」的触发条件与语义结算，得出每个受影响角色的最终 HP。
 3. 对每个受影响角色调用 set_entity_hp 写入最终 HP（可在同一次回复中并发调用多个）。
 4. 调用 submit_arbitration 提交最终结果，结束本次仲裁。
 
@@ -108,7 +126,7 @@ def _build_consumable_arbitration_prompt(
 
 ### combat_log（简名 = 全名最后一段）
 
-示例：`[治愈药水→英雄] HP:英雄 8→13`
+示例：`[纸钱方孔|第2回合] HP:英雄 12→0 阿秀 8→0`
 
 {NARRATIVE_DESCRIPTION}"""
 
@@ -119,7 +137,7 @@ def _build_consumable_arbitration_prompt(
 GET_ENTITY_STATS_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="get_entity_stats",
-        description="读取指定战斗角色的当前生命值（HP/最大HP）与格挡（BLOCK，手牌 block 之和）。用于获取发起者与目标当前状态。",
+        description="读取指定战斗角色的当前生命值（HP/最大HP）与格挡（BLOCK，手牌 block 之和）。用于获取可能受影响角色当前状态。",
         parameters={
             "type": "object",
             "properties": {
@@ -137,7 +155,7 @@ GET_ENTITY_STATS_TOOL: Final[ToolDefinition] = ToolDefinition(
 SET_ENTITY_HP_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="set_entity_hp",
-        description="设置指定战斗角色的当前生命值（自动 clamp 到 0~最大HP）。对每个受影响角色（含发起者与所有目标）都必须调用一次。",
+        description="设置指定战斗角色的当前生命值（自动 clamp 到 0~最大HP）。对每个受影响角色都必须调用一次。",
         parameters={
             "type": "object",
             "properties": {
@@ -159,7 +177,7 @@ SET_ENTITY_HP_TOOL: Final[ToolDefinition] = ToolDefinition(
 SUBMIT_ARBITRATION_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="submit_arbitration",
-        description="提交本次仲裁的最终结果（战斗日志、演出叙事）。调用后本次仲裁结束。",
+        description="提交本次神器仲裁的最终结果（战斗日志、演出叙事）。调用后本次仲裁结束。",
         parameters={
             "type": "object",
             "properties": {
@@ -189,7 +207,6 @@ class _ArbitrationContext(BaseModel):
     narrative: Optional[str] = None
 
 
-###########################################################################################################################################
 def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
     """处理 get_entity_stats 工具调用：返回角色的 HP 与格挡。"""
     entity = game.get_actor_entity(entity_name)
@@ -198,7 +215,7 @@ def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
 
     stats = compute_character_stats(entity)
     hand_block = compute_character_hand_block(entity)
-    return f"{entity_name}: HP {stats.hp}/{stats.max_hp} | " f"BLOCK {hand_block}"
+    return f"{entity_name}: HP {stats.hp}/{stats.max_hp} | BLOCK {hand_block}"
 
 
 def _handle_set_entity_hp(
@@ -227,8 +244,8 @@ def _handle_submit_arbitration(
 
 ###########################################################################################################################################
 @final
-class UseConsumableItemArbitrationSystem(ReactiveProcessor):
-    """响应 UseConsumableItemAction 事件，借世界实体「世界.消耗品仲裁」作为临时 agent 结算消耗品效果。"""
+class ArtifactArbitrationSystem(ReactiveProcessor):
+    """响应 PlayCardsAction / UseConsumableItemAction 事件，借世界实体「世界.神器仲裁」作为临时 agent 结算神器修正规则。"""
 
     def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
@@ -237,46 +254,51 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
     #######################################################################################################################################
     @override
     def get_trigger(self) -> Dict[Matcher, GroupEvent]:
-        return {Matcher(UseConsumableItemAction): GroupEvent.ADDED}
+        return {
+            Matcher(PlayCardsAction): GroupEvent.ADDED,
+            Matcher(UseConsumableItemAction): GroupEvent.ADDED,
+        }
 
     #######################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(UseConsumableItemAction)
+        return entity.has(PlayCardsAction) or entity.has(UseConsumableItemAction)
 
     #######################################################################################################################################
     @override
     async def react(self, entities: List[Entity]) -> None:
 
         if not self._game.current_dungeon_combat_room.combat.is_ongoing:
-            logger.debug("UseConsumableItemArbitrationSystem: 战斗未进行中，跳过仲裁")
+            logger.debug("ArtifactArbitrationSystem: 战斗未进行中，跳过神器仲裁")
+            return
+
+        if not _HARDCODED_ARTIFACTS:
+            logger.debug("ArtifactArbitrationSystem: 无神器规则，跳过神器仲裁")
             return
 
         assert (
             len(entities) == 1
-        ), "UseConsumableItemArbitrationSystem 期望每次仅处理一个 UseConsumableItemAction 实体"
-        await self._run_consumable_arbitration(entities[0])
+        ), "ArtifactArbitrationSystem 期望每次仅处理一个动作实体"
+        await self._run_artifact_arbitration(entities[0])
 
     #######################################################################################################################################
-    async def _run_consumable_arbitration(self, actor_entity: Entity) -> None:
-        """驱动单次消耗品使用的完整临时 agent 仲裁流程。"""
+    async def _run_artifact_arbitration(self, actor_entity: Entity) -> None:
+        """驱动单次神器修正的完整临时 agent 仲裁流程。"""
 
-        action = actor_entity.get(UseConsumableItemAction)
-
-        # 宿主：专用的「世界.消耗品仲裁」世界实体（其 SystemMessage 即临时 agent 的「设定」）
+        # 宿主：专用的「世界.神器仲裁」世界实体（其 SystemMessage 即临时 agent 的「设定」）
         arbitrator_entities = self._game.get_group(
-            Matcher(all_of=[WorldComponent, ConsumableArbitratorComponent])
+            Matcher(all_of=[WorldComponent, ArtifactArbitratorComponent])
         ).entities
         assert (
             len(arbitrator_entities) == 1
-        ), f"UseConsumableItemArbitrationSystem: 应恰好存在一个消耗品仲裁世界实体，实际={len(arbitrator_entities)}"
+        ), f"ArtifactArbitrationSystem: 应恰好存在一个神器仲裁世界实体，实际={len(arbitrator_entities)}"
         arbitrator_entity = next(iter(arbitrator_entities))
 
         # 场景实体与当前场景环境快照
         stage_entity = self._game.resolve_stage_entity(actor_entity)
         assert (
             stage_entity is not None
-        ), f"UseConsumableItemArbitrationSystem: 无法找到 {actor_entity.name} 所在的场景实体"
+        ), f"ArtifactArbitrationSystem: 无法找到 {actor_entity.name} 所在的场景实体"
         assert stage_entity.has(
             StageDescriptionComponent
         ), "当前场景实体缺少 StageDescriptionComponent 组件！"
@@ -288,18 +310,20 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             self._game.current_dungeon_combat_room.combat.rounds or []
         )
 
-        # 场景内参与人员（存活角色），供 agent 感知战场全貌
-        stage_actor_names = sorted(
-            e.name for e in get_alive_actors_in_stage(self._game, actor_entity)
+        # 场上存活阵营（供 agent 判断「队伍方/怪物方」）
+        party_members = get_alive_party_members_in_stage(stage_entity, self._game)
+        monsters = get_alive_monsters_in_stage(stage_entity, self._game)
+        party_names = (
+            "、".join(e.name for e in party_members) if party_members else "无"
         )
+        monster_names = "、".join(e.name for e in monsters) if monsters else "无"
 
-        prompt = _build_consumable_arbitration_prompt(
-            actor_name=actor_entity.name,
-            item=action.item,
-            targets=action.targets,
+        prompt = _build_artifact_arbitration_prompt(
             current_round_number=current_round_number,
+            artifacts=list(_HARDCODED_ARTIFACTS),
+            party_names=party_names,
+            monster_names=monster_names,
             current_stage_description=current_stage_description,
-            stage_actor_names=stage_actor_names,
         )
 
         # 仲裁结果容器：handler 通过 partial 绑定写入，避免闭包。
@@ -308,8 +332,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
         # 上下文隔离：仅取世界实体的首条 SystemMessage 作为「设定」，
         # 传入全新列表（agent_loop 原地追加），结束后不写回宿主实体持久记忆。
         arbitrator_memory = self._game.get_agent_memory(arbitrator_entity)
-        assert arbitrator_memory.messages, "消耗品仲裁世界实体缺少首条 SystemMessage"
-        # 仅取首条消息（SystemMessage，即「设定」），构造全新列表供 agent_loop 原地追加
+        assert arbitrator_memory.messages, "神器仲裁世界实体缺少首条 SystemMessage"
         messages = [arbitrator_memory.messages[0]]
 
         try:
@@ -332,40 +355,26 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                 terminal_tools=[SUBMIT_ARBITRATION_TOOL],
             )
         except Exception as e:
-            logger.error(f"[UseConsumableItemArbitrationSystem] agent_loop 异常: {e}")
+            logger.error(f"[ArtifactArbitrationSystem] agent_loop 异常: {e}")
             return
 
         if not ok or ctx.combat_log is None or ctx.narrative is None:
             logger.error(
-                "[UseConsumableItemArbitrationSystem] 仲裁未正常完成（未提交结果或达到轮次上限）"
+                "[ArtifactArbitrationSystem] 神器仲裁未正常完成（未提交结果或达到轮次上限）"
             )
             return
 
-        # 通知覆盖保证：发起人 + 所有目标（去重）都必须收到通知；
-        # 若 LLM 未对某个实体调用 set_entity_hp（例如其 HP 未变化），则补记其当前 HP。
-        notify_names = list(dict.fromkeys([actor_entity.name, *action.targets]))
-        for notify_name in notify_names:
-            if notify_name in ctx.hp_changes:
-                continue
-            entity = self._game.get_actor_entity(notify_name)
-            if entity is None:
-                logger.error(
-                    f"[UseConsumableItemArbitrationSystem] 无法找到需通知角色: {notify_name}"
-                )
-                return
-            ctx.hp_changes[notify_name] = compute_character_stats(entity).hp
-
-        self._apply_arbitration_result(stage_entity, ctx, prompt, action.item)
+        # 应用仲裁结果
+        self._apply_artifact_arbitration_result(stage_entity, ctx, prompt)
 
     #######################################################################################################################################
-    def _apply_arbitration_result(
+    def _apply_artifact_arbitration_result(
         self,
         stage_entity: Entity,
         ctx: _ArbitrationContext,
         prompt: str,
-        item: ConsumableItem,
     ) -> None:
-        """应用临时 agent 的仲裁结果：广播事件、写入 HP、记录回合日志（不直接改场景环境快照）。"""
+        """应用临时 agent 的神器仲裁结果：广播事件、写入 HP、记录回合日志（不直接改场景环境快照）。"""
 
         assert ctx.combat_log is not None, "combat_log 不应为 None"
         assert ctx.narrative is not None, "narrative 不应为 None"
@@ -377,7 +386,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
         for entity_name in hp_changes:
             if self._game.get_entity_by_name(entity_name) is None:
                 logger.error(
-                    f"UseConsumableItemArbitrationSystem: hp_changes 中的实体不存在于游戏中: {entity_name}"
+                    f"ArtifactArbitrationSystem: hp_changes 中的实体不存在于游戏中: {entity_name}"
                 )
                 return
 
@@ -400,7 +409,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             ),
         )
 
-        # 广播本次仲裁结果给场景内角色
+        # 广播本次神器仲裁结果给场景内角色
         current_round_number = len(
             self._game.current_dungeon_combat_room.combat.rounds or []
         )
@@ -411,7 +420,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                     combat_log,
                     narrative,
                     current_round_number,
-                    f"使用消耗品「{item.name}」",
+                    "场景神器仲裁",
                 ),
                 stage=stage_entity.name,
                 combat_log=combat_log,
@@ -442,9 +451,8 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                 ),
             )
 
-        # 更新本回合的消耗品仲裁日志与计数
+        # 更新本回合的神器仲裁日志
         latest_round = self._game.current_dungeon_combat_room.combat.latest_round
         assert latest_round is not None, "latest_round 不应为 None"
-        latest_round.consumable_log.append(combat_log)
-        latest_round.consumable_narrative.append(narrative)
-        latest_round.consumable_use_count += 1
+        latest_round.artifact_log.append(combat_log)
+        latest_round.artifact_narrative.append(narrative)

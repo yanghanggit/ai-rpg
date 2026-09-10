@@ -116,7 +116,7 @@ class EquipGearItemActionSystem(ReactiveProcessor):
         # 记录本回合装备使用结果（供 TUI 展示）
         latest_round = self._game.current_dungeon_combat_room.combat.latest_round
         if latest_round is not None:
-            latest_round.gear_combat_log.append(
+            latest_round.gear_log.append(
                 f"[{entity.name} 装备 {item.name}] 生成手牌「{'、'.join(card_names)}」"
             )
             latest_round.gear_narrative.append(

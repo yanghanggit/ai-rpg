@@ -59,7 +59,7 @@ def _setup_mock_game(mock_game: MagicMock, player: Entity) -> MagicMock:
     mock_game.current_dungeon_combat_room.combat.is_ongoing = True
     mock_game.current_dungeon_combat_room.combat.rounds = [MagicMock()]
     latest_round = MagicMock()
-    latest_round.gear_combat_log = []
+    latest_round.gear_log = []
     latest_round.gear_narrative = []
     latest_round.gear_equip_count = 0
     mock_game.current_dungeon_combat_room.combat.latest_round = latest_round
@@ -136,7 +136,7 @@ class TestReact:
         assert generated in actor.get(HandComponent).cards
         # 本回合装备使用结果被记录
         assert latest_round.gear_equip_count == 1
-        assert latest_round.gear_combat_log
+        assert latest_round.gear_log
         assert latest_round.gear_narrative
         # 广播装备转化通知
         mock_game.broadcast_to_stage.assert_called_once()

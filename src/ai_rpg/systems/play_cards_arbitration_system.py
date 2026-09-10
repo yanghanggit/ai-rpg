@@ -14,8 +14,6 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_combat_processor import (
     compute_character_hand_block,
     compute_character_stats,
-    get_alive_monsters_in_stage,
-    get_alive_party_members_in_stage,
     set_character_hp,
 )
 from ..game.dbg_game import DBGGame
@@ -28,7 +26,6 @@ from ..models import (
     HumanMessage,
     PlayCardsAction,
     RoundStatsComponent,
-    StageArtifactComponent,
     StageDescriptionComponent,
     TargetType,
 )
@@ -166,11 +163,10 @@ get_entity_stats 返回的「受击卡牌」仅列出带受击词缀（on_hit_af
 
 ## 工具使用流程
 
-1. 先调用 get_stage_stats 检查本场景自身状态（场上阵营与携带神器及其修正规则），若存在场景修正规则必须遵守。
-2. 调用 get_entity_stats 读取「出牌者」与所有「目标」的当前属性与受击词缀（可在同一次回复中并发调用多个）。
-3. 依据「计算规则」与场景修正规则结算，得出每个受影响角色的最终 HP。
-4. 对每个受影响角色（含出牌者、所有目标，以及场景修正规则指定的其他角色）调用 set_entity_hp 写入最终 HP（可在同一次回复中并发调用多个）。
-5. 调用 submit_arbitration 提交最终结果，结束本次仲裁。
+1. 调用 get_entity_stats 读取「出牌者」与所有「目标」的当前属性与受击词缀（可在同一次回复中并发调用多个）。
+2. 依据「计算规则」结算，得出每个受影响角色的最终 HP。
+3. 对每个受影响角色（含出牌者与所有目标）调用 set_entity_hp 写入最终 HP（可在同一次回复中并发调用多个）。
+4. 调用 submit_arbitration 提交最终结果，结束本次仲裁。
 
 ## submit_arbitration 字段说明
 
@@ -200,15 +196,6 @@ def _build_combat_arbitration_broadcast(
 ###########################################################################################################################################
 # 仲裁工具定义
 ###########################################################################################################################################
-GET_STAGE_STATS_TOOL: Final[ToolDefinition] = ToolDefinition(
-    function=ToolFunction(
-        name="get_stage_stats",
-        description="读取当前战斗场景（仲裁者自身）的状态：场上存活阵营清单，以及场景携带的神器（name/description/modifiers）。结算前应先调用一次，以确认是否有需要遵守的场景级修正规则。",
-        parameters={"type": "object", "properties": {}},
-    )
-)
-
-
 GET_ENTITY_STATS_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="get_entity_stats",
@@ -322,38 +309,6 @@ def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
         f"BLOCK {hand_block} | "
         f"受击卡牌（仅含带受击词缀的卡牌，非完整手牌）: {cards_str}"
     )
-
-
-def _handle_get_stage_stats(game: DBGGame, stage_entity: Entity) -> str:
-    """处理 get_stage_stats 工具调用：返回场景自身状态（场上阵营 + 携带神器）。"""
-    party_members = get_alive_party_members_in_stage(stage_entity, game)
-    monsters = get_alive_monsters_in_stage(stage_entity, game)
-
-    party_names = "、".join(e.name for e in party_members) if party_members else "无"
-    monster_names = "、".join(e.name for e in monsters) if monsters else "无"
-
-    lines = [
-        "## 场上阵营（当前存活）",
-        f"- 队伍方：{party_names}",
-        f"- 怪物方：{monster_names}",
-        "",
-        "## 携带神器",
-    ]
-
-    artifacts = (
-        stage_entity.get(StageArtifactComponent).artifacts
-        if stage_entity.has(StageArtifactComponent)
-        else []
-    )
-    if artifacts:
-        for artifact in artifacts:
-            lines.append(f"- **{artifact.name}**：{artifact.description}")
-            for modifier in artifact.modifiers:
-                lines.append(f"  - {modifier}")
-    else:
-        lines.append("- 无")
-
-    return "\n".join(lines)
 
 
 def _handle_set_entity_hp(
@@ -471,15 +426,11 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                 prompt=message,
                 messages=self._game.get_agent_memory(stage_entity).messages,
                 tools=[
-                    GET_STAGE_STATS_TOOL,
                     GET_ENTITY_STATS_TOOL,
                     SET_ENTITY_HP_TOOL,
                     SUBMIT_ARBITRATION_TOOL,
                 ],
                 handlers={
-                    "get_stage_stats": partial(
-                        _handle_get_stage_stats, self._game, stage_entity
-                    ),
                     "get_entity_stats": partial(_handle_get_entity_stats, self._game),
                     "set_entity_hp": partial(_handle_set_entity_hp, self._game, ctx),
                     "submit_arbitration": partial(_handle_submit_arbitration, ctx),
@@ -618,7 +569,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
         # 将本回合的战斗日志和叙事内容添加到当前回合的记录中
         latest_round = self._game.current_dungeon_combat_room.combat.latest_round
         assert latest_round is not None, "current_rounds 不应为 None"
-        latest_round.cards_combat_log.append(combat_log)
+        latest_round.cards_log.append(combat_log)
         latest_round.cards_narrative.append(narrative)
 
     #######################################################################################################################################

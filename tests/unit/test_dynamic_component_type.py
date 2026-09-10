@@ -1,15 +1,12 @@
-"""测试动态组件类型创建与 Stage 唯一组件挂载功能。
+"""测试动态组件类型创建与挂载功能。
 
 覆盖范围：
 - registry.create_component_type 动态创建组件类（含幂等与字段定义）
 - registry.resolve_component_type 惰性重建动态组件（含按 data 推断字段）
-- Stage.code_name 必填字段与序列化
-- demo.world 唯一组件挂载辅助函数
 - DBGGame.create_stage_entities 挂载 Stage.components
 - RPGEntityManager.deserialize_entities 跨进程重建动态组件
 """
 
-import importlib
 import uuid
 from typing import Any, Iterator
 
@@ -29,13 +26,7 @@ from src.ai_rpg.models import (
     StageType,
     create_component_type,
     resolve_component_type,
-    attach_stage_component,
 )
-
-# demo.world 内部使用 `ai_rpg.models`（而非 `src.ai_rpg.models`）导入，静态导入会
-# 让 mypy 把同一源文件识别为两个模块（"Source file found twice"）。这里改用
-# importlib 动态导入，运行时仍加载真实的 demo 代码。
-_demo_world: Any = importlib.import_module("demo.world")
 
 
 ############################################################################################################
@@ -50,16 +41,15 @@ def _clean_dynamic_component_types() -> Iterator[None]:
 
 
 ############################################################################################################
-def _make_stage_model(name: str, code_name: str) -> Stage:
-    """构造一个挂载了指定英文代号对应动态组件的 Stage 模型。"""
+def _make_stage_model(name: str, component_name: str) -> Stage:
+    """构造一个挂载了指定动态组件的 Stage 模型。"""
     return Stage(
         name=name,
-        code_name=code_name,
         type=StageType.HOME,
         profile="测试场景",
         system_message=f"{name} 的系统消息",
         actors=[],
-        components=[ComponentSerialization(name=code_name, data={"name": name})],
+        components=[ComponentSerialization(name=component_name, data={"name": name})],
     )
 
 
@@ -128,115 +118,6 @@ class TestResolveComponentType:
         assert COMPONENT_TYPES["TestResolveWithField"] is cls
         inst = cls.model_validate({"name": "场景.测试"})
         assert inst.model_dump() == {"name": "场景.测试"}
-
-
-############################################################################################################
-# Stage.code_name
-############################################################################################################
-class TestStageCodeName:
-    def test_code_name_is_required(self) -> None:
-        # 缺少 code_name 时，反序列化/构造必须失败
-        with pytest.raises(ValidationError):
-            Stage.model_validate(
-                {
-                    "name": "s",
-                    "type": StageType.HOME,
-                    "profile": "p",
-                    "system_message": "s",
-                    "actors": [],
-                }
-            )
-
-    def test_serialization_round_trip(self) -> None:
-        stage = _make_stage_model("场景.测试房", "test_room")
-
-        restored = Stage.model_validate(stage.model_dump())
-
-        assert restored.code_name == "test_room"
-        assert restored.components[0].name == "test_room"
-        assert restored.components[0].data == {"name": "场景.测试房"}
-
-
-############################################################################################################
-# demo.world 唯一组件辅助函数
-############################################################################################################
-class TestDemoStageComponentHelpers:
-    def test_attach_stage_component(self) -> None:
-        stage = Stage(
-            name="场景.测试",
-            code_name="test_room",
-            type=StageType.HOME,
-            profile="p",
-            system_message="场景.测试",
-            actors=[],
-        )
-
-        result = attach_stage_component(stage)
-
-        assert result is stage
-        assert len(stage.components) == 1
-        assert stage.components[0].name == "test_room"
-        assert stage.components[0].data == {"name": "场景.测试"}
-
-    def test_attach_stage_component_rejects_invalid_code_name(self) -> None:
-        stage = Stage(
-            name="场景.测试",
-            code_name="not valid!",
-            type=StageType.HOME,
-            profile="p",
-            system_message="场景.测试",
-            actors=[],
-        )
-
-        with pytest.raises(AssertionError, match="code_name"):
-            attach_stage_component(stage)
-
-    def test_attach_stage_component_rejects_duplicate_code_name(self) -> None:
-        first = Stage(
-            name="场景.A",
-            code_name="dup_room",
-            type=StageType.HOME,
-            profile="p",
-            system_message="场景.A",
-            actors=[],
-        )
-        attach_stage_component(first)
-
-        second = Stage(
-            name="场景.B",
-            code_name="dup_room",
-            type=StageType.HOME,
-            profile="p",
-            system_message="场景.B",
-            actors=[],
-        )
-
-        with pytest.raises(AssertionError, match="重名"):
-            attach_stage_component(second)
-
-
-############################################################################################################
-# demo 蓝图/副本的 Stage 唯一标记
-############################################################################################################
-class TestDemoBlueprintUniqueTags:
-    def test_all_blueprint_stages_have_unique_tags(self) -> None:
-        blueprint = _demo_world.create_ruins_blueprint("Game1")
-
-        code_names = [stage.code_name for stage in blueprint.stages]
-        assert all(code_names)
-        assert len(set(code_names)) == len(code_names)
-        for stage in blueprint.stages:
-            assert len(stage.components) == 1
-            assert stage.components[0].name == stage.code_name
-            assert stage.components[0].data == {"name": stage.name}
-
-    def test_all_dungeon_stages_have_unique_tags(self) -> None:
-        dungeon = _demo_world.create_shrine_ruins_dungeon()
-
-        stages = [room.stage for room in dungeon.rooms]
-        code_names = [stage.code_name for stage in stages]
-        assert all(code_names)
-        assert len(set(code_names)) == len(code_names)
 
 
 ############################################################################################################

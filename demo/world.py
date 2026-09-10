@@ -39,7 +39,6 @@ from ai_rpg.models import (
     create_actor,
     create_stage,
     create_world,
-    attach_stage_component,
 )
 
 from .card_prototypes import (
@@ -255,7 +254,6 @@ def create_shrine_ruins_dungeon() -> Dungeon:
     # ── 开场叙事房间 ──
     stage_shrine_entrance = create_stage(
         name="场景.庙祠入口",
-        code_name="shrine_entrance",
         stage_type=StageType.DUNGEON,
         profile="""你是一条被荒草半掩的碎石小径，尽头立着一座坍塌过半的庙祠。
 天色是介于黄昏与夜晚之间的那种灰蓝，四下无风，但路旁的枯草丛偶尔簌簌作响，像有什么极轻的东西从其间穿行。
@@ -265,12 +263,9 @@ def create_shrine_ruins_dungeon() -> Dungeon:
         system_rules=SYSTEM_RULES,
     )
 
-    attach_stage_component(stage_shrine_entrance)
-
     # ── 战斗房间 ──
     stage_shrine_courtyard = create_stage(
         name="场景.破败殿前",
-        code_name="shrine_courtyard",
         stage_type=StageType.DUNGEON,
         profile="""你是一座坍塌庙祠的前院。青石地面已大面积龟裂，裂缝中长出灰白色的干枯苔藓，踩上去发出细碎的脆响。
 正前方是殿门，门扇只剩一扇半掩着，门楣上的匾额歪斜悬挂，字迹已模糊不可辨。殿内隐约可见一尊神像的背影——它面向后墙，而非殿门。
@@ -278,8 +273,6 @@ def create_shrine_ruins_dungeon() -> Dungeon:
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=SYSTEM_RULES,
     )
-
-    attach_stage_component(stage_shrine_courtyard)
 
     # 战斗场景神器：挂载在战斗场景实体上，命中「出牌/消耗品仲裁后」运行点
     # stage_shrine_courtyard.components.append(
@@ -321,13 +314,12 @@ def create_wuming_room() -> Stage:
 
     stage = create_stage(
         name="场景.二楼卧室",
-        code_name="wuming_room",
         stage_type=StageType.HOME,
         profile="""你是司氏宅邸二楼的一间卧室，久无人住。一张铁架床靠墙而放，被褥半旧，叠得并不整齐；床头一个歪斜的矮柜，柜面落着一层薄灰。一扇木窗正对庭院，窗外荒草没膝，一直蔓延到远处的锈蚀铁门，更远处是终年不散的灰白雾气。墙纸受潮卷边，露出灰褐的底子；天花板一角有水渍晕痕。房门虚掩，门外是铺着旧地毯的走廊，静得能听见灰尘落下的声音。空气里有旧木、积尘与轻微霉味混合的气息。""",
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=SYSTEM_RULES,
     )
-    return attach_stage_component(stage)
+    return stage
 
 
 #######################################################################################################################
@@ -336,13 +328,12 @@ def create_guzhiqiu_room() -> Stage:
 
     stage = create_stage(
         name="场景.一楼客房",
-        code_name="guzhiqiu_room",
         stage_type=StageType.HOME,
         profile="""你是司氏宅邸一楼的一间客房，比二楼的卧室稍大，靠墙立着衣柜与梳妆台，镜面蒙尘，照不清人脸。床铺整洁，被角被细心掖好，显然近期有人住过。窗朝西，黄昏时能望见荒草尽头的天光。地上铺着褪色的旧地毯，桌上有半截燃过的蜡烛和一摞旧书。房门关着，门外走廊偶尔传来极轻的脚步声——像是住在这里的人在走动，又像是风。""",
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=SYSTEM_RULES,
     )
-    return attach_stage_component(stage)
+    return stage
 
 
 #######################################################################################################################
@@ -351,13 +342,12 @@ def create_entrance_hall() -> Stage:
 
     stage = create_stage(
         name="场景.门厅",
-        code_name="entrance_hall",
         stage_type=StageType.HOME,
         profile="""你是司氏宅邸的门厅，两层通高，一道弧形楼梯通向二楼。地面铺着黑白相间的大理石，踩上去有回音。正中悬着一盏落满灰的水晶吊灯，早已不亮。两侧墙上挂着几幅蒙尘的旧油画，画中人面目在昏暗里看不真切。大门紧闭，门缝透不进一丝风，门外听不见任何声音——仿佛整座洋馆被从世界其余部分切了下来。门厅一侧有扇虚掩的门通向客厅，另一侧是一条通向里间的走廊，隐入暗处。""",
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=SYSTEM_RULES,
     )
-    return attach_stage_component(stage)
+    return stage
 
 
 #######################################################################################################################

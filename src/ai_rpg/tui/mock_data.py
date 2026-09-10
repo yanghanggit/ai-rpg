@@ -470,7 +470,6 @@ def build_mock_dungeon_room_response() -> DungeonRoomResponse:
     """构造固定的战斗房间响应：2v2（玩家+队友 vs 怪物x2），state=ONGOING。"""
     stage = DungeonStage(
         name=MOCK_STAGE_NAME,
-        code_name="mock_dungeon_room",
         type=StageType.DUNGEON,
         profile="模拟副本房间，用于本地无服务器调试。",
         system_message="",
@@ -520,7 +519,6 @@ def build_mock_dungeon_state_response() -> DungeonStateResponse:
 
     next_stage = DungeonStage(
         name=MOCK_NEXT_STAGE_NAME,
-        code_name="mock_dungeon_next_room",
         type=StageType.DUNGEON,
         profile="模拟副本下一关卡占位数据，用于本地无服务器调试。",
         system_message="",
@@ -721,9 +719,7 @@ def build_mock_entities_details_response(
             *_identity_components(MOCK_STAGE_NAME, 0),
             ComponentSerialization(
                 name=StageComponent.__name__,
-                data=StageComponent(
-                    name=MOCK_STAGE_NAME, code_name="mock_dungeon_room"
-                ).model_dump(),
+                data=StageComponent(name=MOCK_STAGE_NAME).model_dump(),
             ),
             ComponentSerialization(
                 name=DungeonComponent.__name__,

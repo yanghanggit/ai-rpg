@@ -9,9 +9,6 @@ from . import (
     Stage,
     StageType,
     World,
-    COMPONENT_TYPES,
-    create_component_type,
-    ComponentSerialization,
 )
 
 
@@ -78,7 +75,6 @@ def create_actor(
 #######################################################################################################################################
 def create_stage(
     name: str,
-    code_name: str,
     stage_type: StageType,
     profile: str,
     campaign_setting: str,
@@ -89,10 +85,6 @@ def create_stage(
     """
 
     assert name.strip() != "", "DBG 游戏要求必须有场景名称(name)"
-    assert code_name.strip() != "", "DBG 游戏要求必须有场景英文代号(code_name)"
-    assert (
-        code_name.isidentifier()
-    ), f"DBG 游戏要求 code_name 必须是合法 Python 标识符: {code_name!r}"
     assert profile.strip() != "", "DBG 游戏要求必须有场景设定(profile)"
     assert (
         campaign_setting.strip() != ""
@@ -102,7 +94,6 @@ def create_stage(
     # 创建场景实例
     stage = Stage(
         name=name,
-        code_name=code_name,
         type=stage_type,
         profile=profile,
         system_message="",
@@ -169,24 +160,3 @@ def create_world(
 {role_rules}"""
 
     return world
-
-
-########################################################################################################################
-def attach_stage_component(stage: Stage) -> Stage:
-    """为场景挂载唯一组件：以 code_name 作为动态组件类名，并把中文名存入组件字段。"""
-    assert (
-        stage.code_name.isidentifier()
-    ), f"Stage {stage.name!r} 的 code_name 必须是合法 Python 标识符: {stage.code_name!r}"
-    assert (
-        stage.code_name not in COMPONENT_TYPES
-    ), f"Stage {stage.name!r} 的 code_name 与已有组件类型重名: {stage.code_name!r}"
-
-    component_cls = create_component_type(stage.code_name, name=(str, ...))
-
-    stage.components.append(
-        ComponentSerialization(
-            name=stage.code_name,
-            data=component_cls.model_validate({"name": stage.name}).model_dump(),
-        )
-    )
-    return stage

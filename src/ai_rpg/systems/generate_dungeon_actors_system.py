@@ -246,7 +246,6 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
                 room_bp = DungeonRoomBlueprint(
                     room_type=room.room_type,
                     room_name=room.room_name,
-                    code_name=room.code_name,
                     profile=room.profile,
                     actors=[],
                 )
@@ -260,7 +259,6 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
             room_bp = DungeonRoomBlueprint(
                 room_type=room.room_type,
                 room_name=room.room_name,
-                code_name=room.code_name,
                 profile=room.profile,
                 actors=actors_by_room[room.room_name],
             )

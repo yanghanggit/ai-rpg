@@ -21,7 +21,7 @@ from ..models import (
     CharacterStats,
     CharacterStatsComponent,
     Combat,
-    CombatLootComponent,
+    LootComponent,
     CombatResult,
     CombatRoom,
     CombatState,
@@ -399,7 +399,7 @@ def simulate_mock_advance_monster_turn() -> Tuple[bool, str]:
 
 
 def simulate_mock_collect_loot() -> Tuple[bool, str]:
-    """开发调试用：模拟收取战利品（战利品转入背包并清空 CombatLootComponent）。"""
+    """开发调试用：模拟收取战利品（战利品转入背包并清空 LootComponent）。"""
     if not _mock_loot_items:
         return False, "[yellow]（mock）当前没有可收取的战利品。[/]"
     count = len(_mock_loot_items)
@@ -596,15 +596,15 @@ def _inventory_component_serialization(
 def _combat_loot_component_serialization(
     name: str, items: List[AnyItem]
 ) -> ComponentSerialization:
-    """构造 CombatLootComponent 序列化数据（仅玩家持有，用于「查阅战利品」命令）。"""
+    """构造 LootComponent 序列化数据（仅玩家持有，用于「查阅战利品」命令）。"""
     return ComponentSerialization(
-        name=CombatLootComponent.__name__,
-        data=CombatLootComponent(name=name, items=list(items)).model_dump(),
+        name=LootComponent.__name__,
+        data=LootComponent(name=name, items=list(items)).model_dump(),
     )
 
 
 def _mock_combat_loot_components() -> List[ComponentSerialization]:
-    """有战利品时返回 CombatLootComponent 序列化；空则返回空列表（与真实 ECS 一致）。"""
+    """有战利品时返回 LootComponent 序列化；空则返回空列表（与真实 ECS 一致）。"""
     if not _mock_loot_items:
         return []
     return [_combat_loot_component_serialization(MOCK_ACTOR_NAME, _mock_loot_items)]

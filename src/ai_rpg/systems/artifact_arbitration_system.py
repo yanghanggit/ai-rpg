@@ -30,8 +30,8 @@ from ..game.dbg_game import DBGGame
 from ..models import (
     AIMessage,
     Artifact,
-    ArtifactArbitratorComponent,
-    ArtifactContainerComponent,
+    ArtifactComponent,
+    ReliquaryComponent,
     ArtifactTag,
     CharacterStatsComponent,
     CombatArbitrationEvent,
@@ -299,9 +299,9 @@ class ArtifactArbitrationSystem(ReactiveProcessor):
         scoped_entities: List[Entity] = [stage_entity, *party_members, *monsters]
         triggered: List[Tuple[Artifact, str]] = []
         for entity in scoped_entities:
-            if not entity.has(ArtifactContainerComponent):
+            if not entity.has(ReliquaryComponent):
                 continue
-            comp = entity.get(ArtifactContainerComponent)
+            comp = entity.get(ReliquaryComponent)
             for artifact in comp.artifacts:
                 if ArtifactTag.POST_ARBITRATION in artifact.tags:
                     triggered.append((artifact, entity.name))
@@ -314,7 +314,7 @@ class ArtifactArbitrationSystem(ReactiveProcessor):
 
         # 宿主：专用的「世界.神器仲裁」世界实体（其 SystemMessage 即临时 agent 的「设定」）
         arbitrator_entities = self._game.get_group(
-            Matcher(all_of=[WorldComponent, ArtifactArbitratorComponent])
+            Matcher(all_of=[WorldComponent, ArtifactComponent])
         ).entities
         assert (
             len(arbitrator_entities) == 1

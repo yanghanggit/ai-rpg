@@ -26,7 +26,7 @@ from ai_rpg.services.dungeon_combat_actions import (
     activate_retreat,
     activate_use_consumable,
     activate_equip_gear,
-    collect_combat_loot,
+    collect_loot,
 )
 from pathlib import Path
 from typing import List
@@ -289,7 +289,7 @@ async def collect_loot_game(
         logger.error("collect-loot 只能在战斗房间中使用")
         return terminal_game
 
-    success, msg = collect_combat_loot(terminal_game)
+    success, msg = collect_loot(terminal_game)
     if not success:
         logger.warning(f"collect-loot 未归档：{msg}")
         return terminal_game

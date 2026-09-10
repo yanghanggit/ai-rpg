@@ -189,7 +189,7 @@ class CharacterStatsComponent(Component):
 ############################################################################################################
 @final
 @register_component_type
-class PlayerActionAuditComponent(Component):
+class PlayerAuditComponent(Component):
     """标记世界实体具有玩家行动审计功能。"""
 
     name: str
@@ -213,6 +213,9 @@ class GearWorkshopComponent(Component):
     name: str
 
 
+############################################################################################################
+
+
 @final
 @register_component_type
 class ConsumableWorkshopComponent(Component):
@@ -221,6 +224,7 @@ class ConsumableWorkshopComponent(Component):
     name: str
 
 
+############################################################################################################
 @final
 @register_component_type
 class CostumeWorkshopComponent(Component):
@@ -229,9 +233,10 @@ class CostumeWorkshopComponent(Component):
     name: str
 
 
+############################################################################################################
 @final
 @register_component_type
-class ConsumableArbitratorComponent(Component):
+class ConsumableComponent(Component):
     """标记世界实体具有消耗品使用仲裁职责（LLM 驱动，作为临时 agent 结算消耗品效果）。"""
 
     name: str
@@ -240,7 +245,7 @@ class ConsumableArbitratorComponent(Component):
 ############################################################################################################
 @final
 @register_component_type
-class ArtifactArbitratorComponent(Component):
+class ArtifactComponent(Component):
     """标记世界实体具有场景神器仲裁职责（LLM 驱动，作为临时 agent 结算神器修正规则）。"""
 
     name: str
@@ -249,7 +254,7 @@ class ArtifactArbitratorComponent(Component):
 ############################################################################################################
 @final
 @register_component_type
-class ArtifactContainerComponent(Component):
+class ReliquaryComponent(Component):
     """神器容器组件：Actor/Stage 均可携带，承载该实体携带的神器列表。"""
 
     name: str
@@ -320,7 +325,7 @@ class DeckComponent(Component):
 ############################################################################################################
 @final
 @register_component_type
-class CardPoolComponent(Component):
+class SpoilsComponent(Component):
     """卡池：待从中抽取的候选卡牌（默认 3 张，3 选 1）。"""
 
     name: str
@@ -350,8 +355,8 @@ class StorageComponent(Component):
 ############################################################################################################
 @final
 @register_component_type
-class CombatLootComponent(Component):
-    """战斗战利品背包；战斗胜利后由 CombatLootSystem 写入，调用 collect_combat_loot() 后合并至 InventoryComponent 并移除。"""
+class LootComponent(Component):
+    """战斗战利品背包。"""
 
     name: str
     items: List[AnyItem]  # 本场战斗从怪物处获得的战利品（实践中为 MaterialItem）

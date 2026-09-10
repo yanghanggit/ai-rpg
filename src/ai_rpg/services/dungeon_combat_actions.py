@@ -24,7 +24,7 @@ from ..models import (
     RetreatAction,
     MonsterTurnAction,
     InventoryComponent,
-    CombatLootComponent,
+    LootComponent,
     EquipGearItemAction,
     UseConsumableItemAction,
     GearItem,
@@ -555,10 +555,10 @@ def activate_pass_turn(
 
 
 ###################################################################################################################################################################
-def collect_combat_loot(
+def collect_loot(
     dbg_game: DBGGame,
 ) -> Tuple[bool, str]:
-    """将战斗战利品背包（CombatLootComponent）中的道具全部转入玩家随身背包（InventoryComponent）。"""
+    """将战斗战利品背包（LootComponent）中的道具全部转入玩家随身背包（InventoryComponent）。"""
 
     # 检查玩家是否在副本场景中，如果不在则无法收取战利品。
     if not dbg_game.is_player_in_dungeon_stage:
@@ -577,27 +577,25 @@ def collect_combat_loot(
     assert player_entity is not None, "无法获取玩家实体"
 
     # 检查玩家实体是否拥有战斗战利品组件，如果没有则无法收取战利品。
-    if not player_entity.has(CombatLootComponent):
-        msg = (
-            "收取战利品失败：玩家身上没有 CombatLootComponent（本场战斗无掉落或已收取）"
-        )
+    if not player_entity.has(LootComponent):
+        msg = "收取战利品失败：玩家身上没有 LootComponent（本场战斗无掉落或已收取）"
         logger.warning(msg)
         return False, msg
 
     assert player_entity.has(InventoryComponent), "玩家实体缺少 InventoryComponent"
 
     # 获取战斗战利品组件中的道具列表，以便将其合并到玩家的背包中。
-    loot_comp = player_entity.get(CombatLootComponent)
+    loot_comp = player_entity.get(LootComponent)
     loot_items = loot_comp.items
 
     inventory_comp = player_entity.get(InventoryComponent)
     new_inventory = list(inventory_comp.items) + loot_items
 
     player_entity.replace(InventoryComponent, inventory_comp.name, new_inventory)
-    player_entity.remove(CombatLootComponent)
+    player_entity.remove(LootComponent)
 
     logger.info(
-        f"[collect_combat_loot] 收取战利品 {len(loot_items)} 件，"
+        f"[collect_loot] 收取战利品 {len(loot_items)} 件，"
         f"背包现有 {len(new_inventory)} 件道具"
     )
     return True, f"成功收取 {len(loot_items)} 件战利品到背包"

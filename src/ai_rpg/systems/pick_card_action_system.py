@@ -8,17 +8,17 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..models import (
     ActorComponent,
-    CardPoolComponent,
+    SpoilsComponent,
     DeathComponent,
     DeckComponent,
-    PickCardFromPoolAction,
+    PickCardAction,
 )
 
 
 #######################################################################################################################################
 @final
-class PickCardFromPoolActionSystem(ReactiveProcessor):
-    """响应 PickCardFromPoolAction，把选中卡追加进 DeckComponent 并清空 CardPoolComponent。"""
+class PickCardActionSystem(ReactiveProcessor):
+    """响应 PickCardFromPoolAction，把选中卡追加进 DeckComponent 并清空 SpoilsComponent。"""
 
     def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
@@ -27,16 +27,16 @@ class PickCardFromPoolActionSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def get_trigger(self) -> Dict[Matcher, GroupEvent]:
-        return {Matcher(PickCardFromPoolAction): GroupEvent.ADDED}
+        return {Matcher(PickCardAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
         return (
-            entity.has(PickCardFromPoolAction)
+            entity.has(PickCardAction)
             and entity.has(ActorComponent)
             and entity.has(DeckComponent)
-            and entity.has(CardPoolComponent)
+            and entity.has(SpoilsComponent)
             and not entity.has(DeathComponent)
         )
 
@@ -44,7 +44,7 @@ class PickCardFromPoolActionSystem(ReactiveProcessor):
     @override
     async def react(self, entities: List[Entity]) -> None:
         for entity in entities:
-            action = entity.get(PickCardFromPoolAction)
+            action = entity.get(PickCardAction)
             assert action is not None, f"{entity.name} 缺少 PickCardFromPoolAction"
 
             deck_comp = entity.get(DeckComponent)
@@ -54,7 +54,7 @@ class PickCardFromPoolActionSystem(ReactiveProcessor):
             deck_comp.cards.append(action.card)
 
             # 3 选 1：消费掉整个卡池（其余候选丢弃）
-            entity.remove(CardPoolComponent)
+            entity.remove(SpoilsComponent)
 
             logger.info(
                 f"[PickCardFromPoolActionSystem] {entity.name} 已从卡池挑选"

@@ -9,12 +9,12 @@ from loguru import logger
 from ..entitas import Matcher
 from ..game.dbg_game import DBGGame
 from ..models import (
-    CardPoolComponent,
+    SpoilsComponent,
     DeathComponent,
     DeckComponent,
     GenerateCardPoolAction,
     PartyMemberComponent,
-    PickCardFromPoolAction,
+    PickCardAction,
 )
 
 
@@ -57,11 +57,11 @@ def activate_generate_card_pool(
 
     # 幂等守卫：若任一队伍成员已持有卡池组件，说明卡池已生成，拒绝重复生成
     already_generated = [
-        e.name for e in party_member_entities if e.has(CardPoolComponent)
+        e.name for e in party_member_entities if e.has(SpoilsComponent)
     ]
     if already_generated:
         error_msg = (
-            f"卡池已生成（{already_generated} 已持有 CardPoolComponent），无需重复生成"
+            f"卡池已生成（{already_generated} 已持有 SpoilsComponent），无需重复生成"
         )
         logger.warning(error_msg)
         return False, error_msg
@@ -136,8 +136,8 @@ def activate_pick_card_from_pool(
 
     assert actor_entity.has(DeckComponent), f"队伍成员 {actor_name} 缺少 DeckComponent"
 
-    if not actor_entity.has(CardPoolComponent):
-        error_msg = f"角色 {actor_name} 尚无卡池（CardPoolComponent），请先生成卡池"
+    if not actor_entity.has(SpoilsComponent):
+        error_msg = f"角色 {actor_name} 尚无卡池（SpoilsComponent），请先生成卡池"
         logger.error(error_msg)
         return False, error_msg
 
@@ -147,7 +147,7 @@ def activate_pick_card_from_pool(
         return False, error_msg
 
     # 从卡池中按名称检索选中的卡（3 选 1）
-    pool_comp = actor_entity.get(CardPoolComponent)
+    pool_comp = actor_entity.get(SpoilsComponent)
     selected_card = next((c for c in pool_comp.cards if c.name == card_name), None)
     if selected_card is None:
         error_msg = (
@@ -159,7 +159,7 @@ def activate_pick_card_from_pool(
 
     # 挂载挑卡动作组件
     actor_entity.replace(
-        PickCardFromPoolAction,
+        PickCardAction,
         actor_entity.name,
         selected_card,
     )

@@ -9,13 +9,13 @@ from uuid import uuid4
 from ai_rpg.models import (
     Actor,
     ActorType,
-    ArtifactArbitratorComponent,
+    ArtifactComponent,
     Blueprint,
     Card,
     CharacterStats,
     CombatRoom,
     ComponentSerialization,
-    ConsumableArbitratorComponent,
+    ConsumableComponent,
     ConsumableItem,
     ConsumableWorkshopComponent,
     CostumeItem,
@@ -29,7 +29,7 @@ from ai_rpg.models import (
     GearWorkshopComponent,
     InventoryComponent,
     MaterialItem,
-    PlayerActionAuditComponent,
+    PlayerAuditComponent,
     Stage,
     StageType,
     StorageComponent,
@@ -284,8 +284,8 @@ def create_shrine_ruins_dungeon() -> Dungeon:
     # 战斗场景神器：挂载在战斗场景实体上，命中「出牌/消耗品仲裁后」运行点
     # stage_shrine_courtyard.components.append(
     #     ComponentSerialization(
-    #         name=ArtifactContainerComponent.__name__,
-    #         data=ArtifactContainerComponent(
+    #         name=ReliquaryComponent.__name__,
+    #         data=ReliquaryComponent(
     #             name=stage_shrine_courtyard.name,
     #             artifacts=[
     #                 Artifact(
@@ -636,8 +636,8 @@ def create_player_action_audit() -> World:
 
     world.components = [
         ComponentSerialization(
-            name=PlayerActionAuditComponent.__name__,
-            data=PlayerActionAuditComponent(name=world.name).model_dump(),
+            name=PlayerAuditComponent.__name__,
+            data=PlayerAuditComponent(name=world.name).model_dump(),
         )
     ]
 
@@ -788,8 +788,8 @@ def create_consumable_arbitrator() -> World:
 
     world.components = [
         ComponentSerialization(
-            name=ConsumableArbitratorComponent.__name__,
-            data=ConsumableArbitratorComponent(name=world.name).model_dump(),
+            name=ConsumableComponent.__name__,
+            data=ConsumableComponent(name=world.name).model_dump(),
         )
     ]
 
@@ -821,8 +821,8 @@ def create_artifact_arbitrator() -> World:
 
     world.components = [
         ComponentSerialization(
-            name=ArtifactArbitratorComponent.__name__,
-            data=ArtifactArbitratorComponent(name=world.name).model_dump(),
+            name=ArtifactComponent.__name__,
+            data=ArtifactComponent(name=world.name).model_dump(),
         )
     ]
 

@@ -11,7 +11,7 @@ from src.ai_rpg.models import (
     AnnounceAction,
     SpeakAction,
     WhisperAction,
-    PlayerActionAuditComponent,
+    PlayerAuditComponent,
     PlayerComponent,
     WorldComponent,
     SystemMessage,
@@ -233,7 +233,7 @@ class TestFilterPlayerActions:
         entity = context.create_entity()
         entity._name = "世界.玩家行动审计系统"
         entity.add(WorldComponent, "世界.玩家行动审计系统")
-        entity.add(PlayerActionAuditComponent, "世界.玩家行动审计系统")
+        entity.add(PlayerAuditComponent, "世界.玩家行动审计系统")
         return entity
 
     def _make_player_entity(self, context: Context) -> Entity:
@@ -362,7 +362,7 @@ class TestReact:
         entity = context.create_entity()
         entity._name = "世界.玩家行动审计系统"
         entity.add(WorldComponent, "世界.玩家行动审计系统")
-        entity.add(PlayerActionAuditComponent, "世界.玩家行动审计系统")
+        entity.add(PlayerAuditComponent, "世界.玩家行动审计系统")
         return entity
 
     def _make_player_entity(self, context: Context) -> Entity:

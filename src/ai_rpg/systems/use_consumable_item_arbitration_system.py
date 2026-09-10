@@ -29,7 +29,7 @@ from ..models import (
     AIMessage,
     CharacterStatsComponent,
     CombatArbitrationEvent,
-    ConsumableArbitratorComponent,
+    ConsumableComponent,
     ConsumableItem,
     HumanMessage,
     StageDescriptionComponent,
@@ -265,7 +265,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
 
         # 宿主：专用的「世界.消耗品仲裁」世界实体（其 SystemMessage 即临时 agent 的「设定」）
         arbitrator_entities = self._game.get_group(
-            Matcher(all_of=[WorldComponent, ConsumableArbitratorComponent])
+            Matcher(all_of=[WorldComponent, ConsumableComponent])
         ).entities
         assert (
             len(arbitrator_entities) == 1

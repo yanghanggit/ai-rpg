@@ -28,7 +28,7 @@ from ..models import (
     ActorComponent,
     BUILD_CARD_FIELD_DESCRIPTION,
     Card,
-    CardPoolComponent,
+    SpoilsComponent,
     DeathComponent,
     GenerateCardPoolAction,
 )
@@ -266,7 +266,7 @@ class GenerateCardPoolActionSystem(ReactiveProcessor):
                 applied += 1
 
             # 装入卡池（replace 覆盖旧池，避免残留）
-            entity.replace(CardPoolComponent, entity.name, candidates)
+            entity.replace(SpoilsComponent, entity.name, candidates)
 
             logger.info(
                 f"[GenerateCardPoolActionSystem] {entity.name}: 生成卡池 {len(candidates)} 张"

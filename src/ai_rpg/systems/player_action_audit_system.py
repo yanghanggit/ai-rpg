@@ -8,7 +8,7 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..models import (
     AnnounceAction,
-    PlayerActionAuditComponent,
+    PlayerAuditComponent,
     PlayerComponent,
     SpeakAction,
     WhisperAction,
@@ -93,7 +93,7 @@ class PlayerActionAuditSystem(ReactiveProcessor):
 
         # 获取玩家行动审计系统实体
         world_entities = self._game.get_group(
-            Matcher(all_of=[WorldComponent, PlayerActionAuditComponent])
+            Matcher(all_of=[WorldComponent, PlayerAuditComponent])
         ).entities.copy()
 
         # 确保存在玩家行动审计系统实体

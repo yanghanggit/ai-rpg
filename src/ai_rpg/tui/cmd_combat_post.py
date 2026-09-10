@@ -9,7 +9,7 @@ from typing import List, Tuple
 from loguru import logger
 
 from ..models import (
-    CombatLootComponent,
+    LootComponent,
     CombatResult,
     CombatRoom,
     Round,
@@ -65,7 +65,7 @@ async def build_post_combat_info_text(game_client: GameClient) -> str:
 
 ###############################################################################################################################################
 async def build_loot_text(game_client: GameClient) -> str:
-    """查阅玩家身上的 CombatLootComponent（本场战斗战利品）。"""
+    """查阅玩家身上的 LootComponent（本场战斗战利品）。"""
     _, _, actor_name = resolve_identity(game_client)
     logger.info(f"build_loot_text: mock={is_mock_mode(game_client)} actor={actor_name}")
     try:
@@ -78,13 +78,13 @@ async def build_loot_text(game_client: GameClient) -> str:
         return f"[yellow]未找到角色：{actor_name}[/]"
 
     entity = resp.entities[0]
-    loot_data = find_component_data(entity, CombatLootComponent.__name__)
+    loot_data = find_component_data(entity, LootComponent.__name__)
     lines: List[str] = []
     lines.append(f"[bold yellow]── {display_name(entity.name)} 的战利品 ──[/]")
     if loot_data is None:
         lines.append("  [dim]（本场战斗无战利品，或已收取）[/]")
     else:
-        loot = CombatLootComponent(**loot_data)
+        loot = LootComponent(**loot_data)
         if not loot.items:
             lines.append("  [dim]（战利品为空）[/]")
         else:

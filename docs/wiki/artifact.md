@@ -14,7 +14,7 @@
 
 ## 仲裁时如何生效
 
-出牌/消耗品仲裁由各自系统先完成一次结算。随后 `ArtifactArbitrationSystem` 响应 `PlayCardsAction` / `UseConsumableItemAction`，借世界实体「世界.神器仲裁」（`ArtifactArbitratorComponent` 标记）作为**隔离的临时 agent**：
+出牌/消耗品仲裁由各自系统先完成一次结算。随后 `ArtifactArbitrationSystem` 响应 `PlayCardsAction` / `UseConsumableItemAction`，借世界实体「世界.神器仲裁」（`ArtifactComponent` 标记）作为**隔离的临时 agent**：
 
 1. 注入当前回合数、场景神器修正规则、场上存活阵营、场景环境快照；
 2. 临时 agent 依规则判定是否触发（如「第 2 回合」）并调用 `set_entity_hp` 覆盖式写入最终 HP；

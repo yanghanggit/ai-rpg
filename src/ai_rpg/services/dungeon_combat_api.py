@@ -34,7 +34,7 @@ from .dungeon_combat_actions import (
     activate_play_cards_specified,
     activate_retreat,
     activate_use_consumable,
-    collect_combat_loot,
+    collect_loot,
 )
 from .dungeon_combat_tasks import (
     execute_init_combat_task,
@@ -233,7 +233,7 @@ async def dungeon_combat_collect_loot(
             )
 
         # 收取战利品
-        success, message = collect_combat_loot(dbg_game)
+        success, message = collect_loot(dbg_game)
         if not success:
             logger.warning(f"玩家 {payload.user_name} 收取战利品失败: {message}")
             raise HTTPException(

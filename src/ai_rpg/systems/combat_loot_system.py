@@ -11,7 +11,7 @@ from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.dbg_game import DBGGame
 from ..models import (
     AppearanceComponent,
-    CombatLootComponent,
+    LootComponent,
     MonsterComponent,
     PartyMemberComponent,
 )
@@ -119,7 +119,7 @@ class CombatLootSystem(ExecuteProcessor):
     #######################################################################################################################################
     @override
     async def execute(self) -> None:
-        """每帧检查战斗是否胜利结束；未胜利则直接返回，胜利则推理掉落并写入 CombatLootComponent。"""
+        """每帧检查战斗是否胜利结束；未胜利则直接返回，胜利则推理掉落并写入 LootComponent。"""
         if not self._game.current_dungeon_combat_room.combat.is_combat_completed:
             return
 
@@ -139,7 +139,7 @@ class CombatLootSystem(ExecuteProcessor):
             )
         )
 
-        # 为每头怪物创建 LLM 客户端并推理掉落，解析结果后写入玩家 CombatLootComponent
+        # 为每头怪物创建 LLM 客户端并推理掉落，解析结果后写入玩家 LootComponent
         clients = [self._create_loot_client(m) for m in monsters]
 
         # 并行调用 LLM 推理所有怪物掉落
@@ -150,10 +150,10 @@ class CombatLootSystem(ExecuteProcessor):
             item for client in clients for item in self._parse_loot_item(client)
         ]
 
-        # 将掉落物写入玩家 CombatLootComponent
-        player_entity.replace(CombatLootComponent, player_entity.name, loot_items)
+        # 将掉落物写入玩家 LootComponent
+        player_entity.replace(LootComponent, player_entity.name, loot_items)
         logger.info(
-            f"[CombatLootSystem] 掉落完成，共 {len(loot_items)} 件战利品写入 CombatLootComponent"
+            f"[CombatLootSystem] 掉落完成，共 {len(loot_items)} 件战利品写入 LootComponent"
         )
 
     #######################################################################################################################################

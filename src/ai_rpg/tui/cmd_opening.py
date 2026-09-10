@@ -5,7 +5,7 @@ from typing import List, Optional, Tuple
 from loguru import logger
 
 from ..models import (
-    CardPoolComponent,
+    SpoilsComponent,
     DeckComponent,
     InventoryComponent,
     OpeningRoom,
@@ -71,7 +71,7 @@ async def build_opening_info_text(
         lines.append(f"  初始化（叙事 + 牌库）：{init_tag}")
 
         pool_ready = any(
-            any(c.name == CardPoolComponent.__name__ for c in e.components)
+            any(c.name == SpoilsComponent.__name__ for c in e.components)
             for e in entities_resp.entities
         )
         pool_tag = "[bold green]✅ 已生成[/]" if pool_ready else "[yellow]未生成[/]"
@@ -157,14 +157,14 @@ async def build_card_pool_text(
     for entity in resp.entities:
         pool_data = None
         for comp in entity.components:
-            if comp.name == CardPoolComponent.__name__:
+            if comp.name == SpoilsComponent.__name__:
                 pool_data = comp.data
                 break
         lines.append(f"[bold yellow]── {display_name(entity.name)} ──[/]")
         if pool_data is None:
             lines.append("  [dim]（无卡池组件，请先执行 /generate-pool）[/]")
         else:
-            pool = CardPoolComponent(**pool_data)
+            pool = SpoilsComponent(**pool_data)
             if not pool.cards:
                 lines.append("  [dim]（卡池为空）[/]")
             else:

@@ -9,7 +9,10 @@ from uuid import uuid4
 from ai_rpg.models import (
     Actor,
     ActorType,
+    Artifact,
     ArtifactArbitratorComponent,
+    ArtifactContainerComponent,
+    ArtifactTag,
     Blueprint,
     Card,
     CharacterStats,
@@ -280,6 +283,28 @@ def create_shrine_ruins_dungeon() -> Dungeon:
     )
 
     attach_stage_component(stage_shrine_courtyard)
+
+    # 战斗场景神器：挂载在战斗场景实体上，命中「出牌/消耗品仲裁后」运行点
+    stage_shrine_courtyard.components.append(
+        ComponentSerialization(
+            name=ArtifactContainerComponent.__name__,
+            data=ArtifactContainerComponent(
+                name=stage_shrine_courtyard.name,
+                artifacts=[
+                    Artifact(
+                        name="纸钱方孔",
+                        description="散落满院的纸钱，其方孔总像在暗中调转方向；据说被它们「看过」的人，会在一瞬间失了全部气力。",
+                        modifiers=[
+                            "在第二回合的战斗结算/消耗品使用结算之后，满院纸钱将夺走闯入者的生气：队伍方所有角色生命耗尽（HP 归零），"
+                            "无论本次出牌/使用消耗品如何结算，最终结果都必须体现队伍方全员倒下、无力再战。",
+                        ],
+                        tags=[ArtifactTag.POST_ARBITRATION],
+                        source="场景.破败殿前",
+                    ),
+                ],
+            ).model_dump(),
+        )
+    )
 
     actor_paper_doll = create_actor_paper_doll()
     stage_shrine_courtyard.actors = [actor_paper_doll]

@@ -11,7 +11,7 @@
 
 import json
 from functools import partial
-from typing import Dict, Final, List, Optional, final
+from typing import Dict, Final, List, Optional, Tuple, final
 
 from loguru import logger
 from overrides import override
@@ -31,6 +31,8 @@ from ..models import (
     AIMessage,
     Artifact,
     ArtifactArbitratorComponent,
+    ArtifactContainerComponent,
+    ArtifactTag,
     CharacterStatsComponent,
     CombatArbitrationEvent,
     HumanMessage,
@@ -48,30 +50,18 @@ from .arbitration_prompt_builders import (
 
 
 ###########################################################################################################################################
-# 硬编码神器（数据注入落地前的临时承载；后续改为从场景/副本数据读取）
-###########################################################################################################################################
-_HARDCODED_ARTIFACTS: Final[List[Artifact]] = [
-    Artifact(
-        name="纸钱方孔",
-        description="散落满院的纸钱，其方孔总像在暗中调转方向；据说被它们「看过」第二回合的人，会在一瞬间失了全部气力。",
-        modifiers=[
-            "第 2 回合时，满院纸钱将夺走闯入者的生气：本回合仲裁中，队伍方所有角色生命耗尽（HP 归零），"
-            "无论本次出牌如何结算，最终结果都必须体现队伍方全员倒下、无力再战。",
-        ],
-    ),
-]
-
-
-###########################################################################################################################################
 # 仲裁提示词构建器
 ###########################################################################################################################################
-def _build_artifact_lines(artifacts: List[Artifact]) -> str:
-    """把神器清单格式化为提示词片段。"""
-    if not artifacts:
+def _build_artifact_lines(triggered: List[Tuple[Artifact, str]]) -> str:
+    """把命中当前运行点的神器清单（含来源与携带者）格式化为提示词片段。"""
+    if not triggered:
         return "无"
     lines: List[str] = []
-    for artifact in artifacts:
-        lines.append(f"- **{artifact.name}**：{artifact.description}")
+    for artifact, carrier in triggered:
+        source = artifact.source or "未知"
+        lines.append(
+            f"- **{artifact.name}**（来源：{source}；携带者：{carrier}）：{artifact.description}"
+        )
         for modifier in artifact.modifiers:
             lines.append(f"  - 修正规则：{modifier}")
     return "\n".join(lines)
@@ -80,15 +70,15 @@ def _build_artifact_lines(artifacts: List[Artifact]) -> str:
 @prompt_builder
 def _build_artifact_arbitration_prompt(
     current_round_number: int,
-    artifacts: List[Artifact],
+    triggered: List[Tuple[Artifact, str]],
     party_names: str,
     monster_names: str,
     current_stage_description: str,
 ) -> str:
-    """构建神器仲裁提示词：回合数/神器修正规则/场上阵营/场景环境全部注入。"""
+    """构建神器仲裁提示词：回合数/神器修正规则（含来源与携带者）/场上阵营/场景环境全部注入。"""
     return f"""# 第 {current_round_number} 回合：场景神器修正结算（工具调用模式）
 
-你是一次出牌/消耗品仲裁完成之后被临时唤醒的场景神器仲裁者，负责落实本场景神器的修正规则。
+你是在一次「战斗结算/消耗品使用结算」之后被临时唤醒的场景神器仲裁者，负责落实本场景神器的修正规则。这些修正规则发生在该次结算之后，属覆盖式修正。
 
 ## 当前回合数
 
@@ -96,7 +86,7 @@ def _build_artifact_arbitration_prompt(
 
 ## 当前场景神器
 
-{_build_artifact_lines(artifacts)}
+{_build_artifact_lines(triggered)}
 
 ## 场上阵营（当前存活）
 
@@ -272,10 +262,6 @@ class ArtifactArbitrationSystem(ReactiveProcessor):
             logger.debug("ArtifactArbitrationSystem: 战斗未进行中，跳过神器仲裁")
             return
 
-        if not _HARDCODED_ARTIFACTS:
-            logger.debug("ArtifactArbitrationSystem: 无神器规则，跳过神器仲裁")
-            return
-
         assert (
             len(entities) == 1
         ), "ArtifactArbitrationSystem 期望每次仅处理一个动作实体"
@@ -285,16 +271,7 @@ class ArtifactArbitrationSystem(ReactiveProcessor):
     async def _run_artifact_arbitration(self, actor_entity: Entity) -> None:
         """驱动单次神器修正的完整临时 agent 仲裁流程。"""
 
-        # 宿主：专用的「世界.神器仲裁」世界实体（其 SystemMessage 即临时 agent 的「设定」）
-        arbitrator_entities = self._game.get_group(
-            Matcher(all_of=[WorldComponent, ArtifactArbitratorComponent])
-        ).entities
-        assert (
-            len(arbitrator_entities) == 1
-        ), f"ArtifactArbitrationSystem: 应恰好存在一个神器仲裁世界实体，实际={len(arbitrator_entities)}"
-        arbitrator_entity = next(iter(arbitrator_entities))
-
-        # 场景实体与当前场景环境快照
+        # 场景实体（当前战斗舞台）与当前场景环境快照
         stage_entity = self._game.resolve_stage_entity(actor_entity)
         assert (
             stage_entity is not None
@@ -318,9 +295,35 @@ class ArtifactArbitrationSystem(ReactiveProcessor):
         )
         monster_names = "、".join(e.name for e in monsters) if monsters else "无"
 
+        # 收敛作用域：只查当前战斗舞台 + 本场存活角色携带的神器，不跨场景、不跨其角色
+        scoped_entities: List[Entity] = [stage_entity, *party_members, *monsters]
+        triggered: List[Tuple[Artifact, str]] = []
+        for entity in scoped_entities:
+            if not entity.has(ArtifactContainerComponent):
+                continue
+            comp = entity.get(ArtifactContainerComponent)
+            for artifact in comp.artifacts:
+                if ArtifactTag.POST_ARBITRATION in artifact.tags:
+                    triggered.append((artifact, entity.name))
+
+        if not triggered:
+            logger.debug(
+                "ArtifactArbitrationSystem: 当前战斗舞台与参战角色无命中运行点的神器，跳过仲裁"
+            )
+            return
+
+        # 宿主：专用的「世界.神器仲裁」世界实体（其 SystemMessage 即临时 agent 的「设定」）
+        arbitrator_entities = self._game.get_group(
+            Matcher(all_of=[WorldComponent, ArtifactArbitratorComponent])
+        ).entities
+        assert (
+            len(arbitrator_entities) == 1
+        ), f"ArtifactArbitrationSystem: 应恰好存在一个神器仲裁世界实体，实际={len(arbitrator_entities)}"
+        arbitrator_entity = next(iter(arbitrator_entities))
+
         prompt = _build_artifact_arbitration_prompt(
             current_round_number=current_round_number,
-            artifacts=list(_HARDCODED_ARTIFACTS),
+            triggered=triggered,
             party_names=party_names,
             monster_names=monster_names,
             current_stage_description=current_stage_description,

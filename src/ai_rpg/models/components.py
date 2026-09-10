@@ -3,6 +3,7 @@
 from typing import List, final
 
 from ..entitas.components import Component
+from .artifacts import Artifact
 from .card import Card
 from .character_stats import CharacterStats
 from .items import AnyItem, CostumeItem, GearItem
@@ -243,6 +244,16 @@ class ArtifactArbitratorComponent(Component):
     """标记世界实体具有场景神器仲裁职责（LLM 驱动，作为临时 agent 结算神器修正规则）。"""
 
     name: str
+
+
+############################################################################################################
+@final
+@register_component_type
+class ArtifactContainerComponent(Component):
+    """神器容器组件：Actor/Stage 均可携带，承载该实体携带的神器列表。"""
+
+    name: str
+    artifacts: List[Artifact] = []
 
 
 ############################################################################################################

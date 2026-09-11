@@ -2,7 +2,7 @@ import asyncio
 import contextlib
 import os
 import sys
-from typing import Any, AsyncIterator, Dict
+from typing import AsyncIterator
 
 # 将 src 目录添加到模块搜索路径
 sys.path.insert(
@@ -20,6 +20,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
 
+from ai_rpg.models import ApiRouteInfo, ServerInfoResponse
 from ai_rpg.pgsql import procrastinate_app
 from ai_rpg.replicate import (
     GENERATED_IMAGES_OUTPUT_DIR,
@@ -65,8 +66,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(lifespan=lifespan)
 
 
-@app.get(path="/")
-async def get_api_info(request: Request) -> Dict[str, Any]:
+@app.get(path="/", response_model=ServerInfoResponse)
+async def get_api_info(request: Request) -> ServerInfoResponse:
     """API 根路由接口"""
     from fastapi.routing import APIRoute
 
@@ -74,27 +75,29 @@ async def get_api_info(request: Request) -> Dict[str, Any]:
     logger.info(f"获取API路由信息: {base_url}")
 
     # 收集所有已注册的路由信息
-    routes_info = []
+    # FastAPI 把 APIRoute.tags 标注为 list[str | Enum]；本项目只用字符串标签，
+    # 这里统一成 str 以匹配 ServerInfoResponse 的字段类型。
+    routes_info: list[ApiRouteInfo] = []
     for route in app.routes:
         if isinstance(route, APIRoute):
             routes_info.append(
-                {
-                    "path": route.path,
-                    "name": route.name,
-                    "methods": list(route.methods),
-                    "tags": route.tags if route.tags else [],
-                }
+                ApiRouteInfo(
+                    path=route.path,
+                    name=route.name,
+                    methods=list(route.methods),
+                    tags=[str(tag) for tag in route.tags] if route.tags else [],
+                )
             )
 
-    return {
-        "service": "AI RPG DBG Game Server",
-        "base_url": base_url,
-        "description": "AI RPG DBG Game Server API Root Endpoint",
-        "status": "healthy",
-        "timestamp": datetime.now().isoformat(),
-        "version": "0.0.1",
-        "routes": routes_info,
-    }
+    return ServerInfoResponse(
+        service="AI RPG DBG Game Server",
+        base_url=base_url,
+        description="AI RPG DBG Game Server API Root Endpoint",
+        status="healthy",
+        timestamp=datetime.now(),
+        version="0.0.1",
+        routes=routes_info,
+    )
 
 
 app.add_middleware(

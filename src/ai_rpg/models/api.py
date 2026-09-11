@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import StrEnum, unique
 from typing import Dict, List, final
 
@@ -8,7 +9,7 @@ from .dungeon import AnyDungeonRoom, Dungeon
 from .player_session import PlayerSession
 from .serialization import EntitySerialization
 from .session_message import SessionMessage
-from .task import TaskStatusView
+from .task import BackgroundTaskStatus, TaskStatusView
 
 
 @final
@@ -512,13 +513,39 @@ class SessionMessageResponse(BaseModel):
 @final
 class TaskTriggerResponse(BaseModel):
     job_id: str
-    status: str
+    status: BackgroundTaskStatus
     message: str
 
 
 @final
 class TasksStatusResponse(BaseModel):
     tasks: List[TaskStatusView]
+
+
+@final
+class ApiRouteInfo(BaseModel):
+    """已注册路由的摘要信息（根路由自描述用）"""
+
+    path: str
+    name: str
+    methods: List[str]
+    tags: List[str]
+
+
+@final
+class ServerInfoResponse(BaseModel):
+    """根路由响应：服务自描述信息
+
+    有了这个 response_model，OpenAPI 才能生成具体字段，前端无需再手写收窄层。
+    """
+
+    service: str
+    base_url: str
+    description: str
+    status: str
+    timestamp: datetime
+    version: str
+    routes: List[ApiRouteInfo]
 
 
 ################################################################################################################

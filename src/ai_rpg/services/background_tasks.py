@@ -69,7 +69,7 @@ async def trigger_background_task() -> TaskTriggerResponse:
 
     return TaskTriggerResponse(
         job_id=job_id,
-        status=BackgroundTaskStatus.RUNNING.value,
+        status=BackgroundTaskStatus.RUNNING,
         message="后台任务已启动",
     )
 

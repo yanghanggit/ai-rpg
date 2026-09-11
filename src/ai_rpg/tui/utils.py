@@ -15,11 +15,8 @@ from ..models import (
     WhisperEvent,
     AnnounceEvent,
     MindEvent,
-    QueryEvent,
     TransStageEvent,
-    CombatInitiationEvent,
     CombatArbitrationEvent,
-    CombatArchiveEvent,
     AppearanceUpdateEvent,
 )
 
@@ -138,24 +135,13 @@ def format_agent_event(event: AnyAgentEvent) -> str:
                 f"[dim italic]{event.actor} @{event.stage} 心想：\n"
                 f"  （{event.content}）[/]"
             )
-        case QueryEvent():
-            return (
-                f"[dim]{event.actor} @{event.stage} 询问：\n" f"  {event.question}[/]"
-            )
         case TransStageEvent():
             return f"[cyan]▶ {event.actor}  {event.stage} → {event.target}[/]"
-        case CombatInitiationEvent():
-            return f"[bold red]⚔ {event.actor}[/] [dim]@{event.stage}[/] 发起战斗！"
         case CombatArbitrationEvent():
             return (
                 f"[bold yellow]── 战斗裁决 @{event.stage} ──[/]\n"
                 f"[dim]{event.combat_log}[/]\n"
                 f"[bold]{event.narrative}[/]"
-            )
-        case CombatArchiveEvent():
-            return (
-                f"[dim]{event.actor} @{event.stage} 战斗归档：\n"
-                f"  {event.summary}[/]"
             )
         case AppearanceUpdateEvent():
             return (

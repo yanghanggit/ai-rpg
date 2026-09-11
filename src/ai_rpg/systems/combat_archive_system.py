@@ -93,7 +93,7 @@ class CombatArchiveSystem(ExecuteProcessor):
 
     #######################################################################################################################################
     def _archive_actor_combat_record(self, chat_client: DeepSeekClient) -> None:
-        """对单个角色完成记忆压缩并派发 CombatArchiveEvent。"""
+        """对单个角色完成战斗记忆压缩。"""
 
         if chat_client.response_ai_message is None:
             logger.error(f"LLM 响应缺失，无法归档战斗记录！chat_client: {chat_client}")

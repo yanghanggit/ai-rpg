@@ -2,22 +2,37 @@
 
 import asyncio
 import json
-from typing import AsyncGenerator, List
-from fastapi import APIRouter, HTTPException, Query, status
+from typing import Annotated, AsyncGenerator, List
+
+from fastapi import APIRouter, Path, Query
 from fastapi.responses import StreamingResponse
 from loguru import logger
 from procrastinate.exceptions import NoResult
-from ..pgsql import procrastinate_app
+from pydantic import StringConstraints
+
 from ..models import (
     BackgroundTaskStatus,
-    TaskTriggerResponse,
-    TaskStatusView,
     TasksStatusResponse,
+    TaskStatusView,
+    TaskTriggerResponse,
 )
+from ..pgsql import procrastinate_app
 from .task_status import get_task_status_view
 
 ################################################################################################################
 background_tasks_api_router = APIRouter()
+
+# job_id 在契约上是不透明字符串（不向客户端暴露队列实现），但内部由 Procrastinate
+# 的自增整数 id 支撑，所以用 pattern 在**契约层**拦住非法输入。
+# 否则下游 `int(job_id)` 会抛出未捕获的 ValueError，表现为：
+#   /api/tasks/v1/status      → HTTP 500
+#   /api/tasks/v1/watch/{id}  → 响应头已发出，客户端只收到一个空的 SSE 流（静默失败）
+JOB_ID_PATTERN = r"^\d+$"
+
+# 注意：列表里的每一项必须用 Pydantic 的 StringConstraints 才能约束到 `items` 上。
+# 直接写 `Query(pattern=...)` 会被 FastAPI 当成"对整个列表"的约束，
+# 求值时抛 TypeError —— 那样所有 /status 请求都会变成 500。
+JobId = Annotated[str, StringConstraints(pattern=JOB_ID_PATTERN)]
 
 
 ###############################################################################################################################################
@@ -68,18 +83,11 @@ async def trigger_background_task() -> TaskTriggerResponse:
     path="/api/tasks/v1/status", response_model=TasksStatusResponse
 )
 async def get_tasks_status(
-    job_ids: List[str] = Query(..., alias="job_ids"),
+    job_ids: Annotated[List[JobId], Query(alias="job_ids")],
 ) -> TasksStatusResponse:
-    """批量查询任务状态"""
+    """批量查询任务状态；`job_id` 必须为数字字符串，否则返回 422"""
 
     logger.info(f"🔍 批量查询任务状态: job_ids={job_ids}")
-
-    # 验证请求参数
-    if len(job_ids) == 0 or job_ids[0] == "":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="请提供至少一个任务ID",
-        )
 
     # 批量查询任务
     tasks_details: List[TaskStatusView] = []
@@ -105,7 +113,7 @@ async def get_tasks_status(
 
 @background_tasks_api_router.get(path="/api/tasks/v1/watch/{job_id}")
 async def watch_task(
-    job_id: str,
+    job_id: Annotated[JobId, Path()],
     timeout_seconds: int = Query(default=120, ge=1, le=600),
     interval: float = Query(default=0.3, ge=0.1, le=5.0),
 ) -> StreamingResponse:

@@ -2,7 +2,8 @@
  * DeepSeek Vision Tool
  *
  * 注册一个 `vision` 工具，让 pi 具备图片理解能力。
- * 通过 DeepSeek 的 deepseek-v4-flash-vision-exp 模型分析图片。
+ * 通过 DeepSeek 的 deepseek-flash（DeepSeek-V4.1-Flash）模型分析图片。
+ * 旧模型名 deepseek-v4-flash-vision-exp 已下线，其请求同样由 deepseek-flash 承接。
  *
  * 文档: https://api-docs.deepseek.com/zh-cn/guides/vision
  *
@@ -18,7 +19,7 @@ import { Type } from "@earendil-works/pi-ai";
 import { defineTool, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 const API_URL = "https://api.deepseek.com/chat/completions";
-const MODEL = "deepseek-v4-flash-vision-exp";
+const MODEL = "deepseek-flash";
 
 /** 通过文件魔数判断真实图片格式（不看扩展名）。 */
 function detectMime(buf: Buffer): string {
@@ -55,7 +56,7 @@ const visionTool = defineTool({
   name: "vision",
   label: "Vision",
   description:
-    "Analyze an image using the DeepSeek vision model (deepseek-v4-flash-vision-exp). " +
+    "Analyze an image using the DeepSeek vision model (deepseek-flash). " +
     "Use this whenever you need to understand an image file: describe it, read text (OCR), " +
     "analyze charts/diagrams/screenshots, identify characters/objects, etc. " +
     "Accepts a local file path or a public http(s) URL.",
@@ -69,6 +70,7 @@ const visionTool = defineTool({
           "What to ask about the image. Defaults to a general description of its content.",
       }),
     ),
+    // DeepSeek 细节级别：low=缩放到 512×512（更快更省 token）；high/original/auto 均保留原图（high 仅为兼容保留，等价于 original）。
     detail: Type.Optional(
       Type.Enum({
         low: "low",
@@ -103,6 +105,21 @@ const visionTool = defineTool({
       imageUrl = params.image;
     } else {
       const buf = readFileSync(params.image);
+      const MAX_INLINE_BYTES = 32 * 1024 * 1024; // DeepSeek 单图内联上限 32 MiB（base64 后约 43 MiB，仍低于 48 MiB 请求体上限）
+      if (buf.length > MAX_INLINE_BYTES) {
+        return {
+          content: [
+            {
+              type: "text",
+              text:
+                `本地图片 ${params.image} 大小 ${(buf.length / 1024 / 1024).toFixed(1)} MiB，超过内联上限 32 MiB。` +
+                `请先压缩图片，或改用 Files API 上传后引用（file_id）。`,
+            },
+          ],
+          details: { error: "image_too_large", sizeBytes: buf.length },
+          isError: true,
+        };
+      }
       const mime = detectMime(buf);
       const b64 = buf.toString("base64");
       imageUrl = `data:${mime};base64,${b64}`;

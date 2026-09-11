@@ -53,9 +53,3 @@
 | [家园规划系统（Home Plan Action）](wiki/home-plan-action.md) | PlanAction 信号驱动的行动规划：工具调用式决策、query 先查后决策、玩家影子工具轨迹对齐 |
 | [新故事设计草稿：《大渊》](wiki/新故事设计草稿.md) | 作者头脑风暴草稿（不进入正式设计/demo）：双重世界、核心冲突、角色与玩法方向 |
 | [战役设定与全局规则（CAMPAIGN_SETTING / SYSTEM_RULES）](wiki/campaign-setting-rules-bridge.md) | 战役大背景与全局规则的分层（均封存在 demo/）、抽象设定的惰性知识问题、事件级引用提示的桥接方案 |
-
-### 工程计划
-
-| 文档 | 简介 |
-| ------ | ------ |
-| [Web 客户端计划与建议](web-client-plan.md) | 独立前端仓库的定位与理由、技术选型、OpenAPI 类型同步、通信架构、认证与落地里程碑 |

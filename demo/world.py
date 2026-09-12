@@ -282,7 +282,7 @@ def create_shrine_ruins_dungeon() -> Dungeon:
     #             name=stage_shrine_courtyard.name,
     #             artifacts=[
     #                 Artifact(
-    #                     name="纸钱方孔",
+    #                     name="神器.纸钱方孔",
     #                     description="散落满院的纸钱，其方孔总像在暗中调转方向；据说被它们「看过」的人，会在一瞬间失了全部气力。",
     #                     modifiers=[
     #                         "在第二回合的战斗结算/消耗品使用结算之后，满院纸钱将夺走闯入者的生气：队伍方所有角色生命耗尽（HP 归零），无论本次出牌/使用消耗品如何结算，最终结果都必须体现队伍方全员倒下、无力再战。",

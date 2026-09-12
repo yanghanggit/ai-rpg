@@ -4,11 +4,10 @@ from typing import List
 
 from loguru import logger
 
-from ..models.api import HomePlayerActionType
 from .server_client import (
     TaskFailedError,
     fetch_stages_state,
-    home_player_action,
+    home_switch_stage,
     watch_task_until_done,
 )
 from .utils import display_name
@@ -46,11 +45,10 @@ async def switch_stage(
     if player_actor in stages_resp.mapping.get(target_stage, []):
         return f"[yellow]你已经在场景：{display_name(target_stage)}。[/]"
 
-    resp = await home_player_action(
+    resp = await home_switch_stage(
         user_name,
         game_name,
-        HomePlayerActionType.SWITCH_STAGE,
-        {"stage_name": target_stage},
+        stage_name=target_stage,
     )
     job_id = resp.job_id
     logger.info(f"switch_stage: 任务已创建 job_id={job_id}")

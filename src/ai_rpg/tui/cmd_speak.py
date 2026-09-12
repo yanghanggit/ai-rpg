@@ -4,11 +4,10 @@ from typing import List
 
 from loguru import logger
 
-from ..models.api import HomePlayerActionType
 from .server_client import (
     TaskFailedError,
     fetch_stages_state,
-    home_player_action,
+    home_speak,
     watch_task_until_done,
 )
 from .utils import display_name
@@ -63,11 +62,11 @@ async def speak_to(
             )
         return f"[yellow]目标 {display_name(target)} 不存在，" f"可用 /stage 查看。[/]"
 
-    resp = await home_player_action(
+    resp = await home_speak(
         user_name,
         game_name,
-        HomePlayerActionType.SPEAK,
-        {"target": target, "content": content},
+        target=target,
+        content=content,
     )
     job_id = resp.job_id
     logger.info(f"speak_to: 任务已创建 job_id={job_id}")

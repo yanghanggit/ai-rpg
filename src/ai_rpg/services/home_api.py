@@ -6,52 +6,55 @@
 """
 
 from typing import List
+
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
-from .game_server_dependencies import CurrentGameServer
-from .home_tasks import (
-    _validate_player_at_home,
-    execute_home_pipeline_task,
-    execute_home_craft_pipeline_task,
-    execute_dungeon_generate_pipeline_task,
-)
-from .home_actions import (
-    activate_speak_action,
-    activate_switch_stage,
-    activate_plan_action,
-    activate_generate_dungeon,
-    activate_wear_costume,
-    activate_remove_costume,
-    activate_craft_consumable,
-    activate_craft_gear_item,
-    activate_craft_costume_item,
-    add_party_member,
-    remove_party_member,
-    move_item_to_inventory,
-    move_item_to_storage,
-)
+
 from ..models import (
-    HomePlayerActionRequest,
-    HomePlayerActionResponse,
-    HomePlayerActionType,
     HomeAdvanceRequest,
     HomeAdvanceResponse,
+    HomeCraftItemRequest,
+    HomeCraftItemResponse,
     HomeGenerateDungeonRequest,
     HomeGenerateDungeonResponse,
-    HomeRosterAddRequest,
-    HomeRosterAddResponse,
-    HomeRosterRemoveRequest,
-    HomeRosterRemoveResponse,
     HomeItemMoveToInventoryRequest,
     HomeItemMoveToInventoryResponse,
     HomeItemMoveToStorageRequest,
     HomeItemMoveToStorageResponse,
-    HomeWearCostumeRequest,
-    HomeWearCostumeResponse,
     HomeRemoveCostumeRequest,
     HomeRemoveCostumeResponse,
-    HomeCraftItemRequest,
-    HomeCraftItemResponse,
+    HomeRosterAddRequest,
+    HomeRosterAddResponse,
+    HomeRosterRemoveRequest,
+    HomeRosterRemoveResponse,
+    HomeSpeakRequest,
+    HomeSpeakResponse,
+    HomeSwitchStageRequest,
+    HomeSwitchStageResponse,
+    HomeWearCostumeRequest,
+    HomeWearCostumeResponse,
+)
+from .game_server_dependencies import CurrentGameServer
+from .home_actions import (
+    activate_craft_consumable,
+    activate_craft_costume_item,
+    activate_craft_gear_item,
+    activate_generate_dungeon,
+    activate_plan_action,
+    activate_remove_costume,
+    activate_speak_action,
+    activate_switch_stage,
+    activate_wear_costume,
+    add_party_member,
+    move_item_to_inventory,
+    move_item_to_storage,
+    remove_party_member,
+)
+from .home_tasks import (
+    _validate_player_at_home,
+    execute_dungeon_generate_pipeline_task,
+    execute_home_craft_pipeline_task,
+    execute_home_pipeline_task,
 )
 
 ###################################################################################################################################################################
@@ -62,17 +65,17 @@ home_api_router = APIRouter()
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 @home_api_router.post(
-    path="/api/home/player_action/v1/", response_model=HomePlayerActionResponse
+    path="/api/home/player/speak/v1/", response_model=HomeSpeakResponse
 )
-async def home_player_action(
-    payload: HomePlayerActionRequest,
+async def home_player_speak(
+    payload: HomeSpeakRequest,
     game_server: CurrentGameServer,
-) -> HomePlayerActionResponse:
+) -> HomeSpeakResponse:
     """
-    家园玩家动作接口
+    家园玩家对话接口
     """
 
-    logger.info(f"/api/home/player_action/v1/: {payload.model_dump_json()}")
+    logger.info(f"/api/home/player/speak/v1/: {payload.model_dump_json()}")
 
     # 获取房间并用每玩家锁避免并发状态竞争
     current_room = game_server.get_room(payload.user_name)
@@ -90,29 +93,12 @@ async def home_player_action(
             game_server,
         )
 
-        # 根据动作类型激活对应的 Action 组件
-        match payload.action:
-            case HomePlayerActionType.SPEAK:
-                # 激活对话动作：玩家与指定NPC进行对话交互
-                success, error_detail = activate_speak_action(
-                    rpg_game,
-                    target=payload.arguments.get("target", ""),
-                    content=payload.arguments.get("content", ""),
-                )
-
-            case HomePlayerActionType.SWITCH_STAGE:
-                # 激活场景切换动作：在家园内切换到不同的场景
-                success, error_detail = activate_switch_stage(
-                    rpg_game, stage_name=payload.arguments.get("stage_name", "")
-                )
-
-            case _:
-                # 未知的动作类型
-                logger.error(f"未知的请求类型 = {payload.action}, 不能处理！")
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"未知的请求类型 = {payload.action}, 不能处理！",
-                )
+        # 激活对话动作：玩家与指定NPC进行对话交互
+        success, error_detail = activate_speak_action(
+            rpg_game,
+            target=payload.target,
+            content=payload.content,
+        )
 
         # 统一处理动作激活结果
         if not success:
@@ -131,7 +117,65 @@ async def home_player_action(
         f"📝 创建 home pipeline 任务: job_id={job_id}, user={payload.user_name}"
     )
 
-    return HomePlayerActionResponse(
+    return HomeSpeakResponse(
+        job_id=job_id,
+        message="home pipeline 任务已启动，请通过会话消息查询结果",
+    )
+
+
+###################################################################################################################################################################
+@home_api_router.post(
+    path="/api/home/player/switch_stage/v1/", response_model=HomeSwitchStageResponse
+)
+async def home_player_switch_stage(
+    payload: HomeSwitchStageRequest,
+    game_server: CurrentGameServer,
+) -> HomeSwitchStageResponse:
+    """
+    家园玩家场景切换接口
+    """
+
+    logger.info(f"/api/home/player/switch_stage/v1/: {payload.model_dump_json()}")
+
+    # 获取房间并用每玩家锁避免并发状态竞争
+    current_room = game_server.get_room(payload.user_name)
+    if current_room is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="没有登录，请先登录",
+        )
+
+    async with current_room._lock:
+
+        # 验证前置条件并获取游戏实例
+        rpg_game = await _validate_player_at_home(
+            payload.user_name,
+            game_server,
+        )
+
+        # 激活场景切换动作：在家园内切换到不同的场景
+        success, error_detail = activate_switch_stage(
+            rpg_game, stage_name=payload.stage_name
+        )
+
+        # 统一处理动作激活结果
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=error_detail,
+            )
+
+    # 在锁外派发 home pipeline 任务，让任务独立持锁执行
+    deferred_job_id = await execute_home_pipeline_task.defer_async(
+        user_name=payload.user_name
+    )
+    job_id = deferred_job_id
+
+    logger.info(
+        f"📝 创建 home pipeline 任务: job_id={job_id}, user={payload.user_name}"
+    )
+
+    return HomeSwitchStageResponse(
         job_id=job_id,
         message="home pipeline 任务已启动，请通过会话消息查询结果",
     )

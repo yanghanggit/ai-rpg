@@ -1,5 +1,4 @@
 from datetime import datetime
-from enum import StrEnum, unique
 from typing import Dict, List, final
 
 from pydantic import BaseModel
@@ -248,22 +247,31 @@ class DungeonCombatCollectLootResponse(BaseModel):
 
 
 @final
-@unique
-class HomePlayerActionType(StrEnum):
-    SPEAK = "/speak"
-    SWITCH_STAGE = "/switch_stage"
-
-
-@final
-class HomePlayerActionRequest(BaseModel):
+class HomeSpeakRequest(BaseModel):
     user_name: str
     game_name: str
-    action: HomePlayerActionType
-    arguments: Dict[str, str]
+    target: str
+    content: str
 
 
 @final
-class HomePlayerActionResponse(BaseModel):
+class HomeSpeakResponse(BaseModel):
+    job_id: int
+    message: str
+
+
+################################################################################################################
+################################################################################################################
+################################################################################################################
+@final
+class HomeSwitchStageRequest(BaseModel):
+    user_name: str
+    game_name: str
+    stage_name: str
+
+
+@final
+class HomeSwitchStageResponse(BaseModel):
     job_id: int
     message: str
 

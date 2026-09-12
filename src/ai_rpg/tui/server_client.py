@@ -52,15 +52,16 @@ from ..models import (
     HomeItemMoveToInventoryResponse,
     HomeItemMoveToStorageRequest,
     HomeItemMoveToStorageResponse,
-    HomePlayerActionRequest,
-    HomePlayerActionResponse,
-    HomePlayerActionType,
     HomeRemoveCostumeRequest,
     HomeRemoveCostumeResponse,
     HomeRosterAddRequest,
     HomeRosterAddResponse,
     HomeRosterRemoveRequest,
     HomeRosterRemoveResponse,
+    HomeSpeakRequest,
+    HomeSpeakResponse,
+    HomeSwitchStageRequest,
+    HomeSwitchStageResponse,
     HomeWearCostumeRequest,
     HomeWearCostumeResponse,
     LoginRequest,
@@ -592,25 +593,44 @@ async def home_generate_dungeon(
         return HomeGenerateDungeonResponse.model_validate(response.json())
 
 
-async def home_player_action(
+async def home_speak(
     user_name: str,
     game_name: str,
-    action: HomePlayerActionType,
-    arguments: Dict[str, str],
-) -> HomePlayerActionResponse:
-    """触发家园玩家动作（对话、场景切换等），返回任务ID。"""
+    target: str,
+    content: str,
+) -> HomeSpeakResponse:
+    """触发家园玩家对话动作，返回任务ID。"""
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.post(
-            server_config.base_url + "/api/home/player_action/v1/",
-            json=HomePlayerActionRequest(
+            server_config.base_url + "/api/home/player/speak/v1/",
+            json=HomeSpeakRequest(
                 user_name=user_name,
                 game_name=game_name,
-                action=action,
-                arguments=arguments,
+                target=target,
+                content=content,
             ).model_dump(),
         )
         response.raise_for_status()
-        return HomePlayerActionResponse.model_validate(response.json())
+        return HomeSpeakResponse.model_validate(response.json())
+
+
+async def home_switch_stage(
+    user_name: str,
+    game_name: str,
+    stage_name: str,
+) -> HomeSwitchStageResponse:
+    """触发家园玩家场景切换动作，返回任务ID。"""
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.post(
+            server_config.base_url + "/api/home/player/switch_stage/v1/",
+            json=HomeSwitchStageRequest(
+                user_name=user_name,
+                game_name=game_name,
+                stage_name=stage_name,
+            ).model_dump(),
+        )
+        response.raise_for_status()
+        return HomeSwitchStageResponse.model_validate(response.json())
 
 
 async def home_roster_add(

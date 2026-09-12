@@ -218,7 +218,7 @@ class DungeonOpeningRoomScreen(BaseGameScreen):
     def _cmd_next(self, args: str) -> None:
         self._do_next()
 
-    # ── 后台任务 ──
+    # ── 任务 ──
 
     @work
     async def _do_info(self) -> None:

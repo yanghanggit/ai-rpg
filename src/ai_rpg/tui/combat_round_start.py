@@ -228,7 +228,7 @@ class CombatRoundStartScreen(BaseGameScreen):
     def _cmd_turn(self, args: str) -> None:
         self._do_turn()
 
-    # ── 后台任务 ──
+    # ── 任务 ──
 
     @work
     async def _do_info(self) -> None:

@@ -203,7 +203,7 @@ class CombatInitScreen(BaseGameScreen):
     def _cmd_begin(self, args: str) -> None:
         self._do_begin()
 
-    # ── 后台任务 ──
+    # ── 任务 ──
 
     @work
     async def _do_info(self) -> None:

@@ -1,5 +1,5 @@
 """
-家园后台任务模块
+家园任务模块
 """
 
 from procrastinate import JobContext
@@ -58,8 +58,9 @@ async def execute_dungeon_generate_pipeline_task(
     context: JobContext,
     user_name: str,
 ) -> None:
-    """后台执行 dungeon generate pipeline 任务"""
-    job_id = str(context.job.id)
+    """执行 dungeon generate pipeline 任务"""
+    job_id = context.job.id
+    assert job_id is not None, "运行中的任务必然有 job id"
     try:
         logger.info(
             f"🚀 dungeon generate pipeline 任务开始: job_id={job_id}, user={user_name}"
@@ -101,8 +102,9 @@ async def execute_home_pipeline_task(
     context: JobContext,
     user_name: str,
 ) -> None:
-    """后台执行 home pipeline 任务"""
-    job_id = str(context.job.id)
+    """执行 home pipeline 任务"""
+    job_id = context.job.id
+    assert job_id is not None, "运行中的任务必然有 job id"
     try:
         logger.info(f"🚀 home pipeline 任务开始: job_id={job_id}, user={user_name}")
 
@@ -140,8 +142,9 @@ async def execute_home_craft_pipeline_task(
     context: JobContext,
     user_name: str,
 ) -> None:
-    """后台执行 home craft pipeline 任务"""
-    job_id = str(context.job.id)
+    """执行 home craft pipeline 任务"""
+    job_id = context.job.id
+    assert job_id is not None, "运行中的任务必然有 job id"
     try:
         logger.info(
             f"🚀 home craft pipeline 任务开始: job_id={job_id}, user={user_name}"

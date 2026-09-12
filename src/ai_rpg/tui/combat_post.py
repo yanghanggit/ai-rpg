@@ -238,7 +238,7 @@ class CombatPostScreen(BaseGameScreen):
     def _cmd_advance(self, args: str) -> None:
         self._do_advance()
 
-    # ── 后台任务 ──
+    # ── 任务 ──
 
     @work
     async def _do_info(self) -> None:

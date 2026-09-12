@@ -4,22 +4,16 @@ from .task_error import TaskErrorDB
 
 
 ############################################################################################################
-def save_task_error(job_id: str, error: str) -> TaskErrorDB:
-    """保存后台任务失败时的错误信息"""
+def save_task_error(job_id: int, error: str) -> None:
+    """保存任务失败时的错误信息；同一 job 重复失败时覆盖旧记录"""
 
     # 创建一个新的数据库会话
     db = SessionLocal()
 
     try:
-        task_error = TaskErrorDB(job_id=job_id, error=error)
-
-        # 将记录添加到数据库会话并提交事务
-        db.add(task_error)
+        # merge：job_id 已存在则更新，不存在则插入，避免主键冲突顶掉原始异常
+        db.merge(TaskErrorDB(job_id=job_id, error=error))
         db.commit()
-        db.refresh(task_error)
-
-        # 返回保存的记录对象
-        return task_error
     except Exception as e:
         db.rollback()
         raise e  # 重新抛出异常以便调用者处理
@@ -28,7 +22,7 @@ def save_task_error(job_id: str, error: str) -> TaskErrorDB:
 
 
 ############################################################################################################
-def get_task_error(job_id: str) -> Optional[str]:
+def get_task_error(job_id: int) -> Optional[str]:
     """获取指定任务的失败错误信息，不存在则返回 None"""
 
     # 创建一个新的数据库会话

@@ -4,9 +4,9 @@ import json
 from typing import Any, AsyncGenerator, Dict, List, cast
 
 import httpx
+from procrastinate.jobs import Status as ProcrastinateJobStatus
 
 from ..models import (
-    BackgroundTaskStatus,
     BlueprintListResponse,
     CompactContextRequest,
     CompactContextResponse,
@@ -79,7 +79,7 @@ from .config import server_config
 
 
 class TaskFailedError(Exception):
-    """后台任务执行失败时抛出。"""
+    """任务执行失败时抛出。"""
 
     pass
 
@@ -238,8 +238,8 @@ async def fetch_dungeon_list() -> DungeonListResponse:
         return DungeonListResponse.model_validate(response.json())
 
 
-async def fetch_tasks_status(job_ids: List[str]) -> TasksStatusResponse:
-    """批量查询后台任务状态。"""
+async def fetch_tasks_status(job_ids: List[int]) -> TasksStatusResponse:
+    """批量查询任务状态。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.get(
             server_config.base_url + "/api/tasks/v1/status",
@@ -250,19 +250,19 @@ async def fetch_tasks_status(job_ids: List[str]) -> TasksStatusResponse:
 
 
 async def watch_task_until_done(
-    job_id: str, timeout_seconds: int = 120
+    job_id: int, timeout_seconds: int = 120
 ) -> TaskStatusView:
-    """通过 SSE 等待后台任务完成，返回终态 TaskStatusView。
+    """通过 SSE 等待任务完成，返回终态 TaskStatusView。
 
     Args:
         job_id: 要监听的任务 ID
         timeout_seconds: 最大等待秒数（同时透传给服务端 SSE 生成器）
 
     Returns:
-        TaskStatusView: 状态为 COMPLETED 的任务状态视图
+        TaskStatusView: 状态为 SUCCEEDED 的任务状态视图
 
     Raises:
-        TaskFailedError: 任务失败（status=FAILED 或服务端返回 error 字段）
+        TaskFailedError: 任务不存在或失败（status=FAILED）
         TimeoutError: 等待超时
     """
     url = server_config.base_url + f"/api/tasks/v1/watch/{job_id}"
@@ -283,10 +283,15 @@ async def watch_task_until_done(
                 if not payload:
                     continue
                 data = json.loads(payload)
+                # 服务端在 "任务不存在" / "超时" 时推的是 {"error": ...}，不是状态视图
+                if "error" in data:
+                    if data["error"] == "timeout":
+                        raise TimeoutError(f"任务 {job_id} 等待超时")
+                    raise TaskFailedError(f"{data['error']}: job_id={job_id}")
                 record = TaskStatusView.model_validate(data)
-                if record.status == BackgroundTaskStatus.FAILED:
+                if record.status == ProcrastinateJobStatus.FAILED:
                     raise TaskFailedError(record.error or "未知错误")
-                if record.status == BackgroundTaskStatus.COMPLETED:
+                if record.status == ProcrastinateJobStatus.SUCCEEDED:
                     return record
     raise TimeoutError(f"任务 {job_id} 等待超时")
 
@@ -294,7 +299,7 @@ async def watch_task_until_done(
 async def home_advance(
     user_name: str, game_name: str, actors: List[str]
 ) -> HomeAdvanceResponse:
-    """触发家园推进流程，为 actors 指定的角色激活行动计划，返回后台任务ID。"""
+    """触发家园推进流程，为 actors 指定的角色激活行动计划，返回任务ID。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
             server_config.base_url + "/api/home/advance/v1/",
@@ -311,7 +316,7 @@ async def home_advance(
 async def home_enter_dungeon(
     user_name: str, game_name: str, dungeon_name: str
 ) -> HomeEnterDungeonResponse:
-    """传送玩家进入指定副本（同步，无后台任务）。"""
+    """传送玩家进入指定副本（同步，无任务）。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
             server_config.base_url + "/api/home/enter_dungeon/v1/",
@@ -346,7 +351,7 @@ async def fetch_dungeon_room(user_name: str, game_name: str) -> DungeonRoomRespo
 
 
 async def dungeon_exit(user_name: str, game_name: str) -> DungeonExitResponse:
-    """触发退出副本后台任务，返回后台任务ID。"""
+    """触发退出副本任务，返回任务ID。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
             server_config.base_url + "/api/dungeon/exit/v1/",
@@ -378,7 +383,7 @@ async def dungeon_advance_stage(
 async def dungeon_opening_init(
     user_name: str, game_name: str
 ) -> DungeonOpeningInitResponse:
-    """触发开场房间初始化（叙事 + 牌库初始化），返回后台任务ID。"""
+    """触发开场房间初始化（叙事 + 牌库初始化），返回任务ID。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
             server_config.base_url + "/api/dungeon/opening/init/v1/",
@@ -394,7 +399,7 @@ async def dungeon_opening_init(
 async def dungeon_opening_generate_card_pool(
     user_name: str, game_name: str
 ) -> DungeonOpeningGenerateCardPoolResponse:
-    """触发开场房间卡池生成（外部显式触发 GenerateCardPoolAction），返回后台任务ID。"""
+    """触发开场房间卡池生成（外部显式触发 GenerateCardPoolAction），返回任务ID。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
             server_config.base_url + "/api/dungeon/opening/generate_card_pool/v1/",
@@ -410,7 +415,7 @@ async def dungeon_opening_generate_card_pool(
 async def dungeon_opening_pick_card_from_pool(
     user_name: str, game_name: str, actor_name: str, card_name: str
 ) -> DungeonOpeningPickCardFromPoolResponse:
-    """触发开场房间挑卡（外部显式触发 PickCardFromPoolAction），返回后台任务ID。"""
+    """触发开场房间挑卡（外部显式触发 PickCardFromPoolAction），返回任务ID。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
             server_config.base_url + "/api/dungeon/opening/pick_card_from_pool/v1/",
@@ -444,7 +449,7 @@ async def dungeon_combat_collect_loot(
 async def dungeon_combat_init(
     user_name: str, game_name: str
 ) -> DungeonCombatInitResponse:
-    """触发战斗初始化，返回后台任务ID。"""
+    """触发战斗初始化，返回任务ID。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
             server_config.base_url + "/api/dungeon/combat/init/v1/",
@@ -460,7 +465,7 @@ async def dungeon_combat_init(
 async def dungeon_combat_retreat(
     user_name: str, game_name: str
 ) -> DungeonCombatRetreatResponse:
-    """触发战斗撤退，返回后台任务ID。"""
+    """触发战斗撤退，返回任务ID。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
             server_config.base_url + "/api/dungeon/combat/retreat/v1/",
@@ -476,7 +481,7 @@ async def dungeon_combat_retreat(
 async def dungeon_combat_draw_cards(
     user_name: str, game_name: str
 ) -> DungeonCombatDrawCardsResponse:
-    """为全体战斗角色激活抽牌动作，返回后台任务ID。"""
+    """为全体战斗角色激活抽牌动作，返回任务ID。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
             server_config.base_url + "/api/dungeon/combat/draw_cards/v1/",
@@ -496,7 +501,7 @@ async def dungeon_combat_play_cards(
     card_name: str,
     targets: List[str],
 ) -> DungeonCombatPlayCardsResponse:
-    """让指定角色打出指定卡牌，返回后台任务ID。"""
+    """让指定角色打出指定卡牌，返回任务ID。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
             server_config.base_url + "/api/dungeon/combat/play_cards/v1/",
@@ -517,7 +522,7 @@ async def dungeon_combat_pass_turn(
     game_name: str,
     actor_name: str,
 ) -> DungeonCombatPassTurnResponse:
-    """让指定角色过牌，返回后台任务ID。"""
+    """让指定角色过牌，返回任务ID。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
             server_config.base_url + "/api/dungeon/combat/pass_turn/v1/",
@@ -537,7 +542,7 @@ async def dungeon_combat_use_consumable(
     item_name: str,
     targets: List[str],
 ) -> DungeonCombatUseConsumableItemResponse:
-    """使用玩家背包内消耗品，返回后台任务ID。"""
+    """使用玩家背包内消耗品，返回任务ID。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
             server_config.base_url + "/api/dungeon/combat/use_consumable/v1/",
@@ -557,7 +562,7 @@ async def dungeon_combat_equip_gear(
     game_name: str,
     item_name: str,
 ) -> DungeonCombatEquipGearItemResponse:
-    """使用玩家背包内装备，返回后台任务信息。"""
+    """使用玩家背包内装备，返回任务信息。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
             server_config.base_url + "/api/dungeon/combat/equip_gear/v1/",
@@ -574,7 +579,7 @@ async def dungeon_combat_equip_gear(
 async def home_generate_dungeon(
     user_name: str, game_name: str
 ) -> HomeGenerateDungeonResponse:
-    """触发副本生成流程，返回后台任务ID."""
+    """触发副本生成流程，返回任务ID."""
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.post(
             server_config.base_url + "/api/home/generate_dungeon/v1/",
@@ -593,7 +598,7 @@ async def home_player_action(
     action: HomePlayerActionType,
     arguments: Dict[str, str],
 ) -> HomePlayerActionResponse:
-    """触发家园玩家动作（对话、场景切换等），返回后台任务ID。"""
+    """触发家园玩家动作（对话、场景切换等），返回任务ID。"""
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.post(
             server_config.base_url + "/api/home/player_action/v1/",
@@ -679,7 +684,7 @@ async def home_item_move_to_storage(
 async def home_wear_costume(
     user_name: str, game_name: str, item_name: str, target_name: str
 ) -> HomeWearCostumeResponse:
-    """为指定角色穿戴或移除时装，返回后台任务ID。"""
+    """为指定角色穿戴或移除时装，返回任务ID。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
             server_config.base_url + "/api/home/costume/wear/v1/",
@@ -697,7 +702,7 @@ async def home_wear_costume(
 async def home_remove_costume(
     user_name: str, game_name: str, target_name: str
 ) -> HomeRemoveCostumeResponse:
-    """为指定角色脱下当前穿戴的时装，返回后台任务ID。"""
+    """为指定角色脱下当前穿戴的时装，返回任务ID。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
             server_config.base_url + "/api/home/costume/remove/v1/",
@@ -714,7 +719,7 @@ async def home_remove_costume(
 async def home_craft_item(
     user_name: str, game_name: str, materials: List[str]
 ) -> HomeCraftItemResponse:
-    """从储物箱材料合成道具（消耗品等），返回后台任务ID。"""
+    """从储物箱材料合成道具（消耗品等），返回任务ID。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
             server_config.base_url + "/api/home/craft/item/v1/",
@@ -731,7 +736,7 @@ async def home_craft_item(
 async def home_craft_gear_item(
     user_name: str, game_name: str, materials: List[str]
 ) -> HomeCraftItemResponse:
-    """从储物箱材料在装备工坊锻造一件装备，返回后台任务ID。"""
+    """从储物箱材料在装备工坊锻造一件装备，返回任务ID。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
             server_config.base_url + "/api/home/craft/gear/v1/",
@@ -748,7 +753,7 @@ async def home_craft_gear_item(
 async def home_craft_costume_item(
     user_name: str, game_name: str, materials: List[str]
 ) -> HomeCraftItemResponse:
-    """从储物箱材料在工坊制作一件时装，返回后台任务ID。"""
+    """从储物箱材料在工坊制作一件时装，返回任务ID。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
             server_config.base_url + "/api/home/craft/costume/v1/",
@@ -765,7 +770,7 @@ async def home_craft_costume_item(
 async def compact_context(
     user_name: str, game_name: str, target_name: str
 ) -> CompactContextResponse:
-    """手动压缩指定实体的 LLM 记忆，返回后台任务ID。"""
+    """手动压缩指定实体的 LLM 记忆，返回任务ID。"""
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.post(
             server_config.base_url + "/api/compact_context/v1/",

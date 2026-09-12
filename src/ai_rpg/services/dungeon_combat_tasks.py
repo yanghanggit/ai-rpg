@@ -1,5 +1,5 @@
 """
-副本战斗后台任务模块
+副本战斗任务模块
 """
 
 from procrastinate import JobContext
@@ -18,8 +18,9 @@ async def execute_init_combat_task(
     context: JobContext,
     user_name: str,
 ) -> None:
-    """后台执行战斗初始化任务"""
-    job_id = str(context.job.id)
+    """执行战斗初始化任务"""
+    job_id = context.job.id
+    assert job_id is not None, "运行中的任务必然有 job id"
     try:
 
         logger.info(f"🚀 战斗初始化任务开始: job_id={job_id}, user={user_name}")
@@ -69,8 +70,9 @@ async def execute_retreat_task(
     context: JobContext,
     user_name: str,
 ) -> None:
-    """后台执行撤退任务"""
-    job_id = str(context.job.id)
+    """执行撤退任务"""
+    job_id = context.job.id
+    assert job_id is not None, "运行中的任务必然有 job id"
     try:
 
         logger.info(f"🚀 撤退任务开始: job_id={job_id}, user={user_name}")
@@ -123,8 +125,9 @@ async def execute_draw_cards_task(
     context: JobContext,
     user_name: str,
 ) -> None:
-    """后台执行抽卡任务"""
-    job_id = str(context.job.id)
+    """执行抽卡任务"""
+    job_id = context.job.id
+    assert job_id is not None, "运行中的任务必然有 job id"
     try:
 
         logger.info(f"🚀 抽卡任务开始: job_id={job_id}, user={user_name}")
@@ -172,8 +175,9 @@ async def execute_play_cards_task(
     context: JobContext,
     user_name: str,
 ) -> None:
-    """后台执行出牌任务"""
-    job_id = str(context.job.id)
+    """执行出牌任务"""
+    job_id = context.job.id
+    assert job_id is not None, "运行中的任务必然有 job id"
     try:
         logger.info(f"🚀 出牌任务开始: job_id={job_id}, user={user_name}")
 
@@ -220,8 +224,9 @@ async def execute_pass_turn_task(
     context: JobContext,
     user_name: str,
 ) -> None:
-    """后台执行过牌任务"""
-    job_id = str(context.job.id)
+    """执行过牌任务"""
+    job_id = context.job.id
+    assert job_id is not None, "运行中的任务必然有 job id"
     try:
         logger.info(f"🚀 过牌任务开始: job_id={job_id}, user={user_name}")
 
@@ -268,8 +273,9 @@ async def execute_use_consumable_task(
     context: JobContext,
     user_name: str,
 ) -> None:
-    """后台执行使用消耗品任务"""
-    job_id = str(context.job.id)
+    """执行使用消耗品任务"""
+    job_id = context.job.id
+    assert job_id is not None, "运行中的任务必然有 job id"
     try:
 
         logger.info(f"🚀 使用消耗品任务开始: job_id={job_id}, user={user_name}")
@@ -318,8 +324,9 @@ async def execute_equip_gear_task(
     context: JobContext,
     user_name: str,
 ) -> None:
-    """后台执行使用装备任务"""
-    job_id = str(context.job.id)
+    """执行使用装备任务"""
+    job_id = context.job.id
+    assert job_id is not None, "运行中的任务必然有 job id"
     try:
 
         logger.info(f"🚀 使用装备任务开始: job_id={job_id}, user={user_name}")

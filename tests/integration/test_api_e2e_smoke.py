@@ -137,8 +137,8 @@ def _get(
     return r.status_code, data
 
 
-def _poll_task(client: httpx.Client, job_id: str, timeout: float = 300.0) -> str:
-    """轮询后台任务直到终态，返回 'completed' / 'failed'，超时则失败。"""
+def _poll_task(client: httpx.Client, job_id: int, timeout: float = 300.0) -> str:
+    """轮询任务直到终态，返回 'succeeded' / 'failed'，超时则失败。"""
     deadline = time.time() + timeout
     while time.time() < deadline:
         code, data = _get(client, "/api/tasks/v1/status", params={"job_ids": job_id})
@@ -146,12 +146,12 @@ def _poll_task(client: httpx.Client, job_id: str, timeout: float = 300.0) -> str
             tasks = data.get("tasks", [])
             if tasks:
                 status = (tasks[0].get("status") or "").lower()
-                if status == "completed":
+                if status == "succeeded":
                     return status
                 if status == "failed":
-                    pytest.fail(f"后台任务失败: {tasks[0].get('error')}")
+                    pytest.fail(f"任务失败: {tasks[0].get('error')}")
         time.sleep(1)
-    pytest.fail(f"后台任务 {job_id} 轮询超时")
+    pytest.fail(f"任务 {job_id} 轮询超时")
 
 
 def _get_hand_cards(
@@ -233,7 +233,7 @@ def test_api_e2e_smoke(game_server_url: str) -> None:
     hand_cards = _get_hand_cards(client, user, player_actor)
     assert hand_cards, "抽牌后玩家应有手牌"
 
-    # 9. 关键断言：非法出牌应在请求阶段同步返回 400（而非后台任务失败）
+    # 9. 关键断言：非法出牌应在请求阶段同步返回 400（而非任务失败）
     code, data = _post(
         client,
         "/api/dungeon/combat/play_cards/v1/",
@@ -248,7 +248,7 @@ def test_api_e2e_smoke(game_server_url: str) -> None:
     assert code == 400, f"非法出牌应同步返回 400，实际 {code}: {data}"
     assert "找不到卡牌" in str(data.get("detail", "")), f"detail 异常: {data}"
 
-    # 10. 合法出牌应正常启动后台任务并完成
+    # 10. 合法出牌应正常启动任务并完成
     playable = [c for c in hand_cards if c.get("playable", True)]
     assert playable, "手牌中应存在可打出的卡牌"
     card = playable[0]

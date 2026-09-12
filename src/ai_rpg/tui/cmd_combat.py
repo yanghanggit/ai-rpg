@@ -296,4 +296,4 @@ async def start_combat(game_client: GameClient) -> Tuple[bool, str]:
     except Exception as e:
         logger.error(f"start_combat: 请求失败 error={e}")
         return False, f"[bold red]❌ 请求失败：{e}[/]"
-    return True, f"[bold green]✅ 战斗初始化完成：{record.status}[/]"
+    return True, f"[bold green]✅ 战斗初始化完成：{record.status.value}[/]"

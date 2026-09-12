@@ -369,7 +369,7 @@ class CombatTurnActorScreen(BaseGameScreen):
         self._write("")
         self._write("[bold yellow]🔒 输入已锁定 —— 按回车继续[/]")
 
-    # ── 后台任务 ──
+    # ── 任务 ──
 
     @work
     async def _load_turn_actor(self) -> None:

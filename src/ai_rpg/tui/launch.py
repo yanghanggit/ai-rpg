@@ -160,7 +160,7 @@ class LaunchScreen(BaseGameScreen):
     def _cmd_quit(self, args: str) -> None:
         self.app.exit()
 
-    # ── 后台任务 ──
+    # ── 任务 ──
 
     @work
     async def _fetch_server_info(self) -> None:

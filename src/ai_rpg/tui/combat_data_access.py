@@ -151,7 +151,7 @@ async def submit_wear_costume(
     game_client: GameClient, item_name: str, target_name: str
 ) -> None:
     """提交穿戴时装：mock 模式下直接同步模拟储物箱 ⇄ 已穿戴状态转移（不发起
-    任何真实网络请求）；真实模式下调用服务端接口并等待后台任务完成。
+    任何真实网络请求）；真实模式下调用服务端接口并等待任务完成。
 
     item_name 必须非空；target_name 为目标角色实体名。"""
     if is_mock_mode(game_client):
@@ -165,7 +165,7 @@ async def submit_wear_costume(
 ###############################################################################################################################################
 async def submit_remove_costume(game_client: GameClient, target_name: str) -> None:
     """提交脱下当前穿戴的时装：mock 模式下直接同步模拟归还储物箱（不发起
-    任何真实网络请求）；真实模式下调用服务端接口并等待后台任务完成。
+    任何真实网络请求）；真实模式下调用服务端接口并等待任务完成。
 
     target_name 为目标角色实体名。"""
     if is_mock_mode(game_client):

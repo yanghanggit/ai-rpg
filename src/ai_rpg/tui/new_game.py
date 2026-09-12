@@ -181,7 +181,7 @@ class NewGameScreen(BaseGameScreen):
     def _cmd_quit(self, args: str) -> None:
         self.app.exit()
 
-    # ── 后台任务 ──
+    # ── 任务 ──
 
     async def _load_blueprints(self) -> None:
         logger.info("_load_blueprints: 正在获取蓝图列表...")

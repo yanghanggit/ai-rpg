@@ -52,7 +52,6 @@ from ..models import (
     HomeRemoveCostumeResponse,
     HomeCraftItemRequest,
     HomeCraftItemResponse,
-    BackgroundTaskStatus,
 )
 
 ###################################################################################################################################################################
@@ -122,11 +121,11 @@ async def home_player_action(
                 detail=error_detail,
             )
 
-    # 在锁外派发 home pipeline 后台任务，让任务在后台独立持锁执行
+    # 在锁外派发 home pipeline 任务，让任务独立持锁执行
     deferred_job_id = await execute_home_pipeline_task.defer_async(
         user_name=payload.user_name
     )
-    job_id = str(deferred_job_id)
+    job_id = deferred_job_id
 
     logger.info(
         f"📝 创建 home pipeline 任务: job_id={job_id}, user={payload.user_name}"
@@ -134,7 +133,6 @@ async def home_player_action(
 
     return HomePlayerActionResponse(
         job_id=job_id,
-        status=BackgroundTaskStatus.RUNNING.value,
         message="home pipeline 任务已启动，请通过会话消息查询结果",
     )
 
@@ -178,15 +176,14 @@ async def home_advance(
                 detail=error_detail,
             )
 
-    # 在锁外派发 home pipeline 后台任务，让任务在后台独立持锁执行
+    # 在锁外派发 home pipeline 任务，让任务独立持锁执行
     deferred_job_id = await execute_home_pipeline_task.defer_async(
         user_name=payload.user_name
     )
-    job_id = str(deferred_job_id)
+    job_id = deferred_job_id
 
     return HomeAdvanceResponse(
         job_id=job_id,
-        status=BackgroundTaskStatus.RUNNING.value,
         message="home pipeline 任务已启动，请通过会话消息查询结果",
     )
 
@@ -230,11 +227,11 @@ async def home_generate_dungeon(
                 detail=error_detail,
             )
 
-    # 在锁外派发 dungeon generate pipeline 后台任务，让任务在后台独立持锁执行
+    # 在锁外派发 dungeon generate pipeline 任务，让任务独立持锁执行
     deferred_job_id = await execute_dungeon_generate_pipeline_task.defer_async(
         user_name=payload.user_name
     )
-    job_id = str(deferred_job_id)
+    job_id = deferred_job_id
 
     logger.info(
         f"📝 创建 dungeon generate pipeline 任务: job_id={job_id}, user={payload.user_name}"
@@ -242,7 +239,6 @@ async def home_generate_dungeon(
 
     return HomeGenerateDungeonResponse(
         job_id=job_id,
-        status=BackgroundTaskStatus.RUNNING.value,
         message="dungeon generate pipeline 任务已启动，请通过会话消息查询结果",
     )
 
@@ -403,11 +399,10 @@ async def home_wear_costume(
     deferred_job_id = await execute_home_pipeline_task.defer_async(
         user_name=payload.user_name
     )
-    job_id = str(deferred_job_id)
+    job_id = deferred_job_id
     logger.info(f"📝 创建穿装任务: job_id={job_id}, user={payload.user_name}")
     return HomeWearCostumeResponse(
         job_id=job_id,
-        status=BackgroundTaskStatus.RUNNING.value,
         message="穿装任务已启动，请通过会话消息查询结果",
     )
 
@@ -444,11 +439,10 @@ async def home_remove_costume(
     deferred_job_id = await execute_home_pipeline_task.defer_async(
         user_name=payload.user_name
     )
-    job_id = str(deferred_job_id)
+    job_id = deferred_job_id
     logger.info(f"📝 创建脱装任务: job_id={job_id}, user={payload.user_name}")
     return HomeRemoveCostumeResponse(
         job_id=job_id,
-        status=BackgroundTaskStatus.RUNNING.value,
         message="脱装任务已启动，请通过会话消息查询结果",
     )
 
@@ -492,11 +486,10 @@ async def home_craft_item(
     deferred_job_id = await execute_home_craft_pipeline_task.defer_async(
         user_name=payload.user_name
     )
-    job_id = str(deferred_job_id)
+    job_id = deferred_job_id
     logger.info(f"📝 创建消耗品工坐任务: job_id={job_id}, user={payload.user_name}")
     return HomeCraftItemResponse(
         job_id=job_id,
-        status=BackgroundTaskStatus.RUNNING.value,
         message="消耗品工坊任务已启动，请通过会话消息查询结果",
     )
 
@@ -536,11 +529,10 @@ async def home_craft_gear_item(
     deferred_job_id = await execute_home_craft_pipeline_task.defer_async(
         user_name=payload.user_name
     )
-    job_id = str(deferred_job_id)
+    job_id = deferred_job_id
     logger.info(f"📝 创建装备工坐任务: job_id={job_id}, user={payload.user_name}")
     return HomeCraftItemResponse(
         job_id=job_id,
-        status=BackgroundTaskStatus.RUNNING.value,
         message="装备工坊任务已启动，请通过会话消息查询结果",
     )
 
@@ -580,11 +572,10 @@ async def home_craft_costume_item(
     deferred_job_id = await execute_home_craft_pipeline_task.defer_async(
         user_name=payload.user_name
     )
-    job_id = str(deferred_job_id)
+    job_id = deferred_job_id
     logger.info(f"📝 创建时装工坐任务: job_id={job_id}, user={payload.user_name}")
     return HomeCraftItemResponse(
         job_id=job_id,
-        status=BackgroundTaskStatus.RUNNING.value,
         message="时装工坊任务已启动，请通过会话消息查询结果",
     )
 

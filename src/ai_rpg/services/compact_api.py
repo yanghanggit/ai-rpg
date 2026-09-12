@@ -8,7 +8,6 @@ from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 
 from ..models import (
-    BackgroundTaskStatus,
     CompactContextRequest,
     CompactContextResponse,
 )
@@ -67,17 +66,16 @@ async def compact_context(
                 detail=error_detail,
             )
 
-    # 在锁外派发 compact pipeline 后台任务，让任务在后台独立持锁执行
+    # 在锁外派发 compact pipeline 任务，让任务独立持锁执行
     deferred_job_id = await execute_compact_context_task.defer_async(
         user_name=payload.user_name
     )
-    job_id = str(deferred_job_id)
+    job_id = deferred_job_id
 
     logger.info(f"📝 创建上下文压缩任务: job_id={job_id}, user={payload.user_name}")
 
     return CompactContextResponse(
         job_id=job_id,
-        status=BackgroundTaskStatus.RUNNING.value,
         message="上下文压缩任务已启动，请通过会话消息查询结果",
     )
 

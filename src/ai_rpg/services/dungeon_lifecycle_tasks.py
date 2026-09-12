@@ -1,4 +1,4 @@
-"""副本生命周期后台任务模块"""
+"""副本生命周期任务模块"""
 
 from procrastinate import JobContext
 from loguru import logger
@@ -25,8 +25,9 @@ async def execute_exit_dungeon_task(
     context: JobContext,
     user_name: str,
 ) -> None:
-    """后台执行退出副本任务（返回家园 + 副本导演归档 + 实体销毁）。"""
-    job_id = str(context.job.id)
+    """执行退出副本任务（返回家园 + 副本导演归档 + 实体销毁）。"""
+    job_id = context.job.id
+    assert job_id is not None, "运行中的任务必然有 job id"
     try:
 
         logger.info(f"🚀 退出副本任务开始: job_id={job_id}, user={user_name}")

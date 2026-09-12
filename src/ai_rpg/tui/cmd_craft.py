@@ -20,7 +20,7 @@ async def _submit_craft(
     craft_fn: Callable[[str, str, List[str]], Awaitable[HomeCraftItemResponse]],
     verb: str,
 ) -> str:
-    """提交合成请求并等待后台任务完成，返回成功或失败文本。"""
+    """提交合成请求并等待任务完成，返回成功或失败文本。"""
     logger.info(f"{verb}: 提交 user_name={user_name} materials={materials}")
     try:
         resp = await craft_fn(user_name, game_name, materials)

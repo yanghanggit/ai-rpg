@@ -9,7 +9,7 @@ from .dungeon import AnyDungeonRoom, Dungeon
 from .player_session import PlayerSession
 from .serialization import EntitySerialization
 from .session_message import SessionMessage
-from .task import BackgroundTaskStatus, TaskStatusView
+from .task import TaskStatusView
 
 
 @final
@@ -70,8 +70,7 @@ class HomeAdvanceRequest(BaseModel):
 
 @final
 class HomeAdvanceResponse(BaseModel):
-    job_id: str
-    status: str
+    job_id: int
     message: str
 
 
@@ -103,8 +102,7 @@ class HomeGenerateDungeonRequest(BaseModel):
 
 @final
 class HomeGenerateDungeonResponse(BaseModel):
-    job_id: str
-    status: str
+    job_id: int
     message: str
 
 
@@ -181,8 +179,7 @@ class HomeWearCostumeRequest(BaseModel):
 
 @final
 class HomeWearCostumeResponse(BaseModel):
-    job_id: str
-    status: str
+    job_id: int
     message: str
 
 
@@ -198,8 +195,7 @@ class HomeRemoveCostumeRequest(BaseModel):
 
 @final
 class HomeRemoveCostumeResponse(BaseModel):
-    job_id: str
-    status: str
+    job_id: int
     message: str
 
 
@@ -215,8 +211,7 @@ class HomeCraftItemRequest(BaseModel):
 
 @final
 class HomeCraftItemResponse(BaseModel):
-    job_id: str
-    status: str
+    job_id: int
     message: str
 
 
@@ -231,8 +226,7 @@ class DungeonExitRequest(BaseModel):
 
 @final
 class DungeonExitResponse(BaseModel):
-    job_id: str
-    status: str
+    job_id: int
     message: str
 
 
@@ -270,8 +264,7 @@ class HomePlayerActionRequest(BaseModel):
 
 @final
 class HomePlayerActionResponse(BaseModel):
-    job_id: str
-    status: str
+    job_id: int
     message: str
 
 
@@ -288,8 +281,7 @@ class DungeonCombatRetreatRequest(BaseModel):
 
 @final
 class DungeonCombatRetreatResponse(BaseModel):
-    job_id: str
-    status: str
+    job_id: int
     message: str
 
 
@@ -322,8 +314,7 @@ class DungeonCombatInitRequest(BaseModel):
 
 @final
 class DungeonCombatInitResponse(BaseModel):
-    job_id: str
-    status: str
+    job_id: int
     message: str
 
 
@@ -343,8 +334,7 @@ class DungeonCombatPlayCardsRequest(BaseModel):
 
 @final
 class DungeonCombatPlayCardsResponse(BaseModel):
-    job_id: str
-    status: str
+    job_id: int
     message: str
 
 
@@ -357,8 +347,7 @@ class DungeonCombatPassTurnRequest(BaseModel):
 
 @final
 class DungeonCombatPassTurnResponse(BaseModel):
-    job_id: str
-    status: str
+    job_id: int
     message: str
 
 
@@ -372,8 +361,7 @@ class DungeonCombatUseConsumableItemRequest(BaseModel):
 
 @final
 class DungeonCombatUseConsumableItemResponse(BaseModel):
-    job_id: str
-    status: str
+    job_id: int
     message: str
 
 
@@ -386,8 +374,7 @@ class DungeonCombatEquipGearItemRequest(BaseModel):
 
 @final
 class DungeonCombatEquipGearItemResponse(BaseModel):
-    job_id: str
-    status: str
+    job_id: int
     message: str
 
 
@@ -404,8 +391,7 @@ class DungeonOpeningInitRequest(BaseModel):
 
 @final
 class DungeonOpeningInitResponse(BaseModel):
-    job_id: str
-    status: str
+    job_id: int
     message: str
 
 
@@ -417,8 +403,7 @@ class DungeonOpeningGenerateCardPoolRequest(BaseModel):
 
 @final
 class DungeonOpeningGenerateCardPoolResponse(BaseModel):
-    job_id: str
-    status: str
+    job_id: int
     message: str
 
 
@@ -432,8 +417,7 @@ class DungeonOpeningPickCardFromPoolRequest(BaseModel):
 
 @final
 class DungeonOpeningPickCardFromPoolResponse(BaseModel):
-    job_id: str
-    status: str
+    job_id: int
     message: str
 
 
@@ -450,8 +434,7 @@ class DungeonCombatDrawCardsRequest(BaseModel):
 
 @final
 class DungeonCombatDrawCardsResponse(BaseModel):
-    job_id: str
-    status: str
+    job_id: int
     message: str
 
 
@@ -508,13 +491,6 @@ class SessionMessageResponse(BaseModel):
 ################################################################################################################
 ################################################################################################################
 ################################################################################################################
-
-
-@final
-class TaskTriggerResponse(BaseModel):
-    job_id: str
-    status: BackgroundTaskStatus
-    message: str
 
 
 @final
@@ -580,6 +556,5 @@ class CompactContextRequest(BaseModel):
 
 @final
 class CompactContextResponse(BaseModel):
-    job_id: str
-    status: str
+    job_id: int
     message: str

@@ -13,7 +13,6 @@ from ..models import (
     DungeonExitResponse,
     HomeEnterDungeonRequest,
     HomeEnterDungeonResponse,
-    BackgroundTaskStatus,
 )
 from .dungeon_advance_action import (
     advance_dungeon,
@@ -204,17 +203,16 @@ async def dungeon_exit(
                     detail="只能在战斗结束后回家",
                 )
 
-    # 在锁外派发退出副本后台任务，让任务在后台独立持锁执行
+    # 在锁外派发退出副本任务，让任务独立持锁执行
     deferred_job_id = await execute_exit_dungeon_task.defer_async(
         user_name=payload.user_name
     )
-    job_id = str(deferred_job_id)
+    job_id = deferred_job_id
     logger.info(f"📝 创建退出副本任务: job_id={job_id}, user={payload.user_name}")
 
     # 返回退出副本任务启动成功的响应
     return DungeonExitResponse(
         job_id=job_id,
-        status=BackgroundTaskStatus.RUNNING.value,
         message="退出副本任务已启动，请通过会话消息查询结果",
     )
 

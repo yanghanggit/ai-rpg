@@ -1,5 +1,5 @@
 """
-上下文压缩后台任务模块
+上下文压缩任务模块
 """
 
 from loguru import logger
@@ -19,8 +19,9 @@ async def execute_compact_context_task(
     context: JobContext,
     user_name: str,
 ) -> None:
-    """后台执行手动上下文压缩任务"""
-    job_id = str(context.job.id)
+    """执行手动上下文压缩任务"""
+    job_id = context.job.id
+    assert job_id is not None, "运行中的任务必然有 job id"
     try:
         logger.info(f"🚀 上下文压缩任务开始: job_id={job_id}, user={user_name}")
 

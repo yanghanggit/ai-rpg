@@ -1,5 +1,5 @@
 """
-副本开场房间后台任务模块
+副本开场房间任务模块
 """
 
 from procrastinate import JobContext
@@ -22,8 +22,9 @@ async def execute_opening_room_init_task(
     context: JobContext,
     user_name: str,
 ) -> None:
-    """后台执行副本开场房间初始化任务（叙事 + 牌库初始化，无战斗）"""
-    job_id = str(context.job.id)
+    """执行副本开场房间初始化任务（叙事 + 牌库初始化，无战斗）"""
+    job_id = context.job.id
+    assert job_id is not None, "运行中的任务必然有 job id"
     try:
 
         logger.info(f"🚀 开场房间初始化任务开始: job_id={job_id}, user={user_name}")
@@ -73,8 +74,9 @@ async def execute_generate_card_pool_task(
     context: JobContext,
     user_name: str,
 ) -> None:
-    """后台执行卡池生成任务（外部触发 GenerateCardPoolAction 后推动开场管道处理）"""
-    job_id = str(context.job.id)
+    """执行卡池生成任务（外部触发 GenerateCardPoolAction 后推动开场管道处理）"""
+    job_id = context.job.id
+    assert job_id is not None, "运行中的任务必然有 job id"
     try:
 
         logger.info(f"🚀 卡池生成任务开始: job_id={job_id}, user={user_name}")
@@ -127,8 +129,9 @@ async def execute_pick_card_from_pool_task(
     actor_name: str,
     card_name: str,
 ) -> None:
-    """后台执行从卡池挑选一张卡牌任务（外部触发 PickCardFromPoolAction 后推动开场管道处理）"""
-    job_id = str(context.job.id)
+    """执行从卡池挑选一张卡牌任务（外部触发 PickCardFromPoolAction 后推动开场管道处理）"""
+    job_id = context.job.id
+    assert job_id is not None, "运行中的任务必然有 job id"
     try:
 
         logger.info(

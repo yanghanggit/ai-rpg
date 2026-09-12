@@ -8,12 +8,12 @@ from ..game.config import DEBUG_CACHE_DIR
 from ..game.dbg_game import DBGGame
 from ..models import (
     ActorType,
+    AnyDungeonRoom,
     AssembleDungeonAction,
     AssembleDeckAction,
     CharacterStats,
     CombatRoom,
     Dungeon,
-    DungeonRoom,
     OpeningRoom,
     StageType,
 )
@@ -101,7 +101,7 @@ class AssembleDungeonSystem(ReactiveProcessor):
         """将 DungeonBlueprint 组装为完整 Dungeon 实体树（纯数据，无 LLM 调用）。"""
         seen_room_names: set[str] = set()
         seen_actor_names: set[str] = set()
-        rooms: List[DungeonRoom] = []
+        rooms: List[AnyDungeonRoom] = []
 
         # 组装每个 room 对应的房间
         for i, room_bp in enumerate(blueprint.rooms, start=1):

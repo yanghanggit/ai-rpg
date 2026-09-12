@@ -13,7 +13,7 @@ from ..game.dbg_combat_processor import (
 from ..game.dbg_game import DBGGame
 from ..models import (
     ActorComponent,
-    AgentEvent,
+    NoneEvent,
     HandComponent,
     HumanMessage,
     PlayCardsAction,
@@ -177,7 +177,7 @@ class PlayCardsActionSystem(ReactiveProcessor):
             ), f"PlayCardsActionSystem: 无法找到 {entity.name} 所在的场景实体"
             self._game.broadcast_to_stage(
                 entity=entity,
-                agent_event=AgentEvent(
+                agent_event=NoneEvent(
                     message=_build_action_notice_for_others(
                         actor_name=play_cards_action.name,
                         round_number=len(current_rounds),

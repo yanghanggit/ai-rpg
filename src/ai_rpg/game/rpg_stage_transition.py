@@ -9,7 +9,7 @@ from loguru import logger
 from ..entitas import Entity
 from ..models import (
     ActorComponent,
-    AgentEvent,
+    NoneEvent,
     TransStageEvent,
 )
 from .rpg_game import RPGGame
@@ -71,7 +71,7 @@ def _broadcast_departure_notifications(game: RPGGame, actors: Set[Entity]) -> No
         # 向所在场景及所在场景内除自身外的其他人宣布，这货要离开了
         game.broadcast_to_stage(
             entity=current_stage,
-            agent_event=AgentEvent(
+            agent_event=NoneEvent(
                 message=_build_stage_departure_message(
                     actor_entity.name, current_stage.name
                 ),
@@ -123,7 +123,7 @@ def _broadcast_arrival_notifications(
         # 向所在场景及所在场景内除自身外的其他人宣布，这货到了
         game.broadcast_to_stage(
             entity=stage_destination,
-            agent_event=AgentEvent(
+            agent_event=NoneEvent(
                 message=_build_stage_arrival_message(
                     actor_entity.name, stage_destination.name
                 ),

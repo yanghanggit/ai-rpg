@@ -10,7 +10,7 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_combat_processor import compute_character_stats
 from ..game.dbg_game import DBGGame
 from ..models import (
-    AgentEvent,
+    NoneEvent,
     Card,
     EquipGearItemAction,
     EquippedGearComponent,
@@ -132,7 +132,7 @@ class EquipGearItemActionSystem(ReactiveProcessor):
         ), f"EquipGearItemActionSystem: 无法找到 {entity.name} 所在的场景实体"
         self._game.broadcast_to_stage(
             entity=entity,
-            agent_event=AgentEvent(
+            agent_event=NoneEvent(
                 message=_build_gear_notice(
                     entity.name,
                     item.name,

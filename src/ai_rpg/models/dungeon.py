@@ -8,9 +8,9 @@ from .image import GeneratedImage
 
 ###############################################################################################################################################
 class DungeonRoom(BaseModel):
-    """副本房间基类（关卡包装）"""
+    """副本房间基类（抽象关卡包装）：不直接实例化，具体房间见 OpeningRoom / CombatRoom。"""
 
-    type: Literal["base"] = "base"  # 判别字段，子类收窄为对应 Literal 值
+    type: str  # 判别字段，子类收窄为各自的 Literal 值
     stage: Stage  # 必须，对应关卡场景
     image: GeneratedImage = GeneratedImage()  # 当前房间的文生图数据，默认为空
 
@@ -20,7 +20,7 @@ class DungeonRoom(BaseModel):
 class CombatRoom(DungeonRoom):
     """战斗房间（含战斗数据）"""
 
-    type: Literal["combat"] = "combat"  # type: ignore[assignment]
+    type: Literal["combat"] = "combat"
     combat: Combat = Combat(name="")  # 当前房间的战斗数据，默认为空战斗（state=NONE）
 
 
@@ -29,16 +29,17 @@ class CombatRoom(DungeonRoom):
 class OpeningRoom(DungeonRoom):
     """开场房间（非战斗叙事场景，用于副本开场铺垫）"""
 
-    type: Literal["opening"] = "opening"  # type: ignore[assignment]
+    type: Literal["opening"] = "opening"
     initialized: bool = (
         False  # 是否已完成开场初始化（叙事 + 牌库初始化），用于幂等状态守护；卡池生成由外部显式触发
     )
 
 
 ###############################################################################################################################################
-# 判别联合类型：可基于 type 字段进行精确的反序列化
+# 判别联合类型：基于 type 字段进行精确的反序列化。
+# 只含具体房间：DungeonRoom 是抽象基类，"base" 房间不存在，故不进入联合。
 AnyDungeonRoom = Annotated[
-    Union[DungeonRoom, OpeningRoom, CombatRoom],
+    Union[OpeningRoom, CombatRoom],
     Field(discriminator="type"),
 ]
 

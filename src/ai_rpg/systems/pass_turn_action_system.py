@@ -8,7 +8,7 @@ from ..models import (
     HandComponent,
     PassTurnAction,
     ActorComponent,
-    AgentEvent,
+    NoneEvent,
     RoundStatsComponent,
 )
 from ..game.dbg_game import DBGGame
@@ -106,7 +106,7 @@ class PassTurnActionSystem(ReactiveProcessor):
         ), f"PassTurnActionSystem: 无法找到 {entity.name} 所在的场景实体"
         self._game.broadcast_to_stage(
             entity=entity,
-            agent_event=AgentEvent(
+            agent_event=NoneEvent(
                 message=_build_pass_turn_notice(
                     actor_name=pass_turn_action.name,
                     round_number=len(current_rounds),

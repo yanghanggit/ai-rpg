@@ -909,7 +909,7 @@ def create_storage() -> World:
     """
 
     world = create_world(
-        name="世界储物箱",
+        name="世界.储物箱",
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=SYSTEM_RULES,
         role_rules="""## 储物箱职责

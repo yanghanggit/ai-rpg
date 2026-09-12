@@ -7,7 +7,7 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..utils import prompt_builder
 from ..models import (
-    AgentEvent,
+    NoneEvent,
     InventoryComponent,
     UseConsumableItemAction,
 )
@@ -112,7 +112,7 @@ class UseConsumableItemActionSystem(ReactiveProcessor):
         ), f"UseConsumableItemActionSystem: 无法找到 {entity.name} 所在的场景实体"
         self._game.broadcast_to_stage(
             entity=entity,
-            agent_event=AgentEvent(
+            agent_event=NoneEvent(
                 message=_build_consumable_notice(
                     entity.name,
                     action,

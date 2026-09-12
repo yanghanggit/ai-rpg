@@ -21,7 +21,7 @@ from src.ai_rpg.models import (
     IdentityComponent,
     StageComponent,
 )
-from src.ai_rpg.models.agent_event import AgentEvent
+from src.ai_rpg.models.agent_event import NoneEvent
 from src.ai_rpg.models.messages import HumanMessage, SystemMessage
 
 
@@ -51,8 +51,8 @@ def _make_entity_with_identity(game: Any, name: str, order: int) -> Entity:
     return entity
 
 
-def _agent_event(message: str = "hello") -> AgentEvent:
-    return AgentEvent(message=message)
+def _agent_event(message: str = "hello") -> NoneEvent:
+    return NoneEvent(message=message)
 
 
 # ---------------------------------------------------------------------------

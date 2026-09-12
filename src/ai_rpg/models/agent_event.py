@@ -1,28 +1,28 @@
-"""游戏事件定义模块
+"""游戏事件定义模块"""
 
-事件类型用**字符串字面量**（"speak" / "whisper" / ...），不再使用自增的 IntEnum。
-好处：新增事件类型时不必再"挑下一个整数"，类型名即语义，读到 JSON 就能看懂。
+from typing import Annotated, Literal, Union, final
 
-两条约束：
-1. 具体事件的 type 必须是 Literal（不能是裸 str）——判别联合要求每个成员的判别字段是 Literal。
-2. 基类 AgentEvent 的 type 是宽泛的 str（子类才能收窄成各自的 Literal），
-   因此它不能作为判别联合的成员，只能放在外层 Union 里，见 AnyAgentEvent。
-"""
-
-from typing import Annotated, Literal, Union
-from overrides import final
 from pydantic import BaseModel, ConfigDict, Field
 
 
 ####################################################################################################################################
 class AgentEvent(BaseModel):
-    """事件基类，也是后端"未分类事件"的兜底形态（type = "none"）"""
+    """事件基类（抽象）：只声明公共字段，不直接实例化；具体事件继承它并把 type 收窄为 Literal。"""
 
-    # 禁止额外字段：确保具体子类的 payload 无法被误判为基类事件（详见 AnyAgentEvent 处的说明）
+    # 禁止额外字段：具体事件的 payload 不会被静默丢弃；未分类事件请显式用 NoneEvent
     model_config = ConfigDict(extra="forbid")
 
-    type: str = "none"
+    type: str
     message: str
+
+
+####################################################################################################################################
+# 未分类事件（兜底）
+@final
+class NoneEvent(AgentEvent):
+    """未分类事件：兜底形态（type = "none"）"""
+
+    type: Literal["none"] = "none"
 
 
 ####################################################################################################################################
@@ -110,10 +110,8 @@ class AppearanceUpdateEvent(AgentEvent):
 
 ####################################################################################################################################
 # 具体事件的判别联合类型：基于 type 字段（Literal 值）进行精确的反序列化。
-# 注意：AgentEvent 基类的 type 字段是普通 str（非 Literal），无法作为判别式联合的
-# 成员，因此单独放在外层 Union 中，由 pydantic 的 smart-union 判定
-# （配合 AgentEvent.model_config.extra="forbid"，具体子类特有字段会使基类校验失败，
-# 从而保证反序列化时优先精确匹配到具体子类）。
+# 每个成员（含兜底的 NoneEvent）都以 Literal 作为判别键，因此是标准 discriminated union；
+# 未知 type 会明确报 ValidationError，不再靠 smart-union 兜。
 _ConcreteAgentEvent = Annotated[
     Union[
         SpeakEvent,
@@ -123,9 +121,10 @@ _ConcreteAgentEvent = Annotated[
         TransStageEvent,
         CombatArbitrationEvent,
         AppearanceUpdateEvent,
+        NoneEvent,
     ],
     Field(discriminator="type"),
 ]
 
-AnyAgentEvent = Union[AgentEvent, _ConcreteAgentEvent]
+AnyAgentEvent = _ConcreteAgentEvent
 ####################################################################################################################################

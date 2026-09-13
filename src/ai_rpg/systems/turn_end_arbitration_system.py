@@ -22,7 +22,6 @@ from ..models import (
     Card,
     CharacterStatsComponent,
     CombatArbitrationEvent,
-    EnvironmentComponent,
     HandComponent,
     HumanMessage,
     MonsterComponent,
@@ -87,7 +86,6 @@ def _build_turn_end_arbitration_tool_prompt(
     cards: List[Card],
     alive_actor_names: List[str],
     current_round_number: int,
-    current_environment: str,
 ) -> str:
     """生成回合结束仲裁提示词（完整版，供 LLM 首轮使用）。"""
     cards_lines = "\n\n".join(_build_turn_end_card_lines(c) for c in cards)
@@ -104,10 +102,6 @@ def _build_turn_end_arbitration_tool_prompt(
 ## 场上存活角色
 
 {alive_lines}
-
-## 当前场景环境
-
-{current_environment}
 
 {CALC_RULES_SECTION}
 
@@ -296,11 +290,6 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
             stage_entity is not None
         ), f"TurnEndArbitrationSystem: 无法找到 {pass_turn_entity.name} 所在的场景实体"
 
-        assert stage_entity.has(
-            EnvironmentComponent
-        ), "当前场景实体缺少 EnvironmentComponent 组件！"
-        current_environment = stage_entity.get(EnvironmentComponent).narrative
-
         current_round_number = len(
             self._game.current_dungeon_combat_room.combat.rounds or []
         )
@@ -324,7 +313,6 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
             turn_end_cards,
             alive_actor_names,
             current_round_number,
-            current_environment,
         )
         ctx = _TurnEndArbitrationContext()
 

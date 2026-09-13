@@ -51,8 +51,6 @@ def mock_game() -> MagicMock:
     game.current_dungeon_combat_room.combat.is_ongoing = True
     game.current_dungeon_combat_room.combat.rounds = [object()]
     stage = MagicMock()
-    stage.has.return_value = True
-    stage.get.return_value = SimpleNamespace(narrative="测试场景环境")
     game.resolve_stage_entity.return_value = stage
     game.get_agent_memory.return_value = SimpleNamespace(messages=[])
     return game

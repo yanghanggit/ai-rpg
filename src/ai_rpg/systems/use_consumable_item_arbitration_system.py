@@ -2,9 +2,7 @@
 
 借世界实体「世界.消耗品仲裁」作为临时 agent（LLM），在工具边界内结算消耗品使用效果：
 读取属性 → 依效果提示词结算 → 写入 HP → 提交仲裁结果（战斗日志/叙事）。
-注意：本系统借用世界实体作为临时 agent，不直接改写场景的环境快照（EnvironmentComponent）；
-仅把「发生了什么」写入场景实体记忆，由场景自身后续推理更新。
-
+仅把「发生了什么」写入场景实体记忆；
 临时 agent 的对话上下文仅在本次结算过程中累积，结束后不写回宿主世界实体的持久记忆。
 """
 
@@ -31,7 +29,6 @@ from ..models import (
     CombatArbitrationEvent,
     ConsumableComponent,
     ConsumableItem,
-    EnvironmentComponent,
     HumanMessage,
     UseConsumableItemAction,
     WorldComponent,
@@ -54,10 +51,9 @@ def _build_consumable_arbitration_prompt(
     item: ConsumableItem,
     targets: List[str],
     current_round_number: int,
-    current_environment: str,
     stage_actor_names: List[str],
 ) -> str:
-    """构建消耗品仲裁提示词：发起人/目标/场景描述/场景内参与人员/效果提示词全部注入。"""
+    """构建消耗品仲裁提示词：发起人/目标/场景内参与人员/效果提示词全部注入。"""
     target_names = "、".join(targets) if targets else "无"
     stage_actors = "、".join(stage_actor_names) if stage_actor_names else "无"
     effect_prompt = (
@@ -85,10 +81,6 @@ def _build_consumable_arbitration_prompt(
 ## 场景内参与人员
 
 {stage_actors}
-
-## 当前场景环境
-
-{current_environment}
 
 ## 结算规则
 
@@ -272,16 +264,11 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
         ), f"UseConsumableItemArbitrationSystem: 应恰好存在一个消耗品仲裁世界实体，实际={len(arbitrator_entities)}"
         arbitrator_entity = next(iter(arbitrator_entities))
 
-        # 场景实体与当前场景环境快照
+        # 场景实体
         stage_entity = self._game.resolve_stage_entity(actor_entity)
         assert (
             stage_entity is not None
         ), f"UseConsumableItemArbitrationSystem: 无法找到 {actor_entity.name} 所在的场景实体"
-        assert stage_entity.has(
-            EnvironmentComponent
-        ), "当前场景实体缺少 EnvironmentComponent 组件！"
-        current_environment = stage_entity.get(EnvironmentComponent).narrative
-
         current_round_number = len(
             self._game.current_dungeon_combat_room.combat.rounds or []
         )
@@ -296,7 +283,6 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             item=action.item,
             targets=action.targets,
             current_round_number=current_round_number,
-            current_environment=current_environment,
             stage_actor_names=stage_actor_names,
         )
 
@@ -363,7 +349,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
         prompt: str,
         item: ConsumableItem,
     ) -> None:
-        """应用临时 agent 的仲裁结果：广播事件、写入 HP、记录回合日志（不直接改场景环境快照）。"""
+        """应用临时 agent 的仲裁结果：广播事件、写入 HP、记录回合日志。"""
 
         assert ctx.combat_log is not None, "combat_log 不应为 None"
         assert ctx.narrative is not None, "narrative 不应为 None"
@@ -379,8 +365,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                 )
                 return
 
-        # 仅把「发生了什么」记录进场景实体记忆（供场景后续推理更新自身环境快照），
-        # 临时 agent 自身的对话上下文不写回世界实体。本系统不改写 EnvironmentComponent。
+        # 仅把「发生了什么」记录进场景实体记忆；临时 agent 自身的对话上下文不写回世界实体。
         self._game.add_human_message(
             entity=stage_entity,
             human_message=HumanMessage(content=prompt),

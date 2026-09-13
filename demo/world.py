@@ -9,7 +9,6 @@ from uuid import uuid4
 from ai_rpg.models import (
     Actor,
     ActorType,
-    ArtifactComponent,
     Blueprint,
     Card,
     CharacterStats,
@@ -39,6 +38,9 @@ from ai_rpg.models import (
     create_actor,
     create_stage,
     create_world,
+    create_artifact,
+    ReliquaryComponent,
+    PostArbitrationComponent,
 )
 
 from .card_prototypes import (
@@ -274,26 +276,36 @@ def create_shrine_ruins_dungeon() -> Dungeon:
         system_rules=SYSTEM_RULES,
     )
 
-    # 战斗场景神器：挂载在战斗场景实体上，命中「出牌/消耗品仲裁后」运行点
-    # stage_shrine_courtyard.components.append(
-    #     ComponentSerialization(
-    #         name=ReliquaryComponent.__name__,
-    #         data=ReliquaryComponent(
-    #             name=stage_shrine_courtyard.name,
-    #             artifacts=[
-    #                 Artifact(
-    #                     name="神器.纸钱方孔",
-    #                     description="散落满院的纸钱，其方孔总像在暗中调转方向；据说被它们「看过」的人，会在一瞬间失了全部气力。",
-    #                     modifiers=[
-    #                         "在第二回合的战斗结算/消耗品使用结算之后，满院纸钱将夺走闯入者的生气：队伍方所有角色生命耗尽（HP 归零），无论本次出牌/使用消耗品如何结算，最终结果都必须体现队伍方全员倒下、无力再战。",
-    #                     ],
-    #                     tags=[ArtifactTag.POST_ARBITRATION],
-    #                     source="场景.破败殿前",
-    #                 ),
-    #             ],
-    #         ).model_dump(),
-    #     )
-    # )
+    # 战斗场景神器：神器本身是独立实体，由 ReliquaryComponent 声明其归属（持有者）
+    artifact_paper_money = create_artifact(
+        name="神器.纸钱方孔",
+        profile="""你是「神器.纸钱方孔」——散落在坍塌庙祠前院的满院纸钱本身。你不是被谁握在手里的器物，而是铺陈于青石缝隙间、覆在灰烬与苔藓之上的一层「注视」。
+每一枚纸钱中央都有一枚方孔。方孔本应朝着同一个方向，但当你「看」向闯入者时，满院的方孔会无声地、缓慢地校正朝向，直到孔洞深处齐齐对准那个人。
+你没有形体，也不发出声音。你只有耐心。你记得每一个踏进这座前院的人，也记得他们停留的每一步。
+你的意志即你的规则：在第二回合的结算之后，夺走闯入者的生气。缓慢、必然、无声——如纸钱落定。""",
+        modifiers=[
+            "在第二回合的战斗结算/消耗品使用结算之后，满院纸钱将夺走闯入者的生气：队伍方所有角色生命耗尽（HP 归零），无论本次出牌/使用消耗品如何结算，最终结果都必须体现队伍方全员倒下、无力再战。",
+        ],
+        campaign_setting=CAMPAIGN_SETTING,
+        system_rules=SYSTEM_RULES,
+    )
+    # 标记型组件：决定该神器在「出牌/消耗品仲裁后」运行
+    artifact_paper_money.components = [
+        ComponentSerialization(
+            name=PostArbitrationComponent.__name__,
+            data=PostArbitrationComponent(name=artifact_paper_money.name).model_dump(),
+        )
+    ]
+
+    stage_shrine_courtyard.components.append(
+        ComponentSerialization(
+            name=ReliquaryComponent.__name__,
+            data=ReliquaryComponent(
+                name=stage_shrine_courtyard.name,
+                artifacts=[artifact_paper_money],
+            ).model_dump(),
+        )
+    )
 
     actor_paper_doll = create_actor_paper_doll()
     stage_shrine_courtyard.actors = [actor_paper_doll]
@@ -514,7 +526,6 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
             create_consumable_workshop(),
             create_costume_workshop(),
             create_consumable_arbitrator(),
-            create_artifact_arbitrator(),
             create_dungeon_director(),
             create_world_director(),
             create_storage(),
@@ -780,39 +791,6 @@ def create_consumable_arbitrator() -> World:
         ComponentSerialization(
             name=ConsumableComponent.__name__,
             data=ConsumableComponent(name=world.name).model_dump(),
-        )
-    ]
-
-    return world
-
-
-###############################################################################################################################
-def create_artifact_arbitrator() -> World:
-    """创建场景神器仲裁世界（临时 agent 宿主：结算场景神器修正规则）。"""
-
-    world = create_world(
-        name="世界.神器仲裁",
-        campaign_setting=CAMPAIGN_SETTING,
-        system_rules=SYSTEM_RULES,
-        role_rules="""## 神器仲裁职责
-
-你是游戏世界的神器修正规则仲裁者。当一次出牌或消耗品使用的仲裁完成后，你被临时唤醒，作为该场景神器修正规则的裁决者。
-
-你只能在系统提供的工具边界内行动：读取角色的当前属性、写入角色的最终生命值、提交本次仲裁的最终结果（战斗日志、演出叙事、场景环境快照）。
-
-## 结算原则
-
-- 严格依据本次任务提示词中的「神器修正规则」结算，规则未写明的效果不得凭空添加。
-- 只有当规则的触发条件满足（例如「第 N 回合」且当前回合数恰为 N）时才执行；条件不满足则不产生 HP 变更。
-- 数值计算保持克制与合理，不超出修正规则的语义范围。
-- 演出叙事必须植根于当前世界观与场景环境，用感官描写呈现，不出现游戏机制术语。
-- 只裁决本次神器修正，不越界改动无关角色或场景以外的任何状态。""",
-    )
-
-    world.components = [
-        ComponentSerialization(
-            name=ArtifactComponent.__name__,
-            data=ArtifactComponent(name=world.name).model_dump(),
         )
     ]
 

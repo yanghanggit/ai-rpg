@@ -3,8 +3,8 @@
 from typing import List, final
 
 from ..entitas.components import Component
-from .artifacts import Artifact
 from .card import Card
+from .entities import Artifact
 from .character_stats import CharacterStats
 from .items import AnyItem, CostumeItem, GearItem
 from .registry import register_component_type
@@ -245,9 +245,15 @@ class ConsumableComponent(Component):
 @final
 @register_component_type
 class ArtifactComponent(Component):
-    """标记世界实体具有场景神器仲裁职责（LLM 驱动，作为临时 agent 结算神器修正规则）。"""
+    """标记实体为神器，承载神器完整定义，并记录其持有者。
+
+    holder 为持有者实体全名，作用类似 ActorComponent.current_stage；
+    artifact 为神器的完整模型（人设、挂载组件等），使神器实体自包含。
+    """
 
     name: str
+    holder: str  # 持有者实体全名
+    artifact: Artifact  # 神器完整定义
 
 
 ############################################################################################################
@@ -381,3 +387,12 @@ class EquippedGearComponent(Component):
 
     name: str
     items: List[GearItem]
+
+
+############################################################################################################
+@final
+@register_component_type
+class PostArbitrationComponent(Component):
+    """出牌/消耗品仲裁后触发的效果组件。"""
+
+    name: str

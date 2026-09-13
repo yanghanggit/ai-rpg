@@ -2,9 +2,12 @@
 游戏实体工厂模块。
 """
 
+from typing import List
+
 from . import (
     Actor,
     ActorType,
+    Artifact,
     CharacterStats,
     Stage,
     StageType,
@@ -160,3 +163,63 @@ def create_world(
 {role_rules}"""
 
     return world
+
+
+#######################################################################################################################################
+def create_artifact(
+    name: str,
+    profile: str,
+    modifiers: List[str],
+    campaign_setting: str,
+    system_rules: str,
+) -> Artifact:
+    """
+    创建一个神器(Artifact)实例。
+
+    神器是独立实体，其 system_message 即其作为 agent 的人设：
+    由战役设定、全局规则、神器人设（profile）与其修正规则（modifiers）共同构成。
+
+    持有者归属（挂载在哪张场景/角色上）由 ReliquaryComponent 声明，
+    引擎物化神器实体时写入 ArtifactComponent.holder。
+    """
+
+    assert name.strip() != "", "DBG 游戏要求必须有神器名称(name)"
+    assert profile.strip() != "", "DBG 游戏要求必须有神器设定(profile)"
+    assert modifiers, "DBG 游戏要求神器至少有一条修正规则(modifiers)"
+    assert (
+        campaign_setting.strip() != ""
+    ), "DBG 游戏要求必须有游戏设定(campaign_setting)"
+    assert system_rules.strip() != "", "DBG 游戏要求必须有系统规则(system_rules)"
+
+    # 创建神器实例
+    artifact = Artifact(
+        name=name,
+        system_message="",
+        components=[],
+    )
+
+    # 修正规则以列表形式落入人设，供神器 agent 在运行时自行解释
+    rules = "\n".join(f"- {modifier}" for modifier in modifiers)
+
+    # 系统提示词词
+    artifact.system_message = f"""# {artifact.name}
+
+你扮演神器: {artifact.name}
+
+## 游戏设定
+
+{campaign_setting}
+
+## 全局规则
+
+{system_rules}
+
+## 神器设定
+
+{profile}
+
+## 神器修正规则
+
+{rules}"""
+
+    return artifact

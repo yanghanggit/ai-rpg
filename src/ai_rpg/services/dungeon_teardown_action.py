@@ -27,8 +27,16 @@ def teardown_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> None:
         if destroy_stage_entity is not None:
             dbg_game.destroy_entity(destroy_stage_entity)
 
-    # 3. 重置副本数据为空副本
+    # 3. 销毁因持有者（副本场景/角色）消失而孤立的神器实体
+    destroyed_artifact_names = dbg_game.destroy_orphan_artifact_entities()
+    if destroyed_artifact_names:
+        logger.debug(
+            "[teardown_dungeon] 已销毁孤立神器实体: "
+            + "、".join(destroyed_artifact_names)
+        )
+
+    # 4. 重置副本数据为空副本
     dbg_game._world.dungeon = Dungeon(name="", rooms=[], profile="")
 
-    # 4. 打印副本销毁完成日志
+    # 5. 打印副本销毁完成日志
     logger.debug("[teardown_dungeon] 副本实体清理完成，dungeon 已重置")

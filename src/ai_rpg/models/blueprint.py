@@ -2,8 +2,6 @@ from typing import Dict, List, final
 from pydantic import BaseModel
 from .entities import Stage, World
 
-# from .artifacts import Artifact
-
 
 ###############################################################################################################################################################
 # 生成世界的根文件，就是世界的起点

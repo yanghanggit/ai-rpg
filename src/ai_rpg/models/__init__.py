@@ -11,7 +11,6 @@ from .components import *
 from .dungeon import *
 from .entities import *
 from .items import *
-from .artifacts import *
 from .messages import *
 from .registry import *
 from .serialization import *

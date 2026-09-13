@@ -16,6 +16,7 @@ def create_dungeon_opening_room_pipeline(
     from ..systems.appearance_initialization_system import (
         AppearanceInitializationSystem,
     )
+    from ..systems.artifact_initialization_system import ArtifactInitializationSystem
     from ..systems.context_compaction_system import ContextCompactionSystem
     from ..systems.deck_initialization_system import DeckInitializationSystem
     from ..systems.destroy_entity_system import DestroyEntitySystem
@@ -44,6 +45,9 @@ def create_dungeon_opening_room_pipeline(
 
     # 开场环境初始化系统
     processors.add(EnvironmentInitializationSystem(dbg_game))
+
+    # 神器实体初始化系统：将持有者 ReliquaryComponent 声明的神器物化为神器实体（幂等）
+    processors.add(ArtifactInitializationSystem(dbg_game))
 
     # 开场初始化系统（角色侧）：为开场场景内的队伍成员注入场景环境信息
     processors.add(OpeningInitActorSystem(dbg_game))

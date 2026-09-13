@@ -16,7 +16,9 @@ def create_dungeon_combat_room_pipeline(
     from ..systems.appearance_initialization_system import (
         AppearanceInitializationSystem,
     )
-    from ..systems.artifact_arbitration_system import ArtifactArbitrationSystem
+    from ..systems.artifact_initialization_system import ArtifactInitializationSystem
+    from ..systems.artifact_post_arbitration_system import ArtifactPostArbitrationSystem
+    from ..systems.combat_artifact_cleanup_system import CombatArtifactCleanupSystem
     from ..systems.combat_init_actor_system import CombatInitActorSystem
     from ..systems.combat_init_stage_system import CombatInitStageSystem
     from ..systems.combat_loot_system import CombatLootSystem
@@ -85,6 +87,9 @@ def create_dungeon_combat_room_pipeline(
     # 战斗环境初始化系统
     processors.add(EnvironmentInitializationSystem(dbg_game))
 
+    # 神器实体初始化系统：将持有者 ReliquaryComponent 声明的神器物化为神器实体（幂等）
+    processors.add(ArtifactInitializationSystem(dbg_game))
+
     # 战斗初始化系统（角色侧）：初始化战斗临时牌堆，为参战角色注入战场环境
     processors.add(CombatInitActorSystem(dbg_game))
 
@@ -133,7 +138,7 @@ def create_dungeon_combat_room_pipeline(
     processors.add(UseConsumableItemArbitrationSystem(dbg_game))
 
     # 场景神器仲裁系统：在出牌/消耗品仲裁之后，由「世界.神器仲裁」临时 agent 落实场景神器修正规则
-    processors.add(ArtifactArbitrationSystem(dbg_game))
+    processors.add(ArtifactPostArbitrationSystem(dbg_game))
 
     # 回合结束仲裁系统（监视 PassTurnAction，扫全场持有回合结束词缀卡牌的角色并并发仲裁）
     processors.add(TurnEndArbitrationSystem(dbg_game))
@@ -152,6 +157,9 @@ def create_dungeon_combat_room_pipeline(
 
     # 检查战斗结果系统（必须在死亡标记之后，才能在同一周期内根据最终存活情况判定胜负）
     processors.add(CombatOutcomeSystem(dbg_game))
+
+    # 战斗结束神器清理系统：战斗结果出现后，标记参战怪物与副本场景持有的神器实体待销毁
+    processors.add(CombatArtifactCleanupSystem(dbg_game))
 
     # 战斗掉落系统（胜利时为每头怪物推理掉落 MaterialItem，写入玩家 LootComponent）
     processors.add(CombatLootSystem(dbg_game))

@@ -15,6 +15,7 @@ from ..models import (
     ActorComponent,
     ActorType,
     AppearanceComponent,
+    ArtifactComponent,
     CharacterStatsComponent,
     CombatRoom,
     DeckComponent,
@@ -411,5 +412,33 @@ class DBGGame(RPGGame):
             stage_entities.append(stage_entity)
 
         return stage_entities
+
+    ###############################################################################################################################################
+    def destroy_orphan_artifact_entities(self) -> List[str]:
+        """销毁持有者已不存在的神器实体（幂等）。
+
+        神器实体的归属由 `ArtifactComponent.holder` 记录。当持有者实体（Stage/Actor）
+        被销毁后，其神器实体成为孤立实体；本方法扫描所有神器实体，销毁 holder 指向的
+        实体已不存在的那些。已销毁的实体不会再出现在查询结果中，因此可重复调用。
+
+        返回被销毁的神器实体名称列表（无孤立实体时为空）。
+        """
+        artifact_entities = self.get_group(
+            Matcher(all_of=[ArtifactComponent])
+        ).entities.copy()
+
+        destroyed_names: List[str] = []
+        for artifact_entity in artifact_entities:
+            holder_name = artifact_entity.get(ArtifactComponent).holder
+            if self.get_entity_by_name(holder_name) is not None:
+                continue
+
+            logger.debug(
+                f"销毁孤立神器实体: {artifact_entity.name}（持有者 {holder_name!r} 已不存在）"
+            )
+            destroyed_names.append(artifact_entity.name)
+            self.destroy_entity(artifact_entity)
+
+        return destroyed_names
 
     ################################################################################################################

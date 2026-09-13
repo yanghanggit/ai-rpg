@@ -1,16 +1,17 @@
-"""场景神器仲裁系统模块。
+"""神器·出牌后仲裁系统模块。
 
-借世界实体「世界.神器仲裁」作为临时 agent（LLM），在一次出牌/消耗品仲裁完成后，
-依本场景神器的修正规则（modifiers）做覆盖式结算：
+神器是独立实体（其 system_message 即人设）。在一次出牌/消耗品仲裁完成后，本系统找出
+当前战斗作用域内（当前舞台 + 场上存活角色所持有）、挂有 PostArbitrationComponent 的神器实体，
+逐一以神器实体自身为 agent，依其人设中的「神器修正规则」做覆盖式结算：
 读取属性 → 判定规则是否触发（如「第 N 回合」）→ 写入 HP → 提交仲裁结果（战斗日志/叙事）。
 
-临时 agent 的对话上下文仅在本次结算过程中累积，结束后不写回宿主世界实体的持久记忆。
-本系统只把「发生了什么」写入场景实体记忆。
+神器作为 agent 会在自身记忆中持续积累每次结算（prompt / 工具轨迹 / 结果）；
+同时把「发生了什么」写入场景实体记忆，并广播本次事件，使场景与场上角色均获得记忆。
 """
 
 import json
 from functools import partial
-from typing import Dict, Final, List, Optional, Tuple, final
+from typing import Dict, Final, List, Optional, final
 
 from loguru import logger
 from overrides import override
@@ -28,16 +29,14 @@ from ..game.dbg_combat_processor import (
 from ..game.dbg_game import DBGGame
 from ..models import (
     AIMessage,
-    Artifact,
     ArtifactComponent,
-    ArtifactTag,
     CharacterStatsComponent,
     CombatArbitrationEvent,
     HumanMessage,
+    IdentityComponent,
     PlayCardsAction,
-    ReliquaryComponent,
+    PostArbitrationComponent,
     UseConsumableItemAction,
-    WorldComponent,
 )
 from ..utils import prompt_builder
 from .arbitration_prompt_builders import (
@@ -50,40 +49,31 @@ from .arbitration_prompt_builders import (
 ###########################################################################################################################################
 # 仲裁提示词构建器
 ###########################################################################################################################################
-def _build_artifact_lines(triggered: List[Tuple[Artifact, str]]) -> str:
-    """把命中当前运行点的神器清单（含来源与携带者）格式化为提示词片段。"""
-    if not triggered:
-        return "无"
-    lines: List[str] = []
-    for artifact, carrier in triggered:
-        source = artifact.source or "未知"
-        lines.append(
-            f"- **{artifact.name}**（来源：{source}；携带者：{carrier}）：{artifact.description}"
-        )
-        for modifier in artifact.modifiers:
-            lines.append(f"  - 修正规则：{modifier}")
-    return "\n".join(lines)
-
-
 @prompt_builder
-def _build_artifact_arbitration_prompt(
+def _build_artifact_post_arbitration_prompt(
+    artifact_name: str,
+    holder_name: str,
     current_round_number: int,
-    triggered: List[Tuple[Artifact, str]],
     party_names: str,
     monster_names: str,
 ) -> str:
-    """构建神器仲裁提示词：回合数/神器修正规则（含来源与携带者）/场上阵营全部注入。"""
-    return f"""# 第 {current_round_number} 回合：场景神器修正结算（工具调用模式）
+    """构建神器仲裁提示词：回合数/神器身份与持有者/场上阵营注入。
 
-你是在一次「战斗结算/消耗品使用结算」之后被临时唤醒的场景神器仲裁者，负责落实本场景神器的修正规则。这些修正规则发生在该次结算之后，属覆盖式修正。
+    神器自身的修正规则已写入其人设（system_message）的「神器修正规则」段，
+    此处只补足本次结算所需的动态上下文。
+    """
+    return f"""# 第 {current_round_number} 回合：神器修正结算（工具调用模式）
+
+你是在一次「战斗结算/消耗品使用结算」之后被唤醒的神器「{artifact_name}」，负责落实你自身人设中的「神器修正规则」。这些修正规则发生在该次结算之后，属覆盖式修正。
 
 ## 当前回合数
 
 第 {current_round_number} 回合
 
-## 当前场景神器
+## 你的身份
 
-{_build_artifact_lines(triggered)}
+- 神器全名：{artifact_name}
+- 持有者：{holder_name}
 
 ## 场上阵营（当前存活）
 
@@ -93,7 +83,7 @@ def _build_artifact_arbitration_prompt(
 ## 结算规则
 
 - 你只能通过下方工具读取/写入数据，禁止引入工具未提供的机制。
-- 严格依据各神器的「修正规则」结算；规则未写明的效果不得凭空添加。
+- 严格依据你人设中「神器修正规则」的语义结算；规则未写明的效果不得凭空添加。
 - 只有当规则的触发条件满足时（例如「第 N 回合」且当前回合数恰为 N）才执行该规则；条件不满足则本回合不产生任何 HP 变更。
 - 对每个受影响角色调用 set_entity_hp 写入最终 HP。
 - 目标 HP = max(0, min(计算后 HP, 最大 HP))。
@@ -101,7 +91,7 @@ def _build_artifact_arbitration_prompt(
 ## 工具使用流程
 
 1. 调用 get_entity_stats 读取所有可能受影响角色的当前属性（可在同一次回复中并发调用多个）。
-2. 依据各神器「修正规则」的触发条件与语义结算，得出每个受影响角色的最终 HP。
+2. 依据「神器修正规则」的触发条件与语义结算，得出每个受影响角色的最终 HP。
 3. 对每个受影响角色调用 set_entity_hp 写入最终 HP（可在同一次回复中并发调用多个）。
 4. 调用 submit_arbitration 提交最终结果，结束本次仲裁。
 
@@ -227,8 +217,8 @@ def _handle_submit_arbitration(
 
 ###########################################################################################################################################
 @final
-class ArtifactArbitrationSystem(ReactiveProcessor):
-    """响应 PlayCardsAction / UseConsumableItemAction 事件，借世界实体「世界.神器仲裁」作为临时 agent 结算神器修正规则。"""
+class ArtifactPostArbitrationSystem(ReactiveProcessor):
+    """响应 PlayCardsAction / UseConsumableItemAction，驱动作用域内命中运行点的神器实体各自完成修正结算。"""
 
     def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
@@ -252,23 +242,22 @@ class ArtifactArbitrationSystem(ReactiveProcessor):
     async def react(self, entities: List[Entity]) -> None:
 
         if not self._game.current_dungeon_combat_room.combat.is_ongoing:
-            logger.debug("ArtifactArbitrationSystem: 战斗未进行中，跳过神器仲裁")
+            logger.debug("ArtifactPostArbitrationSystem: 战斗未进行中，跳过神器仲裁")
             return
 
-        assert (
-            len(entities) == 1
-        ), "ArtifactArbitrationSystem 期望每次仅处理一个动作实体"
-        await self._run_artifact_arbitration(entities[0])
+        # 同一帧可能有多个动作实体命中本运行点；逐个 await，串行结算，避免并发争夺
+        for action_entity in entities:
+            await self._run_artifact_arbitration(action_entity)
 
     #######################################################################################################################################
-    async def _run_artifact_arbitration(self, actor_entity: Entity) -> None:
-        """驱动单次神器修正的完整临时 agent 仲裁流程。"""
+    async def _run_artifact_arbitration(self, action_entity: Entity) -> None:
+        """驱动一次动作后、作用域内所有命中神器的完整临时 agent 仲裁流程。"""
 
         # 场景实体（当前战斗舞台）
-        stage_entity = self._game.resolve_stage_entity(actor_entity)
+        stage_entity = self._game.resolve_stage_entity(action_entity)
         assert (
             stage_entity is not None
-        ), f"ArtifactArbitrationSystem: 无法找到 {actor_entity.name} 所在的场景实体"
+        ), f"ArtifactPostArbitrationSystem: 无法找到 {action_entity.name} 所在的场景实体"
 
         current_round_number = len(
             self._game.current_dungeon_combat_room.combat.rounds or []
@@ -282,35 +271,57 @@ class ArtifactArbitrationSystem(ReactiveProcessor):
         )
         monster_names = "、".join(e.name for e in monsters) if monsters else "无"
 
-        # 收敛作用域：只查当前战斗舞台 + 本场存活角色携带的神器，不跨场景、不跨其角色
-        scoped_entities: List[Entity] = [stage_entity, *party_members, *monsters]
-        triggered: List[Tuple[Artifact, str]] = []
-        for entity in scoped_entities:
-            if not entity.has(ReliquaryComponent):
-                continue
-            comp = entity.get(ReliquaryComponent)
-            for artifact in comp.artifacts:
-                if ArtifactTag.POST_ARBITRATION in artifact.tags:
-                    triggered.append((artifact, entity.name))
+        # 收敛作用域：只取持有者为当前战斗舞台或本场存活角色的神器，不跨场景
+        scoped_holder_names = {
+            stage_entity.name,
+            *(e.name for e in party_members),
+            *(e.name for e in monsters),
+        }
+        artifact_entities: List[Entity] = [
+            entity
+            for entity in self._game.get_group(
+                Matcher(all_of=[ArtifactComponent, PostArbitrationComponent])
+            ).entities
+            if entity.get(ArtifactComponent).holder in scoped_holder_names
+        ]
 
-        if not triggered:
+        if not artifact_entities:
             logger.debug(
-                "ArtifactArbitrationSystem: 当前战斗舞台与参战角色无命中运行点的神器，跳过仲裁"
+                "ArtifactPostArbitrationSystem: 当前战斗舞台与参战角色无命中运行点的神器，跳过仲裁"
             )
             return
 
-        # 宿主：专用的「世界.神器仲裁」世界实体（其 SystemMessage 即临时 agent 的「设定」）
-        arbitrator_entities = self._game.get_group(
-            Matcher(all_of=[WorldComponent, ArtifactComponent])
-        ).entities
-        assert (
-            len(arbitrator_entities) == 1
-        ), f"ArtifactArbitrationSystem: 应恰好存在一个神器仲裁世界实体，实际={len(arbitrator_entities)}"
-        arbitrator_entity = next(iter(arbitrator_entities))
+        # 稳定顺序：按实体创建顺序依次仲裁；逐个结算，后者可读到前者已落库的 HP
+        artifact_entities.sort(
+            key=lambda entity: entity.get(IdentityComponent).creation_order
+        )
 
-        prompt = _build_artifact_arbitration_prompt(
+        for artifact_entity in artifact_entities:
+            await self._run_single_artifact_arbitration(
+                artifact_entity=artifact_entity,
+                stage_entity=stage_entity,
+                current_round_number=current_round_number,
+                party_names=party_names,
+                monster_names=monster_names,
+            )
+
+    #######################################################################################################################################
+    async def _run_single_artifact_arbitration(
+        self,
+        artifact_entity: Entity,
+        stage_entity: Entity,
+        current_round_number: int,
+        party_names: str,
+        monster_names: str,
+    ) -> None:
+        """以单个神器实体为宿主，驱动一次临时 agent 仲裁。"""
+
+        holder_name = artifact_entity.get(ArtifactComponent).holder
+
+        prompt = _build_artifact_post_arbitration_prompt(
+            artifact_name=artifact_entity.name,
+            holder_name=holder_name,
             current_round_number=current_round_number,
-            triggered=triggered,
             party_names=party_names,
             monster_names=monster_names,
         )
@@ -318,15 +329,15 @@ class ArtifactArbitrationSystem(ReactiveProcessor):
         # 仲裁结果容器：handler 通过 partial 绑定写入，避免闭包。
         ctx = _ArbitrationContext()
 
-        # 上下文隔离：仅取世界实体的首条 SystemMessage 作为「设定」，
-        # 传入全新列表（agent_loop 原地追加），结束后不写回宿主实体持久记忆。
-        arbitrator_memory = self._game.get_agent_memory(arbitrator_entity)
-        assert arbitrator_memory.messages, "神器仲裁世界实体缺少首条 SystemMessage"
-        messages = [arbitrator_memory.messages[0]]
+        # 神器自身即 agent：直接使用其真实记忆列表，让本次结算（prompt / 工具轨迹 / 结果）
+        # 完整写入神器实体记忆，供后续运行点继续积累上下文。
+        artifact_memory = self._game.get_agent_memory(artifact_entity)
+        assert artifact_memory.messages, "神器实体缺少首条 SystemMessage"
+        messages = artifact_memory.messages
 
         try:
             ok = await agent_loop(
-                name=arbitrator_entity.name,
+                name=artifact_entity.name,
                 prompt=prompt,
                 messages=messages,
                 tools=[
@@ -344,21 +355,32 @@ class ArtifactArbitrationSystem(ReactiveProcessor):
                 terminal_tools=[SUBMIT_ARBITRATION_TOOL],
             )
         except Exception as e:
-            logger.error(f"[ArtifactArbitrationSystem] agent_loop 异常: {e}")
+            logger.error(
+                f"[ArtifactPostArbitrationSystem] {artifact_entity.name} agent_loop 异常: {e}"
+            )
             return
+
+        # agent_loop 直接追加记忆，绕过 add_ai_message，这里手动同步上下文占比
+        self._game.sync_latest_context_usage_ratio(artifact_entity)
 
         if not ok or ctx.combat_log is None or ctx.narrative is None:
             logger.error(
-                "[ArtifactArbitrationSystem] 神器仲裁未正常完成（未提交结果或达到轮次上限）"
+                f"[ArtifactPostArbitrationSystem] {artifact_entity.name} 未正常完成（未提交结果或达到轮次上限）"
             )
             return
 
         # 应用仲裁结果
-        self._apply_artifact_arbitration_result(stage_entity, ctx, prompt)
+        self._apply_artifact_arbitration_result(
+            artifact_entity=artifact_entity,
+            stage_entity=stage_entity,
+            ctx=ctx,
+            prompt=prompt,
+        )
 
     #######################################################################################################################################
     def _apply_artifact_arbitration_result(
         self,
+        artifact_entity: Entity,
         stage_entity: Entity,
         ctx: _ArbitrationContext,
         prompt: str,
@@ -375,32 +397,37 @@ class ArtifactArbitrationSystem(ReactiveProcessor):
         for entity_name in hp_changes:
             if self._game.get_entity_by_name(entity_name) is None:
                 logger.error(
-                    f"ArtifactArbitrationSystem: hp_changes 中的实体不存在于游戏中: {entity_name}"
+                    f"ArtifactPostArbitrationSystem: hp_changes 中的实体不存在于游戏中: {entity_name}"
                 )
                 return
 
-        # 仅把「发生了什么」记录进场景实体记忆；临时 agent 自身的对话上下文不写回世界实体。
+        # 把本次「发生了什么」写入场景实体记忆，供场景与参战角色通过广播获得记忆；
+        # 同时把结果补写进神器自身记忆（agent_loop 已写入 prompt 与工具轨迹）。
+        result_content = json.dumps(
+            {
+                "combat_log": combat_log,
+                "narrative": narrative,
+            },
+            ensure_ascii=False,
+        )
         self._game.add_human_message(
             entity=stage_entity,
             human_message=HumanMessage(content=prompt),
         )
         self._game.add_ai_message(
             entity=stage_entity,
-            ai_message=AIMessage(
-                content=json.dumps(
-                    {
-                        "combat_log": combat_log,
-                        "narrative": narrative,
-                    },
-                    ensure_ascii=False,
-                )
-            ),
+            ai_message=AIMessage(content=result_content),
+        )
+        self._game.add_ai_message(
+            entity=artifact_entity,
+            ai_message=AIMessage(content=result_content),
         )
 
         # 广播本次神器仲裁结果给场景内角色
         current_round_number = len(
             self._game.current_dungeon_combat_room.combat.rounds or []
         )
+        title = f"神器·{artifact_entity.name}"
         self._game.broadcast_to_stage(
             entity=stage_entity,
             agent_event=CombatArbitrationEvent(
@@ -408,7 +435,7 @@ class ArtifactArbitrationSystem(ReactiveProcessor):
                     combat_log,
                     narrative,
                     current_round_number,
-                    "场景神器仲裁",
+                    title,
                 ),
                 stage=stage_entity.name,
                 combat_log=combat_log,

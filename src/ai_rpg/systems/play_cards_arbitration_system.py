@@ -22,18 +22,18 @@ from ..models import (
     Card,
     CharacterStatsComponent,
     CombatArbitrationEvent,
+    EnvironmentComponent,
     HandComponent,
     HumanMessage,
     PlayCardsAction,
     RoundStatsComponent,
-    StageDescriptionComponent,
     TargetType,
 )
 from ..utils import prompt_builder
 from .arbitration_prompt_builders import (
     CALC_RULES_SECTION,
+    ENVIRONMENT_DESCRIPTION,
     NARRATIVE_DESCRIPTION,
-    STAGE_DESCRIPTION_DESCRIPTION,
     build_arbitration_broadcast,
     build_stats_update_notification,
 )
@@ -111,7 +111,7 @@ def _build_combat_arbitration_tool_prompt(
     card: Card,
     targets: List[str],
     current_round_number: int,
-    current_stage_description: str,
+    current_environment: str,
     action_order: List[str] | None = None,
     completed_actors: List[str] | None = None,
     current_actor: str | None = None,
@@ -140,7 +140,7 @@ def _build_combat_arbitration_tool_prompt(
 
 ## 当前场景环境
 
-{current_stage_description}
+{current_environment}
 
 ## 回合行动信息（背景信息，不改变结算规则）
 
@@ -178,7 +178,7 @@ get_entity_stats 返回的「受击卡牌」仅列出带受击词缀（on_hit_af
 
 {NARRATIVE_DESCRIPTION}
 
-{STAGE_DESCRIPTION_DESCRIPTION}"""
+{ENVIRONMENT_DESCRIPTION}"""
 
 
 @prompt_builder
@@ -251,12 +251,12 @@ SUBMIT_ARBITRATION_TOOL: Final[ToolDefinition] = ToolDefinition(
                     "type": "string",
                     "description": "60-120 字第三人称演出叙事",
                 },
-                "stage_description": {
+                "environment": {
                     "type": "string",
                     "description": "仲裁后的场景环境快照",
                 },
             },
-            "required": ["combat_log", "narrative", "stage_description"],
+            "required": ["combat_log", "narrative", "environment"],
         },
     )
 )
@@ -271,7 +271,7 @@ class _ArbitrationContext(BaseModel):
     hp_changes: Dict[str, int] = Field(default_factory=dict)
     combat_log: Optional[str] = None
     narrative: Optional[str] = None
-    stage_description: Optional[str] = None
+    environment: Optional[str] = None
 
 
 ###########################################################################################################################################
@@ -328,12 +328,12 @@ def _handle_submit_arbitration(
     ctx: _ArbitrationContext,
     combat_log: str,
     narrative: str,
-    stage_description: str,
+    environment: str,
 ) -> str:
     """处理 submit_arbitration 工具调用。"""
     ctx.combat_log = combat_log
     ctx.narrative = narrative
-    ctx.stage_description = stage_description
+    ctx.environment = environment
     return "仲裁结果已提交"
 
 
@@ -399,11 +399,9 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
         round_current_actor = latest_round.current_actor
 
         assert stage_entity.has(
-            StageDescriptionComponent
-        ), "当前场景实体缺少 StageDescriptionComponent 组件！"
-        current_stage_description = stage_entity.get(
-            StageDescriptionComponent
-        ).narrative
+            EnvironmentComponent
+        ), "当前场景实体缺少 EnvironmentComponent 组件！"
+        current_environment = stage_entity.get(EnvironmentComponent).narrative
 
         # 生成工具化仲裁提示消息（完整版，供 LLM 首轮使用）
         message = _build_combat_arbitration_tool_prompt(
@@ -411,7 +409,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             play_cards_action.card,
             play_cards_action.targets,
             current_round_number,
-            current_stage_description,
+            current_environment,
             round_action_order,
             round_completed_actors,
             round_current_actor,
@@ -447,7 +445,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             not ok
             or ctx.combat_log is None
             or ctx.narrative is None
-            or ctx.stage_description is None
+            or ctx.environment is None
         ):
             logger.error(
                 "[PlayCardsArbitrationSystem] 仲裁未正常完成（未提交结果或达到轮次上限）"
@@ -488,10 +486,10 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
 
         assert ctx.combat_log is not None, "combat_log 不应为 None"
         assert ctx.narrative is not None, "narrative 不应为 None"
-        assert ctx.stage_description is not None, "stage_description 不应为 None"
+        assert ctx.environment is not None, "environment 不应为 None"
         combat_log = ctx.combat_log
         narrative = ctx.narrative
-        stage_description = ctx.stage_description
+        environment = ctx.environment
         hp_changes = ctx.hp_changes
 
         # 校验 HP 变更中的实体名称（handler 已校验存在，此处兜底防御）
@@ -503,11 +501,11 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                 return
 
         # 仲裁者（combat stage）更新自身场景环境快照
-        if stage_description.strip():
+        if environment.strip():
             stage_entity.replace(
-                StageDescriptionComponent,
+                EnvironmentComponent,
                 stage_entity.name,
-                stage_description,
+                environment,
             )
 
         # agent_loop 已原地写入完整提示词与工具调用轨迹，这里仅补记干净的结构化结果。
@@ -518,7 +516,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                     {
                         "combat_log": combat_log,
                         "narrative": narrative,
-                        "stage_description": stage_description,
+                        "environment": environment,
                     },
                     ensure_ascii=False,
                 )

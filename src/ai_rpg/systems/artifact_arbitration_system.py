@@ -5,7 +5,7 @@
 读取属性 → 判定规则是否触发（如「第 N 回合」）→ 写入 HP → 提交仲裁结果（战斗日志/叙事）。
 
 临时 agent 的对话上下文仅在本次结算过程中累积，结束后不写回宿主世界实体的持久记忆。
-注意：本系统借用世界实体作为临时 agent，不直接改写场景的环境快照（StageDescriptionComponent）；
+注意：本系统借用世界实体作为临时 agent，不直接改写场景的环境快照（EnvironmentComponent）；
 仅把「发生了什么」写入场景实体记忆，由场景自身后续推理更新。
 """
 
@@ -31,13 +31,13 @@ from ..models import (
     AIMessage,
     Artifact,
     ArtifactComponent,
-    ReliquaryComponent,
     ArtifactTag,
     CharacterStatsComponent,
     CombatArbitrationEvent,
+    EnvironmentComponent,
     HumanMessage,
     PlayCardsAction,
-    StageDescriptionComponent,
+    ReliquaryComponent,
     UseConsumableItemAction,
     WorldComponent,
 )
@@ -73,7 +73,7 @@ def _build_artifact_arbitration_prompt(
     triggered: List[Tuple[Artifact, str]],
     party_names: str,
     monster_names: str,
-    current_stage_description: str,
+    current_environment: str,
 ) -> str:
     """构建神器仲裁提示词：回合数/神器修正规则（含来源与携带者）/场上阵营/场景环境全部注入。"""
     return f"""# 第 {current_round_number} 回合：场景神器修正结算（工具调用模式）
@@ -95,7 +95,7 @@ def _build_artifact_arbitration_prompt(
 
 ## 当前场景环境
 
-{current_stage_description}
+{current_environment}
 
 ## 结算规则
 
@@ -277,11 +277,9 @@ class ArtifactArbitrationSystem(ReactiveProcessor):
             stage_entity is not None
         ), f"ArtifactArbitrationSystem: 无法找到 {actor_entity.name} 所在的场景实体"
         assert stage_entity.has(
-            StageDescriptionComponent
-        ), "当前场景实体缺少 StageDescriptionComponent 组件！"
-        current_stage_description = stage_entity.get(
-            StageDescriptionComponent
-        ).narrative
+            EnvironmentComponent
+        ), "当前场景实体缺少 EnvironmentComponent 组件！"
+        current_environment = stage_entity.get(EnvironmentComponent).narrative
 
         current_round_number = len(
             self._game.current_dungeon_combat_room.combat.rounds or []
@@ -326,7 +324,7 @@ class ArtifactArbitrationSystem(ReactiveProcessor):
             triggered=triggered,
             party_names=party_names,
             monster_names=monster_names,
-            current_stage_description=current_stage_description,
+            current_environment=current_environment,
         )
 
         # 仲裁结果容器：handler 通过 partial 绑定写入，避免闭包。
@@ -394,7 +392,7 @@ class ArtifactArbitrationSystem(ReactiveProcessor):
                 return
 
         # 仅把「发生了什么」记录进场景实体记忆（供场景后续推理更新自身环境快照），
-        # 临时 agent 自身的对话上下文不写回世界实体。本系统不改写 StageDescriptionComponent。
+        # 临时 agent 自身的对话上下文不写回世界实体。本系统不改写 EnvironmentComponent。
         self._game.add_human_message(
             entity=stage_entity,
             human_message=HumanMessage(content=prompt),

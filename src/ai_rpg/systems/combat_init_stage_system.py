@@ -5,12 +5,12 @@ from typing import Final, List, final, override
 from loguru import logger
 
 from ..entitas import ExecuteProcessor
-from ..game.dbg_game import DBGGame
 from ..game.dbg_combat_processor import (
     get_alive_monsters_in_stage,
     get_alive_party_members_in_stage,
 )
-from ..models import StageDescriptionComponent
+from ..game.dbg_game import DBGGame
+from ..models import EnvironmentComponent
 from ..models.messages import AIMessage, HumanMessage
 from ..utils import prompt_builder
 
@@ -18,7 +18,7 @@ from ..utils import prompt_builder
 ###################################################################################################################################################################
 @prompt_builder
 def _build_stage_combat_state_prompt(
-    stage_description: str,
+    environment: str,
     party_names: List[str],
     monster_names: List[str],
 ) -> str:
@@ -29,7 +29,7 @@ def _build_stage_combat_state_prompt(
 
 ## 场景环境
 
-{stage_description}
+{environment}
 
 ## 场上阵营
 
@@ -65,11 +65,11 @@ class CombatInitStageSystem(ExecuteProcessor):
         current_stage_entity = self._game.resolve_stage_entity(player_entity)
         assert current_stage_entity is not None, "无法找到当前场景实体！"
         assert current_stage_entity.has(
-            StageDescriptionComponent
-        ), "当前场景实体缺少 StageDescriptionComponent 组件！"
+            EnvironmentComponent
+        ), "当前场景实体缺少 EnvironmentComponent 组件！"
 
         # 向场景实体注入当前战斗场景状态（谁在场上、阵营分别是什么），供后续仲裁阶段作为上下文
-        stage_description_comp = current_stage_entity.get(StageDescriptionComponent)
+        environment_comp = current_stage_entity.get(EnvironmentComponent)
         party_members = get_alive_party_members_in_stage(
             current_stage_entity, self._game
         )
@@ -79,7 +79,7 @@ class CombatInitStageSystem(ExecuteProcessor):
             current_stage_entity,
             HumanMessage(
                 content=_build_stage_combat_state_prompt(
-                    stage_description=stage_description_comp.narrative,
+                    environment=environment_comp.narrative,
                     party_names=[e.name for e in party_members],
                     monster_names=[e.name for e in monsters],
                 )

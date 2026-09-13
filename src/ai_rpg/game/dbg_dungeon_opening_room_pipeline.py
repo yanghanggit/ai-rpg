@@ -17,21 +17,20 @@ def create_dungeon_opening_room_pipeline(
         AppearanceInitializationSystem,
     )
     from ..systems.context_compaction_system import ContextCompactionSystem
+    from ..systems.deck_initialization_system import DeckInitializationSystem
     from ..systems.destroy_entity_system import DestroyEntitySystem
-    from ..systems.opening_init_actor_system import OpeningInitActorSystem
+    from ..systems.environment_initialization_system import (
+        EnvironmentInitializationSystem,
+    )
     from ..systems.epilogue_system import EpilogueSystem
-
     from ..systems.generate_card_pool_action_system import (
         GenerateCardPoolActionSystem,
     )
+    from ..systems.opening_init_actor_system import OpeningInitActorSystem
     from ..systems.pick_card_action_system import (
         PickCardActionSystem,
     )
-    from ..systems.deck_initialization_system import DeckInitializationSystem
     from ..systems.prologue_system import PrologueSystem
-    from ..systems.stage_description_system import (
-        StageDescriptionSystem,
-    )
     from .dbg_game import DBGGame
 
     dbg_game = cast(DBGGame, game)
@@ -43,8 +42,8 @@ def create_dungeon_opening_room_pipeline(
     # 角色外观生成系统
     processors.add(AppearanceInitializationSystem(dbg_game))
 
-    # 开场场景描述系统
-    processors.add(StageDescriptionSystem(dbg_game))
+    # 开场环境初始化系统
+    processors.add(EnvironmentInitializationSystem(dbg_game))
 
     # 开场初始化系统（角色侧）：为开场场景内的队伍成员注入场景环境信息
     processors.add(OpeningInitActorSystem(dbg_game))

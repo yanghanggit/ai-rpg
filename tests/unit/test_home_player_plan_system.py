@@ -16,14 +16,13 @@ from src.ai_rpg.entitas.entity import Entity
 from src.ai_rpg.game.dbg_game import DBGGame
 from src.ai_rpg.models import (
     ActorComponent,
+    EnvironmentComponent,
     NPCComponent,
     PlanAction,
     PlayerComponent,
     SpeakAction,
-    StageDescriptionComponent,
 )
 from src.ai_rpg.systems.home_player_plan_system import HomePlayerPlanSystem
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -52,7 +51,7 @@ def _make_npc(context: Context, name: str = "角色.NPC_A") -> Entity:
 def _stub_scene(context: Context, mock_game: MagicMock) -> None:
     stage = context.create_entity()
     stage._name = "场景.石台广场"
-    stage.add(StageDescriptionComponent, stage.name, "石台广场")
+    stage.add(EnvironmentComponent, stage.name, "石台广场")
     mock_game.resolve_stage_entity.return_value = stage
     mock_game.get_actors_in_stage.return_value = set()
     mock_game.get_group.return_value.entities.copy.return_value = set()

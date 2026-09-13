@@ -2,7 +2,7 @@
 
 借世界实体「世界.消耗品仲裁」作为临时 agent（LLM），在工具边界内结算消耗品使用效果：
 读取属性 → 依效果提示词结算 → 写入 HP → 提交仲裁结果（战斗日志/叙事）。
-注意：本系统借用世界实体作为临时 agent，不直接改写场景的环境快照（StageDescriptionComponent）；
+注意：本系统借用世界实体作为临时 agent，不直接改写场景的环境快照（EnvironmentComponent）；
 仅把「发生了什么」写入场景实体记忆，由场景自身后续推理更新。
 
 临时 agent 的对话上下文仅在本次结算过程中累积，结束后不写回宿主世界实体的持久记忆。
@@ -31,8 +31,8 @@ from ..models import (
     CombatArbitrationEvent,
     ConsumableComponent,
     ConsumableItem,
+    EnvironmentComponent,
     HumanMessage,
-    StageDescriptionComponent,
     UseConsumableItemAction,
     WorldComponent,
 )
@@ -54,7 +54,7 @@ def _build_consumable_arbitration_prompt(
     item: ConsumableItem,
     targets: List[str],
     current_round_number: int,
-    current_stage_description: str,
+    current_environment: str,
     stage_actor_names: List[str],
 ) -> str:
     """构建消耗品仲裁提示词：发起人/目标/场景描述/场景内参与人员/效果提示词全部注入。"""
@@ -88,7 +88,7 @@ def _build_consumable_arbitration_prompt(
 
 ## 当前场景环境
 
-{current_stage_description}
+{current_environment}
 
 ## 结算规则
 
@@ -278,11 +278,9 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             stage_entity is not None
         ), f"UseConsumableItemArbitrationSystem: 无法找到 {actor_entity.name} 所在的场景实体"
         assert stage_entity.has(
-            StageDescriptionComponent
-        ), "当前场景实体缺少 StageDescriptionComponent 组件！"
-        current_stage_description = stage_entity.get(
-            StageDescriptionComponent
-        ).narrative
+            EnvironmentComponent
+        ), "当前场景实体缺少 EnvironmentComponent 组件！"
+        current_environment = stage_entity.get(EnvironmentComponent).narrative
 
         current_round_number = len(
             self._game.current_dungeon_combat_room.combat.rounds or []
@@ -298,7 +296,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             item=action.item,
             targets=action.targets,
             current_round_number=current_round_number,
-            current_stage_description=current_stage_description,
+            current_environment=current_environment,
             stage_actor_names=stage_actor_names,
         )
 
@@ -382,7 +380,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                 return
 
         # 仅把「发生了什么」记录进场景实体记忆（供场景后续推理更新自身环境快照），
-        # 临时 agent 自身的对话上下文不写回世界实体。本系统不改写 StageDescriptionComponent。
+        # 临时 agent 自身的对话上下文不写回世界实体。本系统不改写 EnvironmentComponent。
         self._game.add_human_message(
             entity=stage_entity,
             human_message=HumanMessage(content=prompt),

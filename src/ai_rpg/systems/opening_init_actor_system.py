@@ -15,10 +15,10 @@ from ..models import (
     AppearanceComponent,
     CharacterStats,
     DeckComponent,
+    EnvironmentComponent,
     InitializeDeckAction,
     MonsterComponent,
     PartyMemberComponent,
-    StageDescriptionComponent,
 )
 from ..models.messages import AIMessage, HumanMessage
 from ..utils import prompt_builder
@@ -52,7 +52,7 @@ def _build_other_actors_info(other_actors_info: List[OtherActorInfo]) -> str:
 @prompt_builder
 def _build_opening_init_prompt(
     stage_name: str,
-    stage_description: str,
+    environment: str,
     other_actors_info: List[OtherActorInfo],
     actor_stats: CharacterStats,
 ) -> str:
@@ -63,7 +63,7 @@ def _build_opening_init_prompt(
 
 ## 场景叙事
 
-{stage_name} ｜ {stage_description}
+{stage_name} ｜ {environment}
 
 ## 其余角色
 
@@ -107,11 +107,11 @@ class OpeningInitActorSystem(ExecuteProcessor):
         current_stage_entity = self._game.resolve_stage_entity(player_entity)
         assert current_stage_entity is not None, "无法找到当前场景实体！"
         assert current_stage_entity.has(
-            StageDescriptionComponent
-        ), "当前场景实体缺少 StageDescriptionComponent 组件！"
+            EnvironmentComponent
+        ), "当前场景实体缺少 EnvironmentComponent 组件！"
 
         # 获取场景环境组件
-        stage_description_comp = current_stage_entity.get(StageDescriptionComponent)
+        environment_comp = current_stage_entity.get(EnvironmentComponent)
 
         # 开场场景内仅有队伍成员（怪物分散在各战斗房间，不在此处注入场景环境信息）
         actor_entities = get_alive_actors_in_stage(self._game, player_entity)
@@ -121,7 +121,7 @@ class OpeningInitActorSystem(ExecuteProcessor):
         self._inject_opening_scene_environment(
             actor_entities=actor_entities,
             stage_name=current_stage_entity.name,
-            stage_description=stage_description_comp.narrative,
+            environment=environment_comp.narrative,
         )
 
         # 为队伍成员触发牌库初始化（精确控制触发对象）
@@ -136,7 +136,7 @@ class OpeningInitActorSystem(ExecuteProcessor):
         self,
         actor_entities: Set[Entity],
         stage_name: str,
-        stage_description: str,
+        environment: str,
     ) -> None:
         """为所有开场场景内的角色注入场景环境信息（human message + 模拟 AI 回应），无 LLM 调用。"""
 
@@ -193,7 +193,7 @@ class OpeningInitActorSystem(ExecuteProcessor):
             # 生成开场场景环境提示词
             opening_init_prompt = _build_opening_init_prompt(
                 stage_name=stage_name,
-                stage_description=stage_description,
+                environment=environment,
                 other_actors_info=other_actors_info,
                 actor_stats=actor_stats,
             )

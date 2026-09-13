@@ -1,29 +1,31 @@
 """战斗初始化系统（角色侧）：战斗触发后，为参战角色初始化临时牌堆、注入战场环境并触发初始牌库生成。"""
 
 from dataclasses import dataclass
-from typing import Final, List, final, override, Set
-from ..models.messages import AIMessage, HumanMessage
+from typing import Final, List, Set, final, override
+
 from loguru import logger
-from ..entitas import ExecuteProcessor, Entity
-from ..game.dbg_game import DBGGame
-from ..utils import prompt_builder
+
+from ..entitas import Entity, ExecuteProcessor
 from ..game.dbg_combat_processor import (
     compute_character_stats,
     get_alive_actors_in_stage,
 )
+from ..game.dbg_game import DBGGame
 from ..models import (
+    AppearanceComponent,
+    CharacterStats,
+    DeckComponent,
+    DiscardPileComponent,
+    DrawPileComponent,
+    EnvironmentComponent,
+    ExhaustPileComponent,
     FillDrawPileAction,
     InitializeDeckAction,
-    StageDescriptionComponent,
-    DrawPileComponent,
-    DiscardPileComponent,
-    ExhaustPileComponent,
-    CharacterStats,
-    AppearanceComponent,
     MonsterComponent,
     PartyMemberComponent,
-    DeckComponent,
 )
+from ..models.messages import AIMessage, HumanMessage
+from ..utils import prompt_builder
 
 
 ###################################################################################################################################################################
@@ -54,7 +56,7 @@ def _build_other_actors_info(other_actors_info: List[OtherActorInfo]) -> str:
 @prompt_builder
 def _build_combat_init_prompt(
     stage_name: str,
-    stage_description: str,
+    environment: str,
     other_actors_info: List[OtherActorInfo],
     actor_stats: CharacterStats,
 ) -> str:
@@ -65,7 +67,7 @@ def _build_combat_init_prompt(
 
 ## 场景叙事
 
-{stage_name} ｜ {stage_description}
+{stage_name} ｜ {environment}
 
 ## 其余角色
 
@@ -109,11 +111,11 @@ class CombatInitActorSystem(ExecuteProcessor):
         current_stage_entity = self._game.resolve_stage_entity(player_entity)
         assert current_stage_entity is not None, "无法找到当前场景实体！"
         assert current_stage_entity.has(
-            StageDescriptionComponent
-        ), "当前场景实体缺少 StageDescriptionComponent 组件！"
+            EnvironmentComponent
+        ), "当前场景实体缺少 EnvironmentComponent 组件！"
 
         # 获取场景环境组件
-        stage_description_comp = current_stage_entity.get(StageDescriptionComponent)
+        environment_comp = current_stage_entity.get(EnvironmentComponent)
 
         # 参与战斗的角色实体列表
         actor_entities = get_alive_actors_in_stage(self._game, player_entity)
@@ -126,7 +128,7 @@ class CombatInitActorSystem(ExecuteProcessor):
         self._inject_combat_environment(
             actor_entities=actor_entities,
             stage_name=current_stage_entity.name,
-            stage_description=stage_description_comp.narrative,
+            environment=environment_comp.narrative,
         )
 
         # 所有参战角色都需要填充抽牌堆（从 DeckComponent 洗牌填入 DrawPileComponent）
@@ -185,7 +187,7 @@ class CombatInitActorSystem(ExecuteProcessor):
         self,
         actor_entities: Set[Entity],
         stage_name: str,
-        stage_description: str,
+        environment: str,
     ) -> None:
         """为所有参战角色注入战场环境信息（human message + 模拟 AI 回应），无 LLM 调用。"""
 
@@ -229,7 +231,7 @@ class CombatInitActorSystem(ExecuteProcessor):
             # 生成战场环境提示词
             combat_init_prompt = _build_combat_init_prompt(
                 stage_name=stage_name,
-                stage_description=stage_description,
+                environment=environment,
                 other_actors_info=other_actors_info,
                 actor_stats=actor_stats,
             )

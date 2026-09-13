@@ -16,11 +16,11 @@ from src.ai_rpg.entitas.entity import Entity
 from src.ai_rpg.game.dbg_game import DBGGame
 from src.ai_rpg.models import (
     ActorComponent,
+    EnvironmentComponent,
     NPCComponent,
     PlanAction,
     PlayerComponent,
     SpeakAction,
-    StageDescriptionComponent,
     TransStageAction,
     WhisperAction,
 )
@@ -160,7 +160,7 @@ class TestReact:
         """2 个 NPC 传入 → 生成 2 个 agent_loop 任务；每个提交结果都被应用一次。"""
         stage = context.create_entity()
         stage._name = "场景.石台广场"
-        stage.add(StageDescriptionComponent, stage.name, "石台广场")
+        stage.add(EnvironmentComponent, stage.name, "石台广场")
         mock_game.resolve_stage_entity.return_value = stage
         mock_game.get_group.return_value.entities.copy.return_value = set()
         mock_game.get_agent_memory.return_value = MagicMock(messages=[])

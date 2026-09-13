@@ -1,5 +1,7 @@
 """CombatInitActorSystem 单元测试。"""
 
+from unittest.mock import MagicMock
+
 import pytest
 
 from src.ai_rpg.entitas.context import Context
@@ -15,14 +17,12 @@ from src.ai_rpg.models import (
     MonsterComponent,
     PartyMemberComponent,
 )
-from unittest.mock import MagicMock
 from src.ai_rpg.models.character_stats import CharacterStats
 from src.ai_rpg.systems.combat_init_actor_system import (
     CombatInitActorSystem,
     OtherActorInfo,
     _build_other_actors_info,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -95,7 +95,7 @@ def test_format_other_actors_info_contains_name_camp_appearance() -> None:
 #     stats = CharacterStats(hp=8, max_hp=20, attack=6, defense=4)
 #     result = _build_combat_init_prompt(
 #         stage_name="副本一层",
-#         stage_description="阴暗潮湿的石室",
+#         environment="阴暗潮湿的石室",
 #         other_actors_info=[],
 #         actor_stats=stats,
 #     )

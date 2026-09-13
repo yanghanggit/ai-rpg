@@ -5,11 +5,11 @@ from typing import List, Optional, Tuple
 from loguru import logger
 
 from ..models import (
-    SpoilsComponent,
     DeckComponent,
+    EnvironmentComponent,
     InventoryComponent,
     OpeningRoom,
-    StageDescriptionComponent,
+    SpoilsComponent,
 )
 from .server_client import (
     TaskFailedError,
@@ -84,8 +84,8 @@ async def build_opening_info_text(
         for entity in entities_resp.entities:
             if entity.name == stage_name:
                 for comp in entity.components:
-                    if comp.name == StageDescriptionComponent.__name__:
-                        narrative = StageDescriptionComponent(**comp.data).narrative
+                    if comp.name == EnvironmentComponent.__name__:
+                        narrative = EnvironmentComponent(**comp.data).narrative
                         break
         lines.append("")
         lines.append(

@@ -4,7 +4,7 @@ from typing import List, Optional
 
 from loguru import logger
 
-from ..models import AppearanceComponent, StageDescriptionComponent
+from ..models import AppearanceComponent, EnvironmentComponent
 from .server_client import fetch_entities_details, fetch_stages_state
 from .utils import display_name
 
@@ -56,8 +56,8 @@ async def build_stage_view_text(
 
     narrative: Optional[str] = None
     for comp in components_by_entity.get(stage_name, []):
-        if comp.name == StageDescriptionComponent.__name__:
-            narrative = StageDescriptionComponent(**comp.data).narrative
+        if comp.name == EnvironmentComponent.__name__:
+            narrative = EnvironmentComponent(**comp.data).narrative
             break
     lines.append(f"  {narrative}" if narrative else "  [dim]（该场景暂无描述）[/]")
 

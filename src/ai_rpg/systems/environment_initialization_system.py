@@ -8,8 +8,8 @@ from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.dbg_game import DBGGame
 from ..game.rpg_actor_appearances import get_actor_appearances_in_stage
 from ..models import (
+    EnvironmentComponent,
     StageComponent,
-    StageDescriptionComponent,
 )
 from ..models.messages import HumanMessage
 from ..utils import (
@@ -19,10 +19,10 @@ from ..utils import (
 
 #######################################################################################################################################
 @prompt_builder
-def _build_condensed_stage_description_prompt(
+def _build_condensed_environment_prompt(
     actor_appearances_in_stage: Dict[str, str],
 ) -> str:
-    """生成精简版场景描述提示词（仅角色外观动态感知，省略静态输出格式与约束规则）"""
+    """生成精简版环境叙事提示词（仅角色外观动态感知，省略静态输出格式与约束规则）"""
 
     actor_appearances_in_stage_info = []
     for actor_name, appearance in actor_appearances_in_stage.items():
@@ -31,7 +31,7 @@ def _build_condensed_stage_description_prompt(
     if len(actor_appearances_in_stage_info) == 0:
         actor_appearances_in_stage_info.append("无")
 
-    return f"""# 请你输出你的场景描述。
+    return f"""# 请你输出你的环境描述。
 
 ## 场景内角色外观（用于推断环境影响）
 
@@ -42,10 +42,10 @@ def _build_condensed_stage_description_prompt(
 
 #######################################################################################################################################
 @prompt_builder
-def _build_stage_description_prompt(
+def _build_environment_prompt(
     actor_appearances_in_stage: Dict[str, str],
 ) -> str:
-    """为场景描述请求构建 prompt。"""
+    """为环境叙事请求构建 prompt。"""
 
     # 构建角色外观信息列表，若无角色则注明“无”以避免 AI 误以为输入遗漏导致解析错误
     actor_appearances_in_stage_info = []
@@ -56,7 +56,7 @@ def _build_stage_description_prompt(
     if len(actor_appearances_in_stage_info) == 0:
         actor_appearances_in_stage_info.append("无")
 
-    return f"""# 请你输出你的场景描述。
+    return f"""# 请你输出你的环境描述。
 
 ## 场景内角色外观（用于推断环境影响）
 
@@ -66,7 +66,7 @@ def _build_stage_description_prompt(
 
 **约束规则**：
 
-- 若角色外观会对环境产生直接影响（例如：持火把者照亮黑暗空间、发光生物映亮洞壁），须将该**环境影响效果**纳入场景描述
+- 若角色外观会对环境产生直接影响（例如：持火把者照亮黑暗空间、发光生物映亮洞壁），须将该**环境影响效果**纳入环境描述
 - 无论角色是否对环境产生影响，最终描述中均**不得提及**任何角色本身（不得出现角色名称、角色形态或角色行为）
 - 所有输出必须为第三人称视角
 - 直接输出一段纯文本的环境描述，不要使用 JSON 或 Markdown 标记"""
@@ -74,8 +74,8 @@ def _build_stage_description_prompt(
 
 #######################################################################################################################################
 @final
-class StageDescriptionSystem(ExecuteProcessor):
-    """为场景实体生成环境描述，写入 StageDescriptionComponent.narrative。"""
+class EnvironmentInitializationSystem(ExecuteProcessor):
+    """为场景实体生成环境描述，写入 EnvironmentComponent.narrative。"""
 
     def __init__(
         self,
@@ -89,9 +89,9 @@ class StageDescriptionSystem(ExecuteProcessor):
     @override
     async def execute(self) -> None:
 
-        # 获取所有场景实体（StageComponent）且尚未生成环境描述（StageDescriptionComponent）的实体
+        # 获取所有场景实体（StageComponent）且尚未生成环境描述（EnvironmentComponent）的实体
         stage_entities = self._game.get_group(
-            Matcher(all_of=[StageComponent], none_of=[StageDescriptionComponent])
+            Matcher(all_of=[StageComponent], none_of=[EnvironmentComponent])
         ).entities.copy()
 
         # 若没有需要生成环境描述的场景实体，则直接返回
@@ -102,9 +102,9 @@ class StageDescriptionSystem(ExecuteProcessor):
         # 批量发送请求给 AI，等待所有响应完成
         await batch_chat(clients=chat_clients)
 
-        # 处理每个场景实体的 AI 响应，更新 StageDescriptionComponent 并存入对话历史
+        # 处理每个场景实体的 AI 响应，更新 EnvironmentComponent 并存入对话历史
         for chat_client in chat_clients:
-            self._process_stage_description_response(
+            self._process_environment_response(
                 chat_client,
             )
 
@@ -118,9 +118,9 @@ class StageDescriptionSystem(ExecuteProcessor):
 
         return DeepSeekClient(
             name=stage_entity.name,
-            full_prompt=_build_stage_description_prompt(actor_appearances),
+            full_prompt=_build_environment_prompt(actor_appearances),
             condensed_prompt=(
-                _build_condensed_stage_description_prompt(actor_appearances)
+                _build_condensed_environment_prompt(actor_appearances)
                 if self._use_condensed_prompt
                 else None
             ),
@@ -128,16 +128,16 @@ class StageDescriptionSystem(ExecuteProcessor):
         )
 
     #######################################################################################################################################
-    def _process_stage_description_response(
+    def _process_environment_response(
         self,
         chat_client: DeepSeekClient,
     ) -> bool:
-        """解析 AI 响应，更新 StageDescriptionComponent 并存入对话历史。"""
+        """解析 AI 响应，更新 EnvironmentComponent 并存入对话历史。"""
 
         # 如果 AI 响应为空，则记录警告并返回 False。
         if chat_client.response_ai_message is None:
             logger.warning(
-                f"StageDescriptionSystem: AI 响应为空，name={chat_client.name}"
+                f"EnvironmentInitializationSystem: AI 响应为空，name={chat_client.name}"
             )
             return False
 
@@ -146,11 +146,11 @@ class StageDescriptionSystem(ExecuteProcessor):
             stage_entity is not None
         ), f"stage_entity is None, name={chat_client.name}"
 
-        # 直接取 LLM 返回的纯文本作为场景描述（去除首尾空白）。
+        # 直接取 LLM 返回的纯文本作为环境描述（去除首尾空白）。
         description = chat_client.response_content.strip()
         if not description:
             logger.warning(
-                f"StageDescriptionSystem: AI 返回空文本，name={chat_client.name}"
+                f"EnvironmentInitializationSystem: AI 返回空文本，name={chat_client.name}"
             )
             return False
 
@@ -162,7 +162,7 @@ class StageDescriptionSystem(ExecuteProcessor):
                 stage_entity,
                 HumanMessage(
                     content=chat_client.condensed_prompt,
-                    stage_description_full_prompt=chat_client.full_prompt,
+                    environment_full_prompt=chat_client.full_prompt,
                 ),
             )
         else:
@@ -175,9 +175,9 @@ class StageDescriptionSystem(ExecuteProcessor):
         # 添加消息。
         self._game.add_ai_message(stage_entity, chat_client.response_ai_message)
 
-        # 更新环境描写
+        # 更新环境叙事
         stage_entity.replace(
-            StageDescriptionComponent,
+            EnvironmentComponent,
             stage_entity.name,
             description,
         )

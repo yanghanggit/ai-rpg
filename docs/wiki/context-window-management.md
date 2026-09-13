@@ -8,7 +8,7 @@
 
 `DeepSeekClient` 同时持有「发送给 LLM 的完整提示词」与「写入记忆的精简提示词」两个版本：上行请求用完整版，写回记忆用精简版，从而让后续轮次不再携带完整提示词；完整版仅作为消息附加字段留痕。
 
-当前消费方是 `StageDescriptionSystem`（场景描述）与 `MonsterPrePlaySystem`（怪物出牌决策），二者都在批量调用后把精简版写入各自 agent 记忆。
+当前消费方是 `EnvironmentInitializationSystem`（环境叙事）与 `MonsterPrePlaySystem`（怪物出牌决策），二者都在批量调用后把精简版写入各自 agent 记忆。
 
 ## 战斗记忆归档
 

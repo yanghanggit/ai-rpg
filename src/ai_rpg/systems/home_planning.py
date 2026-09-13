@@ -10,7 +10,7 @@ from ..deepseek import ToolDefinition, ToolFunction
 from ..entitas import Entity, Matcher
 from ..game import DBGGame
 from ..game.rpg_actor_appearances import get_actor_appearances_in_stage
-from ..models import HomeComponent, StageDescriptionComponent
+from ..models import EnvironmentComponent, HomeComponent
 from ..utils import prompt_builder
 from .knowledge_query import search_knowledge_base
 
@@ -155,13 +155,11 @@ def build_planning_context(game: DBGGame, entity: Entity) -> PlanningContext:
 
     current_stage = game.resolve_stage_entity(entity)
     assert current_stage is not None, "当前角色所在的场景不存在"
-    assert current_stage.has(
-        StageDescriptionComponent
-    ), "场景缺少 StageDescriptionComponent"
+    assert current_stage.has(EnvironmentComponent), "场景缺少 EnvironmentComponent"
 
     other_actors_appearances = get_other_actors_appearances(game, entity, current_stage)
     available_home_stages = get_available_home_stages(game, entity, current_stage)
-    stage_narrative = current_stage.get(StageDescriptionComponent).narrative
+    stage_narrative = current_stage.get(EnvironmentComponent).narrative
     available_stage_names = sorted(e.name for e in available_home_stages)
 
     return PlanningContext(

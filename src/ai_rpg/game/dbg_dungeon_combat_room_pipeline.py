@@ -1,6 +1,7 @@
 """地牢战斗场景流程管道工厂模块。"""
 
 from typing import cast
+
 from .base_game import BaseGame
 from .rpg_game_pipeline_manager import RPGGameProcessPipeline
 
@@ -11,71 +12,66 @@ def create_dungeon_combat_room_pipeline(
     """创建地牢战斗场景的流程管道"""
 
     ### 不这样就循环引用
-    from .dbg_game import DBGGame
-    from ..systems.combat_outcome_system import CombatOutcomeSystem
-    from ..systems.combat_init_actor_system import CombatInitActorSystem
-    from ..systems.combat_init_stage_system import CombatInitStageSystem
-
+    from ..systems.action_cleanup_system import ActionCleanupSystem
     from ..systems.appearance_initialization_system import (
         AppearanceInitializationSystem,
     )
-    from ..systems.context_compaction_system import ContextCompactionSystem
-    from ..systems.destroy_entity_system import DestroyEntitySystem
-    from ..systems.draw_cards_action_system import (
-        DrawCardsActionSystem,
-    )
-    from ..systems.play_cards_action_system import (
-        PlayCardsActionSystem,
-    )
-    from ..systems.transfer_cards_action_system import (
-        TransferCardsActionSystem,
-    )
-    from ..systems.use_consumable_item_action_system import (
-        UseConsumableItemActionSystem,
-    )
-    from ..systems.equip_gear_item_action_system import (
-        EquipGearItemActionSystem,
-    )
-
-    from ..systems.exhaust_cards_action_system import ExhaustCardsActionSystem
-    from ..systems.exhaust_ethereal_cards_system import ExhaustEtherealCardsSystem
-    from ..systems.discard_cards_action_system import DiscardCardsActionSystem
-    from ..systems.pass_turn_action_system import PassTurnActionSystem
-    from ..systems.retreat_action_system import RetreatActionSystem
-    from ..systems.action_cleanup_system import ActionCleanupSystem
-    from ..systems.epilogue_system import EpilogueSystem
-    from ..systems.prologue_system import PrologueSystem
-
-    from ..systems.play_cards_arbitration_system import PlayCardsArbitrationSystem
-    from ..systems.use_consumable_item_arbitration_system import (
-        UseConsumableItemArbitrationSystem,
-    )
     from ..systems.artifact_arbitration_system import ArtifactArbitrationSystem
-    from ..systems.turn_end_arbitration_system import TurnEndArbitrationSystem
-
+    from ..systems.combat_init_actor_system import CombatInitActorSystem
+    from ..systems.combat_init_stage_system import CombatInitStageSystem
+    from ..systems.combat_loot_system import CombatLootSystem
+    from ..systems.combat_outcome_system import CombatOutcomeSystem
+    from ..systems.combat_pile_teardown_system import CombatPileTeardownSystem
     from ..systems.combat_post_combat_transition_system import (
         CombatPostCombatTransitionSystem,
     )
-    from ..systems.combat_loot_system import CombatLootSystem
-    from ..systems.fill_draw_pile_system import FillDrawPileSystem
-
-    from ..systems.deck_initialization_system import DeckInitializationSystem
-    from ..systems.combat_pile_teardown_system import CombatPileTeardownSystem
-    from ..systems.stage_description_system import (
-        StageDescriptionSystem,
-    )
     from ..systems.combat_round_cleanup_system import CombatRoundCleanupSystem
-    from ..systems.death_system import DeathSystem
-    from ..systems.pre_combat_outcome_system import PreCombatOutcomeSystem
-    from ..systems.combat_round_start_system import (
-        CombatRoundStartSystem,
-        ActionOrderStrategy,
-    )
     from ..systems.combat_round_completion_system import CombatRoundCompletionSystem
+    from ..systems.combat_round_start_system import (
+        ActionOrderStrategy,
+        CombatRoundStartSystem,
+    )
+    from ..systems.context_compaction_system import ContextCompactionSystem
+    from ..systems.death_system import DeathSystem
+    from ..systems.deck_initialization_system import DeckInitializationSystem
+    from ..systems.destroy_entity_system import DestroyEntitySystem
+    from ..systems.discard_cards_action_system import DiscardCardsActionSystem
+    from ..systems.draw_cards_action_system import (
+        DrawCardsActionSystem,
+    )
+    from ..systems.environment_initialization_system import (
+        EnvironmentInitializationSystem,
+    )
+    from ..systems.epilogue_system import EpilogueSystem
+    from ..systems.equip_gear_item_action_system import (
+        EquipGearItemActionSystem,
+    )
+    from ..systems.exhaust_cards_action_system import ExhaustCardsActionSystem
+    from ..systems.exhaust_ethereal_cards_system import ExhaustEtherealCardsSystem
+    from ..systems.fill_draw_pile_system import FillDrawPileSystem
     from ..systems.monster_pre_play_system import MonsterPrePlaySystem
 
     # from ..systems.monster_memory_probe_system import MonsterMemoryProbeSystem
     from ..systems.party_pre_play_system import PartyPrePlaySystem
+    from ..systems.pass_turn_action_system import PassTurnActionSystem
+    from ..systems.play_cards_action_system import (
+        PlayCardsActionSystem,
+    )
+    from ..systems.play_cards_arbitration_system import PlayCardsArbitrationSystem
+    from ..systems.pre_combat_outcome_system import PreCombatOutcomeSystem
+    from ..systems.prologue_system import PrologueSystem
+    from ..systems.retreat_action_system import RetreatActionSystem
+    from ..systems.transfer_cards_action_system import (
+        TransferCardsActionSystem,
+    )
+    from ..systems.turn_end_arbitration_system import TurnEndArbitrationSystem
+    from ..systems.use_consumable_item_action_system import (
+        UseConsumableItemActionSystem,
+    )
+    from ..systems.use_consumable_item_arbitration_system import (
+        UseConsumableItemArbitrationSystem,
+    )
+    from .dbg_game import DBGGame
 
     dbg_game = cast(DBGGame, game)
     processors = RPGGameProcessPipeline()
@@ -86,8 +82,8 @@ def create_dungeon_combat_room_pipeline(
     # 角色外观生成系统
     processors.add(AppearanceInitializationSystem(dbg_game))
 
-    # 战斗场景描述系统
-    processors.add(StageDescriptionSystem(dbg_game))
+    # 战斗环境初始化系统
+    processors.add(EnvironmentInitializationSystem(dbg_game))
 
     # 战斗初始化系统（角色侧）：初始化战斗临时牌堆，为参战角色注入战场环境
     processors.add(CombatInitActorSystem(dbg_game))

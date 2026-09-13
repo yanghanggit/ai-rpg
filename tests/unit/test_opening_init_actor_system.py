@@ -94,7 +94,7 @@ def test_format_other_actors_info_contains_name_camp_appearance() -> None:
 #     stats = CharacterStats(hp=8, max_hp=20, attack=6, defense=4)
 #     result = _build_opening_init_prompt(
 #         stage_name="入口石室",
-#         stage_description="潮湿阴冷的洞口",
+#         environment="潮湿阴冷的洞口",
 #         other_actors_info=[],
 #         actor_stats=stats,
 #     )
@@ -121,7 +121,7 @@ def test_inject_opening_scene_environment_injects_human_and_ai_messages(
     system._inject_opening_scene_environment(
         actor_entities={actor_a, actor_b},
         stage_name="入口石室",
-        stage_description="潮湿阴冷的洞口",
+        environment="潮湿阴冷的洞口",
     )
 
     assert mock_game.add_human_message.call_count == 2
@@ -145,7 +145,7 @@ def test_inject_opening_scene_environment_skips_already_injected_actor(
     system._inject_opening_scene_environment(
         actor_entities={actor},
         stage_name="入口石室",
-        stage_description="潮湿阴冷的洞口",
+        environment="潮湿阴冷的洞口",
     )
 
     mock_game.add_human_message.assert_not_called()

@@ -43,8 +43,8 @@ from .dungeon_room_router import route_to_current_room
 from .server_client import (
     fetch_session_messages,
     logout,
-    stream_session_messages,
 )
+from .session_watch import watch_session_messages
 from .utils import display_name, format_agent_event, strip_markup
 
 INTRO_TEXT = """\
@@ -466,25 +466,11 @@ class HomeScreen(BaseGameScreen):
 
     @work(exclusive=True)
     async def _watch_notifications(self) -> None:
-        app = self.game_client
-        if app.session is None:
-            return
-        user_name = app.session.user_name
-        game_name = app.session.game_name
-        app.session.notify_last_sequence_id = app.session.last_sequence_id
-        logger.info(f"_watch_notifications: 启动通知监听 user_name={user_name}")
-        try:
-            async for msg in stream_session_messages(
-                user_name, game_name, app.session.notify_last_sequence_id
-            ):
-                if app.session is None:
-                    break
-                if msg.sequence_id > app.session.notify_last_sequence_id:
-                    app.session.notify_last_sequence_id = msg.sequence_id
-                self._update_notify_badge()
-        except Exception as e:
-            logger.warning(f"_watch_notifications: 通知流中断 error={e}")
-        logger.info(f"_watch_notifications: 通知流已停止 user_name={user_name}")
+        await watch_session_messages(
+            self.game_client,
+            self._update_notify_badge,
+            is_active=lambda: self.is_mounted,
+        )
 
     def _cmd_list_roster(self, args: str) -> None:
         self._do_list_roster()

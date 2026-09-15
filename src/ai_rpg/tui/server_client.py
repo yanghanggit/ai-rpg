@@ -1,9 +1,10 @@
 """游戏服务器 HTTP 客户端（TUI 客户端专用）"""
 
 import json
-from typing import Any, AsyncGenerator, Dict, List, cast
+from typing import Any, Callable, Dict, List, cast
 
 import httpx
+from loguru import logger
 from procrastinate.jobs import Status as ProcrastinateJobStatus
 
 from ..models import (
@@ -70,7 +71,6 @@ from ..models import (
     LogoutResponse,
     NewGameRequest,
     NewGameResponse,
-    SessionMessage,
     SessionMessageResponse,
     StagesStateResponse,
     TaskSnapshot,
@@ -83,6 +83,39 @@ class TaskFailedError(Exception):
     """任务执行失败时抛出。"""
 
     pass
+
+
+###############################################################################################################################################
+# 任务成功信号
+#
+# 「有新会话消息」在时间上几乎总等价于「某个任务成功收尾」：pipeline 由任务驱动，
+# 消息在 pipeline 处理（notify_entities / broadcast_to_stage）时产生。因此命令模块
+# await watch_task_until_done 成功返回后，通过这里通知 UI 立刻同步一次会话消息，
+# 无需等定时器到点。失败/超时不同步（由定时器兜底）。监听器为同步回调
+# （典型实现：置位一个 asyncio.Event）。
+###############################################################################################################################################
+_task_succeeded_listeners: List[Callable[[], None]] = []
+
+
+def add_task_succeeded_listener(listener: Callable[[], None]) -> None:
+    """注册任务成功监听器（幂等：同一对象只保留一份）。"""
+    if listener not in _task_succeeded_listeners:
+        _task_succeeded_listeners.append(listener)
+
+
+def remove_task_succeeded_listener(listener: Callable[[], None]) -> None:
+    """移除任务成功监听器。"""
+    if listener in _task_succeeded_listeners:
+        _task_succeeded_listeners.remove(listener)
+
+
+def _notify_task_succeeded() -> None:
+    """通知所有监听器：某个任务已成功，可以刷新会话消息了。"""
+    for listener in list(_task_succeeded_listeners):
+        try:
+            listener()
+        except Exception as e:  # 监听器异常不得影响任务等待流程
+            logger.warning(f"_notify_task_succeeded: listener 异常 error={e}")
 
 
 async def fetch_server_info() -> Dict[str, Any]:
@@ -158,40 +191,6 @@ async def fetch_session_messages(
         )
         response.raise_for_status()
         return SessionMessageResponse.model_validate(response.json())
-
-
-async def stream_session_messages(
-    user_name: str, game_name: str, last_sequence_id: int
-) -> AsyncGenerator[SessionMessage, None]:
-    """通过 SSE 持续接收玩家会话新消息。
-
-    长连接方式替代轮询，服务端以 0.3s 为间隔推送新 SessionMessage。
-    调用方通过 `async for` 消费，取消协程即可停止接收。
-
-    Args:
-        user_name: 用户名
-        game_name: 游戏名称
-        last_sequence_id: 从此序列号之后开始接收
-
-    Yields:
-        SessionMessage: 服务端推送的每条新消息
-    """
-    url = (
-        server_config.base_url
-        + f"/api/session_messages/v1/{user_name}/{game_name}/stream"
-    )
-    params = {"last_sequence_id": last_sequence_id}
-    timeout = httpx.Timeout(connect=10.0, read=None, write=10.0, pool=10.0)
-    async with httpx.AsyncClient(timeout=timeout) as client:
-        async with client.stream("GET", url, params=params) as response:
-            response.raise_for_status()
-            async for line in response.aiter_lines():
-                if not line.startswith("data:"):
-                    continue
-                payload = line[5:].strip()
-                if not payload:
-                    continue
-                yield SessionMessage.model_validate_json(payload)
 
 
 async def fetch_entities_details(
@@ -293,6 +292,8 @@ async def watch_task_until_done(
                 if record.status == ProcrastinateJobStatus.FAILED:
                     raise TaskFailedError(record.error or "未知错误")
                 if record.status == ProcrastinateJobStatus.SUCCEEDED:
+                    # 任务成功：通知 UI 立刻同步一次会话消息（失败/超时不同步，由定时器兜底）
+                    _notify_task_succeeded()
                     return record
     raise TimeoutError(f"任务 {job_id} 等待超时")
 

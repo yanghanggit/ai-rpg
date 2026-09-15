@@ -1,11 +1,8 @@
 """玩家会话消息服务模块"""
 
-import asyncio
-from typing import AsyncGenerator
-
 from fastapi import APIRouter, HTTPException, Query, status
-from fastapi.responses import StreamingResponse
 from loguru import logger
+
 from ..models import (
     SessionMessageResponse,
 )
@@ -18,7 +15,7 @@ player_session_api_router = APIRouter()
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 ###################################################################################################################################################################
-# API增加增量查询端点
+# API增加增量查询端点（唯一读取入口：显式一次性拉取；实时性由客户端定时轮询 + 任务终态即时拉取保证）
 @player_session_api_router.get(
     "/api/session_messages/v1/{user_name}/{game_name}/since",
     response_model=SessionMessageResponse,
@@ -68,42 +65,3 @@ async def get_session_messages(
     # 根据游戏类型获取增量消息
     messages = rpg_game._player_session.get_messages_since(last_sequence_id)
     return SessionMessageResponse(session_messages=messages)
-
-
-###################################################################################################################################################################
-###################################################################################################################################################################
-###################################################################################################################################################################
-@player_session_api_router.get(
-    "/api/session_messages/v1/{user_name}/{game_name}/stream",
-)
-async def stream_session_messages(
-    game_server: CurrentGameServer,
-    user_name: str,
-    game_name: str,
-    last_sequence_id: int = Query(..., alias="last_sequence_id"),
-    interval: float = Query(default=0.3, ge=0.1, le=5.0),
-) -> StreamingResponse:
-    """SSE 端点：持续推送玩家会话新消息。"""
-
-    async def event_generator() -> AsyncGenerator[str, None]:
-        current_last_id = last_sequence_id
-        while True:
-            if not game_server.has_room(user_name):
-                logger.warning(
-                    f"stream_session_messages: {user_name} has no room, stopping stream"
-                )
-                return
-            current_room = game_server.get_room(user_name)
-            if current_room is None:
-                return
-            rpg_game = current_room._dbg_game
-            if rpg_game is None or rpg_game.name != game_name:
-                return
-            messages = rpg_game._player_session.get_messages_since(current_last_id)
-            for msg in messages:
-                if msg.sequence_id > current_last_id:
-                    current_last_id = msg.sequence_id
-                yield f"data: {msg.model_dump_json()}\n\n"
-            await asyncio.sleep(interval)
-
-    return StreamingResponse(event_generator(), media_type="text/event-stream")

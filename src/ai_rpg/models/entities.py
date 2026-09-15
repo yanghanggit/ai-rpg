@@ -64,6 +64,7 @@ class Artifact(BaseModel):
 
     name: str
     system_message: str
+    modifiers: List[str] = []  # 对持有者或环境的属性修正列表
     components: List[ComponentSerialization] = []  # 挂载在神器上的组件序列化列表
     uuid: str = Field(default_factory=lambda: str(uuid4()))  # 全局唯一标识符
 

@@ -195,6 +195,7 @@ def create_artifact(
     artifact = Artifact(
         name=name,
         system_message="",
+        modifiers=list(modifiers),
         components=[],
     )
 

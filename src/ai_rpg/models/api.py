@@ -8,7 +8,7 @@ from .dungeon import AnyDungeonRoom, Dungeon
 from .player_session import PlayerSession
 from .serialization import EntitySerialization
 from .session_message import SessionMessage
-from .task import TaskStatusView
+from .task import TaskSnapshot
 
 
 @final
@@ -502,8 +502,8 @@ class SessionMessageResponse(BaseModel):
 
 
 @final
-class TasksStatusResponse(BaseModel):
-    tasks: List[TaskStatusView]
+class TaskStatusListResponse(BaseModel):
+    tasks: List[TaskSnapshot]
 
 
 @final

@@ -73,8 +73,8 @@ from ..models import (
     SessionMessage,
     SessionMessageResponse,
     StagesStateResponse,
-    TasksStatusResponse,
-    TaskStatusView,
+    TaskSnapshot,
+    TaskStatusListResponse,
 )
 from .config import server_config
 
@@ -239,7 +239,7 @@ async def fetch_dungeon_list() -> DungeonListResponse:
         return DungeonListResponse.model_validate(response.json())
 
 
-async def fetch_tasks_status(job_ids: List[int]) -> TasksStatusResponse:
+async def fetch_tasks_status(job_ids: List[int]) -> TaskStatusListResponse:
     """批量查询任务状态。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.get(
@@ -247,20 +247,20 @@ async def fetch_tasks_status(job_ids: List[int]) -> TasksStatusResponse:
             params={"job_ids": job_ids},
         )
         response.raise_for_status()
-        return TasksStatusResponse.model_validate(response.json())
+        return TaskStatusListResponse.model_validate(response.json())
 
 
 async def watch_task_until_done(
     job_id: int, timeout_seconds: int = 120
-) -> TaskStatusView:
-    """通过 SSE 等待任务完成，返回终态 TaskStatusView。
+) -> TaskSnapshot:
+    """通过 SSE 等待任务完成，返回终态 TaskSnapshot。
 
     Args:
         job_id: 要监听的任务 ID
         timeout_seconds: 最大等待秒数（同时透传给服务端 SSE 生成器）
 
     Returns:
-        TaskStatusView: 状态为 SUCCEEDED 的任务状态视图
+        TaskSnapshot: 状态为 SUCCEEDED 的任务快照
 
     Raises:
         TaskFailedError: 任务不存在或失败（status=FAILED）
@@ -289,7 +289,7 @@ async def watch_task_until_done(
                     if data["error"] == "timeout":
                         raise TimeoutError(f"任务 {job_id} 等待超时")
                     raise TaskFailedError(f"{data['error']}: job_id={job_id}")
-                record = TaskStatusView.model_validate(data)
+                record = TaskSnapshot.model_validate(data)
                 if record.status == ProcrastinateJobStatus.FAILED:
                     raise TaskFailedError(record.error or "未知错误")
                 if record.status == ProcrastinateJobStatus.SUCCEEDED:

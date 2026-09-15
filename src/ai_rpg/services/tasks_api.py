@@ -14,7 +14,7 @@ from loguru import logger
 from procrastinate.exceptions import NoResult
 from procrastinate.jobs import Status as ProcrastinateJobStatus
 
-from ..models import TasksStatusResponse, TaskStatusView
+from ..models import TaskSnapshot, TaskStatusListResponse
 from ..pgsql import get_task_error, procrastinate_app
 
 ################################################################################################################
@@ -22,14 +22,14 @@ tasks_api_router = APIRouter()
 
 
 ###############################################################################################################################################
-async def get_task_status_view(job_id: int) -> TaskStatusView:
-    """查询指定任务的当前状态视图；job 不存在时由 Procrastinate 抛出 NoResult"""
+async def get_task_snapshot(job_id: int) -> TaskSnapshot:
+    """查询指定任务的当前快照；job 不存在时由 Procrastinate 抛出 NoResult"""
 
     status = await procrastinate_app.job_manager.get_job_status_async(job_id)
 
     error = get_task_error(job_id) if status == ProcrastinateJobStatus.FAILED else None
 
-    return TaskStatusView(job_id=job_id, status=status, error=error)
+    return TaskSnapshot(job_id=job_id, status=status, error=error)
 
 
 ################################################################################################################
@@ -37,20 +37,22 @@ async def get_task_status_view(job_id: int) -> TaskStatusView:
 ################################################################################################################
 
 
-@tasks_api_router.get(path="/api/tasks/v1/status", response_model=TasksStatusResponse)
+@tasks_api_router.get(
+    path="/api/tasks/v1/status", response_model=TaskStatusListResponse
+)
 async def get_tasks_status(
     job_ids: Annotated[List[int], Query(alias="job_ids")],
-) -> TasksStatusResponse:
+) -> TaskStatusListResponse:
     """批量查询任务状态；不存在的 job_id 会被跳过"""
 
     logger.info(f"🔍 批量查询任务状态: job_ids={job_ids}")
 
     # 批量查询任务
-    tasks_details: List[TaskStatusView] = []
+    tasks_details: List[TaskSnapshot] = []
 
     for job_id in job_ids:
         try:
-            task_detail = await get_task_status_view(job_id)
+            task_detail = await get_task_snapshot(job_id)
         except NoResult:
             logger.warning(f"⚠️ 查询的任务不存在: job_id={job_id}")
             continue  # 跳过不存在的任务
@@ -59,7 +61,7 @@ async def get_tasks_status(
 
         tasks_details.append(task_detail)
 
-    return TasksStatusResponse(tasks=tasks_details)
+    return TaskStatusListResponse(tasks=tasks_details)
 
 
 ################################################################################################################
@@ -82,7 +84,7 @@ async def watch_task(
 
             try:
                 # 查询任务的当前状态
-                task = await get_task_status_view(job_id)
+                task = await get_task_snapshot(job_id)
             except NoResult:
 
                 # 任务不存在，发送错误事件并终止生成器

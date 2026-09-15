@@ -737,13 +737,13 @@ async def home_remove_costume(
         return HomeRemoveCostumeResponse.model_validate(response.json())
 
 
-async def home_craft_item(
+async def home_craft_consumable(
     user_name: str, game_name: str, materials: List[str]
 ) -> HomeCraftItemResponse:
-    """从储物箱材料合成道具（消耗品等），返回任务ID。"""
+    """从储物箱材料合成消耗品，返回任务ID。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
-            server_config.base_url + "/api/home/craft/item/v1/",
+            server_config.base_url + "/api/home/craft/consumable/v1/",
             json=HomeCraftItemRequest(
                 user_name=user_name,
                 game_name=game_name,

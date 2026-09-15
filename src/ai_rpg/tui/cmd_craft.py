@@ -6,9 +6,9 @@ from loguru import logger
 
 from ..models import HomeCraftItemResponse
 from .server_client import (
+    home_craft_consumable,
     home_craft_costume_item,
     home_craft_gear_item,
-    home_craft_item,
     watch_task_until_done,
 )
 
@@ -36,7 +36,7 @@ async def _submit_craft(
 async def craft_consumable(user_name: str, game_name: str, materials: List[str]) -> str:
     """合成消耗品，返回成功或失败文本。"""
     return await _submit_craft(
-        user_name, game_name, materials, home_craft_item, "合成消耗品"
+        user_name, game_name, materials, home_craft_consumable, "合成消耗品"
     )
 
 

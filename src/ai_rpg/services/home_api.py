@@ -498,15 +498,15 @@ async def home_remove_costume(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 @home_api_router.post(
-    path="/api/home/craft/item/v1/", response_model=HomeCraftItemResponse
+    path="/api/home/craft/consumable/v1/", response_model=HomeCraftItemResponse
 )
-async def home_craft_item(
+async def home_craft_consumable(
     payload: HomeCraftItemRequest,
     game_server: CurrentGameServer,
 ) -> HomeCraftItemResponse:
     """消耗品工坊合成接口：使用储物箱中的材料合成消耗品。"""
     logger.info(
-        f"/api/home/craft/item/v1/: user={payload.user_name} materials={payload.materials}"
+        f"/api/home/craft/consumable/v1/: user={payload.user_name} materials={payload.materials}"
     )
 
     current_room = game_server.get_room(payload.user_name)

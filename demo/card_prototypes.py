@@ -62,7 +62,7 @@ ATTACK_PROTOTYPE: Final[Card] = Card(
     ethereal=False,
     transferable=False,
     cost=1,
-    damage=1,
+    damage=3,
     hit_count=1,
     block=0,
     target_type=TargetType.SINGLE,
@@ -84,7 +84,7 @@ DEFENSE_PROTOTYPE: Final[Card] = Card(
     cost=1,
     damage=0,
     hit_count=1,
-    block=2,
+    block=1,
     target_type=TargetType.SINGLE,
     self_target=True,
 )

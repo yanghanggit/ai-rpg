@@ -144,7 +144,9 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
             f"[IllustrateDungeonActionSystem] react: 收到 IllustrateDungeonAction 事件，准备生成图片，entities count={len(entities)}"
         )
         for entity in entities:
-            await self._generate_images(entity)
+            # TODO: 这里可以添加对实体的预处理逻辑，例如检查实体状态或准备生成图片的上下文
+            logger.debug(f"[IllustrateDungeonActionSystem] react: 处理实体 {entity.name}")
+            # await self._generate_images(entity)
 
     ####################################################################################################################################
     async def _generate_images(self, entity: Entity) -> None:

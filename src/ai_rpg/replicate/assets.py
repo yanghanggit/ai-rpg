@@ -13,7 +13,7 @@
 
 from contextlib import ExitStack
 from dataclasses import dataclass
-from typing import List, Optional, final
+from typing import Final, List, Optional, Tuple, final
 
 from ..models.image import ImageMeta, ImageSource, new_image_filename
 from .batch import batch_generate_images
@@ -26,17 +26,24 @@ from .schemas import ReplicateImageInput
 @final
 @dataclass(frozen=True)
 class TextToImageJob:
-    """一次文生图的完整输入规格。"""
+    """一次文生图的完整输入规格。
+
+    - ``aspect_ratio`` 为 ``None`` 时，按 ``width`` / ``height`` 推导最接近的受支持比例；
+    - ``scheduler`` / ``magic_prompt_option`` 为 ``None`` 时不下发，交由模型使用自身默认值；
+    - ``num_outputs`` 固定为 1（一次生成对应一个资产）。
+    """
 
     model: str
     prompt: str
     negative_prompt: Optional[str] = None
     width: int = 1024
     height: int = 1024
-    aspect_ratio: str = "1:1"
+    aspect_ratio: Optional[str] = None
     num_inference_steps: int = 4
     guidance_scale: float = 7.5
     seed: Optional[int] = None
+    scheduler: Optional[str] = None
+    magic_prompt_option: Optional[str] = None
 
 
 ################################################################################################################################################################################
@@ -53,22 +60,51 @@ class EditImageJob:
 
 
 ################################################################################################################################################################################
+# 受支持的宽高比（与 config.py 中 nano-banana 支持列表一致）
+_SUPPORTED_ASPECT_RATIOS: Final[Tuple[Tuple[int, int], ...]] = (
+    (1, 1),
+    (2, 3),
+    (3, 2),
+    (3, 4),
+    (4, 3),
+    (4, 5),
+    (5, 4),
+    (9, 16),
+    (16, 9),
+    (21, 9),
+)
+
+
+def _derive_aspect_ratio(width: int, height: int) -> str:
+    """按宽度/高度推导最接近的受支持宽高比（非法尺寸返回 1:1）。"""
+    if width <= 0 or height <= 0:
+        return "1:1"
+    target = width / height
+    best_w, best_h = min(
+        _SUPPORTED_ASPECT_RATIOS, key=lambda r: abs(r[0] / r[1] - target)
+    )
+    return f"{best_w}:{best_h}"
+
+
+################################################################################################################################################################################
 def _text_to_image_input(job: TextToImageJob) -> ReplicateImageInput:
     """把文生图请求规格转换为 Replicate 模型输入。"""
     model_input: ReplicateImageInput = {
         "prompt": job.prompt,
         "negative_prompt": job.negative_prompt or "",
-        "aspect_ratio": job.aspect_ratio,
+        "aspect_ratio": job.aspect_ratio or _derive_aspect_ratio(job.width, job.height),
         "width": job.width,
         "height": job.height,
         "num_outputs": 1,
         "num_inference_steps": job.num_inference_steps,
         "guidance_scale": job.guidance_scale,
-        "scheduler": "K_EULER",
-        "magic_prompt_option": "Auto",
     }
     if job.seed is not None:
         model_input["seed"] = job.seed
+    if job.scheduler is not None:
+        model_input["scheduler"] = job.scheduler
+    if job.magic_prompt_option is not None:
+        model_input["magic_prompt_option"] = job.magic_prompt_option
     return model_input
 
 

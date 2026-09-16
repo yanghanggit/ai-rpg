@@ -189,23 +189,6 @@ async def _async_main(
             print(f"  python scripts/{script} --help")
             return
 
-        # 计算宽高比（用于 ideogram 系列模型）
-        aspect_ratio = "1:1"  # 默认
-        if width == height:
-            aspect_ratio = "1:1"
-        elif width > height:
-            ratio = width / height
-            if abs(ratio - 16 / 9) < 0.1:
-                aspect_ratio = "16:9"
-            elif abs(ratio - 4 / 3) < 0.1:
-                aspect_ratio = "4:3"
-        else:
-            ratio = height / width
-            if abs(ratio - 16 / 9) < 0.1:
-                aspect_ratio = "9:16"
-            elif abs(ratio - 4 / 3) < 0.1:
-                aspect_ratio = "3:4"
-
         model_name = model if model else replicate_config.default_image_model
 
         # 打印生成信息
@@ -213,7 +196,7 @@ async def _async_main(
         print(f"📝 提示词: {prompt}")
         print(f"⚙️  参数: {width}x{height}, {steps} 步")
 
-        # 生成并写入配套 meta
+        # 生成并写入配套 meta（aspect_ratio 由 width/height 自动推导）
         meta = await text_to_image(
             job=TextToImageJob(
                 model=model_name,
@@ -221,7 +204,6 @@ async def _async_main(
                 negative_prompt=negative,
                 width=width,
                 height=height,
-                aspect_ratio=aspect_ratio,
                 num_inference_steps=steps,
                 guidance_scale=guidance,
             )

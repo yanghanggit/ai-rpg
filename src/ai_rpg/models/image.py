@@ -70,7 +70,23 @@ ImageSource = Literal["text2image", "image_edit"]
 ###############################################################################################################################################
 @final
 class ImageMeta(BaseModel):
-    """图片资产元数据（meta），与 .images/ 下同名 raw 文件成对存在。"""
+    """图片资产元数据（meta），与 .images/ 下同名 raw 文件成对存在。
+
+    记录范围（跨 provider 的生成溯源）：
+
+    - 身份：``filename`` / ``schema_version`` / ``provider`` / ``source`` / ``created_at``
+    - 提示：``prompt`` / ``negative_prompt``
+    - 模型：``model`` / ``model_ref``
+    - 几何：``width`` / ``height`` / ``aspect_ratio``
+    - 采样：``num_inference_steps`` / ``guidance_scale`` / ``scheduler`` / ``seed``
+    - 图生图：``input_images``
+    - 文件：``format`` / ``size_bytes``
+
+    刻意不记录 provider 专属调参（如 ``magic_prompt_option`` / ``resolution`` /
+    ``safety_filter_level`` / ``output_quality``），以保证 meta 结构不绑定任何 provider。
+    若需逐参数精确复现，请调用方自行持久化完整 ``model_input``；
+    边界调整（新增字段）随 ``schema_version`` 一起评估。
+    """
 
     # ---- 协议与身份 ----
     schema_version: int = 1
@@ -166,7 +182,11 @@ class ImageMeta(BaseModel):
         source: ImageSource = "text2image",
         input_images: Optional[List[str]] = None,
     ) -> "ImageMeta":
-        """从模型输入参数抽取生成溯源信息，构造 meta。"""
+        """从模型输入参数抽取生成溯源信息，构造 meta。
+
+        仅抽取 :class:`ImageMeta` 声明范围内的通用字段；provider 专属参数
+        （如 ``magic_prompt_option``）刻意忽略，边界见类 docstring。
+        """
         return cls(
             filename=filename,
             provider=provider,

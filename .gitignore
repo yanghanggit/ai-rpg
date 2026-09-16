@@ -58,8 +58,7 @@ htmlcov/
 # -----------------------------------------------------------------------------
 # AI Generated Content
 # -----------------------------------------------------------------------------
-.generated_images/
-.generated_archetypes/
+.images/
 
 # -----------------------------------------------------------------------------
 # Other Files and Directories to Ignore
@@ -69,7 +68,6 @@ htmlcov/
 .dungeons/
 .debug_cache/
 .chat_dumps/
-.archetypes/
 
 # Local AI Agent Configurations (e.g., Claude, Gemini, etc.)
 .claude.json

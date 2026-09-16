@@ -8,7 +8,7 @@
     --list-demos                                        列出预设场景
     --test                                              测试 API 连接
 
-生成图片输出到 .generated_images/。
+生成图片输出到 .images/。
 """
 
 import asyncio
@@ -20,7 +20,7 @@ from typing import List, Optional, Tuple
 import click
 
 from ai_rpg.replicate import (
-    GENERATED_IMAGES_OUTPUT_DIR,
+    IMAGES_OUTPUT_DIR,
     ReplicateImageInput,
     ReplicateImageTask,
     check_replicate_connection,
@@ -68,9 +68,7 @@ DEMO_SCENARIOS = {
 }
 
 
-def find_test_images(
-    directory: Path = GENERATED_IMAGES_OUTPUT_DIR, limit: int = 3
-) -> List[Path]:
+def find_test_images(directory: Path = IMAGES_OUTPUT_DIR, limit: int = 3) -> List[Path]:
     """查找测试用图片"""
     if not directory.exists():
         return []
@@ -149,7 +147,7 @@ async def run_image_edit(
 
     # 准备输出路径
     output_path = str(
-        GENERATED_IMAGES_OUTPUT_DIR / f"{model}_edit_{uuid.uuid4()}.{output_format}"
+        IMAGES_OUTPUT_DIR / f"{model}_edit_{uuid.uuid4()}.{output_format}"
     )
 
     print(f"\n⏳ 开始执行编辑任务...")
@@ -204,7 +202,7 @@ async def run_demo_scenario(scenario_key: str, model: str = "nano-banana") -> No
         # 单图编辑只需要1张
         test_images = find_test_images(limit=1)
         if not test_images:
-            print(f"\n❌ 错误: 在 {GENERATED_IMAGES_OUTPUT_DIR} 目录下未找到测试图片")
+            print(f"\n❌ 错误: 在 {IMAGES_OUTPUT_DIR} 目录下未找到测试图片")
             print(f"💡 请先运行 run_replicate_generate_image.py 生成一些图片")
             return
 
@@ -337,7 +335,7 @@ async def _async_main(
         print(f"  python scripts/{script} --demo blur\n")
         print("  # 自定义编辑")
         print(f"  python scripts/{script} \\")
-        print("    --input .generated_images/cat.png \\")
+        print("    --input .images/cat.png \\")
         print("    --prompt 'Make the background blurry'\n")
         print("  # 多图融合")
         print(f"  python scripts/{script} \\")

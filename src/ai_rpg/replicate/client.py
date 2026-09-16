@@ -16,8 +16,8 @@ from loguru import logger
 
 from ..models.image import GeneratedImage
 from .config import (
-    GENERATED_IMAGES_OUTPUT_DIR,
-    GENERATED_IMAGES_URL_PREFIX,
+    IMAGES_OUTPUT_DIR,
+    IMAGES_URL_PREFIX,
     replicate_config,
 )
 from .schemas import ReplicateImageInput
@@ -114,7 +114,7 @@ class ReplicateImageRequest:
             }
 
             filename = f"{self._model}_{uuid.uuid4()}.png"
-            output_path = str(GENERATED_IMAGES_OUTPUT_DIR / filename)
+            output_path = str(IMAGES_OUTPUT_DIR / filename)
 
             task = ReplicateImageTask(
                 model_ref=model_ref,
@@ -130,7 +130,7 @@ class ReplicateImageRequest:
             self._images = [
                 GeneratedImage(
                     filename=Path(local_path).name,
-                    url=f"{GENERATED_IMAGES_URL_PREFIX}/{Path(local_path).name}",
+                    url=f"{IMAGES_URL_PREFIX}/{Path(local_path).name}",
                     prompt=self._prompt,
                     model=self._model,
                     local_path=local_path,

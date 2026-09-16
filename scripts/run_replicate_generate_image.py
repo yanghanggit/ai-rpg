@@ -6,7 +6,7 @@ python scripts/run_replicate_generate_image.py --demo     并发生成多张
 python scripts/run_replicate_generate_image.py --test     测试连接
 
 选项：--model / --negative / --size small|medium|large|wide|tall / --width / --height / --steps / --guidance
-输出到 .generated_images/。
+输出到 .images/。
 """
 
 import asyncio
@@ -18,7 +18,7 @@ from typing import List, Optional
 import click
 
 from ai_rpg.replicate import (
-    GENERATED_IMAGES_OUTPUT_DIR,
+    IMAGES_OUTPUT_DIR,
     ReplicateImageInput,
     ReplicateImageTask,
     check_replicate_connection,
@@ -65,7 +65,7 @@ async def run_concurrent_demo(prompts: List[str]) -> None:
             }
             # 准备输出路径
             output_path = str(
-                GENERATED_IMAGES_OUTPUT_DIR
+                IMAGES_OUTPUT_DIR
                 / f"{replicate_config.default_image_model}_{i:02d}_{uuid.uuid4()}.png"
             )
 
@@ -116,7 +116,7 @@ async def run_concurrent_demo(prompts: List[str]) -> None:
 @click.option(
     "--output",
     "-o",
-    default=str(GENERATED_IMAGES_OUTPUT_DIR),
+    default=str(IMAGES_OUTPUT_DIR),
     type=click.Path(),
     help="输出目录",
 )

@@ -6,8 +6,8 @@ Replicate 模块
 
 from .client import ReplicateImageRequest
 from .config import (
-    GENERATED_IMAGES_OUTPUT_DIR,
-    GENERATED_IMAGES_URL_PREFIX,
+    IMAGES_OUTPUT_DIR,
+    IMAGES_URL_PREFIX,
     ReplicateConfig,
     replicate_config,
 )
@@ -29,7 +29,7 @@ __all__ = [
     "ReplicateImageTask",
     "ReplicateImageInput",
     "replicate_config",
-    "GENERATED_IMAGES_OUTPUT_DIR",
-    "GENERATED_IMAGES_URL_PREFIX",
+    "IMAGES_OUTPUT_DIR",
+    "IMAGES_URL_PREFIX",
     "ReplicateImageRequest",
 ]

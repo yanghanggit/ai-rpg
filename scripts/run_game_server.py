@@ -23,10 +23,9 @@ from loguru import logger
 from ai_rpg.models import ApiRouteInfo, ServerInfoResponse
 from ai_rpg.pgsql import procrastinate_app
 from ai_rpg.replicate import (
-    GENERATED_IMAGES_OUTPUT_DIR,
-    GENERATED_IMAGES_URL_PREFIX,
+    IMAGES_OUTPUT_DIR,
+    IMAGES_URL_PREFIX,
 )
-from ai_rpg.services.tasks_api import tasks_api_router
 from ai_rpg.services.compact_api import compact_api_router
 from ai_rpg.services.dungeon_combat_api import (
     dungeon_combat_api_router,
@@ -46,6 +45,7 @@ from ai_rpg.services.login import login_api_router
 from ai_rpg.services.new_game import new_game_api_router
 from ai_rpg.services.player_session import player_session_api_router
 from ai_rpg.services.stages_state import stages_state_api_router
+from ai_rpg.services.tasks_api import tasks_api_router
 
 
 @asynccontextmanager
@@ -111,9 +111,9 @@ app.add_middleware(
 ############################################################################################################
 # 挂载静态文件服务
 app.mount(
-    GENERATED_IMAGES_URL_PREFIX,
-    StaticFiles(directory=str(GENERATED_IMAGES_OUTPUT_DIR)),
-    name=GENERATED_IMAGES_URL_PREFIX.lstrip("/"),
+    IMAGES_URL_PREFIX,
+    StaticFiles(directory=str(IMAGES_OUTPUT_DIR)),
+    name=IMAGES_URL_PREFIX.lstrip("/"),
 )
 
 # 注册各个 API 路由

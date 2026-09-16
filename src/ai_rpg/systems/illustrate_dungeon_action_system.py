@@ -5,7 +5,7 @@
 # from ..models import IllustrateDungeonAction, Dungeon, DungeonRoom
 # from ..game.dbg_game import DBGGame
 # from ..game.config import DUNGEONS_DIR
-# from ..replicate import ReplicateImageClient
+# from ..replicate import ReplicateImageRequest
 # from ..utils import prompt_builder
 
 
@@ -192,8 +192,8 @@
 #             dungeon_name=dungeon.name,
 #             profile=dungeon.profile,
 #         )
-#         cover_client = ReplicateImageClient(
-#             name=f"{dungeon.name}.cover",
+#         cover_client = ReplicateImageRequest(
+#             label=f"{dungeon.name}.cover",
 #             prompt=cover_prompt,
 #             negative_prompt=_IMAGE_NEGATIVE_BASE,
 #             width=_IMAGE_WIDTH,
@@ -210,9 +210,9 @@
 #             )
 #             for room in dungeon.rooms
 #         ]
-#         room_clients: List[ReplicateImageClient] = [
-#             ReplicateImageClient(
-#                 name=f"{room.stage.name}.illustration",
+#         room_clients: List[ReplicateImageRequest] = [
+#             ReplicateImageRequest(
+#                 label=f"{room.stage.name}.illustration",
 #                 prompt=prompt,
 #                 negative_prompt=_IMAGE_NEGATIVE_STAGE,
 #                 width=_IMAGE_WIDTH,
@@ -222,8 +222,8 @@
 #             for room, prompt in zip(dungeon.rooms, room_prompts)
 #         ]
 
-#         all_clients: List[ReplicateImageClient] = [cover_client] + room_clients
-#         await ReplicateImageClient.batch_generate(all_clients)
+#         all_clients: List[ReplicateImageRequest] = [cover_client] + room_clients
+#         await ReplicateImageRequest.batch_generate(all_clients)
 
 #         # 写入封面 GeneratedImage（直接赋值 response 对象，保留全部字段）
 #         if cover_client.images:

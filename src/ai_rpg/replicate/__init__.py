@@ -4,34 +4,32 @@ Replicate 模块
 统一管理 Replicate API 相关功能
 """
 
-from .api_test import test_replicate_api_connection
+from .client import ReplicateImageRequest
 from .config import (
-    ReplicateConfig,
-    replicate_config,
     GENERATED_IMAGES_OUTPUT_DIR,
     GENERATED_IMAGES_URL_PREFIX,
+    ReplicateConfig,
+    replicate_config,
 )
-from .image_tools import (
-    run_concurrent_tasks,
-    # 任务类
-    ImageGenerationSubTask,
-    ImageDownloadSubTask,
+from .connection import check_replicate_connection
+from .schemas import ReplicateImageInput
+from .tasks import (
+    ImageDownloadTask,
+    ImageGenerationTask,
     ReplicateImageTask,
+    generate_images_concurrently,
 )
-from .types import ReplicateImageInput
-from .client import ReplicateImageClient
-
 
 __all__ = [
     "ReplicateConfig",
-    "test_replicate_api_connection",
-    "run_concurrent_tasks",
-    "ImageGenerationSubTask",
-    "ImageDownloadSubTask",
+    "check_replicate_connection",
+    "generate_images_concurrently",
+    "ImageGenerationTask",
+    "ImageDownloadTask",
     "ReplicateImageTask",
     "ReplicateImageInput",
     "replicate_config",
     "GENERATED_IMAGES_OUTPUT_DIR",
     "GENERATED_IMAGES_URL_PREFIX",
-    "ReplicateImageClient",
+    "ReplicateImageRequest",
 ]

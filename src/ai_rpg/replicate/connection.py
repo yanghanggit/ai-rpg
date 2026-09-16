@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Replicate API 连接测试模块
+Replicate API 连通性检查模块
 """
 
 import os
@@ -16,9 +16,9 @@ load_dotenv()
 TEST_URL: Final[str] = "https://api.replicate.com/v1/models"
 
 
-def test_replicate_api_connection() -> bool:
+def check_replicate_connection() -> bool:
     """
-    测试 Replicate API 连接
+    检查 Replicate API 连接
     独立函数，不依赖配置类实例
 
     Returns:

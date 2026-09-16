@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Replicate 文生图测试。
+"""Replicate 文生图脚本。
 
-python scripts/run_replicate_test_text2image.py "prompt"   单张生成
-python scripts/run_replicate_test_text2image.py --demo     并发生成多张
-python scripts/run_replicate_test_text2image.py --test     测试连接
+python scripts/run_replicate_generate_image.py "prompt"   单张生成
+python scripts/run_replicate_generate_image.py --demo     并发生成多张
+python scripts/run_replicate_generate_image.py --test     测试连接
 
 选项：--model / --negative / --size small|medium|large|wide|tall / --width / --height / --steps / --guidance
 输出到 .generated_images/。
@@ -18,12 +18,12 @@ from typing import List, Optional
 import click
 
 from ai_rpg.replicate import (
-    test_replicate_api_connection,
-    replicate_config,
-    run_concurrent_tasks,
-    ReplicateImageTask,
-    ReplicateImageInput,
     GENERATED_IMAGES_OUTPUT_DIR,
+    ReplicateImageInput,
+    ReplicateImageTask,
+    check_replicate_connection,
+    generate_images_concurrently,
+    replicate_config,
 )
 
 
@@ -34,7 +34,7 @@ async def run_concurrent_demo(prompts: List[str]) -> None:
     print("=" * 60)
 
     # 1. 测试连接
-    if not test_replicate_api_connection():
+    if not check_replicate_connection():
         print("❌ 连接测试失败，请检查网络设置")
         return
 
@@ -44,8 +44,8 @@ async def run_concurrent_demo(prompts: List[str]) -> None:
         print(f"  {i}. {prompt}")
 
     try:
-        # 获取模型版本
-        model_version = replicate_config.get_model_version()
+        # 获取模型引用
+        model_ref = replicate_config.get_model_ref()
 
         # 准备任务列表
         tasks = []
@@ -72,14 +72,14 @@ async def run_concurrent_demo(prompts: List[str]) -> None:
             # 创建任务
             tasks.append(
                 ReplicateImageTask(
-                    model_version=model_version,
+                    model_ref=model_ref,
                     model_input=dict(model_input),
                     output_path=output_path,
                 )
             )
 
         # 并发生成
-        results = await run_concurrent_tasks(tasks)
+        results = await generate_images_concurrently(tasks)
 
         print(f"\n🎉 并发生成完成! 生成了 {len(results)} 张图片:")
         for i, path in enumerate(results, 1):
@@ -200,18 +200,19 @@ async def _async_main(
 
         # 如果是测试连接
         if test:
-            test_replicate_api_connection()
+            check_replicate_connection()
             return
 
         # 如果没有提供提示词，显示帮助
+        script = Path(__file__).name
         if not prompt:
             print("🎨 Replicate 文生图工具")
             print("\n快速开始:")
             print(
-                "  python run_replicate_text2image.py --demo            # 运行演示（并发生成多张图片）"
+                f"  python scripts/{script} --demo            # 运行演示（并发生成多张图片）"
             )
-            print("  python run_replicate_text2image.py --test            # 测试连接")
-            print('  python run_replicate_text2image.py "生成一只猫"       # 生成图片')
+            print(f"  python scripts/{script} --test            # 测试连接")
+            print(f'  python scripts/{script} "生成一只猫"       # 生成图片')
             print("\n尺寸选项:")
             print("  --size small    # 512x512  (最快)")
             print("  --size medium   # 768x768  (推荐)")
@@ -219,12 +220,12 @@ async def _async_main(
             print("  --size wide     # 1024x768 (横向)")
             print("  --size tall     # 768x1024 (纵向)")
             print("\n详细帮助:")
-            print("  python run_replicate_text2image.py --help")
+            print(f"  python scripts/{script} --help")
             return
 
-        # 获取模型版本（支持指定模型）
+        # 获取模型引用（支持指定模型）
         model_name = model if model else replicate_config.default_image_model
-        model_version = replicate_config.get_model_version(model_name)
+        model_ref = replicate_config.get_model_ref(model_name)
 
         # 计算宽高比（用于 ideogram 系列模型）
         aspect_ratio = "1:1"  # 默认
@@ -267,7 +268,7 @@ async def _async_main(
 
         # 生成并下载图片
         task = ReplicateImageTask(
-            model_version=model_version,
+            model_ref=model_ref,
             model_input=dict(model_input),
             output_path=output_path,
         )

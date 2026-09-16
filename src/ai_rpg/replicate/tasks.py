@@ -1,23 +1,24 @@
 #!/usr/bin/env python3
 """
-Replicate 图像生成工具模块
-包含异步图像生成和下载工具
+Replicate 图像任务模块
+包含异步图像生成任务、下载任务，以及批量并发执行工具
 """
 
 import asyncio
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
 import aiohttp
 import replicate
 from loguru import logger
 from pydantic import BaseModel
 
 
-class ImageGenerationSubTask(BaseModel):
-    """图像生成子任务"""
+class ImageGenerationTask(BaseModel):
+    """图像生成任务"""
 
-    model_version: str
+    model_ref: str
     model_input: Dict[str, Any]
 
     # 输出结果（None 表示未完成）
@@ -29,9 +30,7 @@ class ImageGenerationSubTask(BaseModel):
 
         try:
             # 核心调用
-            output = await replicate.async_run(
-                self.model_version, input=self.model_input
-            )
+            output = await replicate.async_run(self.model_ref, input=self.model_input)
 
             # 获取图片 URL（处理 FileOutput 对象和列表）
             if isinstance(output, list):
@@ -52,8 +51,8 @@ class ImageGenerationSubTask(BaseModel):
             raise
 
 
-class ImageDownloadSubTask(BaseModel):
-    """图像下载子任务"""
+class ImageDownloadTask(BaseModel):
+    """图像下载任务"""
 
     image_url: str
     save_path: str
@@ -103,13 +102,13 @@ class ReplicateImageTask(BaseModel):
     执行流程：调用 API → 下载结果
     """
 
-    model_version: str
+    model_ref: str
     model_input: Dict[str, Any]
     output_path: str
 
     # 子任务（None 表示未初始化/未执行）
-    generation_task: Optional[ImageGenerationSubTask] = None
-    download_task: Optional[ImageDownloadSubTask] = None
+    generation_task: Optional[ImageGenerationTask] = None
+    download_task: Optional[ImageDownloadTask] = None
 
     async def execute(self) -> str:
         """执行完整任务流程"""
@@ -120,13 +119,13 @@ class ReplicateImageTask(BaseModel):
             return self.output_path
 
         # 步骤1: 生成图像
-        self.generation_task = ImageGenerationSubTask(
-            model_version=self.model_version, model_input=self.model_input
+        self.generation_task = ImageGenerationTask(
+            model_ref=self.model_ref, model_input=self.model_input
         )
         image_url = await self.generation_task.execute()
 
         # 步骤2: 下载图像
-        self.download_task = ImageDownloadSubTask(
+        self.download_task = ImageDownloadTask(
             image_url=image_url, save_path=self.output_path
         )
         local_path = await self.download_task.execute()
@@ -134,7 +133,7 @@ class ReplicateImageTask(BaseModel):
         return local_path
 
 
-async def run_concurrent_tasks(
+async def generate_images_concurrently(
     tasks: List[ReplicateImageTask],
 ) -> List[str]:
     """

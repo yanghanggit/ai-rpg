@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Replicate 图像编辑测试（nano-banana 系列）。
+"""Replicate 图像编辑脚本（nano-banana 系列）。
 
     --demo blur|watercolor|oil|garden|night|hat|fusion  预设场景
     --input PATH [-i PATH ...]                          输入图片（可多个）
@@ -20,13 +20,12 @@ from typing import List, Optional, Tuple
 import click
 
 from ai_rpg.replicate import (
-    ReplicateImageTask,
-    ReplicateImageInput,
-    replicate_config,
-    test_replicate_api_connection,
     GENERATED_IMAGES_OUTPUT_DIR,
+    ReplicateImageInput,
+    ReplicateImageTask,
+    check_replicate_connection,
+    replicate_config,
 )
-
 
 # ========== 预设测试场景 ==========
 
@@ -129,8 +128,8 @@ async def run_image_edit(
     print(f"  输出格式: {output_format}")
     print(f"  宽高比: {aspect_ratio}")
 
-    # 获取模型版本
-    model_version = replicate_config.get_model_version(model)
+    # 获取模型引用
+    model_ref = replicate_config.get_model_ref(model)
 
     # 打开图片文件（传递文件对象给 Replicate API）
     print(f"\n📤 准备上传图片文件...")
@@ -158,7 +157,7 @@ async def run_image_edit(
     try:
         # 创建并执行任务
         task = ReplicateImageTask(
-            model_version=model_version,
+            model_ref=model_ref,
             model_input=dict(model_input),
             output_path=output_path,
         )
@@ -206,7 +205,7 @@ async def run_demo_scenario(scenario_key: str, model: str = "nano-banana") -> No
         test_images = find_test_images(limit=1)
         if not test_images:
             print(f"\n❌ 错误: 在 {GENERATED_IMAGES_OUTPUT_DIR} 目录下未找到测试图片")
-            print(f"💡 请先运行 run_replicate_test_text2image.py 生成一些图片")
+            print(f"💡 请先运行 run_replicate_generate_image.py 生成一些图片")
             return
 
     # 转换为字符串路径
@@ -319,7 +318,7 @@ async def _async_main(
 
     # 测试连接
     if test:
-        test_replicate_api_connection()
+        check_replicate_connection()
         return
 
     # 运行预设场景
@@ -328,23 +327,24 @@ async def _async_main(
         return
 
     # 自定义编辑
+    script = Path(__file__).name
     if not input_images or not prompt:
-        print("🎨 Nano Banana 图像编辑测试工具\n")
+        print("🎨 Nano Banana 图像编辑工具\n")
         print("快速开始:")
         print("  # 列出所有预设场景")
-        print("  python scripts/run_replicate_image_edit_test.py --list-demos\n")
+        print(f"  python scripts/{script} --list-demos\n")
         print("  # 运行预设场景")
-        print("  python scripts/run_replicate_image_edit_test.py --demo blur\n")
+        print(f"  python scripts/{script} --demo blur\n")
         print("  # 自定义编辑")
-        print("  python scripts/run_replicate_image_edit_test.py \\")
+        print(f"  python scripts/{script} \\")
         print("    --input .generated_images/cat.png \\")
         print("    --prompt 'Make the background blurry'\n")
         print("  # 多图融合")
-        print("  python scripts/run_replicate_image_edit_test.py \\")
+        print(f"  python scripts/{script} \\")
         print("    --input img1.png img2.png img3.png \\")
         print("    --prompt 'Combine into one scene'\n")
         print("详细帮助:")
-        print("  python scripts/run_replicate_image_edit_test.py --help")
+        print(f"  python scripts/{script} --help")
         return
 
     # 执行自定义编辑

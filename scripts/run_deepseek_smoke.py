@@ -20,7 +20,6 @@ from ai_rpg.deepseek import (
     agent_loop,
     batch_chat,
 )
-from ai_rpg.utils import batch_run_boolean_tasks
 from ai_rpg.models.messages import (
     AIMessage,
     ChatMessage,
@@ -29,6 +28,7 @@ from ai_rpg.models.messages import (
     ToolMessage,
     get_buffer_string,
 )
+from ai_rpg.utils import batch_run_boolean_tasks
 
 _SYSTEM = SystemMessage(content="你是一个有帮助的助手，请用中文回答。")
 

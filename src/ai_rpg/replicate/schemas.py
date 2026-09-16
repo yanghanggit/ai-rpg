@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Replicate 模块类型定义
-包含 Replicate API 相关的类型定义
+Replicate 模块 Schema 定义
+包含 Replicate API 相关的输入参数 Schema
 """
 
-from typing import Any, TypedDict, List
+from typing import Any, List, TypedDict
 
 
 class ReplicateImageInput(TypedDict, total=False):

@@ -1,12 +1,10 @@
 """Replicate 图片生成请求模块
 
-提供异步图片生成请求对象，支持单张和批量生成。
+提供异步图片生成请求对象。
 核心功能：
-- 直接调用 ai_rpg.replicate 封装模块生成图片（无 HTTP 中间层）
-- 批量并发生成多张图片
+- 直接调用 ai_rpg.replicate.pipeline 生成图片（无 HTTP 中间层）
 """
 
-import asyncio
 import time
 import uuid
 from pathlib import Path
@@ -20,8 +18,8 @@ from .config import (
     IMAGES_URL_PREFIX,
     replicate_config,
 )
+from .pipeline import generate_and_download
 from .schemas import ReplicateImageInput
-from .tasks import ReplicateImageTask
 
 
 ################################################################################################################################################################################
@@ -29,7 +27,7 @@ from .tasks import ReplicateImageTask
 class ReplicateImageRequest:
     """Replicate 图片生成请求
 
-    直接调用 ai_rpg.replicate 封装模块生成图片，无需独立 HTTP 图片服务。
+    直接调用 ai_rpg.replicate.pipeline 生成图片，无需独立 HTTP 图片服务。
     """
 
     def __init__(
@@ -91,93 +89,54 @@ class ReplicateImageRequest:
                 return "1:1"
 
     ################################################################################################################################################################################
-    async def generate(self) -> None:
-        """异步生成图片，结果保存在 images 属性中。"""
-        try:
-            logger.debug(f"{self._label} generate prompt:\n{self._prompt}")
-            start_time = time.time()
+    async def generate(self) -> str:
+        """异步生成图片，结果同时保存在 images 属性中。
 
-            model_ref = replicate_config.get_model_ref(self._model)
-            aspect_ratio = self._compute_aspect_ratio()
-
-            model_input: ReplicateImageInput = {
-                "prompt": self._prompt,
-                "negative_prompt": self._negative_prompt,
-                "aspect_ratio": aspect_ratio,
-                "width": self._width,
-                "height": self._height,
-                "num_outputs": 1,
-                "num_inference_steps": 4,
-                "guidance_scale": 7.5,
-                "scheduler": "K_EULER",
-                "magic_prompt_option": "Auto",
-            }
-
-            filename = f"{self._model}_{uuid.uuid4()}.png"
-            output_path = str(IMAGES_OUTPUT_DIR / filename)
-
-            task = ReplicateImageTask(
-                model_ref=model_ref,
-                model_input=dict(model_input),
-                output_path=output_path,
-            )
-            local_path = await task.execute()
-
-            elapsed_time = time.time() - start_time
-            logger.debug(
-                f"{self._label} generate completed in {elapsed_time:.2f} seconds, output: {local_path}"
-            )
-            self._images = [
-                GeneratedImage(
-                    filename=Path(local_path).name,
-                    url=f"{IMAGES_URL_PREFIX}/{Path(local_path).name}",
-                    prompt=self._prompt,
-                    model=self._model,
-                    local_path=local_path,
-                )
-            ]
-            logger.info(f"{self._label} successfully generated image: {local_path}")
-
-        except ValueError as e:
-            logger.error(f"{self._label}: invalid model '{self._model}': {e}")
-        except Exception as e:
-            logger.error(
-                f"{self._label}: unexpected async error: {type(e).__name__}: {e}"
-            )
-
-    ################################################################################################################################################################################
-    @staticmethod
-    async def batch_generate(requests: List["ReplicateImageRequest"]) -> None:
-        """批量并发生成多张图片，单个失败不影响其他请求。"""
-        if not requests:
-            return
-
+        返回本地图片路径；失败时异常向上抛出，由调用方
+        （或 batch_generate_images）处理。
+        """
+        logger.debug(f"{self._label} generate prompt:\n{self._prompt}")
         start_time = time.time()
-        batch_results = await asyncio.gather(
-            *[request.generate() for request in requests],
-            return_exceptions=True,
+
+        model_ref = replicate_config.get_model_ref(self._model)
+        aspect_ratio = self._compute_aspect_ratio()
+
+        model_input: ReplicateImageInput = {
+            "prompt": self._prompt,
+            "negative_prompt": self._negative_prompt,
+            "aspect_ratio": aspect_ratio,
+            "width": self._width,
+            "height": self._height,
+            "num_outputs": 1,
+            "num_inference_steps": 4,
+            "guidance_scale": 7.5,
+            "scheduler": "K_EULER",
+            "magic_prompt_option": "Auto",
+        }
+
+        filename = f"{self._model}_{uuid.uuid4()}.png"
+        output_path = str(IMAGES_OUTPUT_DIR / filename)
+
+        local_path = await generate_and_download(
+            model_ref=model_ref,
+            model_input=dict(model_input),
+            output_path=output_path,
         )
+
         elapsed_time = time.time() - start_time
         logger.debug(
-            f"ReplicateImageRequest.batch_generate: {len(requests)} requests, {elapsed_time:.2f} seconds"
+            f"{self._label} generate completed in {elapsed_time:.2f} seconds, output: {local_path}"
         )
-
-        failed_count = 0
-        for i, result in enumerate(batch_results):
-            if isinstance(result, Exception):
-                label = requests[i].label if i < len(requests) else "unknown"
-                logger.error(
-                    f"Request failed for '{label}': {type(result).__name__}: {result}"
-                )
-                failed_count += 1
-
-        if failed_count > 0:
-            logger.warning(
-                f"ReplicateImageRequest.batch_generate: {failed_count}/{len(requests)} requests failed"
+        self._images = [
+            GeneratedImage(
+                filename=Path(local_path).name,
+                url=f"{IMAGES_URL_PREFIX}/{Path(local_path).name}",
+                prompt=self._prompt,
+                model=self._model,
+                local_path=local_path,
             )
-        else:
-            logger.debug(
-                f"ReplicateImageRequest.batch_generate: All {len(requests)} requests completed successfully"
-            )
+        ]
+        logger.info(f"{self._label} successfully generated image: {local_path}")
+        return local_path
 
     ################################################################################################################################################################################

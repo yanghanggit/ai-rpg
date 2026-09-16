@@ -4,6 +4,7 @@ Replicate 模块
 统一管理 Replicate API 相关功能
 """
 
+from .batch import batch_generate_images
 from .client import ReplicateImageRequest
 from .config import (
     IMAGES_OUTPUT_DIR,
@@ -12,24 +13,19 @@ from .config import (
     replicate_config,
 )
 from .connection import check_replicate_connection
+from .pipeline import download_image, generate_and_download, generate_image
 from .schemas import ReplicateImageInput
-from .tasks import (
-    ImageDownloadTask,
-    ImageGenerationTask,
-    ReplicateImageTask,
-    generate_images_concurrently,
-)
 
 __all__ = [
     "ReplicateConfig",
-    "check_replicate_connection",
-    "generate_images_concurrently",
-    "ImageGenerationTask",
-    "ImageDownloadTask",
-    "ReplicateImageTask",
+    "ReplicateImageRequest",
     "ReplicateImageInput",
+    "check_replicate_connection",
+    "generate_image",
+    "download_image",
+    "generate_and_download",
+    "batch_generate_images",
     "replicate_config",
     "IMAGES_OUTPUT_DIR",
     "IMAGES_URL_PREFIX",
-    "ReplicateImageRequest",
 ]

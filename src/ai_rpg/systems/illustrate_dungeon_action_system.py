@@ -5,7 +5,7 @@
 # from ..models import IllustrateDungeonAction, Dungeon, DungeonRoom
 # from ..game.dbg_game import DBGGame
 # from ..game.config import DUNGEONS_DIR
-# from ..replicate import ReplicateImageRequest
+# from ..replicate import ReplicateImageRequest, batch_generate_images
 # from ..utils import prompt_builder
 
 
@@ -187,12 +187,12 @@
 #             )
 #             return
 
-#         # 封面客户端（index 0）
+#         # 封面请求（index 0）
 #         cover_prompt = _build_dungeon_cover_image_prompt(
 #             dungeon_name=dungeon.name,
 #             profile=dungeon.profile,
 #         )
-#         cover_client = ReplicateImageRequest(
+#         cover_request = ReplicateImageRequest(
 #             label=f"{dungeon.name}.cover",
 #             prompt=cover_prompt,
 #             negative_prompt=_IMAGE_NEGATIVE_BASE,
@@ -201,7 +201,7 @@
 #             model=_IMAGE_MODEL,
 #         )
 
-#         # 每个房间各一个客户端（index 1..N）
+#         # 每个房间各一个请求（index 1..N）
 #         room_prompts: List[str] = [
 #             _build_room_image_prompt(
 #                 dungeon_name=dungeon.name,
@@ -210,7 +210,7 @@
 #             )
 #             for room in dungeon.rooms
 #         ]
-#         room_clients: List[ReplicateImageRequest] = [
+#         room_requests: List[ReplicateImageRequest] = [
 #             ReplicateImageRequest(
 #                 label=f"{room.stage.name}.illustration",
 #                 prompt=prompt,
@@ -222,12 +222,12 @@
 #             for room, prompt in zip(dungeon.rooms, room_prompts)
 #         ]
 
-#         all_clients: List[ReplicateImageRequest] = [cover_client] + room_clients
-#         await ReplicateImageRequest.batch_generate(all_clients)
+#         all_requests: List[ReplicateImageRequest] = [cover_request] + room_requests
+#         await batch_generate_images([(r.label, r.generate()) for r in all_requests])
 
 #         # 写入封面 GeneratedImage（直接赋值 response 对象，保留全部字段）
-#         if cover_client.images:
-#             dungeon.image = cover_client.images[0]
+#         if cover_request.images:
+#             dungeon.image = cover_request.images[0]
 #             logger.info(
 #                 f"[IllustrateDungeonActionSystem][Step 5] 封面图片生成完成: {dungeon.image.local_path}"
 #             )
@@ -237,9 +237,9 @@
 #             )
 
 #         # 写入各房间 GeneratedImage（直接赋值 response 对象，保留全部字段）
-#         for room, client in zip(dungeon.rooms, room_clients):
-#             if client.images:
-#                 room.image = client.images[0]
+#         for room, request in zip(dungeon.rooms, room_requests):
+#             if request.images:
+#                 room.image = request.images[0]
 #                 logger.info(
 #                     f"[IllustrateDungeonActionSystem][Step 5] 房间插图生成完成: "
 #                     f"{room.stage.name} -> {room.image.local_path}"

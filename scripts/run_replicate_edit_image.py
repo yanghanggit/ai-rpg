@@ -22,8 +22,8 @@ import click
 from ai_rpg.replicate import (
     IMAGES_OUTPUT_DIR,
     ReplicateImageInput,
-    ReplicateImageTask,
     check_replicate_connection,
+    generate_and_download,
     replicate_config,
 )
 
@@ -153,13 +153,12 @@ async def run_image_edit(
     print(f"\n⏳ 开始执行编辑任务...")
 
     try:
-        # 创建并执行任务
-        task = ReplicateImageTask(
+        # 执行编辑任务
+        saved_path = await generate_and_download(
             model_ref=model_ref,
             model_input=dict(model_input),
             output_path=output_path,
         )
-        saved_path = await task.execute()
 
         # 关闭文件
         for f in image_files:

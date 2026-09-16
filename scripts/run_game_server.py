@@ -20,12 +20,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
 
-from ai_rpg.models import ApiRouteInfo, ServerInfoResponse
-from ai_rpg.pgsql import procrastinate_app
-from ai_rpg.replicate import (
-    IMAGES_OUTPUT_DIR,
+from ai_rpg.models import (
+    IMAGES_DIR,
     IMAGES_URL_PREFIX,
+    ApiRouteInfo,
+    ServerInfoResponse,
 )
+from ai_rpg.pgsql import procrastinate_app
 from ai_rpg.services.compact_api import compact_api_router
 from ai_rpg.services.dungeon_combat_api import (
     dungeon_combat_api_router,
@@ -112,7 +113,7 @@ app.add_middleware(
 # 挂载静态文件服务
 app.mount(
     IMAGES_URL_PREFIX,
-    StaticFiles(directory=str(IMAGES_OUTPUT_DIR)),
+    StaticFiles(directory=str(IMAGES_DIR)),
     name=IMAGES_URL_PREFIX.lstrip("/"),
 )
 

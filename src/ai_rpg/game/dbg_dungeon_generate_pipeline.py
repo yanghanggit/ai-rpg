@@ -1,6 +1,7 @@
 """副本生成流程管道工厂模块。"""
 
 from typing import cast
+
 from .base_game import BaseGame
 from .rpg_game_pipeline_manager import RPGGameProcessPipeline
 
@@ -11,22 +12,20 @@ def create_dungeon_generate_pipeline(
     """创建副本生成流程管道（LLM 文本生成 + 图片生成）"""
 
     ### 不这样就循环引用
-    from .dbg_game import DBGGame
+    from ..systems.action_cleanup_system import ActionCleanupSystem
+    from ..systems.assemble_deck_system import AssembleDeckSystem
+    from ..systems.assemble_dungeon_system import AssembleDungeonSystem
+    from ..systems.context_compaction_system import ContextCompactionSystem
+    from ..systems.destroy_entity_system import DestroyEntitySystem
+    from ..systems.epilogue_system import EpilogueSystem
+    from ..systems.generate_dungeon_actors_system import GenerateDungeonActorsSystem
     from ..systems.generate_dungeon_directive_system import (
         GenerateDungeonDirectiveSystem,
     )
     from ..systems.generate_dungeon_profile_system import GenerateDungeonProfileSystem
     from ..systems.generate_dungeon_rooms_system import GenerateDungeonRoomsSystem
-    from ..systems.generate_dungeon_actors_system import GenerateDungeonActorsSystem
-    from ..systems.assemble_dungeon_system import AssembleDungeonSystem
-    from ..systems.assemble_deck_system import AssembleDeckSystem
-
-    # from ..systems.illustrate_dungeon_action_system import IllustrateDungeonActionSystem
-    from ..systems.epilogue_system import EpilogueSystem
     from ..systems.prologue_system import PrologueSystem
-    from ..systems.action_cleanup_system import ActionCleanupSystem
-    from ..systems.context_compaction_system import ContextCompactionSystem
-    from ..systems.destroy_entity_system import DestroyEntitySystem
+    from .dbg_game import DBGGame
 
     dbg_game = cast(DBGGame, game)
     processors = RPGGameProcessPipeline()
@@ -43,9 +42,6 @@ def create_dungeon_generate_pipeline(
     processors.add(
         AssembleDeckSystem(dbg_game)
     )  # Step 4.5: 牌库组建（原型选卡 + 润色）
-
-    # 副本图片生成系统（Step 5）
-    # processors.add(IllustrateDungeonActionSystem(dbg_game))
 
     # 清除动作相关的临时状态、标记等，准备下一轮输入
     processors.add(ActionCleanupSystem(dbg_game))

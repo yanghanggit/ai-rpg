@@ -113,7 +113,7 @@
 #     """副本图片生成系统（Step 5）。
 
 #     反应式处理器，监听 IllustrateDungeonAction 的添加事件，从磁盘读取
-#     Dungeon JSON，并发生成封面与各房间插图，将结果写入 GeneratedImage
+#     Dungeon JSON，并发生成封面与各房间插图，将结果写入 ImageMeta
 #     字段后重新保存 dungeon 文件。
 
 #     工作流程：
@@ -162,7 +162,7 @@
 #         """为实体触发的副本执行图片并发生成。
 
 #         从磁盘加载 Dungeon，生成封面 + 各房间插图，
-#         写入 GeneratedImage 字段后重新保存 dungeon 文件。
+#         写入 ImageMeta 字段后重新保存 dungeon 文件。
 
 #         Args:
 #             entity: 携带 IllustrateDungeonAction 的实体（玩家实体）
@@ -225,7 +225,7 @@
 #         all_requests: List[ReplicateImageRequest] = [cover_request] + room_requests
 #         await batch_generate_images([(r.label, r.generate()) for r in all_requests])
 
-#         # 写入封面 GeneratedImage（直接赋值 response 对象，保留全部字段）
+#         # 写入封面 ImageMeta（直接赋值 response 对象，保留全部字段）
 #         if cover_request.images:
 #             dungeon.image = cover_request.images[0]
 #             logger.info(
@@ -236,7 +236,7 @@
 #                 f"[IllustrateDungeonActionSystem][Step 5] 封面图片生成失败: {dungeon.name}"
 #             )
 
-#         # 写入各房间 GeneratedImage（直接赋值 response 对象，保留全部字段）
+#         # 写入各房间 ImageMeta（直接赋值 response 对象，保留全部字段）
 #         for room, request in zip(dungeon.rooms, room_requests):
 #             if request.images:
 #                 room.image = request.images[0]

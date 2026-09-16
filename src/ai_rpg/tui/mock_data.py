@@ -21,7 +21,6 @@ from ..models import (
     CharacterStats,
     CharacterStatsComponent,
     Combat,
-    LootComponent,
     CombatResult,
     CombatRoom,
     CombatState,
@@ -39,10 +38,11 @@ from ..models import (
     EntitySerialization,
     ExhaustPileComponent,
     GearItem,
-    GeneratedImage,
     HandComponent,
     IdentityComponent,
+    ImageMeta,
     InventoryComponent,
+    LootComponent,
     MaterialItem,
     MonsterComponent,
     NPCComponent,
@@ -505,7 +505,7 @@ def build_mock_dungeon_room_response() -> DungeonRoomResponse:
         rounds=list(_mock_rounds),
     )
 
-    room = CombatRoom(stage=stage, combat=combat, image=GeneratedImage())
+    room = CombatRoom(stage=stage, combat=combat, image=ImageMeta.empty())
     return DungeonRoomResponse(room=room)
 
 

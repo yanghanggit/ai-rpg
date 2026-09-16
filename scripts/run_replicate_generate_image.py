@@ -6,24 +6,23 @@ python scripts/run_replicate_generate_image.py --demo     并发生成多张
 python scripts/run_replicate_generate_image.py --test     测试连接
 
 选项：--model / --negative / --size small|medium|large|wide|tall / --width / --height / --steps / --guidance
-输出到 .images/。
+资产固定输出到 .images/，每个 raw 文件配一个同名 .meta。
 """
 
 import asyncio
 import sys
-import uuid
 from pathlib import Path
 from typing import List, Optional
 
 import click
 
+from ai_rpg.models import ImageMeta
 from ai_rpg.replicate import (
-    IMAGES_OUTPUT_DIR,
-    ReplicateImageInput,
-    batch_generate_images,
+    TextToImageJob,
+    batch_text_to_images,
     check_replicate_connection,
-    generate_and_download,
     replicate_config,
+    text_to_image,
 )
 
 
@@ -44,46 +43,23 @@ async def run_concurrent_demo(prompts: List[str]) -> None:
         print(f"  {i}. {prompt}")
 
     try:
-        # 获取模型引用
-        model_ref = replicate_config.get_model_ref()
-
-        # 准备并发生成任务
-        jobs = []
-        for i, prompt in enumerate(prompts, 1):
-            # 构建模型输入参数
-            model_input: ReplicateImageInput = {
-                "prompt": prompt,
-                "negative_prompt": "worst quality, low quality, blurry",
-                "aspect_ratio": "1:1",  # ideogram-v3-turbo 使用此参数
-                "width": 512,  # 某些模型可能使用
-                "height": 512,  # 某些模型可能使用
-                "num_outputs": 1,
-                "num_inference_steps": 4,
-                "guidance_scale": 7.5,
-                "scheduler": "K_EULER",
-                "magic_prompt_option": "Auto",  # ideogram 专用
-            }
-            # 准备输出路径
-            output_path = str(
-                IMAGES_OUTPUT_DIR
-                / f"{replicate_config.default_image_model}_{i:02d}_{uuid.uuid4()}.png"
+        jobs = [
+            TextToImageJob(
+                model=replicate_config.default_image_model,
+                prompt=prompt,
+                negative_prompt="worst quality, low quality, blurry",
+                width=512,
+                height=512,
             )
+            for prompt in prompts
+        ]
 
-            # 组装 (任务名, 协程)
-            jobs.append(
-                (
-                    f"{replicate_config.default_image_model}_{i:02d}",
-                    generate_and_download(model_ref, dict(model_input), output_path),
-                )
-            )
+        results = await batch_text_to_images(jobs=jobs)
 
-        # 并发生成（单个失败不影响其他）
-        results = await batch_generate_images(jobs)
-
-        paths = [p for p in results if p]
-        print(f"\n🎉 并发生成完成! 成功 {len(paths)}/{len(jobs)} 张:")
-        for i, path in enumerate(paths, 1):
-            print(f"  {i}. {path}")
+        metas: List[ImageMeta] = [m for m in results if m is not None]
+        print(f"\n🎉 并发生成完成! 成功 {len(metas)}/{len(jobs)} 张:")
+        for i, meta in enumerate(metas, 1):
+            print(f"  {i}. {meta.local_path}  ({meta.url})")
         print("💡 这展示了异步并发的强大能力！")
 
     except Exception as e:
@@ -113,13 +89,6 @@ async def run_concurrent_demo(prompts: List[str]) -> None:
 )
 @click.option("--steps", "-s", default=4, type=int, help="推理步数")
 @click.option("--guidance", "-g", default=7.5, type=float, help="引导比例")
-@click.option(
-    "--output",
-    "-o",
-    default=str(IMAGES_OUTPUT_DIR),
-    type=click.Path(),
-    help="输出目录",
-)
 @click.option("--demo", is_flag=True, help="运行演示（并发生成多张图片）")
 @click.option("--test", is_flag=True, help="测试连接")
 def main(
@@ -131,7 +100,6 @@ def main(
     size: Optional[str],
     steps: int,
     guidance: float,
-    output: str,
     demo: bool,
     test: bool,
 ) -> None:
@@ -146,7 +114,6 @@ def main(
             size,
             steps,
             guidance,
-            output,
             demo,
             test,
         )
@@ -162,7 +129,6 @@ async def _async_main(
     size: Optional[str],
     steps: int,
     guidance: float,
-    output: str,
     demo: bool,
     test: bool,
 ) -> None:
@@ -223,10 +189,6 @@ async def _async_main(
             print(f"  python scripts/{script} --help")
             return
 
-        # 获取模型引用（支持指定模型）
-        model_name = model if model else replicate_config.default_image_model
-        model_ref = replicate_config.get_model_ref(model_name)
-
         # 计算宽高比（用于 ideogram 系列模型）
         aspect_ratio = "1:1"  # 默认
         if width == height:
@@ -244,36 +206,30 @@ async def _async_main(
             elif abs(ratio - 4 / 3) < 0.1:
                 aspect_ratio = "3:4"
 
-        # 构建模型输入参数 (包含所有可能的参数，模型会选择其支持的使用)
-        model_input: ReplicateImageInput = {
-            "prompt": prompt,
-            "negative_prompt": negative,
-            "aspect_ratio": aspect_ratio,  # ideogram-v3-turbo 使用
-            "width": width,  # 某些模型 (如 flux) 使用
-            "height": height,  # 某些模型 (如 flux) 使用
-            "num_outputs": 1,
-            "num_inference_steps": steps,
-            "guidance_scale": guidance,
-            "scheduler": "K_EULER",
-            "magic_prompt_option": "Auto",  # ideogram 专用
-        }
-
-        # 准备输出路径
-        output_path = str(Path(output) / f"{model_name}_{uuid.uuid4()}.png")
+        model_name = model if model else replicate_config.default_image_model
 
         # 打印生成信息
         print(f"🎨 使用模型: {model_name}")
         print(f"📝 提示词: {prompt}")
         print(f"⚙️  参数: {width}x{height}, {steps} 步")
 
-        # 生成并下载图片
-        saved_path = await generate_and_download(
-            model_ref=model_ref,
-            model_input=dict(model_input),
-            output_path=output_path,
+        # 生成并写入配套 meta
+        meta = await text_to_image(
+            job=TextToImageJob(
+                model=model_name,
+                prompt=prompt,
+                negative_prompt=negative,
+                width=width,
+                height=height,
+                aspect_ratio=aspect_ratio,
+                num_inference_steps=steps,
+                guidance_scale=guidance,
+            )
         )
 
-        print(f"\n🎉 完成! 图片已保存到: {saved_path}")
+        print(f"\n🎉 完成! 图片已保存到: {meta.local_path}")
+        print(f"📝 元数据: {meta.meta_path}")
+        print(f"🔗 URL: {meta.url}")
 
     except Exception as e:
         print(f"❌ 错误: {e}")

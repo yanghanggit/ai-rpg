@@ -1,14 +1,187 @@
-from typing import final
-from pydantic import BaseModel, Field
+"""图片资产元数据（meta）模型。
+
+采用"raw 资源 + 同名 .meta 文件"配对的管理方式（借鉴 Unity）：
+
+    .images/20260916T155321Z_<uuid32>.png         # raw 资源（系统固定目录）
+    .images/20260916T155321Z_<uuid32>.png.meta    # 元数据（本模块序列化的 JSON）
+
+- ``filename`` 是资产唯一键，生成后不再变更；
+- ``.images/`` 是系统固定目录，``local_path`` / ``url`` 可由 ``filename`` 完全推导，
+  因此不写入 meta；
+- 一个 :class:`ImageMeta` 描述一次生成（provider / 模型 / 提示词 / 参数等），
+  与 provider 解耦，便于后续接入多个生成方。
+"""
+
+import os
+import uuid
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Final, List, Literal, Mapping, Optional, final
+
+from pydantic import BaseModel, Field, computed_field
+
+###############################################################################################################################################
+# 图片资产目录协议（系统固定）
+IMAGES_DIR: Final[Path] = Path(".images")
+IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+assert IMAGES_DIR.exists(), "无法创建图片资产目录"
+
+# 静态文件服务的 HTTP URL 前缀（与 run_game_server.py 的 app.mount 保持一致）
+IMAGES_URL_PREFIX: Final[str] = "/images"
+assert IMAGES_URL_PREFIX.startswith("/"), "URL 前缀必须以 / 开头"
+
+# meta 文件后缀（Unity 风格：<完整文件名>.meta）
+IMAGE_META_SUFFIX: Final[str] = ".meta"
+
+
+###############################################################################################################################################
+def new_image_filename(ext: str = "png") -> str:
+    """生成新的资产文件名：``<UTC时间戳>_<uuid32>.<ext>``。
+
+    时间戳在前保证字典序等于创建顺序，uuid 保证同秒并发不冲突。
+    """
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    return f"{timestamp}_{uuid.uuid4().hex}.{ext.lstrip('.')}"
+
+
+###############################################################################################################################################
+def image_path(filename: str) -> Path:
+    """raw 资源路径。"""
+    return IMAGES_DIR / filename
+
+
+###############################################################################################################################################
+def image_url(filename: str) -> str:
+    """静态文件服务访问 URL。"""
+    return f"{IMAGES_URL_PREFIX}/{filename}"
+
+
+###############################################################################################################################################
+def image_meta_path(filename: str) -> Path:
+    """meta 文件路径（``<filename>.meta``）。"""
+    return IMAGES_DIR / f"{filename}{IMAGE_META_SUFFIX}"
+
+
+###############################################################################################################################################
+# 生成方式：文生图 / 图生图（编辑、融合）
+ImageSource = Literal["text2image", "image_edit"]
 
 
 ###############################################################################################################################################
 @final
-class GeneratedImage(BaseModel):
-    """AI 文生图生成的图片资产（通用模型）"""
+class ImageMeta(BaseModel):
+    """图片资产元数据（meta），与 .images/ 下同名 raw 文件成对存在。"""
 
-    filename: str = Field(default="", description="文件名")
-    url: str = Field(default="", description="访问 URL（相对路径）")
-    prompt: str = Field(default="", description="使用的提示词")
-    model: str = Field(default="", description="使用的模型")
-    local_path: str = Field(default="", description="本地存储路径")
+    # ---- 协议与身份 ----
+    schema_version: int = 1
+    filename: str = ""  # 唯一键（含扩展名），空表示无图
+
+    # ---- 来源（provider 由上层显式注入，models 层不预设任何 provider）----
+    provider: str  # 必填
+    source: ImageSource = "text2image"
+
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    # ---- 生成溯源 ----
+    prompt: str = ""
+    negative_prompt: str = ""
+    model: str = ""  # 逻辑模型名（如 nano-banana）
+    model_ref: str = ""  # provider 侧标识（如 google/nano-banana）
+    width: int = 0
+    height: int = 0
+    aspect_ratio: str = ""
+    num_inference_steps: int = 0
+    guidance_scale: float = 0.0
+    scheduler: str = ""
+    seed: Optional[int] = None
+    input_images: List[str] = Field(default_factory=list)  # 图生图来源 filename
+    format: str = "png"
+    size_bytes: int = 0
+
+    ########################################################################################################################
+    # 派生属性：只由 filename + 固定目录推导，不落盘
+    ########################################################################################################################
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def url(self) -> str:
+        """静态访问 URL（派生，每次 dump 现算，永不失效）。"""
+        return image_url(self.filename) if self.filename else ""
+
+    @property
+    def local_path(self) -> Path:
+        """raw 资源本地路径（派生）。"""
+        return image_path(self.filename)
+
+    @property
+    def meta_path(self) -> Path:
+        """meta 文件本地路径（派生）。"""
+        return image_meta_path(self.filename)
+
+    @property
+    def is_empty(self) -> bool:
+        return not self.filename
+
+    ########################################################################################################################
+    # 读写
+    ########################################################################################################################
+    def save(self) -> Path:
+        """原子写入同名 .meta 文件（排除派生字段 url），返回 meta 路径。"""
+        path = self.meta_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp_path = path.with_name(f"{path.name}.tmp")
+        tmp_path.write_text(
+            self.model_dump_json(indent=2, exclude={"url"}),
+            encoding="utf-8",
+        )
+        os.replace(tmp_path, path)
+        return path
+
+    ########################################################################################################################
+    @classmethod
+    def empty(cls) -> "ImageMeta":
+        """空 meta（无图）。provider 为空字符串：models 层不预设任何 provider。"""
+        return cls(provider="")
+
+    ########################################################################################################################
+    @classmethod
+    def load(cls, filename: str) -> "ImageMeta":
+        """按 filename 读取 meta；meta 不存在时返回仅含 filename 的兜底对象。"""
+        if not filename:
+            return cls.empty()
+        path = image_meta_path(filename)
+        if path.exists():
+            return cls.model_validate_json(path.read_text(encoding="utf-8"))
+        return cls(provider="", filename=filename)
+
+    ########################################################################################################################
+    @classmethod
+    def from_generation(
+        cls,
+        *,
+        filename: str,
+        provider: str,
+        model: str,
+        model_ref: str,
+        model_input: Mapping[str, Any],
+        source: ImageSource = "text2image",
+        input_images: Optional[List[str]] = None,
+    ) -> "ImageMeta":
+        """从模型输入参数抽取生成溯源信息，构造 meta。"""
+        return cls(
+            filename=filename,
+            provider=provider,
+            source=source,
+            prompt=str(model_input.get("prompt") or ""),
+            negative_prompt=str(model_input.get("negative_prompt") or ""),
+            model=model,
+            model_ref=model_ref,
+            width=int(model_input.get("width") or 0),
+            height=int(model_input.get("height") or 0),
+            aspect_ratio=str(model_input.get("aspect_ratio") or ""),
+            num_inference_steps=int(model_input.get("num_inference_steps") or 0),
+            guidance_scale=float(model_input.get("guidance_scale") or 0.0),
+            scheduler=str(model_input.get("scheduler") or ""),
+            seed=model_input.get("seed"),
+            input_images=list(input_images or []),
+            format=Path(filename).suffix.lstrip(".") or "png",
+        )

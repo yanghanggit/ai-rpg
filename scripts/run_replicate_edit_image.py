@@ -8,23 +8,21 @@
     --list-demos                                        列出预设场景
     --test                                              测试 API 连接
 
-生成图片输出到 .images/。
+资产固定输出到 .images/，每个 raw 文件配一个同名 .meta。
 """
 
 import asyncio
 import sys
-import uuid
 from pathlib import Path
 from typing import List, Optional, Tuple
 
 import click
 
+from ai_rpg.models import IMAGES_DIR, ImageMeta
 from ai_rpg.replicate import (
-    IMAGES_OUTPUT_DIR,
-    ReplicateImageInput,
+    EditImageJob,
     check_replicate_connection,
-    generate_and_download,
-    replicate_config,
+    edit_image,
 )
 
 # ========== 预设测试场景 ==========
@@ -68,7 +66,7 @@ DEMO_SCENARIOS = {
 }
 
 
-def find_test_images(directory: Path = IMAGES_OUTPUT_DIR, limit: int = 3) -> List[Path]:
+def find_test_images(directory: Path = IMAGES_DIR, limit: int = 3) -> List[Path]:
     """查找测试用图片"""
     if not directory.exists():
         return []
@@ -98,7 +96,7 @@ async def run_image_edit(
     model: str = "nano-banana",
     output_format: str = "png",
     aspect_ratio: str = "match_input_image",
-) -> str:
+) -> ImageMeta:
     """
     执行图像编辑任务
 
@@ -110,7 +108,7 @@ async def run_image_edit(
         aspect_ratio: 宽高比
 
     Returns:
-        保存的文件路径
+        生成的图片元数据（ImageMeta）
     """
     print("=" * 70)
     print(f"🎨 Nano Banana 图像编辑测试")
@@ -126,52 +124,25 @@ async def run_image_edit(
     print(f"  输出格式: {output_format}")
     print(f"  宽高比: {aspect_ratio}")
 
-    # 获取模型引用
-    model_ref = replicate_config.get_model_ref(model)
-
-    # 打开图片文件（传递文件对象给 Replicate API）
-    print(f"\n📤 准备上传图片文件...")
-    image_files = []
-    for img_path in input_images:
-        with open(img_path, "rb") as f:
-            # 读取文件内容并保存
-            image_files.append(open(img_path, "rb"))
-
-    # 构建模型输入（包含 image_input）
-    model_input: ReplicateImageInput = {
-        "prompt": prompt,
-        "image_input": image_files,  # 传递打开的文件对象
-        "aspect_ratio": aspect_ratio,
-        "output_format": output_format,
-    }
-
-    # 准备输出路径
-    output_path = str(
-        IMAGES_OUTPUT_DIR / f"{model}_edit_{uuid.uuid4()}.{output_format}"
-    )
-
     print(f"\n⏳ 开始执行编辑任务...")
 
-    try:
-        # 执行编辑任务
-        saved_path = await generate_and_download(
-            model_ref=model_ref,
-            model_input=dict(model_input),
-            output_path=output_path,
+    # 文件打开/关闭、image_input 拼接、meta 写入均由 edit_image 负责
+    meta = await edit_image(
+        job=EditImageJob(
+            model=model,
+            prompt=prompt,
+            input_images=input_images,
+            output_format=output_format,
+            aspect_ratio=aspect_ratio,
         )
+    )
 
-        # 关闭文件
-        for f in image_files:
-            f.close()
+    print(f"\n🎉 编辑完成!")
+    print(f"📂 保存位置: {meta.local_path}")
+    print(f"📝 元数据: {meta.meta_path}")
+    print(f"🔗 URL: {meta.url}")
 
-        print(f"\n🎉 编辑完成!")
-        print(f"📂 保存位置: {saved_path}")
-
-        return saved_path
-
-    except Exception as e:
-        print(f"\n❌ 编辑失败: {e}")
-        raise
+    return meta
 
 
 async def run_demo_scenario(scenario_key: str, model: str = "nano-banana") -> None:
@@ -201,7 +172,7 @@ async def run_demo_scenario(scenario_key: str, model: str = "nano-banana") -> No
         # 单图编辑只需要1张
         test_images = find_test_images(limit=1)
         if not test_images:
-            print(f"\n❌ 错误: 在 {IMAGES_OUTPUT_DIR} 目录下未找到测试图片")
+            print(f"\n❌ 错误: 在 {IMAGES_DIR} 目录下未找到测试图片")
             print(f"💡 请先运行 run_replicate_generate_image.py 生成一些图片")
             return
 

@@ -163,7 +163,7 @@ class MonsterTurnAction(Component):
 #     → GenerateDungeonActorsSystem    (Step 3)   → AssembleDungeonAction
 #     → AssembleDungeonSystem          (Step 4)   → AssembleDeckAction
 #     → AssembleDeckSystem      (Step 4.5)（当前终点）
-#     → IllustrateDungeonActionSystem  (Step 5)（暂注释禁用）
+#     → IllustrateDungeonActionSystem  (Step 5)
 ############################################################################################################
 @final
 @register_action_component_type
@@ -247,23 +247,22 @@ class AssembleDeckAction(Component):
     """Step 4→4.5 衔接：由 AssembleDungeonSystem 添加，携带已组装的 Dungeon（牌库待填）。
 
     触发 AssembleDeckSystem（Step 4.5），其并发为每个角色从卡牌原型库
-    组建并润色牌库，随后写盘 Dungeon JSON（Step 5 插图暂注释禁用）。
+    组建并润色牌库，随后写盘 Dungeon JSON，并触发 Step 5 插图生成。
     """
 
     name: str
     dungeon: Dungeon
 
 
-# 暂注释禁用：Step 5 插图生成（IllustrateDungeonAction / IllustrateDungeonActionSystem）
-# ############################################################################################################
-# @final
-# @register_action_component_type
-# @register_component_type
-# class IllustrateDungeonAction(Component):
-#     """Step 4.5→5 衔接：由 AssembleDeckSystem 添加，触发副本封面与 Stage 插图的并发生成。"""
-#
-#     name: str
-#     dungeon_name: str  # 副本全名，用于定位磁盘上的 .dungeons/{dungeon_name}.json
+############################################################################################################
+@final
+@register_action_component_type
+@register_component_type
+class IllustrateDungeonAction(Component):
+    """Step 4.5→5 衔接：由 AssembleDeckSystem 添加，触发副本封面与 Stage 插图的并发生成。"""
+
+    name: str
+    dungeon_name: str  # 副本全名，用于定位磁盘上的 .dungeons/{dungeon_name}.json
 
 
 ############################################################################################################

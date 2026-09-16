@@ -4,7 +4,7 @@
 - ``text_to_image`` / ``batch_text_to_images``：文生图（单个 / 批量）
 - ``edit_image`` / ``batch_edit_images``：图生图编辑（单个 / 批量）
 
-单个与批量共用同一"完整请求"类型（:class:`TextToImageJob` / :class:`EditImageJob`），
+单个与批量共用同一"完整输入规格"类型（:class:`TextToImageSpec` / :class:`EditImageSpec`），
 不含任何隐藏约定：模型、提示词、尺寸等一律显式填写。
 
 另提供通用底层入口 :func:`generate_image_asset`（自定义 ``model_input``）。
@@ -18,14 +18,14 @@ from typing import Final, List, Optional, Tuple, final
 from ..models.image import ImageMeta, ImageSource, new_image_filename
 from .batch import batch_generate_images
 from .config import replicate_config
-from .pipeline import generate_and_download
+from .pipeline import download_image, generate_image, image_format_from_url
 from .schemas import ReplicateImageInput
 
 
 ################################################################################################################################################################################
 @final
 @dataclass(frozen=True)
-class TextToImageJob:
+class TextToImageSpec:
     """一次文生图的完整输入规格。
 
     - ``aspect_ratio`` 为 ``None`` 时，按 ``width`` / ``height`` 推导最接近的受支持比例；
@@ -49,7 +49,7 @@ class TextToImageJob:
 ################################################################################################################################################################################
 @final
 @dataclass(frozen=True)
-class EditImageJob:
+class EditImageSpec:
     """一次图生图编辑的完整输入规格。"""
 
     model: str
@@ -87,24 +87,25 @@ def _derive_aspect_ratio(width: int, height: int) -> str:
 
 
 ################################################################################################################################################################################
-def _text_to_image_input(job: TextToImageJob) -> ReplicateImageInput:
-    """把文生图请求规格转换为 Replicate 模型输入。"""
+def _text_to_image_input(spec: TextToImageSpec) -> ReplicateImageInput:
+    """把文生图输入规格转换为 Replicate 模型输入。"""
     model_input: ReplicateImageInput = {
-        "prompt": job.prompt,
-        "negative_prompt": job.negative_prompt or "",
-        "aspect_ratio": job.aspect_ratio or _derive_aspect_ratio(job.width, job.height),
-        "width": job.width,
-        "height": job.height,
+        "prompt": spec.prompt,
+        "negative_prompt": spec.negative_prompt or "",
+        "aspect_ratio": spec.aspect_ratio
+        or _derive_aspect_ratio(spec.width, spec.height),
+        "width": spec.width,
+        "height": spec.height,
         "num_outputs": 1,
-        "num_inference_steps": job.num_inference_steps,
-        "guidance_scale": job.guidance_scale,
+        "num_inference_steps": spec.num_inference_steps,
+        "guidance_scale": spec.guidance_scale,
     }
-    if job.seed is not None:
-        model_input["seed"] = job.seed
-    if job.scheduler is not None:
-        model_input["scheduler"] = job.scheduler
-    if job.magic_prompt_option is not None:
-        model_input["magic_prompt_option"] = job.magic_prompt_option
+    if spec.seed is not None:
+        model_input["seed"] = spec.seed
+    if spec.scheduler is not None:
+        model_input["scheduler"] = spec.scheduler
+    if spec.magic_prompt_option is not None:
+        model_input["magic_prompt_option"] = spec.magic_prompt_option
     return model_input
 
 
@@ -118,11 +119,18 @@ async def generate_image_asset(
 ) -> ImageMeta:
     """通用底层入口：按给定 ``model_input`` 生成并写入 ``.images/<filename>.meta``。
 
+    文件扩展名与 meta 的 ``format`` 由模型返回的产物 URL 推断（真实格式），
+    不依赖模型是否遵守 ``output_format``，避免扩展名与字节内容不符。
     失败时异常向上抛出；批量场景可配合 ``batch_generate_images`` 隔离。
     常规文生图/图生图请优先使用 :func:`text_to_image` / :func:`edit_image`。
     """
     model_ref = replicate_config.get_model_ref(model)
-    ext = str(model_input.get("output_format") or "png")
+    image_url = await generate_image(model_ref, dict(model_input))
+
+    # 以产物 URL 的真实格式命名；无法识别时回退到声明的 output_format（默认 png）
+    ext = image_format_from_url(image_url) or str(
+        model_input.get("output_format") or "png"
+    )
     meta = ImageMeta.from_generation(
         filename=new_image_filename(ext),
         provider="replicate",
@@ -133,62 +141,63 @@ async def generate_image_asset(
         input_images=input_images,
     )
 
-    await generate_and_download(model_ref, dict(model_input), str(meta.local_path))
+    await download_image(image_url, str(meta.local_path))
     meta.size_bytes = meta.local_path.stat().st_size
     meta.save()
     return meta
 
 
 ################################################################################################################################################################################
-async def text_to_image(*, job: TextToImageJob) -> ImageMeta:
+async def text_to_image(*, spec: TextToImageSpec) -> ImageMeta:
     """文生图：生成一张图片并写入配套 meta。"""
     return await generate_image_asset(
-        model=job.model,
-        model_input=_text_to_image_input(job),
+        model=spec.model,
+        model_input=_text_to_image_input(spec),
         source="text2image",
     )
 
 
 ################################################################################################################################################################################
-async def edit_image(*, job: EditImageJob) -> ImageMeta:
-    """图生图编辑：以 ``job.input_images`` 为输入生成新图片并写入配套 meta。
+async def edit_image(*, spec: EditImageSpec) -> ImageMeta:
+    """图生图编辑：以 ``spec.input_images`` 为输入生成新图片并写入配套 meta。
 
     负责打开 / 关闭输入文件、拼接模型输入 ``image_input``，并把输入来源
     写入 meta 的 ``input_images``。
     """
     with ExitStack() as stack:
         image_files = [
-            stack.enter_context(open(path, "rb")) for path in job.input_images
+            stack.enter_context(open(path, "rb")) for path in spec.input_images
         ]
         model_input: ReplicateImageInput = {
-            "prompt": job.prompt,
+            "prompt": spec.prompt,
             "image_input": image_files,
-            "aspect_ratio": job.aspect_ratio,
-            "output_format": job.output_format,
+            "aspect_ratio": spec.aspect_ratio,
+            "output_format": spec.output_format,
         }
         return await generate_image_asset(
-            model=job.model,
+            model=spec.model,
             model_input=model_input,
             source="image_edit",
-            input_images=job.input_images,
+            input_images=spec.input_images,
         )
 
 
 ################################################################################################################################################################################
 async def batch_text_to_images(
-    *, jobs: List[TextToImageJob]
+    *, specs: List[TextToImageSpec]
 ) -> List[Optional[ImageMeta]]:
     """批量文生图：并发生成，单个失败不影响其他，失败项为 ``None``。"""
-    runner_jobs = [
-        (f"text_to_image_{i:02d}", text_to_image(job=job)) for i, job in enumerate(jobs)
+    runner_tasks = [
+        (f"text_to_image_{i:02d}", text_to_image(spec=spec))
+        for i, spec in enumerate(specs)
     ]
-    return await batch_generate_images(runner_jobs)
+    return await batch_generate_images(runner_tasks)
 
 
 ################################################################################################################################################################################
-async def batch_edit_images(*, jobs: List[EditImageJob]) -> List[Optional[ImageMeta]]:
+async def batch_edit_images(*, specs: List[EditImageSpec]) -> List[Optional[ImageMeta]]:
     """批量图生图编辑：并发生成，单个失败不影响其他，失败项为 ``None``。"""
-    runner_jobs = [
-        (f"edit_image_{i:02d}", edit_image(job=job)) for i, job in enumerate(jobs)
+    runner_tasks = [
+        (f"edit_image_{i:02d}", edit_image(spec=spec)) for i, spec in enumerate(specs)
     ]
-    return await batch_generate_images(runner_jobs)
+    return await batch_generate_images(runner_tasks)

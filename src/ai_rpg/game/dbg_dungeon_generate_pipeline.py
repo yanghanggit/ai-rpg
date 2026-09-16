@@ -24,6 +24,9 @@ def create_dungeon_generate_pipeline(
     )
     from ..systems.generate_dungeon_profile_system import GenerateDungeonProfileSystem
     from ..systems.generate_dungeon_rooms_system import GenerateDungeonRoomsSystem
+    from ..systems.illustrate_dungeon_action_system import (
+        IllustrateDungeonActionSystem,
+    )
     from ..systems.prologue_system import PrologueSystem
     from .dbg_game import DBGGame
 
@@ -42,6 +45,9 @@ def create_dungeon_generate_pipeline(
     processors.add(
         AssembleDeckSystem(dbg_game)
     )  # Step 4.5: 牌库组建（原型选卡 + 润色）
+    processors.add(
+        IllustrateDungeonActionSystem(dbg_game)
+    )  # Step 5: 封面 + 房间插图生成
 
     # 清除动作相关的临时状态、标记等，准备下一轮输入
     processors.add(ActionCleanupSystem(dbg_game))

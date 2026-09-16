@@ -20,7 +20,7 @@ import click
 
 from ai_rpg.models import IMAGES_DIR, ImageMeta
 from ai_rpg.replicate import (
-    EditImageJob,
+    EditImageSpec,
     check_replicate_connection,
     edit_image,
 )
@@ -128,7 +128,7 @@ async def run_image_edit(
 
     # 文件打开/关闭、image_input 拼接、meta 写入均由 edit_image 负责
     meta = await edit_image(
-        job=EditImageJob(
+        spec=EditImageSpec(
             model=model,
             prompt=prompt,
             input_images=input_images,

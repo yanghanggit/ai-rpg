@@ -67,10 +67,7 @@ async def compact_context(
             )
 
     # 在锁外派发 compact pipeline 任务，让任务独立持锁执行
-    deferred_job_id = await execute_compact_context_task.defer_async(
-        user_name=payload.user_name
-    )
-    job_id = deferred_job_id
+    job_id = await execute_compact_context_task.defer_async(user_name=payload.user_name)
 
     logger.info(f"📝 创建上下文压缩任务: job_id={job_id}, user={payload.user_name}")
 

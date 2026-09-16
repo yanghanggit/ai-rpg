@@ -40,5 +40,5 @@
 
 → 参见：[卡牌数据模型（Card）](card.md)（功能字段规范与词缀语义）
 → 参见：[工坊合成管道（Craft Pipeline）](craft-pipeline.md)（机制与内容分离、信息注入两层架构）
-→ 参见：[战役设定与全局规则（CAMPAIGN_SETTING / SYSTEM_RULES）](campaign-setting-rules-bridge.md)（引擎内容无关的分层原则）
+→ 参见：[战役设定、全局规则与插图风格（CAMPAIGN_SETTING / SYSTEM_RULES / IMAGE_STYLE）](campaign-setting-rules-bridge.md)（引擎内容无关的分层原则）
 → 参见：[材料系统（MaterialItem）](material-item.md)（材料消耗与产物入库规则）

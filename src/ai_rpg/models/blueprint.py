@@ -14,6 +14,8 @@ class Blueprint(BaseModel):
     knowledge_base: Dict[str, List[str]]  # 蓝图关联的 RAG 知识库（按分类组织）
     stages: List[Stage]
     world_entities: List[World]
+    image_style: str = ""  # Step 5 副本插图的全局视觉风格（故事层注入）
+    image_negative_prompt: str = ""  # Step 5 副本插图的全局负面提示词
 
 
 ###############################################################################################################################################

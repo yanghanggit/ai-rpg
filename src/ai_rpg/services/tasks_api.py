@@ -2,6 +2,8 @@
 
 状态不持久化，每次查询时从 Procrastinate 实时读取；仅失败时的错误文本被
 持久化在 `task_errors` 表中（Procrastinate 自己的表不记录异常内容）。
+
+命名约定：接口用 ``task``，任务标识符用 ``job_id``（见 ``models/task.py`` 模块 docstring）。
 """
 
 import asyncio

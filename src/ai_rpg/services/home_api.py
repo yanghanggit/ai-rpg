@@ -108,10 +108,7 @@ async def home_player_speak(
             )
 
     # 在锁外派发 home pipeline 任务，让任务独立持锁执行
-    deferred_job_id = await execute_home_pipeline_task.defer_async(
-        user_name=payload.user_name
-    )
-    job_id = deferred_job_id
+    job_id = await execute_home_pipeline_task.defer_async(user_name=payload.user_name)
 
     logger.info(
         f"📝 创建 home pipeline 任务: job_id={job_id}, user={payload.user_name}"
@@ -166,10 +163,7 @@ async def home_player_switch_stage(
             )
 
     # 在锁外派发 home pipeline 任务，让任务独立持锁执行
-    deferred_job_id = await execute_home_pipeline_task.defer_async(
-        user_name=payload.user_name
-    )
-    job_id = deferred_job_id
+    job_id = await execute_home_pipeline_task.defer_async(user_name=payload.user_name)
 
     logger.info(
         f"📝 创建 home pipeline 任务: job_id={job_id}, user={payload.user_name}"
@@ -221,10 +215,7 @@ async def home_advance(
             )
 
     # 在锁外派发 home pipeline 任务，让任务独立持锁执行
-    deferred_job_id = await execute_home_pipeline_task.defer_async(
-        user_name=payload.user_name
-    )
-    job_id = deferred_job_id
+    job_id = await execute_home_pipeline_task.defer_async(user_name=payload.user_name)
 
     return HomeAdvanceResponse(
         job_id=job_id,
@@ -272,10 +263,9 @@ async def home_generate_dungeon(
             )
 
     # 在锁外派发 dungeon generate pipeline 任务，让任务独立持锁执行
-    deferred_job_id = await execute_dungeon_generate_pipeline_task.defer_async(
+    job_id = await execute_dungeon_generate_pipeline_task.defer_async(
         user_name=payload.user_name
     )
-    job_id = deferred_job_id
 
     logger.info(
         f"📝 创建 dungeon generate pipeline 任务: job_id={job_id}, user={payload.user_name}"
@@ -440,10 +430,7 @@ async def home_wear_costume(
                 detail=error_detail,
             )
 
-    deferred_job_id = await execute_home_pipeline_task.defer_async(
-        user_name=payload.user_name
-    )
-    job_id = deferred_job_id
+    job_id = await execute_home_pipeline_task.defer_async(user_name=payload.user_name)
     logger.info(f"📝 创建穿装任务: job_id={job_id}, user={payload.user_name}")
     return HomeWearCostumeResponse(
         job_id=job_id,
@@ -480,10 +467,7 @@ async def home_remove_costume(
                 detail=error_detail,
             )
 
-    deferred_job_id = await execute_home_pipeline_task.defer_async(
-        user_name=payload.user_name
-    )
-    job_id = deferred_job_id
+    job_id = await execute_home_pipeline_task.defer_async(user_name=payload.user_name)
     logger.info(f"📝 创建脱装任务: job_id={job_id}, user={payload.user_name}")
     return HomeRemoveCostumeResponse(
         job_id=job_id,
@@ -527,10 +511,9 @@ async def home_craft_consumable(
                 detail=error_detail,
             )
 
-    deferred_job_id = await execute_home_craft_pipeline_task.defer_async(
+    job_id = await execute_home_craft_pipeline_task.defer_async(
         user_name=payload.user_name
     )
-    job_id = deferred_job_id
     logger.info(f"📝 创建消耗品工坐任务: job_id={job_id}, user={payload.user_name}")
     return HomeCraftItemResponse(
         job_id=job_id,
@@ -570,10 +553,9 @@ async def home_craft_gear_item(
                 detail=error_detail,
             )
 
-    deferred_job_id = await execute_home_craft_pipeline_task.defer_async(
+    job_id = await execute_home_craft_pipeline_task.defer_async(
         user_name=payload.user_name
     )
-    job_id = deferred_job_id
     logger.info(f"📝 创建装备工坐任务: job_id={job_id}, user={payload.user_name}")
     return HomeCraftItemResponse(
         job_id=job_id,
@@ -613,10 +595,9 @@ async def home_craft_costume_item(
                 detail=error_detail,
             )
 
-    deferred_job_id = await execute_home_craft_pipeline_task.defer_async(
+    job_id = await execute_home_craft_pipeline_task.defer_async(
         user_name=payload.user_name
     )
-    job_id = deferred_job_id
     logger.info(f"📝 创建时装工坐任务: job_id={job_id}, user={payload.user_name}")
     return HomeCraftItemResponse(
         job_id=job_id,

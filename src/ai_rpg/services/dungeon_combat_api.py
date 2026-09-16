@@ -109,10 +109,7 @@ async def dungeon_combat_retreat(
         logger.info(f"玩家 {payload.user_name} 撤退动作激活成功: {message}")
 
     # 在锁外派发任务，让任务独立持锁执行
-    deferred_job_id = await execute_retreat_task.defer_async(
-        user_name=payload.user_name
-    )
-    job_id = deferred_job_id
+    job_id = await execute_retreat_task.defer_async(user_name=payload.user_name)
     logger.info(f"📝 创建撤退任务: job_id={job_id}, user={payload.user_name}")
 
     # 返回撤退任务启动成功的响应
@@ -173,10 +170,7 @@ async def dungeon_combat_init(
             )
 
     # 派发战斗初始化任务（在锁外派发，让任务独立持锁执行）
-    deferred_job_id = await execute_init_combat_task.defer_async(
-        user_name=payload.user_name
-    )
-    job_id = deferred_job_id
+    job_id = await execute_init_combat_task.defer_async(user_name=payload.user_name)
     logger.info(f"📝 创建战斗初始化任务: job_id={job_id}, user={payload.user_name}")
 
     # 返回战斗初始化任务启动成功的响应
@@ -304,10 +298,7 @@ async def dungeon_combat_draw_cards(
             )
 
     # 派发任务（在锁外派发，让任务独立持锁执行）
-    deferred_job_id = await execute_draw_cards_task.defer_async(
-        user_name=payload.user_name
-    )
-    job_id = deferred_job_id
+    job_id = await execute_draw_cards_task.defer_async(user_name=payload.user_name)
     logger.info(f"📝 创建全员抽卡任务: job_id={job_id}, user={payload.user_name}")
 
     # 返回全员抽卡任务启动成功的响应
@@ -397,10 +388,7 @@ async def dungeon_combat_play_cards(
             )
 
     # 在锁外派发任务，让任务独立持锁执行
-    deferred_job_id = await execute_play_cards_task.defer_async(
-        user_name=payload.user_name
-    )
-    job_id = deferred_job_id
+    job_id = await execute_play_cards_task.defer_async(user_name=payload.user_name)
 
     logger.info(f"📝 创建出牌任务: job_id={job_id}, user={payload.user_name}")
 
@@ -481,10 +469,7 @@ async def dungeon_combat_pass_turn(
             )
 
     # 在锁外派发任务，让任务独立持锁执行
-    deferred_job_id = await execute_pass_turn_task.defer_async(
-        user_name=payload.user_name
-    )
-    job_id = deferred_job_id
+    job_id = await execute_pass_turn_task.defer_async(user_name=payload.user_name)
 
     logger.info(f"📝 创建过牌任务: job_id={job_id}, user={payload.user_name}")
 
@@ -574,10 +559,7 @@ async def dungeon_combat_use_consumable(
             )
 
     # 在锁外派发任务，让任务独立持锁执行
-    deferred_job_id = await execute_use_consumable_task.defer_async(
-        user_name=payload.user_name
-    )
-    job_id = deferred_job_id
+    job_id = await execute_use_consumable_task.defer_async(user_name=payload.user_name)
 
     logger.info(f"📝 创建使用消耗品任务: job_id={job_id}, user={payload.user_name}")
 
@@ -663,10 +645,7 @@ async def dungeon_combat_equip_gear(
             )
 
     # 在锁外派发任务，让任务独立持锁执行
-    deferred_job_id = await execute_equip_gear_task.defer_async(
-        user_name=payload.user_name
-    )
-    job_id = deferred_job_id
+    job_id = await execute_equip_gear_task.defer_async(user_name=payload.user_name)
 
     logger.info(f"📝 创建使用装备任务: job_id={job_id}, user={payload.user_name}")
 

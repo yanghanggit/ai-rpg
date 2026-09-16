@@ -2,7 +2,7 @@
 
 位于 AssembleDungeonSystem 之后（Step 4.5）：为已组装副本中的每个 Actor，
 从其自己的 agent 视角浏览卡牌原型库、选定恰好 5 张并做叙事润色（name/description），
-随后写盘 Dungeon JSON（Step 5 插图暂注释禁用）；任何一步失败均回退默认牌库
+随后写盘 Dungeon JSON 并触发 Step 5 插图生成；任何一步失败均回退默认牌库
 （取自数据库中的默认牌单 DEFAULT_DECK_BUILD，source 由实体构造期 DBGGame.create_actor_entities 回填）。
 """
 
@@ -20,14 +20,15 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.config import DUNGEONS_DIR
 from ..game.dbg_game import DBGGame
 from ..models import (
+    BUILD_CARD_FIELD_DESCRIPTION,
     Actor,
     AssembleDeckAction,
-    BUILD_CARD_FIELD_DESCRIPTION,
     Card,
     ChatMessage,
     CombatRoom,
     ComponentSerialization,
     DeckComponent,
+    IllustrateDungeonAction,
     SystemMessage,
 )
 from ..pgsql import (
@@ -329,11 +330,11 @@ class AssembleDeckSystem(ReactiveProcessor):
             )
         )
 
-        # 衔接 Step 5：插图生成（暂注释禁用）
-        # entity.replace(IllustrateDungeonAction, entity.name, dungeon_name)
-        # logger.info(
-        #     f"[AssembleDeckSystem] 添加 IllustrateDungeonAction: dungeon={dungeon_name}"
-        # )
+        # 衔接 Step 5：插图生成
+        entity.replace(IllustrateDungeonAction, entity.name, dungeon_name)
+        logger.info(
+            f"[AssembleDeckSystem] 添加 IllustrateDungeonAction: dungeon={dungeon_name}"
+        )
 
         # 副本生成完成：重置副本生成系统实体（WorldComponent + DungeonGenerationComponent）
         # 的 agent memory，仅保留首条 system prompt，清除其余全部对话

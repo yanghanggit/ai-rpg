@@ -1,4 +1,4 @@
-# 战役设定与全局规则（CAMPAIGN_SETTING / SYSTEM_RULES）
+# 战役设定、全局规则与插图风格（CAMPAIGN_SETTING / SYSTEM_RULES / IMAGE_STYLE）
 
 ## 分层
 
@@ -7,7 +7,21 @@
 - `SYSTEM_RULES`：全局规则（角色扮演契约、游戏实体、实体全名、根属性、战斗机制、场景移动、扮演与事实）。副本=梦境的语义直接写在本层——进入副本即进入梦境、进出副本即入梦与醒来。
 - `CAMPAIGN_SETTING`：战役大背景（时代锚点、类型标签、寻常/诡谲双层面、核心玩法），是全部实体的最低公共知识。
 
-`Blueprint` 以 `campaign_setting` 与 `system_rules` 两个字段承载二者；工厂（create_actor / create_stage / create_world）与副本组装系统（AssembleDungeonSystem）都从蓝图取值，不再硬编码任何规则文本。
+`Blueprint` 以 `campaign_setting` 与 `system_rules` 两个字段承载这两个 prompt 层字段；工厂（create_actor / create_stage / create_world）与副本组装系统（AssembleDungeonSystem）都从蓝图取值，不再硬编码任何规则文本。
+
+## 故事层三字段（Blueprint）
+
+`Blueprint` 是引擎与故事之间唯一的注入边界，共承载三个故事层字段；引擎只按字段消费，不含任何具体故事文本。
+
+| 字段 | 故事常量（demo/world.py） | 消费方 | 注入目标 |
+| --- | --- | --- | --- |
+| `campaign_setting` | `CAMPAIGN_SETTING` | 工厂（create_actor / create_stage / create_world）、AssembleDungeonSystem | 实体 system prompt 的「游戏设定」段 |
+| `system_rules` | `SYSTEM_RULES` | 同上 | 实体 system prompt 的「全局规则」段 |
+| `image_style` / `image_negative_prompt` | `IMAGE_STYLE` / `IMAGE_NEGATIVE_PROMPT` | IllustrateDungeonActionSystem（Step 5） | 副本插图的提示词前缀与负面提示词 |
+
+前两者面向 LLM（文本扮演），第三者面向图像模型（插图生成）——后者是唯一不进入 system prompt 的故事层字段，因此单独列出。插图系统只读取该字段并拼接通用构图约束，不硬编码画风、氛围或负面词；换故事只改 `demo/world.py`。
+
+字段默认值均为空串，旧 Blueprint / 存档可直接反序列化。
 
 ## 抽象设定是惰性知识
 
@@ -23,3 +37,4 @@
 
 - 副本=梦境的故事语义来源。→ 参见：[新故事设计草稿：《大渊》](新故事设计草稿.md)
 - 副本概念的生成与实体化。→ 参见：[副本生成管道（Dungeon Generation Pipeline）](dungeon-generation.md)
+- 插图风格字段的消费方。→ 参见：[副本插图生成系统（Step 5）](../../src/ai_rpg/systems/illustrate_dungeon_action_system.py)

@@ -10,7 +10,7 @@ Replicate 模块
 2. 通用底层门面（需要自定义 ``model_input`` 时使用）
    ``generate_image_asset``
 3. 传输纯函数（生成 / 下载）
-   ``generate_image`` / ``download_image`` / ``generate_and_download``
+   ``generate_image`` / ``image_format_from_url`` / ``download_image``
 4. 并发引擎
    ``batch_generate_images``
 5. 配置与连通性
@@ -20,8 +20,8 @@ Replicate 模块
 """
 
 from .assets import (
-    EditImageJob,
-    TextToImageJob,
+    EditImageSpec,
+    TextToImageSpec,
     batch_edit_images,
     batch_text_to_images,
     edit_image,
@@ -34,15 +34,19 @@ from .config import (
     replicate_config,
 )
 from .connection import check_replicate_connection
-from .pipeline import download_image, generate_and_download, generate_image
+from .pipeline import (
+    download_image,
+    generate_image,
+    image_format_from_url,
+)
 from .schemas import ReplicateImageInput
 
 __all__ = [
     "ReplicateConfig",
     "ReplicateImageInput",
     # 语义化入口（推荐）
-    "TextToImageJob",
-    "EditImageJob",
+    "TextToImageSpec",
+    "EditImageSpec",
     "text_to_image",
     "edit_image",
     "batch_text_to_images",
@@ -51,8 +55,8 @@ __all__ = [
     "generate_image_asset",
     "check_replicate_connection",
     "generate_image",
+    "image_format_from_url",
     "download_image",
-    "generate_and_download",
     "batch_generate_images",
     "replicate_config",
 ]

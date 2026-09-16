@@ -18,7 +18,7 @@ import click
 
 from ai_rpg.models import ImageMeta
 from ai_rpg.replicate import (
-    TextToImageJob,
+    TextToImageSpec,
     batch_text_to_images,
     check_replicate_connection,
     replicate_config,
@@ -43,8 +43,8 @@ async def run_concurrent_demo(prompts: List[str]) -> None:
         print(f"  {i}. {prompt}")
 
     try:
-        jobs = [
-            TextToImageJob(
+        specs = [
+            TextToImageSpec(
                 model=replicate_config.default_image_model,
                 prompt=prompt,
                 negative_prompt="worst quality, low quality, blurry",
@@ -54,10 +54,10 @@ async def run_concurrent_demo(prompts: List[str]) -> None:
             for prompt in prompts
         ]
 
-        results = await batch_text_to_images(jobs=jobs)
+        results = await batch_text_to_images(specs=specs)
 
         metas: List[ImageMeta] = [m for m in results if m is not None]
-        print(f"\n🎉 并发生成完成! 成功 {len(metas)}/{len(jobs)} 张:")
+        print(f"\n🎉 并发生成完成! 成功 {len(metas)}/{len(specs)} 张:")
         for i, meta in enumerate(metas, 1):
             print(f"  {i}. {meta.local_path}  ({meta.url})")
         print("💡 这展示了异步并发的强大能力！")
@@ -198,7 +198,7 @@ async def _async_main(
 
         # 生成并写入配套 meta（aspect_ratio 由 width/height 自动推导）
         meta = await text_to_image(
-            job=TextToImageJob(
+            spec=TextToImageSpec(
                 model=model_name,
                 prompt=prompt,
                 negative_prompt=negative,

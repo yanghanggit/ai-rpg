@@ -404,19 +404,19 @@ class DungeonOpeningInitResponse(BaseModel):
 
 
 @final
-class DungeonOpeningGenerateCardPoolRequest(BaseModel):
+class DungeonOpeningGenerateSpoilsRequest(BaseModel):
     user_name: str
     game_name: str
 
 
 @final
-class DungeonOpeningGenerateCardPoolResponse(BaseModel):
+class DungeonOpeningGenerateSpoilsResponse(BaseModel):
     job_id: int
     message: str
 
 
 @final
-class DungeonOpeningPickCardFromPoolRequest(BaseModel):
+class DungeonOpeningPickSpoilsCardRequest(BaseModel):
     user_name: str
     game_name: str
     actor_name: str
@@ -424,7 +424,7 @@ class DungeonOpeningPickCardFromPoolRequest(BaseModel):
 
 
 @final
-class DungeonOpeningPickCardFromPoolResponse(BaseModel):
+class DungeonOpeningPickSpoilsCardResponse(BaseModel):
     job_id: int
     message: str
 

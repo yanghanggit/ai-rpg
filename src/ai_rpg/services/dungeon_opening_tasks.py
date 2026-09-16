@@ -9,8 +9,8 @@ from ..game.dbg_store import store_game_async
 from ..pgsql import procrastinate_app, save_task_error
 from .game_server_dependencies import get_game_server
 from .dungeon_opening_actions import (
-    activate_generate_card_pool,
-    activate_pick_card_from_pool,
+    activate_generate_spoils,
+    activate_pick_spoils_card,
 )
 
 
@@ -70,16 +70,16 @@ async def execute_opening_room_init_task(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 @procrastinate_app.task(queue="game", pass_context=True)
-async def execute_generate_card_pool_task(
+async def execute_generate_spoils_task(
     context: JobContext,
     user_name: str,
 ) -> None:
-    """执行卡池生成任务（外部触发 GenerateCardPoolAction 后推动开场管道处理）"""
+    """执行奖励生成任务（外部触发 GenerateSpoilsAction 后推动开场管道处理）"""
     job_id = context.job.id
     assert job_id is not None, "运行中的任务必然有 job id"
     try:
 
-        logger.info(f"🚀 卡池生成任务开始: job_id={job_id}, user={user_name}")
+        logger.info(f"🚀 奖励生成任务开始: job_id={job_id}, user={user_name}")
 
         game_server = get_game_server()
 
@@ -98,22 +98,22 @@ async def execute_generate_card_pool_task(
             if not rpg_game.is_current_room_dungeon_opening:
                 raise ValueError("当前副本房间不是开场房间")
 
-            # 外部显式激活卡池生成动作（内部含开场已初始化 + 幂等守卫）
-            success, message = activate_generate_card_pool(rpg_game)
+            # 外部显式激活奖励生成动作（内部含开场已初始化 + 幂等守卫）
+            success, message = activate_generate_spoils(rpg_game)
             if not success:
-                raise ValueError(f"卡池生成失败: {message}")
+                raise ValueError(f"奖励生成失败: {message}")
 
-            # 推进开场房间流程，让 GenerateCardPoolActionSystem 响应并生成卡池
+            # 推进开场房间流程，让 GenerateSpoilsActionSystem 响应并生成奖励
             await rpg_game._dungeon_opening_room_pipeline.process()
 
-            # 存储卡池生成后的世界状态，便于调试和回放
+            # 存储奖励生成后的世界状态，便于调试和回放
             await store_game_async(rpg_game)
 
-        logger.info(f"✅ 卡池生成任务完成: job_id={job_id}, user={user_name}")
+        logger.info(f"✅ 奖励生成任务完成: job_id={job_id}, user={user_name}")
 
     except Exception as e:
         logger.error(
-            f"❌ 卡池生成任务失败: job_id={job_id}, user={user_name}, error={e}"
+            f"❌ 奖励生成任务失败: job_id={job_id}, user={user_name}, error={e}"
         )
         save_task_error(job_id, str(e))
         raise
@@ -123,19 +123,19 @@ async def execute_generate_card_pool_task(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 @procrastinate_app.task(queue="game", pass_context=True)
-async def execute_pick_card_from_pool_task(
+async def execute_pick_spoils_card_task(
     context: JobContext,
     user_name: str,
     actor_name: str,
     card_name: str,
 ) -> None:
-    """执行从卡池挑选一张卡牌任务（外部触发 PickCardFromPoolAction 后推动开场管道处理）"""
+    """执行从 Spoils 领取一张卡牌任务（外部触发 PickSpoilsAction 后推动开场管道处理）"""
     job_id = context.job.id
     assert job_id is not None, "运行中的任务必然有 job id"
     try:
 
         logger.info(
-            f"🚀 挑卡任务开始: job_id={job_id}, user={user_name}, "
+            f"🚀 领卡任务开始: job_id={job_id}, user={user_name}, "
             f"actor={actor_name}, card={card_name}"
         )
 
@@ -156,23 +156,23 @@ async def execute_pick_card_from_pool_task(
             if not rpg_game.is_current_room_dungeon_opening:
                 raise ValueError("当前副本房间不是开场房间")
 
-            # 外部显式激活挑卡动作（内部含初始化 + 卡池存在 + 卡牌检索守卫）
-            success, message = activate_pick_card_from_pool(
+            # 外部显式激活领卡动作（内部含初始化 + Spoils 存在 + 卡牌检索守卫）
+            success, message = activate_pick_spoils_card(
                 rpg_game, actor_name, card_name
             )
             if not success:
-                raise ValueError(f"从卡池挑卡失败: {message}")
+                raise ValueError(f"从 Spoils 领卡失败: {message}")
 
-            # 推进开场房间流程，让 PickCardFromPoolActionSystem 响应并把选中卡加入牌库
+            # 推进开场房间流程，让 PickSpoilsActionSystem 响应并把选中卡加入牌库
             await rpg_game._dungeon_opening_room_pipeline.process()
 
-            # 存储挑卡后的世界状态，便于调试和回放
+            # 存储领卡后的世界状态，便于调试和回放
             await store_game_async(rpg_game)
 
-        logger.info(f"✅ 挑卡任务完成: job_id={job_id}, user={user_name}")
+        logger.info(f"✅ 领卡任务完成: job_id={job_id}, user={user_name}")
 
     except Exception as e:
-        logger.error(f"❌ 挑卡任务失败: job_id={job_id}, user={user_name}, error={e}")
+        logger.error(f"❌ 领卡任务失败: job_id={job_id}, user={user_name}, error={e}")
         save_task_error(job_id, str(e))
         raise
 

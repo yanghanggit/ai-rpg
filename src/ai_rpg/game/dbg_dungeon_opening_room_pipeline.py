@@ -9,7 +9,7 @@ from .rpg_game_pipeline_manager import RPGGameProcessPipeline
 def create_dungeon_opening_room_pipeline(
     game: BaseGame,
 ) -> RPGGameProcessPipeline:
-    """创建副本开场场景的流程管道（叙事 + 牌库初始化，无战斗；卡池生成由外部显式触发 GenerateCardPoolAction）"""
+    """创建副本开场场景的流程管道（叙事 + 牌库初始化，无战斗；奖励生成由外部显式触发 GenerateSpoilsAction）"""
 
     ### 不这样就循环引用
     from ..systems.action_cleanup_system import ActionCleanupSystem
@@ -24,12 +24,12 @@ def create_dungeon_opening_room_pipeline(
         EnvironmentInitializationSystem,
     )
     from ..systems.epilogue_system import EpilogueSystem
-    from ..systems.generate_card_pool_action_system import (
-        GenerateCardPoolActionSystem,
+    from ..systems.generate_spoils_action_system import (
+        GenerateSpoilsActionSystem,
     )
     from ..systems.opening_init_actor_system import OpeningInitActorSystem
-    from ..systems.pick_card_action_system import (
-        PickCardActionSystem,
+    from ..systems.pick_spoils_action_system import (
+        PickSpoilsActionSystem,
     )
     from ..systems.prologue_system import PrologueSystem
     from .dbg_game import DBGGame
@@ -55,11 +55,11 @@ def create_dungeon_opening_room_pipeline(
     # 牌库初始化系统：回填空 source 卡牌并做叙事个人化（幂等）
     processors.add(DeckInitializationSystem(dbg_game))
 
-    # 卡池系统：从原型库抽取候选卡并润色后装入卡池（响应 GenerateCardPoolAction）
-    processors.add(GenerateCardPoolActionSystem(dbg_game))
+    # 奖励生成系统：从原型库抽取候选卡并润色后装入 Spoils（响应 GenerateSpoilsAction）
+    processors.add(GenerateSpoilsActionSystem(dbg_game))
 
-    # 从卡池挑选卡牌系统：选中卡加入牌库并清空卡池（响应 PickCardFromPoolAction）
-    processors.add(PickCardActionSystem(dbg_game))
+    # 领取奖励系统：选中卡加入牌库并清空 Spoils（响应 PickSpoilsAction）
+    processors.add(PickSpoilsActionSystem(dbg_game))
 
     # 清除动作相关的临时状态
     processors.add(ActionCleanupSystem(dbg_game))

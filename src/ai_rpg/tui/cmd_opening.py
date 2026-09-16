@@ -1,4 +1,4 @@
-"""开场房间命令：info / deck / card-pool / inventory / init / generate-pool / pick / next。"""
+"""开场房间命令：info / deck / spoils / inventory / init / generate-spoils / pick-card / next。"""
 
 from typing import List, Optional, Tuple
 
@@ -14,9 +14,9 @@ from ..models import (
 from .server_client import (
     TaskFailedError,
     dungeon_advance_stage,
-    dungeon_opening_generate_card_pool,
+    dungeon_opening_generate_spoils,
     dungeon_opening_init,
-    dungeon_opening_pick_card_from_pool,
+    dungeon_opening_pick_spoils_card,
     fetch_dungeon_room,
     fetch_dungeon_state,
     fetch_entities_details,
@@ -40,7 +40,7 @@ async def _fetch_party_names(
 async def build_opening_info_text(
     user_name: str, game_name: str, player_actor: str
 ) -> str:
-    """开场房间状态总览：初始化状态 + 卡池状态 + 场景描述。"""
+    """开场房间状态总览：初始化状态 + 奖励（Spoils）状态 + 场景描述。"""
     logger.info(f"build_opening_info_text: user_name={user_name} game_name={game_name}")
     try:
         room_resp = await fetch_dungeon_room(user_name, game_name)
@@ -70,12 +70,12 @@ async def build_opening_info_text(
         )
         lines.append(f"  初始化（叙事 + 牌库）：{init_tag}")
 
-        pool_ready = any(
+        spoils_ready = any(
             any(c.name == SpoilsComponent.__name__ for c in e.components)
             for e in entities_resp.entities
         )
-        pool_tag = "[bold green]✅ 已生成[/]" if pool_ready else "[yellow]未生成[/]"
-        lines.append(f"  卡池：{pool_tag}")
+        spoils_tag = "[bold green]✅ 已生成[/]" if spoils_ready else "[yellow]未生成[/]"
+        lines.append(f"  奖励（Spoils）：{spoils_tag}")
     else:
         lines.append(f"  [red]当前房间类型：{room.type}（非开场房间）[/]")
 
@@ -136,23 +136,21 @@ async def build_deck_text(user_name: str, game_name: str, player_actor: str) -> 
     return "\n".join(lines)
 
 
-async def build_card_pool_text(
-    user_name: str, game_name: str, player_actor: str
-) -> str:
-    """查阅我方卡池，返回可写入正文区的富文本字符串。"""
-    logger.info(f"build_card_pool_text: user_name={user_name} game_name={game_name}")
+async def build_spoils_text(user_name: str, game_name: str, player_actor: str) -> str:
+    """查阅我方 Spoils（候选奖励），返回可写入正文区的富文本字符串。"""
+    logger.info(f"build_spoils_text: user_name={user_name} game_name={game_name}")
     try:
         party_names = await _fetch_party_names(user_name, game_name, player_actor)
         if not party_names:
             return "[yellow]无法确定队伍成员。[/]"
         resp = await fetch_entities_details(user_name, game_name, party_names)
     except Exception as e:
-        logger.error(f"build_card_pool_text: 加载失败 error={e}")
-        return f"[bold red]❌ 加载卡池失败: {e}[/]"
+        logger.error(f"build_spoils_text: 加载失败 error={e}")
+        return f"[bold red]❌ 加载 Spoils 失败: {e}[/]"
 
     lines: List[str] = []
     lines.append(
-        "[bold cyan]── 查阅卡池（我方） ──────────────────────────────────────[/]"
+        "[bold cyan]── 查阅奖励（Spoils） ──────────────────────────────────────[/]"
     )
     for entity in resp.entities:
         pool_data = None
@@ -162,15 +160,17 @@ async def build_card_pool_text(
                 break
         lines.append(f"[bold yellow]── {display_name(entity.name)} ──[/]")
         if pool_data is None:
-            lines.append("  [dim]（无卡池组件，请先执行 /generate-pool）[/]")
+            lines.append("  [dim]（无 Spoils 组件，请先执行 /generate-spoils）[/]")
         else:
             pool = SpoilsComponent(**pool_data)
-            if not pool.cards:
-                lines.append("  [dim]（卡池为空）[/]")
+            if pool.claimed:
+                lines.append(
+                    f"  [bold green]✅ 已领取[/]（本次候选 [bold]{len(pool.cards)}[/] 张，供回看）："
+                )
             else:
-                lines.append(f"  候选卡 [bold]{len(pool.cards)}[/] 张：")
-                for card in pool.cards:
-                    lines.append(render_card(card))
+                lines.append(f"  候选奖励 [bold]{len(pool.cards)}[/] 张（未领取）：")
+            for card in pool.cards:
+                lines.append(render_card(card))
         lines.append("")
 
     return "\n".join(lines)
@@ -228,39 +228,41 @@ async def init_opening(user_name: str, game_name: str) -> str:
     return "[bold green]✅ 开场房间初始化完成（叙事 + 牌库）。[/]"
 
 
-async def generate_card_pool(user_name: str, game_name: str) -> str:
-    """生成卡池，返回成功或失败文本。"""
-    logger.info(f"generate_card_pool: user_name={user_name} game_name={game_name}")
+async def generate_spoils(user_name: str, game_name: str) -> str:
+    """生成候选奖励（Spoils），返回成功或失败文本。"""
+    logger.info(f"generate_spoils: user_name={user_name} game_name={game_name}")
     try:
-        resp = await dungeon_opening_generate_card_pool(user_name, game_name)
+        resp = await dungeon_opening_generate_spoils(user_name, game_name)
         await watch_task_until_done(resp.job_id)
     except TaskFailedError as e:
-        logger.error(f"generate_card_pool: 任务失败 error={e}")
-        return f"[bold red]❌ 卡池生成失败: {e}[/]"
+        logger.error(f"generate_spoils: 任务失败 error={e}")
+        return f"[bold red]❌ 奖励生成失败: {e}[/]"
     except Exception as e:
-        logger.error(f"generate_card_pool: 请求失败 error={e}")
+        logger.error(f"generate_spoils: 请求失败 error={e}")
         return f"[bold red]❌ 请求失败: {e}[/]"
-    return "[bold green]✅ 卡池生成完成。[/]"
+    return "[bold green]✅ 奖励生成完成。[/]"
 
 
-async def pick_card(
+async def pick_spoils_card(
     user_name: str, game_name: str, actor_name: str, card_name: str
 ) -> str:
-    """从指定角色的卡池挑一张卡加入其牌库，返回成功或失败文本。"""
-    logger.info(f"pick_card: user_name={user_name} actor={actor_name} card={card_name}")
+    """从指定角色的 Spoils 领取一张卡加入其牌库，返回成功或失败文本。"""
+    logger.info(
+        f"pick_spoils_card: user_name={user_name} actor={actor_name} card={card_name}"
+    )
     try:
-        resp = await dungeon_opening_pick_card_from_pool(
+        resp = await dungeon_opening_pick_spoils_card(
             user_name, game_name, actor_name, card_name
         )
         await watch_task_until_done(resp.job_id)
     except TaskFailedError as e:
-        logger.error(f"pick_card: 任务失败 error={e}")
-        return f"[bold red]❌ 挑卡失败: {e}[/]"
+        logger.error(f"pick_spoils_card: 任务失败 error={e}")
+        return f"[bold red]❌ 领卡失败: {e}[/]"
     except Exception as e:
-        logger.error(f"pick_card: 请求失败 error={e}")
+        logger.error(f"pick_spoils_card: 请求失败 error={e}")
         return f"[bold red]❌ 请求失败: {e}[/]"
     return (
-        f"[bold green]✅ 已从 {display_name(actor_name)} 的卡池挑选"
+        f"[bold green]✅ 已从 {display_name(actor_name)} 的 Spoils 领取"
         f"「{card_name}」加入其牌库。[/]"
     )
 

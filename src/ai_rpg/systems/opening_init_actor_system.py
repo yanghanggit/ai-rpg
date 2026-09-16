@@ -19,6 +19,7 @@ from ..models import (
     InitializeDeckAction,
     MonsterComponent,
     PartyMemberComponent,
+    SpoilsComponent,
 )
 from ..models.messages import AIMessage, HumanMessage
 from ..utils import prompt_builder
@@ -125,8 +126,11 @@ class OpeningInitActorSystem(ExecuteProcessor):
         )
 
         # 为队伍成员触发牌库初始化（精确控制触发对象）
-        # 注：卡池生成（GenerateCardPoolAction）已改为外部显式触发，见 services/dungeon_opening_actions.py
+        # 注：奖励生成（GenerateSpoilsAction）已改为外部显式触发，见 services/dungeon_opening_actions.py
         self._add_initialize_deck_actions()
+
+        # 兜底：进入开场房时清掉上一局残留的奖励状态，保证守卫 `any(has(SpoilsComponent))` 从“无”开始
+        self._reset_spoils_state()
 
         # 状态守护：标记开场房间已完成初始化（叙事 + 牌库初始化），避免重复触发
         opening_room.initialized = True
@@ -216,6 +220,22 @@ class OpeningInitActorSystem(ExecuteProcessor):
             logger.debug(
                 f"[{actor_entity.name}] 开场场景环境信息注入完成（无 LLM 推理）"
             )
+
+    ###################################################################################################################################################################
+    def _reset_spoils_state(self) -> None:
+        """清掉队伍成员残留的 SpoilsComponent（保证开场房奖励守卫从“无”开始，幂等）。"""
+        party_entities = self._game.get_group(
+            Matcher(all_of=[PartyMemberComponent])
+        ).entities.copy()
+        cleared = 0
+        for entity in party_entities:
+            if entity.has(SpoilsComponent):
+                entity.remove(SpoilsComponent)
+                cleared += 1
+                logger.debug(f"[{entity.name}] 已清理残留 SpoilsComponent")
+        logger.debug(
+            f"[OpeningInitActorSystem] 残留奖励状态清理完成：{cleared} 个队伍成员"
+        )
 
     ###################################################################################################################################################################
     def _add_initialize_deck_actions(self) -> None:

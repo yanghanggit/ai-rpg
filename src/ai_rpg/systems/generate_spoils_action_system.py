@@ -1,4 +1,4 @@
-"""卡池系统：从卡牌原型库随机抽取 N 个原型，润色后装入卡池供后续抽卡。"""
+"""奖励(Spoils)生成系统：从卡牌原型库随机抽取 N 个原型，润色后装入 SpoilsComponent 供后续领取。"""
 
 import json
 import random
@@ -30,19 +30,19 @@ from ..models import (
     Card,
     SpoilsComponent,
     DeathComponent,
-    GenerateCardPoolAction,
+    GenerateSpoilsAction,
 )
 from ..pgsql import get_card_prototype, list_card_prototype_index
 from ..utils import batch_run_boolean_tasks, prompt_builder
 
 #######################################################################################################################################
-CARD_POOL_SIZE: Final[int] = 3  # 卡池候选数量（3 选 1），未来可调
+SPOILS_CARD_COUNT: Final[int] = 3  # 候选卡数量（3 选 1），未来可调
 
 
 #######################################################################################################################################
 @final
-class _CardPoolEdit(BaseModel):
-    """submit_pool_card 提交的单张卡牌叙事调整（仅 name/description，结构上杜绝改属性/词缀）。"""
+class _SpoilsCardEdit(BaseModel):
+    """submit_spoils_card 提交的单张候选卡叙事调整（仅 name/description，结构上杜绝改属性/词缀）。"""
 
     uuid: str
     name: str
@@ -50,10 +50,10 @@ class _CardPoolEdit(BaseModel):
 
 
 #######################################################################################################################################
-SUBMIT_POOL_CARD_TOOL: Final[ToolDefinition] = ToolDefinition(
+SUBMIT_SPOILS_CARD_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
-        name="submit_pool_card",
-        description="提交一张卡牌的叙事调整（仅 name 与 description）。每张卡各调用一次，用 uuid 精确定位目标卡。",
+        name="submit_spoils_card",
+        description="提交一张候选卡的叙事调整（仅 name 与 description）。每张卡各调用一次，用 uuid 精确定位目标卡。",
         parameters={
             "type": "object",
             "properties": {
@@ -77,38 +77,38 @@ SUBMIT_POOL_CARD_TOOL: Final[ToolDefinition] = ToolDefinition(
 
 
 #######################################################################################################################################
-FINISH_POOL_TOOL: Final[ToolDefinition] = ToolDefinition(
+FINISH_SPOILS_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
-        name="finish_pool",
-        description="全部卡牌均已通过 submit_pool_card 提交后调用，结束本次卡池润色。",
+        name="finish_spoils",
+        description="全部候选卡均已通过 submit_spoils_card 提交后调用，结束本次候选奖励润色。",
         parameters={"type": "object", "properties": {}},
     )
 )
 
 
 #######################################################################################################################################
-def _handle_submit_pool_card(
-    edits: List[_CardPoolEdit],
+def _handle_submit_spoils_card(
+    edits: List[_SpoilsCardEdit],
     uuid: str,
     name: str,
     description: str,
 ) -> str:
-    """处理 submit_pool_card 工具调用：校验并暂存一张卡牌的叙事调整。"""
+    """处理 submit_spoils_card 工具调用：校验并暂存一张候选卡的叙事调整。"""
     assert uuid, "uuid 不能为空"
-    edits.append(_CardPoolEdit(uuid=uuid, name=name, description=description))
-    logger.info(f"[GenerateCardPoolActionSystem] submit_pool_card: {uuid} → {name}")
-    return "已记录该卡牌的叙事调整。"
+    edits.append(_SpoilsCardEdit(uuid=uuid, name=name, description=description))
+    logger.info(f"[GenerateSpoilsActionSystem] submit_spoils_card: {uuid} → {name}")
+    return "已记录该候选卡的叙事调整。"
 
 
 #######################################################################################################################################
-def _handle_finish_pool() -> str:
-    """处理 finish_pool 工具调用（无参，仅作为终止信号）。"""
-    return "已结束卡池润色。"
+def _handle_finish_spoils() -> str:
+    """处理 finish_spoils 工具调用（无参，仅作为终止信号）。"""
+    return "已结束候选奖励润色。"
 
 
 #######################################################################################################################################
 def _format_card_for_prompt(card: Card) -> str:
-    """将单张待润色卡牌格式化为 prompt 片段（机械字段仅作只读上下文）。"""
+    """将单张待润色候选卡格式化为 prompt 片段（机械字段仅作只读上下文）。"""
     lines = [
         f"- uuid: {card.uuid}",
         f"  当前名: {card.name}",
@@ -141,14 +141,14 @@ def _format_card_for_prompt(card: Card) -> str:
 
 #######################################################################################################################################
 @prompt_builder
-def _build_card_pool_prompt(entity: Entity, cards: List[Card]) -> str:
-    """生成卡池候选卡牌的叙事个人化提示词。"""
+def _build_spoils_prompt(entity: Entity, cards: List[Card]) -> str:
+    """生成候选奖励（卡牌）的叙事个人化提示词。"""
     card_lines = "\n\n".join(_format_card_for_prompt(c) for c in cards)
-    return f"""# 任务：为你新获得的卡池候选卡牌做叙事润色
+    return f"""# 任务：为你新获得的候选奖励（卡牌）做叙事润色
 
-你是「{entity.name}」。你刚获得若干张候选卡牌（将进入你的卡池，供之后抽选）。请依据你的角色设定（见对话开头的系统设定），对这些卡牌的 `name` 与 `description` 做一次叙事个人化润色，使其更像是"你自己"的招式、习惯或随身手段。
+你是「{entity.name}」。你刚获得若干张候选卡牌（将进入你的 Spoils，供之后领取一项）。请依据你的角色设定（见对话开头的系统设定），对这些卡牌的 `name` 与 `description` 做一次叙事个人化润色，使其更像是"你自己"的招式、习惯或随身手段。
 
-## 待润色卡牌清单
+## 待润色候选卡清单
 
 {card_lines}
 
@@ -165,14 +165,14 @@ def _build_card_pool_prompt(entity: Entity, cards: List[Card]) -> str:
 ## 工作流程
 
 1. 逐一审视每张卡（以 `uuid` 精确定位，避免同名混淆）；
-2. 为每张卡各调用一次 `submit_pool_card`（参数：uuid / name / description）；
-3. 全部提交完毕后调用 `finish_pool` 结束。"""
+2. 为每张卡各调用一次 `submit_spoils_card`（参数：uuid / name / description）；
+3. 全部提交完毕后调用 `finish_spoils` 结束。"""
 
 
 #######################################################################################################################################
 @final
-class GenerateCardPoolActionSystem(ReactiveProcessor):
-    """响应卡池生成动作，为触发角色从原型库抽取候选卡、润色后装入卡池。"""
+class GenerateSpoilsActionSystem(ReactiveProcessor):
+    """响应奖励生成动作，为触发角色从原型库抽取候选卡、润色后装入 SpoilsComponent。"""
 
     def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
@@ -181,13 +181,13 @@ class GenerateCardPoolActionSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def get_trigger(self) -> Dict[Matcher, GroupEvent]:
-        return {Matcher(GenerateCardPoolAction): GroupEvent.ADDED}
+        return {Matcher(GenerateSpoilsAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
         return (
-            entity.has(GenerateCardPoolAction)
+            entity.has(GenerateSpoilsAction)
             and entity.has(ActorComponent)
             and not entity.has(DeathComponent)
         )
@@ -200,38 +200,51 @@ class GenerateCardPoolActionSystem(ReactiveProcessor):
         try:
             index = list_card_prototype_index(card_type="手牌")
         except Exception as e:
-            logger.error(f"[GenerateCardPoolActionSystem] 拉取卡牌原型失败: {e}")
+            logger.error(f"[GenerateSpoilsActionSystem] 拉取卡牌原型失败: {e}")
             return
 
         if not index:
-            logger.error("[GenerateCardPoolActionSystem] 卡牌原型库为空，无法生成卡池")
+            logger.error(
+                "[GenerateSpoilsActionSystem] 卡牌原型库为空，无法生成候选奖励"
+            )
             return
 
-        # 组装待生成卡池的任务（每个实体一个 agent_loop，并发执行）
-        pending: List[Tuple[Entity, List[Card], List[_CardPoolEdit]]] = []
-        tasks: List[Tuple[str, Coroutine[Any, Any, bool]]] = []
-
+        # 组装待生成奖励的任务（每个实体一个 agent_loop，并发执行）
+        #
+        # 第一步：整批物化候选；任一角色物化失败则整批中止（不写任何 SpoilsComponent、不调 LLM）。
+        # 这样守卫 `any(has(SpoilsComponent))` 保持“全有或全无”，客户端可安全手动重试。
+        materialized: List[Tuple[Entity, List[Card]]] = []
         for entity in entities:
-
             candidates = self._materialize_candidates(entity, index)
             if not candidates:
-                continue
+                logger.error(
+                    f"[GenerateSpoilsActionSystem] {entity.name} 候选物化失败，"
+                    f"整批中止，未写入任何 SpoilsComponent（客户端可重试）"
+                )
+                return
+            materialized.append((entity, candidates))
+
+        # 第二步：组装并并发执行 agent_loop（LLM 润色失败不阻断发奖，只影响命名）
+        pending: List[Tuple[Entity, List[Card], List[_SpoilsCardEdit]]] = []
+        tasks: List[Tuple[str, Coroutine[Any, Any, bool]]] = []
+
+        for entity, candidates in materialized:
 
             # 每实体独立的结果容器与工具处理器
-            edits: List[_CardPoolEdit] = []
+            edits: List[_SpoilsCardEdit] = []
             handlers: Dict[str, Callable[..., Union[str, Awaitable[str]]]] = {
-                "submit_pool_card": partial(_handle_submit_pool_card, edits),
-                "finish_pool": _handle_finish_pool,
+                "submit_spoils_card": partial(_handle_submit_spoils_card, edits),
+                "finish_spoils": _handle_finish_spoils,
             }
 
             # 组装 agent_loop 协程；messages 直接传真实记忆（原地写回）
             coro = agent_loop(
                 name=entity.name,
-                prompt=_build_card_pool_prompt(entity, candidates),
+                prompt=_build_spoils_prompt(entity, candidates),
                 messages=self._game.get_agent_memory(entity).messages,
-                tools=[SUBMIT_POOL_CARD_TOOL, FINISH_POOL_TOOL],
+                tools=[SUBMIT_SPOILS_CARD_TOOL, FINISH_SPOILS_TOOL],
                 handlers=handlers,
-                terminal_tools=[FINISH_POOL_TOOL],
+                terminal_tools=[FINISH_SPOILS_TOOL],
                 max_rounds=6,
             )
 
@@ -239,17 +252,17 @@ class GenerateCardPoolActionSystem(ReactiveProcessor):
             tasks.append((entity.name, coro))
 
         if not tasks:
-            logger.debug("[GenerateCardPoolActionSystem] 无待生成卡池的角色")
+            logger.debug("[GenerateSpoilsActionSystem] 无待生成奖励的角色")
             return
 
         logger.info(
-            f"[GenerateCardPoolActionSystem] 为 {len(tasks)} 个角色并发生成卡池..."
+            f"[GenerateSpoilsActionSystem] 为 {len(tasks)} 个角色并发生成候选奖励..."
         )
 
         # 并发执行
         outcomes = await batch_run_boolean_tasks(tasks)
 
-        # 应用结果：仅按 uuid 回填 name/description（硬约束），随后装入卡池
+        # 应用结果：仅按 uuid 回填 name/description（硬约束），随后装入 SpoilsComponent
         for (entity, candidates, edits), ok in zip(pending, outcomes):
             by_uuid = {c.uuid: c for c in candidates}
             applied = 0
@@ -257,7 +270,7 @@ class GenerateCardPoolActionSystem(ReactiveProcessor):
                 target_card = by_uuid.get(edit.uuid)
                 if target_card is None:
                     logger.warning(
-                        f"[GenerateCardPoolActionSystem] {entity.name} 提交了未知 uuid "
+                        f"[GenerateSpoilsActionSystem] {entity.name} 提交了未知 uuid "
                         f"{edit.uuid!r}，忽略"
                     )
                     continue
@@ -265,11 +278,11 @@ class GenerateCardPoolActionSystem(ReactiveProcessor):
                 target_card.description = edit.description
                 applied += 1
 
-            # 装入卡池（replace 覆盖旧池，避免残留）
-            entity.replace(SpoilsComponent, entity.name, candidates)
+            # 装入 Spoils（replace 覆盖旧内容；claimed=False）
+            entity.replace(SpoilsComponent, entity.name, candidates, False)
 
             logger.info(
-                f"[GenerateCardPoolActionSystem] {entity.name}: 生成卡池 {len(candidates)} 张"
+                f"[GenerateSpoilsActionSystem] {entity.name}: 生成候选卡 {len(candidates)} 张"
                 f"，应用叙事调整 {applied} 张（agent_loop 成功={ok}）"
             )
 
@@ -281,7 +294,7 @@ class GenerateCardPoolActionSystem(ReactiveProcessor):
     ) -> List[Card]:
         """从原型索引随机抽取并物化为独立卡牌（换新 uuid、回填 source）。"""
 
-        sample = random.sample(index, k=min(CARD_POOL_SIZE, len(index)))
+        sample = random.sample(index, k=min(SPOILS_CARD_COUNT, len(index)))
 
         candidates: List[Card] = []
         for entry in sample:
@@ -291,7 +304,7 @@ class GenerateCardPoolActionSystem(ReactiveProcessor):
                 card = Card.model_validate(json.loads(proto.card_json))
             except Exception as e:
                 logger.error(
-                    f"[GenerateCardPoolActionSystem] 获取/解析原型 {prototype_id!r} 失败: {e}"
+                    f"[GenerateSpoilsActionSystem] 获取/解析原型 {prototype_id!r} 失败: {e}"
                 )
                 continue
 

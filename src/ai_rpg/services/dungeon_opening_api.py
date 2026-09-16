@@ -2,7 +2,7 @@
 副本开场房间 API 路由模块
 
 提供开场房间（叙事 + 牌库初始化，无战斗）的初始化接口，
-以及卡池生成（GenerateCardPoolAction，外部显式触发）接口。
+以及奖励生成（GenerateSpoilsAction，外部显式触发）接口。
 与 combat room API 平级设计，开场房间只需一次 process() 调用完成初始化。
 """
 
@@ -10,18 +10,18 @@ from fastapi import APIRouter, HTTPException, status
 from loguru import logger
 from .game_server_dependencies import CurrentGameServer
 from ..models import (
-    DungeonOpeningGenerateCardPoolRequest,
-    DungeonOpeningGenerateCardPoolResponse,
+    DungeonOpeningGenerateSpoilsRequest,
+    DungeonOpeningGenerateSpoilsResponse,
     DungeonOpeningInitRequest,
     DungeonOpeningInitResponse,
-    DungeonOpeningPickCardFromPoolRequest,
-    DungeonOpeningPickCardFromPoolResponse,
+    DungeonOpeningPickSpoilsCardRequest,
+    DungeonOpeningPickSpoilsCardResponse,
 )
 from .dungeon_lifecycle_api import _validate_dungeon_prerequisites
 from .dungeon_opening_tasks import (
-    execute_generate_card_pool_task,
+    execute_generate_spoils_task,
     execute_opening_room_init_task,
-    execute_pick_card_from_pool_task,
+    execute_pick_spoils_card_task,
 )
 
 ###################################################################################################################################################################
@@ -98,20 +98,18 @@ async def dungeon_opening_init(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 @dungeon_opening_api_router.post(
-    path="/api/dungeon/opening/generate_card_pool/v1/",
-    response_model=DungeonOpeningGenerateCardPoolResponse,
+    path="/api/dungeon/opening/generate_spoils/v1/",
+    response_model=DungeonOpeningGenerateSpoilsResponse,
 )
-async def dungeon_opening_generate_card_pool(
-    payload: DungeonOpeningGenerateCardPoolRequest,
+async def dungeon_opening_generate_spoils(
+    payload: DungeonOpeningGenerateSpoilsRequest,
     game_server: CurrentGameServer,
-) -> DungeonOpeningGenerateCardPoolResponse:
+) -> DungeonOpeningGenerateSpoilsResponse:
     """
-    副本开场房间卡池生成接口（外部显式触发 GenerateCardPoolAction）
+    副本开场房间奖励生成接口（外部显式触发 GenerateSpoilsAction）
     """
 
-    logger.info(
-        f"/api/dungeon/opening/generate_card_pool/v1/: user={payload.user_name}"
-    )
+    logger.info(f"/api/dungeon/opening/generate_spoils/v1/: user={payload.user_name}")
 
     # 获取房间并用每玩家锁避免并发状态竞争
     current_room = game_server.get_room(payload.user_name)
@@ -132,32 +130,32 @@ async def dungeon_opening_generate_card_pool(
         # 验证当前副本房间是否为开场房间
         if not rpg_game.is_current_room_dungeon_opening:
             logger.error(
-                f"玩家 {payload.user_name} 卡池生成失败: 当前副本房间不是开场房间"
+                f"玩家 {payload.user_name} 奖励生成失败: 当前副本房间不是开场房间"
             )
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="当前副本房间不是开场房间",
             )
 
-        # 状态守护：卡池生成依赖开场初始化（叙事 + 牌库）已完成
+        # 状态守护：奖励生成依赖开场初始化（叙事 + 牌库）已完成
         if not rpg_game.current_dungeon_opening_room.initialized:
-            logger.error(f"玩家 {payload.user_name} 卡池生成失败: 开场房间尚未初始化")
+            logger.error(f"玩家 {payload.user_name} 奖励生成失败: 开场房间尚未初始化")
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="开场房间尚未初始化（叙事 + 牌库），请先调用开场初始化接口",
             )
 
-    # 在锁外派发卡池生成任务，让任务独立持锁执行
-    deferred_job_id = await execute_generate_card_pool_task.defer_async(
+    # 在锁外派发奖励生成任务，让任务独立持锁执行
+    deferred_job_id = await execute_generate_spoils_task.defer_async(
         user_name=payload.user_name
     )
     job_id = deferred_job_id
-    logger.info(f"📝 创建卡池生成任务: job_id={job_id}, user={payload.user_name}")
+    logger.info(f"📝 创建奖励生成任务: job_id={job_id}, user={payload.user_name}")
 
-    # 返回卡池生成任务启动成功的响应
-    return DungeonOpeningGenerateCardPoolResponse(
+    # 返回奖励生成任务启动成功的响应
+    return DungeonOpeningGenerateSpoilsResponse(
         job_id=job_id,
-        message="卡池生成任务已启动，请通过会话消息查询结果",
+        message="奖励生成任务已启动，请通过会话消息查询结果",
     )
 
 
@@ -165,19 +163,19 @@ async def dungeon_opening_generate_card_pool(
 ###################################################################################################################################################################
 ###################################################################################################################################################################
 @dungeon_opening_api_router.post(
-    path="/api/dungeon/opening/pick_card_from_pool/v1/",
-    response_model=DungeonOpeningPickCardFromPoolResponse,
+    path="/api/dungeon/opening/pick_spoils/pick_card/v1/",
+    response_model=DungeonOpeningPickSpoilsCardResponse,
 )
-async def dungeon_opening_pick_card_from_pool(
-    payload: DungeonOpeningPickCardFromPoolRequest,
+async def dungeon_opening_pick_spoils_card(
+    payload: DungeonOpeningPickSpoilsCardRequest,
     game_server: CurrentGameServer,
-) -> DungeonOpeningPickCardFromPoolResponse:
+) -> DungeonOpeningPickSpoilsCardResponse:
     """
-    副本开场房间挑卡接口（外部显式触发 PickCardFromPoolAction）
+    副本开场房间领卡接口（Spoils 子操作：pick_card；外部显式触发 PickSpoilsAction）
     """
 
     logger.info(
-        f"/api/dungeon/opening/pick_card_from_pool/v1/: user={payload.user_name} "
+        f"/api/dungeon/opening/pick_spoils/pick_card/v1/: user={payload.user_name} "
         f"actor={payload.actor_name} card={payload.card_name}"
     )
 
@@ -199,33 +197,33 @@ async def dungeon_opening_pick_card_from_pool(
 
         # 验证当前副本房间是否为开场房间
         if not rpg_game.is_current_room_dungeon_opening:
-            logger.error(f"玩家 {payload.user_name} 挑卡失败: 当前副本房间不是开场房间")
+            logger.error(f"玩家 {payload.user_name} 领卡失败: 当前副本房间不是开场房间")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="当前副本房间不是开场房间",
             )
 
-        # 状态守护：挑卡依赖开场初始化（叙事 + 牌库）已完成
+        # 状态守护：领卡依赖开场初始化（叙事 + 牌库）已完成
         if not rpg_game.current_dungeon_opening_room.initialized:
-            logger.error(f"玩家 {payload.user_name} 挑卡失败: 开场房间尚未初始化")
+            logger.error(f"玩家 {payload.user_name} 领卡失败: 开场房间尚未初始化")
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="开场房间尚未初始化（叙事 + 牌库），请先调用开场初始化接口",
             )
 
-    # 在锁外派发挑卡任务，让任务独立持锁执行
-    deferred_job_id = await execute_pick_card_from_pool_task.defer_async(
+    # 在锁外派发领卡任务，让任务独立持锁执行
+    deferred_job_id = await execute_pick_spoils_card_task.defer_async(
         user_name=payload.user_name,
         actor_name=payload.actor_name,
         card_name=payload.card_name,
     )
     job_id = deferred_job_id
-    logger.info(f"📝 创建挑卡任务: job_id={job_id}, user={payload.user_name}")
+    logger.info(f"📝 创建领卡任务: job_id={job_id}, user={payload.user_name}")
 
-    # 返回挑卡任务启动成功的响应
-    return DungeonOpeningPickCardFromPoolResponse(
+    # 返回领卡任务启动成功的响应
+    return DungeonOpeningPickSpoilsCardResponse(
         job_id=job_id,
-        message="挑卡任务已启动，请通过会话消息查询结果",
+        message="领卡任务已启动，请通过会话消息查询结果",
     )
 
 

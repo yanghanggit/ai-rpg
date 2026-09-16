@@ -197,6 +197,15 @@ class DeckInitializationSystem(ReactiveProcessor):
         pending: List[Tuple[Entity, List[Card], List[_DeckCardEdit]]] = []
         tasks: List[Tuple[str, Coroutine[Any, Any, bool]]] = []
 
+        # TODO 注入一个hack，让下面的故意跳过
+        for entity in entities:
+            deck_comp = entity.get(DeckComponent)
+            assert deck_comp is not None, f"{entity.name} 缺少 DeckComponent"
+            for card in deck_comp.cards:
+                if not card.source:
+                    card.source = entity.name
+
+        # 正式流程。
         for entity in entities:
 
             deck_comp = entity.get(DeckComponent)

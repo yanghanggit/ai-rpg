@@ -1,4 +1,4 @@
-"""从卡池挑选卡牌系统：将选中的候选卡加入牌库，并清空卡池（零 LLM）。"""
+"""从 Spoils 领取奖励系统：当前仅实现卡牌子操作（加入牌库并标记已领取）。"""
 
 from typing import Dict, Final, List, final, override
 
@@ -11,14 +11,15 @@ from ..models import (
     SpoilsComponent,
     DeathComponent,
     DeckComponent,
-    PickCardAction,
+    PickSpoilsAction,
+    SpoilRewardKind,
 )
 
 
 #######################################################################################################################################
 @final
-class PickCardActionSystem(ReactiveProcessor):
-    """响应 PickCardFromPoolAction，把选中卡追加进 DeckComponent 并清空 SpoilsComponent。"""
+class PickSpoilsActionSystem(ReactiveProcessor):
+    """响应 PickSpoilsAction，按 reward_kind 路由领取结果；当前仅支持卡牌（追加进 DeckComponent 并标记 Spoils claimed）。"""
 
     def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
@@ -27,15 +28,14 @@ class PickCardActionSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def get_trigger(self) -> Dict[Matcher, GroupEvent]:
-        return {Matcher(PickCardAction): GroupEvent.ADDED}
+        return {Matcher(PickSpoilsAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
         return (
-            entity.has(PickCardAction)
+            entity.has(PickSpoilsAction)
             and entity.has(ActorComponent)
-            and entity.has(DeckComponent)
             and entity.has(SpoilsComponent)
             and not entity.has(DeathComponent)
         )
@@ -44,20 +44,32 @@ class PickCardActionSystem(ReactiveProcessor):
     @override
     async def react(self, entities: List[Entity]) -> None:
         for entity in entities:
-            action = entity.get(PickCardAction)
-            assert action is not None, f"{entity.name} 缺少 PickCardFromPoolAction"
+            action = entity.get(PickSpoilsAction)
+            assert action is not None, f"{entity.name} 缺少 PickSpoilsAction"
+
+            # 子操作路由：当前仅实现卡牌；未来可扩展 item / artifact
+            assert (
+                action.reward_kind == SpoilRewardKind.CARD
+            ), f"{entity.name} 暂不支持的奖励类型: {action.reward_kind}"
+            assert action.card is not None, f"{entity.name} 领取卡牌但 card 为空"
 
             deck_comp = entity.get(DeckComponent)
             assert deck_comp is not None, f"{entity.name} 缺少 DeckComponent"
 
-            # 追加选中的卡（保留其 uuid / source）
+            spoils_comp = entity.get(SpoilsComponent)
+            assert spoils_comp is not None, f"{entity.name} 缺少 SpoilsComponent"
+            assert (
+                not spoils_comp.claimed
+            ), f"{entity.name} 的 Spoils 已领取，不能重复领取"
+
+            # 追加领取的卡（保留其 uuid / source）
             deck_comp.cards.append(action.card)
 
-            # 3 选 1：消费掉整个卡池（其余候选丢弃）
-            entity.remove(SpoilsComponent)
+            # 3 选 1：标记已领取；组件与候选保留（作为“已生成”守卫，并供回看）
+            entity.replace(SpoilsComponent, entity.name, spoils_comp.cards, True)
 
             logger.info(
-                f"[PickCardFromPoolActionSystem] {entity.name} 已从卡池挑选"
+                f"[PickSpoilsActionSystem] {entity.name} 已从 Spoils 领取"
                 f"「{action.card.name}」加入牌库（当前 {len(deck_comp.cards)} 张），"
-                f"卡池已清空"
+                f"Spoils 保留为已领取"
             )

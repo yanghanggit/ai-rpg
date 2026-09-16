@@ -331,10 +331,18 @@ class DeckComponent(Component):
 @final
 @register_component_type
 class SpoilsComponent(Component):
-    """卡池：待从中抽取的候选卡牌（默认 3 张，3 选 1）。"""
+    """系统给予的候选奖励（当前为 3 张候选卡、3 选 1）。
+
+    组件存在即表示「本开场房已生成奖励」，作为重复生成的守卫；claimed=True 表示已领取。
+    领取后组件保留（cards 不清空）供回看。与 LootComponent（怪物掉落的可搜刮物）区分；
+    未来可能容纳道具/神器等奖励。
+    """
 
     name: str
-    cards: List[Card]  # 候选卡；抽卡后由后续动作移入牌库并清空本组件
+    # 本次提供的候选卡；领取后保留供回看
+    cards: List[Card]
+    # 是否已领取；领取后置 True，组件保留作为“已生成”守卫
+    claimed: bool = False
 
 
 ############################################################################################################

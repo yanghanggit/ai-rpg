@@ -37,8 +37,8 @@
   collect-loot    --snapshot PATH                               收战利品（胜利后）
   next-dungeon    --snapshot PATH                               下一关（仅推进，不初始化新房间）
   exit-dungeon    --snapshot PATH                               退出副本 → 家园模式（无论胜负）
-  generate-card-pool --snapshot PATH                            生成卡池（开场房间初始化后）
-  pick-card-from-pool --snapshot PATH --actor A --card C        从卡池挑一张加入牌库
+  generate-spoils --snapshot PATH                              生成候选奖励（开场房间初始化后）
+  pick-card       --snapshot PATH --actor A --card C            从 Spoils 领取一张卡加入牌库
 
 ==== 典型流程 ====
   家园：new → stages → advance(循环) / speak / switch-stage → enter-dungeon
@@ -46,7 +46,7 @@
         胜利 → collect-loot → next-dungeon → combat-init（或 opening-init，视新房间类型）
         失败 → exit-dungeon
         战斗中途撤退 → retreat → exit-dungeon
-  副本（开场房间）：enter-dungeon → opening-init → generate-card-pool → pick-card-from-pool"""
+  副本（开场房间）：enter-dungeon → opening-init → generate-spoils → pick-card"""
 
 import os
 import sys
@@ -128,9 +128,9 @@ from agent_game_items import (
     wear_costume_game,
 )
 from agent_game_opening import (
-    generate_card_pool_game,
+    generate_spoils_game,
     init_opening_game,
-    pick_card_from_pool_game,
+    pick_spoils_card_game,
 )
 
 
@@ -912,7 +912,7 @@ def retreat(snapshot: str) -> None:
     help="存档目录路径",
 )
 def opening_init(snapshot: str) -> None:
-    """初始化开场房间（叙事 + 牌库）并归档。需进入开场房间后、生成卡池前使用。"""
+    """初始化开场房间（叙事 + 牌库）并归档。需进入开场房间后、生成奖励前使用。"""
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
@@ -937,14 +937,14 @@ def opening_init(snapshot: str) -> None:
 
 
 ###############################################################################################################################################
-@main.command("generate-card-pool")
+@main.command("generate-spoils")
 @click.option(
     "--snapshot",
     required=True,
     help="存档目录路径",
 )
-def generate_card_pool(snapshot: str) -> None:
-    """为开场房间内的队伍成员生成卡池并归档。需开场已初始化（叙事 + 牌库）。"""
+def generate_spoils(snapshot: str) -> None:
+    """为开场房间内的队伍成员生成候选奖励（Spoils）并归档。需开场已初始化（叙事 + 牌库）。"""
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
@@ -965,11 +965,11 @@ def generate_card_pool(snapshot: str) -> None:
     logger.info(f"读取存档：{snapshot_path}")
     logger.info(f"本次存档目录：{_save_dir}")
 
-    asyncio.run(generate_card_pool_game(world, player_session, _save_dir))
+    asyncio.run(generate_spoils_game(world, player_session, _save_dir))
 
 
 ###############################################################################################################################################
-@main.command("pick-card-from-pool")
+@main.command("pick-card")
 @click.option(
     "--snapshot",
     required=True,
@@ -978,15 +978,15 @@ def generate_card_pool(snapshot: str) -> None:
 @click.option(
     "--actor",
     required=True,
-    help="选卡角色全名（如 角色.某某）",
+    help="领卡角色全名（如 角色.某某）",
 )
 @click.option(
     "--card",
     required=True,
-    help="要选的卡牌名称（须存在于该角色卡池中）",
+    help="要选的卡牌名称（须存在于该角色 Spoils 中）",
 )
-def pick_card_from_pool(snapshot: str, actor: str, card: str) -> None:
-    """从卡池挑选一张卡加入牌库并归档。需开场已初始化且已生成卡池。"""
+def pick_spoils_card(snapshot: str, actor: str, card: str) -> None:
+    """从 Spoils 领取一张卡加入牌库并归档。需开场已初始化且已生成奖励。"""
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
@@ -1007,7 +1007,7 @@ def pick_card_from_pool(snapshot: str, actor: str, card: str) -> None:
     logger.info(f"读取存档：{snapshot_path}")
     logger.info(f"本次存档目录：{_save_dir}")
 
-    asyncio.run(pick_card_from_pool_game(world, player_session, actor, card, _save_dir))
+    asyncio.run(pick_spoils_card_game(world, player_session, actor, card, _save_dir))
 
 
 ###############################################################################################################################################

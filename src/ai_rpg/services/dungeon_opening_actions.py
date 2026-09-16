@@ -12,61 +12,62 @@ from ..models import (
     SpoilsComponent,
     DeathComponent,
     DeckComponent,
-    GenerateCardPoolAction,
+    GenerateSpoilsAction,
     PartyMemberComponent,
-    PickCardAction,
+    PickSpoilsAction,
+    SpoilRewardKind,
 )
 
 
 ###################################################################################################################################################################
-def activate_generate_card_pool(
+def activate_generate_spoils(
     dbg_game: DBGGame,
 ) -> Tuple[bool, str]:
     """
-    为当前开场房间内的所有队伍成员激活卡池生成动作（GenerateCardPoolAction）。
+    为当前开场房间内的所有队伍成员激活奖励生成动作（GenerateSpoilsAction）。
 
     由外部入口（CLI / API）显式调用，随后推动 _dungeon_opening_room_pipeline.process()
-    让 GenerateCardPoolActionSystem 响应并生成卡池。
+    让 GenerateSpoilsActionSystem 响应并生成候选奖励（SpoilsComponent）。
     """
 
     # 检查当前是否在玩家的副本阶段
     if not dbg_game.is_player_in_dungeon_stage:
-        error_msg = "激活卡池生成失败：玩家不在副本场景中"
+        error_msg = "激活奖励生成失败：玩家不在副本场景中"
         logger.error(error_msg)
         return False, error_msg
 
     # 检查当前副本房间是否为开场房间
     if not dbg_game.is_current_room_dungeon_opening:
-        error_msg = "当前副本房间不是开场房间，无法生成卡池"
+        error_msg = "当前副本房间不是开场房间，无法生成奖励"
         logger.error(error_msg)
         return False, error_msg
 
-    # 状态守卫：卡池生成依赖开场初始化（叙事 + 牌库初始化）已完成
+    # 状态守卫：奖励生成依赖开场初始化（叙事 + 牌库初始化）已完成
     if not dbg_game.current_dungeon_opening_room.initialized:
-        error_msg = "开场房间尚未初始化（叙事 + 牌库），无法生成卡池"
+        error_msg = "开场房间尚未初始化（叙事 + 牌库），无法生成奖励"
         logger.error(error_msg)
         return False, error_msg
 
-    # 获取当前副本中所有队伍成员实体，用于为他们添加卡池生成动作组件
+    # 获取当前副本中所有队伍成员实体，用于为他们添加奖励生成动作组件
     party_member_entities = dbg_game.get_group(
         Matcher(all_of=[PartyMemberComponent])
     ).entities.copy()
     assert (
         len(party_member_entities) > 0
-    ), "激活卡池生成失败: 没有找到队伍成员, 至少有一个player"
+    ), "激活奖励生成失败: 没有找到队伍成员, 至少有一个player"
 
-    # 幂等守卫：若任一队伍成员已持有卡池组件，说明卡池已生成，拒绝重复生成
+    # 幂等守卫：若任一队伍成员已持有 Spoils 组件，说明奖励已生成，拒绝重复生成
     already_generated = [
         e.name for e in party_member_entities if e.has(SpoilsComponent)
     ]
     if already_generated:
         error_msg = (
-            f"卡池已生成（{already_generated} 已持有 SpoilsComponent），无需重复生成"
+            f"奖励已生成（{already_generated} 已持有 SpoilsComponent），无需重复生成"
         )
         logger.warning(error_msg)
         return False, error_msg
 
-    # 为每个队伍成员添加卡池生成动作组件
+    # 为每个队伍成员添加奖励生成动作组件
     for party_member_entity in party_member_entities:
         assert party_member_entity.has(
             PartyMemberComponent
@@ -76,48 +77,48 @@ def activate_generate_card_pool(
         ), f"队伍成员 {party_member_entity.name} 缺少 DeckComponent"
         assert not party_member_entity.has(
             DeathComponent
-        ), f"队伍成员 {party_member_entity.name} 已死亡，无法生成卡池"
+        ), f"队伍成员 {party_member_entity.name} 已死亡，无法生成奖励"
 
         party_member_entity.replace(
-            GenerateCardPoolAction,
+            GenerateSpoilsAction,
             party_member_entity.name,
         )
-        logger.debug(f"为角色 {party_member_entity.name} 添加卡池生成动作组件")
+        logger.debug(f"为角色 {party_member_entity.name} 添加奖励生成动作组件")
 
     return (
         True,
-        f"成功为 {len(party_member_entities)} 个队伍成员激活卡池生成动作",
+        f"成功为 {len(party_member_entities)} 个队伍成员激活奖励生成动作",
     )
 
 
 ###################################################################################################################################################################
-def activate_pick_card_from_pool(
+def activate_pick_spoils_card(
     dbg_game: DBGGame,
     actor_name: str,
     card_name: str,
 ) -> Tuple[bool, str]:
     """
-    为指定队伍成员激活「从卡池挑选一张卡」动作（PickCardFromPoolAction）。
+    为指定队伍成员激活「从 Spoils 领取一张卡」子操作（PickSpoilsAction, reward_kind=CARD）。
 
     由外部入口（CLI / API）显式调用，随后推动 _dungeon_opening_room_pipeline.process()
-    让 PickCardFromPoolActionSystem 响应并把选中卡加入牌库。
+    让 PickSpoilsActionSystem 响应并把选中卡加入牌库。
     """
 
     # 检查当前是否在玩家的副本阶段
     if not dbg_game.is_player_in_dungeon_stage:
-        error_msg = "从卡池挑卡失败：玩家不在副本场景中"
+        error_msg = "从 Spoils 领卡失败：玩家不在副本场景中"
         logger.error(error_msg)
         return False, error_msg
 
     # 检查当前副本房间是否为开场房间
     if not dbg_game.is_current_room_dungeon_opening:
-        error_msg = "当前副本房间不是开场房间，无法从卡池挑卡"
+        error_msg = "当前副本房间不是开场房间，无法从 Spoils 领卡"
         logger.error(error_msg)
         return False, error_msg
 
-    # 状态守卫：卡池依赖开场初始化（叙事 + 牌库初始化）已完成
+    # 状态守卫：领取依赖开场初始化（叙事 + 牌库初始化）已完成
     if not dbg_game.current_dungeon_opening_room.initialized:
-        error_msg = "开场房间尚未初始化（叙事 + 牌库），无法从卡池挑卡"
+        error_msg = "开场房间尚未初始化（叙事 + 牌库），无法从 Spoils 领卡"
         logger.error(error_msg)
         return False, error_msg
 
@@ -128,41 +129,46 @@ def activate_pick_card_from_pool(
         logger.error(error_msg)
         return False, error_msg
 
-    # 必须是队伍成员，且持有牌库与卡池组件
+    # 必须是队伍成员，且持有牌库与 Spoils 组件
     if not actor_entity.has(PartyMemberComponent):
-        error_msg = f"角色 {actor_name} 不是队伍成员，无法从卡池挑卡"
+        error_msg = f"角色 {actor_name} 不是队伍成员，无法从 Spoils 领卡"
         logger.error(error_msg)
         return False, error_msg
 
     assert actor_entity.has(DeckComponent), f"队伍成员 {actor_name} 缺少 DeckComponent"
 
     if not actor_entity.has(SpoilsComponent):
-        error_msg = f"角色 {actor_name} 尚无卡池（SpoilsComponent），请先生成卡池"
+        error_msg = f"角色 {actor_name} 尚无奖励（SpoilsComponent），请先生成奖励"
         logger.error(error_msg)
         return False, error_msg
 
     if actor_entity.has(DeathComponent):
-        error_msg = f"角色 {actor_name} 已死亡，无法从卡池挑卡"
+        error_msg = f"角色 {actor_name} 已死亡，无法从 Spoils 领卡"
         logger.error(error_msg)
         return False, error_msg
 
-    # 从卡池中按名称检索选中的卡（3 选 1）
+    # 从 Spoils 中按名称检索选中的卡（3 选 1）
     pool_comp = actor_entity.get(SpoilsComponent)
+    if pool_comp.claimed:
+        error_msg = f"角色 {actor_name} 已领取过奖励，无法重复领取"
+        logger.error(error_msg)
+        return False, error_msg
     selected_card = next((c for c in pool_comp.cards if c.name == card_name), None)
     if selected_card is None:
         error_msg = (
-            f"角色 {actor_name} 卡池中找不到卡牌 '{card_name}'，"
-            f"当前卡池: {[c.name for c in pool_comp.cards]}"
+            f"角色 {actor_name} 的 Spoils 中找不到卡牌 '{card_name}'，"
+            f"当前候选: {[c.name for c in pool_comp.cards]}"
         )
         logger.error(error_msg)
         return False, error_msg
 
-    # 挂载挑卡动作组件
+    # 挂载领取动作组件（子操作：卡牌）
     actor_entity.replace(
-        PickCardAction,
+        PickSpoilsAction,
         actor_entity.name,
+        SpoilRewardKind.CARD,
         selected_card,
     )
-    logger.debug(f"为角色 {actor_name} 添加挑卡动作组件（卡牌: {card_name}）")
+    logger.debug(f"为角色 {actor_name} 添加领卡动作组件（卡牌: {card_name}）")
 
-    return True, f"成功为角色 {actor_name} 激活挑卡动作（卡牌: {card_name}）"
+    return True, f"成功为角色 {actor_name} 激活领卡动作（卡牌: {card_name}）"

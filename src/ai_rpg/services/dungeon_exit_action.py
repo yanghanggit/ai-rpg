@@ -17,6 +17,7 @@ from ..models import (
     Dungeon,
     HumanMessage,
     PartyMemberComponent,
+    SpoilsComponent,
     HomeComponent,
     DeathComponent,
     CombatRoom,
@@ -100,6 +101,11 @@ def exit_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, str]:
         assert party_member_entity.has(PartyMemberComponent)
         party_member_entity.remove(PartyMemberComponent)
         logger.info(f"从队伍移除: {party_member_entity.name}")
+
+        # 清理仅在本局副本队伍内才有意义的奖励状态（SpoilsComponent）
+        if party_member_entity.has(SpoilsComponent):
+            party_member_entity.remove(SpoilsComponent)
+            logger.info(f"清理副本奖励状态（Spoils）: {party_member_entity.name}")
 
     # 离开战斗房间：保底断言 pipeline 已清理完毕，不应存在残留战斗临时组件
     if isinstance(current_room, CombatRoom):

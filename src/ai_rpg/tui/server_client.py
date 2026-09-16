@@ -32,12 +32,12 @@ from ..models import (
     DungeonExitRequest,
     DungeonExitResponse,
     DungeonListResponse,
-    DungeonOpeningGenerateCardPoolRequest,
-    DungeonOpeningGenerateCardPoolResponse,
+    DungeonOpeningGenerateSpoilsRequest,
+    DungeonOpeningGenerateSpoilsResponse,
     DungeonOpeningInitRequest,
     DungeonOpeningInitResponse,
-    DungeonOpeningPickCardFromPoolRequest,
-    DungeonOpeningPickCardFromPoolResponse,
+    DungeonOpeningPickSpoilsCardRequest,
+    DungeonOpeningPickSpoilsCardResponse,
     DungeonRoomResponse,
     DungeonStateResponse,
     EntitiesDetailsResponse,
@@ -398,30 +398,30 @@ async def dungeon_opening_init(
         return DungeonOpeningInitResponse.model_validate(response.json())
 
 
-async def dungeon_opening_generate_card_pool(
+async def dungeon_opening_generate_spoils(
     user_name: str, game_name: str
-) -> DungeonOpeningGenerateCardPoolResponse:
-    """触发开场房间卡池生成（外部显式触发 GenerateCardPoolAction），返回任务ID。"""
+) -> DungeonOpeningGenerateSpoilsResponse:
+    """触发开场房间奖励生成（外部显式触发 GenerateSpoilsAction），返回任务ID。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
-            server_config.base_url + "/api/dungeon/opening/generate_card_pool/v1/",
-            json=DungeonOpeningGenerateCardPoolRequest(
+            server_config.base_url + "/api/dungeon/opening/generate_spoils/v1/",
+            json=DungeonOpeningGenerateSpoilsRequest(
                 user_name=user_name,
                 game_name=game_name,
             ).model_dump(),
         )
         response.raise_for_status()
-        return DungeonOpeningGenerateCardPoolResponse.model_validate(response.json())
+        return DungeonOpeningGenerateSpoilsResponse.model_validate(response.json())
 
 
-async def dungeon_opening_pick_card_from_pool(
+async def dungeon_opening_pick_spoils_card(
     user_name: str, game_name: str, actor_name: str, card_name: str
-) -> DungeonOpeningPickCardFromPoolResponse:
-    """触发开场房间挑卡（外部显式触发 PickCardFromPoolAction），返回任务ID。"""
+) -> DungeonOpeningPickSpoilsCardResponse:
+    """触发开场房间领卡（Spoils 子操作 pick_card，外部显式触发 PickSpoilsAction），返回任务ID。"""
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(
-            server_config.base_url + "/api/dungeon/opening/pick_card_from_pool/v1/",
-            json=DungeonOpeningPickCardFromPoolRequest(
+            server_config.base_url + "/api/dungeon/opening/pick_spoils/pick_card/v1/",
+            json=DungeonOpeningPickSpoilsCardRequest(
                 user_name=user_name,
                 game_name=game_name,
                 actor_name=actor_name,
@@ -429,7 +429,7 @@ async def dungeon_opening_pick_card_from_pool(
             ).model_dump(),
         )
         response.raise_for_status()
-        return DungeonOpeningPickCardFromPoolResponse.model_validate(response.json())
+        return DungeonOpeningPickSpoilsCardResponse.model_validate(response.json())
 
 
 async def dungeon_combat_collect_loot(

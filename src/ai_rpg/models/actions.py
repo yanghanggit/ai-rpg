@@ -1,6 +1,7 @@
 """游戏动作组件。添加到实体后由对应系统处理执行。"""
 
-from typing import Dict, List, final
+from enum import StrEnum, unique
+from typing import Dict, List, Optional, final
 
 from ..entitas.components import Component
 from .card import Card
@@ -350,21 +351,35 @@ class InitializeDeckAction(Component):
 @final
 @register_action_component_type
 @register_component_type
-class GenerateCardPoolAction(Component):
-    """触发为角色生成卡池（抽卡候选）。"""
+class GenerateSpoilsAction(Component):
+    """触发为角色生成候选奖励（SpoilsComponent），当前生成候选卡牌。"""
 
     name: str
 
 
 ############################################################################################################
 @final
+@unique
+class SpoilRewardKind(StrEnum):
+    """Spoils 奖励类型；用于区分 PickSpoilsAction 的领取子操作。"""
+
+    CARD = "card"  # 卡牌（当前唯一实现；未来可扩展 ITEM / ARTIFACT）
+
+
+############################################################################################################
+@final
 @register_action_component_type
 @register_component_type
-class PickCardAction(Component):
-    """触发角色从卡池（SpoilsComponent）挑选一张候选卡加入牌库（DeckComponent）。"""
+class PickSpoilsAction(Component):
+    """触发角色从 SpoilsComponent 领取一项奖励（umbrella）。
+
+    当前仅实现卡牌子操作（reward_kind=CARD），由 activate_pick_spoils_card
+    检索后填入 card；未来可扩展 item / artifact 等子操作。
+    """
 
     name: str
-    card: Card  # 从 SpoilsComponent 中选中的卡牌（由 activate 层检索后填入）
+    reward_kind: SpoilRewardKind = SpoilRewardKind.CARD  # 领取的奖励类型
+    card: Optional[Card] = None  # reward_kind == CARD 时有效
 
 
 ############################################################################################################

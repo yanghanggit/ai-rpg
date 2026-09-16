@@ -11,13 +11,13 @@ from textual.widgets import Input, Static, TextArea
 from .base import BaseGameScreen
 from .cmd_opening import (
     advance_stage,
-    build_card_pool_text,
     build_deck_text,
     build_inventory_text,
     build_opening_info_text,
-    generate_card_pool,
+    build_spoils_text,
+    generate_spoils,
     init_opening,
-    pick_card,
+    pick_spoils_card,
 )
 from .dungeon_room_router import route_to_current_room
 from .server_client import fetch_session_messages
@@ -34,13 +34,13 @@ COMMAND_DEFS: List[Tuple[str, str, str]] = [
     # 查询（只读）
     ("info", "i", "开场房间状态总览"),
     ("deck", "dk", "查阅我方牌组"),
-    ("card-pool", "cp", "查阅我方卡池"),
+    ("spoils", "sp", "查阅我方奖励（Spoils）"),
     ("inventory", "inv", "查阅我方背包"),
     ("session", "ss", "查看消息（可带 sequence_id）"),
     # 操作
     ("init", "in", "初始化开场房间（叙事 + 牌库）"),
-    ("generate-pool", "gp", "生成卡池"),
-    ("pick", "pc", "挑卡：/pick @角色名 @卡名"),
+    ("generate-spoils", "gs", "生成奖励（Spoils）"),
+    ("pick-card", "pc", "领卡：/pick-card @角色名 @卡名"),
     ("next", "n", "进入下一关"),
     # 通用命令（固定在底部）
     ("help", "h", "显示本帮助"),
@@ -184,8 +184,8 @@ class DungeonOpeningRoomScreen(BaseGameScreen):
     def _cmd_deck(self, args: str) -> None:
         self._do_deck()
 
-    def _cmd_card_pool(self, args: str) -> None:
-        self._do_card_pool()
+    def _cmd_spoils(self, args: str) -> None:
+        self._do_spoils()
 
     def _cmd_inventory(self, args: str) -> None:
         self._do_inventory()
@@ -196,23 +196,23 @@ class DungeonOpeningRoomScreen(BaseGameScreen):
     def _cmd_init(self, args: str) -> None:
         self._do_init()
 
-    def _cmd_generate_pool(self, args: str) -> None:
-        self._do_generate_pool()
+    def _cmd_generate_spoils(self, args: str) -> None:
+        self._do_generate_spoils()
 
-    def _cmd_pick(self, args: str) -> None:
+    def _cmd_pick_card(self, args: str) -> None:
         parts = args.strip().split()
         if len(parts) < 2:
-            self._write("[yellow]用法：/pick @角色名 @卡名[/]")
+            self._write("[yellow]用法：/pick-card @角色名 @卡名[/]")
             return
         actor = parts[0]
         card = " ".join(parts[1:])
         if not actor.startswith("@") or not card.startswith("@"):
-            self._write("[yellow]用法：/pick @角色名 @卡名[/]")
+            self._write("[yellow]用法：/pick-card @角色名 @卡名[/]")
             return
         actor = actor[1:]
         card = card[1:]
         if not actor or not card:
-            self._write("[yellow]用法：/pick @角色名 @卡名[/]")
+            self._write("[yellow]用法：/pick-card @角色名 @卡名[/]")
             return
         self._do_pick(actor, card)
 
@@ -242,11 +242,11 @@ class DungeonOpeningRoomScreen(BaseGameScreen):
         self._write(text)
 
     @work
-    async def _do_card_pool(self) -> None:
+    async def _do_spoils(self) -> None:
         app = self.game_client
         if app.session is None:
             return
-        text = await build_card_pool_text(
+        text = await build_spoils_text(
             app.session.user_name, app.session.game_name, app.session.actor_name
         )
         self._write(text)
@@ -274,15 +274,15 @@ class DungeonOpeningRoomScreen(BaseGameScreen):
         self._write(text)
 
     @work
-    async def _do_generate_pool(self) -> None:
+    async def _do_generate_spoils(self) -> None:
         app = self.game_client
         if app.session is None:
             return
         self._write(
-            "[bold yellow]── 生成卡池 ──────────────────────────────────────[/]"
+            "[bold yellow]── 生成奖励（Spoils） ──────────────────────────────────────[/]"
         )
-        self._write("[dim]▶ 正在生成卡池...[/]")
-        text = await generate_card_pool(app.session.user_name, app.session.game_name)
+        self._write("[dim]▶ 正在生成奖励...[/]")
+        text = await generate_spoils(app.session.user_name, app.session.game_name)
         self._write(text)
 
     @work
@@ -290,8 +290,8 @@ class DungeonOpeningRoomScreen(BaseGameScreen):
         app = self.game_client
         if app.session is None:
             return
-        self._write(f"[dim]▶ 正在从 {actor} 的卡池挑选「{card}」...[/]")
-        text = await pick_card(
+        self._write(f"[dim]▶ 正在从 {actor} 的 Spoils 领取「{card}」...[/]")
+        text = await pick_spoils_card(
             app.session.user_name, app.session.game_name, actor, card
         )
         self._write(text)

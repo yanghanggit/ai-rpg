@@ -18,6 +18,7 @@
   - 防御端：前端防御 / 成长性防御 / 特殊防御机制
 
 后续新增原型时，在下方追加全局实例并登记到 `CARD_PROTOTYPES` 即可。
+默认牌库（兜底牌库）的组成由底部的 `DEFAULT_DECK_BUILD` 声明，运行时不再硬编码卡名与份数。
 """
 
 from dataclasses import dataclass
@@ -62,7 +63,7 @@ ATTACK_PROTOTYPE: Final[Card] = Card(
     ethereal=False,
     transferable=False,
     cost=1,
-    damage=3,
+    damage=2,
     hit_count=1,
     block=0,
     target_type=TargetType.SINGLE,
@@ -84,7 +85,7 @@ DEFENSE_PROTOTYPE: Final[Card] = Card(
     cost=1,
     damage=0,
     hit_count=1,
-    block=1,
+    block=2,
     target_type=TargetType.SINGLE,
     self_target=True,
 )
@@ -1005,3 +1006,28 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
         ),
     ),
 ]
+
+
+# ── 默认牌单 ────────────────────────────────────────────────────────
+
+
+@dataclass(frozen=True)
+class DeckBuild:
+    """一套默认牌库配置：按顺序引用原型 id，重复项表示副本份数。
+
+    作为兜底牌库（assemble_deck_system.make_default_deck_cards）的数据来源，
+    使运行时无需硬编码任何卡名与份数。
+    """
+
+    card_prototype_ids: Tuple[str, ...]
+
+
+DEFAULT_DECK_BUILD: Final[DeckBuild] = DeckBuild(
+    card_prototype_ids=(
+        "proto.attack",
+        "proto.attack",
+        "proto.attack",
+        "proto.defense",
+        "proto.defense",
+    )
+)

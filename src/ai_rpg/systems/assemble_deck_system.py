@@ -3,7 +3,7 @@
 位于 AssembleDungeonSystem 之后（Step 4.5）：为已组装副本中的每个 Actor，
 从其自己的 agent 视角浏览卡牌原型库、选定恰好 5 张并做叙事润色（name/description），
 随后写盘 Dungeon JSON（Step 5 插图暂注释禁用）；任何一步失败均回退默认牌库
-（3 攻击 + 2 防御，source 留空交给战斗初始化的 DeckInitializationSystem 回填并润色）。
+（取自数据库中的默认牌单 DEFAULT_DECK_BUILD，source 由实体构造期 DBGGame.create_actor_entities 回填）。
 """
 
 import json
@@ -33,6 +33,7 @@ from ..models import (
 from ..pgsql import (
     get_card_prototype,
     get_card_prototype_by_name,
+    get_default_deck_card_jsons,
     list_card_prototype_index,
 )
 from ..utils import batch_run_boolean_tasks, prompt_builder
@@ -48,17 +49,18 @@ def _materialize_prototype_card(name: str) -> Card:
 
 
 def make_default_deck_cards() -> List[Card]:
-    """默认牌库：3 攻击 + 2 防御（source 留空，战斗初始化时回填并润色）。
+    """默认牌库：直接取数据库中的「默认牌单」，给什么用什么。
 
-    原型一律取自 pgsql（由 demo/card_prototypes.py 经 setup_demo 初始化入库），
-    卡牌定义不再在此硬编码。
+    牌单由 demo/card_prototypes.py 的 `DEFAULT_DECK_BUILD` 经 setup_demo 灌库，
+    本函数不关心任何卡名与份数，仅按返回顺序逐张物化为独立 Card。
     """
-    attack = _materialize_prototype_card("基础攻击")
-    defense = _materialize_prototype_card("基础防御")
-    cards = [attack.model_copy(deep=True) for _ in range(3)]
-    cards += [defense.model_copy(deep=True) for _ in range(2)]
-    for card in cards:
+    cards: List[Card] = []
+    for card_json in get_default_deck_card_jsons():
+        card = Card.model_validate(json.loads(card_json))
         card.uuid = str(uuid4())
+        cards.append(card)
+
+    assert cards, "默认牌单为空：请检查 demo/card_prototypes.py 与 setup_demo 灌库"
     return cards
 
 

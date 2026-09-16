@@ -1,4 +1,9 @@
-"""牌库初始化系统：为牌库中 source 为空的卡牌回填来源，并做一次性叙事个人化润色。"""
+"""牌库初始化系统：响应 InitializeDeckAction，为尚未初始化的卡牌做一次性叙事个人化润色。
+
+注意：卡牌来源（source）已在实体构造期由 DBGGame.create_actor_entities 确定性回填，
+因此本系统以 `source == ""` 判定「未初始化」的触发条件通常不再满足，该动作被触发时
+一般无待处理卡牌（保留调用点，暂不实际执行）。
+"""
 
 from functools import partial
 from typing import (
@@ -89,7 +94,7 @@ def _handle_submit_deck_card(
     """处理 submit_deck_card 工具调用：校验并暂存一张卡牌的叙事调整。"""
     assert uuid, "uuid 不能为空"
     edits.append(_DeckCardEdit(uuid=uuid, name=name, description=description))
-    logger.info(f"[DeckInitializationSystem] submit_deck_card: {uuid} → {name}")
+    logger.info(f"[InitializeDeckActionSystem] submit_deck_card: {uuid} → {name}")
     return "已记录该卡牌的叙事调整。"
 
 
@@ -135,7 +140,7 @@ def _format_card_for_prompt(card: Card) -> str:
 #######################################################################################################################################
 @prompt_builder
 def _build_deck_init_prompt(entity: Entity, cards: List[Card]) -> str:
-    """生成牌库初始化（source 回填后的叙事个人化）提示词。"""
+    """生成牌库初始化（叙事个人化）提示词。"""
     card_lines = "\n\n".join(_format_card_for_prompt(c) for c in cards)
     return f"""# 任务：初始化你的初始牌库（叙事个人化）
 
@@ -164,10 +169,14 @@ def _build_deck_init_prompt(entity: Entity, cards: List[Card]) -> str:
 
 #######################################################################################################################################
 @final
-class DeckInitializationSystem(ReactiveProcessor):
-    """响应牌库初始化动作，为触发角色回填 source 并做叙事个人化润色。
+class InitializeDeckActionSystem(ReactiveProcessor):
+    """响应 InitializeDeckAction，为触发角色做牌库叙事个人化润色。
 
-    幂等语义：仅处理 `source == ""` 的卡牌，回填后下次自动跳过（不会重复润色）。
+    幂等语义：仅处理 `source == ""` 的卡牌（视为「未初始化」），处理成功后下次自动跳过。
+
+    注意：source 的回填已前移到 DBGGame.create_actor_entities（实体构造期），
+    故该动作触发时通常已无 `source == ""` 的卡牌，本流程目前不会实际执行；
+    此处保留调用点，供后续调整「未初始化」判据时复用。
     """
 
     def __init__(self, game: DBGGame) -> None:
@@ -197,15 +206,6 @@ class DeckInitializationSystem(ReactiveProcessor):
         pending: List[Tuple[Entity, List[Card], List[_DeckCardEdit]]] = []
         tasks: List[Tuple[str, Coroutine[Any, Any, bool]]] = []
 
-        # TODO 注入一个hack，让下面的故意跳过
-        for entity in entities:
-            deck_comp = entity.get(DeckComponent)
-            assert deck_comp is not None, f"{entity.name} 缺少 DeckComponent"
-            for card in deck_comp.cards:
-                if not card.source:
-                    card.source = entity.name
-
-        # 正式流程。
         for entity in entities:
 
             deck_comp = entity.get(DeckComponent)
@@ -242,11 +242,13 @@ class DeckInitializationSystem(ReactiveProcessor):
             tasks.append((entity.name, coro))
 
         if not tasks:
-            logger.debug("[DeckInitializationSystem] 无待初始化牌库（source 均已回填）")
+            logger.debug(
+                "[InitializeDeckActionSystem] 无待初始化牌库（source 均已回填）"
+            )
             return
 
         logger.info(
-            f"[DeckInitializationSystem] 为 {len(tasks)} 个角色并发初始化牌库..."
+            f"[InitializeDeckActionSystem] 为 {len(tasks)} 个角色并发初始化牌库..."
         )
 
         # 4) 并发执行
@@ -260,7 +262,7 @@ class DeckInitializationSystem(ReactiveProcessor):
                 target_card = by_uuid.get(edit.uuid)
                 if target_card is None:
                     logger.warning(
-                        f"[DeckInitializationSystem] {entity.name} 提交了未知 uuid "
+                        f"[InitializeDeckActionSystem] {entity.name} 提交了未知 uuid "
                         f"{edit.uuid!r}，忽略"
                     )
                     continue
@@ -269,6 +271,6 @@ class DeckInitializationSystem(ReactiveProcessor):
                 applied += 1
 
             logger.info(
-                f"[DeckInitializationSystem] {entity.name}: 初始化 {len(targets)} 张"
+                f"[InitializeDeckActionSystem] {entity.name}: 初始化 {len(targets)} 张"
                 f"，应用叙事调整 {applied} 张（agent_loop 成功={ok}）"
             )

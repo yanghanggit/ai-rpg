@@ -18,7 +18,6 @@ def create_dungeon_opening_room_pipeline(
     )
     from ..systems.artifact_initialization_system import ArtifactInitializationSystem
     from ..systems.context_compaction_system import ContextCompactionSystem
-    from ..systems.deck_initialization_system import DeckInitializationSystem
     from ..systems.destroy_entity_system import DestroyEntitySystem
     from ..systems.environment_initialization_system import (
         EnvironmentInitializationSystem,
@@ -27,6 +26,7 @@ def create_dungeon_opening_room_pipeline(
     from ..systems.generate_spoils_action_system import (
         GenerateSpoilsActionSystem,
     )
+    from ..systems.initialize_deck_action_system import InitializeDeckActionSystem
     from ..systems.opening_init_actor_system import OpeningInitActorSystem
     from ..systems.pick_spoils_action_system import (
         PickSpoilsActionSystem,
@@ -52,8 +52,8 @@ def create_dungeon_opening_room_pipeline(
     # 开场初始化系统（角色侧）：为开场场景内的队伍成员注入场景环境信息
     processors.add(OpeningInitActorSystem(dbg_game))
 
-    # 牌库初始化系统：回填空 source 卡牌并做叙事个人化（幂等）
-    processors.add(DeckInitializationSystem(dbg_game))
+    # 牌库初始化系统：响应 InitializeDeckAction，做叙事个人化（source 已在实体构造期回填，幂等）
+    processors.add(InitializeDeckActionSystem(dbg_game))
 
     # 奖励生成系统：从原型库抽取候选卡并润色后装入 Spoils（响应 GenerateSpoilsAction）
     processors.add(GenerateSpoilsActionSystem(dbg_game))

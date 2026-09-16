@@ -35,7 +35,6 @@ def create_dungeon_combat_room_pipeline(
     )
     from ..systems.context_compaction_system import ContextCompactionSystem
     from ..systems.death_system import DeathSystem
-    from ..systems.deck_initialization_system import DeckInitializationSystem
     from ..systems.destroy_entity_system import DestroyEntitySystem
     from ..systems.discard_cards_action_system import DiscardCardsActionSystem
     from ..systems.draw_cards_action_system import (
@@ -51,6 +50,7 @@ def create_dungeon_combat_room_pipeline(
     from ..systems.exhaust_cards_action_system import ExhaustCardsActionSystem
     from ..systems.exhaust_ethereal_cards_system import ExhaustEtherealCardsSystem
     from ..systems.fill_draw_pile_system import FillDrawPileSystem
+    from ..systems.initialize_deck_action_system import InitializeDeckActionSystem
     from ..systems.monster_pre_play_system import MonsterPrePlaySystem
 
     # from ..systems.monster_memory_probe_system import MonsterMemoryProbeSystem
@@ -96,8 +96,9 @@ def create_dungeon_combat_room_pipeline(
     # 战斗初始化系统（场景侧）：注入战斗专用规则、转换战斗状态为进行中
     processors.add(CombatInitStageSystem(dbg_game))
 
-    # 牌库初始化系统：回填空 source 卡牌并做叙事个人化（幂等，须在抽牌堆填充之前）
-    processors.add(DeckInitializationSystem(dbg_game))
+    # 牌库初始化系统：响应 InitializeDeckAction，做叙事个人化（source 已在实体构造期回填，幂等；
+    # 若被触发须在抽牌堆填充之前）
+    processors.add(InitializeDeckActionSystem(dbg_game))
 
     # 抽牌堆填充系统（从 DeckComponent 填 DrawPileComponent，零 LLM）
     processors.add(FillDrawPileSystem(dbg_game))

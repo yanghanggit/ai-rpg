@@ -21,7 +21,7 @@ from demo import (
     create_ruins_blueprint,
     create_shrine_ruins_dungeon,
 )
-from demo import CARD_PROTOTYPES
+from demo import CARD_PROTOTYPES, DEFAULT_DECK_BUILD
 from ai_rpg.pgsql import (
     pgsql_create_database,
     pgsql_drop_database,
@@ -29,6 +29,7 @@ from ai_rpg.pgsql import (
     postgresql_config,
     procrastinate_app,
     save_card_prototype,
+    save_deck_build,
 )
 from ai_rpg.pgsql.user_operations import has_user, save_user
 from ai_rpg.rag import add_documents
@@ -193,6 +194,22 @@ def _setup_card_prototypes() -> None:
 
 
 ########################################################################################################
+def _setup_deck_build() -> None:
+    """将默认牌单刷入 PostgreSQL，作为牌库组建失败时的兜底牌库。"""
+    logger.info("🚀 初始化默认牌单...")
+
+    known_ids = {proto.meta.prototype_id for proto in CARD_PROTOTYPES}
+    for prototype_id in DEFAULT_DECK_BUILD.card_prototype_ids:
+        assert (
+            prototype_id in known_ids
+        ), f"默认牌单引用了不存在的原型 id: {prototype_id}"
+
+    save_deck_build(list(DEFAULT_DECK_BUILD.card_prototype_ids))
+    logger.success(
+        f"✅ 默认牌单初始化完成（{len(DEFAULT_DECK_BUILD.card_prototype_ids)} 张）"
+    )
+
+
 ########################################################################################################
 ########################################################################################################
 def main() -> None:
@@ -230,6 +247,9 @@ def main() -> None:
 
         logger.info("🎴 初始化卡牌原型...")
         _setup_card_prototypes()
+
+        logger.info("🃏 初始化默认牌单...")
+        _setup_deck_build()
 
         logger.info("🚀 初始化RAG系统...")
         _setup_rag()

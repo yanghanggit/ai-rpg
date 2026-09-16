@@ -15,6 +15,8 @@ from .card_prototype_operations import (
     get_card_prototype,
     get_card_prototype_by_name,
 )
+from .deck_build import DeckBuildDB
+from .deck_build_operations import save_deck_build, get_default_deck_card_jsons
 from .task_error import TaskErrorDB
 from .task_error_operations import save_task_error, get_task_error
 from .config import PostgreSQLConfig, postgresql_config
@@ -42,6 +44,11 @@ __all__: List[str] = [
     "list_card_prototype_index",
     "get_card_prototype",
     "get_card_prototype_by_name",
+    # Deck build models
+    "DeckBuildDB",
+    # Deck build operations
+    "save_deck_build",
+    "get_default_deck_card_jsons",
     # Task error models
     "TaskErrorDB",
     # Task error operations

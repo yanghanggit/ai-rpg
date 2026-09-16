@@ -139,6 +139,17 @@ async def dungeon_advance_stage(
                     detail="战斗状态异常",
                 )
 
+        # 若当前为开场房间，验证是否已完成初始化（叙事 + 牌库）
+        elif rpg_game.is_current_room_dungeon_opening:
+            if not rpg_game.current_dungeon_opening_room.initialized:
+                logger.error(
+                    f"玩家 {payload.user_name} 前进下一关失败: 开场房间尚未初始化"
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="开场房间尚未初始化，无法推进",
+                )
+
         # 获取下一房间索引和房间实例，确保存在下一房间，否则无法推进副本
         next_room_index = rpg_game.current_dungeon.current_room_index + 1
         next_room = rpg_game.current_dungeon.get_room(next_room_index)
@@ -201,6 +212,17 @@ async def dungeon_exit(
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="只能在战斗结束后回家",
+                )
+
+        # 若当前为开场房间，验证是否已完成初始化（叙事 + 牌库）
+        elif dbg_game.is_current_room_dungeon_opening:
+            if not dbg_game.current_dungeon_opening_room.initialized:
+                logger.error(
+                    f"玩家 {payload.user_name} 返回家园失败: 开场房间尚未初始化"
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="开场房间尚未初始化，无法退出",
                 )
 
     # 在锁外派发退出副本任务，让任务独立持锁执行

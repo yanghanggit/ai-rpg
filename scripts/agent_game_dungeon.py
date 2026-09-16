@@ -51,6 +51,11 @@ async def next_dungeon_game(
     # 创建 DBGGame 实例并从快照恢复游戏状态
     terminal_game = await restore_game(world, player_session)
 
+    # 状态守卫：玩家必须处于副本场景中（与 API 的 _validate_dungeon_prerequisites 对齐）
+    if not terminal_game.is_player_in_dungeon_stage:
+        logger.error("next-dungeon 只能在副本场景中使用")
+        return terminal_game
+
     # 若当前为战斗房间，需确认战斗已结束且胜利
     if terminal_game.is_current_room_dungeon_combat:
         if not terminal_game.current_dungeon_combat_room.combat.is_post_combat:
@@ -158,6 +163,11 @@ async def exit_dungeon_and_return_home_game(
 
     # 创建 DBGGame 实例并从快照恢复游戏状态
     terminal_game = await restore_game(world, player_session)
+
+    # 状态守卫：玩家必须处于副本场景中（与 API 的 _validate_dungeon_prerequisites 对齐）
+    if not terminal_game.is_player_in_dungeon_stage:
+        logger.error("exit-dungeon 只能在副本场景中使用")
+        return terminal_game
 
     # 若当前为战斗房间，状态守卫：只能在战斗结束后使用
     if terminal_game.is_current_room_dungeon_combat:

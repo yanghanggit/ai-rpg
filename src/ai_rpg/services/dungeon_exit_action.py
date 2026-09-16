@@ -21,6 +21,7 @@ from ..models import (
     HomeComponent,
     DeathComponent,
     CombatRoom,
+    OpeningRoom,
 )
 from ..entitas import Matcher
 from ..utils import prompt_builder
@@ -51,13 +52,25 @@ def exit_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, str]:
     # 阶段 1：检查（零状态变更，允许 return）
     # =========================================================================
 
-    current_room = dungeon.rooms[dungeon.current_room_index]
+    # 当前房间必须有效（current_room_index 合法：既不能为 -1「尚未进入」，也不能越界）
+    current_room = dungeon.current_room
+    if current_room is None:
+        logger.error(
+            f"退出副本失败，current_room_index={dungeon.current_room_index} 无效，尚未进入任何房间"
+        )
+        return False, "尚未进入副本房间，无法退出"
 
     # 战斗房间必须处于战斗后状态才能退出（无论胜负）
     if isinstance(current_room, CombatRoom):
         if not current_room.combat.is_post_combat:
             logger.error("当前不处于战斗后状态，无法退出副本！必须先完成战斗。")
             return False, "战斗未结束，无法退出"
+
+    # 开场房间必须已完成初始化（叙事 + 牌库）才能退出
+    if isinstance(current_room, OpeningRoom):
+        if not current_room.initialized:
+            logger.error("开场房间尚未初始化，无法退出副本")
+            return False, "开场房间尚未初始化，无法退出"
 
     # 确保存在队伍成员
     party_member_entities = dbg_game.get_group(

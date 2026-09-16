@@ -20,6 +20,7 @@ from ..models import (
     PartyMemberComponent,
     DeathComponent,
     CombatRoom,
+    OpeningRoom,
     CombatState,
 )
 from ..entitas import Matcher
@@ -54,7 +55,14 @@ async def advance_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, st
     # 阶段 1：检查（零状态变更，允许 return）
     # =========================================================================
 
-    current_room = dungeon.rooms[dungeon.current_room_index]
+    # 当前房间必须有效（current_room_index 合法：既不能为 -1「尚未进入」，也不能越界）
+    current_room = dungeon.current_room
+    if current_room is None:
+        logger.error(
+            f"副本前进失败，current_room_index={dungeon.current_room_index} 无效，尚未进入任何房间"
+        )
+        return False, "尚未进入副本房间，无法推进"
+
     next_room_index = dungeon.current_room_index + 1
 
     # 下一房间必须存在
@@ -90,6 +98,12 @@ async def advance_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, st
             return False, "战斗失败，无法推进"
 
         assert current_room.combat.is_won, "不可能出现的情况！"
+
+    # 当前房间若是开场房间，必须已完成初始化（叙事 + 牌库）才能推进
+    if isinstance(current_room, OpeningRoom):
+        if not current_room.initialized:
+            logger.error("开场房间尚未初始化，无法推进副本关卡")
+            return False, "开场房间尚未初始化，无法推进"
 
     # =========================================================================
     # 阶段 2：执行（不可中断，不回退）

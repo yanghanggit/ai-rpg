@@ -52,4 +52,4 @@
 | [上下文窗口管理（Context Window Management）](wiki/context-window-management.md) | 应对 agent 记忆膨胀的三种减量手段：精简提示词、战斗记忆归档、阈值触发压缩（以上下文占比为信号） |
 | [家园规划系统（Home Plan Action）](wiki/home-plan-action.md) | PlanAction 信号驱动的行动规划：工具调用式决策、query 先查后决策、玩家影子工具轨迹对齐 |
 | [新故事设计草稿：《大渊》](wiki/新故事设计草稿.md) | 作者头脑风暴草稿（不进入正式设计/demo）：双重世界、核心冲突、角色与玩法方向 |
-| [战役设定、全局规则与插图风格（CAMPAIGN_SETTING / SYSTEM_RULES / IMAGE_STYLE）](wiki/campaign-setting-rules-bridge.md) | 故事层三字段的分层（均封存在 demo/）、抽象设定的惰性知识问题、事件级引用提示的桥接方案、插图风格的注入路径 |
+| [战役设定与全局规则（CAMPAIGN_SETTING / SYSTEM_RULES）](wiki/campaign-setting-rules-bridge.md) | 故事层两字段的分层（均封存在 demo/）、抽象设定的惰性知识问题、事件级引用提示的桥接方案、插图风格改由世界实体承载 |

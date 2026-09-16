@@ -1,4 +1,4 @@
-# 战役设定、全局规则与插图风格（CAMPAIGN_SETTING / SYSTEM_RULES / IMAGE_STYLE）
+# 战役设定与全局规则（CAMPAIGN_SETTING / SYSTEM_RULES）
 
 ## 分层
 
@@ -9,19 +9,22 @@
 
 `Blueprint` 以 `campaign_setting` 与 `system_rules` 两个字段承载这两个 prompt 层字段；工厂（create_actor / create_stage / create_world）与副本组装系统（AssembleDungeonSystem）都从蓝图取值，不再硬编码任何规则文本。
 
-## 故事层三字段（Blueprint）
+## 故事层两字段（Blueprint）
 
-`Blueprint` 是引擎与故事之间唯一的注入边界，共承载三个故事层字段；引擎只按字段消费，不含任何具体故事文本。
+`Blueprint` 是引擎与故事之间唯一的注入边界，共承载两个故事层字段；引擎只按字段消费，不含任何具体故事文本。
 
 | 字段 | 故事常量（demo/world.py） | 消费方 | 注入目标 |
 | --- | --- | --- | --- |
 | `campaign_setting` | `CAMPAIGN_SETTING` | 工厂（create_actor / create_stage / create_world）、AssembleDungeonSystem | 实体 system prompt 的「游戏设定」段 |
 | `system_rules` | `SYSTEM_RULES` | 同上 | 实体 system prompt 的「全局规则」段 |
-| `image_style` / `image_negative_prompt` | `IMAGE_STYLE` / `IMAGE_NEGATIVE_PROMPT` | IllustrateDungeonActionSystem（Step 5） | 副本插图的提示词前缀与负面提示词 |
 
-前两者面向 LLM（文本扮演），第三者面向图像模型（插图生成）——后者是唯一不进入 system prompt 的故事层字段，因此单独列出。插图系统只读取该字段并拼接通用构图约束，不硬编码画风、氛围或负面词；换故事只改 `demo/world.py`。
+字段默认值均为空串，旧 Blueprint / 存档未涉及引擎不认识的字段。
 
-字段默认值均为空串，旧 Blueprint / 存档可直接反序列化。
+## 插图风格由世界实体承载
+
+副本插图的画风、构图与负面词**不再进入 Blueprint**，而是由 `world_entities` 中的「世界.插图提示词」实体（`IllustrationPromptComponent`）承载：其 `role_rules`（system prompt）定义视觉方向与提示词写作要求，Step 5 由该实体作为 agent 为封面与各房间编排文生图提示词。
+
+引擎（IllustrateDungeonActionSystem）只传递事实（副本 / 场景 / 生物设定）与调用图像模型，不含任何具体画风或构图模板。换故事只改 `demo/world.py` 的该世界实体。
 
 ## 抽象设定是惰性知识
 

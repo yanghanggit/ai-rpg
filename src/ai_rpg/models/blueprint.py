@@ -13,9 +13,8 @@ class Blueprint(BaseModel):
     system_rules: str  # 全局规则（角色扮演契约、副本定义、场景移动、战斗机制等）
     knowledge_base: Dict[str, List[str]]  # 蓝图关联的 RAG 知识库（按分类组织）
     stages: List[Stage]
+    # 含专责插图提示词编排的世界实体（画风/构图/负面词由其 system prompt 承载）
     world_entities: List[World]
-    image_style: str = ""  # Step 5 副本插图的全局视觉风格（故事层注入）
-    image_negative_prompt: str = ""  # Step 5 副本插图的全局负面提示词
 
 
 ###############################################################################################################################################

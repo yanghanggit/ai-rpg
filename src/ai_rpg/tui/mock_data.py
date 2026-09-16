@@ -40,7 +40,6 @@ from ..models import (
     GearItem,
     HandComponent,
     IdentityComponent,
-    ImageMeta,
     InventoryComponent,
     LootComponent,
     MaterialItem,
@@ -505,7 +504,7 @@ def build_mock_dungeon_room_response() -> DungeonRoomResponse:
         rounds=list(_mock_rounds),
     )
 
-    room = CombatRoom(stage=stage, combat=combat, image=ImageMeta.empty())
+    room = CombatRoom(stage=stage, combat=combat)
     return DungeonRoomResponse(room=room)
 
 

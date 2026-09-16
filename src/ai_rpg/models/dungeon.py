@@ -14,9 +14,9 @@ class DungeonRoom(BaseModel):
 
     type: str  # 判别字段，子类收窄为各自的 Literal 值
     stage: Stage  # 必须，对应关卡场景
-    image: ImageMeta = Field(
-        default_factory=ImageMeta.empty
-    )  # 当前房间的文生图数据，默认为空
+    image: Optional[ImageMeta] = (
+        None  # 当前房间的文生图数据，None 表示尚未生成/生成失败
+    )
 
 
 ###############################################################################################################################################
@@ -63,9 +63,7 @@ class Dungeon(BaseModel):
     setup_entities: bool = (
         False  # 是否已经根据模型创建了实体（敌人和场景），默认 False，创建后置 True
     )
-    image: ImageMeta = Field(
-        default_factory=ImageMeta.empty
-    )  # 副本封面文生图数据，默认为空
+    image: Optional[ImageMeta] = None  # 副本封面文生图数据，None 表示尚未生成/生成失败
 
     ########################################################################################################################
     @property

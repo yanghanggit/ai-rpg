@@ -206,6 +206,15 @@ class DungeonGenerationComponent(Component):
 ############################################################################################################
 @final
 @register_component_type
+class IllustrationPromptComponent(Component):
+    """标记世界实体具有插图提示词编排职责（LLM 驱动，把副本场景设定转化为文生图提示词）。"""
+
+    name: str
+
+
+############################################################################################################
+@final
+@register_component_type
 class GearWorkshopComponent(Component):
     """标记世界实体具有装备工坊职责（LLM 驱动，仅合成装备）。"""
 

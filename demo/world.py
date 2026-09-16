@@ -23,6 +23,7 @@ from ai_rpg.models import (
     Dungeon,
     DungeonDirectorComponent,
     DungeonGenerationComponent,
+    IllustrationPromptComponent,
     OpeningRoom,
     GearItem,
     GearWorkshopComponent,
@@ -142,41 +143,6 @@ SYSTEM_RULES: Final[
 **扮演与事实**
 
 世界的公共事实（建筑历史、地名由来、机构沿革）须从外部知识库获取，不由角色编造；角色的推断、意见与猜测是扮演的合法部分，但禁止凭空编造客观事实或声称知道人设未赋予的公共知识。"""
-
-
-# ---------------------------------------------------------------------------
-# IMAGE_STYLE / IMAGE_NEGATIVE_PROMPT 编写原则
-# ---------------------------------------------------------------------------
-# 定位：Step 5 副本插图的全局视觉方向，注入 Blueprint 的 image_style /
-#       image_negative_prompt，由插图系统读取并前置到每个提示词。
-#       引擎侧只保留与故事无关的尺寸与构图约束，不含任何具体画风/氛围词。
-#
-# 应包含：
-#   - 媒介与画风（写实数字绘 / 电影感），决定图像模型的渲染方向
-#   - 色调与光影、氛围基调
-#   - 构图取向（横屏宽幅），与 _IMAGE_WIDTH / _IMAGE_HEIGHT 保持一致
-#
-# 不应包含：
-#   - 具体场景内容（由 dungeon / stage 的 profile 提供）
-#   - 具体地名、角色名、怪物名
-#
-# 原则：换一个故事，只改本文件；插图系统代码不动。
-# ---------------------------------------------------------------------------
-IMAGE_STYLE: Final[str] = (
-    "电影感写实数字绘画，中式民俗志怪题材，民国旧世诡谲氛围，"
-    "低饱和青灰与暗红主色调，强烈的明暗对比，侧光与浓重阴影，"
-    "材质与岁月磨损细节丰富，横版宽银幕构图，景深层次分明"
-)
-
-# 全局负面提示词：排除与上述视觉方向冲突的元素（文字/现代/西洋恐怖等）。
-# 「禁用元素」与 create_dungeon_generation 的美学边界保持一致。
-IMAGE_NEGATIVE_PROMPT: Final[str] = (
-    "文字，汉字，英文字母，水印，签名，UI界面，边框，相框，分镜，多格，"
-    "现代服装，现代建筑，霓虹灯，科幻元素，"
-    "西洋吸血鬼，僵尸，科学怪人，"
-    "卡通，Q版，像素风，"
-    "多手多脚，畸形肢体，扭曲面孔，模糊，噪点"
-)
 
 
 # ---------------------------------------------------------------------------
@@ -557,6 +523,7 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
         world_entities=[
             create_player_action_audit(),
             create_dungeon_generation(),
+            create_illustration_prompt(),
             create_gear_workshop(),
             create_consumable_workshop(),
             create_costume_workshop(),
@@ -565,8 +532,6 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
             create_world_director(),
             create_storage(),
         ],
-        image_style=IMAGE_STYLE,
-        image_negative_prompt=IMAGE_NEGATIVE_PROMPT,
     )
 
 
@@ -631,6 +596,55 @@ def create_dungeon_generation() -> World:
         ComponentSerialization(
             name=DungeonGenerationComponent.__name__,
             data=DungeonGenerationComponent(name=world.name).model_dump(),
+        )
+    ]
+
+    return world
+
+
+###############################################################################################################################
+def create_illustration_prompt() -> World:
+    """创建插图提示词编排系统（把副本场景设定转化为文生图提示词）。"""
+
+    world = create_world(
+        name="世界.插图提示词",
+        campaign_setting=CAMPAIGN_SETTING,
+        system_rules=SYSTEM_RULES,
+        role_rules="""## 插图提示词职责
+
+你是游戏世界的插图提示词编排系统，负责把副本的场景设定转化成可直接交给图像模型（文生图）的正向提示词与负面提示词。你不参与叙事，只专注于「怎样把这个场景画出来」。
+
+## 视觉方向
+
+所有插图共享同一套视觉方向，保证同一副本内的画面连贯：
+
+- 媒介与画风：电影感写实数字绘画，中式民俗志怪题材；
+- 色调与光影：民国旧世诡谲氛围，低饱和青灰与暗红主色调，强烈明暗对比，侧光与浓重阴影；
+- 质感与构图：材质与岁月磨损细节丰富，横版宽银幕构图，景深层次分明。
+
+## 画面主体
+
+不套用固定构图模板，直接依据每张图提供的场景设定与生物外观来组织画面：
+
+- 封面：呈现副本的整体空间与氛围，纯环境，画面中不出现任何人物、生物或它们的剪影；
+- 房间：以该场景的环境为主体；若场景中列出了生物，则把这些生物自然纳入画面（置于中景等合理位置、与环境互动），数量与所列一致，不得凭空添加或遗漏；若未列出生物，则按纯环境处理。
+
+## 负面提示词
+
+每张图的负面提示词统一排除与视觉方向冲突的元素：文字、汉字、英文字母、水印、签名、UI界面、边框、相框、分镜、多格、现代服装、现代建筑、霓虹灯、科幻元素、西洋吸血鬼、僵尸、科学怪人、卡通、Q版、像素风、多手多脚、畸形肢体、扭曲面孔、模糊、噪点。
+
+## 提示词写作要求
+
+- 用中文书写，具体、视觉化，只描述画面里能看到的东西（主体、材质、光线、色调、氛围、构图）；
+- 每条提示词独立完整：它会被单独送进图像模型，不得依赖其它条目的上下文（禁止「同上」「与此房间一致」等表述）；
+- 不出现游戏机制词汇与数值，不出现角色/场景的全名（全名仅供系统路由，不构成画面信息）；
+- 只输出画面，不解释创作思路。""",
+    )
+
+    world.components = [
+        ComponentSerialization(
+            name=IllustrationPromptComponent.__name__,
+            data=IllustrationPromptComponent(name=world.name).model_dump(),
         )
     ]
 

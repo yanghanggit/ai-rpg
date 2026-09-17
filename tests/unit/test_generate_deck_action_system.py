@@ -59,8 +59,7 @@
 #     client = MagicMock()
 #     client.name = entity_name
 #     client.response_content = response_content
-#     client.full_prompt = "prompt"
-#     client.condensed_prompt = "condensed_prompt"
+#     client.prompt = "prompt"
 #     client.response_ai_message = AIMessage(content=response_content)
 #     return client
 

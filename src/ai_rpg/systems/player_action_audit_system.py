@@ -177,7 +177,7 @@ class PlayerActionAuditSystem(ReactiveProcessor):
         # 创建AI审核请求（使用审计世界实体的system prompt）
         chat_client = DeepSeekClient(
             name=world_entity.name,
-            full_prompt=prompt,
+            prompt=prompt,
             messages=[agent_memory.messages[0]],
         )
 

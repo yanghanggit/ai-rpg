@@ -51,7 +51,7 @@ class CompactContextActionSystem(ReactiveProcessor):
             chat_clients.append(
                 DeepSeekClient(
                     name=memory.name,
-                    full_prompt=build_compaction_prompt(memory.name),
+                    prompt=build_compaction_prompt(memory.name),
                     messages=memory.messages,
                 )
             )

@@ -259,41 +259,6 @@ def _build_monster_decision_prompt(
 
 
 #######################################################################################################################################
-@prompt_builder
-def _build_condensed_monster_decision_prompt(
-    monster_name: str,
-    monster_stats: CharacterStats,
-    energy: int,
-    hand_cards: List[Card],
-    opponents: List[_OpponentView],
-    action_order: List[str],
-    completed_actors: List[str],
-    current_round_number: int,
-) -> str:
-    """生成怪物出牌决策的精简版提示词（写入对话历史，减少 token 消耗）。"""
-    context = _build_context_block(
-        monster_name=monster_name,
-        stats=monster_stats,
-        energy=energy,
-        hand_cards=hand_cards,
-        opponents=opponents,
-        action_order=action_order,
-        completed_actors=completed_actors,
-    )
-    affordable_names = _affordable_playable_names(hand_cards, energy)
-    if affordable_names:
-        card_names_hint = "、".join(f'"{name}"' for name in affordable_names)
-    else:
-        card_names_hint = "无（剩余能量不足，应 pass_turn=true）"
-
-    return f"""# 第 {current_round_number} 回合 · 出牌决策
-
-{context}
-
-输出 JSON（pass_turn/card_name/targets；可出且费用可支付的卡牌：{card_names_hint}；只能选择 cost ≤ 剩余能量的牌，无牌可出则 pass_turn=true）"""
-
-
-#######################################################################################################################################
 @final
 class MonsterPrePlaySystem(ReactiveProcessor):
     """
@@ -395,23 +360,10 @@ class MonsterPrePlaySystem(ReactiveProcessor):
             current_round_number=current_round_number,
         )
 
-        # 构建怪物出牌决策的精简提示信息（Condensed Prompt）
-        condensed_prompt = _build_condensed_monster_decision_prompt(
-            monster_name=entity.name,
-            monster_stats=monster_stats,
-            energy=energy,
-            hand_cards=hand_comp.cards,
-            opponents=opponents,
-            action_order=action_order,
-            completed_actors=completed_actors,
-            current_round_number=current_round_number,
-        )
-
         return DeepSeekClient(
             name=entity.name,
-            full_prompt=prompt,
+            prompt=prompt,
             messages=self._game.get_agent_memory(entity).messages,
-            condensed_prompt=condensed_prompt,
         )
 
     ####################################################################################################################################
@@ -441,16 +393,15 @@ class MonsterPrePlaySystem(ReactiveProcessor):
             entity.replace(PassTurnAction, entity.name)
             return
 
-        # 写对话历史（精简版 prompt + AI 原文，附挂全量 prompt 供检索）
+        # 写对话历史（写入与请求一致的完整 prompt，保证记忆与实际请求不错位）
         current_round_number = len(
             self._game.current_dungeon_combat_room.combat.rounds or []
         )
         self._game.add_human_message(
             entity=entity,
             human_message=HumanMessage(
-                content=client.condensed_prompt,
+                content=client.prompt,
                 draw_cards_round_number=current_round_number,
-                draw_cards_full_prompt=client.full_prompt,
             ),
         )
 

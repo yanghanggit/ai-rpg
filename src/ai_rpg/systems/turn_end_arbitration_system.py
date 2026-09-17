@@ -308,7 +308,7 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
             f"{actor.name}（{_camp_label(actor)}）" for actor in alive_actors
         )
 
-        full_prompt = _build_turn_end_arbitration_tool_prompt(
+        prompt = _build_turn_end_arbitration_tool_prompt(
             pass_turn_entity.name,
             turn_end_cards,
             alive_actor_names,
@@ -319,7 +319,7 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
         try:
             ok = await agent_loop(
                 name=pass_turn_entity.name,
-                prompt=full_prompt,
+                prompt=prompt,
                 messages=self._game.get_agent_memory(pass_turn_entity).messages,
                 tools=[
                     GET_ENTITY_STATS_TOOL,

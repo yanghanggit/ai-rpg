@@ -73,7 +73,7 @@ class AppearanceInitializationSystem(ExecuteProcessor):
 
         return DeepSeekClient(
             name=entity.name,
-            full_prompt=prompt,
+            prompt=prompt,
             messages=self._game.get_agent_memory(entity).messages,
         )
 

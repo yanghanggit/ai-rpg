@@ -282,7 +282,7 @@ async def debug_probe_dungeon_director_reasoning(
 
     client = DeepSeekClient(
         name=dungeon.name,
-        full_prompt=prompt,
+        prompt=prompt,
         messages=agent_memory.messages,
         model=MODEL_FLASH,
     )
@@ -320,7 +320,7 @@ async def archive_dungeon(
 
         client = DeepSeekClient(
             name=f"dungeon:{dungeon.name}",
-            full_prompt=prompt,
+            prompt=prompt,
             messages=agent_memory.messages,
             model=MODEL_FLASH,
         )

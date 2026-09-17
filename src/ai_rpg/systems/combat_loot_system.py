@@ -174,7 +174,7 @@ class CombatLootSystem(ExecuteProcessor):
         )
         return DeepSeekClient(
             name=monster.name,
-            full_prompt=_build_loot_prompt(
+            prompt=_build_loot_prompt(
                 monster.name, appearance, stage_name, total_rounds
             ),
             messages=self._game.get_agent_memory(monster).messages,

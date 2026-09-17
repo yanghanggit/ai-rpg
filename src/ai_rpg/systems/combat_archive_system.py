@@ -85,7 +85,7 @@ class CombatArchiveSystem(ExecuteProcessor):
 
         return DeepSeekClient(
             name=combat_actor.name,
-            full_prompt=_build_combat_summary_prompt(
+            prompt=_build_combat_summary_prompt(
                 combat_actor.name, combat_stage_entity.name, total_rounds, result_text
             ),
             messages=self._game.get_agent_memory(combat_actor).messages,
@@ -116,7 +116,7 @@ class CombatArchiveSystem(ExecuteProcessor):
         # 将原始消息内容附在事件上，供后续流程（如记忆存储）使用
         self._game.add_human_message(
             entity=processed_actor_entity,
-            human_message=HumanMessage(content=chat_client.full_prompt),
+            human_message=HumanMessage(content=chat_client.prompt),
         )
 
         # 将 LLM 生成的摘要写回角色记忆

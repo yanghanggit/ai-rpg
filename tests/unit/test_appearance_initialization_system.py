@@ -91,9 +91,9 @@ class TestBuildClient:
         client = system._build_client(entity)
 
         assert client.name == "英雄"
-        assert _BASE_BODY in client.full_prompt
-        assert _COSTUME.name in client.full_prompt
-        assert _COSTUME.description in client.full_prompt
+        assert _BASE_BODY in client.prompt
+        assert _COSTUME.name in client.prompt
+        assert _COSTUME.description in client.prompt
 
 
 # ---------------------------------------------------------------------------

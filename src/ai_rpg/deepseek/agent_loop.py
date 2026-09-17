@@ -34,7 +34,7 @@ async def agent_loop(
         # 初始化 DeepSeekClient，用于与 LLM 进行交互，传入当前轮次的 prompt、消息历史、工具定义和工具选择策略
         client = DeepSeekClient(
             name=name,
-            full_prompt=current_prompt,
+            prompt=current_prompt,
             messages=history,
             tools=tools,
             tool_choice=tool_choice,

@@ -79,7 +79,7 @@ class MonsterMemoryProbeSystem(ReactiveProcessor):
             chat_clients.append(
                 DeepSeekClient(
                     name=entity.name,
-                    full_prompt=prompt,
+                    prompt=prompt,
                     messages=self._game.get_agent_memory(entity).messages,
                 )
             )
@@ -103,7 +103,7 @@ class MonsterMemoryProbeSystem(ReactiveProcessor):
 
             logger.info("=" * 80)
             logger.info(
-                f"MonsterMemoryProbeSystem: [{client.name}] 调试探针问题：\n{client.full_prompt}"
+                f"MonsterMemoryProbeSystem: [{client.name}] 调试探针问题：\n{client.prompt}"
             )
             logger.info(
                 f"MonsterMemoryProbeSystem: [{client.name}] 怪物回答：\n{client.response_content}"

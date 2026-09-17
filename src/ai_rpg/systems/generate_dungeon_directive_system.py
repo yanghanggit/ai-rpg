@@ -72,7 +72,7 @@ class GenerateDungeonDirectiveSystem(ReactiveProcessor):
         prompt = _build_directive_prompt()
         client = DeepSeekClient(
             name=director_entity.name,
-            full_prompt=prompt,
+            prompt=prompt,
             messages=self._game.get_agent_memory(director_entity).messages,
             model=MODEL_FLASH,
             # thinking=False,

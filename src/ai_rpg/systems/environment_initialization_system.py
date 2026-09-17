@@ -19,29 +19,6 @@ from ..utils import (
 
 #######################################################################################################################################
 @prompt_builder
-def _build_condensed_environment_prompt(
-    actor_appearances_in_stage: Dict[str, str],
-) -> str:
-    """生成精简版环境叙事提示词（仅角色外观动态感知，省略静态输出格式与约束规则）"""
-
-    actor_appearances_in_stage_info = []
-    for actor_name, appearance in actor_appearances_in_stage.items():
-        actor_appearances_in_stage_info.append(f"{actor_name}: {appearance}")
-
-    if len(actor_appearances_in_stage_info) == 0:
-        actor_appearances_in_stage_info.append("无")
-
-    return f"""# 请你输出你的环境描述。
-
-## 场景内角色外观（用于推断环境影响）
-
-以下角色的外观可能对场景环境产生间接影响，请据此推断当前环境状态。
-
-{"\n\n".join(actor_appearances_in_stage_info)}"""
-
-
-#######################################################################################################################################
-@prompt_builder
 def _build_environment_prompt(
     actor_appearances_in_stage: Dict[str, str],
 ) -> str:
@@ -80,10 +57,8 @@ class EnvironmentInitializationSystem(ExecuteProcessor):
     def __init__(
         self,
         game: DBGGame,
-        use_condensed_prompt: bool = True,
     ) -> None:
         self._game: Final[DBGGame] = game
-        self._use_condensed_prompt: Final[bool] = use_condensed_prompt
 
     #######################################################################################################################################
     @override
@@ -118,12 +93,7 @@ class EnvironmentInitializationSystem(ExecuteProcessor):
 
         return DeepSeekClient(
             name=stage_entity.name,
-            full_prompt=_build_environment_prompt(actor_appearances),
-            condensed_prompt=(
-                _build_condensed_environment_prompt(actor_appearances)
-                if self._use_condensed_prompt
-                else None
-            ),
+            prompt=_build_environment_prompt(actor_appearances),
             messages=self._game.get_agent_memory(stage_entity).messages,
         )
 
@@ -154,23 +124,10 @@ class EnvironmentInitializationSystem(ExecuteProcessor):
             )
             return False
 
-        # 添加消息。
-        if self._use_condensed_prompt:
-
-            # 使用精简 prompt 加入消息历史。
-            self._game.add_human_message(
-                stage_entity,
-                HumanMessage(
-                    content=chat_client.condensed_prompt,
-                    environment_full_prompt=chat_client.full_prompt,
-                ),
-            )
-        else:
-
-            # 直接使用完整 prompt 加入消息历史。
-            self._game.add_human_message(
-                stage_entity, HumanMessage(content=chat_client.full_prompt)
-            )
+        # 添加消息（写入与请求一致的完整 prompt，保证记忆与实际请求不错位）。
+        self._game.add_human_message(
+            stage_entity, HumanMessage(content=chat_client.prompt)
+        )
 
         # 添加消息。
         self._game.add_ai_message(stage_entity, chat_client.response_ai_message)

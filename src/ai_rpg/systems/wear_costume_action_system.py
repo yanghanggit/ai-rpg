@@ -121,7 +121,7 @@ class WearCostumeActionSystem(ReactiveProcessor):
         # 创建 DeepSeekClient 并发送请求
         client = DeepSeekClient(
             name=entity.name,
-            full_prompt=prompt,
+            prompt=prompt,
             messages=self._game.get_agent_memory(entity).messages,
         )
 

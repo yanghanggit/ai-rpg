@@ -20,7 +20,7 @@ from ..models import (
     ImageMeta,
     SystemMessage,
 )
-from ..replicate import TextToImageSpec, batch_text_to_images
+from ..replicate import TextToImageSpec, batch_text_to_images, replicate_config
 from ..utils import prompt_builder
 
 
@@ -28,10 +28,6 @@ from ..utils import prompt_builder
 # 图片生成规格（引擎级：尺寸 / 模型，与具体故事无关）
 _IMAGE_WIDTH: Final[int] = 1344  # 16:9 横屏（nano-banana 原生宽高比）
 _IMAGE_HEIGHT: Final[int] = 768
-_IMAGE_MODEL: Final[str] = "nano-banana"
-
-# 封面在提示词任务中的 target 键（房间以场景全名为 target）
-_COVER_TARGET: Final[str] = "cover"
 
 
 ####################################################################################################################################
@@ -80,7 +76,7 @@ def _build_image_prompts_tool(room_targets: List[str]) -> ToolDefinition:
                             "properties": {
                                 "target": {
                                     "type": "string",
-                                    "enum": [_COVER_TARGET] + room_targets,
+                                    "enum": [AssetKey.COVER] + room_targets,
                                     "description": (
                                         '"cover" 为副本封面；其余为房间对应的场景全名，'
                                         "每个 target 恰好出现一次"
@@ -254,7 +250,7 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
 
         # 组装生成任务：封面（index 0）+ 各房间（index 1..N）
         by_target = {item.target: item for item in prompts}
-        specs: List[TextToImageSpec] = [self._to_spec(by_target[_COVER_TARGET])] + [
+        specs: List[TextToImageSpec] = [self._to_spec(by_target[AssetKey.COVER])] + [
             self._to_spec(by_target[room.stage.name]) for room in dungeon.rooms
         ]
 
@@ -303,7 +299,9 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
         使用隔离记忆（仅该实体的 system prompt），避免跨副本累积污染上下文。
         返回 None 表示编排失败。
         """
-        expected_targets = [_COVER_TARGET] + [room.stage.name for room in dungeon.rooms]
+        expected_targets = [AssetKey.COVER] + [
+            room.stage.name for room in dungeon.rooms
+        ]
         result = _ImagePromptsResult()
 
         memory = self._game.get_agent_memory(prompt_entity).messages
@@ -350,7 +348,7 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
     def _to_spec(self, item: _ImagePrompt) -> TextToImageSpec:
         """把 LLM 产出的单条提示词映射为文生图输入规格。"""
         return TextToImageSpec(
-            model=_IMAGE_MODEL,
+            model=replicate_config.default_image_model,
             prompt=item.prompt,
             negative_prompt=item.negative_prompt or None,
             width=_IMAGE_WIDTH,

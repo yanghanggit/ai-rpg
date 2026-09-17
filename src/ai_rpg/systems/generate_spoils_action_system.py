@@ -278,8 +278,8 @@ class GenerateSpoilsActionSystem(ReactiveProcessor):
                 target_card.description = edit.description
                 applied += 1
 
-            # 装入 Spoils（replace 覆盖旧内容；claimed=False）
-            entity.replace(SpoilsComponent, entity.name, candidates, False)
+            # 装入 Spoils（replace 覆盖旧内容；claimed_cards 为空队列）
+            entity.replace(SpoilsComponent, entity.name, candidates, [])
 
             logger.info(
                 f"[GenerateSpoilsActionSystem] {entity.name}: 生成候选卡 {len(candidates)} 张"

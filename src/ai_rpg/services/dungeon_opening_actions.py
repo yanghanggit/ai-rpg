@@ -147,17 +147,19 @@ def activate_pick_spoils_card(
         logger.error(error_msg)
         return False, error_msg
 
-    # 从 Spoils 中按名称检索选中的卡（3 选 1）
+    # 从 Spoils 待领取队列中按名称检索选中的卡（当前 gameplay 只允许领一张）
     pool_comp = actor_entity.get(SpoilsComponent)
-    if pool_comp.claimed:
+    if pool_comp.claimed_cards:
         error_msg = f"角色 {actor_name} 已领取过奖励，无法重复领取"
         logger.error(error_msg)
         return False, error_msg
-    selected_card = next((c for c in pool_comp.cards if c.name == card_name), None)
+    selected_card = next(
+        (c for c in pool_comp.candidate_cards if c.name == card_name), None
+    )
     if selected_card is None:
         error_msg = (
             f"角色 {actor_name} 的 Spoils 中找不到卡牌 '{card_name}'，"
-            f"当前候选: {[c.name for c in pool_comp.cards]}"
+            f"当前待领取: {[c.name for c in pool_comp.candidate_cards]}"
         )
         logger.error(error_msg)
         return False, error_msg

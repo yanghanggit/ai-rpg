@@ -163,14 +163,21 @@ async def build_spoils_text(user_name: str, game_name: str, player_actor: str) -
             lines.append("  [dim]（无 Spoils 组件，请先执行 /generate-spoils）[/]")
         else:
             pool = SpoilsComponent(**pool_data)
-            if pool.claimed:
+            if pool.claimed_cards:
                 lines.append(
-                    f"  [bold green]✅ 已领取[/]（本次候选 [bold]{len(pool.cards)}[/] 张，供回看）："
+                    f"  [bold green]✅ 已领取 {len(pool.claimed_cards)} 张：[/]"
                 )
+                for card in pool.claimed_cards:
+                    lines.append(render_card(card))
+                lines.append(f"  [dim]待领取候选 {len(pool.candidate_cards)} 张：[/]")
+                for card in pool.candidate_cards:
+                    lines.append(render_card(card))
             else:
-                lines.append(f"  候选奖励 [bold]{len(pool.cards)}[/] 张（未领取）：")
-            for card in pool.cards:
-                lines.append(render_card(card))
+                lines.append(
+                    f"  候选奖励 [bold]{len(pool.candidate_cards)}[/] 张（未领取）："
+                )
+                for card in pool.candidate_cards:
+                    lines.append(render_card(card))
         lines.append("")
 
     return "\n".join(lines)

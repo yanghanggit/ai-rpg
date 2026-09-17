@@ -2,6 +2,8 @@
 
 from typing import List, final
 
+from pydantic import Field
+
 from ..entitas.components import Component
 from .card import Card
 from .entities import Artifact
@@ -340,18 +342,20 @@ class DeckComponent(Component):
 @final
 @register_component_type
 class SpoilsComponent(Component):
-    """系统给予的候选奖励（当前为 3 张候选卡、3 选 1）。
+    """系统给予的奖励，内部以两个队列维护。
 
-    组件存在即表示「本开场房已生成奖励」，作为重复生成的守卫；claimed=True 表示已领取。
-    领取后组件保留（cards 不清空）供回看。与 LootComponent（怪物掉落的可搜刮物）区分；
-    未来可能容纳道具/神器等奖励。
+    - ``candidate_cards``：待领取候选卡队列（出队后移入 ``claimed_cards``）。
+    - ``claimed_cards``：已领取卡队列（按领取顺序记录，供回看）。
+
+    领取即从 ``candidate_cards`` 出队一张并追加进 ``claimed_cards``；组件保留作为“已生成”守卫。
+    字段以奖励类型作前缀，未来可按需扩展 ``candidate_items`` / ``claimed_items`` 等。
     """
 
     name: str
-    # 本次提供的候选卡；领取后保留供回看
-    cards: List[Card]
-    # 是否已领取；领取后置 True，组件保留作为“已生成”守卫
-    claimed: bool = False
+    # 队列 A：待领取候选卡；领取后从本队列移除
+    candidate_cards: List[Card]
+    # 队列 B：已领取的卡（按领取顺序）
+    claimed_cards: List[Card] = Field(default_factory=list)
 
 
 ############################################################################################################

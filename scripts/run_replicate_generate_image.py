@@ -6,7 +6,7 @@ python scripts/run_replicate_generate_image.py --demo     并发生成多张
 python scripts/run_replicate_generate_image.py --test     测试连接
 
 选项：--model / --negative / --size small|medium|large|wide|tall / --width / --height / --steps / --guidance
-资产固定输出到 .images/，每个 raw 文件配一个同名 .meta。
+资产固定输出到 .assets/image/，每个 raw 文件配一个同名 .meta。
 """
 
 import asyncio

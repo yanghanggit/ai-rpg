@@ -1,11 +1,11 @@
 from datetime import datetime, timezone
-from typing import Annotated, List, Literal, Optional, Union, final
+from typing import Annotated, Dict, List, Literal, Optional, Union, final
 
 from pydantic import BaseModel, Field
 
+from .assets_meta import AssetKey
 from .combat import Combat
 from .entities import Stage
-from .image import ImageMeta
 
 
 ###############################################################################################################################################
@@ -13,10 +13,7 @@ class DungeonRoom(BaseModel):
     """副本房间基类（抽象关卡包装）：不直接实例化，具体房间见 OpeningRoom / CombatRoom。"""
 
     type: str  # 判别字段，子类收窄为各自的 Literal 值
-    stage: Stage  # 必须，对应关卡场景
-    image: Optional[ImageMeta] = (
-        None  # 当前房间的文生图数据，None 表示尚未生成/生成失败
-    )
+    stage: Stage  # 必须，对应关卡场景（插图等资源挂在 stage.assets 上）
 
 
 ###############################################################################################################################################
@@ -63,7 +60,9 @@ class Dungeon(BaseModel):
     setup_entities: bool = (
         False  # 是否已经根据模型创建了实体（敌人和场景），默认 False，创建后置 True
     )
-    image: Optional[ImageMeta] = None  # 副本封面文生图数据，None 表示尚未生成/生成失败
+    assets: Dict[AssetKey, str] = Field(
+        default_factory=dict
+    )  # 副本封面等资源：AssetKey -> meta 路径（.assets/image/<file>.meta）
 
     ########################################################################################################################
     @property

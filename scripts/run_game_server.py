@@ -21,8 +21,8 @@ from fastapi.staticfiles import StaticFiles
 from loguru import logger
 
 from ai_rpg.models import (
-    IMAGES_DIR,
-    IMAGES_URL_PREFIX,
+    ASSETS_DIR,
+    ASSETS_URL_PREFIX,
     ApiRouteInfo,
     ServerInfoResponse,
 )
@@ -112,9 +112,9 @@ app.add_middleware(
 ############################################################################################################
 # 挂载静态文件服务
 app.mount(
-    IMAGES_URL_PREFIX,
-    StaticFiles(directory=str(IMAGES_DIR)),
-    name=IMAGES_URL_PREFIX.lstrip("/"),
+    ASSETS_URL_PREFIX,
+    StaticFiles(directory=str(ASSETS_DIR)),
+    name=ASSETS_URL_PREFIX.lstrip("/"),
 )
 
 # 注册各个 API 路由

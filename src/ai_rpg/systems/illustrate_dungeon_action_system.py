@@ -11,6 +11,7 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.config import DUNGEONS_DIR
 from ..game.dbg_game import DBGGame
 from ..models import (
+    AssetKey,
     ChatMessage,
     Dungeon,
     DungeonRoom,
@@ -260,10 +261,10 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
         # 并发批量生成；返回值与 specs 顺序一一对应，失败项为 None
         metas: List[Optional[ImageMeta]] = await batch_text_to_images(specs=specs)
 
-        # 写入封面 ImageMeta（完整对象落库，保留全部生成溯源字段）
+        # 写入封面资源地址（只落 meta 路径，ImageMeta 对象由 replicate 层写入 .assets/image/*.meta）
         cover_meta = metas[0]
         if cover_meta is not None:
-            dungeon.image = cover_meta
+            dungeon.assets[AssetKey.COVER] = str(cover_meta.meta_path)
             logger.info(
                 f"[IllustrateDungeonActionSystem][Step 5] 封面图片生成完成: "
                 f"{cover_meta.local_path}"
@@ -273,10 +274,10 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
                 f"[IllustrateDungeonActionSystem][Step 5] 封面图片生成失败: {dungeon.name}"
             )
 
-        # 写入各房间 ImageMeta（失败项保持为 None）
+        # 写入各房间资源地址（失败项不写入，保持 stage.assets 原状）
         for room, meta in zip(dungeon.rooms, metas[1:]):
             if meta is not None:
-                room.image = meta
+                room.stage.assets[AssetKey.ILLUSTRATION] = str(meta.meta_path)
                 logger.info(
                     f"[IllustrateDungeonActionSystem][Step 5] 房间插图生成完成: "
                     f"{room.stage.name} -> {meta.local_path}"
@@ -287,10 +288,10 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
                     f"{room.stage.name}"
                 )
 
-        # 将更新后的 dungeon（含 image 数据）重新保存到磁盘
+        # 将更新后的 dungeon（含 assets 地址）重新保存到磁盘
         dungeon_path.write_text(dungeon.model_dump_json(indent=4), encoding="utf-8")
         logger.info(
-            f"[IllustrateDungeonActionSystem] Dungeon 已更新（含 image 数据）: {dungeon_path}"
+            f"[IllustrateDungeonActionSystem] Dungeon 已更新（含 assets 地址）: {dungeon_path}"
         )
 
     ####################################################################################################################################

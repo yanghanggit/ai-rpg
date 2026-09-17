@@ -44,7 +44,7 @@ Step 0–3 之间不再写任何中间 JSON 文件，数据全在内存流转；
 - Step 2 rooms → `GenerateDungeonActorsAction`（dungeon_name / dungeon_profile / rooms）
 - Step 3 actors → `AssembleDungeonAction`（dungeon_name / blueprint）
 - Step 4 组装 Dungeon 实体树
-- Step 5 从磁盘加载 Dungeon →「世界.插图提示词」编排提示词 → replicate 出图 → 写回 `dungeon.image` / `room.image`
+- Step 5 从磁盘加载 Dungeon →「世界.插图提示词」编排提示词 → replicate 出图 → 写回 `dungeon.assets["cover"]` / `stage.assets["illustration"]`（仅落 `.assets/image/<file>.meta` 地址，`ImageMeta` 不内连）
 
 ---
 

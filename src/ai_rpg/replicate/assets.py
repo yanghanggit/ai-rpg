@@ -15,7 +15,7 @@ from contextlib import ExitStack
 from dataclasses import dataclass
 from typing import Final, List, Optional, Tuple, final
 
-from ..models.image import ImageMeta, ImageSource, new_image_filename
+from ..models.assets_meta import AssetSource, ImageMeta, new_asset_filename
 from .batch import batch_generate_images
 from .config import replicate_config
 from .pipeline import download_image, generate_image, image_format_from_url
@@ -114,10 +114,10 @@ async def generate_image_asset(
     *,
     model: str,
     model_input: ReplicateImageInput,
-    source: ImageSource = "text2image",
+    source: AssetSource = AssetSource.TEXT2IMAGE,
     input_images: Optional[List[str]] = None,
 ) -> ImageMeta:
-    """通用底层入口：按给定 ``model_input`` 生成并写入 ``.images/<filename>.meta``。
+    """通用底层入口：按给定 ``model_input`` 生成并写入 ``.assets/image/<filename>.meta``。
 
     文件扩展名与 meta 的 ``format`` 由模型返回的产物 URL 推断（真实格式），
     不依赖模型是否遵守 ``output_format``，避免扩展名与字节内容不符。
@@ -132,7 +132,7 @@ async def generate_image_asset(
         model_input.get("output_format") or "png"
     )
     meta = ImageMeta.from_generation(
-        filename=new_image_filename(ext),
+        filename=new_asset_filename(ext),
         provider="replicate",
         model=model,
         model_ref=model_ref,
@@ -153,7 +153,7 @@ async def text_to_image(*, spec: TextToImageSpec) -> ImageMeta:
     return await generate_image_asset(
         model=spec.model,
         model_input=_text_to_image_input(spec),
-        source="text2image",
+        source=AssetSource.TEXT2IMAGE,
     )
 
 
@@ -177,7 +177,7 @@ async def edit_image(*, spec: EditImageSpec) -> ImageMeta:
         return await generate_image_asset(
             model=spec.model,
             model_input=model_input,
-            source="image_edit",
+            source=AssetSource.IMAGE_EDIT,
             input_images=spec.input_images,
         )
 

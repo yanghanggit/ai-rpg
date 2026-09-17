@@ -525,6 +525,8 @@ class ServerInfoResponse(BaseModel):
 
     service: str
     base_url: str
+    # 静态资源 URL 前缀（不含主机名），客户端据此拼接图片地址，避免硬编码服务端目录映射
+    assets_url_prefix: str
     description: str
     status: str
     timestamp: datetime

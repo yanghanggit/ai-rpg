@@ -15,10 +15,11 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 
 from config import GAME_SERVER_PORT, LOGS_DIR
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
+from starlette.types import Scope
 
 from ai_rpg.models import (
     ASSETS_DIR,
@@ -93,6 +94,7 @@ async def get_api_info(request: Request) -> ServerInfoResponse:
     return ServerInfoResponse(
         service="AI RPG DBG Game Server",
         base_url=base_url,
+        assets_url_prefix=ASSETS_URL_PREFIX,
         description="AI RPG DBG Game Server API Root Endpoint",
         status="healthy",
         timestamp=datetime.now(),
@@ -109,11 +111,33 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 ############################################################################################################
 # 挂载静态文件服务
+class AssetStaticFiles(StaticFiles):
+    """资源静态服务。
+
+    资源文件名内容寻址（``<UTC时间戳>_<uuid>``，生成后永不改写），因此可安全地
+    声明为不可变资源，让浏览器/CDN 长期缓存、连条件请求（304）都不再发起。
+    """
+
+    _CACHE_CONTROL = "public, max-age=31536000, immutable"
+
+    def file_response(
+        self,
+        full_path: str | os.PathLike[str],
+        stat_result: os.stat_result,
+        scope: Scope,
+        status_code: int = 200,
+    ) -> Response:
+        response = super().file_response(full_path, stat_result, scope, status_code)
+        response.headers["cache-control"] = self._CACHE_CONTROL
+        return response
+
+
 app.mount(
     ASSETS_URL_PREFIX,
-    StaticFiles(directory=str(ASSETS_DIR)),
+    AssetStaticFiles(directory=str(ASSETS_DIR)),
     name=ASSETS_URL_PREFIX.lstrip("/"),
 )
 

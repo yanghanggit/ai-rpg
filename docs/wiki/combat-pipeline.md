@@ -76,4 +76,3 @@
 - 副本生成管道产出 `CombatRoom`（stage + actors + 预置卡牌），战斗管道消费它 → 参见：[副本生成管道](dungeon-generation.md)
 - 装备系统将装备物化为临时手牌参与出牌，与普通卡牌共用出牌仲裁 → 参见：[装备系统](gear-item.md)
 - 消耗品系统走独立的世界实体临时 agent 仲裁 → 参见：[消耗品系统](consumable-item.md)
-- 战斗结束后 `CombatArchiveSystem` 触发记忆存储，衔接家园模式的叙事连续性

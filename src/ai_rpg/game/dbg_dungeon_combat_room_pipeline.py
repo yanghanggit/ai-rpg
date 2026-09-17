@@ -165,9 +165,6 @@ def create_dungeon_combat_room_pipeline(
     # 战斗掉落系统（胜利时为每头怪物推理掉落 MaterialItem，写入玩家 LootComponent）
     processors.add(CombatLootSystem(dbg_game))
 
-    # 战斗归档系统（生成总结、压缩消息、触发记忆存储，内部有状态守卫；可插拔，当前已拔掉）
-    # processors.add(CombatArchiveSystem(dbg_game))
-
     # 战斗状态转换系统（COMPLETE -> POST_COMBAT，战斗状态机的关键步骤，必须常驻）
     processors.add(CombatPostCombatTransitionSystem(dbg_game))
 

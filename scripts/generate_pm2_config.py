@@ -6,38 +6,47 @@ import os
 import sys
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 sys.path.insert(
     0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
 )
 
 # from ai_rpg.services import server_configuration
-from config import GAME_SERVER_PORT
+
+load_dotenv()
 
 
 def main(target_directory: str = ".") -> None:
     """
     生成 PM2 进程管理配置文件
     """
+    game_server_port_env = os.getenv("GAME_SERVER_PORT")
+    if not game_server_port_env:
+        raise RuntimeError(
+            "环境变量 GAME_SERVER_PORT 未设置，请在 .env 中配置（参考 .env.example）"
+        )
+    game_server_port = int(game_server_port_env)
     ecosystem_config_content = f"""module.exports = {{
   apps: [
-    // 游戏服务器实例 - 端口 {GAME_SERVER_PORT}
+    // 游戏服务器实例 - 端口 {game_server_port}
     {{
-      name: 'game-server-{GAME_SERVER_PORT}',
+      name: 'game-server-{game_server_port}',
       script: 'uvicorn',
-      args: 'scripts.run_game_server:app --host 0.0.0.0 --port {GAME_SERVER_PORT}',
+      args: 'scripts.run_game_server:app --host 0.0.0.0 --port {game_server_port}',
       interpreter: 'python',
       cwd: process.cwd(),
       env: {{
         PYTHONPATH: `${{process.cwd()}}`,
-        PORT: '{GAME_SERVER_PORT}'
+        PORT: '{game_server_port}'
       }},
       instances: 1,
       autorestart: false,
       watch: false,
       max_memory_restart: '2G',
-      log_file: './logs/game-server-{GAME_SERVER_PORT}.log',
-      error_file: './logs/game-server-{GAME_SERVER_PORT}-error.log',
-      out_file: './logs/game-server-{GAME_SERVER_PORT}-out.log',
+      log_file: './logs/game-server-{game_server_port}.log',
+      error_file: './logs/game-server-{game_server_port}-error.log',
+      out_file: './logs/game-server-{game_server_port}-out.log',
       time: true
     }}
   ]

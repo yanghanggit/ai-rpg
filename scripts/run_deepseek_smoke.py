@@ -12,8 +12,6 @@ sys.path.insert(
 )
 
 from ai_rpg.deepseek import (
-    MODEL_FLASH,
-    MODEL_PRO,
     DeepSeekClient,
     ToolDefinition,
     ToolFunction,
@@ -140,10 +138,10 @@ async def test_model_matrix() -> None:
     print("\n=== 测试 2x2 模型矩阵（flash/pro × thinking off/on）===")
     _PROMPT = "请用一句话解释什么是递归。"
     cases = [
-        (MODEL_FLASH, False),
-        (MODEL_FLASH, True),
-        (MODEL_PRO, False),
-        (MODEL_PRO, True),
+        (DeepSeekClient.MODEL_FLASH, False),
+        (DeepSeekClient.MODEL_FLASH, True),
+        (DeepSeekClient.MODEL_PRO, False),
+        (DeepSeekClient.MODEL_PRO, True),
     ]
     clients = [
         DeepSeekClient(

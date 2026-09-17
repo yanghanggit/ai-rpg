@@ -4,10 +4,9 @@ from typing import Final, List, Optional, Sequence, Set, Tuple
 
 from loguru import logger
 
-from ..deepseek import MODEL_FLASH, DeepSeekClient
+from ..deepseek import DeepSeekClient
 from ..entitas import Entity, Matcher
 from ..game.dbg_game import DBGGame
-from ..utils import prompt_builder
 from ..models import (
     AnyDungeonRoom,
     BaseMessage,
@@ -18,6 +17,7 @@ from ..models import (
     WorldDirectorComponent,
     get_buffer_string,
 )
+from ..utils import prompt_builder
 
 # 实体记忆块之间的长分割线
 _SEP: Final[str] = "-" * 100
@@ -284,7 +284,7 @@ async def debug_probe_dungeon_director_reasoning(
         name=dungeon.name,
         prompt=prompt,
         messages=agent_memory.messages,
-        model=MODEL_FLASH,
+        model=DeepSeekClient.MODEL_FLASH,
     )
     await client.chat()
 
@@ -322,7 +322,7 @@ async def archive_dungeon(
             name=f"dungeon:{dungeon.name}",
             prompt=prompt,
             messages=agent_memory.messages,
-            model=MODEL_FLASH,
+            model=DeepSeekClient.MODEL_FLASH,
         )
         await client.chat()
 

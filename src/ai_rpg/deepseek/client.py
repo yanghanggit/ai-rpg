@@ -31,8 +31,7 @@ from ..models.messages import (
     ToolMessage,
     get_buffer_string,
 )
-from . import config
-from .config import CHAT_DUMP_DIR, MODEL_FLASH, MODEL_PRO
+from ..paths import CHAT_DUMP_DIR
 
 load_dotenv()
 
@@ -47,13 +46,6 @@ _ROLE_MAP: Final[Dict[str, str]] = {
     "human": "user",
     "ai": "assistant",
     "tool": "tool",
-}
-
-
-# 各模型的上下文长度上限（输入 + 输出 token 总数），取值见 DeepSeek 定价文档
-CONTEXT_WINDOW_TOKENS: Final[Dict[str, int]] = {
-    MODEL_FLASH: 1_000_000,
-    MODEL_PRO: 1_000_000,
 }
 
 
@@ -108,6 +100,23 @@ class DeepSeekClient:
     支持 deepseek-chat 和 deepseek-reasoner 两个模型。
     公共接口与 ChatClient 保持一致。
     """
+
+    # DeepSeek 模型名称
+    MODEL_FLASH: Final[str] = (
+        "deepseek-flash"  # DeepSeek-V4.1-Flash，支持视觉（旧名 deepseek-v4-flash 已下线）
+    )
+    MODEL_PRO: Final[str] = (
+        "deepseek-v4-pro"  # V4 Pro（已下线；2026-09-14 起请求路由到 V4.1 Flash，按 Flash 计费）
+    )
+
+    # 各模型的上下文长度上限（输入 + 输出 token 总数），取值见 DeepSeek 定价文档
+    CONTEXT_WINDOW_TOKENS: Final[Dict[str, int]] = {
+        MODEL_FLASH: 1_000_000,
+        MODEL_PRO: 1_000_000,
+    }
+
+    # chat dump 全局开关（默认关闭）；run_agent_game.py 等调试入口会在运行时打开
+    chat_dump_enabled: bool = False
 
     ################################################################################################################################################################################
     @classmethod
@@ -290,7 +299,7 @@ class DeepSeekClient:
     @property
     def context_window(self) -> int:
         """当前模型的上下文长度上限（输入 + 输出 token 总数）"""
-        return CONTEXT_WINDOW_TOKENS.get(self._model, 1_000_000)
+        return DeepSeekClient.CONTEXT_WINDOW_TOKENS.get(self._model, 1_000_000)
 
     ################################################################################################################################################################################
     @property
@@ -514,7 +523,7 @@ class DeepSeekClient:
                 logger.info("=" * 60)
 
             # 记录完整对话内容以供调试分析
-            if config.CHAT_DUMP_ENABLED:
+            if DeepSeekClient.chat_dump_enabled:
                 self._dump_chat()
 
         else:

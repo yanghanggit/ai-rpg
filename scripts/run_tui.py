@@ -18,7 +18,6 @@ from datetime import datetime
 from typing import Optional, Type
 
 import click
-from config import LOGS_DIR
 from loguru import logger
 
 # from ai_rpg.tui.home_wear_costume import HomeWearCostumeScreen
@@ -26,6 +25,7 @@ from textual.screen import Screen
 from textual_serve.server import Server
 
 from ai_rpg.models import CombatState
+from ai_rpg.paths import LOGS_DIR
 from ai_rpg.tui import GameClient
 from ai_rpg.tui.combat_init import CombatInitScreen
 from ai_rpg.tui.combat_post import CombatPostScreen

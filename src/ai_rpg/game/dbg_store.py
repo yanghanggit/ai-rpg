@@ -9,7 +9,7 @@ import asyncio
 from pathlib import Path
 from typing import Optional
 
-from .config import WORLDS_DIR
+from ..paths import WORLDS_DIR
 from .dbg_game import DBGGame
 from .world_persistence import save_world
 

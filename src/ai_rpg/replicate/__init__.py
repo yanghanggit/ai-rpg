@@ -14,7 +14,7 @@ Replicate 模块
 4. 并发引擎
    ``batch_generate_images``
 5. 配置与连通性
-   ``replicate_config`` / ``ReplicateConfig`` / ``check_replicate_connection``
+   ``DEFAULT_IMAGE_MODEL`` / ``IMAGE_MODELS`` / ``check_replicate_connection``
 
 低层函数一并导出，便于按需组合；日常调用请优先使用第 1 层。
 """
@@ -30,8 +30,8 @@ from .assets import (
 )
 from .batch import batch_generate_images
 from .config import (
-    ReplicateConfig,
-    replicate_config,
+    DEFAULT_IMAGE_MODEL,
+    IMAGE_MODELS,
 )
 from .connection import check_replicate_connection
 from .pipeline import (
@@ -42,7 +42,8 @@ from .pipeline import (
 from .schemas import ReplicateImageInput
 
 __all__ = [
-    "ReplicateConfig",
+    "DEFAULT_IMAGE_MODEL",
+    "IMAGE_MODELS",
     "ReplicateImageInput",
     # 语义化入口（推荐）
     "TextToImageSpec",
@@ -58,5 +59,4 @@ __all__ = [
     "image_format_from_url",
     "download_image",
     "batch_generate_images",
-    "replicate_config",
 ]

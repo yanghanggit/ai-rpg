@@ -1,16 +1,17 @@
 """副本组装系统"""
 
 from pathlib import Path
-from typing import Dict, Final, List, final, override, Optional, Set
+from typing import Dict, Final, List, Optional, Set, final, override
+
 from loguru import logger
+
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..game.config import DEBUG_CACHE_DIR
 from ..game.dbg_game import DBGGame
 from ..models import (
     ActorType,
     AnyDungeonRoom,
-    AssembleDungeonAction,
     AssembleDeckAction,
+    AssembleDungeonAction,
     CharacterStats,
     CombatRoom,
     Dungeon,
@@ -19,6 +20,7 @@ from ..models import (
 )
 from ..models.dungeon_generation import DungeonBlueprint
 from ..models.entity_factory import create_actor, create_stage
+from ..paths import DEBUG_CACHE_DIR
 
 
 ####################################################################################################################################

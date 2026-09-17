@@ -8,13 +8,12 @@ from typing import AsyncIterator
 sys.path.insert(
     0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
 )
-# 将 scripts 目录添加到模块搜索路径
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from contextlib import asynccontextmanager
 from datetime import datetime
 
-from config import GAME_SERVER_PORT, LOGS_DIR
+import click
+from dotenv import load_dotenv
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -22,11 +21,11 @@ from loguru import logger
 from starlette.types import Scope
 
 from ai_rpg.models import (
-    ASSETS_DIR,
     ASSETS_URL_PREFIX,
     ApiRouteInfo,
     ServerInfoResponse,
 )
+from ai_rpg.paths import ASSETS_DIR, LOGS_DIR
 from ai_rpg.pgsql import procrastinate_app
 from ai_rpg.services.compact_api import compact_api_router
 from ai_rpg.services.dungeon_combat_api import (
@@ -48,6 +47,8 @@ from ai_rpg.services.new_game import new_game_api_router
 from ai_rpg.services.player_session import player_session_api_router
 from ai_rpg.services.stages_state import stages_state_api_router
 from ai_rpg.services.tasks_api import tasks_api_router
+
+load_dotenv()
 
 
 @asynccontextmanager
@@ -156,7 +157,26 @@ app.include_router(router=dungeon_combat_api_router)
 app.include_router(router=dungeon_opening_api_router)
 
 
-def main() -> None:
+@click.command()
+@click.option(
+    "--host",
+    default="0.0.0.0",
+    show_default=True,
+    help="监听地址",
+)
+@click.option(
+    "--port",
+    type=int,
+    envvar="GAME_SERVER_PORT",
+    required=True,
+    show_envvar=True,
+    help="监听端口（未传入时回退读取 .env 的 GAME_SERVER_PORT）",
+)
+def main(host: str, port: int) -> None:
+    """启动 AI RPG 游戏服务器（uvicorn）。
+
+    port 可通过 --port 传入；未传入时回退读取 .env 中的 GAME_SERVER_PORT。
+    """
 
     import datetime
 
@@ -171,14 +191,14 @@ def main() -> None:
     logger.add(_log_file, level="DEBUG")
     logger.info(f"日志配置: 级别=DEBUG, 文件路径={_log_file}")
 
-    logger.info(f"启动游戏服务器，端口: {GAME_SERVER_PORT}")
+    logger.info(f"启动游戏服务器，地址: {host}, 端口: {port}")
 
     import uvicorn
 
     uvicorn.run(
         app,
-        host="0.0.0.0",
-        port=GAME_SERVER_PORT,
+        host=host,
+        port=port,
     )
 
 

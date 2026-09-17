@@ -33,12 +33,9 @@ from typing import (
 
 from pydantic import BaseModel, Field, TypeAdapter, computed_field
 
-###############################################################################################################################################
-# 资源资产目录协议（系统固定）
-ASSETS_DIR: Final[Path] = Path(".assets/image")
-ASSETS_DIR.mkdir(parents=True, exist_ok=True)
-assert ASSETS_DIR.exists(), "无法创建资源资产目录"
+from ..paths import ASSETS_DIR
 
+###############################################################################################################################################
 # 静态文件服务的 HTTP URL 前缀（与 run_game_server.py 的 app.mount 保持一致）
 ASSETS_URL_PREFIX: Final[str] = "/assets/image"
 assert ASSETS_URL_PREFIX.startswith("/"), "URL 前缀必须以 / 开头"

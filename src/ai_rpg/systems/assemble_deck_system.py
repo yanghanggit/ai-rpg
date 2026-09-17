@@ -17,7 +17,6 @@ from pydantic import BaseModel
 
 from ..deepseek import ToolDefinition, ToolFunction, agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..game.config import DUNGEONS_DIR
 from ..game.dbg_game import DBGGame
 from ..models import (
     BUILD_CARD_FIELD_DESCRIPTION,
@@ -31,6 +30,7 @@ from ..models import (
     IllustrateDungeonAction,
     SystemMessage,
 )
+from ..paths import DUNGEONS_DIR
 from ..pgsql import (
     get_card_prototype,
     get_card_prototype_by_name,

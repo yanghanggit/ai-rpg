@@ -18,10 +18,11 @@ import click
 
 from ai_rpg.models import ImageMeta
 from ai_rpg.replicate import (
+    DEFAULT_IMAGE_MODEL,
+    IMAGE_MODELS,
     TextToImageSpec,
     batch_text_to_images,
     check_replicate_connection,
-    replicate_config,
     text_to_image,
 )
 
@@ -45,7 +46,7 @@ async def run_concurrent_demo(prompts: List[str]) -> None:
     try:
         specs = [
             TextToImageSpec(
-                model=replicate_config.default_image_model,
+                model=DEFAULT_IMAGE_MODEL,
                 prompt=prompt,
                 negative_prompt="worst quality, low quality, blurry",
                 width=512,
@@ -71,8 +72,8 @@ async def run_concurrent_demo(prompts: List[str]) -> None:
 @click.option(
     "--model",
     "-m",
-    type=click.Choice(list(replicate_config.get_available_models().keys())),
-    help=f"选择模型 (默认: {replicate_config.default_image_model})",
+    type=click.Choice(list(IMAGE_MODELS.keys())),
+    help=f"选择模型 (默认: {DEFAULT_IMAGE_MODEL})",
 )
 @click.option(
     "--negative",
@@ -134,7 +135,7 @@ async def _async_main(
 ) -> None:
     """异步主函数"""
     # 检查模型配置是否正确加载
-    if not replicate_config.get_available_models():
+    if not IMAGE_MODELS:
         print("❌ 错误: 图像模型配置未正确加载")
         sys.exit(1)
 
@@ -189,7 +190,7 @@ async def _async_main(
             print(f"  python scripts/{script} --help")
             return
 
-        model_name = model if model else replicate_config.default_image_model
+        model_name = model if model else DEFAULT_IMAGE_MODEL
 
         # 打印生成信息
         print(f"🎨 使用模型: {model_name}")

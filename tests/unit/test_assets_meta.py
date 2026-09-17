@@ -13,9 +13,8 @@ from pydantic import ValidationError
 
 import src.ai_rpg.models.assets_meta as assets_module
 from src.ai_rpg.models.assets_meta import (
-    ASSETS_DIR,
-    ASSETS_URL_PREFIX,
     ASSET_META_SUFFIX,
+    ASSETS_URL_PREFIX,
     AssetKey,
     AssetMeta,
     AssetSource,
@@ -25,6 +24,7 @@ from src.ai_rpg.models.assets_meta import (
     asset_url,
     new_asset_filename,
 )
+from src.ai_rpg.paths import ASSETS_DIR
 
 # ISO UTC 时间戳 + 32 位 uuid hex
 FILENAME_PATTERN = re.compile(r"^\d{8}T\d{6}Z_[0-9a-f]{32}\.png$")

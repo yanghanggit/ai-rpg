@@ -13,16 +13,17 @@ sys.path.insert(
 # 将 scripts 目录添加到模块搜索路径
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+from pathlib import Path
+
 from loguru import logger
-from ai_rpg.game.config import (
+
+from ai_rpg.game.dbg_game import DBGGame
+from ai_rpg.game.dbg_store import store_game_async
+from ai_rpg.models import Blueprint, Dungeon, PlayerSession, WorldState
+from ai_rpg.paths import (
     BLUEPRINTS_DIR,
     DUNGEONS_DIR,
 )
-from ai_rpg.models import PlayerSession
-from ai_rpg.game.dbg_game import DBGGame
-from ai_rpg.models import Blueprint, Dungeon, WorldState
-from ai_rpg.game.dbg_store import store_game_async
-from pathlib import Path
 
 
 ###############################################################################

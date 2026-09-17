@@ -2,15 +2,16 @@
 
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
-from .game_server_dependencies import CurrentGameServer
+
 from ..models import (
-    DungeonStateResponse,
+    Dungeon,
+    DungeonListResponse,
     # DungeonCombatResponse,
     DungeonRoomResponse,
-    DungeonListResponse,
-    Dungeon,
+    DungeonStateResponse,
 )
-from ..game.config import DUNGEONS_DIR
+from ..paths import DUNGEONS_DIR
+from .game_server_dependencies import CurrentGameServer
 
 ###################################################################################################################################################################
 dungeon_state_api_router = APIRouter()

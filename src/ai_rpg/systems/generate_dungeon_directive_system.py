@@ -4,10 +4,9 @@ from typing import Dict, Final, List, final, override
 
 from loguru import logger
 
-from ..deepseek import MODEL_FLASH, DeepSeekClient
+from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
-from ..utils import prompt_builder
 from ..models import (
     AIMessage,
     GenerateDungeonAction,
@@ -15,6 +14,7 @@ from ..models import (
     HumanMessage,
     WorldDirectorComponent,
 )
+from ..utils import prompt_builder
 
 
 ####################################################################################################################################
@@ -74,7 +74,7 @@ class GenerateDungeonDirectiveSystem(ReactiveProcessor):
             name=director_entity.name,
             prompt=prompt,
             messages=self._game.get_agent_memory(director_entity).messages,
-            model=MODEL_FLASH,
+            model=DeepSeekClient.MODEL_FLASH,
             # thinking=False,
         )
         await client.chat()

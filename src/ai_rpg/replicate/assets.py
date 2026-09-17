@@ -17,7 +17,7 @@ from typing import Final, List, Optional, Tuple, final
 
 from ..models.assets_meta import AssetSource, ImageMeta, new_asset_filename
 from .batch import batch_generate_images
-from .config import replicate_config
+from .config import DEFAULT_IMAGE_MODEL, IMAGE_MODELS
 from .pipeline import download_image, generate_image, image_format_from_url
 from .schemas import ReplicateImageInput
 
@@ -124,7 +124,12 @@ async def generate_image_asset(
     失败时异常向上抛出；批量场景可配合 ``batch_generate_images`` 隔离。
     常规文生图/图生图请优先使用 :func:`text_to_image` / :func:`edit_image`。
     """
-    model_ref = replicate_config.get_model_ref(model)
+    model_name = model or DEFAULT_IMAGE_MODEL
+    if model_name not in IMAGE_MODELS:
+        raise ValueError(
+            f"不支持的模型: {model_name}. 可用模型: {list(IMAGE_MODELS.keys())}"
+        )
+    model_ref = IMAGE_MODELS[model_name]["model_ref"]
     image_url = await generate_image(model_ref, dict(model_input))
 
     # 以产物 URL 的真实格式命名；无法识别时回退到声明的 output_format（默认 png）

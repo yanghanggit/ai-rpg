@@ -65,17 +65,14 @@ from pathlib import Path
 from typing import Final, Tuple
 
 import click
-from config import LOGS_DIR
 from loguru import logger
 
 # 仅在本 CLI 运行时启用 chat dump（调试用途）
-import ai_rpg.deepseek.config
+from ai_rpg.deepseek import DeepSeekClient
 from ai_rpg.game import restore_world
-from ai_rpg.game.config import (
-    WORLDS_DIR,
-)
+from ai_rpg.paths import LOGS_DIR, WORLDS_DIR
 
-ai_rpg.deepseek.config.CHAT_DUMP_ENABLED = True
+DeepSeekClient.chat_dump_enabled = True
 
 LOG_LEVEL: Final[str] = "DEBUG"
 

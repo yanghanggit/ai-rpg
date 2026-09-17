@@ -5,14 +5,16 @@
 """
 
 from typing import Tuple
+
 from loguru import logger
-from ..game.config import DUNGEONS_DIR
+
 from ..game.dbg_game import DBGGame
 from ..models import (
     ActorType,
     Dungeon,
     StageType,
 )
+from ..paths import DUNGEONS_DIR
 
 
 ###################################################################################################################################################################

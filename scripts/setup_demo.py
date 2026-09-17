@@ -6,7 +6,8 @@
 import asyncio
 import os
 import sys
-from typing import Final, final, List, Dict
+from typing import Dict, Final, List, final
+
 from pydantic import BaseModel
 
 # 将 src 目录和项目根目录添加到模块搜索路径
@@ -15,13 +16,10 @@ sys.path.insert(
 )
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 from loguru import logger
-from ai_rpg.game.config import BLUEPRINTS_DIR, DUNGEONS_DIR
+
+from ai_rpg.embedding_model.sentence_transformer import embedding_model
 from ai_rpg.models import Blueprint
-from demo import (
-    create_ruins_blueprint,
-    create_shrine_ruins_dungeon,
-)
-from demo import CARD_PROTOTYPES, DEFAULT_DECK_BUILD
+from ai_rpg.paths import BLUEPRINTS_DIR, DUNGEONS_DIR
 from ai_rpg.pgsql import (
     pgsql_create_database,
     pgsql_drop_database,
@@ -33,7 +31,12 @@ from ai_rpg.pgsql import (
 )
 from ai_rpg.pgsql.user_operations import has_user, save_user
 from ai_rpg.rag import add_documents
-from ai_rpg.embedding_model.sentence_transformer import embedding_model
+from demo import (
+    CARD_PROTOTYPES,
+    DEFAULT_DECK_BUILD,
+    create_ruins_blueprint,
+    create_shrine_ruins_dungeon,
+)
 
 
 #######################################################################################################

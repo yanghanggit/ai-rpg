@@ -8,7 +8,6 @@ from pydantic import BaseModel
 
 from ..deepseek import ToolDefinition, ToolFunction, agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..game.config import DUNGEONS_DIR
 from ..game.dbg_game import DBGGame
 from ..models import (
     AssetKey,
@@ -20,9 +19,9 @@ from ..models import (
     ImageMeta,
     SystemMessage,
 )
-from ..replicate import TextToImageSpec, batch_text_to_images, replicate_config
+from ..paths import DUNGEONS_DIR
+from ..replicate import DEFAULT_IMAGE_MODEL, TextToImageSpec, batch_text_to_images
 from ..utils import prompt_builder
-
 
 ####################################################################################################################################
 # 图片生成规格（引擎级：尺寸 / 模型，与具体故事无关）
@@ -348,7 +347,7 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
     def _to_spec(self, item: _ImagePrompt) -> TextToImageSpec:
         """把 LLM 产出的单条提示词映射为文生图输入规格。"""
         return TextToImageSpec(
-            model=replicate_config.default_image_model,
+            model=DEFAULT_IMAGE_MODEL,
             prompt=item.prompt,
             negative_prompt=item.negative_prompt or None,
             width=_IMAGE_WIDTH,

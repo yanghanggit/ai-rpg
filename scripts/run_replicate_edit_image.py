@@ -18,7 +18,8 @@ from typing import List, Optional, Tuple
 
 import click
 
-from ai_rpg.models import ASSETS_DIR, ImageMeta
+from ai_rpg.models import ImageMeta
+from ai_rpg.paths import ASSETS_DIR
 from ai_rpg.replicate import (
     EditImageSpec,
     check_replicate_connection,

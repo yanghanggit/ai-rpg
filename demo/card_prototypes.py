@@ -1,8 +1,15 @@
 """卡牌原型注册表
 
-本文件创建「卡牌原型」：与游戏内容完全解耦的指导性卡牌，供 Agent 工具检索时
-作为上下文引导。原型复用 `Card` 模型，但 `name` / `description` 均为教学性文本，
-不指向任何具体故事、角色或牌名。
+本文件创建「卡牌原型」：与游戏内容完全解耦的**骨架 + 设计指导**，供 Agent 工具检索后
+作为上下文，由角色 agent 在此之上设计自己的卡牌。
+
+原型复用 `Card` 模型，但承担三重职责：
+  - `Card` 的机械字段（cost/damage/hit_count/block/target_type/self_target/flags）
+    是只读骨架，agent 只能引用；
+  - `Card` 的三类词缀是「槽位声明 + 校验失败时的回退参考」，已写成字段引用式
+    （`本卡 damage×N` / `block` / `非 source 者` / 具名状态标记）；
+  - `Card` 的 `name` / `description` 不作为教学内容（`description` 留空，生成时
+    由角色重写），教学文本集中在 `meta.summary` / `meta.guide`。
 
 每个原型在底部注册表中附带元数据，支持**逐级披露**：
   - 一级（列表 / 检索）：返回 `meta.name` + `meta.summary` + `meta.keywords`；
@@ -53,7 +60,7 @@ class CardPrototype:
 
 ATTACK_PROTOTYPE: Final[Card] = Card(
     name="基础攻击",
-    description="单目标直接伤害原型：费用 1，伤害为卡牌自身值，填充牌库时叠加角色攻击力。",
+    description="",
     on_play_affixes=[],
     on_hit_affixes=[],
     on_turn_end_affixes=[],
@@ -73,7 +80,7 @@ ATTACK_PROTOTYPE: Final[Card] = Card(
 
 DEFENSE_PROTOTYPE: Final[Card] = Card(
     name="基础防御",
-    description="自身格挡原型：费用 1，格挡为卡牌自身值，填充牌库时叠加角色防御力，持有期间计入持有者总防御。",
+    description="",
     on_play_affixes=[],
     on_hit_affixes=[],
     on_turn_end_affixes=[],
@@ -95,7 +102,7 @@ DEFENSE_PROTOTYPE: Final[Card] = Card(
 
 BURST_PROTOTYPE: Final[Card] = Card(
     name="一次性爆发",
-    description="高费用单次高伤，打出后永久消耗，整场只此一次。",
+    description="",
     on_play_affixes=[],
     on_hit_affixes=[],
     on_turn_end_affixes=[],
@@ -115,8 +122,8 @@ BURST_PROTOTYPE: Final[Card] = Card(
 
 SACRIFICE_PROTOTYPE: Final[Card] = Card(
     name="代价爆发",
-    description="高伤但打出时反噬自身。",
-    on_play_affixes=["[自损]:打出时对自己造成伤害"],
+    description="",
+    on_play_affixes=["[自损]:打出时对自身结算本卡 damage×1 的伤害"],
     on_hit_affixes=[],
     on_turn_end_affixes=[],
     playable=True,
@@ -135,7 +142,7 @@ SACRIFICE_PROTOTYPE: Final[Card] = Card(
 
 FOCUS_PROTOTYPE: Final[Card] = Card(
     name="集火连击",
-    description="对单体多段独立结算的连击。",
+    description="",
     on_play_affixes=[],
     on_hit_affixes=[],
     on_turn_end_affixes=[],
@@ -155,7 +162,7 @@ FOCUS_PROTOTYPE: Final[Card] = Card(
 
 SPREAD_PROTOTYPE: Final[Card] = Card(
     name="散射清场",
-    description="多段伤害在敌阵营内散射分配。",
+    description="",
     on_play_affixes=[],
     on_hit_affixes=[],
     on_turn_end_affixes=[],
@@ -175,9 +182,9 @@ SPREAD_PROTOTYPE: Final[Card] = Card(
 
 MARK_PROTOTYPE: Final[Card] = Card(
     name="传染标记",
-    description="打出后把负面标记转嫁给目标手牌，被命中时反受其害。",
+    description="",
     on_play_affixes=[],
-    on_hit_affixes=["[标记]:被命中时承受额外伤害"],
+    on_hit_affixes=["[标记]:被命中时为自身叠加「破绽」标记"],
     on_turn_end_affixes=[],
     playable=True,
     exhaust=False,
@@ -195,8 +202,8 @@ MARK_PROTOTYPE: Final[Card] = Card(
 
 PIERCE_PROTOTYPE: Final[Card] = Card(
     name="破甲输出",
-    description="本次伤害无视目标防御。",
-    on_play_affixes=["[穿甲]:本次伤害无视目标防御"],
+    description="",
+    on_play_affixes=["[穿甲]:本卡 damage 结算时无视目标 block"],
     on_hit_affixes=[],
     on_turn_end_affixes=[],
     playable=True,
@@ -215,10 +222,10 @@ PIERCE_PROTOTYPE: Final[Card] = Card(
 
 SELF_LOOP_PROTOTYPE: Final[Card] = Card(
     name="自我循环",
-    description="锁定自身，每回合给自己叠增益。",
+    description="",
     on_play_affixes=[],
     on_hit_affixes=[],
-    on_turn_end_affixes=["[循环]:回合结束时自身获益"],
+    on_turn_end_affixes=["[循环]:回合结束时为自身叠加「蓄势」标记"],
     playable=True,
     exhaust=False,
     retain=True,
@@ -235,8 +242,8 @@ SELF_LOOP_PROTOTYPE: Final[Card] = Card(
 
 FLEETING_PROTOTYPE: Final[Card] = Card(
     name="限时机会",
-    description="限时强力，本回合不用即消失。",
-    on_play_affixes=["[爆发]:本次出牌额外收益"],
+    description="",
+    on_play_affixes=["[爆发]:打出时对目标额外结算本卡 damage×1 的伤害"],
     on_hit_affixes=[],
     on_turn_end_affixes=[],
     playable=True,
@@ -255,7 +262,7 @@ FLEETING_PROTOTYPE: Final[Card] = Card(
 
 DEADLINE_PROTOTYPE: Final[Card] = Card(
     name="限时终结",
-    description="虚无且消耗：本回合不用即消失，打出后永久消耗。",
+    description="",
     on_play_affixes=[],
     on_hit_affixes=[],
     on_turn_end_affixes=[],
@@ -275,7 +282,7 @@ DEADLINE_PROTOTYPE: Final[Card] = Card(
 
 FINISHER_PROTOTYPE: Final[Card] = Card(
     name="蓄力终结",
-    description="跨回合保留的大招，一旦打出永久消耗。",
+    description="",
     on_play_affixes=[],
     on_hit_affixes=[],
     on_turn_end_affixes=[],
@@ -295,10 +302,10 @@ FINISHER_PROTOTYPE: Final[Card] = Card(
 
 DOT_PROTOTYPE: Final[Card] = Card(
     name="持续减益传染",
-    description="打出后转嫁给目标，每回合末持续受损。",
+    description="",
     on_play_affixes=[],
     on_hit_affixes=[],
-    on_turn_end_affixes=["[中毒]:回合结束时对非 source 者结算持续伤害"],
+    on_turn_end_affixes=["[中毒]:回合结束时对非 source 者结算本卡 damage×1 的持续伤害"],
     playable=True,
     exhaust=False,
     retain=True,
@@ -315,10 +322,10 @@ DOT_PROTOTYPE: Final[Card] = Card(
 
 THROW_PROTOTYPE: Final[Card] = Card(
     name="一次性投掷",
-    description="打出后本体永久消耗，副本投递目标手牌并每回合末持续受损。",
+    description="",
     on_play_affixes=[],
     on_hit_affixes=[],
-    on_turn_end_affixes=["[中毒]:回合结束时对非 source 者结算持续伤害"],
+    on_turn_end_affixes=["[中毒]:回合结束时对非 source 者结算本卡 damage×1 的持续伤害"],
     playable=True,
     exhaust=True,
     retain=False,
@@ -335,7 +342,7 @@ THROW_PROTOTYPE: Final[Card] = Card(
 
 AOE_PROTOTYPE: Final[Card] = Card(
     name="群体打击",
-    description="对敌阵营全体造成伤害。",
+    description="",
     on_play_affixes=[],
     on_hit_affixes=[],
     on_turn_end_affixes=[],
@@ -355,8 +362,8 @@ AOE_PROTOTYPE: Final[Card] = Card(
 
 AOE_DEBUFF_PROTOTYPE: Final[Card] = Card(
     name="群体减益",
-    description="对敌阵营全体施加减益。",
-    on_play_affixes=["[诅咒]:本次出牌对目标阵营施加减益"],
+    description="",
+    on_play_affixes=["[诅咒]:打出时对目标阵营叠加「虚弱」标记"],
     on_hit_affixes=[],
     on_turn_end_affixes=[],
     playable=True,
@@ -377,7 +384,7 @@ AOE_DEBUFF_PROTOTYPE: Final[Card] = Card(
 
 BULWARK_PROTOTYPE: Final[Card] = Card(
     name="防御蓄力",
-    description="持有期格挡，跨回合保留。",
+    description="",
     on_play_affixes=[],
     on_hit_affixes=[],
     on_turn_end_affixes=[],
@@ -397,9 +404,9 @@ BULWARK_PROTOTYPE: Final[Card] = Card(
 
 THORNS_PROTOTYPE: Final[Card] = Card(
     name="反伤壁垒",
-    description="持牌高防，被命中时反制攻击者。",
+    description="",
     on_play_affixes=[],
-    on_hit_affixes=["[反伤]:被命中时对出牌者造成伤害"],
+    on_hit_affixes=["[反伤]:被命中时对出牌者结算本卡 damage×1 的伤害"],
     on_turn_end_affixes=[],
     playable=True,
     exhaust=False,
@@ -417,10 +424,10 @@ THORNS_PROTOTYPE: Final[Card] = Card(
 
 PASSIVE_PROTOTYPE: Final[Card] = Card(
     name="常驻被动",
-    description="不可打出，跨回合持有，每回合末结算持续效果。",
+    description="",
     on_play_affixes=[],
     on_hit_affixes=[],
-    on_turn_end_affixes=["[常驻]:回合结束时结算持续效果"],
+    on_turn_end_affixes=["[常驻]:回合结束时为自身叠加「护持」标记"],
     playable=False,
     exhaust=False,
     retain=True,
@@ -437,7 +444,7 @@ PASSIVE_PROTOTYPE: Final[Card] = Card(
 
 PLATE_PROTOTYPE: Final[Card] = Card(
     name="常驻护甲",
-    description="不可出的纯防御状态，跨回合持有提供格挡。",
+    description="",
     on_play_affixes=[],
     on_hit_affixes=[],
     on_turn_end_affixes=[],
@@ -457,10 +464,10 @@ PLATE_PROTOTYPE: Final[Card] = Card(
 
 SUPPORT_PROTOTYPE: Final[Card] = Card(
     name="支援分发",
-    description="打出后把增益副本分发给队友。",
+    description="",
     on_play_affixes=[],
     on_hit_affixes=[],
-    on_turn_end_affixes=["[增益]:回合结束时持有者获益"],
+    on_turn_end_affixes=["[增益]:回合结束时使非 source 者获得「鼓舞」标记"],
     playable=True,
     exhaust=False,
     retain=False,
@@ -477,7 +484,7 @@ SUPPORT_PROTOTYPE: Final[Card] = Card(
 
 SHIELD_TRANSFER_PROTOTYPE: Final[Card] = Card(
     name="格挡支援",
-    description="打出后把格挡副本分发给队友。",
+    description="",
     on_play_affixes=[],
     on_hit_affixes=[],
     on_turn_end_affixes=[],
@@ -497,10 +504,10 @@ SHIELD_TRANSFER_PROTOTYPE: Final[Card] = Card(
 
 AOE_BUFF_PROTOTYPE: Final[Card] = Card(
     name="群体增益",
-    description="对己方阵营全体施加增益。",
+    description="",
     on_play_affixes=[],
     on_hit_affixes=[],
-    on_turn_end_affixes=["[增益]:回合结束时持有者获益"],
+    on_turn_end_affixes=["[增益]:回合结束时为自身叠加「鼓舞」标记"],
     playable=True,
     exhaust=False,
     retain=False,
@@ -519,8 +526,8 @@ AOE_BUFF_PROTOTYPE: Final[Card] = Card(
 
 GEAR_OFFENSE_PROTOTYPE: Final[Card] = Card(
     name="装备.名字",
-    description="对装备进行描述，突出装备特点",
-    on_play_affixes=["[词缀名]:本次出牌产生何种即时效果"],
+    description="",
+    on_play_affixes=["[词缀名]:<设计：打出时对本卡 damage 或目标 block 的具体操作>"],
     on_hit_affixes=[],
     on_turn_end_affixes=[],
     playable=True,
@@ -539,9 +546,9 @@ GEAR_OFFENSE_PROTOTYPE: Final[Card] = Card(
 
 GEAR_DEFENSE_PROTOTYPE: Final[Card] = Card(
     name="装备.名字",
-    description="对装备进行描述，突出装备特点",
+    description="",
     on_play_affixes=[],
-    on_hit_affixes=["[词缀名]:持有者受到攻击命中时触发何种效果"],
+    on_hit_affixes=["[词缀名]:<设计：被命中时对出牌者/自身的 damage 或 block 操作>"],
     on_turn_end_affixes=[],
     playable=True,
     exhaust=False,
@@ -559,10 +566,12 @@ GEAR_DEFENSE_PROTOTYPE: Final[Card] = Card(
 
 GEAR_CONTAGION_PROTOTYPE: Final[Card] = Card(
     name="装备.名字",
-    description="对装备进行描述，突出装备特点",
+    description="",
     on_play_affixes=[],
     on_hit_affixes=[],
-    on_turn_end_affixes=["[词缀名]:回合结束时对非 source 者结算何种持续效果"],
+    on_turn_end_affixes=[
+        "[词缀名]:<设计：回合结束时对非 source 者的 damage 或 block 操作>"
+    ],
     playable=True,
     exhaust=False,
     retain=True,

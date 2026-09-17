@@ -1,59 +1,63 @@
-"""GenerateSpoilsActionSystem 词缀「等量改写」回填逻辑的单元测试。"""
+"""GenerateSpoilsActionSystem 的候选物化、prompt 组装与提交暂存的单元测试。"""
 
 from src.ai_rpg.models import Card
 from src.ai_rpg.systems.generate_spoils_action_system import (
+    _Candidate,
     _SpoilsCardEdit,
-    _apply_affix_edits,
+    _format_card_for_prompt,
+    _handle_submit_spoils_card,
 )
 
 
-def _card(**overrides: object) -> Card:
-    base: dict[str, object] = {
-        "name": "原型",
-        "description": "原型描述",
-        "on_play_affixes": ["[诅咒]:本次出牌对目标阵营施加减益"],
-    }
-    base.update(overrides)
-    return Card.model_validate(base)
+def _candidate() -> _Candidate:
+    card = Card(
+        name="骨架卡",
+        description="",
+        damage=2,
+        block=1,
+        retain=True,
+        on_turn_end_affixes=[
+            "[中毒]:回合结束时对非 source 者结算本卡 damage×1 的持续伤害"
+        ],
+    )
+    return _Candidate(
+        card=card,
+        archetype="攻击端",
+        archetype_subtype="成长性伤害",
+        summary="摘要",
+        guide="指导",
+    )
 
 
-def _edit(card: Card, **overrides: object) -> _SpoilsCardEdit:
-    base: dict[str, object] = {
-        "uuid": card.uuid,
-        "name": "改写名",
-        "description": "改写描述",
-    }
-    base.update(overrides)
-    return _SpoilsCardEdit.model_validate(base)
+def test_format_card_includes_guide_and_skeleton() -> None:
+    text = _format_card_for_prompt(_candidate())
+
+    assert "攻击端 / 成长性伤害" in text
+    assert "摘要" in text
+    assert "指导" in text
+    assert "damage=2" in text
+    assert "retain=True" in text
+    # 原型词缀作为回退参考展示
+    assert "on_turn_end_affixes（原型回退参考，需重设计）" in text
 
 
-def test_equal_count_affixes_are_applied() -> None:
-    card = _card()
-    edit = _edit(card, on_play_affixes=["[病气缠身]:令同场者手脚发沉、力气散失"])
+def test_handle_submit_stores_all_design_fields() -> None:
+    edits: list[_SpoilsCardEdit] = []
+    _handle_submit_spoils_card(
+        edits,
+        uuid="u-1",
+        name="朱批",
+        description="落款",
+        on_play_affixes=["[朱批]:打出时对目标造成本卡 damage×1 的伤害"],
+        on_hit_affixes=None,
+        on_turn_end_affixes=[
+            "[余墨]:回合结束时对非 source 者结算本卡 damage×1 的持续伤害"
+        ],
+    )
 
-    assert _apply_affix_edits("角色.无名", card, edit) == 1
-    assert card.on_play_affixes == ["[病气缠身]:令同场者手脚发沉、力气散失"]
-
-
-def test_omitted_affixes_fall_back_to_prototype() -> None:
-    card = _card()
-    edit = _edit(card)  # 未提交任何词缀
-
-    assert _apply_affix_edits("角色.无名", card, edit) == 0
-    assert card.on_play_affixes == ["[诅咒]:本次出牌对目标阵营施加减益"]
-
-
-def test_mismatched_count_falls_back_to_prototype() -> None:
-    card = _card()
-    edit = _edit(card, on_play_affixes=["[甲]:一", "[乙]:二"])
-
-    assert _apply_affix_edits("角色.无名", card, edit) == 0
-    assert card.on_play_affixes == ["[诅咒]:本次出牌对目标阵营施加减益"]
-
-
-def test_empty_prototype_stays_empty() -> None:
-    card = _card(on_play_affixes=[])
-    edit = _edit(card)
-
-    assert _apply_affix_edits("角色.无名", card, edit) == 0
-    assert card.on_play_affixes == []
+    assert len(edits) == 1
+    edit = edits[0]
+    assert edit.uuid == "u-1"
+    assert edit.name == "朱批"
+    assert edit.on_play_affixes == ["[朱批]:打出时对目标造成本卡 damage×1 的伤害"]
+    assert edit.on_hit_affixes is None

@@ -1,7 +1,13 @@
-"""奖励(Spoils)生成系统：从卡牌原型库随机抽取 N 个原型，润色后装入 SpoilsComponent 供后续领取。"""
+"""奖励(Spoils)生成系统：从卡牌原型库随机抽取 N 个原型，交由角色 agent 设计后装入 SpoilsComponent 供后续领取。
+
+原型提供「骨架字段 + 设计指导」，agent 在此之上为本角色设计 `name` / `description`
+与三类词缀（增益/减益规则）。词缀设计由 `validate_affix_slot` / `apply_affix_design` 校验，
+任一槽不满足字段锚点/数值护栏则整槽回退原型。
+"""
 
 import json
 import random
+from dataclasses import dataclass
 from functools import partial
 from typing import (
     Any,
@@ -26,11 +32,14 @@ from ..deepseek import ToolDefinition, ToolFunction, agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..models import (
+    AFFIX_DESIGN_SPEC,
+    BUILD_CARD_FIELD_DESCRIPTION,
     ActorComponent,
     Card,
     SpoilsComponent,
     DeathComponent,
     GenerateSpoilsAction,
+    apply_affix_design,
 )
 from ..pgsql import get_card_prototype, list_card_prototype_index
 from ..utils import batch_run_boolean_tasks, prompt_builder
@@ -40,14 +49,26 @@ SPOILS_CARD_COUNT: Final[int] = 3  # 候选卡数量（3 选 1），未来可调
 
 
 #######################################################################################################################################
+@dataclass
+class _Candidate:
+    """一张待设计的候选卡 = 骨架卡 + 原型设计指导。"""
+
+    card: Card
+    archetype: str
+    archetype_subtype: str
+    summary: str
+    guide: str
+
+
+#######################################################################################################################################
 @final
 class _SpoilsCardEdit(BaseModel):
-    """submit_spoils_card 提交的单张候选卡叙事调整（name/description + 等量改写的三类词缀；机械字段锁定）。"""
+    """submit_spoils_card 提交的单张候选卡设计（name/description + 三类词缀）。"""
 
     uuid: str
     name: str
     description: str
-    # 三类词缀：提交则按「等量改写」应用（条数必须与原型一致）；缺省或条数不符则保留原型。
+    # 三类词缀：agent 在原型已存在的槽位内重新设计；缺省则保留原型。
     on_play_affixes: Optional[List[str]] = None
     on_hit_affixes: Optional[List[str]] = None
     on_turn_end_affixes: Optional[List[str]] = None
@@ -57,7 +78,7 @@ class _SpoilsCardEdit(BaseModel):
 SUBMIT_SPOILS_CARD_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="submit_spoils_card",
-        description="提交一张候选卡的叙事调整（name / description，以及可选的等量词缀改写）。每张卡各调用一次，用 uuid 精确定位目标卡。",
+        description="提交一张候选卡的设计（name / description，以及可选的 on_play_affixes / on_hit_affixes / on_turn_end_affixes）。每张卡各调用一次，用 uuid 精确定位目标卡。",
         parameters={
             "type": "object",
             "properties": {
@@ -67,26 +88,26 @@ SUBMIT_SPOILS_CARD_TOOL: Final[ToolDefinition] = ToolDefinition(
                 },
                 "name": {
                     "type": "string",
-                    "description": "改写后的卡牌名",
+                    "description": "设计后的卡牌名",
                 },
                 "description": {
                     "type": "string",
-                    "description": "改写后的叙事描述（叙事锚点：不含数值，不重述字段已确定的效果）",
+                    "description": "设计后的叙事描述（叙事锚点：不含数值，不重述字段已确定的效果）",
                 },
                 "on_play_affixes": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "改写后的即时词缀（可选）。若提交，条数必须与原词缀完全一致，且保留原结算倾向；没把握可省略以保留原型。",
+                    "description": "本卡打出时结算的即时词缀（可选），格式 `[词缀名]:机械结算描述`。仅当原型该槽非空时可提交；须满足字段锚点与数值护栏，否则整槽回退原型。",
                 },
                 "on_hit_affixes": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "改写后的受击词缀（可选）。若提交，条数必须与原词缀完全一致，且保留原结算倾向；没把握可省略以保留原型。",
+                    "description": "本卡持有者被命中时触发的受击词缀（可选），格式同上。仅当原型该槽非空时可提交；须满足字段锚点与数值护栏。",
                 },
                 "on_turn_end_affixes": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "改写后的回合结束词缀（可选）。若提交，条数必须与原词缀完全一致，且保留原结算倾向；没把握可省略以保留原型。",
+                    "description": "持有者每次 pass turn 结算的回合结束词缀（可选），格式同上。仅当原型该槽非空时可提交；须满足字段锚点与数值护栏。",
                 },
             },
             "required": ["uuid", "name", "description"],
@@ -99,7 +120,7 @@ SUBMIT_SPOILS_CARD_TOOL: Final[ToolDefinition] = ToolDefinition(
 FINISH_SPOILS_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="finish_spoils",
-        description="全部候选卡均已通过 submit_spoils_card 提交后调用，结束本次候选奖励润色。",
+        description="全部候选卡均已通过 submit_spoils_card 提交后调用，结束本次候选奖励设计。",
         parameters={"type": "object", "properties": {}},
     )
 )
@@ -115,7 +136,7 @@ def _handle_submit_spoils_card(
     on_hit_affixes: Optional[List[str]] = None,
     on_turn_end_affixes: Optional[List[str]] = None,
 ) -> str:
-    """处理 submit_spoils_card 工具调用：校验并暂存一张候选卡的叙事调整。"""
+    """处理 submit_spoils_card 工具调用：校验并暂存一张候选卡的设计。"""
     assert uuid, "uuid 不能为空"
     edits.append(
         _SpoilsCardEdit(
@@ -128,37 +149,27 @@ def _handle_submit_spoils_card(
         )
     )
     logger.info(f"[GenerateSpoilsActionSystem] submit_spoils_card: {uuid} → {name}")
-    return "已记录该候选卡的叙事调整。"
+    return "已记录该候选卡的设计。"
 
 
 #######################################################################################################################################
 def _handle_finish_spoils() -> str:
     """处理 finish_spoils 工具调用（无参，仅作为终止信号）。"""
-    return "已结束候选奖励润色。"
+    return "已结束候选奖励设计。"
 
 
 #######################################################################################################################################
-def _format_card_for_prompt(card: Card) -> str:
-    """将单张待润色候选卡格式化为 prompt 片段（机械字段仅作只读上下文）。"""
+def _format_card_for_prompt(candidate: _Candidate) -> str:
+    """将单张候选卡格式化为 prompt 片段（骨架字段只读 + 原型设计指导）。"""
+    card = candidate.card
     lines = [
         f"- uuid: {card.uuid}",
-        f"  当前名: {card.name}",
-        f"  当前描述: {card.description}",
-        f"  功能（只读）: cost={card.cost} damage={card.damage} hit_count={card.hit_count} "
+        f"  原型定位: {candidate.archetype} / {candidate.archetype_subtype}",
+        f"  原型摘要: {candidate.summary}",
+        f"  设计指导: {candidate.guide}",
+        f"  骨架字段（只读）: cost={card.cost} damage={card.damage} hit_count={card.hit_count} "
         f"block={card.block} target_type={card.target_type.value} self_target={card.self_target}",
     ]
-    if card.on_play_affixes:
-        lines.append(
-            f"  on_play_affixes（可等量改写，保留结算倾向）: {card.on_play_affixes}"
-        )
-    if card.on_hit_affixes:
-        lines.append(
-            f"  on_hit_affixes（可等量改写，保留结算倾向）: {card.on_hit_affixes}"
-        )
-    if card.on_turn_end_affixes:
-        lines.append(
-            f"  on_turn_end_affixes（可等量改写，保留结算倾向）: {card.on_turn_end_affixes}"
-        )
 
     flags: List[str] = []
     if not card.playable:
@@ -173,73 +184,64 @@ def _format_card_for_prompt(card: Card) -> str:
         flags.append(f"transferable={card.transferable}")
     if flags:
         lines.append(f"  特性（只读）: {', '.join(flags)}")
+
+    # 原型词缀：既是槽位声明，也是设计失败时的回退参考。
+    if card.on_play_affixes:
+        lines.append(
+            f"  on_play_affixes（原型回退参考，需重设计）: {card.on_play_affixes}"
+        )
+    if card.on_hit_affixes:
+        lines.append(
+            f"  on_hit_affixes（原型回退参考，需重设计）: {card.on_hit_affixes}"
+        )
+    if card.on_turn_end_affixes:
+        lines.append(
+            f"  on_turn_end_affixes（原型回退参考，需重设计）: {card.on_turn_end_affixes}"
+        )
+
     return "\n".join(lines)
 
 
 #######################################################################################################################################
 @prompt_builder
-def _build_spoils_prompt(entity: Entity, cards: List[Card]) -> str:
-    """生成候选奖励（卡牌）的叙事个人化提示词。"""
-    card_lines = "\n\n".join(_format_card_for_prompt(c) for c in cards)
-    return f"""# 任务：为你新获得的候选奖励（卡牌）做叙事润色
+def _build_spoils_prompt(entity: Entity, candidates: List[_Candidate]) -> str:
+    """生成候选奖励（卡牌）的设计提示词：骨架字段 + 原型指导 + 词缀设计规范。"""
+    card_lines = "\n\n".join(_format_card_for_prompt(c) for c in candidates)
+    return f"""# 任务：为你新获得的候选奖励（卡牌）做设计
 
-你是「{entity.name}」。你刚获得若干张候选卡牌（将进入你的 Spoils，供之后领取一项）。请依据角色设定（见对话开头的系统设定），对这些卡牌的 `name`、`description` 与三类词缀做叙事个人化润色，使其更像是"你自己"的招式、习惯或随身手段。
+你是「{entity.name}」。你刚获得若干张候选卡牌（将进入你的 Spoils，供之后领取一项）。请依据角色设定（见对话开头的系统设定），为每张卡设计 `name`、`description`，并在原型已存在的词缀槽位内**重新设计**词缀，使它们成为"你自己"的招式、习惯或随身手段。
 
-## 待润色候选卡清单
+## 待设计候选卡清单
 
 {card_lines}
 
-## 卡牌字段速览（除 name / description / 三类词缀外均只读）
+{BUILD_CARD_FIELD_DESCRIPTION}
 
-- 三类词缀：`on_play_affixes` 本卡打出时结算；`on_hit_affixes` 持有者被本次出牌命中时触发；`on_turn_end_affixes` 持有者每次 pass turn 结算一次（配合 `retain` 可跨回合持续）。格式 `[名称]:触发倾向描述`，描述即该时机的结算倾向。
-- 其余字段：`cost/damage/hit_count/block` = 费用/单次伤害/攻击次数/持牌格挡；`target_type` = `single` 单体 / `all` 阵营全体 / `spread` 阵营散射；`playable/exhaust/retain/ethereal/transferable` = 可否出牌/打出后消耗/回合末保留/过回合自动消耗/打出时复制给目标；`source` = 来源者，词缀可引用（持有者非 source 时以「非 source 者」指代）。
+{AFFIX_DESIGN_SPEC}
 
-## 硬性约束
+## 骨架与设计的边界
 
-- 可改写：`name`、`description`、三类词缀；其余字段只读，禁止改动，也禁止在提交中输出。
+- **骨架字段只读**：`cost/damage/hit_count/block/target_type/self_target/playable/exhaust/retain/ethereal/transferable` 由原型给定，你只能引用，不能改动，也不能在提交中输出。
+- **词缀槽位**：只能对原型已非空的槽位提交设计，不得新增其它时机；不提交则保留原型词缀，提交不合法则整槽回退原型。
+- **原型词缀只是回退参考**：它不是你必须照抄的答案；请按上方规范为你的角色设计更贴合的版本。
+
+## 叙事与边界
+
 - `description` 保持"叙事锚点"：不含具体数值，不重述 cost/damage/block 等已确定的效果；可自由采用动作、物件、意象、氛围、典故等形态。
 - `name` 简洁有辨识度，体现你的个人风格。
 - **场景中立（重要）**：卡牌是你内在能力的外化，只能取材于你的角色设定（系统设定中的历史、性格、禁忌、最爱、体型，以及你的技艺、习惯与典故）。**禁止**在 `name`、`description` 或词缀中出现当前所在场景/地点的名称与景物、本次邂逅的人或怪、以及刚刚发生的具体遭遇；请刻意忽略对话中"当前场景感知"这类即时信息，成稿应在更换任何场景后依然成立。
-- **词缀等量改写**：若某张卡带有词缀，可为该词缀的每一条各提交一条改写，条数必须与原词缀完全一致；每一条都要保留原有结算倾向（机械含义不变），只把名称与描述换成你自己的语言，禁止照抄原型字面。没有把握时宁可不提交（将保留原型词缀）。
 
 ## 工作流程
 
-1. 逐一审视每张卡（以 `uuid` 精确定位，避免同名混淆）；
-2. 为每张卡各调用一次 `submit_spoils_card`（参数：uuid / name / description；如有词缀，附上等量改写后的 on_play_affixes / on_hit_affixes / on_turn_end_affixes）；
+1. 逐一审视每张卡（以 `uuid` 精确定位，避免同名混淆）：读骨架字段与设计指导，判断该卡能为你的角色带来什么收益/代价；
+2. 为每张卡各调用一次 `submit_spoils_card`：提交 `uuid` / `name` / `description`；对原型已存在的词缀槽位，提交你设计好的 `on_play_affixes` / `on_hit_affixes` / `on_turn_end_affixes`（合法则采用，不合法整槽回退原型）；
 3. 全部提交完毕后调用 `finish_spoils` 结束。"""
-
-
-_AFFIX_FIELDS: Final[Tuple[str, ...]] = (
-    "on_play_affixes",
-    "on_hit_affixes",
-    "on_turn_end_affixes",
-)
-
-
-#######################################################################################################################################
-def _apply_affix_edits(entity_name: str, card: Card, edit: _SpoilsCardEdit) -> int:
-    """按「等量改写」回填三类词缀；缺省或条数不符时保留原型。返回实际改写的词缀条数。"""
-    rewritten = 0
-    for field in _AFFIX_FIELDS:
-        submitted: Optional[List[str]] = getattr(edit, field)
-        if submitted is None:
-            continue
-        original: List[str] = getattr(card, field)
-        if len(submitted) != len(original):
-            logger.warning(
-                f"[GenerateSpoilsActionSystem] {entity_name} 卡「{card.name}」的 "
-                f"{field} 提交 {len(submitted)} 条与原 {len(original)} 条不一致，保留原型"
-            )
-            continue
-        setattr(card, field, submitted)
-        rewritten += len(submitted)
-    return rewritten
 
 
 #######################################################################################################################################
 @final
 class GenerateSpoilsActionSystem(ReactiveProcessor):
-    """响应奖励生成动作，为触发角色从原型库抽取候选卡、润色后装入 SpoilsComponent。"""
+    """响应奖励生成动作，为触发角色从原型库抽取候选卡、交由 agent 设计后装入 SpoilsComponent。"""
 
     def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
@@ -280,7 +282,7 @@ class GenerateSpoilsActionSystem(ReactiveProcessor):
         #
         # 第一步：整批物化候选；任一角色物化失败则整批中止（不写任何 SpoilsComponent、不调 LLM）。
         # 这样守卫 `any(has(SpoilsComponent))` 保持“全有或全无”，客户端可安全手动重试。
-        materialized: List[Tuple[Entity, List[Card]]] = []
+        materialized: List[Tuple[Entity, List[_Candidate]]] = []
         for entity in entities:
             candidates = self._materialize_candidates(entity, index)
             if not candidates:
@@ -291,8 +293,8 @@ class GenerateSpoilsActionSystem(ReactiveProcessor):
                 return
             materialized.append((entity, candidates))
 
-        # 第二步：组装并并发执行 agent_loop（LLM 润色失败不阻断发奖，只影响命名）
-        pending: List[Tuple[Entity, List[Card], List[_SpoilsCardEdit]]] = []
+        # 第二步：组装并并发执行 agent_loop（LLM 设计失败不阻断发奖，只影响设计）
+        pending: List[Tuple[Entity, List[_Candidate], List[_SpoilsCardEdit]]] = []
         tasks: List[Tuple[str, Coroutine[Any, Any, bool]]] = []
 
         for entity, candidates in materialized:
@@ -329,11 +331,11 @@ class GenerateSpoilsActionSystem(ReactiveProcessor):
         # 并发执行
         outcomes = await batch_run_boolean_tasks(tasks)
 
-        # 应用结果：按 uuid 回填 name/description（硬约束），三类词缀按「等量改写」回填（不符则保留原型）
+        # 应用结果：按 uuid 回填 name/description（硬约束），词缀经「字段锚点 + 数值护栏」校验（失败整槽回退原型）
         for (entity, candidates, edits), ok in zip(pending, outcomes):
-            by_uuid = {c.uuid: c for c in candidates}
+            by_uuid = {c.card.uuid: c.card for c in candidates}
             applied = 0
-            affixes_rewritten = 0
+            affixes_applied = 0
             for edit in edits:
                 target_card = by_uuid.get(edit.uuid)
                 if target_card is None:
@@ -344,15 +346,28 @@ class GenerateSpoilsActionSystem(ReactiveProcessor):
                     continue
                 target_card.name = edit.name
                 target_card.description = edit.description
-                affixes_rewritten += _apply_affix_edits(entity.name, target_card, edit)
+                count, fallbacks = apply_affix_design(
+                    entity.name,
+                    target_card,
+                    {
+                        "on_play_affixes": edit.on_play_affixes,
+                        "on_hit_affixes": edit.on_hit_affixes,
+                        "on_turn_end_affixes": edit.on_turn_end_affixes,
+                    },
+                )
+                affixes_applied += count
+                for reason in fallbacks:
+                    logger.warning(f"[GenerateSpoilsActionSystem] {reason}")
                 applied += 1
 
             # 装入 Spoils（replace 覆盖旧内容；claimed_cards 为空队列）
-            entity.replace(SpoilsComponent, entity.name, candidates, [])
+            entity.replace(
+                SpoilsComponent, entity.name, [c.card for c in candidates], []
+            )
 
             logger.info(
                 f"[GenerateSpoilsActionSystem] {entity.name}: 生成候选卡 {len(candidates)} 张"
-                f"，应用叙事调整 {applied} 张，改写词缀 {affixes_rewritten} 条（agent_loop 成功={ok}）"
+                f"，应用设计 {applied} 张，设计词缀 {affixes_applied} 条（agent_loop 成功={ok}）"
             )
 
     ####################################################################################################################################
@@ -360,12 +375,12 @@ class GenerateSpoilsActionSystem(ReactiveProcessor):
         self,
         entity: Entity,
         index: List[Dict[str, object]],
-    ) -> List[Card]:
-        """从原型索引随机抽取并物化为独立卡牌（换新 uuid、回填 source）。"""
+    ) -> List[_Candidate]:
+        """从原型索引随机抽取并物化为独立候选（换新 uuid、回填 source、附设计指导）。"""
 
         sample = random.sample(index, k=min(SPOILS_CARD_COUNT, len(index)))
 
-        candidates: List[Card] = []
+        candidates: List[_Candidate] = []
         for entry in sample:
             prototype_id = entry["prototype_id"]
             try:
@@ -380,6 +395,14 @@ class GenerateSpoilsActionSystem(ReactiveProcessor):
             # 原型 uuid 是共享常量，必须换新；source 回填持有者名（与牌库初始化一致）
             card.uuid = str(uuid4())
             card.source = entity.name
-            candidates.append(card)
+            candidates.append(
+                _Candidate(
+                    card=card,
+                    archetype=proto.archetype,
+                    archetype_subtype=proto.archetype_subtype,
+                    summary=proto.summary,
+                    guide=proto.guide,
+                )
+            )
 
         return candidates

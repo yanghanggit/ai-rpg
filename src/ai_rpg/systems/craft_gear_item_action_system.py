@@ -12,6 +12,8 @@ from ..deepseek import ToolDefinition, ToolFunction, agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..models import (
+    AFFIX_DESIGN_SPEC,
+    AFFIX_FIELDS,
     BUILD_CARD_FIELD_DESCRIPTION,
     Card,
     ChatMessage,
@@ -19,6 +21,7 @@ from ..models import (
     StorageComponent,
     SystemMessage,
     TargetType,
+    validate_affix_slot,
 )
 from ..models.items import AnyItem, GearItem, ItemType, MaterialItem
 from ..pgsql import get_card_prototype, list_card_prototype_index
@@ -233,6 +236,38 @@ def _handle_submit_gear(
     """处理 submit_gear 工具调用：校验并暂存装备规格。"""
     assert name, "name 不能为空"
     spec = _CraftGearSpec(name=name, description=description, **card)
+
+    # 词缀设计校验：agent 自设计的骨架 + 词缀必须满足字段锚点与数值护栏。
+    valid_target_types = {t.value for t in TargetType}
+    if spec.target_type not in valid_target_types:
+        return f"错误：target_type 无效（{spec.target_type!r}）。请修正后重新提交。"
+    probe = Card(
+        name=spec.name,
+        description=spec.description,
+        on_play_affixes=spec.on_play_affixes,
+        on_hit_affixes=spec.on_hit_affixes,
+        on_turn_end_affixes=spec.on_turn_end_affixes,
+        playable=spec.playable,
+        exhaust=spec.exhaust,
+        retain=spec.retain,
+        ethereal=spec.ethereal,
+        transferable=spec.transferable,
+        cost=spec.cost,
+        damage=spec.damage,
+        hit_count=spec.hit_count,
+        block=spec.block,
+        self_target=spec.self_target,
+        target_type=TargetType(spec.target_type),
+    )
+    for affix_field in AFFIX_FIELDS:
+        for affix in getattr(probe, affix_field):
+            result = validate_affix_slot(affix_field, affix, probe)
+            if not result.ok:
+                return (
+                    f"错误：{affix_field} 词缀不合法：{result.reason}。"
+                    "请修正后重新调用 submit_gear。"
+                )
+
     results.append(spec)
     logger.info(
         f"[CraftGearItemActionSystem] submit_gear 执行:\n"
@@ -265,9 +300,11 @@ def _build_craft_gear_prompt(materials: List[MaterialItem]) -> str:
 ## 卡牌规格（card）
 
 `card` 是这件装备在战斗中被转化为手牌时的完整卡牌规格。`card` 内不输出 `name`/`description`（由系统沿用装备的）；其余字段以下方说明为准，未提及即禁止。
-每个字段只表达自己的职责，不重复、不互相替代。
+每个字段只表达自己的职责，不重复、不互相替代；三类词缀由你自行决定使用哪些时机（可为空）。
 
 {BUILD_CARD_FIELD_DESCRIPTION}
+
+{AFFIX_DESIGN_SPEC}
 
 ## 工作流程
 

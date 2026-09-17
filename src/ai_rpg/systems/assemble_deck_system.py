@@ -9,7 +9,18 @@
 import json
 from functools import partial
 from pathlib import Path
-from typing import Any, Coroutine, Dict, Final, List, Set, Tuple, final, override
+from typing import (
+    Any,
+    Coroutine,
+    Dict,
+    Final,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    final,
+    override,
+)
 from uuid import uuid4
 
 from loguru import logger
@@ -19,6 +30,7 @@ from ..deepseek import ToolDefinition, ToolFunction, agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..models import (
+    AFFIX_DESIGN_SPEC,
     BUILD_CARD_FIELD_DESCRIPTION,
     Actor,
     AssembleDeckAction,
@@ -29,6 +41,7 @@ from ..models import (
     DeckComponent,
     IllustrateDungeonAction,
     SystemMessage,
+    apply_affix_design,
 )
 from ..paths import DUNGEONS_DIR
 from ..pgsql import (
@@ -72,11 +85,14 @@ DECK_SIZE: Final[int] = 5  # 每副牌库固定 5 张
 ####################################################################################################################################
 @final
 class _DeckCardPick(BaseModel):
-    """submit_deck_card 提交的单张卡牌选定（原型 id + 叙事改写）。"""
+    """submit_deck_card 提交的单张卡牌选定（原型 id + 叙事改写 + 可选词缀重设计）。"""
 
     prototype_id: str
     name: str
     description: str
+    on_play_affixes: Optional[List[str]] = None
+    on_hit_affixes: Optional[List[str]] = None
+    on_turn_end_affixes: Optional[List[str]] = None
 
 
 ####################################################################################################################################
@@ -112,7 +128,7 @@ GET_CARD_PROTOTYPE_TOOL: Final[ToolDefinition] = ToolDefinition(
 SUBMIT_DECK_CARD_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="submit_deck_card",
-        description="选定一张卡牌原型并提交其叙事改写（name 与 description）。每张卡各调用一次，用 prototype_id 精确指定原型。",
+        description="选定一张卡牌原型并提交其设计（name / description，以及可选的词缀重设计）。每张卡各调用一次，用 prototype_id 精确指定原型。",
         parameters={
             "type": "object",
             "properties": {
@@ -122,11 +138,26 @@ SUBMIT_DECK_CARD_TOOL: Final[ToolDefinition] = ToolDefinition(
                 },
                 "name": {
                     "type": "string",
-                    "description": "改写后的卡牌名（叙事、有辨识度，避免教学性命名的原型名）",
+                    "description": "设计后的卡牌名（叙事、有辨识度，避免教学性命名的原型名）",
                 },
                 "description": {
                     "type": "string",
-                    "description": "改写后的叙事描述（叙事锚点：不含数值，不重述字段已确定的效果）",
+                    "description": "设计后的叙事描述（叙事锚点：不含数值，不重述字段已确定的效果）",
+                },
+                "on_play_affixes": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "本卡打出时结算的即时词缀（可选），格式 `[词缀名]:机械结算描述`。仅当原型该槽非空时可提交；须满足字段锚点与数值护栏，否则整槽回退原型。",
+                },
+                "on_hit_affixes": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "本卡持有者被命中时触发的受击词缀（可选），格式同上。仅当原型该槽非空时可提交。",
+                },
+                "on_turn_end_affixes": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "持有者每次 pass turn 结算的回合结束词缀（可选），格式同上。仅当原型该槽非空时可提交。",
                 },
             },
             "required": ["prototype_id", "name", "description"],
@@ -195,8 +226,11 @@ def _handle_submit_deck_card(
     prototype_id: str,
     name: str,
     description: str,
+    on_play_affixes: Optional[List[str]] = None,
+    on_hit_affixes: Optional[List[str]] = None,
+    on_turn_end_affixes: Optional[List[str]] = None,
 ) -> str:
-    """处理 submit_deck_card 工具调用：校验并暂存一张卡牌的选定与叙事改写。"""
+    """处理 submit_deck_card 工具调用：校验并暂存一张卡牌的选定与设计。"""
     assert name.strip(), "name 不能为空"
     assert description.strip(), "description 不能为空"
     if prototype_id not in valid_ids:
@@ -209,6 +243,9 @@ def _handle_submit_deck_card(
             prototype_id=prototype_id,
             name=name.strip(),
             description=description.strip(),
+            on_play_affixes=on_play_affixes,
+            on_hit_affixes=on_hit_affixes,
+            on_turn_end_affixes=on_turn_end_affixes,
         )
     )
     logger.info(
@@ -227,14 +264,20 @@ def _handle_finish_deck() -> str:
 ####################################################################################################################################
 @prompt_builder
 def _build_deck_prompt(actor_name: str) -> str:
-    """生成组建初始牌库（选 5 张原型 + 叙事润色）提示词。"""
+    """生成组建初始牌库（选 5 张原型 + 设计 name/description/词缀）提示词。"""
     return f"""# 任务：为你自己组建初始牌库（恰好 {DECK_SIZE} 张）
 
-你是「{actor_name}」。请依据你的角色设定（见对话开头的系统设定），从卡牌原型库中为自己挑选恰好 {DECK_SIZE} 张卡牌组成初始牌库，并做叙事个人化润色，使其更像「你自己」的招式、习惯或随身手段。
-
-## 卡牌是什么（字段语义，只读背景）
+你是「{actor_name}」。请依据你的角色设定（见对话开头的系统设定），从卡牌原型库中为自己挑选恰好 {DECK_SIZE} 张卡牌组成初始牌库，并在骨架字段之上**设计**每张卡的 `name`、`description` 与词缀，使其成为「你自己」的招式、习惯或随身手段。
 
 {BUILD_CARD_FIELD_DESCRIPTION}
+
+{AFFIX_DESIGN_SPEC}
+
+## 骨架与设计的边界
+
+- **骨架字段只读**：`cost/damage/hit_count/block/target_type/self_target/playable/exhaust/retain/ethereal/transferable` 由原型给定，你只能引用，不能改动，也不能在提交中输出。
+- **词缀槽位**：只能对 `get_card_prototype` 返回的 `card` 中已非空的槽位提交设计，不得新增其它时机；不提交则保留原型，提交不合法则整槽回退原型。
+- **你来设计**：`name`、`description`，以及上述槽位内的词缀全文。
 
 ## 工作流程
 
@@ -242,13 +285,14 @@ def _build_deck_prompt(actor_name: str) -> str:
 2. 对感兴趣的候选，调用 `get_card_prototype` 精读其完整卡牌规格（guide + card 全字段）；
 3. 为最终选定的 **恰好 {DECK_SIZE} 张** 卡牌，各调用一次 `submit_deck_card`：
    - `prototype_id`：所选原型的 id；
-   - `name`：改写后的卡牌名（体现你的个人风格，避免教学性命名的原型名）；
-   - `description`：改写后的叙事描述（叙事锚点：不含数值，不重述字段已确定的效果；可自由采用动作/物件/意象/氛围/典故等形态）。
+   - `name`：设计后的卡牌名（体现你的个人风格，避免教学性命名的原型名）；
+   - `description`：设计后的叙事描述（叙事锚点：不含数值，不重述字段已确定的效果；可自由采用动作/物件/意象/氛围/典故等形态）；
+   - `on_play_affixes` / `on_hit_affixes` / `on_turn_end_affixes`：仅对原型已存在的槽位提交你重设计的词缀（格式与约束见上「词缀设计规范」）。
 4. 全部 {DECK_SIZE} 张提交完毕后调用 `finish_deck` 结束。
 
 ## 硬性约束
 
-- 只能通过 `prototype_id` 选定原型；卡牌的机械字段（cost/damage/hit_count/block/target_type/self_target/三类词缀/playable/exhaust/retain/ethereal/transferable）一律沿用原型，禁止改动，也禁止在提交中输出。
+- 只能通过 `prototype_id` 选定原型；骨架字段禁止改动。
 - `name`/`description` 只做叙事表达，不重述数值与机械效果。
 - 可重复选择同一原型（会得到多张独立卡牌）；但提交总量必须恰好为 {DECK_SIZE} 张。"""
 
@@ -440,6 +484,18 @@ class AssembleDeckSystem(ReactiveProcessor):
                 card.source = actor.name
                 card.name = pick.name
                 card.description = pick.description
+                # 词缀：在原型骨架上重设计；不合法则整槽回退原型
+                _, fallbacks = apply_affix_design(
+                    actor.name,
+                    card,
+                    {
+                        "on_play_affixes": pick.on_play_affixes,
+                        "on_hit_affixes": pick.on_hit_affixes,
+                        "on_turn_end_affixes": pick.on_turn_end_affixes,
+                    },
+                )
+                for reason in fallbacks:
+                    logger.warning(f"[AssembleDeckSystem] {reason}")
                 cards.append(card)
         except Exception as e:
             logger.error(f"[AssembleDeckSystem] {actor.name} 物化卡牌失败: {e}")

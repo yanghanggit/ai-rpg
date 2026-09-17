@@ -150,8 +150,6 @@ def _build_deck_init_prompt(entity: Entity, cards: List[Card]) -> str:
 
 {card_lines}
 
-## 卡牌是什么（字段语义，只读背景）
-
 {BUILD_CARD_FIELD_DESCRIPTION}
 
 ## 硬性约束

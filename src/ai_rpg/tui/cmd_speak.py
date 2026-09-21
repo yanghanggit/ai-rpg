@@ -44,7 +44,7 @@ async def speak_to(
     # 收集全部场景中的全部角色（服务端说话动作只校验目标是否存在，不限制同场景）
     all_actors: set[str] = set()
     current_actors: List[str] = []
-    for stage, actors in stages_resp.mapping.items():
+    for stage, actors in stages_resp.actors_by_stage.items():
         all_actors.update(actors)
         if player_actor in actors:
             current_actors = actors

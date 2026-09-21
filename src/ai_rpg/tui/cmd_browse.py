@@ -32,12 +32,12 @@ async def build_entity_browser_text(
         f"build_entity_browser_text: 请求实体列表 user_name={user_name} game_name={game_name}"
     )
     stages_resp = await fetch_stages_state(user_name, game_name)
-    stages = list(stages_resp.mapping.keys())
+    stages = list(stages_resp.actors_by_stage.keys())
 
     # 按首次出现顺序收集去重后的全部角色
     seen: Set[str] = set()
     actors: List[str] = []
-    for actor_list in stages_resp.mapping.values():
+    for actor_list in stages_resp.actors_by_stage.values():
         for actor in actor_list:
             if actor not in seen:
                 seen.add(actor)

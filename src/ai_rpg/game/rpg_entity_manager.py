@@ -274,9 +274,9 @@ class RPGEntityManager(Context):
     ) -> Dict[str, List[str]]:
         """获取所有场景到 Actor 的分组映射（名称版本）。"""
         ret: Dict[str, List[str]] = {}
-        mapping = self.get_actors_by_stage()
+        actors_by_stage = self.get_actors_by_stage()
 
-        for stage_entity, actor_entities in mapping.items():
+        for stage_entity, actor_entities in actors_by_stage.items():
             ret[stage_entity.name] = [
                 actor_entity.name for actor_entity in actor_entities
             ]

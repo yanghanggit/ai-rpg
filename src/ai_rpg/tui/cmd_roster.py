@@ -39,7 +39,7 @@ async def build_roster_list_text(
         # 收集全部场景中的全部角色（去重、保持首次出现顺序，排除主角本人）
         all_actors: List[str] = []
         seen: Set[str] = set()
-        for actors in stages_resp.mapping.values():
+        for actors in stages_resp.actors_by_stage.values():
             for actor in actors:
                 if actor != player_actor and actor not in seen:
                     seen.add(actor)

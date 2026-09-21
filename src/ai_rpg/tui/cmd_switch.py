@@ -36,13 +36,13 @@ async def switch_stage(
     )
     stages_resp = await fetch_stages_state(user_name, game_name)
 
-    if target_stage not in stages_resp.mapping:
+    if target_stage not in stages_resp.actors_by_stage:
         return (
             f"[yellow]未知场景：{display_name(target_stage)}，"
             f"可用场景见 /stage。[/]"
         )
 
-    if player_actor in stages_resp.mapping.get(target_stage, []):
+    if player_actor in stages_resp.actors_by_stage.get(target_stage, []):
         return f"[yellow]你已经在场景：{display_name(target_stage)}。[/]"
 
     resp = await home_switch_stage(

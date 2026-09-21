@@ -43,11 +43,11 @@ async def build_hand_text(game_client: GameClient) -> str:
     )
     try:
         stages_resp = await get_stages_state(game_client)
-        stage_name = find_stage_of_actor(stages_resp.mapping, player_actor)
+        stage_name = find_stage_of_actor(stages_resp.actors_by_stage, player_actor)
         assert (
             stage_name is not None
         ), f"未能在场景映射中找到玩家角色所在场景：actor={player_actor}"
-        participant_names = list(stages_resp.mapping[stage_name])
+        participant_names = list(stages_resp.actors_by_stage[stage_name])
         if not participant_names:
             return "[yellow]场景内暂无参战者。[/]"
         resp = await get_entities_details(game_client, participant_names)

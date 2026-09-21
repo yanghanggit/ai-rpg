@@ -58,9 +58,9 @@ async def get_stages_state(
 
     # 获取场景与角色的分布映射
     actors_by_stage_as_names = rpg_game.get_actors_by_stage_as_names()
-    logger.info(f"view_home: {user_name} mapping_data: {actors_by_stage_as_names}")
+    logger.info(f"view_home: {user_name} actors_by_stage: {actors_by_stage_as_names}")
 
     # 返回场景状态
     return StagesStateResponse(
-        mapping=actors_by_stage_as_names,
+        actors_by_stage=actors_by_stage_as_names,
     )

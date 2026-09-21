@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Dict, List, final
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .blueprint import Blueprint
 from .dungeon import AnyDungeonRoom, Dungeon
@@ -473,7 +473,9 @@ class DungeonRoomResponse(BaseModel):
 
 @final
 class StagesStateResponse(BaseModel):
-    mapping: Dict[str, List[str]]
+    actors_by_stage: Dict[str, List[str]] = Field(
+        description="场景名 -> 该场景内的角色名列表（每个角色只属于一个场景）"
+    )
 
 
 ################################################################################################################

@@ -17,7 +17,7 @@ def _get_all_actors(stages_resp: StagesStateResponse) -> List[str]:
     """返回全部场景中出现过的全部角色（跨场景去重，保持首次出现顺序）。"""
     all_actors: List[str] = []
     seen: set[str] = set()
-    for actors in stages_resp.mapping.values():
+    for actors in stages_resp.actors_by_stage.values():
         for actor in actors:
             if actor not in seen:
                 seen.add(actor)

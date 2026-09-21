@@ -31,7 +31,7 @@ async def _fetch_party_names(
 ) -> List[str]:
     """返回玩家所在场景内的全部参与者（含玩家与队友）。"""
     stages_resp = await fetch_stages_state(user_name, game_name)
-    for actors in stages_resp.mapping.values():
+    for actors in stages_resp.actors_by_stage.values():
         if player_actor in actors:
             return list(actors)
     return []
@@ -49,7 +49,7 @@ async def build_opening_info_text(
         stages_resp = await fetch_stages_state(user_name, game_name)
         stage_name: Optional[str] = None
         party_names: List[str] = []
-        for stage, actors in stages_resp.mapping.items():
+        for stage, actors in stages_resp.actors_by_stage.items():
             if player_actor in actors:
                 stage_name = stage
                 party_names = list(actors)

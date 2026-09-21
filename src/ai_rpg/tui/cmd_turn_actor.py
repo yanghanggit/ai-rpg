@@ -155,11 +155,11 @@ async def load_turn_actor_overview(game_client: GameClient) -> TurnActorOverview
 
     combat = await _fetch_combat(game_client)
     stages_resp = await get_stages_state(game_client)
-    stage_name = find_stage_of_actor(stages_resp.mapping, player_actor)
+    stage_name = find_stage_of_actor(stages_resp.actors_by_stage, player_actor)
     assert (
         stage_name is not None
     ), f"未能在场景映射中找到玩家角色所在场景：actor={player_actor}"
-    participant_names = list(stages_resp.mapping[stage_name])
+    participant_names = list(stages_resp.actors_by_stage[stage_name])
 
     entities_resp = await get_entities_details(
         game_client, [stage_name, *participant_names]

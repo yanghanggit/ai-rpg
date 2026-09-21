@@ -32,7 +32,7 @@ async def build_stage_view_text(
 
     stage_name: Optional[str] = None
     actor_names: List[str] = []
-    for name, actors in stages_resp.mapping.items():
+    for name, actors in stages_resp.actors_by_stage.items():
         if player_actor in actors:
             stage_name = name
             actor_names = actors
@@ -84,7 +84,7 @@ async def build_stage_view_text(
     lines.append("[bold yellow]── 其他场景 ──────────────────────────────────────[/]")
     other_stages = [
         (name, actors)
-        for name, actors in stages_resp.mapping.items()
+        for name, actors in stages_resp.actors_by_stage.items()
         if name != stage_name
     ]
     if not other_stages:

@@ -25,7 +25,7 @@ async def _fetch_all_actor_names(user_name: str, game_name: str) -> List[str]:
     stages_resp = await fetch_stages_state(user_name, game_name)
     all_actors: List[str] = []
     seen: Set[str] = set()
-    for actors in stages_resp.mapping.values():
+    for actors in stages_resp.actors_by_stage.values():
         for actor in actors:
             if actor not in seen:
                 seen.add(actor)

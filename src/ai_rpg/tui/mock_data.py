@@ -543,7 +543,7 @@ def build_mock_dungeon_state_response() -> DungeonStateResponse:
 def build_mock_stages_state_response() -> StagesStateResponse:
     """构造固定的场景状态映射：单一场景内含玩家、队友与两个怪物。"""
     return StagesStateResponse(
-        mapping={
+        actors_by_stage={
             MOCK_STAGE_NAME: [
                 MOCK_ACTOR_NAME,
                 MOCK_TEAMMATE_NAME,

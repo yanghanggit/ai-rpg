@@ -281,7 +281,7 @@ class ReliquaryComponent(Component):
 @final
 @register_component_type
 class DungeonDirectorComponent(Component):
-    """标记世界实体为副本导演，扮演当前正在游玩的副本，随房间进程积累记忆，副本结束时总结移交世界导演。"""
+    """标记世界实体为副本导演，扮演当前正在游玩的副本，随房间进程积累记忆，副本结束时总结并压缩本次副本经过。"""
 
     name: str
 

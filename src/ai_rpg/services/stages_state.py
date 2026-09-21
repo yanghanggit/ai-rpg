@@ -29,7 +29,7 @@ async def get_stages_state(
 
     # 检查房间是否存在
     if not game_server.has_room(user_name):
-        logger.error(f"view_home: {user_name} has no room")
+        # logger.error(f"view_home: {user_name} has no room")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="没有房间",

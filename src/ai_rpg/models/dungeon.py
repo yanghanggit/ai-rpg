@@ -63,6 +63,7 @@ class Dungeon(BaseModel):
     assets: Dict[AssetKey, str] = Field(
         default_factory=dict
     )  # 副本封面等资源：AssetKey -> meta 路径（.assets/image/<file>.meta）
+    archive_summary: str = ""  # 副本结束归档时由副本导演生成的总结正文，初始为空
 
     ########################################################################################################################
     @property

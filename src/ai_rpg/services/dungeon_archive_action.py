@@ -165,6 +165,39 @@ def _build_entity_fact_block(
 
 
 ###################################################################################################################################################################
+@prompt_builder
+def _build_dungeon_start_prompt(
+    dungeon: Dungeon,
+    room: AnyDungeonRoom,
+) -> str:
+    """构建副本导演的副本开局记录提示词。"""
+
+    return (
+        f"# 副本开始\n"
+        f"\n"
+        f"副本「{dungeon.name}」启动。设定（profile）：{dungeon.profile or '（无）'}\n"
+        f"\n"
+        f"{_build_room_sequence_block(dungeon)}\n"
+        f"\n"
+        f"## 首个房间详情\n"
+        f"{_build_room_setting_block(room)}"
+    )
+
+
+###################################################################################################################################################################
+@prompt_builder
+def _build_archive_summary_prompt(dungeon: Dungeon) -> str:
+    """构建副本导演的副本总结归档提示词。"""
+
+    return (
+        f"# 任务：基于你已积累的记忆，总结并压缩本次副本「{dungeon.name}」的全部经历。\n"
+        f"\n"
+        f"站在你（副本导演）亲历本次副本的第一人称视角，输出一段连贯的中文总结正文。"
+        f"整段不分段不空行，纯文本输出。"
+    )
+
+
+###################################################################################################################################################################
 def _collect_room_entities(
     dbg_game: DBGGame,
     room: AnyDungeonRoom,
@@ -207,18 +240,7 @@ def notify_dungeon_director_entered(
         logger.warning("[dungeon_director] 未找到副本导演实体，跳过开局记录")
         return
 
-    message = HumanMessage(
-        content=(
-            f"# 副本开始\n"
-            f"\n"
-            f"副本「{dungeon.name}」启动。设定（profile）：{dungeon.profile or '（无）'}\n"
-            f"\n"
-            f"{_build_room_sequence_block(dungeon)}\n"
-            f"\n"
-            f"## 首个房间详情\n"
-            f"{_build_room_setting_block(room)}"
-        )
-    )
+    message = HumanMessage(content=_build_dungeon_start_prompt(dungeon, room))
     dbg_game.add_human_message(director_entity, message)
     logger.debug(f"[dungeon_director] 已记录副本开局：{dungeon.name!r}")
 
@@ -294,7 +316,7 @@ async def archive_dungeon(
     dbg_game: DBGGame,
     dungeon: Dungeon,
 ) -> None:
-    """副本结束时，让副本导演基于其已积累的记忆输出总结，转交世界导演；随后重置其记忆。
+    """副本结束时，让副本导演基于其已积累的记忆输出总结并存入副本；随后重置其记忆。
 
     副本导演的记忆生命周期限定于当前副本：无论总结是否成功，归档流程结束后都会重置回
     仅剩 system prompt 的初始状态，供下一个副本从零开始积累。
@@ -311,12 +333,7 @@ async def archive_dungeon(
     try:
 
         # 基于副本导演已积累的记忆（开局记录 + 各房间结束记录），驱动其输出总结
-        prompt = (
-            f"# 任务：基于你已积累的记忆，总结并压缩本次副本「{dungeon.name}」的全部经历。\n"
-            f"\n"
-            f"站在你（副本导演）亲历本次副本的第一人称视角，输出一段连贯的中文总结正文。"
-            f"整段不分段不空行，纯文本输出。"
-        )
+        prompt = _build_archive_summary_prompt(dungeon)
 
         client = DeepSeekClient(
             name=f"dungeon:{dungeon.name}",
@@ -332,6 +349,9 @@ async def archive_dungeon(
             return None
 
         logger.info(f"[archive_dungeon] 副本「{dungeon.name}」导演总结:\n{summary}")
+
+        # 将总结存入副本模型，供后续持久化/查询
+        dungeon.archive_summary = summary
 
         # 将总结作为「世界变化通知」写入世界导演（GM）的记忆
         _notify_world_director(dbg_game, dungeon, summary)

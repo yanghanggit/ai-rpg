@@ -37,11 +37,11 @@ from ..models import (
     Card,
     ChatMessage,
     CombatRoom,
-    ComponentSerialization,
     DeckComponent,
     IllustrateDungeonAction,
     SystemMessage,
     apply_affix_design,
+    serialize_component,
 )
 from ..paths import DUNGEONS_DIR
 from ..pgsql import (
@@ -406,10 +406,7 @@ class AssembleDeckSystem(ReactiveProcessor):
             is_fallback = True
 
         actor.components = [
-            ComponentSerialization(
-                name=DeckComponent.__name__,
-                data=DeckComponent(name=actor.name, cards=cards).model_dump(),
-            )
+            serialize_component(DeckComponent(name=actor.name, cards=cards))
         ]
         return not is_fallback
 

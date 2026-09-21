@@ -1,19 +1,21 @@
 from typing import Dict, List, Optional, Set, override
+
+from loguru import logger
+
 from ..entitas import Context, Entity, Matcher
 from ..models import (
     COMPONENT_TYPES,
-    resolve_component_type,
     ActorComponent,
-    ComponentSerialization,
+    DungeonComponent,
     EntitySerialization,
-    PlayerComponent,
+    HomeComponent,
     IdentityComponent,
+    PlayerComponent,
     StageComponent,
     WorldComponent,
-    HomeComponent,
-    DungeonComponent,
+    resolve_component_type,
+    serialize_component,
 )
-from loguru import logger
 
 
 ###############################################################################################################################################
@@ -46,7 +48,7 @@ class RPGEntityManager(Context):
     def _serialize_entity(self, entity: Entity) -> EntitySerialization:
         """序列化单个实体（内部方法）。"""
         components = [
-            ComponentSerialization(name=key.__name__, data=value.model_dump())
+            serialize_component(value)
             for key, value in entity._components.items()
             if COMPONENT_TYPES.get(key.__name__) is not None
         ]

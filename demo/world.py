@@ -13,7 +13,6 @@ from ai_rpg.models import (
     Card,
     CharacterStats,
     CombatRoom,
-    ComponentSerialization,
     ConsumableComponent,
     ConsumableItem,
     ConsumableWorkshopComponent,
@@ -23,13 +22,15 @@ from ai_rpg.models import (
     Dungeon,
     DungeonDirectorComponent,
     DungeonGenerationComponent,
-    IllustrationPromptComponent,
-    OpeningRoom,
     GearItem,
     GearWorkshopComponent,
+    IllustrationPromptComponent,
     InventoryComponent,
     MaterialItem,
+    OpeningRoom,
     PlayerAuditComponent,
+    PostArbitrationComponent,
+    ReliquaryComponent,
     Stage,
     StageType,
     StorageComponent,
@@ -37,18 +38,17 @@ from ai_rpg.models import (
     WorldDirectorComponent,
     WornCostumeComponent,
     create_actor,
+    create_artifact,
     create_stage,
     create_world,
-    create_artifact,
-    ReliquaryComponent,
-    PostArbitrationComponent,
+    serialize_component,
 )
 
 from .card_prototypes import (
     ATTACK_PROTOTYPE,
     DEFENSE_PROTOTYPE,
-    GEAR_OFFENSE_PROTOTYPE,
     GEAR_DEFENSE_PROTOTYPE,
+    GEAR_OFFENSE_PROTOTYPE,
 )
 
 # ---------------------------------------------------------------------------
@@ -230,9 +230,8 @@ def create_actor_paper_doll() -> Actor:
     )
 
     paper_doll.components = [
-        ComponentSerialization(
-            name=DeckComponent.__name__,
-            data=DeckComponent(
+        serialize_component(
+            DeckComponent(
                 name=paper_doll.name,
                 cards=[
                     # 3 张基础攻击
@@ -243,7 +242,7 @@ def create_actor_paper_doll() -> Actor:
                     _make_defense_card(),
                     _make_defense_card(),
                 ],
-            ).model_dump(),
+            )
         )
     ]
 
@@ -292,19 +291,15 @@ def create_shrine_ruins_dungeon() -> Dungeon:
     )
     # 标记型组件：决定该神器在「出牌/消耗品仲裁后」运行
     artifact_paper_money.components = [
-        ComponentSerialization(
-            name=PostArbitrationComponent.__name__,
-            data=PostArbitrationComponent(name=artifact_paper_money.name).model_dump(),
-        )
+        serialize_component(PostArbitrationComponent(name=artifact_paper_money.name))
     ]
 
     stage_shrine_courtyard.components.append(
-        ComponentSerialization(
-            name=ReliquaryComponent.__name__,
-            data=ReliquaryComponent(
+        serialize_component(
+            ReliquaryComponent(
                 name=stage_shrine_courtyard.name,
                 artifacts=[artifact_paper_money],
-            ).model_dump(),
+            )
         )
     )
 
@@ -381,9 +376,8 @@ def create_wuming() -> Actor:
     )
 
     actor.components = [
-        ComponentSerialization(
-            name=DeckComponent.__name__,
-            data=DeckComponent(
+        serialize_component(
+            DeckComponent(
                 name=actor.name,
                 cards=[
                     # 3 张基础攻击
@@ -394,21 +388,19 @@ def create_wuming() -> Actor:
                     _make_defense_card(),
                     _make_defense_card(),
                 ],
-            ).model_dump(),
+            )
         ),
-        ComponentSerialization(
-            name=WornCostumeComponent.__name__,
-            data=WornCostumeComponent(
+        serialize_component(
+            WornCostumeComponent(
                 name=actor.name,
                 item=CostumeItem(
                     name="时装.旧长衫",
                     description="一件洗至发硬的旧长衫，袖口与领口已微微起毛。穿在身上像一件被反复浆洗过的旧衣——干净，但带着洗不掉的时间痕迹。",
                 ),
-            ).model_dump(),
+            )
         ),
-        ComponentSerialization(
-            name=InventoryComponent.__name__,
-            data=InventoryComponent(
+        serialize_component(
+            InventoryComponent(
                 name=actor.name,
                 items=[
                     GearItem(
@@ -436,7 +428,7 @@ def create_wuming() -> Actor:
                         ],
                     ),
                 ],
-            ).model_dump(),
+            )
         ),
     ]
 
@@ -463,9 +455,8 @@ def create_guzhiqiu() -> Actor:
     )
 
     actor.components = [
-        ComponentSerialization(
-            name=DeckComponent.__name__,
-            data=DeckComponent(
+        serialize_component(
+            DeckComponent(
                 name=actor.name,
                 cards=[
                     # 3 张基础攻击
@@ -476,17 +467,16 @@ def create_guzhiqiu() -> Actor:
                     _make_defense_card(),
                     _make_defense_card(),
                 ],
-            ).model_dump(),
+            )
         ),
-        ComponentSerialization(
-            name=WornCostumeComponent.__name__,
-            data=WornCostumeComponent(
+        serialize_component(
+            WornCostumeComponent(
                 name=actor.name,
                 item=CostumeItem(
                     name="时装.灰布长衫",
                     description="一件半旧的深灰色棉布长衫，袖口微微磨损，右袖外侧有一块洗不掉的墨渍。剪裁合身但不束缚，方便在书案与画台间俯身劳作。穿在身上整洁素净，透着修书人特有的利落。",
                 ),
-            ).model_dump(),
+            )
         ),
     ]
 
@@ -593,10 +583,7 @@ def create_dungeon_generation() -> World:
     )
 
     world.components = [
-        ComponentSerialization(
-            name=DungeonGenerationComponent.__name__,
-            data=DungeonGenerationComponent(name=world.name).model_dump(),
-        )
+        serialize_component(DungeonGenerationComponent(name=world.name))
     ]
 
     return world
@@ -642,10 +629,7 @@ def create_illustration_prompt() -> World:
     )
 
     world.components = [
-        ComponentSerialization(
-            name=IllustrationPromptComponent.__name__,
-            data=IllustrationPromptComponent(name=world.name).model_dump(),
-        )
+        serialize_component(IllustrationPromptComponent(name=world.name))
     ]
 
     return world
@@ -686,12 +670,7 @@ def create_player_action_audit() -> World:
 - 拒绝时给出简短明确的理由""",
     )
 
-    world.components = [
-        ComponentSerialization(
-            name=PlayerAuditComponent.__name__,
-            data=PlayerAuditComponent(name=world.name).model_dump(),
-        )
-    ]
+    world.components = [serialize_component(PlayerAuditComponent(name=world.name))]
 
     return world
 
@@ -734,12 +713,7 @@ XXXX 部分简洁有辨识度，避免使用数字后缀。
 两类材料的混合使用应产生合理的化学反应——不是量变，而是质变：锈铁剪裹上浸过香灰的旧麻绳后，不再是"剪子加布条"，而是一件带诡谲锋芒的装备。""",
     )
 
-    world.components = [
-        ComponentSerialization(
-            name=GearWorkshopComponent.__name__,
-            data=GearWorkshopComponent(name=world.name).model_dump(),
-        )
-    ]
+    world.components = [serialize_component(GearWorkshopComponent(name=world.name))]
 
     return world
 
@@ -770,10 +744,7 @@ def create_consumable_workshop() -> World:
     )
 
     world.components = [
-        ComponentSerialization(
-            name=ConsumableWorkshopComponent.__name__,
-            data=ConsumableWorkshopComponent(name=world.name).model_dump(),
-        )
+        serialize_component(ConsumableWorkshopComponent(name=world.name))
     ]
 
     return world
@@ -806,12 +777,7 @@ def create_costume_workshop() -> World:
 成品在民国街头必须看起来自然、合理；其诡谲来源只能以极克制的感官细节暗示，不得点名来源、不得破坏寻常层面的审美。""",
     )
 
-    world.components = [
-        ComponentSerialization(
-            name=CostumeWorkshopComponent.__name__,
-            data=CostumeWorkshopComponent(name=world.name).model_dump(),
-        )
-    ]
+    world.components = [serialize_component(CostumeWorkshopComponent(name=world.name))]
 
     return world
 
@@ -838,12 +804,7 @@ def create_consumable_arbitrator() -> World:
 - 只裁决本次消耗品使用，不越界改动无关角色或场景以外的任何状态。""",
     )
 
-    world.components = [
-        ComponentSerialization(
-            name=ConsumableComponent.__name__,
-            data=ConsumableComponent(name=world.name).model_dump(),
-        )
-    ]
+    world.components = [serialize_component(ConsumableComponent(name=world.name))]
 
     return world
 
@@ -860,7 +821,7 @@ def create_dungeon_director() -> World:
 
 你是副本导演，扮演当前正在游玩的这一个副本本身。你能感知副本内每一个场景与每一个角色身上发生过的一切，随着副本的推进逐步积累记忆：副本开局时记录起始场景，此后每当一个房间结束都会收到该房间内的事实记录。
 
-副本结束时，你需要基于自己已经积累的全部记忆，输出一段总结，移交给世界导演。
+副本结束时，你需要基于自己已经积累的全部记忆，总结并压缩本次副本的经过。
 
 ## 总结要求
 
@@ -871,12 +832,7 @@ def create_dungeon_director() -> World:
 - 只输出总结正文，不要额外解释或客套。""",
     )
 
-    world.components = [
-        ComponentSerialization(
-            name=DungeonDirectorComponent.__name__,
-            data=DungeonDirectorComponent(name=world.name).model_dump(),
-        )
-    ]
+    world.components = [serialize_component(DungeonDirectorComponent(name=world.name))]
 
     return world
 
@@ -919,12 +875,7 @@ def create_world_director() -> World:
 - 输出以「判断 + 决策/指令」为主，简洁明确，不要冗长叙事。""",
     )
 
-    world.components = [
-        ComponentSerialization(
-            name=WorldDirectorComponent.__name__,
-            data=WorldDirectorComponent(name=world.name).model_dump(),
-        )
-    ]
+    world.components = [serialize_component(WorldDirectorComponent(name=world.name))]
 
     return world
 
@@ -947,9 +898,8 @@ def create_storage() -> World:
     )
 
     world.components = [
-        ComponentSerialization(
-            name=StorageComponent.__name__,
-            data=StorageComponent(
+        serialize_component(
+            StorageComponent(
                 name=world.name,
                 items=[
                     ConsumableItem(
@@ -1014,7 +964,7 @@ def create_storage() -> World:
                         count=2,
                     ),
                 ],
-            ).model_dump(),
+            )
         ),
     ]
 

@@ -54,6 +54,7 @@ from ..models import (
     StageType,
     StorageComponent,
     WornCostumeComponent,
+    serialize_component,
 )
 from ..models import (
     Stage as DungeonStage,
@@ -556,11 +557,10 @@ def build_mock_stages_state_response() -> StagesStateResponse:
 ###############################################################################################################################################
 def _identity_components(name: str, order: int) -> List[ComponentSerialization]:
     return [
-        ComponentSerialization(
-            name=IdentityComponent.__name__,
-            data=IdentityComponent(
+        serialize_component(
+            IdentityComponent(
                 name=name, creation_order=order, entity_id=f"mock-{order}"
-            ).model_dump(),
+            )
         ),
     ]
 
@@ -571,10 +571,7 @@ def _deck_component_serialization(
 ) -> List[ComponentSerialization]:
     """构造 DeckComponent 序列化数据（战斗双方均持有牌库，用于「查阅牌组」命令）。"""
     return [
-        ComponentSerialization(
-            name=DeckComponent.__name__,
-            data=DeckComponent(name=name, cards=cards).model_dump(),
-        ),
+        serialize_component(DeckComponent(name=name, cards=cards)),
     ]
 
 
@@ -583,10 +580,7 @@ def _inventory_component_serialization(
     name: str, items: List[AnyItem]
 ) -> ComponentSerialization:
     """构造 InventoryComponent 序列化数据（仅玩家持有，用于「查阅我方背包」命令）。"""
-    return ComponentSerialization(
-        name=InventoryComponent.__name__,
-        data=InventoryComponent(name=name, items=list(items)).model_dump(),
-    )
+    return serialize_component(InventoryComponent(name=name, items=list(items)))
 
 
 ###############################################################################################################################################
@@ -594,10 +588,7 @@ def _combat_loot_component_serialization(
     name: str, items: List[AnyItem]
 ) -> ComponentSerialization:
     """构造 LootComponent 序列化数据（仅玩家持有，用于「查阅战利品」命令）。"""
-    return ComponentSerialization(
-        name=LootComponent.__name__,
-        data=LootComponent(name=name, items=list(items)).model_dump(),
-    )
+    return serialize_component(LootComponent(name=name, items=list(items)))
 
 
 def _mock_combat_loot_components() -> List[ComponentSerialization]:
@@ -612,11 +603,8 @@ def _appearance_component_serialization(
     name: str, base_body: str, appearance: str
 ) -> ComponentSerialization:
     """构造 AppearanceComponent 序列化数据，用于「获取当前外观」命令。"""
-    return ComponentSerialization(
-        name=AppearanceComponent.__name__,
-        data=AppearanceComponent(
-            name=name, base_body=base_body, appearance=appearance
-        ).model_dump(),
+    return serialize_component(
+        AppearanceComponent(name=name, base_body=base_body, appearance=appearance)
     )
 
 
@@ -625,10 +613,7 @@ def _costume_component_serialization(
     name: str, item: CostumeItem
 ) -> ComponentSerialization:
     """构造 CostumeComponent 序列化数据（角色已穿戴时装时才存在）。"""
-    return ComponentSerialization(
-        name=WornCostumeComponent.__name__,
-        data=WornCostumeComponent(name=name, item=item).model_dump(),
-    )
+    return serialize_component(WornCostumeComponent(name=name, item=item))
 
 
 ###############################################################################################################################################
@@ -665,10 +650,7 @@ def _round_stats_components(name: str) -> List[ComponentSerialization]:
     if not _mock_has_round():
         return []
     return [
-        ComponentSerialization(
-            name=RoundStatsComponent.__name__,
-            data=RoundStatsComponent(name=name, energy=2).model_dump(),
-        ),
+        serialize_component(RoundStatsComponent(name=name, energy=2)),
     ]
 
 
@@ -686,22 +668,10 @@ def _ongoing_battle_pile_components(
     if not _mock_has_drawn():
         return []
     return [
-        ComponentSerialization(
-            name=HandComponent.__name__,
-            data=HandComponent(name=name, cards=hand_cards).model_dump(),
-        ),
-        ComponentSerialization(
-            name=DrawPileComponent.__name__,
-            data=DrawPileComponent(name=name, cards=draw_cards).model_dump(),
-        ),
-        ComponentSerialization(
-            name=ExhaustPileComponent.__name__,
-            data=ExhaustPileComponent(name=name, cards=exhaust_cards).model_dump(),
-        ),
-        ComponentSerialization(
-            name=DiscardPileComponent.__name__,
-            data=DiscardPileComponent(name=name, cards=discard_cards).model_dump(),
-        ),
+        serialize_component(HandComponent(name=name, cards=hand_cards)),
+        serialize_component(DrawPileComponent(name=name, cards=draw_cards)),
+        serialize_component(ExhaustPileComponent(name=name, cards=exhaust_cards)),
+        serialize_component(DiscardPileComponent(name=name, cards=discard_cards)),
     ]
 
 
@@ -716,14 +686,8 @@ def build_mock_entities_details_response(
         name=MOCK_STAGE_NAME,
         components=[
             *_identity_components(MOCK_STAGE_NAME, 0),
-            ComponentSerialization(
-                name=StageComponent.__name__,
-                data=StageComponent(name=MOCK_STAGE_NAME).model_dump(),
-            ),
-            ComponentSerialization(
-                name=DungeonComponent.__name__,
-                data=DungeonComponent(name=MOCK_STAGE_NAME).model_dump(),
-            ),
+            serialize_component(StageComponent(name=MOCK_STAGE_NAME)),
+            serialize_component(DungeonComponent(name=MOCK_STAGE_NAME)),
         ],
     )
 
@@ -737,17 +701,13 @@ def build_mock_entities_details_response(
             name=name,
             components=[
                 *_identity_components(name, order),
-                ComponentSerialization(
-                    name=ActorComponent.__name__,
-                    data=ActorComponent(
+                serialize_component(
+                    ActorComponent(
                         name=name,
                         current_stage=MOCK_STAGE_NAME,
-                    ).model_dump(),
+                    )
                 ),
-                ComponentSerialization(
-                    name=CharacterStatsComponent.__name__,
-                    data=CharacterStatsComponent(name=name, stats=stats).model_dump(),
-                ),
+                serialize_component(CharacterStatsComponent(name=name, stats=stats)),
                 *_round_stats_components(name),
                 *role_components,
             ],
@@ -758,10 +718,7 @@ def build_mock_entities_details_response(
         1,
         CharacterStats(hp=18, max_hp=20, attack=6, defense=3),
         [
-            ComponentSerialization(
-                name=PlayerComponent.__name__,
-                data=PlayerComponent(player_name=MOCK_USER_NAME).model_dump(),
-            ),
+            serialize_component(PlayerComponent(player_name=MOCK_USER_NAME)),
             *_appearance_and_costume_components(
                 MOCK_ACTOR_NAME,
                 base_body="体型精瘦的青年男性，动作敏捷。",
@@ -821,14 +778,8 @@ def build_mock_entities_details_response(
         2,
         CharacterStats(hp=15, max_hp=15, attack=4, defense=4),
         [
-            ComponentSerialization(
-                name=NPCComponent.__name__,
-                data=NPCComponent(name=MOCK_TEAMMATE_NAME).model_dump(),
-            ),
-            ComponentSerialization(
-                name=PartyMemberComponent.__name__,
-                data=PartyMemberComponent(name=MOCK_TEAMMATE_NAME).model_dump(),
-            ),
+            serialize_component(NPCComponent(name=MOCK_TEAMMATE_NAME)),
+            serialize_component(PartyMemberComponent(name=MOCK_TEAMMATE_NAME)),
             *_appearance_and_costume_components(
                 MOCK_TEAMMATE_NAME,
                 base_body="身形高挑的女性法师，气质沉静。",
@@ -872,10 +823,7 @@ def build_mock_entities_details_response(
         3,
         CharacterStats(hp=10, max_hp=12, attack=5, defense=2),
         [
-            ComponentSerialization(
-                name=MonsterComponent.__name__,
-                data=MonsterComponent(name=MOCK_MONSTER_1_NAME).model_dump(),
-            ),
+            serialize_component(MonsterComponent(name=MOCK_MONSTER_1_NAME)),
             *_deck_component_serialization(
                 MOCK_MONSTER_1_NAME,
                 [
@@ -909,10 +857,7 @@ def build_mock_entities_details_response(
         4,
         CharacterStats(hp=12, max_hp=12, attack=4, defense=2),
         [
-            ComponentSerialization(
-                name=MonsterComponent.__name__,
-                data=MonsterComponent(name=MOCK_MONSTER_2_NAME).model_dump(),
-            ),
+            serialize_component(MonsterComponent(name=MOCK_MONSTER_2_NAME)),
             *_deck_component_serialization(
                 MOCK_MONSTER_2_NAME,
                 [
@@ -948,10 +893,7 @@ def build_mock_entities_details_response(
         name=MOCK_STORAGE_NAME,
         components=[
             *_identity_components(MOCK_STORAGE_NAME, 5),
-            ComponentSerialization(
-                name=StorageComponent.__name__,
-                data=get_mock_storage_component().model_dump(),
-            ),
+            serialize_component(get_mock_storage_component()),
         ],
     )
 

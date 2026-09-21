@@ -34,7 +34,7 @@ async def get_session_messages(
 
     # 检查房间是否存在
     if not game_server.has_room(user_name):
-        logger.error(f"get_session_messages: {user_name} has no room")
+        # logger.error(f"get_session_messages: {user_name} has no room")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="没有房间",

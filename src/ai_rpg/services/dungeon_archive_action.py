@@ -364,10 +364,4 @@ async def archive_dungeon(
     finally:
 
         # 副本导演记忆生命周期限定于当前副本：归档后重置，仅保留首条 system prompt
-        assert isinstance(
-            agent_memory.messages[0], SystemMessage
-        ), "副本导演 agent memory 首条消息必须是 SystemMessage"
-        del agent_memory.messages[1:]
-        logger.info(
-            f"[archive_dungeon] 已重置副本导演记忆，保留 {len(agent_memory.messages)} 条消息"
-        )
+        dbg_game.reset_agent_memory(director_entity)

@@ -382,14 +382,7 @@ class AssembleDeckSystem(ReactiveProcessor):
 
         # 副本生成完成：重置副本生成系统实体（WorldComponent + DungeonGenerationComponent）
         # 的 agent memory，仅保留首条 system prompt，清除其余全部对话
-        agent_memory = self._game.get_agent_memory(entity)
-        del agent_memory.messages[1:]
-        logger.info(
-            f"[AssembleDeckSystem] 已重置 agent memory，保留 {len(agent_memory.messages)} 条消息"
-        )
-        assert isinstance(
-            agent_memory.messages[0], SystemMessage
-        ), "首条消息不是 SystemMessage"
+        self._game.reset_agent_memory(entity)
 
     ####################################################################################################################################
     async def _assemble_actor_deck(

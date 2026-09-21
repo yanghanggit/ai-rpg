@@ -96,14 +96,46 @@ class RPGAgentMemory:
                 return
 
     ###############################################################################################################################################
+    def reset_agent_memory(
+        self,
+        entity: Entity,
+        new_messages: Sequence[
+            SystemMessage | HumanMessage | AIMessage | ToolMessage
+        ] = (),
+    ) -> None:
+        """把实体记忆重制为「首条 system prompt + new_messages」，其余全部丢弃。
+
+        这是记忆重制的唯一原语，语义就是「把记忆换成另一批消息」：
+        - 默认 `new_messages=()`：等价于 `del messages[1:]`，仅保留首条 system prompt；
+        - 传入 `[human_message]`：以该消息（如压缩摘要）作为新的记忆内容。
+
+        ⚠️ 危险操作：原有 messages[1:] 会被不可逆丢弃，调用前请确认已落盘/留痕。
+        仅在实体完成一次性任务、准备以全新状态复用其 persona 时调用
+        （如副本导演归档后、副本生成系统组装完成后）。
+        """
+        agent_memory = self.get_agent_memory(entity)
+        assert len(agent_memory.messages) > 0 and isinstance(
+            agent_memory.messages[0], SystemMessage
+        ), f"reset_agent_memory 要求实体 {entity.name!r} 首条消息必须是 SystemMessage"
+
+        removed_count = len(agent_memory.messages) - 1
+        agent_memory.messages[1:] = list(new_messages)
+        agent_memory.context_usage_ratio = 0.0
+
+        logger.info(
+            f"[reset_agent_memory] ⚠️ 危险操作：已重制 {entity.name!r} 的 agent memory，"
+            f"丢弃 {removed_count} 条旧消息，写入 {len(new_messages)} 条新消息"
+            f"（保留首条 system prompt）"
+        )
+
+    ###############################################################################################################################################
     def compact_agent_memory(self, entity: Entity, human_message: HumanMessage) -> None:
         """将 agent 记忆中除首条 system 消息外的全部消息压缩为一条摘要，并重置上下文占比。
 
         human_message 由调用方构造，content 为摘要，可附加原始历史字符串留痕。
+        本质是 reset_agent_memory 的一种用法：以单条摘要重制记忆。
         """
-        agent_memory = self.get_agent_memory(entity)
-        agent_memory.messages[1:] = [human_message]
-        agent_memory.context_usage_ratio = 0.0
+        self.reset_agent_memory(entity, [human_message])
 
     ###############################################################################################################################################
     def filter_messages(

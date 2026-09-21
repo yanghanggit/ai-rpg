@@ -2,6 +2,7 @@
 Tests for RPGGame memory message management methods:
   - add_human_message
   - add_ai_message
+  - reset_agent_memory
   - filter_messages
   - remove_messages
   - remove_message_range
@@ -10,7 +11,7 @@ Tests for RPGGame memory message management methods:
 import pytest
 from typing import Any, List, cast
 
-from src.ai_rpg.models.messages import AIMessage, HumanMessage
+from src.ai_rpg.models.messages import AIMessage, HumanMessage, SystemMessage
 from src.ai_rpg.entitas.entity import Entity
 
 
@@ -132,6 +133,94 @@ class TestAddAiMessage:
         game.add_ai_message(actor, ai_msg)
 
         assert game.get_agent_memory(actor).messages[0] is ai_msg
+
+
+# ---------------------------------------------------------------------------
+# reset_agent_memory
+# ---------------------------------------------------------------------------
+
+
+class TestResetAgentMemory:
+    def _seed(self, game: Any, actor: Entity) -> None:
+        """Seed a system prompt plus some accumulated facts (dangerous-op target)."""
+        game.add_system_message(actor, SystemMessage(content="you are a persona"))
+        game.add_human_message(actor, HumanMessage(content="fact 1"))
+        game.add_ai_message(actor, AIMessage(content="reply 1"))
+        game.add_human_message(actor, HumanMessage(content="fact 2"))
+
+    def test_keeps_only_system_message(self, game: Any, actor: Entity) -> None:
+        """Only the leading SystemMessage survives the reset."""
+        self._seed(game, actor)
+        game.reset_agent_memory(actor)
+
+        msgs = game.get_agent_memory(actor).messages
+        assert len(msgs) == 1
+        assert isinstance(msgs[0], SystemMessage)
+        assert msgs[0].content == "you are a persona"
+
+    def test_resets_context_usage_ratio(self, game: Any, actor: Entity) -> None:
+        """context_usage_ratio is zeroed because the context is gone."""
+        self._seed(game, actor)
+        game.get_agent_memory(actor).context_usage_ratio = 0.83
+
+        game.reset_agent_memory(actor)
+        assert game.get_agent_memory(actor).context_usage_ratio == 0.0
+
+    def test_empty_memory_raises(self, game: Any, actor: Entity) -> None:
+        """Resetting an empty memory is refused (nothing to anchor the persona)."""
+        with pytest.raises(AssertionError):
+            game.reset_agent_memory(actor)
+
+    def test_first_message_not_system_raises(self, game: Any, actor: Entity) -> None:
+        """If the leading message is not a SystemMessage, reset is refused."""
+        game.add_human_message(actor, HumanMessage(content="not a persona"))
+        with pytest.raises(AssertionError):
+            game.reset_agent_memory(actor)
+
+    def test_idempotent_after_reset(self, game: Any, actor: Entity) -> None:
+        """Calling reset again on an already-reset memory is a no-op, not an error."""
+        self._seed(game, actor)
+        game.reset_agent_memory(actor)
+        game.reset_agent_memory(actor)
+
+        msgs = game.get_agent_memory(actor).messages
+        assert len(msgs) == 1
+        assert isinstance(msgs[0], SystemMessage)
+
+    def test_empty_sequence_equivalent_to_purge(self, game: Any, actor: Entity) -> None:
+        """Explicit [] behaves like the default: only the system prompt remains."""
+        self._seed(game, actor)
+        game.reset_agent_memory(actor, [])
+
+        msgs = game.get_agent_memory(actor).messages
+        assert len(msgs) == 1
+        assert isinstance(msgs[0], SystemMessage)
+
+    def test_new_messages_replace_tail(self, game: Any, actor: Entity) -> None:
+        """Passing new_messages replaces messages[1:] entirely."""
+        self._seed(game, actor)
+        replacement = [
+            HumanMessage(content="replacement 1"),
+            AIMessage(content="replacement 2"),
+        ]
+        game.reset_agent_memory(actor, replacement)
+
+        msgs = game.get_agent_memory(actor).messages
+        assert len(msgs) == 3
+        assert isinstance(msgs[0], SystemMessage)
+        assert [m.content for m in msgs[1:]] == ["replacement 1", "replacement 2"]
+
+    def test_compact_agent_memory_delegates(self, game: Any, actor: Entity) -> None:
+        """compact_agent_memory is a thin wrapper over reset_agent_memory."""
+        self._seed(game, actor)
+        summary = HumanMessage(content="compressed summary")
+        game.compact_agent_memory(actor, summary)
+
+        msgs = game.get_agent_memory(actor).messages
+        assert len(msgs) == 2
+        assert isinstance(msgs[0], SystemMessage)
+        assert msgs[1] is summary
+        assert game.get_agent_memory(actor).context_usage_ratio == 0.0
 
 
 # ---------------------------------------------------------------------------

@@ -25,7 +25,8 @@ from ..models import (
 class DrawCardsActionSystem(ReactiveProcessor):
     """
     响应 DrawCardsAction，为每个存活角色填充 HandComponent。
-    先取回 retain 牌，再按目标手牌张数补齐新牌：retain 牌占用名额，手牌不超目标张数。
+    先取回 retain 牌（原样保留在手牌），再额外从牌堆尝试抓取目标张数的新牌：
+    retain 牌不占用抓牌名额，新抽牌与 retain 牌叠加，手牌总数可超过目标张数。
     """
 
     def __init__(self, game: DBGGame) -> None:
@@ -94,8 +95,8 @@ class DrawCardsActionSystem(ReactiveProcessor):
         return retained
 
     ####################################################################################################################################
-    def _max_num_cards(self, entity: Entity) -> int:
-        """目标手牌张数（PartyMember 与非 PartyMember 均为 3 张）。"""
+    def _draw_target_count(self, entity: Entity) -> int:
+        """每次尝试从牌堆抓取的目标张数（PartyMember 与非 PartyMember 均为 3 张）。"""
         return 3 if entity.has(PartyMemberComponent) else 3
 
     ######################################################################################################################################
@@ -119,26 +120,25 @@ class DrawCardsActionSystem(ReactiveProcessor):
             f"DrawCardsActionSystem: 处理 {len(entities)} 个实体的 DrawCardsAction"
         )
 
-        # 先取回 retain 牌，再按目标手牌张数补齐新牌：
-        # retain 牌占用名额，保留越多、新抽越少，手牌不超目标张数。
+        # 先取回 retain 牌，再额外尝试抓取目标张数的新牌：
+        # retain 牌不占用名额，只是原样留在手牌，新抽牌照常尽量抓满目标张数。
         for entity in entities:
 
-            # 目标手牌张数
-            max_num_cards = self._max_num_cards(entity)
+            # 本次尝试抓取的目标张数
+            draw_target_count = self._draw_target_count(entity)
 
-            # 先取回 retain 牌（占用名额）
+            # 先取回 retain 牌（不占用抓牌名额，留在手牌）
             retained = self._take_retained_cards(entity)
 
-            # 按目标张数补齐新牌
-            draw_count = max(0, max_num_cards - len(retained))
-            drawn = self._draw_from_pile(entity, draw_count)
+            # 在 retain 牌之外，尽量抓满目标张数（牌堆不足则有多少抓多少）
+            drawn = self._draw_from_pile(entity, draw_target_count)
 
-            # 合并 retain 牌与新抽牌为新的手牌（不超过目标张数）
+            # 合并 retain 牌与新抽牌为新的手牌（总数可超过目标张数）
             new_hand = retained + drawn
 
             logger.debug(
-                f"[{entity.name}] retain 牌 {len(retained)} 张 + 新抽 {len(drawn)} 张："
-                f"{[c.name for c in drawn]} → 手牌共 {len(new_hand)} 张"
+                f"[{entity.name}] retain 牌 {len(retained)} 张 + 新抽 {len(drawn)} 张"
+                f"（目标 {draw_target_count} 张）：{[c.name for c in drawn]} → 手牌共 {len(new_hand)} 张"
             )
             entity.replace(HandComponent, entity.name, new_hand)
 

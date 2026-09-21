@@ -92,7 +92,7 @@ DEFENSE_PROTOTYPE: Final[Card] = Card(
     cost=1,
     damage=0,
     hit_count=1,
-    block=2,
+    block=1,
     target_type=TargetType.SINGLE,
     self_target=True,
 )
@@ -456,7 +456,7 @@ PLATE_PROTOTYPE: Final[Card] = Card(
     cost=1,
     damage=0,
     hit_count=1,
-    block=4,
+    block=3,
     target_type=TargetType.SINGLE,
     self_target=True,
 )
@@ -600,7 +600,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             name="基础攻击",
             summary="单目标直接伤害，最低成本的输出基线。",
             guide=(
-                "字段：target_type=SINGLE、self_target=False、damage=1、hit_count=1、"
+                "字段：target_type=SINGLE、self_target=False、damage=2、hit_count=1、"
                 "block=0、cost=1。填充牌库时 damage 叠加角色攻击力；block 为 0，不承担防御。"
                 "设计指引：作为输出卡原型，变体在其上叠加词缀（穿甲/多段）或流转标志"
                 "（exhaust/ethereal）以创造差异化。"
@@ -841,10 +841,11 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             name="基础防御",
             summary="为自身提供格挡，持有期间提升防御。",
             guide=(
-                "字段：self_target=True（忽略 target_type）、damage=0、block=2、cost=1。"
+                "字段：self_target=True（忽略 target_type）、damage=0、block=1、cost=1、retain=False。"
                 "填充牌库时 block 叠加角色防御力；持有期间计入持有者总防御，与是否打出无关。"
-                "设计指引：作为防御卡原型，变体在其上叠加 retain（常驻）、受击词缀（反伤/减伤）"
-                "以创造差异化。"
+                "基础防御强制 retain=False：未打出即进弃牌堆、随洗牌回到牌库循环，抓到手占用一个"
+                "手牌位。retain 与防御是强力搭配，只留给成长性/特殊防御，基础型不得叠加 retain；"
+                "差异化靠词缀（如受击词缀反伤/减伤）表达。"
             ),
             keywords=("block", "self_target"),
         ),
@@ -861,7 +862,8 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             summary="格挡 + 保留，跨回合常驻防御。",
             guide=(
                 "字段：block=3、retain=True、self_target=True。持有即计入总防御，"
-                "retain 跨回合存续（占用下回合手牌名额）。"
+                "retain 跨回合存续（不占用下回合抓牌名额，是额外留在手牌的常驻格挡）。"
+                "retain 与防御是强力搭配，应作为成长性防御少量出现，不得下放到基础防御。"
             ),
             keywords=("block", "retain"),
         ),
@@ -892,7 +894,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             name="常驻护甲",
             summary="不可出 + 格挡 + 保留，纯被动防御。",
             guide=(
-                "字段：playable=False、block=4、retain=True。不可出但持有期计入总防御，"
+                "字段：playable=False、block=3、retain=True。不可出但持有期计入总防御，"
                 "retain 跨回合存续；playable=False 与 retain/block 组合即纯被动护甲。"
             ),
             keywords=("playable", "block", "retain"),

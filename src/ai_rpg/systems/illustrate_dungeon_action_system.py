@@ -15,7 +15,7 @@ from ..models import (
     Dungeon,
     DungeonRoom,
     IllustrateDungeonAction,
-    IllustrationPromptComponent,
+    IllustrationComponent,
     ImageMeta,
     SystemMessage,
 )
@@ -226,7 +226,7 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
 
         # 定位唯一的插图提示词世界实体
         prompt_entities = self._game.get_group(
-            Matcher(all_of=[IllustrationPromptComponent])
+            Matcher(all_of=[IllustrationComponent])
         ).entities.copy()
         if len(prompt_entities) != 1:
             logger.error(

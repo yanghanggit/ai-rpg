@@ -33,7 +33,7 @@ Step 0–3 之间不再写任何中间 JSON 文件，数据全在内存流转；
 
 **Step 4 — 实体组装**（`AssembleDungeonSystem`）。零 LLM 调用，纯确定性映射。根据 `room_type` 分发：`"opening"` → `OpeningRoom`，`"combat"` → `CombatRoom`（含 Stage + Actor）。当前为所有怪物统一赋予一张预置卡牌「袭击」（单体伤害，伤害值在抽牌堆填充时叠加怪物攻击力）——框架层行为预设，与故事内容无关。
 
-**Step 5 — 场景插画**（`IllustrateDungeonActionSystem`）。加载磁盘上的 Dungeon，交给「世界.插图提示词」世界实体（`IllustrationPromptComponent`）作为 agent，依据各场景设定与生物外观一次性编排封面 + 各房间的文生图提示词（工具 `record_image_prompts`）。引擎只负责传递事实与调用 replicate 批量出图，画风、构图与负面词全部由该实体的 system prompt 承载（故事层）。生成失败项保持 `None`，不阻塞主流程。
+**Step 5 — 场景插画**（`IllustrateDungeonActionSystem`）。加载磁盘上的 Dungeon，交给「世界.插图提示词」世界实体（`IllustrationComponent`）作为 agent，依据各场景设定与生物外观一次性编排封面 + 各房间的文生图提示词（工具 `record_image_prompts`）。引擎只负责传递事实与调用 replicate 批量出图，画风、构图与负面词全部由该实体的 system prompt 承载（故事层）。生成失败项保持 `None`，不阻塞主流程。
 
 ---
 

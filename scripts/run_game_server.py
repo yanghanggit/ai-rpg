@@ -28,6 +28,7 @@ from ai_rpg.models import (
 from ai_rpg.paths import ASSETS_DIR, LOGS_DIR
 from ai_rpg.pgsql import procrastinate_app
 from ai_rpg.services.compact_api import compact_api_router
+from ai_rpg.services.components_api import components_api_router
 from ai_rpg.services.dungeon_combat_api import (
     dungeon_combat_api_router,
 )
@@ -144,6 +145,7 @@ app.mount(
 
 # 注册各个 API 路由
 app.include_router(router=player_session_api_router)
+app.include_router(router=components_api_router)
 app.include_router(router=entity_details_api_router)
 app.include_router(router=stages_state_api_router)
 app.include_router(router=dungeon_state_api_router)

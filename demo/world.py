@@ -24,7 +24,7 @@ from ai_rpg.models import (
     DungeonGenerationComponent,
     GearItem,
     GearWorkshopComponent,
-    IllustrationPromptComponent,
+    IllustrationComponent,
     InventoryComponent,
     MaterialItem,
     OpeningRoom,
@@ -628,9 +628,7 @@ def create_illustration_prompt() -> World:
 - 只输出画面，不解释创作思路。""",
     )
 
-    world.components = [
-        serialize_component(IllustrationPromptComponent(name=world.name))
-    ]
+    world.components = [serialize_component(IllustrationComponent(name=world.name))]
 
     return world
 

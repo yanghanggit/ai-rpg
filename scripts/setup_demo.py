@@ -4,15 +4,10 @@
 """
 
 import asyncio
-import os
-import sys
 from typing import Dict, Final, List, final
 
-from pydantic import BaseModel
-
-# 将项目根目录添加到模块搜索路径（demo 包不在 src/ 下，editable 安装不覆盖）
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 from loguru import logger
+from pydantic import BaseModel
 
 from ai_rpg.embedding_model.sentence_transformer import embedding_model
 from ai_rpg.models import Blueprint

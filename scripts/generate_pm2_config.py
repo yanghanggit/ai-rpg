@@ -3,14 +3,9 @@
 
 
 import os
-import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
-
-sys.path.insert(
-    0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
-)
 
 # from ai_rpg.services import server_configuration
 
@@ -27,17 +22,19 @@ def main(target_directory: str = ".") -> None:
             "环境变量 GAME_SERVER_PORT 未设置，请在 .env 中配置（参考 .env.example）"
         )
     game_server_port = int(game_server_port_env)
-    ecosystem_config_content = f"""module.exports = {{
+    ecosystem_config_content = f"""const path = require('path');
+
+module.exports = {{
   apps: [
     // 游戏服务器实例 - 端口 {game_server_port}
     {{
       name: 'game-server-{game_server_port}',
-      script: 'uvicorn',
+      script: path.join(__dirname, '.venv/bin/uvicorn'),
+      interpreter: 'none',
       args: 'scripts.run_game_server:app --host 0.0.0.0 --port {game_server_port}',
-      interpreter: 'python',
-      cwd: process.cwd(),
+      cwd: __dirname,
       env: {{
-        PYTHONPATH: `${{process.cwd()}}`,
+        PYTHONPATH: `${{__dirname}}/src:${{__dirname}}`,
         PORT: '{game_server_port}'
       }},
       instances: 1,

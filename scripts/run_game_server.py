@@ -4,11 +4,6 @@ import os
 import sys
 from typing import AsyncIterator
 
-# 将 src 目录添加到模块搜索路径
-sys.path.insert(
-    0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
-)
-
 from contextlib import asynccontextmanager
 from datetime import datetime
 

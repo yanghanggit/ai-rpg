@@ -1,14 +1,16 @@
+const path = require('path');
+
 module.exports = {
   apps: [
     // 游戏服务器实例 - 端口 8000
     {
       name: 'game-server-8000',
-      script: 'uvicorn',
+      script: path.join(__dirname, '.venv/bin/uvicorn'),
+      interpreter: 'none',
       args: 'scripts.run_game_server:app --host 0.0.0.0 --port 8000',
-      interpreter: 'python',
-      cwd: process.cwd(),
+      cwd: __dirname,
       env: {
-        PYTHONPATH: `${process.cwd()}`,
+        PYTHONPATH: `${__dirname}/src:${__dirname}`,
         PORT: '8000'
       },
       instances: 1,

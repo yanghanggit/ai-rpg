@@ -1,6 +1,6 @@
 """游戏服务器 HTTP 客户端封装（API Agent 专用）。
 
-供 `scripts/run_agent_api.py` 等代理入口调用，只依赖 httpx 与 ai_rpg.models，
+供 `ai_rpg/cli/agent_api.py` 等代理入口调用，只依赖 httpx 与 ai_rpg.models，
 不含任何界面代码。
 """
 

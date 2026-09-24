@@ -85,8 +85,10 @@ dev = [
     "psutil>=7.1.0",
 ]
 
-# 脚本位于项目根目录的 scripts/ 文件夹中
-# [project.scripts] 暂时不使用
+[project.scripts]
+ai-rpg-server = "ai_rpg.cli.server:main"
+ai-rpg-agent-game = "ai_rpg.cli.agent_game:main"
+ai-rpg-agent-api = "ai_rpg.cli.agent_api:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -115,8 +117,35 @@ ignore_missing_imports = false
 mypy_path = "src"
 
 [tool.pytest.ini_options]
+# 测试发现
 testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+# 导入：显式把 src 与仓库根加入 sys.path；importlib 模式不做隐式 sys.path 注入
 pythonpath = ["src"]
+addopts = "-v --tb=short --strict-markers --import-mode=importlib"
+# asyncio
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+# 自定义标记
+markers = [
+    "integration: marks tests as integration tests",
+    "database: marks tests as database tests",
+    "demo: marks tests as demonstration tests",
+    "slow: marks tests as slow running tests",
+    "comprehensive: marks tests as comprehensive tests",
+    "excel: marks tests as Excel file operation tests",
+    "error_handling: marks tests as error handling tests",
+    "asyncio: marks tests as asynchronous tests",
+]
+# 过滤警告
+filterwarnings = [
+    "ignore::UserWarning",
+    "ignore::DeprecationWarning",
+    "ignore:datetime.datetime.utcnow\\(\\) is deprecated.*:DeprecationWarning:openpyxl.*",
+    "ignore:'crypt' is deprecated.*:DeprecationWarning:passlib.*",
+]
 
 [tool.ruff]
 exclude = [

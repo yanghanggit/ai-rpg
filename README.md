@@ -38,14 +38,15 @@ source .venv/bin/activate        # macOS/Linux
 
 ### 启动服务
 
-各启动脚本见 `scripts/` 目录。使用 PM2 一键启动所有服务（生产环境）：
+服务器命令为 `ai-rpg-server`（等价 `uvicorn ai_rpg.cli.server:app`）；生产用 PM2：
 
 ```bash
-python -m scripts.setup_demo
-pm2 start ecosystem.config.js
+python -m scripts.setup_demo   # 首次：刷入 demo 数据（demo/ 在仓库根，须从项目根运行）
+ai-rpg-server                  # 开发：启动游戏服务器
+pm2 start ecosystem.config.js  # 生产：由 PM2 托管
 ```
 
-> AI 代理走查服务器 API 见 [scripts/run_agent_api.py](scripts/run_agent_api.py) 与 [docs/wiki/run-agent-api.md](docs/wiki/run-agent-api.md)（已取代原 TUI）。
+> AI 代理走查服务器 API 见 [src/ai_rpg/cli/agent_api.py](src/ai_rpg/cli/agent_api.py)（入口命令 `ai-rpg-agent-api`）与 [docs/wiki/run-agent-api.md](docs/wiki/run-agent-api.md)（已取代原 TUI）。
 
 ## 📁 项目结构
 
@@ -57,10 +58,11 @@ ai-rpg/
 │   ├── game/            #   运行时 DBGGame、世界持久化
 │   ├── services/        #   服务层 + FastAPI 路由（*_api.py）
 │   ├── systems/         #   各类 ActionSystem
-│   ├── game_agent/      #   快照驱动的离线推进（run_agent_game）
-│   └── api_agent/       #   HTTP 走查封装（run_agent_api）
+│   ├── game_agent/      #   快照驱动的离线推进（ai-rpg-agent-game）
+│   ├── api_agent/       #   HTTP 走查封装（ai-rpg-agent-api）
+│   └── cli/             #   console scripts（ai-rpg-server / agent-game / agent-api）
 ├── demo/                # 故事层（硬编码设定/蓝图），由 setup_demo 刷入配置与数据库
-├── scripts/             # 入口脚本（run_game_server / run_agent_game / run_agent_api …）
+├── scripts/             # 仓库工具脚本（check_unused_imports / setup_demo / pm2 …）
 ├── tests/               # unit/ + integration/（pytest；统一 `from ai_rpg import ...`）
 ├── docs/                # 文档（docs/README.md 为根节点）
 ├── pyproject.toml       # 依赖与工具配置（[dependency-groups] dev、mypy_path=src、pytest pythonpath=src）

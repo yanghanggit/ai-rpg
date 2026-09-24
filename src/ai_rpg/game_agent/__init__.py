@@ -1,6 +1,6 @@
 """Game Agent：面向 AI 代理的**进程内**游戏动作层。
 
-与 `scripts/run_agent_game.py`（本包的薄 CLI 壳）配合使用：直接从本地快照
+与 `ai_rpg/cli/agent_game.py`（本包的薄 CLI 壳）配合使用：直接从本地快照
 （`.worlds/...`）恢复游戏实例、执行**一次**动作、再写出新快照，进程退出后无残留。
 真正的游戏规则校验仍在 `ai_rpg.services.*`，本包只是「快照读 → 动作 → 快照写」的驱动层。
 

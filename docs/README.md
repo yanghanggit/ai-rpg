@@ -37,8 +37,8 @@
 | [装备系统（GearItem）](wiki/gear-item.md) | 装备的数据模型、装备物化为手牌的管道、战斗结束归还 |
 | [工坊合成管道（Craft Pipeline）](wiki/craft-pipeline.md) | 工坊合成的核心哲学：机制与内容分离、配置注入路径、材料驱动的创意生成 |
 | [材料系统（MaterialItem）](wiki/material-item.md) | 材料的数据模型、工坊合成管道（消耗品/装备/时装三类产物）、与其他物品类型的关系 |
-| [AI 操作 CLI（run_agent_game.py）](wiki/run-agent-game.md) | 快照驱动设计的意图、AI 代理操作工具与服务器 API 工具的分工 |
-| [AI 代理 API 走查 CLI（run_agent_api.py）](wiki/run-agent-api.md) | 取代 TUI：通过 HTTP 逐步驱动服务器、观测状态、由代理决策下一步 |
+| [AI 操作 CLI（ai-rpg-agent-game）](wiki/run-agent-game.md) | 快照驱动设计的意图、AI 代理操作工具与服务器 API 工具的分工 |
+| [AI 代理 API 走查 CLI（ai-rpg-agent-api）](wiki/run-agent-api.md) | 取代 TUI：通过 HTTP 逐步驱动服务器、观测状态、由代理决策下一步 |
 | [世界快照持久化（World Persistence）](wiki/world-persistence.md) | 开发期明文快照留痕的设计意图：人可读状态切片、快照驱动 CLI 的读写循环、非最终存储的定位 |
 | [副本生成管道（Dungeon Generation Pipeline）](wiki/dungeon-generation.md) | 核心哲学：机制与内容分离、四步接力管道的分工意图与设计决策、与工坊合成的架构对比 |
 | [副本导演（Dungeon Director）](wiki/dungeon-director.md) | 全局单例、俯瞰当前副本的有状态记忆积累设计：入口身份锁定、逐房间事实追加、副本结束总结移交世界导演并重置 |

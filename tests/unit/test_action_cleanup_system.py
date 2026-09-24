@@ -7,7 +7,7 @@ from ai_rpg.entitas.context import Context
 from ai_rpg.game.rpg_game import RPGGame
 from ai_rpg.models.actions import AnnounceAction, SpeakAction, WhisperAction
 from ai_rpg.systems.action_cleanup_system import ActionCleanupSystem
-from tests.unit.test_components import Position
+from ai_rpg.entitas.testing import Position
 
 
 # ---------------------------------------------------------------------------

@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 from ai_rpg.entitas import Context, Entity, Matcher, Group
 from ai_rpg.entitas.exceptions import MissingEntity
-from tests.unit.test_components import Position, Velocity, Health, Name, Age
+from ai_rpg.entitas.testing import Position, Velocity, Health, Name, Age
 
 
 class TestContext:

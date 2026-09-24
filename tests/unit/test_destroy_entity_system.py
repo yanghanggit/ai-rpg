@@ -7,7 +7,7 @@ from ai_rpg.entitas.context import Context
 from ai_rpg.game.rpg_game import RPGGame
 from ai_rpg.models.components import DestroyComponent
 from ai_rpg.systems.destroy_entity_system import DestroyEntitySystem
-from tests.unit.test_components import Position
+from ai_rpg.entitas.testing import Position
 
 
 # ---------------------------------------------------------------------------

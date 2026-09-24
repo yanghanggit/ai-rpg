@@ -11,7 +11,7 @@ from ai_rpg.entitas.exceptions import (
     AlreadyAddedComponent,
     MissingComponent,
 )
-from tests.unit.test_components import (
+from ai_rpg.entitas.testing import (
     Position,
     Velocity,
     Health,

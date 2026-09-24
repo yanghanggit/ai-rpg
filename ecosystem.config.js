@@ -7,7 +7,7 @@ module.exports = {
       name: 'game-server-8000',
       script: path.join(__dirname, '.venv/bin/uvicorn'),
       interpreter: 'none',
-      args: 'scripts.run_game_server:app --host 0.0.0.0 --port 8000',
+      args: 'ai_rpg.cli.server:app --host 0.0.0.0 --port 8000',
       cwd: __dirname,
       env: {
         PYTHONPATH: `${__dirname}/src:${__dirname}`,

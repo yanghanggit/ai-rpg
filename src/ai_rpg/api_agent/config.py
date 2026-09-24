@@ -8,7 +8,7 @@ from typing import Dict, Optional, Union
 class ServerConfig:
     """游戏服务器连接配置（可在启动时动态设置）。
 
-    port 不设默认值：必须由外部显式设置（见 scripts/run_agent_api.py），
+    port 不设默认值：必须由外部显式设置（见 ai_rpg/cli/agent_api.py），
     避免任何端口（例如 8000）成为潜规则。
 
     scheme / verify / auth_token 为将来的 HTTPS 与 JWT 预留：
@@ -27,7 +27,7 @@ class ServerConfig:
     def base_url(self) -> str:
         if self.host is None or self.port is None:
             raise RuntimeError(
-                "服务器 host 和 port 必须由外部设置（见 scripts/run_agent_api.py）"
+                "服务器 host 和 port 必须由外部设置（见 ai_rpg/cli/agent_api.py）"
             )
         return f"{self.scheme}://{self.host}:{self.port}"
 

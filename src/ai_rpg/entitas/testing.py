@@ -1,9 +1,11 @@
-"""
-Test components for entitas testing.
-All components use Pydantic BaseModel for enhanced functionality.
+"""供测试复用的通用 ECS 组件（Position/Velocity/Health …）。
+
+这些组件不属于游戏玩法，而是 entitas 单测/集成测试的公共夹具；放在包内是为了让
+测试与库共用同一个导入身份（``ai_rpg.entitas.testing``），无需 ``tests`` 作为包。
+所有组件基于 Pydantic BaseModel。
 """
 
-from ai_rpg.entitas.components import Component
+from .components import Component
 
 
 # Basic components for testing

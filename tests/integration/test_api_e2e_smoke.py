@@ -1,6 +1,6 @@
 """API 端到端冒烟测试（集成测试）。
 
-启动真实游戏服务端（uvicorn 子进程），模拟 TUI 客户端走一遍核心 HTTP 链路，
+启动真实游戏服务端（uvicorn 子进程），模拟客户端走一遍核心 HTTP 链路，
 验证：家园 → 副本（开场房间）→ 战斗房间 的完整流转，以及战斗动作的同步校验行为。
 
 依赖：
@@ -24,7 +24,6 @@ import httpx
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
-SCRIPTS_DIR = ROOT / "scripts"
 
 GAME = "Game1"
 DUNGEON = "副本.坍塌庙祠"
@@ -79,9 +78,7 @@ def game_server_url() -> Iterator[str]:
         sys.executable,
         "-m",
         "uvicorn",
-        "run_game_server:app",
-        "--app-dir",
-        str(SCRIPTS_DIR),
+        "ai_rpg.cli.server:app",
         "--host",
         "127.0.0.1",
         "--port",

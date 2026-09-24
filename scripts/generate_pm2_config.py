@@ -31,7 +31,7 @@ module.exports = {{
       name: 'game-server-{game_server_port}',
       script: path.join(__dirname, '.venv/bin/uvicorn'),
       interpreter: 'none',
-      args: 'scripts.run_game_server:app --host 0.0.0.0 --port {game_server_port}',
+      args: 'ai_rpg.cli.server:app --host 0.0.0.0 --port {game_server_port}',
       cwd: __dirname,
       env: {{
         PYTHONPATH: `${{__dirname}}/src:${{__dirname}}`,

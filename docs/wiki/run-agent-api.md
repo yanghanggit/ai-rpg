@@ -1,24 +1,24 @@
-# AI 代理 API 走查 CLI（run_agent_api.py）
+# AI 代理 API 走查 CLI（ai-rpg-agent-api）
 
 ---
 
 ## 定位
 
-`scripts/run_agent_api.py` 是**取代原 TUI** 的服务器 API 走查入口，面向 **AI 代理**：
-通过 HTTP 逐步驱动常驻的游戏服务端（`run_game_server.py`），供代理（或开发者）观察状态、
+`ai_rpg/cli/agent_api.py`（入口命令 `ai-rpg-agent-api`）是**取代原 TUI** 的服务器 API 走查入口，面向 **AI 代理**：
+通过 HTTP 逐步驱动常驻的游戏服务端（`ai-rpg-server` / `ai_rpg.cli.server:app`），供代理（或开发者）观察状态、
 触发动作、逐条验证接口契约。
 
 它**不是**产品客户端。正式玩家入口是独立仓库的 Web 客户端（`ai-rpg-web`），
 后端是服务端真相所在，前端只消费同一套 HTTP 契约（靠 `/openapi.json` 生成类型）。
 因此本项目内的 API 走查职责，天然由代理承担。
 
-它与 `run_agent_game.py` 构成一对，区别在「通过哪一层操作游戏」：
+它与 `ai-rpg-agent-game` 构成一对，区别在「通过哪一层操作游戏」：
 
-| | `run_agent_game.py` | `run_agent_api.py` |
+| | `ai-rpg-agent-game` | `ai-rpg-agent-api` |
 | --- | --- | --- |
 | 交互层 | 进程内直接调 `ai_rpg.services.*` | 走 HTTP（`ai_rpg.api_agent.server_client`） |
 | 状态位置 | 本地快照 `.worlds/...`（一次性进程） | 服务端**内存**（常驻进程） |
-| 前提 | 无服务器 | 需 `run_game_server.py` 在跑 |
+| 前提 | 无服务器 | 需 `ai-rpg-server` 在跑 |
 | 用途 | 服务层规则的无状态、可回溯验证 | HTTP 契约走查、交互式探索与边界试探 |
 
 ---
@@ -43,18 +43,18 @@ TUI 的职责只有「给后端开发者走查接口」，而这一职责已被�
 export AI_RPG_API_HOST=127.0.0.1 AI_RPG_API_PORT=8000
 export AI_RPG_USER=alice AI_RPG_GAME=Game1
 
-uv run python scripts/run_agent_api.py login
-uv run python scripts/run_agent_api.py new-game
-uv run python scripts/run_agent_api.py status            # 观测 + suggested_actions
-uv run python scripts/run_agent_api.py home enter-dungeon --dungeon "副本.坍塌庙祠"
-uv run python scripts/run_agent_api.py opening init
-uv run python scripts/run_agent_api.py opening generate-spoils
-uv run python scripts/run_agent_api.py opening pick-spoils-card --actor 角色.无名 --card 沉马
-uv run python scripts/run_agent_api.py dungeon advance-stage
-uv run python scripts/run_agent_api.py combat init
-uv run python scripts/run_agent_api.py combat draw-cards
-uv run python scripts/run_agent_api.py combat play-cards --actor 角色.无名 --card 基础攻击 --target 怪物.纸人
-uv run python scripts/run_agent_api.py combat pass-turn --actor 角色.无名
+uv run ai-rpg-agent-api login
+uv run ai-rpg-agent-api new-game
+uv run ai-rpg-agent-api status            # 观测 + suggested_actions
+uv run ai-rpg-agent-api home enter-dungeon --dungeon "副本.坍塌庙祠"
+uv run ai-rpg-agent-api opening init
+uv run ai-rpg-agent-api opening generate-spoils
+uv run ai-rpg-agent-api opening pick-spoils-card --actor 角色.无名 --card 沉马
+uv run ai-rpg-agent-api dungeon advance-stage
+uv run ai-rpg-agent-api combat init
+uv run ai-rpg-agent-api combat draw-cards
+uv run ai-rpg-agent-api combat play-cards --actor 角色.无名 --card 基础攻击 --target 怪物.纸人
+uv run ai-rpg-agent-api combat pass-turn --actor 角色.无名
 ```
 
 命令分组：顶层（`login`/`logout`/`new-game`/`status`/`dungeon-list`/`blueprint-list`/`compact`）、
@@ -113,7 +113,7 @@ export AI_RPG_API_TOKEN=eyJ...
   `COMPLETE`/`POST_COMBAT` → `combat collect-loot` / `dungeon advance-stage`（有下一关时）/
   `dungeon exit`；撤退用 `combat retreat`。
 
-上述字符串已带组前缀，**可直接作为 `run_agent_api.py` 的参数**。
+上述字符串已带组前缀，**可直接作为 `ai-rpg-agent-api` 的参数**。
 
 建议只是提示，**以服务端校验为准**。
 
@@ -125,7 +125,7 @@ export AI_RPG_API_TOKEN=eyJ...
 
 - **契约 / 回归** → `tests/integration/test_api_e2e_smoke.py`（后端）与 `ai-rpg-web` 的
   Vitest + MSW（前端）；
-- **探索 / 新特性走查 / 边界试探 / 交互式调试** → 代理 + `run_agent_api.py`。
+- **探索 / 新特性走查 / 边界试探 / 交互式调试** → 代理 + `ai-rpg-agent-api`。
 
 ---
 
@@ -137,5 +137,5 @@ src/ai_rpg/api_agent/
   server_client.py  # 全部 HTTP 接口封装（含 SSE 任务等待）
   status.py         # build_status：一次调用产出世界状态快照
   flow.py           # suggest_actions：由状态推断下一步
-scripts/run_agent_api.py  # Click CLI（薄壳）
+src/ai_rpg/cli/agent_api.py  # Click CLI 薄壳（入口命令 ai-rpg-agent-api）
 ```

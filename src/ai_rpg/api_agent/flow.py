@@ -8,7 +8,7 @@
 
 输入是 :func:`ai_rpg.api_agent.status.build_status` 产出的快照 dict，
 输出是建议的 CLI 子命令字符串列表（含 home/dungeon/opening/combat 组前缀，
-可直接作为 ``scripts/run_agent_api.py`` 的参数；不含全局的 --user/--game）。
+可直接作为 ``ai_rpg/cli/agent_api.py``（入口 ``ai-rpg-agent-api``）的参数；不含全局的 --user/--game）。
 代理据此决策，但仍以服务端的实际校验为准。
 """
 

@@ -3,7 +3,7 @@ Integration tests for Entity and Context working together.
 """
 
 from ai_rpg.entitas import Context, Entity, Matcher
-from tests.unit.test_components import Position, Velocity, Health, Name, Score
+from ai_rpg.entitas.testing import Position, Velocity, Health, Name, Score
 
 
 class TestEntityContextIntegration:

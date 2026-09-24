@@ -5,12 +5,12 @@
 - 状态在服务端内存里；本脚本不缓存世界状态，只按参数寻址（--user/--game）。
 - 输出统一为 JSON；HTTP 4xx/5xx 的 detail 原样透出，并以非零退出码结束。
 
-典型用法：
+典型用法（入口 `ai-rpg-agent-api`，见 pyproject 的 [project.scripts]）：
     export AI_RPG_API_HOST=127.0.0.1 AI_RPG_API_PORT=8000
-    uv run python scripts/run_agent_api.py login --user alice --game Game1
-    uv run python scripts/run_agent_api.py new-game --user alice --game Game1
-    uv run python scripts/run_agent_api.py status --user alice --game Game1
-    uv run python scripts/run_agent_api.py home enter-dungeon --user alice --game Game1 --dungeon 副本.坍塌庙祠
+    uv run ai-rpg-agent-api login --user alice --game Game1
+    uv run ai-rpg-agent-api new-game --user alice --game Game1
+    uv run ai-rpg-agent-api status --user alice --game Game1
+    uv run ai-rpg-agent-api home enter-dungeon --user alice --game Game1 --dungeon 副本.坍塌庙祠
 
 HTTPS / JWT（连接层集中在一处）：
     --server-scheme https  （或 AI_RPG_API_SCHEME）

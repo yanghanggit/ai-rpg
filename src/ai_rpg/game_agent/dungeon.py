@@ -3,16 +3,6 @@
 包含副本模式下的关卡推进与退出等通用生命周期函数（不依赖具体房间类型）。
 """
 
-import os
-import sys
-
-# 将 src 目录添加到模块搜索路径
-sys.path.insert(
-    0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
-)
-# 将 scripts 目录添加到模块搜索路径
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
 from loguru import logger
 from ai_rpg.models import PlayerSession
 from ai_rpg.game.dbg_game import DBGGame
@@ -37,7 +27,7 @@ from ai_rpg.services.dungeon_archive_action import (
     archive_dungeon,
 )
 from pathlib import Path
-from agent_game_core import restore_game
+from .core import restore_game
 
 
 ###############################################################################

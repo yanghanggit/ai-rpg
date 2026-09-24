@@ -3,16 +3,6 @@
 提供游戏实例的创建与从存档复位的共享入口，供各动作模块 import 使用。
 """
 
-import os
-import sys
-
-# 将 src 目录添加到模块搜索路径
-sys.path.insert(
-    0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
-)
-# 将 scripts 目录添加到模块搜索路径
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
 from pathlib import Path
 
 from loguru import logger

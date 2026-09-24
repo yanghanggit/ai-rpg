@@ -55,8 +55,6 @@ import sys
 sys.path.insert(
     0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
 )
-# 将 scripts 目录添加到模块搜索路径
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import asyncio
 import datetime
@@ -88,7 +86,7 @@ def _setup_logger(log_file_path: Path) -> None:
     logger.info(f"日志配置: 级别={LOG_LEVEL}, 文件路径={log_file_path}")
 
 
-from agent_game_combat import (
+from ai_rpg.game_agent.combat import (
     collect_loot_game,
     draw_cards_game,
     equip_gear_game,
@@ -98,14 +96,14 @@ from agent_game_combat import (
     retreat_game,
     use_consumable_game,
 )
-from agent_game_compact import compact_context_game
-from agent_game_core import create_and_initialize_game
-from agent_game_dungeon import (
+from ai_rpg.game_agent.compact import compact_context_game
+from ai_rpg.game_agent.core import create_and_initialize_game
+from ai_rpg.game_agent.dungeon import (
     enter_dungeon_game,
     exit_dungeon_and_return_home_game,
     next_dungeon_game,
 )
-from agent_game_home import (
+from ai_rpg.game_agent.home import (
     add_party_member_game,
     advance_game,
     generate_dungeon_game,
@@ -115,7 +113,7 @@ from agent_game_home import (
     stages_game,
     switch_stage_game,
 )
-from agent_game_items import (
+from ai_rpg.game_agent.items import (
     craft_consumable_game,
     craft_costume_game,
     craft_gear_item_game,
@@ -124,7 +122,7 @@ from agent_game_items import (
     remove_costume_game,
     wear_costume_game,
 )
-from agent_game_opening import (
+from ai_rpg.game_agent.opening import (
     generate_spoils_game,
     init_opening_game,
     pick_spoils_card_game,

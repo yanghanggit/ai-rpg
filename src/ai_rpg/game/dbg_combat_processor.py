@@ -46,19 +46,6 @@ def compute_character_hand_block(entity: Entity) -> int:
 
 
 #################################################################################################################################################
-# def collect_target_character_stats(
-#     game: DBGGame, target_names: Sequence[str]
-# ) -> Dict[str, CharacterStats]:
-#     """按目标名去重保序收集目标最终属性。"""
-#     target_stats: Dict[str, CharacterStats] = {}
-#     for target_name in dict.fromkeys(target_names):
-#         target_entity = game.get_entity_by_name(target_name)
-#         assert target_entity is not None, f"无法找到目标实体: {target_name}"
-#         target_stats[target_name] = compute_character_stats(target_entity)
-#     return target_stats
-
-
-#################################################################################################################################################
 def set_character_hp(entity: Entity, hp: int) -> CharacterStats:
     """设置角色的当前 HP，自动 clamp 至 [0, max_hp]。"""
     assert entity.has(ActorComponent), f"{entity.name} 缺少 ActorComponent"

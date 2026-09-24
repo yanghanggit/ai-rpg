@@ -45,7 +45,7 @@ python scripts/setup_demo.py
 pm2 start ecosystem.config.js
 ```
 
-> 开发用测试客户端（TUI）见 [src/ai_rpg/tui/README.md](src/ai_rpg/tui/README.md)。
+> AI 代理走查服务器 API 见 [scripts/run_agent_api.py](scripts/run_agent_api.py) 与 [docs/wiki/run-agent-api.md](docs/wiki/run-agent-api.md)（已取代原 TUI）。
 
 ## 🔧 开发常用命令
 

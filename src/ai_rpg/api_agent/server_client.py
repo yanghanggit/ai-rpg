@@ -1,10 +1,13 @@
-"""游戏服务器 HTTP 客户端（TUI 客户端专用）"""
+"""游戏服务器 HTTP 客户端封装（API Agent 专用）。
+
+供 `scripts/run_agent_api.py` 等代理入口调用，只依赖 httpx 与 ai_rpg.models，
+不含任何界面代码。
+"""
 
 import json
-from typing import Any, Callable, Dict, List, cast
+from typing import Any, Dict, List, cast
 
 import httpx
-from loguru import logger
 from procrastinate.jobs import Status as ProcrastinateJobStatus
 
 from ..models import (
@@ -83,39 +86,6 @@ class TaskFailedError(Exception):
     """任务执行失败时抛出。"""
 
     pass
-
-
-###############################################################################################################################################
-# 任务成功信号
-#
-# 「有新会话消息」在时间上几乎总等价于「某个任务成功收尾」：pipeline 由任务驱动，
-# 消息在 pipeline 处理（notify_entities / broadcast_to_stage）时产生。因此命令模块
-# await watch_task_until_done 成功返回后，通过这里通知 UI 立刻同步一次会话消息，
-# 无需等定时器到点。失败/超时不同步（由定时器兜底）。监听器为同步回调
-# （典型实现：置位一个 asyncio.Event）。
-###############################################################################################################################################
-_task_succeeded_listeners: List[Callable[[], None]] = []
-
-
-def add_task_succeeded_listener(listener: Callable[[], None]) -> None:
-    """注册任务成功监听器（幂等：同一对象只保留一份）。"""
-    if listener not in _task_succeeded_listeners:
-        _task_succeeded_listeners.append(listener)
-
-
-def remove_task_succeeded_listener(listener: Callable[[], None]) -> None:
-    """移除任务成功监听器。"""
-    if listener in _task_succeeded_listeners:
-        _task_succeeded_listeners.remove(listener)
-
-
-def _notify_task_succeeded() -> None:
-    """通知所有监听器：某个任务已成功，可以刷新会话消息了。"""
-    for listener in list(_task_succeeded_listeners):
-        try:
-            listener()
-        except Exception as e:  # 监听器异常不得影响任务等待流程
-            logger.warning(f"_notify_task_succeeded: listener 异常 error={e}")
 
 
 async def fetch_server_info() -> Dict[str, Any]:
@@ -283,17 +253,17 @@ async def watch_task_until_done(
                 if not payload:
                     continue
                 data = json.loads(payload)
-                # 服务端在 "任务不存在" / "超时" 时推的是 {"error": ...}，不是状态视图
-                if "error" in data:
-                    if data["error"] == "timeout":
+                # 错误封套（任务不存在 / 超时）不带 status 字段；任务快照必带 status。
+                # 注意：TaskSnapshot 即使成功也会序列化出 "error": null，故不能用
+                # `"error" in data` 判定失败。
+                if "status" not in data:
+                    if data.get("error") == "timeout":
                         raise TimeoutError(f"任务 {job_id} 等待超时")
-                    raise TaskFailedError(f"{data['error']}: job_id={job_id}")
+                    raise TaskFailedError(f"{data.get('error')}: job_id={job_id}")
                 record = TaskSnapshot.model_validate(data)
                 if record.status == ProcrastinateJobStatus.FAILED:
                     raise TaskFailedError(record.error or "未知错误")
                 if record.status == ProcrastinateJobStatus.SUCCEEDED:
-                    # 任务成功：通知 UI 立刻同步一次会话消息（失败/超时不同步，由定时器兜底）
-                    _notify_task_succeeded()
                     return record
     raise TimeoutError(f"任务 {job_id} 等待超时")
 

@@ -1,18 +1,8 @@
 """背包与道具管理动作。
 
 包含所有与道具移动、外观更新、合成相关的游戏动作函数。
-（队伍名单相关已移至 agent_game_home.py）
+（队伍名单相关已移至 home.py）
 """
-
-import os
-import sys
-
-# 将 src 目录添加到模块搜索路径
-sys.path.insert(
-    0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
-)
-# 将 scripts 目录添加到模块搜索路径
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from loguru import logger
 from ai_rpg.models import PlayerSession
@@ -30,7 +20,7 @@ from ai_rpg.services.home_actions import (
 )
 from pathlib import Path
 from typing import List
-from agent_game_core import restore_game
+from .core import restore_game
 
 
 ###############################################################################

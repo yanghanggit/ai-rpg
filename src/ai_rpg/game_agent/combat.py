@@ -3,16 +3,6 @@
 包含所有在战斗房间中执行的游戏动作函数（抽牌、出牌、过牌、撤退、使用物品、收取战利品等）。
 """
 
-import os
-import sys
-
-# 将 src 目录添加到模块搜索路径
-sys.path.insert(
-    0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
-)
-# 将 scripts 目录添加到模块搜索路径
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
 from loguru import logger
 from ai_rpg.models import PlayerSession, CombatState
 from ai_rpg.game.dbg_game import DBGGame
@@ -30,7 +20,7 @@ from ai_rpg.services.dungeon_combat_actions import (
 )
 from pathlib import Path
 from typing import List
-from agent_game_core import restore_game
+from .core import restore_game
 
 
 ###############################################################################

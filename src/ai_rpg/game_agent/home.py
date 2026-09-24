@@ -4,16 +4,6 @@
 包括剧情推进、对话、场景切换、副本进入/生成，以及队伍名单编排。
 """
 
-import os
-import sys
-
-# 将 src 目录添加到模块搜索路径
-sys.path.insert(
-    0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
-)
-# 将 scripts 目录添加到模块搜索路径
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
 from loguru import logger
 from typing import Dict, List
 from ai_rpg.models import PlayerSession
@@ -30,7 +20,7 @@ from ai_rpg.services.home_actions import (
     get_party_roster,
 )
 from pathlib import Path
-from agent_game_core import restore_game
+from .core import restore_game
 
 
 ###############################################################################

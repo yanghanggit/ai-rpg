@@ -3,19 +3,9 @@
 包含手动触发指定实体上下文压缩的游戏动作函数。
 """
 
-import os
-import sys
-
-# 将 src 目录添加到模块搜索路径
-sys.path.insert(
-    0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
-)
-# 将 scripts 目录添加到模块搜索路径
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
 from pathlib import Path
 
-from agent_game_core import restore_game
+from .core import restore_game
 from loguru import logger
 
 from ai_rpg.game.dbg_game import DBGGame

@@ -83,6 +83,13 @@ make format         # black 格式化
 
 更多见 `Makefile`。
 
+### 测试约定
+
+- **统一导入身份**：测试一律 `from ai_rpg... import ...`（**不要** `from src.ai_rpg...`）——测试、脚本、生产加载的是同一个包。
+- **`tests/` 不是包**：没有 `__init__.py`，pytest 走 `--import-mode=importlib` + `pythonpath=["src"]`（见 `pyproject.toml`）。
+- **共享代码放包里或 conftest**：不要写 `from tests... import`。通用测试组件在 `src/ai_rpg/entitas/testing.py`，其余用 `tests/conftest.py` 的 fixture。
+- **测试文件名保持唯一**（importlib 模式下更稳妥）。
+
 > **Windows 用户**: 需要安装 [Git Bash](https://git-scm.com/) 和 Make（`winget install ezwinports.make`）。
 
 ## 📚 知识库

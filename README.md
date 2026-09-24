@@ -1,22 +1,26 @@
 # AI-RPG
 
-一个基于**多智能体架构**和**ECS (Entity Component System)** 的AI驱动型RPG游戏开发框架，深度集成大语言模型(LLM)实现动态内容生成和智能决策。
+一个基于**多智能体架构**与 **ECS (Entity Component System)** 的 AI 驱动型 RPG 框架：
+以 ECS 承载世界与规则，以 LLM（DeepSeek）驱动剧情、卡牌与战斗中的动态决策与内容生成。
+
+> 正式玩家入口是独立仓库的 Web 客户端（`ai-rpg-web`）；本仓库是**引擎 + 常驻服务端 + 服务端真相**，
+> 同时自带两个面向 AI 代理的命令行工具。
 
 ## 🛠️ 技术栈
 
 - **Python 3.12+** / **FastAPI** / **Pydantic v2**
-- **DeepSeek** (chat + reasoner)
-- **PostgreSQL** (pgvector)
+- **DeepSeek**（chat + reasoner）
+- **PostgreSQL**（pgvector）
 - **Sentence Transformers** / **Replicate**（图像生成）
-- **UV** / **Black** / **Ruff** / **MyPy** / **Pytest**
+- **uv** / **Black** / **Ruff** / **MyPy** / **Pytest**
 
 ## 🚀 快速开始
 
 ### 环境要求
 
 - Python 3.12+
-- PostgreSQL（需启用 pgvector 扩展）
-- [UV](https://github.com/astral-sh/uv)（Python 包管理器）
+- PostgreSQL（启用 pgvector 扩展）
+- [uv](https://github.com/astral-sh/uv)
 
 ### 安装
 
@@ -24,78 +28,77 @@
 git clone <repository-url>
 cd ai-rpg
 
-# 安装依赖
-make install
+make install        # 等价 uv sync（含 dev 依赖组）
 # 或
 uv sync
 
-# 激活虚拟环境
 source .venv/bin/activate        # macOS/Linux
 # .\.venv\Scripts\activate       # Windows
 ```
 
-配置数据库连接、API 密钥等环境变量后即可启动。
+### 配置
 
-### 启动服务
+复制 `cp .env.example .env`，填好数据库连接、`DEEPSEEK_API_KEY`、`GAME_SERVER_PORT` 等。
 
-服务器命令为 `ai-rpg-server`（等价 `uvicorn ai_rpg.cli.server:app`）；生产用 PM2：
-
-```bash
-python -m scripts.setup_demo   # 首次：刷入 demo 数据（demo/ 在仓库根，须从项目根运行）
-ai-rpg-server                  # 开发：启动游戏服务器
-pm2 start ecosystem.config.js  # 生产：由 PM2 托管
-```
-
-> AI 代理走查服务器 API 见 [src/ai_rpg/cli/agent_api.py](src/ai_rpg/cli/agent_api.py)（入口命令 `ai-rpg-agent-api`）与 [docs/wiki/run-agent-api.md](docs/wiki/run-agent-api.md)（已取代原 TUI）。
-
-## 📁 项目结构
-
-```
-ai-rpg/
-├── src/ai_rpg/          # 包源码（src-layout；editable 安装为 `ai_rpg`）
-│   ├── models/          #   Pydantic 模型（实体/组件/蓝图/战斗…）
-│   ├── entitas/         #   ECS 框架
-│   ├── game/            #   运行时 DBGGame、世界持久化
-│   ├── services/        #   服务层 + FastAPI 路由（*_api.py）
-│   ├── systems/         #   各类 ActionSystem
-│   ├── game_agent/      #   快照驱动的离线推进（ai-rpg-agent-game）
-│   ├── api_agent/       #   HTTP 走查封装（ai-rpg-agent-api）
-│   └── cli/             #   console scripts（ai-rpg-server / agent-game / agent-api）
-├── demo/                # 故事层（硬编码设定/蓝图），由 setup_demo 刷入配置与数据库
-├── scripts/             # 仓库工具脚本（check_unused_imports / setup_demo / pm2 …）
-├── tests/               # unit/ + integration/（pytest；统一 `from ai_rpg import ...`）
-├── docs/                # 文档（docs/README.md 为根节点）
-├── pyproject.toml       # 依赖与工具配置（[dependency-groups] dev、mypy_path=src、pytest pythonpath=src）
-└── Makefile             # install / test / lint / check-imports
-```
-
-> 可导入代码统一放在 `src/`，经 editable 安装以 `ai_rpg` 暴露；测试、脚本、生产使用**同一导入身份**。
-
-## 🔧 开发常用命令
+### 首次初始化演示数据
 
 ```bash
-make install        # uv sync（含 PEP 735 dev 依赖组），editable 安装本包
+python -m scripts.setup_demo     # 把 demo/ 的硬编码设定刷入 .blueprints/ 与数据库
+```
+
+> `demo/` 在仓库根，故须**从项目根目录**以模块方式运行。
+
+## ▶️ 启动与使用
+
+### 启动游戏服务器
+
+```bash
+uv run ai-rpg-server                  # --port 缺省读 .env 的 GAME_SERVER_PORT
+uv run ai-rpg-server --host 0.0.0.0 --port 8000
+
+# 验证
+curl http://127.0.0.1:8000/
+```
+
+生产环境用 PM2 托管：
+
+```bash
+pm2 start ecosystem.config.js
+```
+
+### 面向 AI 代理的工具（非人工操作）
+
+游戏的「操作」由 AI 代理驱动，日常无需人手动执行。本仓库提供两条代理路径，
+此处仅列入口，**用法、参数与环境变量见各自文档**：
+
+| 命令 | 用途 | 文档 |
+| --- | --- | --- |
+| `ai-rpg-agent-game` | 离线、快照驱动推进（可回溯、可复现） | [docs/wiki/run-agent-game.md](docs/wiki/run-agent-game.md) |
+| `ai-rpg-agent-api` | 通过 HTTP 走查服务器 API | [docs/wiki/run-agent-api.md](docs/wiki/run-agent-api.md) |
+
+`uv run <命令> --help` 可列出全部子命令。
+
+## 🔧 开发
+
+```bash
+make install        # uv sync（含 dev 依赖组）+ editable 安装
 make test           # uv run pytest tests/ -v
 make lint           # uv run mypy --strict src scripts tests demo
 make check-imports  # ruff 检查未使用导入
 make format         # black 格式化
 ```
 
-更多见 `Makefile`。
-
 ### 测试约定
 
-- **统一导入身份**：测试一律 `from ai_rpg... import ...`（**不要** `from src.ai_rpg...`）——测试、脚本、生产加载的是同一个包。
-- **`tests/` 不是包**：没有 `__init__.py`，pytest 走 `--import-mode=importlib` + `pythonpath=["src"]`（见 `pyproject.toml`）。
-- **共享代码放包里或 conftest**：不要写 `from tests... import`。通用测试组件在 `src/ai_rpg/entitas/testing.py`，其余用 `tests/conftest.py` 的 fixture。
-- **测试文件名保持唯一**（importlib 模式下更稳妥）。
+- 测试一律 `from ai_rpg... import ...`（**不要** `from src.ai_rpg...`）——测试、脚本、生产共用同一导入身份。
+- `tests/` 不是包（无 `__init__.py`）；pytest 走 `--import-mode=importlib` + `pythonpath=["src"]`。
+- 共享测试代码放包里（如 `src/ai_rpg/entitas/testing.py`）或 `tests/conftest.py` 的 fixture，不要 `from tests... import`。
 
-> **Windows 用户**: 需要安装 [Git Bash](https://git-scm.com/) 和 Make（`winget install ezwinports.make`）。
+> **Windows 用户**：需装 [Git Bash](https://git-scm.com/) 与 Make（`winget install ezwinports.make`）。
 
-## 📚 知识库
+## 📚 文档
 
-架构文档位于 `docs/`，以 [docs/README.md](docs/README.md) 为根节点。  
-从根节点出发可导航至所有领域文档，适合在 Obsidian 中浏览（支持 Wiki 链接跳转）。
+架构文档位于 `docs/`，以 [docs/README.md](docs/README.md) 为根节点。
 
 ## 🤝 贡献
 

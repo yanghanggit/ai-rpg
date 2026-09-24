@@ -71,6 +71,27 @@ uv run python scripts/run_agent_api.py combat pass-turn --actor 角色.无名
 - **身份（L1）**：只通过 `--user/--game`（或环境变量）寻址，不落盘任何对局状态。
   注意 `/api/login/v1/` 会**清掉该 user 已有房间**，故只在开新局时调用一次。
 
+### 连接层（HTTPS / JWT）与日志
+
+连接层配置全部集中在 `ai_rpg/api_agent/config.py` 的 `ServerConfig`，并由
+`server_client.build_client()` 统一构造 `httpx.AsyncClient`（scheme / TLS 校验 / 鉴权头）。
+因此引入 HTTPS 与 JWT 只需改一处：
+
+```bash
+# HTTPS：指定协议；自签证书用 --server-verify false，或传 CA bundle 路径
+export AI_RPG_API_SCHEME=https
+export AI_RPG_API_VERIFY=/etc/ssl/corp-ca.pem   # 或 false
+
+# JWT：非空 token 会以 Authorization: Bearer <token> 注入所有请求
+export AI_RPG_API_TOKEN=eyJ...
+```
+
+> 当前服务端尚无 JWT，`auth_token` 为静态 token。若将来需要登录换 token +
+> 401 自动刷新，只需在 `build_client()`（或新增的鉴权过滤器）中接入，调用方无需改动。
+
+日志：每次调用写一份 `logs/run_agent_api_<timestamp>.log`（DEBUG）；控制台级别由
+`AI_RPG_API_LOG_LEVEL` 决定（默认 `WARNING`）。**日志只写 stderr/文件，stdout 始终是 JSON**。
+
 ---
 
 ## 观测（status）与流程推断（suggested_actions）
@@ -81,14 +102,18 @@ uv run python scripts/run_agent_api.py combat pass-turn --actor 角色.无名
 
 并在 `suggested_actions` 中给出下一步建议，沉淀的正是原本编码在 TUI 路由里的流程知识：
 
-- **家园**：`advance` / `speak` / `switch-stage` / `generate-dungeon` / `enter-dungeon` /
-  `roster-*` / `item-*` / `craft-*` / `wear-costume` / `compact`。
-- **开场房间**：未初始化 → `opening-init`；未生成奖励 → `generate-spoils`；
-  否则逐个候选卡 `pick-spoils-card`，以及 `advance-stage`。
-- **战斗房间**：`INITIALIZATION` → `combat-init`；`ONGOING` 且未抓牌/回合已结束 →
-  `draw-cards`；轮到某角色 → `play-cards`/`pass-turn`/`use-consumable`/`equip-gear`
-  （怪物回合由服务端自动决策）；`COMPLETE`/`POST_COMBAT` → `collect-loot` /
-  `advance-stage`（有下一关时）/ `exit-dungeon`。
+- **家园**：`home advance` / `home speak` / `home switch-stage` / `home generate-dungeon` /
+  `home enter-dungeon` / `home roster-*` / `home item-*` / `home craft-*` /
+  `home wear-costume` / `compact`。
+- **开场房间**：未初始化 → `opening init`；未生成奖励 → `opening generate-spoils`；
+  否则逐个候选卡 `opening pick-spoils-card`，以及 `dungeon advance-stage`。
+- **战斗房间**：`INITIALIZATION` → `combat init`；`ONGOING` 且未抓牌/回合已结束 →
+  `combat draw-cards`；轮到某角色 → `combat play-cards` / `combat pass-turn` /
+  `combat use-consumable` / `combat equip-gear`（怪物回合由服务端自动决策）；
+  `COMPLETE`/`POST_COMBAT` → `combat collect-loot` / `dungeon advance-stage`（有下一关时）/
+  `dungeon exit`；撤退用 `combat retreat`。
+
+上述字符串已带组前缀，**可直接作为 `run_agent_api.py` 的参数**。
 
 建议只是提示，**以服务端校验为准**。
 
@@ -106,9 +131,9 @@ uv run python scripts/run_agent_api.py combat pass-turn --actor 角色.无名
 
 ## 目录结构
 
-```
+```bash
 src/ai_rpg/api_agent/
-  config.py         # ServerConfig / server_config（host/port 由 CLI 注入）
+  config.py         # ServerConfig / server_config（host/port/scheme/verify/token 由 CLI 注入）
   server_client.py  # 全部 HTTP 接口封装（含 SSE 任务等待）
   status.py         # build_status：一次调用产出世界状态快照
   flow.py           # suggest_actions：由状态推断下一步

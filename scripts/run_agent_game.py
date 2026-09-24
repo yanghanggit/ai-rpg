@@ -48,14 +48,6 @@
         战斗中途撤退 → retreat → exit-dungeon
   副本（开场房间）：enter-dungeon → opening-init → generate-spoils → pick-card"""
 
-import os
-import sys
-
-# 将 src 目录添加到模块搜索路径
-sys.path.insert(
-    0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src")
-)
-
 import asyncio
 import datetime
 import sys

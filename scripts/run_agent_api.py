@@ -10,15 +10,24 @@
     uv run python scripts/run_agent_api.py login --user alice --game Game1
     uv run python scripts/run_agent_api.py new-game --user alice --game Game1
     uv run python scripts/run_agent_api.py status --user alice --game Game1
-    uv run python scripts/run_agent_api.py dungeon enter --user alice --game Game1 --dungeon 副本.坍塌庙祠
+    uv run python scripts/run_agent_api.py home enter-dungeon --user alice --game Game1 --dungeon 副本.坍塌庙祠
 
+HTTPS / JWT（连接层集中在一处）：
+    --server-scheme https  （或 AI_RPG_API_SCHEME）
+    --server-verify false  （自签证书；或传 CA bundle 路径 / AI_RPG_API_VERIFY）
+    --token <jwt>          （或 AI_RPG_API_TOKEN，注入 Authorization: Bearer）
+
+日志：``logs/run_agent_api_<timestamp>.log``（DEBUG；控制台级别由 AI_RPG_API_LOG_LEVEL 决定）。
 命令分组：home / dungeon / opening / combat；`status` 会同时给出 suggested_actions。
 """
 
 import asyncio
+import datetime
 import json
+import os
 import sys
-from typing import Any, Dict, Optional, Tuple
+from pathlib import Path
+from typing import Any, Dict, Optional, Tuple, Union
 
 import click
 import httpx
@@ -63,9 +72,43 @@ from ai_rpg.api_agent.server_client import (
     watch_task_until_done,
 )
 from ai_rpg.api_agent.status import build_status
+from ai_rpg.paths import LOGS_DIR
 
-logger.remove()
-logger.add(sys.stderr, level="WARNING")
+
+########################################################################################################################
+# 日志
+########################################################################################################################
+def _setup_logger() -> Path:
+    """配置本进程日志：stderr 控制台 + ``logs/run_agent_api_<timestamp>.log`` 归档。
+
+    - 控制台级别由 ``AI_RPG_API_LOG_LEVEL`` 控制（默认 WARNING，避免污染 agent 终端）；
+    - 文件始终记录 DEBUG；文件名带秒级时间戳，与 run_game_server / run_agent_game 一致。
+    注意：日志只写 stderr/文件，stdout 始终留给 JSON 结果。
+    """
+    logger.remove()
+    console_level = os.environ.get("AI_RPG_API_LOG_LEVEL", "WARNING")
+    logger.add(
+        sys.stderr,
+        level=console_level,
+        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
+    )
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    log_file = LOGS_DIR / f"run_agent_api_{timestamp}.log"
+    logger.add(log_file, level="DEBUG")
+    return log_file
+
+
+def _parse_verify(value: str) -> Union[bool, str]:
+    """把 ``--server-verify`` 解析为 httpx 的 verify 参数。
+
+    ``true/false``（大小写不敏感）→ bool；其余按 CA bundle 路径原样返回。
+    """
+    normalized = value.strip().lower()
+    if normalized in ("false", "0", "no", "off"):
+        return False
+    if normalized in ("true", "1", "yes", "on", ""):
+        return True
+    return value
 
 
 ########################################################################################################################
@@ -102,11 +145,14 @@ def _error_payload(action: str, error: Exception) -> Dict[str, Any]:
 
 
 def _run(action: str, coro: Any) -> None:
+    logger.info(f"执行动作: {action}")
     try:
         result = asyncio.run(coro)
     except Exception as error:  # noqa: BLE001 - 顶层兜底，转为结构化错误
+        logger.error(f"动作失败: {action}: {type(error).__name__}: {error}")
         _emit(_error_payload(action, error), exit_code=1)
         return
+    logger.info(f"动作成功: {action}")
     _emit({"ok": True, "action": action, "result": result})
 
 
@@ -156,10 +202,48 @@ def identity_options(func: Any) -> Any:
     required=True,
     help="游戏服务器端口（或设 AI_RPG_API_PORT）",
 )
-def main(server_host: str, server_port: int) -> None:
+@click.option(
+    "--server-scheme",
+    envvar="AI_RPG_API_SCHEME",
+    type=click.Choice(["http", "https"]),
+    default="http",
+    show_default=True,
+    help="协议（或设 AI_RPG_API_SCHEME）",
+)
+@click.option(
+    "--server-verify",
+    envvar="AI_RPG_API_VERIFY",
+    default="true",
+    show_default=True,
+    help="TLS 校验：true/false 或 CA bundle 路径（或设 AI_RPG_API_VERIFY）",
+)
+@click.option(
+    "--token",
+    envvar="AI_RPG_API_TOKEN",
+    default=None,
+    help="JWT 鉴权 Bearer token（或设 AI_RPG_API_TOKEN）",
+)
+@click.pass_context
+def main(
+    ctx: click.Context,
+    server_host: str,
+    server_port: int,
+    server_scheme: str,
+    server_verify: str,
+    token: Optional[str],
+) -> None:
     """AI 代理的服务器 API 走查 CLI。"""
     server_config.host = server_host
     server_config.port = server_port
+    server_config.scheme = server_scheme
+    server_config.verify = _parse_verify(server_verify)
+    server_config.auth_token = token
+    log_file = _setup_logger()
+    logger.info(
+        f"命令={ctx.invoked_subcommand} 目标={server_config.base_url} "
+        f"TLS校验={server_config.verify} 鉴权={'bearer' if token else 'none'} "
+        f"日志={log_file}"
+    )
 
 
 ########################################################################################################################
@@ -276,7 +360,8 @@ def home_group() -> None:
     "--actor",
     "actors",
     multiple=True,
-    help="要推进的角色名（可多次；默认空=服务端决定）",
+    required=True,
+    help="要推进的角色名（可多次指定，至少一个）",
 )
 def home_advance_cmd(user: str, game: str, actors: Tuple[str, ...]) -> None:
     """触发家园剧情推进。"""

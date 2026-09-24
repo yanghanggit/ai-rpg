@@ -1,26 +1,16 @@
-"""Unit tests for the multi-agents game framework."""
+"""Package structure / import smoke tests."""
 
-import pytest
 from pathlib import Path
+
+import ai_rpg
 
 
 def test_package_structure() -> None:
-    """Test that the package structure is correctly set up."""
-    # 基本的包结构测试
+    """The src-layout package directory exists."""
     src_path = Path(__file__).parent.parent.parent / "src"
-    assert src_path.exists()
-    assert (src_path / "ai_rpg").exists()
     assert (src_path / "ai_rpg" / "__init__.py").exists()
 
 
 def test_import_main_package() -> None:
-    """Test that the main package can be imported."""
-    try:
-        import src.ai_rpg as ai_rpg
-
-        assert ai_rpg.__version__ == "0.1.0"
-    except ImportError as e:
-        pytest.skip(f"Package import failed: {e}")
-
-
-# 更多具体的测试将在导入路径修复后添加
+    """The installed package imports and exposes its version."""
+    assert ai_rpg.__version__ == "0.1.0"

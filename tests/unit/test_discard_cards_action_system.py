@@ -4,10 +4,10 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from src.ai_rpg.entitas.context import Context
-from src.ai_rpg.entitas.entity import Entity
-from src.ai_rpg.game.dbg_game import DBGGame
-from src.ai_rpg.models import (
+from ai_rpg.entitas.context import Context
+from ai_rpg.entitas.entity import Entity
+from ai_rpg.game.dbg_game import DBGGame
+from ai_rpg.models import (
     ActorComponent,
     Card,
     DiscardPileComponent,
@@ -15,7 +15,7 @@ from src.ai_rpg.models import (
     PlayCardsAction,
     TargetType,
 )
-from src.ai_rpg.systems.discard_cards_action_system import DiscardCardsActionSystem
+from ai_rpg.systems.discard_cards_action_system import DiscardCardsActionSystem
 
 # ---------------------------------------------------------------------------
 # Helpers

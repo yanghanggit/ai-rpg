@@ -52,7 +52,7 @@ dependencies = [
     "procrastinate[psycopg]>=3.9.0",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     # Testing
     "pytest>=8.3.4",
@@ -112,6 +112,11 @@ pretty = true
 incremental = true
 cache_dir = ".mypy_cache"
 ignore_missing_imports = false
+mypy_path = "src"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
 
 [tool.ruff]
 exclude = [

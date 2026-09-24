@@ -13,8 +13,8 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from src.ai_rpg.models import COMPONENT_TYPES
-from src.ai_rpg.services.components_api import components_api_router
+from ai_rpg.models import COMPONENT_TYPES
+from ai_rpg.services.components_api import components_api_router
 
 COMPONENTS_PATH = "/api/components/v1/"
 

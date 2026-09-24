@@ -5,18 +5,18 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.ai_rpg.deepseek import DeepSeekClient
-from src.ai_rpg.entitas.context import Context
-from src.ai_rpg.entitas.entity import Entity
-from src.ai_rpg.game.dbg_game import DBGGame
-from src.ai_rpg.models import (
+from ai_rpg.deepseek import DeepSeekClient
+from ai_rpg.entitas.context import Context
+from ai_rpg.entitas.entity import Entity
+from ai_rpg.game.dbg_game import DBGGame
+from ai_rpg.models import (
     ActorComponent,
     AppearanceComponent,
     WornCostumeComponent,
 )
-from src.ai_rpg.models.items import CostumeItem
-from src.ai_rpg.models.messages import AIMessage
-from src.ai_rpg.systems.appearance_initialization_system import (
+from ai_rpg.models.items import CostumeItem
+from ai_rpg.models.messages import AIMessage
+from ai_rpg.systems.appearance_initialization_system import (
     AppearanceInitializationSystem,
 )
 
@@ -178,7 +178,7 @@ class TestExecute:
         mock_game.get_group.return_value = MagicMock(entities=[target, initialized])
 
         with patch(
-            "src.ai_rpg.systems.appearance_initialization_system.batch_chat",
+            "ai_rpg.systems.appearance_initialization_system.batch_chat",
         ) as mock_batch:
             await system.execute()
 
@@ -206,7 +206,7 @@ class TestExecute:
                 client._response_ai_message = AIMessage(content="穿着铁甲的战士")
 
         with patch(
-            "src.ai_rpg.systems.appearance_initialization_system.batch_chat",
+            "ai_rpg.systems.appearance_initialization_system.batch_chat",
             side_effect=fake_batch_chat,
         ):
             await system.execute()

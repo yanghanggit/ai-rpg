@@ -33,7 +33,7 @@ dependencies = [
     { name = "uvicorn" },
 ]
 
-[package.optional-dependencies]
+[package.dev-dependencies]
 dev = [
     { name = "black" },
     { name = "mypy" },
@@ -60,46 +60,49 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "aiohttp", specifier = ">=3.9.3" },
-    { name = "black", marker = "extra == 'dev'", specifier = ">=25.1.0" },
     { name = "click", specifier = ">=8.1.7" },
     { name = "fastapi", specifier = ">=0.116.1" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "loguru", specifier = ">=0.7.2" },
     { name = "markdown-it-py", specifier = ">=3.0.0" },
-    { name = "mypy", marker = "extra == 'dev'", specifier = "==2.3.1" },
     { name = "overrides", specifier = ">=7.7.0" },
-    { name = "pandas-stubs", marker = "extra == 'dev'", specifier = ">=2.2.1.240316" },
     { name = "passlib", specifier = ">=1.7.4" },
     { name = "pgvector", specifier = ">=0.4.1" },
-    { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4.2.0" },
     { name = "procrastinate", extras = ["psycopg"], specifier = ">=3.9.0" },
-    { name = "psutil", marker = "extra == 'dev'", specifier = ">=7.1.0" },
     { name = "psycopg2-binary", specifier = ">=2.9.10" },
     { name = "pydantic", specifier = ">=2.11.7" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3.4" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.25.3" },
     { name = "python-dotenv", specifier = ">=1.0.1" },
     { name = "python-jose", specifier = ">=3.5.0" },
     { name = "replicate", specifier = ">=1.0.7" },
     { name = "requests", specifier = ">=2.32.2" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.5.0" },
     { name = "sentence-transformers", specifier = ">=4.1.0" },
     { name = "sqlalchemy", specifier = ">=2.0.27" },
-    { name = "types-cffi", marker = "extra == 'dev'", specifier = ">=1.17.0.20250523" },
-    { name = "types-jsonschema", marker = "extra == 'dev'", specifier = ">=4.22.0.20240610" },
-    { name = "types-passlib", marker = "extra == 'dev'", specifier = ">=1.7.7.20250602" },
-    { name = "types-psutil", marker = "extra == 'dev'", specifier = ">=7.0.0.20250822" },
-    { name = "types-psycopg2", marker = "extra == 'dev'", specifier = ">=2.9.21.20250915" },
-    { name = "types-pyasn1", marker = "extra == 'dev'", specifier = ">=0.6.0.20250914" },
-    { name = "types-pyopenssl", marker = "extra == 'dev'", specifier = ">=24.1.0.20240722" },
-    { name = "types-python-jose", marker = "extra == 'dev'", specifier = ">=3.5.0.20250531" },
-    { name = "types-pytz", marker = "extra == 'dev'", specifier = ">=2024.1.0.20240203" },
-    { name = "types-pyyaml", marker = "extra == 'dev'", specifier = ">=6.0.12.12" },
-    { name = "types-requests", marker = "extra == 'dev'", specifier = ">=2.32.0.20240907" },
-    { name = "types-setuptools", marker = "extra == 'dev'", specifier = ">=80.9.0.20250529" },
     { name = "uvicorn", specifier = ">=0.35.0" },
 ]
-provides-extras = ["dev"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "black", specifier = ">=25.1.0" },
+    { name = "mypy", specifier = "==2.3.1" },
+    { name = "pandas-stubs", specifier = ">=2.2.1.240316" },
+    { name = "pre-commit", specifier = ">=4.2.0" },
+    { name = "psutil", specifier = ">=7.1.0" },
+    { name = "pytest", specifier = ">=8.3.4" },
+    { name = "pytest-asyncio", specifier = ">=0.25.3" },
+    { name = "ruff", specifier = ">=0.5.0" },
+    { name = "types-cffi", specifier = ">=1.17.0.20250523" },
+    { name = "types-jsonschema", specifier = ">=4.22.0.20240610" },
+    { name = "types-passlib", specifier = ">=1.7.7.20250602" },
+    { name = "types-psutil", specifier = ">=7.0.0.20250822" },
+    { name = "types-psycopg2", specifier = ">=2.9.21.20250915" },
+    { name = "types-pyasn1", specifier = ">=0.6.0.20250914" },
+    { name = "types-pyopenssl", specifier = ">=24.1.0.20240722" },
+    { name = "types-python-jose", specifier = ">=3.5.0.20250531" },
+    { name = "types-pytz", specifier = ">=2024.1.0.20240203" },
+    { name = "types-pyyaml", specifier = ">=6.0.12.12" },
+    { name = "types-requests", specifier = ">=2.32.0.20240907" },
+    { name = "types-setuptools", specifier = ">=80.9.0.20250529" },
+]
 
 [[package]]
 name = "aiohappyeyeballs"

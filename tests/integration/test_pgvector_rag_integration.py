@@ -14,9 +14,9 @@ from typing import Dict, Generator, List, Tuple
 import pytest
 from loguru import logger
 
-from src.ai_rpg.rag import add_documents, search_documents, delete_collection
-from src.ai_rpg.pgsql.client import pgsql_ensure_database_tables
-from src.ai_rpg.embedding_model import embedding_model
+from ai_rpg.rag import add_documents, search_documents, delete_collection
+from ai_rpg.pgsql.client import pgsql_ensure_database_tables
+from ai_rpg.embedding_model import embedding_model
 
 
 # ============================================================================

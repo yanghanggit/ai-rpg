@@ -1,43 +1,26 @@
 """Test configuration and fixtures."""
 
 import pytest
-from typing import Type, Optional, Any
 
-try:
-    from src.ai_rpg.game.dbg_game import DBGGame
-    from src.ai_rpg.models.entities import Actor
-    from src.ai_rpg.models import (
-        ActorType,
-        WorldState,
-        Blueprint,
-        Dungeon,
-        CharacterStats,
-    )
-
-    # from src.ai_rpg.models.entities import CharacterStats
-    # from src.ai_rpg.models.world_state import WorldState, Blueprint
-    # from src.ai_rpg.models.dungeon import Dungeon
-    from src.ai_rpg.models import PlayerSession
-
-    _DBGGame: Optional[Type[DBGGame]] = DBGGame
-    _Actor: Optional[Type[Actor]] = Actor
-except ImportError:
-    # 在包未完全安装时跳过导入
-    _DBGGame = None
-    _Actor = None
+from ai_rpg.game.dbg_game import DBGGame
+from ai_rpg.models import (
+    ActorType,
+    Blueprint,
+    CharacterStats,
+    Dungeon,
+    PlayerSession,
+    WorldState,
+)
+from ai_rpg.models.entities import Actor
 
 
 @pytest.fixture
-def sample_game() -> Any:
+def sample_game() -> DBGGame:
     """Create a sample game for testing."""
-    if _DBGGame is None:
-        pytest.skip("DBGGame not available")
-
     # 创建基本的依赖
     blueprint = Blueprint(
         name="test_blueprint",
         player_actor="test_player_actor",
-        # player_only_stage="test_player_only_stage",
         campaign_setting="test_setting",
         system_rules="",
         knowledge_base={},
@@ -55,7 +38,7 @@ def sample_game() -> Any:
     player = PlayerSession(
         name="test_player", actor="test_actor", game="test_blueprint"
     )
-    return _DBGGame(
+    return DBGGame(
         name="test_blueprint",
         player_session=player,
         world=world,
@@ -63,17 +46,13 @@ def sample_game() -> Any:
 
 
 @pytest.fixture
-def sample_actor() -> Any:
+def sample_actor() -> Actor:
     """Create a sample actor for testing."""
-    if _Actor is None:
-        pytest.skip("Actor not available")
-
-    return _Actor(
+    return Actor(
         name="test_actor",
         type=ActorType.NPC,
         profile="test profile",
         base_body="",
         system_message="test system message",
-        # kick_off_message="test kick off message",
         character_stats=CharacterStats(max_hp=50, attack=10, defense=5),
     )

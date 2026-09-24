@@ -15,14 +15,14 @@ import uuid
 import pytest
 from typing import Any, cast
 
-from src.ai_rpg.entitas.entity import Entity
-from src.ai_rpg.models import (
+from ai_rpg.entitas.entity import Entity
+from ai_rpg.models import (
     ActorComponent,
     IdentityComponent,
     StageComponent,
 )
-from src.ai_rpg.models.agent_event import NoneEvent
-from src.ai_rpg.models.messages import HumanMessage, SystemMessage
+from ai_rpg.models.agent_event import NoneEvent
+from ai_rpg.models.messages import HumanMessage, SystemMessage
 
 
 # ---------------------------------------------------------------------------

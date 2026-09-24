@@ -10,13 +10,13 @@ Unit tests for src/ai_rpg/game/stage_transition.py
 import pytest
 from typing import Any, Dict
 from unittest.mock import MagicMock
-from src.ai_rpg.entitas.entity import Entity
-from src.ai_rpg.models import (
+from ai_rpg.entitas.entity import Entity
+from ai_rpg.models import (
     ActorComponent,
     PlayerComponent,
     StageComponent,
 )
-from src.ai_rpg.game.rpg_stage_transition import (
+from ai_rpg.game.rpg_stage_transition import (
     _build_stage_arrival_message,
     _build_stage_departure_message,
     _build_stage_transition_message,

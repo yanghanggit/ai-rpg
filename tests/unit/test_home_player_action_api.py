@@ -21,8 +21,8 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from src.ai_rpg.services.game_server_dependencies import get_game_server
-from src.ai_rpg.services.home_api import home_api_router
+from ai_rpg.services.game_server_dependencies import get_game_server
+from ai_rpg.services.home_api import home_api_router
 
 SPEAK_PATH = "/api/home/player/speak/v1/"
 SWITCH_PATH = "/api/home/player/switch_stage/v1/"
@@ -93,8 +93,8 @@ def _patch_home_action(
     task = MagicMock()
     task.defer_async = AsyncMock(return_value=job_id)
     with (
-        patch(f"src.ai_rpg.services.home_api.{activate_name}", activate),
-        patch("src.ai_rpg.services.home_api.execute_home_pipeline_task", task),
+        patch(f"ai_rpg.services.home_api.{activate_name}", activate),
+        patch("ai_rpg.services.home_api.execute_home_pipeline_task", task),
     ):
         yield activate, task.defer_async
 

@@ -3,10 +3,10 @@
 import pytest
 from unittest.mock import MagicMock
 
-from src.ai_rpg.entitas.context import Context
-from src.ai_rpg.entitas.entity import Entity
-from src.ai_rpg.game.dbg_game import DBGGame
-from src.ai_rpg.models import (
+from ai_rpg.entitas.context import Context
+from ai_rpg.entitas.entity import Entity
+from ai_rpg.game.dbg_game import DBGGame
+from ai_rpg.models import (
     ActorComponent,
     Card,
     CombatResult,
@@ -19,7 +19,7 @@ from src.ai_rpg.models import (
     PartyMemberComponent,
     StageComponent,
 )
-from src.ai_rpg.systems.combat_outcome_system import (
+from ai_rpg.systems.combat_outcome_system import (
     CombatOutcomeSystem,
     _build_combat_result_notification,
 )

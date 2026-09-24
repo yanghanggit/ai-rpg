@@ -4,10 +4,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from src.ai_rpg.entitas.context import Context
-from src.ai_rpg.entitas.entity import Entity
-from src.ai_rpg.game.dbg_game import DBGGame
-from src.ai_rpg.models import (
+from ai_rpg.entitas.context import Context
+from ai_rpg.entitas.entity import Entity
+from ai_rpg.game.dbg_game import DBGGame
+from ai_rpg.models import (
     AnnounceAction,
     SpeakAction,
     WhisperAction,
@@ -17,7 +17,7 @@ from src.ai_rpg.models import (
     SystemMessage,
     AgentMemory,
 )
-from src.ai_rpg.systems.player_action_audit_system import (
+from ai_rpg.systems.player_action_audit_system import (
     ContentAuditResponse,
     PlayerActionAuditSystem,
     _build_audit_prompt,
@@ -255,7 +255,7 @@ class TestFilterPlayerActions:
         world = self._make_audit_entity(context)
 
         with patch(
-            "src.ai_rpg.systems.player_action_audit_system.DeepSeekClient"
+            "ai_rpg.systems.player_action_audit_system.DeepSeekClient"
         ) as MockClient:
             MockClient.return_value.response_content = _approved_json()
             MockClient.return_value.chat = AsyncMock()
@@ -278,7 +278,7 @@ class TestFilterPlayerActions:
         world = self._make_audit_entity(context)
 
         with patch(
-            "src.ai_rpg.systems.player_action_audit_system.DeepSeekClient"
+            "ai_rpg.systems.player_action_audit_system.DeepSeekClient"
         ) as MockClient:
             MockClient.return_value.response_content = _rejected_json()
             MockClient.return_value.chat = AsyncMock()
@@ -301,7 +301,7 @@ class TestFilterPlayerActions:
         world = self._make_audit_entity(context)
 
         with patch(
-            "src.ai_rpg.systems.player_action_audit_system.DeepSeekClient"
+            "ai_rpg.systems.player_action_audit_system.DeepSeekClient"
         ) as MockClient:
             MockClient.return_value.chat = AsyncMock(
                 side_effect=RuntimeError("网络错误")
@@ -324,7 +324,7 @@ class TestFilterPlayerActions:
         world = self._make_audit_entity(context)
 
         with patch(
-            "src.ai_rpg.systems.player_action_audit_system.DeepSeekClient"
+            "ai_rpg.systems.player_action_audit_system.DeepSeekClient"
         ) as MockClient:
             MockClient.return_value.response_content = "这不是JSON"
             MockClient.return_value.chat = AsyncMock()
@@ -345,7 +345,7 @@ class TestFilterPlayerActions:
         world = self._make_audit_entity(context)
 
         with patch(
-            "src.ai_rpg.systems.player_action_audit_system.DeepSeekClient"
+            "ai_rpg.systems.player_action_audit_system.DeepSeekClient"
         ) as MockClient:
             await system._filter_player_actions(player, world)
 

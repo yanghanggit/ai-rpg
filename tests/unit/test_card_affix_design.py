@@ -1,6 +1,6 @@
 """卡牌词缀设计校验（`validate_affix_slot`）与「整槽回退」（`apply_affix_design`）的单元测试。"""
 
-from src.ai_rpg.models import (
+from ai_rpg.models import (
     Card,
     apply_affix_design,
     validate_affix_slot,

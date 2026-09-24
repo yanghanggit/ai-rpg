@@ -47,9 +47,39 @@ pm2 start ecosystem.config.js
 
 > AI 代理走查服务器 API 见 [scripts/run_agent_api.py](scripts/run_agent_api.py) 与 [docs/wiki/run-agent-api.md](docs/wiki/run-agent-api.md)（已取代原 TUI）。
 
+## 📁 项目结构
+
+```
+ai-rpg/
+├── src/ai_rpg/          # 包源码（src-layout；editable 安装为 `ai_rpg`）
+│   ├── models/          #   Pydantic 模型（实体/组件/蓝图/战斗…）
+│   ├── entitas/         #   ECS 框架
+│   ├── game/            #   运行时 DBGGame、世界持久化
+│   ├── services/        #   服务层 + FastAPI 路由（*_api.py）
+│   ├── systems/         #   各类 ActionSystem
+│   ├── game_agent/      #   快照驱动的离线推进（run_agent_game）
+│   └── api_agent/       #   HTTP 走查封装（run_agent_api）
+├── demo/                # 故事层（硬编码设定/蓝图），由 setup_demo 刷入配置与数据库
+├── scripts/             # 入口脚本（run_game_server / run_agent_game / run_agent_api …）
+├── tests/               # unit/ + integration/（pytest；统一 `from ai_rpg import ...`）
+├── docs/                # 文档（docs/README.md 为根节点）
+├── pyproject.toml       # 依赖与工具配置（[dependency-groups] dev、mypy_path=src、pytest pythonpath=src）
+└── Makefile             # install / test / lint / check-imports
+```
+
+> 可导入代码统一放在 `src/`，经 editable 安装以 `ai_rpg` 暴露；测试、脚本、生产使用**同一导入身份**。
+
 ## 🔧 开发常用命令
 
-见 `Makefile`。
+```bash
+make install        # uv sync（含 PEP 735 dev 依赖组），editable 安装本包
+make test           # uv run pytest tests/ -v
+make lint           # uv run mypy --strict src scripts tests demo
+make check-imports  # ruff 检查未使用导入
+make format         # black 格式化
+```
+
+更多见 `Makefile`。
 
 > **Windows 用户**: 需要安装 [Git Bash](https://git-scm.com/) 和 Make（`winget install ezwinports.make`）。
 

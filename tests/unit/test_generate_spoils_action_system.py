@@ -1,7 +1,7 @@
 """GenerateSpoilsActionSystem 的候选物化、prompt 组装与提交暂存的单元测试。"""
 
-from src.ai_rpg.models import Card
-from src.ai_rpg.systems.generate_spoils_action_system import (
+from ai_rpg.models import Card
+from ai_rpg.systems.generate_spoils_action_system import (
     _Candidate,
     _SpoilsCardEdit,
     _format_card_for_prompt,

@@ -6,10 +6,10 @@ from unittest.mock import patch
 
 import pytest
 
-from src.ai_rpg.deepseek import ToolDefinition, ToolFunction
-from src.ai_rpg.deepseek.agent_loop import agent_loop
-from src.ai_rpg.deepseek.client import ToolCall
-from src.ai_rpg.models.messages import AIMessage, ChatMessage
+from ai_rpg.deepseek import ToolDefinition, ToolFunction
+from ai_rpg.deepseek.agent_loop import agent_loop
+from ai_rpg.deepseek.client import ToolCall
+from ai_rpg.models.messages import AIMessage, ChatMessage
 
 
 #######################################################################################################################################
@@ -77,7 +77,7 @@ async def test_async_handler_is_awaited_and_appended() -> None:
     ai_message = _build_ai_message("my_tool", {"value": "42"})
 
     messages: list[ChatMessage] = []
-    with patch("src.ai_rpg.deepseek.agent_loop.DeepSeekClient") as mock_client:
+    with patch("ai_rpg.deepseek.agent_loop.DeepSeekClient") as mock_client:
         mock_client.return_value = _FakeClient(ai_message, "tool_calls", [tool_call])
         ok = await agent_loop(
             name="test",
@@ -114,7 +114,7 @@ async def test_sync_handler_result_appended() -> None:
     ai_message = _build_ai_message("my_tool", {"value": "7"})
 
     messages: list[ChatMessage] = []
-    with patch("src.ai_rpg.deepseek.agent_loop.DeepSeekClient") as mock_client:
+    with patch("ai_rpg.deepseek.agent_loop.DeepSeekClient") as mock_client:
         mock_client.return_value = _FakeClient(ai_message, "tool_calls", [tool_call])
         ok = await agent_loop(
             name="test",
@@ -162,7 +162,7 @@ async def test_failed_terminal_tool_retries_next_round() -> None:
         return "ok"
 
     messages: list[ChatMessage] = []
-    with patch("src.ai_rpg.deepseek.agent_loop.DeepSeekClient") as mock_client:
+    with patch("ai_rpg.deepseek.agent_loop.DeepSeekClient") as mock_client:
         mock_client.side_effect = [fake_bad, fake_good]
         ok = await agent_loop(
             name="test",

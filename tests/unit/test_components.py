@@ -3,7 +3,7 @@ Test components for entitas testing.
 All components use Pydantic BaseModel for enhanced functionality.
 """
 
-from src.ai_rpg.entitas.components import Component
+from ai_rpg.entitas.components import Component
 
 
 # Basic components for testing

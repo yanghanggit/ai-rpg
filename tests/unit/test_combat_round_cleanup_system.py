@@ -4,9 +4,9 @@
 
 # import pytest
 
-# from src.ai_rpg.entitas.context import Context
-# from src.ai_rpg.game.dbg_game import DBGGame
-# from src.ai_rpg.systems.combat_round_cleanup_system import CombatRoundCleanupSystem
+# from ai_rpg.entitas.context import Context
+# from ai_rpg.game.dbg_game import DBGGame
+# from ai_rpg.systems.combat_round_cleanup_system import CombatRoundCleanupSystem
 
 
 # # ---------------------------------------------------------------------------

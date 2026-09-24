@@ -9,8 +9,8 @@ from pathlib import Path
 
 import pytest
 
-from src.ai_rpg.game import world_persistence
-from src.ai_rpg.models import (
+from ai_rpg.game import world_persistence
+from ai_rpg.models import (
     AgentMemory,
     Blueprint,
     ComponentSerialization,
@@ -20,7 +20,7 @@ from src.ai_rpg.models import (
     SpeakEvent,
     WorldState,
 )
-from src.ai_rpg.models.messages import AIMessage, HumanMessage
+from ai_rpg.models.messages import AIMessage, HumanMessage
 
 
 # ---------------------------------------------------------------------------

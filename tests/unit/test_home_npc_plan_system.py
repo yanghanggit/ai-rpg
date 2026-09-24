@@ -11,10 +11,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from src.ai_rpg.entitas.context import Context
-from src.ai_rpg.entitas.entity import Entity
-from src.ai_rpg.game.dbg_game import DBGGame
-from src.ai_rpg.models import (
+from ai_rpg.entitas.context import Context
+from ai_rpg.entitas.entity import Entity
+from ai_rpg.game.dbg_game import DBGGame
+from ai_rpg.models import (
     ActorComponent,
     EnvironmentComponent,
     NPCComponent,
@@ -24,8 +24,8 @@ from src.ai_rpg.models import (
     TransStageAction,
     WhisperAction,
 )
-from src.ai_rpg.systems.home_npc_plan_system import HomeNpcPlanSystem
-from src.ai_rpg.systems.home_planning import PlanResult
+from ai_rpg.systems.home_npc_plan_system import HomeNpcPlanSystem
+from ai_rpg.systems.home_planning import PlanResult
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -184,7 +184,7 @@ class TestReact:
             ) as run_patch,
             patch.object(system, "_apply_submitted_action") as apply_patch,
             patch(
-                "src.ai_rpg.systems.home_npc_plan_system.batch_run_boolean_tasks",
+                "ai_rpg.systems.home_npc_plan_system.batch_run_boolean_tasks",
                 new=AsyncMock(),
             ) as batch_patch,
         ):

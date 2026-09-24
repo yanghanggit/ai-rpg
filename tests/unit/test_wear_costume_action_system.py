@@ -3,17 +3,17 @@
 from typing import List, Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
-from src.ai_rpg.entitas import Entity
-from src.ai_rpg.game.rpg_entity_manager import RPGEntityManager
-from src.ai_rpg.game.dbg_game import DBGGame
-from src.ai_rpg.models import (
+from ai_rpg.entitas import Entity
+from ai_rpg.game.rpg_entity_manager import RPGEntityManager
+from ai_rpg.game.dbg_game import DBGGame
+from ai_rpg.models import (
     AppearanceComponent,
     WornCostumeComponent,
     StorageComponent,
     WearCostumeAction,
 )
-from src.ai_rpg.models.items import CostumeItem
-from src.ai_rpg.systems.wear_costume_action_system import (
+from ai_rpg.models.items import CostumeItem
+from ai_rpg.systems.wear_costume_action_system import (
     WearCostumeActionSystem,
 )
 
@@ -25,7 +25,7 @@ from src.ai_rpg.systems.wear_costume_action_system import (
 _BASE_BODY = "人类基础外形"
 _COSTUME = CostumeItem(name="铁甲", description="坚固的铁制盔甲")
 _NEW_COSTUME = CostumeItem(name="法袍", description="绣有星纹的深蓝色法袍")
-_MODULE = "src.ai_rpg.systems.wear_costume_action_system"
+_MODULE = "ai_rpg.systems.wear_costume_action_system"
 
 
 def _make_actor_entity(

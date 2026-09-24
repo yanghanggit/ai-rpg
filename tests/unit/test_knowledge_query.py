@@ -2,7 +2,7 @@
 
 from unittest.mock import MagicMock, patch
 
-from src.ai_rpg.systems.knowledge_query import search_knowledge_base
+from ai_rpg.systems.knowledge_query import search_knowledge_base
 
 
 #######################################################################################################################################
@@ -12,10 +12,10 @@ def test_formats_search_results() -> None:
 
     with (
         patch(
-            "src.ai_rpg.systems.knowledge_query.search_documents",
+            "ai_rpg.systems.knowledge_query.search_documents",
             return_value=(["文档A", "文档B"], [0.9, 0.5]),
         ) as mock_search,
-        patch("src.ai_rpg.systems.knowledge_query.embedding_model", "fake_model"),
+        patch("ai_rpg.systems.knowledge_query.embedding_model", "fake_model"),
     ):
         result = search_knowledge_base(game, "问题", top_k=3)
 
@@ -36,7 +36,7 @@ def test_no_results_returns_hint() -> None:
     game.name = "测试游戏"
 
     with patch(
-        "src.ai_rpg.systems.knowledge_query.search_documents",
+        "ai_rpg.systems.knowledge_query.search_documents",
         return_value=([], []),
     ):
         result = search_knowledge_base(game, "问题")
@@ -50,7 +50,7 @@ def test_exception_returns_failure_message() -> None:
     game.name = "测试游戏"
 
     with patch(
-        "src.ai_rpg.systems.knowledge_query.search_documents",
+        "ai_rpg.systems.knowledge_query.search_documents",
         side_effect=RuntimeError("boom"),
     ):
         result = search_knowledge_base(game, "问题")

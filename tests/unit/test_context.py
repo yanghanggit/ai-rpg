@@ -5,8 +5,8 @@ Tests for the Context class in entitas framework.
 import pytest
 from unittest.mock import patch
 
-from src.ai_rpg.entitas import Context, Entity, Matcher, Group
-from src.ai_rpg.entitas.exceptions import MissingEntity
+from ai_rpg.entitas import Context, Entity, Matcher, Group
+from ai_rpg.entitas.exceptions import MissingEntity
 from tests.unit.test_components import Position, Velocity, Health, Name, Age
 
 

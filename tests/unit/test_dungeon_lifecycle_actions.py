@@ -11,8 +11,8 @@ and src/ai_rpg/services/dungeon_exit_action.py
 
 from typing import Any, List
 
-from src.ai_rpg.entitas.entity import Entity
-from src.ai_rpg.models import (
+from ai_rpg.entitas.entity import Entity
+from ai_rpg.models import (
     ActorComponent,
     CharacterStats,
     CharacterStatsComponent,
@@ -23,13 +23,13 @@ from src.ai_rpg.models import (
     StageComponent,
     StageType,
 )
-from src.ai_rpg.models.dungeon import (
+from ai_rpg.models.dungeon import (
     AnyDungeonRoom,
     Dungeon,
     OpeningRoom,
 )
-from src.ai_rpg.services.dungeon_advance_action import advance_dungeon
-from src.ai_rpg.services.dungeon_exit_action import exit_dungeon
+from ai_rpg.services.dungeon_advance_action import advance_dungeon
+from ai_rpg.services.dungeon_exit_action import exit_dungeon
 
 
 # ---------------------------------------------------------------------------

@@ -12,7 +12,7 @@ import sys
 from typing import List, Callable, Any
 
 # 导入预加载的模型实例
-from src.ai_rpg.embedding_model import embedding_model
+from ai_rpg.embedding_model import embedding_model
 
 
 # Global fixtures for model caching to improve test performance
@@ -297,7 +297,7 @@ if __name__ == "__main__":
             print("1. Testing import...")
             from sentence_transformers import SentenceTransformer
             from sentence_transformers.util import cos_sim
-            from src.ai_rpg.embedding_model import embedding_model
+            from ai_rpg.embedding_model import embedding_model
 
             print("✅ Import successful")
 
@@ -350,7 +350,7 @@ if __name__ == "__main__":
         try:
             from sentence_transformers import SentenceTransformer
             from sentence_transformers.util import cos_sim
-            from src.ai_rpg.embedding_model import embedding_model
+            from ai_rpg.embedding_model import embedding_model
 
             # Use pre-loaded multilingual model for Chinese content
             print("1. Using pre-loaded multilingual model...")
@@ -409,7 +409,7 @@ if __name__ == "__main__":
         try:
             import time
             from sentence_transformers import SentenceTransformer
-            from src.ai_rpg.embedding_model import embedding_model
+            from ai_rpg.embedding_model import embedding_model
 
             print("1. Testing encoding speed with pre-loaded model...")
             assert isinstance(embedding_model, SentenceTransformer)
@@ -499,7 +499,7 @@ if __name__ == "__main__":
 
         try:
             from sentence_transformers import SentenceTransformer
-            from src.ai_rpg.embedding_model import embedding_model
+            from ai_rpg.embedding_model import embedding_model
 
             assert isinstance(embedding_model, SentenceTransformer)
 

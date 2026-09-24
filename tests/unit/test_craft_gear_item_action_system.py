@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List
 
-from src.ai_rpg.systems.craft_gear_item_action_system import (
+from ai_rpg.systems.craft_gear_item_action_system import (
     _CraftGearSpec,
     _handle_submit_gear,
 )

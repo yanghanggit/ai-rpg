@@ -2,10 +2,10 @@
 
 from typing import Any, cast
 
-from src.ai_rpg.entitas.entity import Entity
-from src.ai_rpg.game.dbg_combat_processor import resolve_targets
-from src.ai_rpg.game.dbg_game import DBGGame
-from src.ai_rpg.models import (
+from ai_rpg.entitas.entity import Entity
+from ai_rpg.game.dbg_combat_processor import resolve_targets
+from ai_rpg.game.dbg_game import DBGGame
+from ai_rpg.models import (
     ActorComponent,
     Blueprint,
     DeathComponent,

@@ -6,19 +6,19 @@
 # 推荐：uv 环境完整设置
 install:
 	@echo "🚀 使用 uv 设置环境..."
-	uv sync --extra dev
+	uv sync
 	@echo "✅ 环境设置完成！"
 
-# 安装生产依赖
+# 安装生产依赖（不含 dev 组）
 uv-install:
-	@echo "� 使用 uv 安装生产依赖..."
-	uv sync
+	@echo "📦 使用 uv 安装生产依赖..."
+	uv sync --no-dev
 	@echo "✅ 生产依赖安装完成！"
 
 # 安装开发依赖
 dev-install:
-	@echo "� 使用 uv 安装开发依赖..."
-	uv sync --extra dev
+	@echo "🔧 使用 uv 安装开发依赖..."
+	uv sync
 	@echo "✅ 开发依赖安装完成！"
 
 # 运行测试
@@ -26,20 +26,11 @@ test:
 	uv run pytest tests/ -v
 
 # 运行类型检查
-# 注意：scripts/ 与 src/ai_rpg 共享同一套 ai_rpg.* 模块命名空间，
-# 若 4 个目录共用一个 .mypy_cache 增量缓存，mypy 1.13 在写缓存时会
-# 因跨目录模块名冲突而崩溃（write_cache 抛 AttributeError）。
-# 因此每个目录使用独立的 --cache-dir，互不干扰。
+# mypy_path="src"（见 pyproject.toml）让 ai_rpg 在 scripts/src/tests 下解析到同一路径，
+# 因此可单次运行、共用 .mypy_cache（早期跨目录缓存冲突已消除）。
 lint:
 	@echo "🔍 运行类型检查..."
-	@echo "📁 检查 scripts/ 目录..."
-	uv run mypy --strict --cache-dir=.mypy_cache/scripts scripts/
-	@echo "📁 检查 src/ 目录..."
-	uv run mypy --strict --cache-dir=.mypy_cache/src src/
-	@echo "📁 检查 tests/ 目录..."
-	uv run mypy --strict --cache-dir=.mypy_cache/tests tests/
-	@echo "📁 检查 demo/ 目录..."
-	uv run mypy --strict --cache-dir=.mypy_cache/demo demo/
+	uv run mypy --strict src scripts tests demo
 
 # 格式化代码
 format:
@@ -75,7 +66,7 @@ check:
 	@test -f uv.lock || echo "❌ 警告: uv.lock 文件不存在"
 	@echo "🔍 检查环境状态..."
 	@echo "✅ 使用 uv 管理依赖"
-	@uv pip check 2>/dev/null || echo "⚠️  依赖可能有问题，运行: uv sync --extra dev"
+	@uv pip check 2>/dev/null || echo "⚠️  依赖可能有问题，运行: uv sync"
 	@echo "✅ 项目结构检查完成"
 
 # 显示所有可用的 make 目标

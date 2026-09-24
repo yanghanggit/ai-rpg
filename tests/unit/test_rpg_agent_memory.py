@@ -11,8 +11,8 @@ Tests for RPGGame memory message management methods:
 import pytest
 from typing import Any, List, cast
 
-from src.ai_rpg.models.messages import AIMessage, HumanMessage, SystemMessage
-from src.ai_rpg.entitas.entity import Entity
+from ai_rpg.models.messages import AIMessage, HumanMessage, SystemMessage
+from ai_rpg.entitas.entity import Entity
 
 
 # ---------------------------------------------------------------------------

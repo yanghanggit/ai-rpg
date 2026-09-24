@@ -5,17 +5,17 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from src.ai_rpg.entitas.context import Context
-from src.ai_rpg.entitas.entity import Entity
-from src.ai_rpg.game.dbg_game import DBGGame
-from src.ai_rpg.models import (
+from ai_rpg.entitas.context import Context
+from ai_rpg.entitas.entity import Entity
+from ai_rpg.game.dbg_game import DBGGame
+from ai_rpg.models import (
     ActorComponent,
     Card,
     HandComponent,
     PassTurnAction,
     TargetType,
 )
-from src.ai_rpg.systems.turn_end_arbitration_system import TurnEndArbitrationSystem
+from ai_rpg.systems.turn_end_arbitration_system import TurnEndArbitrationSystem
 
 
 def _make_card(name: str, *, turn_end: bool = False) -> Card:
@@ -96,7 +96,7 @@ class TestTurnEndArbitrationSystem:
         entity.add(PassTurnAction, "英雄")
 
         with patch(
-            "src.ai_rpg.systems.turn_end_arbitration_system.agent_loop"
+            "ai_rpg.systems.turn_end_arbitration_system.agent_loop"
         ) as mock_agent_loop:
             await system.react([entity])
 
@@ -112,7 +112,7 @@ class TestTurnEndArbitrationSystem:
         pass_entity.get(HandComponent).cards.append(_make_card("普通牌"))
 
         with patch(
-            "src.ai_rpg.systems.turn_end_arbitration_system.agent_loop"
+            "ai_rpg.systems.turn_end_arbitration_system.agent_loop"
         ) as mock_agent_loop:
             await system.react([pass_entity])
 
@@ -129,11 +129,11 @@ class TestTurnEndArbitrationSystem:
 
         with (
             patch(
-                "src.ai_rpg.systems.turn_end_arbitration_system.get_alive_actors_in_stage",
+                "ai_rpg.systems.turn_end_arbitration_system.get_alive_actors_in_stage",
                 return_value={holder},
             ),
             patch(
-                "src.ai_rpg.systems.turn_end_arbitration_system.agent_loop",
+                "ai_rpg.systems.turn_end_arbitration_system.agent_loop",
                 new=AsyncMock(return_value=True),
             ) as mock_agent_loop,
         ):

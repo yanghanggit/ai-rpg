@@ -3,12 +3,12 @@
 from typing import List
 from unittest.mock import MagicMock
 
-from src.ai_rpg.entitas.context import Context
-from src.ai_rpg.entitas.entity import Entity
-from src.ai_rpg.game.dbg_game import DBGGame
-from src.ai_rpg.models import EquippedGearComponent, InventoryComponent
-from src.ai_rpg.models.items import GearItem
-from src.ai_rpg.systems.combat_pile_teardown_system import CombatPileTeardownSystem
+from ai_rpg.entitas.context import Context
+from ai_rpg.entitas.entity import Entity
+from ai_rpg.game.dbg_game import DBGGame
+from ai_rpg.models import EquippedGearComponent, InventoryComponent
+from ai_rpg.models.items import GearItem
+from ai_rpg.systems.combat_pile_teardown_system import CombatPileTeardownSystem
 
 
 def _make_gear(name: str) -> GearItem:

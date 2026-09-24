@@ -8,14 +8,14 @@
 from types import SimpleNamespace
 from typing import Any
 
-from src.ai_rpg.models import Card, MaterialItem
-from src.ai_rpg.systems.assemble_deck_system import _build_deck_prompt
-from src.ai_rpg.systems.craft_gear_item_action_system import _build_craft_gear_prompt
-from src.ai_rpg.systems.generate_spoils_action_system import (
+from ai_rpg.models import Card, MaterialItem
+from ai_rpg.systems.assemble_deck_system import _build_deck_prompt
+from ai_rpg.systems.craft_gear_item_action_system import _build_craft_gear_prompt
+from ai_rpg.systems.generate_spoils_action_system import (
     _Candidate,
     _build_spoils_prompt,
 )
-from src.ai_rpg.systems.initialize_deck_action_system import _build_deck_init_prompt
+from ai_rpg.systems.initialize_deck_action_system import _build_deck_init_prompt
 
 FIELD_SPEC = "## 卡牌字段语义"
 AFFIX_SPEC = "## 词缀设计规范"

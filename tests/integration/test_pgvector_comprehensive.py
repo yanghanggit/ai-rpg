@@ -12,8 +12,8 @@ from loguru import logger
 import hashlib
 
 # 导入配置
-from src.ai_rpg.pgsql import postgresql_config
-from src.ai_rpg.pgsql.vector_document import EMBEDDING_DIMENSION
+from ai_rpg.pgsql import postgresql_config
+from ai_rpg.pgsql.vector_document import EMBEDDING_DIMENSION
 
 
 # ================================
@@ -25,7 +25,7 @@ from src.ai_rpg.pgsql.vector_document import EMBEDDING_DIMENSION
 def setup_database_tables() -> Any:
     """设置数据库表的 fixture"""
     try:
-        from src.ai_rpg.pgsql.client import (
+        from ai_rpg.pgsql.client import (
             pgsql_ensure_database_tables,
         )
 
@@ -293,7 +293,7 @@ def test_high_dimension_vectors() -> None:
 @pytest.mark.database
 def test_vector_document_operations() -> None:
     """测试向量文档操作 - 使用ORM"""
-    from src.ai_rpg.pgsql.vector_document_operations import (
+    from ai_rpg.pgsql.vector_document_operations import (
         save_vector_document,
         search_similar_documents,
     )
@@ -403,7 +403,7 @@ def test_conversation_vector_operations() -> None:
 @pytest.mark.demo
 def demo_document_rag_system() -> None:
     """演示基于文档的RAG系统"""
-    from src.ai_rpg.pgsql.vector_document_operations import (
+    from ai_rpg.pgsql.vector_document_operations import (
         save_vector_document,
         search_similar_documents,
     )
@@ -508,8 +508,8 @@ def run_all_vector_tests() -> None:
 
     try:
         # 确保数据库表已创建
-        from src.ai_rpg.pgsql.client import engine
-        from src.ai_rpg.pgsql.base import Base
+        from ai_rpg.pgsql.client import engine
+        from ai_rpg.pgsql.base import Base
 
         Base.metadata.create_all(bind=engine)
         logger.info("✅ 数据库表已就绪")
@@ -532,8 +532,8 @@ def run_all_demos() -> None:
 
     try:
         # 确保数据库表已创建
-        from src.ai_rpg.pgsql.client import engine
-        from src.ai_rpg.pgsql.base import Base
+        from ai_rpg.pgsql.client import engine
+        from ai_rpg.pgsql.base import Base
 
         Base.metadata.create_all(bind=engine)
 

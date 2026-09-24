@@ -1,6 +1,6 @@
 """AssembleDeckSystem 提交入口（词缀随牌设计）的单元测试。"""
 
-from src.ai_rpg.systems.assemble_deck_system import (
+from ai_rpg.systems.assemble_deck_system import (
     _DeckCardPick,
     _handle_submit_deck_card,
 )

@@ -35,7 +35,7 @@ async def test_defer_room_task_sets_lock_and_passes_kwargs() -> None:
     job_id = await defer_room_task(task, user_name="alice", card_name="x")
 
     assert job_id == 123
-    assert task.queueing_lock == "room:alice:fake.task"
+    assert task.queueing_lock == "room:alice"
     assert task.deferred == {"user_name": "alice", "card_name": "x"}
 
 

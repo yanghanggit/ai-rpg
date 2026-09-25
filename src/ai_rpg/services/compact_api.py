@@ -51,7 +51,7 @@ async def compact_context(
             detail="没有游戏，请先登录",
         )
 
-    # 在锁外派发 compact pipeline 任务，让任务独立持锁执行
+    # 派发 compact pipeline 任务
     job_id = await defer_room_task(
         execute_compact_context_task,
         user_name=payload.user_name,

@@ -1,4 +1,4 @@
-.PHONY: install test lint format clean dev-install uv-install check-imports fix-imports show-structure check help
+.PHONY: install test lint format clean dev-install uv-install show-structure check help
 
 # 默认目标：显示帮助信息
 .DEFAULT_GOAL := help
@@ -38,16 +38,6 @@ lint:
 format:
 	uv run black .
 
-# 检查未使用的导入
-check-imports:
-	@echo "🔍 检查未使用的导入..."
-	uv run python scripts/check_unused_imports.py --check
-
-# 修复未使用的导入
-fix-imports:
-	@echo "🔧 修复未使用的导入..."
-	uv run python scripts/check_unused_imports.py --fix
-
 # 清理构建文件
 clean:
 	rm -rf build/ dist/ *.egg-info/
@@ -82,10 +72,8 @@ help:
 	@echo ""
 	@echo "🔍 代码质量:"
 	@echo "  test           - 🧪 运行测试"
-	@echo "  lint           - 🔍 运行类型检查"
+	@echo "  lint           - 🔍 mypy + ruff 检查"
 	@echo "  format         - ✨ 格式化代码"
-	@echo "  check-imports  - 🔍 检查未使用的导入"
-	@echo "  fix-imports    - 🔧 修复未使用的导入"
 	@echo ""
 	@echo "🔧 开发工具:"
 	@echo "  show-structure - 📁 显示项目结构"

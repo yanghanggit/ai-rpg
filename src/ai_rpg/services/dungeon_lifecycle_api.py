@@ -223,7 +223,7 @@ async def dungeon_exit(
                 detail="开场房间尚未初始化，无法退出",
             )
 
-    # 在锁外派发退出副本任务，让任务独立持锁执行
+    # 派发退出副本任务
     job_id = await defer_room_task(
         execute_exit_dungeon_task, user_name=payload.user_name
     )

@@ -83,8 +83,7 @@ pm2 start ecosystem.config.js
 ```bash
 make install        # uv sync（含 dev 依赖组）+ editable 安装
 make test           # uv run pytest tests/ -v
-make lint           # uv run mypy --strict src scripts tests demo
-make check-imports  # ruff 检查未使用导入
+make lint           # uv run mypy --strict + ruff check
 make format         # black 格式化
 ```
 

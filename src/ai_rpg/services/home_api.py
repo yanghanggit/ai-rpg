@@ -88,7 +88,7 @@ async def home_player_speak(
         game_server,
     )
 
-    # 在锁外派发 home pipeline 任务，让任务独立持锁执行
+    # 派发 home pipeline 任务
     job_id = await defer_room_task(
         execute_home_speak_task,
         user_name=payload.user_name,
@@ -133,7 +133,7 @@ async def home_player_switch_stage(
         game_server,
     )
 
-    # 在锁外派发 home pipeline 任务，让任务独立持锁执行
+    # 派发 home pipeline 任务
     job_id = await defer_room_task(
         execute_home_switch_stage_task,
         user_name=payload.user_name,
@@ -177,7 +177,7 @@ async def home_advance(
         game_server,
     )
 
-    # 在锁外派发 home pipeline 任务，让任务独立持锁执行
+    # 派发 home pipeline 任务
     job_id = await defer_room_task(
         execute_home_advance_task,
         user_name=payload.user_name,
@@ -219,7 +219,7 @@ async def home_generate_dungeon(
         game_server,
     )
 
-    # 在锁外派发 dungeon generate pipeline 任务，让任务独立持锁执行
+    # 派发 dungeon generate pipeline 任务
     job_id = await defer_room_task(
         execute_dungeon_generate_pipeline_task, user_name=payload.user_name
     )

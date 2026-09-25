@@ -88,7 +88,7 @@ async def dungeon_combat_retreat(
             detail="只能在战斗进行中撤退",
         )
 
-    # 在锁外派发任务，让任务独立持锁执行
+    # 派发任务
     job_id = await defer_room_task(execute_retreat_task, user_name=payload.user_name)
     logger.info(f"📝 创建撤退任务: job_id={job_id}, user={payload.user_name}")
 
@@ -146,7 +146,7 @@ async def dungeon_combat_init(
             detail="战斗未处于开始阶段",
         )
 
-    # 派发战斗初始化任务（在锁外派发，让任务独立持锁执行）
+    # 派发战斗初始化任务
     job_id = await defer_room_task(
         execute_init_combat_task, user_name=payload.user_name
     )
@@ -261,7 +261,7 @@ async def dungeon_combat_draw_cards(
             detail="战斗未在进行中",
         )
 
-    # 派发任务（在锁外派发，让任务独立持锁执行）
+    # 派发任务
     job_id = await defer_room_task(execute_draw_cards_task, user_name=payload.user_name)
     logger.info(f"📝 创建全员抽卡任务: job_id={job_id}, user={payload.user_name}")
 
@@ -327,7 +327,7 @@ async def dungeon_combat_play_cards(
             detail="当前没有未完成的回合可供打牌",
         )
 
-    # 在锁外派发任务，让任务独立持锁执行
+    # 派发任务
     job_id = await defer_room_task(
         execute_play_cards_task,
         user_name=payload.user_name,
@@ -398,7 +398,7 @@ async def dungeon_combat_pass_turn(
             detail="当前没有未完成的回合可供过牌",
         )
 
-    # 在锁外派发任务，让任务独立持锁执行
+    # 派发任务
     job_id = await defer_room_task(
         execute_pass_turn_task,
         user_name=payload.user_name,
@@ -472,7 +472,7 @@ async def dungeon_combat_use_consumable(
             detail="当前没有未完成的回合",
         )
 
-    # 在锁外派发任务，让任务独立持锁执行
+    # 派发任务
     job_id = await defer_room_task(
         execute_use_consumable_task,
         user_name=payload.user_name,
@@ -545,7 +545,7 @@ async def dungeon_combat_equip_gear(
             detail="当前没有未完成的回合",
         )
 
-    # 在锁外派发任务，让任务独立持锁执行
+    # 派发任务
     job_id = await defer_room_task(
         execute_equip_gear_task,
         user_name=payload.user_name,

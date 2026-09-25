@@ -77,7 +77,7 @@ async def dungeon_opening_init(
             detail="开场房间已初始化",
         )
 
-    # 在锁外派发开场房间初始化任务，让任务独立持锁执行
+    # 派发开场房间初始化任务
     job_id = await defer_room_task(
         execute_opening_room_init_task, user_name=payload.user_name
     )
@@ -136,7 +136,7 @@ async def dungeon_opening_generate_spoils(
             detail="开场房间尚未初始化（叙事 + 牌库），请先调用开场初始化接口",
         )
 
-    # 在锁外派发奖励生成任务，让任务独立持锁执行
+    # 派发奖励生成任务
     job_id = await defer_room_task(
         execute_generate_spoils_task, user_name=payload.user_name
     )
@@ -198,7 +198,7 @@ async def dungeon_opening_pick_spoils_card(
             detail="开场房间尚未初始化（叙事 + 牌库），请先调用开场初始化接口",
         )
 
-    # 在锁外派发领卡任务，让任务独立持锁执行
+    # 派发领卡任务
     job_id = await defer_room_task(
         execute_pick_spoils_card_task,
         user_name=payload.user_name,

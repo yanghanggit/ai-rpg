@@ -7,5 +7,5 @@
 - ``ai-rpg-agent-game`` —— 快照驱动的离线游戏推进
 - ``ai-rpg-agent-api``  —— 服务器 API 走查
 
-``scripts/`` 仅保留仓库工具类脚本（如 ``check_unused_imports.py``）。
+``scripts/`` 仅保留仓库工具类脚本。
 """

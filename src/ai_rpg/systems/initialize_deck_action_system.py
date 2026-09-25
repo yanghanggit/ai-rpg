@@ -27,8 +27,8 @@ from ..deepseek import ToolDefinition, ToolFunction, agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..models import (
-    ActorComponent,
     BUILD_CARD_FIELD_DESCRIPTION,
+    ActorComponent,
     Card,
     DeathComponent,
     DeckComponent,

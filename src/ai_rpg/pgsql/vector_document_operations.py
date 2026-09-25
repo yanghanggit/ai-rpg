@@ -5,11 +5,12 @@ PostgreSQL + pgvector 向量文档操作函数
 
 import json
 from typing import Any, Dict, List, Optional, Tuple
+
 from loguru import logger
 from sqlalchemy import text
-from .client import SessionLocal
-from .vector_document import VectorDocumentDB, EMBEDDING_DIMENSION
 
+from .client import SessionLocal
+from .vector_document import EMBEDDING_DIMENSION, VectorDocumentDB
 
 ##################################################################################################################
 # 向量文档操作

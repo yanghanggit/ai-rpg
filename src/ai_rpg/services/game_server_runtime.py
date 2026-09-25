@@ -22,5 +22,6 @@ def bind_runtime_game_server(game_server: GameServer) -> None:
 ###############################################################################################################################################
 def get_runtime_game_server() -> GameServer:
     """获取进程级 GameServer。"""
-    assert _runtime_game_server is not None, "GameServer 尚未初始化"
+    if _runtime_game_server is None:
+        raise RuntimeError("GameServer 尚未初始化")
     return _runtime_game_server

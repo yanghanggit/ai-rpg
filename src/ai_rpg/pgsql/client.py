@@ -1,8 +1,9 @@
 from loguru import logger
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
-from .config import postgresql_config
+
 from .base import Base
+from .config import postgresql_config
 
 ############################################################################################################
 

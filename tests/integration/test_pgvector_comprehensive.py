@@ -4,17 +4,17 @@ pgvector 综合测试和演示文件
 包含：基础SQL操作测试、ORM向量操作测试、实际应用场景演示
 """
 
-import pytest
-import numpy as np
-from typing import List, Any, cast
-from sqlalchemy import create_engine, text
-from loguru import logger
 import hashlib
+from typing import Any, List, cast
+
+import numpy as np
+import pytest
+from loguru import logger
+from sqlalchemy import create_engine, text
 
 # 导入配置
 from ai_rpg.pgsql import postgresql_config
 from ai_rpg.pgsql.vector_document import EMBEDDING_DIMENSION
-
 
 # ================================
 # pytest fixtures
@@ -508,8 +508,8 @@ def run_all_vector_tests() -> None:
 
     try:
         # 确保数据库表已创建
-        from ai_rpg.pgsql.client import engine
         from ai_rpg.pgsql.base import Base
+        from ai_rpg.pgsql.client import engine
 
         Base.metadata.create_all(bind=engine)
         logger.info("✅ 数据库表已就绪")
@@ -532,8 +532,8 @@ def run_all_demos() -> None:
 
     try:
         # 确保数据库表已创建
-        from ai_rpg.pgsql.client import engine
         from ai_rpg.pgsql.base import Base
+        from ai_rpg.pgsql.client import engine
 
         Base.metadata.create_all(bind=engine)
 
@@ -609,10 +609,10 @@ def test_comprehensive_pgvector_demos(setup_database_tables: Any) -> None:
 
 if __name__ == "__main__":
     # 当直接运行脚本时，执行完整测试
-    import pytest
-
     # 可以选择运行不同的测试模块
     import argparse
+
+    import pytest
 
     parser = argparse.ArgumentParser(description="pgvector 综合测试和演示")
     parser.add_argument(

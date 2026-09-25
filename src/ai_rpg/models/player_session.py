@@ -1,5 +1,7 @@
 from typing import List
+
 from pydantic import BaseModel
+
 from .agent_event import AnyAgentEvent
 from .session_message import SessionMessage
 

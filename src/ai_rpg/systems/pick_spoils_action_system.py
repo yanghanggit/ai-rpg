@@ -8,11 +8,11 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..models import (
     ActorComponent,
-    SpoilsComponent,
     DeathComponent,
     DeckComponent,
     PickSpoilsAction,
     SpoilRewardKind,
+    SpoilsComponent,
 )
 
 

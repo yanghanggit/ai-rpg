@@ -4,22 +4,24 @@
 包括剧情推进、对话、场景切换、副本进入/生成，以及队伍名单编排。
 """
 
-from loguru import logger
+from pathlib import Path
 from typing import Dict, List
-from ai_rpg.models import PlayerSession
+
+from loguru import logger
+
 from ai_rpg.game.dbg_game import DBGGame
-from ai_rpg.models import WorldState
 from ai_rpg.game.dbg_store import store_game_async
+from ai_rpg.models import PlayerSession, WorldState
 from ai_rpg.services.home_actions import (
+    activate_generate_dungeon,
     activate_plan_action,
     activate_speak_action,
     activate_switch_stage,
-    activate_generate_dungeon,
     add_party_member,
-    remove_party_member,
     get_party_roster,
+    remove_party_member,
 )
-from pathlib import Path
+
 from .core import restore_game
 
 

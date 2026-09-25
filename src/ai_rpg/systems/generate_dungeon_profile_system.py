@@ -2,18 +2,18 @@
 
 from functools import partial
 from typing import Dict, Final, List, Optional, final, override
-from ..deepseek import ToolDefinition, ToolFunction
+
 from loguru import logger
-from ..deepseek import agent_loop
+from pydantic import BaseModel
+
+from ..deepseek import ToolDefinition, ToolFunction, agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
-from ..utils import prompt_builder
 from ..models import (
     GenerateDungeonDirectiveAction,
     GenerateDungeonRoomsAction,
 )
-from pydantic import BaseModel
-
+from ..utils import prompt_builder
 
 PROFILE_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(

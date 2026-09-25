@@ -4,9 +4,10 @@ This tests the new Pydantic-based component system.
 """
 
 import pytest
-from ai_rpg.entitas import Entity, Context, Matcher
+
+from ai_rpg.entitas import Context, Entity, Matcher
 from ai_rpg.entitas.components import Component
-from ai_rpg.entitas.testing import Position, Health, Marker, Counter, ResourcePool
+from ai_rpg.entitas.testing import Counter, Health, Marker, Position, ResourcePool
 
 
 class TestPydanticComponents:

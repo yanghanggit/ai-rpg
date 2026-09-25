@@ -1,5 +1,5 @@
-from typing import List
 from types import SimpleNamespace
+from typing import List
 from unittest.mock import MagicMock, patch
 
 from ai_rpg.models import (

@@ -1,0 +1,8 @@
+# 本地提交门禁：ruff 使用 pyproject.toml 的 [tool.ruff] 配置（含 I001 import 排序）。
+# 安装：uv run pre-commit install
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.10
+    hooks:
+      - id: ruff
+        args: [--fix]

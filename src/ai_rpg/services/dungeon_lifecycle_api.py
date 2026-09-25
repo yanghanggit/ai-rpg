@@ -4,8 +4,9 @@
 
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
+
 from ..game.dbg_game import DBGGame
-from .game_server_dependencies import CurrentGameServer
+from ..game.game_server import GameServer
 from ..models import (
     DungeonAdvanceStageRequest,
     DungeonAdvanceStageResponse,
@@ -20,16 +21,16 @@ from .dungeon_advance_action import (
 from .dungeon_enter_action import (
     enter_dungeon,
 )
-from .dungeon_setup_action import (
-    setup_dungeon,
-)
 from .dungeon_lifecycle_tasks import (
     execute_exit_dungeon_task,
 )
+from .dungeon_setup_action import (
+    setup_dungeon,
+)
+from .game_server_dependencies import CurrentGameServer
 from .home_tasks import (
     _validate_player_at_home,
 )
-from ..game.game_server import GameServer
 from .task_dispatch import defer_room_task
 
 ###################################################################################################################################################################
@@ -56,9 +57,11 @@ def _validate_dungeon_prerequisites(
         )
 
     current_room = game_server.get_room(user_name)
-    assert (
-        current_room is not None
-    ), f"_validate_dungeon_prerequisites: room is None for {user_name}"
+    if current_room is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="没有登录，请先登录",
+        )
 
     # 2. 验证游戏实例存在
     if current_room.game is None:

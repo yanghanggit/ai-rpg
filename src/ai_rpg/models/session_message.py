@@ -1,5 +1,7 @@
 from typing import Optional, final
+
 from pydantic import BaseModel
+
 from .agent_event import AnyAgentEvent
 
 

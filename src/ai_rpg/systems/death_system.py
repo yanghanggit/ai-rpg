@@ -7,12 +7,12 @@ from loguru import logger
 from ..entitas import ExecuteProcessor, Matcher
 from ..game.dbg_combat_processor import compute_character_stats
 from ..game.dbg_game import DBGGame
-from ..utils import prompt_builder
 from ..models import (
     CharacterStatsComponent,
     DeathComponent,
     HumanMessage,
 )
+from ..utils import prompt_builder
 
 
 ###############################################################################################################################################

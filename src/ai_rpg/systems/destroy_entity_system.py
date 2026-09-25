@@ -1,7 +1,9 @@
 """销毁所有持有 DestroyComponent 的实体，每帧执行一次。"""
 
 from typing import final, override
+
 from loguru import logger
+
 from ..entitas import ExecuteProcessor, Matcher
 from ..game.rpg_game import RPGGame
 from ..models import DestroyComponent

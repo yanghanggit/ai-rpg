@@ -8,21 +8,20 @@ from ai_rpg.entitas.context import Context
 from ai_rpg.entitas.entity import Entity
 from ai_rpg.game.dbg_game import DBGGame
 from ai_rpg.models import (
+    AgentMemory,
     AnnounceAction,
-    SpeakAction,
-    WhisperAction,
     PlayerAuditComponent,
     PlayerComponent,
-    WorldComponent,
+    SpeakAction,
     SystemMessage,
-    AgentMemory,
+    WhisperAction,
+    WorldComponent,
 )
 from ai_rpg.systems.player_action_audit_system import (
     ContentAuditResponse,
     PlayerActionAuditSystem,
     _build_audit_prompt,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers

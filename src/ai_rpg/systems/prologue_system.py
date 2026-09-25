@@ -1,9 +1,11 @@
 """Pipeline 首端占位入口，未来可在此扩展前置检查、预热等操作。"""
 
 from typing import Final, final, override
+
+from loguru import logger
+
 from ..entitas import ExecuteProcessor
 from ..game.rpg_game import RPGGame
-from loguru import logger
 
 
 @final

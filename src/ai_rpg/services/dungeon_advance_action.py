@@ -5,29 +5,31 @@ advance_dungeon 是推进副本的唯一入口。
 """
 
 from typing import Tuple
+
 from loguru import logger
-from ..game.dbg_game import DBGGame
+
+from ..entitas import Matcher
 from ..game.dbg_combat_processor import (
-    set_character_hp,
     assert_no_residual_combat_state,
+    set_character_hp,
 )
+from ..game.dbg_game import DBGGame
 from ..game.rpg_stage_transition import stage_transition
 from ..models import (
+    Combat,
+    CombatRoom,
+    CombatState,
+    DeathComponent,
     Dungeon,
     DungeonComponent,
-    Combat,
     HumanMessage,
-    PartyMemberComponent,
-    DeathComponent,
-    CombatRoom,
     OpeningRoom,
-    CombatState,
+    PartyMemberComponent,
 )
-from ..entitas import Matcher
 from ..utils import prompt_builder
 from .dungeon_archive_action import (
-    notify_dungeon_director_room_ended,
     debug_probe_dungeon_director_reasoning,
+    notify_dungeon_director_room_ended,
 )
 
 

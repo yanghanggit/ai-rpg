@@ -4,8 +4,9 @@
 
 from typing import List
 
-from procrastinate import JobContext
 from loguru import logger
+from procrastinate import JobContext
+
 from ..game.dbg_game import DBGGame
 from ..game.dbg_store import store_game_async
 from ..models import MonsterComponent

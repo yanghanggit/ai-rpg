@@ -6,8 +6,8 @@ from pydantic import Field
 
 from ..entitas.components import Component
 from .card import Card
-from .entities import Artifact
 from .character_stats import CharacterStats
+from .entities import Artifact
 from .items import AnyItem, CostumeItem, GearItem
 from .registry import register_component_type
 

@@ -12,8 +12,8 @@ from ai_rpg.models import Card, MaterialItem
 from ai_rpg.systems.assemble_deck_system import _build_deck_prompt
 from ai_rpg.systems.craft_gear_item_action_system import _build_craft_gear_prompt
 from ai_rpg.systems.generate_spoils_action_system import (
-    _Candidate,
     _build_spoils_prompt,
+    _Candidate,
 )
 from ai_rpg.systems.initialize_deck_action_system import _build_deck_init_prompt
 

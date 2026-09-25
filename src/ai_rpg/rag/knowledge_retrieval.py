@@ -13,12 +13,14 @@ RAG 知识检索模块（桥接 SentenceTransformer 与 pgvector）
 
 import traceback
 from typing import Any, Dict, List, Tuple, cast
+
 from loguru import logger
+from sentence_transformers import SentenceTransformer
 from sqlalchemy import text
 from sqlalchemy.engine import CursorResult
-from sentence_transformers import SentenceTransformer
-from ..pgsql.client import SessionLocal
+
 from ..pgsql import save_vector_document, search_similar_documents
+from ..pgsql.client import SessionLocal
 
 
 ############################################################################################################

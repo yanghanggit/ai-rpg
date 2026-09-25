@@ -7,9 +7,11 @@
 
 import json
 from typing import Dict, List, Optional
+
 from loguru import logger
-from .client import SessionLocal
+
 from .card_prototype import CardPrototypeDB
+from .client import SessionLocal
 
 
 ############################################################################################################

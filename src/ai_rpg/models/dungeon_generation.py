@@ -1,6 +1,7 @@
 """副本生成流水线的中间数据模型。"""
 
 from typing import List, Literal, final
+
 from pydantic import BaseModel
 
 

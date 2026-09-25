@@ -2,12 +2,14 @@
 
 import json
 from typing import Dict, Final, List, final, override
+
 from loguru import logger
+
+from ..entitas import Entity, ExecuteProcessor
+from ..game.rpg_game import RPGGame
 from ..models.components import (
     DeathComponent,
 )
-from ..entitas import ExecuteProcessor, Entity
-from ..game.rpg_game import RPGGame
 
 
 @final

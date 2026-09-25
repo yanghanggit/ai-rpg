@@ -1,7 +1,8 @@
 """CombatOutcomeSystem 单元测试。"""
 
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 
 from ai_rpg.entitas.context import Context
 from ai_rpg.entitas.entity import Entity
@@ -23,7 +24,6 @@ from ai_rpg.systems.combat_outcome_system import (
     CombatOutcomeSystem,
     _build_combat_result_notification,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers

@@ -2,9 +2,10 @@
 嵌入模型管理模块
 """
 
+from pathlib import Path
+
 from loguru import logger
 from sentence_transformers import SentenceTransformer
-from pathlib import Path
 
 try:
 

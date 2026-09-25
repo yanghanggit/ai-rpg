@@ -1,6 +1,7 @@
 """测试 markdown.py 中的 extract_json 函数"""
 
 import pytest
+
 from ai_rpg.utils.markdown import extract_json
 
 

@@ -1,18 +1,18 @@
 """消耗牌处理系统模块。"""
 
-from typing import Final, final, Dict, List
+from typing import Dict, Final, List, final
 
 from loguru import logger
 from overrides import override
 
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
+from ..game.dbg_game import DBGGame
 from ..models import (
     ActorComponent,
     DiscardPileComponent,
     ExhaustPileComponent,
     PlayCardsAction,
 )
-from ..game.dbg_game import DBGGame
 
 
 #######################################################################################################################################

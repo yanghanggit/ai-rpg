@@ -8,7 +8,6 @@ from ..embedding_model import embedding_model
 from ..game.dbg_game import DBGGame
 from ..rag import search_documents
 
-
 DEFAULT_TOP_K: Final[int] = 5
 
 

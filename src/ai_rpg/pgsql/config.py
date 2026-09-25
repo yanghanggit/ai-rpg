@@ -1,4 +1,5 @@
 from typing import Final, final
+
 from pydantic import BaseModel
 
 

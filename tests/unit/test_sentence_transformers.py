@@ -6,10 +6,11 @@ and functioning correctly in the current environment. It includes both
 pytest-compatible unit tests and manual test functions for direct execution.
 """
 
-import pytest
-import numpy as np
 import sys
-from typing import List, Callable, Any
+from typing import Any, Callable, List
+
+import numpy as np
+import pytest
 
 # 导入预加载的模型实例
 from ai_rpg.embedding_model import embedding_model
@@ -200,8 +201,9 @@ class TestSentenceTransformersPerformance:
 
     def test_model_memory_usage(self, embedding_model_fixture: Any) -> None:
         """Test that model doesn't consume excessive memory using cached model."""
-        import psutil
         import os
+
+        import psutil
 
         # Get current memory usage (model already loaded in fixture)
         process = psutil.Process(os.getpid())
@@ -297,6 +299,7 @@ if __name__ == "__main__":
             print("1. Testing import...")
             from sentence_transformers import SentenceTransformer
             from sentence_transformers.util import cos_sim
+
             from ai_rpg.embedding_model import embedding_model
 
             print("✅ Import successful")
@@ -350,6 +353,7 @@ if __name__ == "__main__":
         try:
             from sentence_transformers import SentenceTransformer
             from sentence_transformers.util import cos_sim
+
             from ai_rpg.embedding_model import embedding_model
 
             # Use pre-loaded multilingual model for Chinese content
@@ -408,7 +412,9 @@ if __name__ == "__main__":
 
         try:
             import time
+
             from sentence_transformers import SentenceTransformer
+
             from ai_rpg.embedding_model import embedding_model
 
             print("1. Testing encoding speed with pre-loaded model...")
@@ -499,6 +505,7 @@ if __name__ == "__main__":
 
         try:
             from sentence_transformers import SentenceTransformer
+
             from ai_rpg.embedding_model import embedding_model
 
             assert isinstance(embedding_model, SentenceTransformer)

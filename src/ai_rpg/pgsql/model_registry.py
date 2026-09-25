@@ -7,11 +7,12 @@
 
 from loguru import logger
 
-# 导入所有数据库模型以确保它们被注册到Base.metadata中
-from .vector_document import VectorDocumentDB
 from .card_prototype import CardPrototypeDB
 from .deck_build import DeckBuildDB
 from .task_error import TaskErrorDB
+
+# 导入所有数据库模型以确保它们被注册到Base.metadata中
+from .vector_document import VectorDocumentDB
 
 __all__ = [
     "VectorDocumentDB",

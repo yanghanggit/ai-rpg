@@ -8,12 +8,12 @@ Tests for RPGGame memory message management methods:
   - remove_message_range
 """
 
-import pytest
 from typing import Any, List, cast
 
-from ai_rpg.models.messages import AIMessage, HumanMessage, SystemMessage
-from ai_rpg.entitas.entity import Entity
+import pytest
 
+from ai_rpg.entitas.entity import Entity
+from ai_rpg.models.messages import AIMessage, HumanMessage, SystemMessage
 
 # ---------------------------------------------------------------------------
 # Fixtures

@@ -7,7 +7,7 @@ uv run python scripts/download_sentence_transformers_models.py --model paraphras
 
 import shutil
 from pathlib import Path
-from typing import Final, Optional, TypedDict, Dict
+from typing import Dict, Final, Optional, TypedDict
 
 import click
 from loguru import logger

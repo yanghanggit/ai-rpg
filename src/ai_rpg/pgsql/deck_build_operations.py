@@ -8,9 +8,11 @@
 
 import json
 from typing import List
+
 from loguru import logger
-from .client import SessionLocal
+
 from .card_prototype import CardPrototypeDB
+from .client import SessionLocal
 from .deck_build import DeckBuildDB
 
 

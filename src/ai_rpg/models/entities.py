@@ -1,10 +1,12 @@
 from enum import StrEnum, unique
 from typing import Dict, List, final
 from uuid import uuid4
+
 from pydantic import BaseModel, Field
+
 from .assets_meta import AssetKey
-from .serialization import ComponentSerialization
 from .character_stats import CharacterStats
+from .serialization import ComponentSerialization
 
 
 ###############################################################################################################################################

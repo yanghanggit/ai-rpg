@@ -12,8 +12,9 @@ Unit tests for src/ai_rpg/game/rpg_game.py
 """
 
 import uuid
-import pytest
 from typing import Any, cast
+
+import pytest
 
 from ai_rpg.entitas.entity import Entity
 from ai_rpg.models import (
@@ -23,7 +24,6 @@ from ai_rpg.models import (
 )
 from ai_rpg.models.agent_event import NoneEvent
 from ai_rpg.models.messages import HumanMessage, SystemMessage
-
 
 # ---------------------------------------------------------------------------
 # Helpers

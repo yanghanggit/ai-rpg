@@ -36,9 +36,9 @@ from ..models import (
     BUILD_CARD_FIELD_DESCRIPTION,
     ActorComponent,
     Card,
-    SpoilsComponent,
     DeathComponent,
     GenerateSpoilsAction,
+    SpoilsComponent,
     apply_affix_design,
 )
 from ..pgsql import get_card_prototype, list_card_prototype_index

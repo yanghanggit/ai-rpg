@@ -2,22 +2,23 @@
 Tests for the Processors module in entitas framework.
 """
 
-import pytest
-from unittest.mock import Mock
 from typing import Dict, List
+from unittest.mock import Mock
 
-from ai_rpg.entitas.processors import (
-    InitializeProcessor,
-    ExecuteProcessor,
-    CleanupProcessor,
-    TearDownProcessor,
-    ReactiveProcessor,
-    Processors,
-)
+import pytest
+
 from ai_rpg.entitas.context import Context
 from ai_rpg.entitas.entity import Entity
-from ai_rpg.entitas.matcher import Matcher
 from ai_rpg.entitas.group import GroupEvent
+from ai_rpg.entitas.matcher import Matcher
+from ai_rpg.entitas.processors import (
+    CleanupProcessor,
+    ExecuteProcessor,
+    InitializeProcessor,
+    Processors,
+    ReactiveProcessor,
+    TearDownProcessor,
+)
 from ai_rpg.entitas.testing import Position, Velocity
 
 

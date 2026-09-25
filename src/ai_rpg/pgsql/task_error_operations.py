@@ -1,4 +1,5 @@
 from typing import Optional
+
 from .client import SessionLocal
 from .task_error import TaskErrorDB
 

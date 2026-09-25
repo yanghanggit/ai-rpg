@@ -4,14 +4,15 @@
 
 from typing import Awaitable, Callable, List, Tuple
 
-from procrastinate import JobContext
-from fastapi import HTTPException, status
 from loguru import logger
+from procrastinate import JobContext
+
 from ..game.dbg_game import DBGGame
 from ..game.dbg_store import store_game_async
-from ..game.game_server import GameServer
+from ..game.game_server import GameServer, RoomNotFoundError
 from ..pgsql import procrastinate_app, save_task_error
 from .game_server_runtime import get_runtime_game_server
+from .game_state_errors import GameNotFoundError, PlayerNotAtHomeError
 from .home_actions import (
     activate_craft_consumable,
     activate_craft_costume_item,
@@ -38,29 +39,23 @@ async def _validate_player_at_home(
 
     # 检查房间是否存在
     if not game_server.has_room(user_name):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="没有登录，请先登录",
-        )
+        raise RoomNotFoundError(user_name)
 
     # 获取房间实例并检查游戏是否存在
     current_room = game_server.get_room(user_name)
-    assert current_room is not None, "_validate_player_at_home: room instance is None"
-    if current_room.game is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="没有游戏，请先登录",
-        )
+    if current_room is None:
+        raise RoomNotFoundError(user_name)
+
+    game = current_room.game
+    if game is None:
+        raise GameNotFoundError(user_name=user_name)
 
     # 判断游戏状态，不是Home状态不可以推进。
-    if not current_room.game.is_player_in_home_stage:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="当前不在家园状态，不能进行家园操作",
-        )
+    if not game.is_player_in_home_stage:
+        raise PlayerNotAtHomeError(user_name=user_name)
 
     # 返回游戏实例
-    return current_room.game
+    return game
 
 
 ###################################################################################################################################################################

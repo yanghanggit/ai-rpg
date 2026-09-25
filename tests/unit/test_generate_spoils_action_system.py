@@ -3,9 +3,9 @@
 from ai_rpg.models import Card
 from ai_rpg.systems.generate_spoils_action_system import (
     _Candidate,
-    _SpoilsCardEdit,
     _format_card_for_prompt,
     _handle_submit_spoils_card,
+    _SpoilsCardEdit,
 )
 
 

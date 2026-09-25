@@ -5,15 +5,17 @@
 """
 
 from typing import Set
+
 from loguru import logger
+
 from ..entitas import Entity
 from ..models import (
     ActorComponent,
     NoneEvent,
     TransStageEvent,
 )
-from .rpg_game import RPGGame
 from ..utils import prompt_builder
+from .rpg_game import RPGGame
 
 
 #################################################################################################################################################

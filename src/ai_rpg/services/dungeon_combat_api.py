@@ -4,39 +4,40 @@
 
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
-from .game_server_dependencies import CurrentGameServer
+
 from ..models import (
-    DungeonCombatRetreatRequest,
-    DungeonCombatRetreatResponse,
-    DungeonCombatInitRequest,
-    DungeonCombatInitResponse,
-    DungeonCombatDrawCardsRequest,
-    DungeonCombatDrawCardsResponse,
-    DungeonCombatPlayCardsRequest,
-    DungeonCombatPlayCardsResponse,
-    DungeonCombatPassTurnRequest,
-    DungeonCombatPassTurnResponse,
-    DungeonCombatUseConsumableItemRequest,
-    DungeonCombatUseConsumableItemResponse,
-    DungeonCombatEquipGearItemRequest,
-    DungeonCombatEquipGearItemResponse,
     DungeonCombatCollectLootRequest,
     DungeonCombatCollectLootResponse,
+    DungeonCombatDrawCardsRequest,
+    DungeonCombatDrawCardsResponse,
+    DungeonCombatEquipGearItemRequest,
+    DungeonCombatEquipGearItemResponse,
+    DungeonCombatInitRequest,
+    DungeonCombatInitResponse,
+    DungeonCombatPassTurnRequest,
+    DungeonCombatPassTurnResponse,
+    DungeonCombatPlayCardsRequest,
+    DungeonCombatPlayCardsResponse,
+    DungeonCombatRetreatRequest,
+    DungeonCombatRetreatResponse,
+    DungeonCombatUseConsumableItemRequest,
+    DungeonCombatUseConsumableItemResponse,
 )
-from .dungeon_lifecycle_api import _validate_dungeon_prerequisites
-from .task_dispatch import defer_room_task
 from .dungeon_combat_actions import (
     collect_loot,
 )
 from .dungeon_combat_tasks import (
-    execute_init_combat_task,
-    execute_retreat_task,
     execute_draw_cards_task,
-    execute_play_cards_task,
-    execute_pass_turn_task,
     execute_equip_gear_task,
+    execute_init_combat_task,
+    execute_pass_turn_task,
+    execute_play_cards_task,
+    execute_retreat_task,
     execute_use_consumable_task,
 )
+from .dungeon_lifecycle_api import _validate_dungeon_prerequisites
+from .game_server_dependencies import CurrentGameServer
+from .task_dispatch import defer_room_task
 
 ###################################################################################################################################################################
 dungeon_combat_api_router = APIRouter()

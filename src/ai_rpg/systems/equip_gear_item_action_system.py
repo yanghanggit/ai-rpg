@@ -10,13 +10,13 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_combat_processor import compute_character_stats
 from ..game.dbg_game import DBGGame
 from ..models import (
-    NoneEvent,
     Card,
     EquipGearItemAction,
     EquippedGearComponent,
     GearItem,
     HandComponent,
     InventoryComponent,
+    NoneEvent,
     PartyMemberComponent,
     apply_stats_to_card,
 )

@@ -4,6 +4,7 @@
 """
 
 from typing import Dict
+
 from ..entitas import Entity, Matcher
 from ..models import AppearanceComponent
 from .rpg_game import RPGGame

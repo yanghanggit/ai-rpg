@@ -2,10 +2,9 @@ import asyncio
 import contextlib
 import os
 import sys
-from typing import AsyncGenerator, Optional
-
 from contextlib import asynccontextmanager
 from datetime import datetime
+from typing import AsyncGenerator, Optional
 
 import click
 from dotenv import load_dotenv

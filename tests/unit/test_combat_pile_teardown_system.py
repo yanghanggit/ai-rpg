@@ -1,20 +1,22 @@
 """CombatPileTeardownSystem 单元测试。"""
 
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
+
+from ai_rpg.entitas import Entity
 from ai_rpg.entitas.context import Context
 from ai_rpg.game.dbg_game import DBGGame
 from ai_rpg.models import (
     ActorComponent,
+    Card,
     DeckComponent,
     DiscardPileComponent,
     DrawPileComponent,
     ExhaustPileComponent,
+    TargetType,
 )
-from ai_rpg.models import Card, TargetType
 from ai_rpg.systems.combat_pile_teardown_system import CombatPileTeardownSystem
-from ai_rpg.entitas import Entity
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

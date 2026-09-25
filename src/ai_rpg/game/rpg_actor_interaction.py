@@ -5,6 +5,7 @@
 
 from enum import IntEnum, unique
 from typing import final
+
 from ..entitas import Entity
 from .rpg_game import RPGGame
 

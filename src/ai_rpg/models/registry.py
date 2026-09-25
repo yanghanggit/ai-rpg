@@ -12,7 +12,9 @@ from typing import (
     Type,
     TypeVar,
 )
+
 from pydantic import create_model
+
 from ..entitas.components import Component
 
 ############################################################################################################

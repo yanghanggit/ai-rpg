@@ -50,11 +50,6 @@ class PlayerRoom:
     def is_closed(self) -> bool:
         return self._closed
 
-    @property
-    def is_busy(self) -> bool:
-        """是否有房间事务正在执行。"""
-        return self._lock.locked()
-
     def touch(self) -> None:
         """刷新房间活跃时间。"""
         self._last_active_at = time.monotonic()
@@ -72,7 +67,8 @@ class PlayerRoom:
     ###############################################################################################################################################
     def bind(self, *, game: DBGGame, player_session: PlayerSession) -> None:
         """绑定游戏与会话实例，应在 ``transaction()`` 内调用。"""
-        assert not self._closed, "不能在已关闭的房间上绑定游戏"
+        if self._closed:
+            raise RoomClosedError(self._username)
         self._dbg_game = game
         self._player_session = player_session
 

@@ -4,7 +4,7 @@ This demonstrates the basic usage patterns tested in our test suite.
 """
 
 from ai_rpg.entitas import Context, Matcher
-from ai_rpg.entitas.testing import Position, Velocity, Health, Name, Score
+from ai_rpg.entitas.testing import Health, Name, Position, Score, Velocity
 
 
 def main() -> None:

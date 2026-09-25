@@ -1,11 +1,13 @@
 """场景转换动作系统模块。"""
 
-from typing import final, override, Dict, List
-from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..models import HumanMessage, TransStageAction, HomeComponent
+from typing import Dict, List, final, override
+
 from loguru import logger
+
+from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..game.rpg_stage_transition import stage_transition
+from ..models import HomeComponent, HumanMessage, TransStageAction
 from ..utils import prompt_builder
 
 

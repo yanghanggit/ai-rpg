@@ -2,22 +2,23 @@
 Tests for the Entity class in entitas framework.
 """
 
-import pytest
 from unittest.mock import Mock
+
+import pytest
 
 from ai_rpg.entitas import Entity
 from ai_rpg.entitas.exceptions import (
-    EntityNotEnabled,
     AlreadyAddedComponent,
+    EntityNotEnabled,
     MissingComponent,
 )
 from ai_rpg.entitas.testing import (
-    Position,
-    Velocity,
     Health,
-    Name,
     Marker,
+    Name,
+    Position,
     Transform,
+    Velocity,
 )
 
 

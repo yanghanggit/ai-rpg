@@ -19,7 +19,7 @@
 import asyncio
 import time
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, Dict, Optional, List
+from typing import AsyncGenerator, Dict, List, Optional
 
 from .player_room import PlayerRoom
 

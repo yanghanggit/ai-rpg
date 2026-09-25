@@ -31,6 +31,8 @@ test:
 lint:
 	@echo "🔍 运行类型检查..."
 	uv run mypy --strict src scripts tests demo
+	@echo "🔍 运行 ruff 检查..."
+	uv run ruff check src scripts tests demo
 
 # 格式化代码
 format:

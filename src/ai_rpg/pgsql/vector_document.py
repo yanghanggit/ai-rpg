@@ -4,9 +4,11 @@ PostgreSQL + pgvector 向量文档模型定义
 
 from datetime import datetime
 from typing import Final, List, Optional
+
 from pgvector.sqlalchemy import Vector  # type: ignore
 from sqlalchemy import DateTime, Index, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
+
 from .base import UUIDBase
 
 # paraphrase-multilingual-MiniLM-L12-v2 输出维度

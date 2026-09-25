@@ -6,6 +6,7 @@ including event handling and observer pattern implementations.
 """
 
 from typing import Any, Callable, Iterator, List
+
 from loguru import logger
 
 

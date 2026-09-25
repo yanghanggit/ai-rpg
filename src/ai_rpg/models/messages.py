@@ -1,6 +1,7 @@
 """自定义消息类型"""
 
 from typing import Annotated, Any, Dict, List, Literal, Sequence, Union
+
 from pydantic import BaseModel, ConfigDict, Field
 
 

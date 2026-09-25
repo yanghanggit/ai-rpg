@@ -9,13 +9,13 @@ from loguru import logger
 from ..entitas import Matcher
 from ..game.dbg_game import DBGGame
 from ..models import (
-    SpoilsComponent,
     DeathComponent,
     DeckComponent,
     GenerateSpoilsAction,
     PartyMemberComponent,
     PickSpoilsAction,
     SpoilRewardKind,
+    SpoilsComponent,
 )
 
 

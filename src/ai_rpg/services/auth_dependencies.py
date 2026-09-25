@@ -3,9 +3,11 @@
 """
 
 from typing import Annotated, Final, Optional
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
+
 from ..auth.jwt import decode_jwt_token
 from ..pgsql.user_operations import get_user, has_user
 

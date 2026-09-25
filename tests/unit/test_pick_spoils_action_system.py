@@ -12,8 +12,8 @@ from ai_rpg.models import (
     Card,
     DeckComponent,
     PickSpoilsAction,
-    SpoilsComponent,
     SpoilRewardKind,
+    SpoilsComponent,
 )
 from ai_rpg.systems.pick_spoils_action_system import PickSpoilsActionSystem
 

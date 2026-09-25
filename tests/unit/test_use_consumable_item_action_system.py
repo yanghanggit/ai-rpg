@@ -18,7 +18,6 @@ from ai_rpg.systems.use_consumable_item_action_system import (
     UseConsumableItemActionSystem,
 )
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

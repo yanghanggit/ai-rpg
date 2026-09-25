@@ -1,6 +1,7 @@
 """角色属性统计模型定义"""
 
 from typing import final
+
 from pydantic import BaseModel
 
 

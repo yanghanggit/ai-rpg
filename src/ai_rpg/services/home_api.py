@@ -36,15 +36,6 @@ from ..models import (
 )
 from .game_server_dependencies import CurrentGameServer
 from .home_actions import (
-    activate_craft_consumable,
-    activate_craft_costume_item,
-    activate_craft_gear_item,
-    activate_generate_dungeon,
-    activate_plan_action,
-    activate_remove_costume,
-    activate_speak_action,
-    activate_switch_stage,
-    activate_wear_costume,
     add_party_member,
     move_item_to_inventory,
     move_item_to_storage,
@@ -53,8 +44,14 @@ from .home_actions import (
 from .home_tasks import (
     _validate_player_at_home,
     execute_dungeon_generate_pipeline_task,
-    execute_home_craft_pipeline_task,
-    execute_home_pipeline_task,
+    execute_home_advance_task,
+    execute_home_craft_consumable_task,
+    execute_home_craft_costume_task,
+    execute_home_craft_gear_task,
+    execute_home_remove_costume_task,
+    execute_home_speak_task,
+    execute_home_switch_stage_task,
+    execute_home_wear_costume_task,
 )
 from .task_dispatch import defer_room_task
 
@@ -78,7 +75,6 @@ async def home_player_speak(
 
     logger.info(f"/api/home/player/speak/v1/: {payload.model_dump_json()}")
 
-    # 获取房间并用每玩家锁避免并发状态竞争
     current_room = game_server.get_room(payload.user_name)
     if current_room is None:
         raise HTTPException(
@@ -86,31 +82,18 @@ async def home_player_speak(
             detail="没有登录，请先登录",
         )
 
-    async with current_room.transaction():
-
-        # 验证前置条件并获取游戏实例
-        rpg_game = await _validate_player_at_home(
-            payload.user_name,
-            game_server,
-        )
-
-        # 激活对话动作：玩家与指定NPC进行对话交互
-        success, error_detail = activate_speak_action(
-            rpg_game,
-            target=payload.target,
-            content=payload.content,
-        )
-
-        # 统一处理动作激活结果
-        if not success:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=error_detail,
-            )
+    # 轻量校验：玩家处于家园状态（动作在任务内激活）
+    await _validate_player_at_home(
+        payload.user_name,
+        game_server,
+    )
 
     # 在锁外派发 home pipeline 任务，让任务独立持锁执行
     job_id = await defer_room_task(
-        execute_home_pipeline_task, user_name=payload.user_name
+        execute_home_speak_task,
+        user_name=payload.user_name,
+        target=payload.target,
+        content=payload.content,
     )
 
     logger.info(
@@ -137,7 +120,6 @@ async def home_player_switch_stage(
 
     logger.info(f"/api/home/player/switch_stage/v1/: {payload.model_dump_json()}")
 
-    # 获取房间并用每玩家锁避免并发状态竞争
     current_room = game_server.get_room(payload.user_name)
     if current_room is None:
         raise HTTPException(
@@ -145,29 +127,17 @@ async def home_player_switch_stage(
             detail="没有登录，请先登录",
         )
 
-    async with current_room.transaction():
-
-        # 验证前置条件并获取游戏实例
-        rpg_game = await _validate_player_at_home(
-            payload.user_name,
-            game_server,
-        )
-
-        # 激活场景切换动作：在家园内切换到不同的场景
-        success, error_detail = activate_switch_stage(
-            rpg_game, stage_name=payload.stage_name
-        )
-
-        # 统一处理动作激活结果
-        if not success:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=error_detail,
-            )
+    # 轻量校验：玩家处于家园状态（动作在任务内激活）
+    await _validate_player_at_home(
+        payload.user_name,
+        game_server,
+    )
 
     # 在锁外派发 home pipeline 任务，让任务独立持锁执行
     job_id = await defer_room_task(
-        execute_home_pipeline_task, user_name=payload.user_name
+        execute_home_switch_stage_task,
+        user_name=payload.user_name,
+        stage_name=payload.stage_name,
     )
 
     logger.info(
@@ -194,7 +164,6 @@ async def home_advance(
 
     logger.info(f"/api/home/advance/v1/: {payload.model_dump_json()}")
 
-    # 获取房间并用每玩家锁避免并发状态竞争
     current_room = game_server.get_room(payload.user_name)
     if current_room is None:
         raise HTTPException(
@@ -202,26 +171,17 @@ async def home_advance(
             detail="没有登录，请先登录",
         )
 
-    async with current_room.transaction():
-
-        # 验证前置条件并获取游戏实例
-        rpg_game = await _validate_player_at_home(
-            payload.user_name,
-            game_server,
-        )
-
-        # 根据请求参数（payload.actors）为客户端显式指定的角色激活行动计划
-        success, error_detail = activate_plan_action(rpg_game, payload.actors)
-        if not success:
-            # 行动计划激活失败，抛出包含具体错误信息的异常
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=error_detail,
-            )
+    # 轻量校验：玩家处于家园状态（动作在任务内激活）
+    await _validate_player_at_home(
+        payload.user_name,
+        game_server,
+    )
 
     # 在锁外派发 home pipeline 任务，让任务独立持锁执行
     job_id = await defer_room_task(
-        execute_home_pipeline_task, user_name=payload.user_name
+        execute_home_advance_task,
+        user_name=payload.user_name,
+        actors=payload.actors,
     )
 
     return HomeAdvanceResponse(
@@ -246,7 +206,6 @@ async def home_generate_dungeon(
 
     logger.info(f"/api/home/generate_dungeon/v1/: user={payload.user_name}")
 
-    # 获取房间并用每玩家锁避免并发状态竞争
     current_room = game_server.get_room(payload.user_name)
     if current_room is None:
         raise HTTPException(
@@ -254,20 +213,11 @@ async def home_generate_dungeon(
             detail="没有登录，请先登录",
         )
 
-    async with current_room.transaction():
-        # 验证前置条件并获取游戏实例
-        rpg_game = await _validate_player_at_home(
-            payload.user_name,
-            game_server,
-        )
-
-        # 激活副本生成动作
-        success, error_detail = activate_generate_dungeon(rpg_game)
-        if not success:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=error_detail,
-            )
+    # 轻量校验：玩家处于家园状态（动作在任务内激活）
+    await _validate_player_at_home(
+        payload.user_name,
+        game_server,
+    )
 
     # 在锁外派发 dungeon generate pipeline 任务，让任务独立持锁执行
     job_id = await defer_room_task(
@@ -426,19 +376,13 @@ async def home_wear_costume(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"找不到游戏房间: user={payload.user_name}",
         )
-    async with current_room.transaction():
-        dbg_game = await _validate_player_at_home(payload.user_name, game_server)
-        success, error_detail = activate_wear_costume(
-            dbg_game, payload.item_name, payload.target_name
-        )
-        if not success:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=error_detail,
-            )
+    await _validate_player_at_home(payload.user_name, game_server)
 
     job_id = await defer_room_task(
-        execute_home_pipeline_task, user_name=payload.user_name
+        execute_home_wear_costume_task,
+        user_name=payload.user_name,
+        item_name=payload.item_name,
+        target_name=payload.target_name,
     )
     logger.info(f"📝 创建穿装任务: job_id={job_id}, user={payload.user_name}")
     return HomeWearCostumeResponse(
@@ -467,17 +411,12 @@ async def home_remove_costume(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"找不到游戏房间: user={payload.user_name}",
         )
-    async with current_room.transaction():
-        dbg_game = await _validate_player_at_home(payload.user_name, game_server)
-        success, error_detail = activate_remove_costume(dbg_game, payload.target_name)
-        if not success:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=error_detail,
-            )
+    await _validate_player_at_home(payload.user_name, game_server)
 
     job_id = await defer_room_task(
-        execute_home_pipeline_task, user_name=payload.user_name
+        execute_home_remove_costume_task,
+        user_name=payload.user_name,
+        target_name=payload.target_name,
     )
     logger.info(f"📝 创建脱装任务: job_id={job_id}, user={payload.user_name}")
     return HomeRemoveCostumeResponse(
@@ -511,19 +450,12 @@ async def home_craft_consumable(
             detail="没有登录，请先登录",
         )
 
-    async with current_room.transaction():
-        dbg_game = await _validate_player_at_home(payload.user_name, game_server)
-        success, error_detail = activate_craft_consumable(
-            dbg_game, list(payload.materials)
-        )
-        if not success:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=error_detail,
-            )
+    await _validate_player_at_home(payload.user_name, game_server)
 
     job_id = await defer_room_task(
-        execute_home_craft_pipeline_task, user_name=payload.user_name
+        execute_home_craft_consumable_task,
+        user_name=payload.user_name,
+        materials=list(payload.materials),
     )
     logger.info(f"📝 创建消耗品工坐任务: job_id={job_id}, user={payload.user_name}")
     return HomeCraftItemResponse(
@@ -553,19 +485,12 @@ async def home_craft_gear_item(
             detail="没有登录，请先登录",
         )
 
-    async with current_room.transaction():
-        dbg_game = await _validate_player_at_home(payload.user_name, game_server)
-        success, error_detail = activate_craft_gear_item(
-            dbg_game, list(payload.materials)
-        )
-        if not success:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=error_detail,
-            )
+    await _validate_player_at_home(payload.user_name, game_server)
 
     job_id = await defer_room_task(
-        execute_home_craft_pipeline_task, user_name=payload.user_name
+        execute_home_craft_gear_task,
+        user_name=payload.user_name,
+        materials=list(payload.materials),
     )
     logger.info(f"📝 创建装备工坐任务: job_id={job_id}, user={payload.user_name}")
     return HomeCraftItemResponse(
@@ -595,19 +520,12 @@ async def home_craft_costume_item(
             detail="没有登录，请先登录",
         )
 
-    async with current_room.transaction():
-        dbg_game = await _validate_player_at_home(payload.user_name, game_server)
-        success, error_detail = activate_craft_costume_item(
-            dbg_game, list(payload.materials)
-        )
-        if not success:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=error_detail,
-            )
+    await _validate_player_at_home(payload.user_name, game_server)
 
     job_id = await defer_room_task(
-        execute_home_craft_pipeline_task, user_name=payload.user_name
+        execute_home_craft_costume_task,
+        user_name=payload.user_name,
+        materials=list(payload.materials),
     )
     logger.info(f"📝 创建时装工坐任务: job_id={job_id}, user={payload.user_name}")
     return HomeCraftItemResponse(

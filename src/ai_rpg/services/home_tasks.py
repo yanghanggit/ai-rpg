@@ -2,6 +2,8 @@
 家园任务模块
 """
 
+from typing import Awaitable, Callable, List, Tuple
+
 from procrastinate import JobContext
 from fastapi import HTTPException, status
 from loguru import logger
@@ -10,6 +12,17 @@ from ..game.dbg_store import store_game_async
 from ..game.game_server import GameServer
 from ..pgsql import procrastinate_app, save_task_error
 from .game_server_runtime import get_runtime_game_server
+from .home_actions import (
+    activate_craft_consumable,
+    activate_craft_costume_item,
+    activate_craft_gear_item,
+    activate_generate_dungeon,
+    activate_plan_action,
+    activate_remove_costume,
+    activate_speak_action,
+    activate_switch_stage,
+    activate_wear_costume,
+)
 
 
 ###################################################################################################################################################################
@@ -51,7 +64,127 @@ async def _validate_player_at_home(
 
 
 ###################################################################################################################################################################
+async def _run_home_task(
+    context: JobContext,
+    user_name: str,
+    activate: Callable[[DBGGame], Tuple[bool, str]],
+    run_pipeline: Callable[[DBGGame], Awaitable[None]],
+) -> None:
+    """在房间锁内激活动作并推进对应 pipeline，最后落盘。"""
+    job_id = context.job.id
+    assert job_id is not None, "运行中的任务必然有 job id"
+    try:
+        logger.info(f"🚀 home 任务开始: job_id={job_id}, user={user_name}")
+
+        game_server = get_runtime_game_server()
+
+        async with game_server.acquire(user_name):
+
+            rpg_game = await _validate_player_at_home(user_name, game_server)
+
+            # 激活动作（在锁内、pipeline 执行前完成）
+            success, message = activate(rpg_game)
+            if not success:
+                raise ValueError(message)
+
+            # 执行 pipeline，可能比较耗时
+            await run_pipeline(rpg_game)
+
+            # 存档当前世界状态，便于调试和回放
+            await store_game_async(rpg_game)
+
+        logger.info(f"✅ home 任务完成: job_id={job_id}, user={user_name}")
+
+    except Exception as e:
+        logger.error(f"❌ home 任务失败: job_id={job_id}, user={user_name}, error={e}")
+        save_task_error(job_id, str(e))
+        raise
+
+
 ###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
+@procrastinate_app.task(queue="game", pass_context=True)
+async def execute_home_speak_task(
+    context: JobContext,
+    user_name: str,
+    target: str,
+    content: str,
+) -> None:
+    """执行家园对话任务"""
+    await _run_home_task(
+        context,
+        user_name,
+        lambda game: activate_speak_action(game, target, content),
+        lambda game: game._home_pipeline.process(),
+    )
+
+
+###################################################################################################################################################################
+@procrastinate_app.task(queue="game", pass_context=True)
+async def execute_home_switch_stage_task(
+    context: JobContext,
+    user_name: str,
+    stage_name: str,
+) -> None:
+    """执行家园场景切换任务"""
+    await _run_home_task(
+        context,
+        user_name,
+        lambda game: activate_switch_stage(game, stage_name),
+        lambda game: game._home_pipeline.process(),
+    )
+
+
+###################################################################################################################################################################
+@procrastinate_app.task(queue="game", pass_context=True)
+async def execute_home_advance_task(
+    context: JobContext,
+    user_name: str,
+    actors: List[str],
+) -> None:
+    """执行家园推进任务"""
+    await _run_home_task(
+        context,
+        user_name,
+        lambda game: activate_plan_action(game, actors),
+        lambda game: game._home_pipeline.process(),
+    )
+
+
+###################################################################################################################################################################
+@procrastinate_app.task(queue="game", pass_context=True)
+async def execute_home_wear_costume_task(
+    context: JobContext,
+    user_name: str,
+    item_name: str,
+    target_name: str,
+) -> None:
+    """执行穿装任务"""
+    await _run_home_task(
+        context,
+        user_name,
+        lambda game: activate_wear_costume(game, item_name, target_name),
+        lambda game: game._home_pipeline.process(),
+    )
+
+
+###################################################################################################################################################################
+@procrastinate_app.task(queue="game", pass_context=True)
+async def execute_home_remove_costume_task(
+    context: JobContext,
+    user_name: str,
+    target_name: str,
+) -> None:
+    """执行脱装任务"""
+    await _run_home_task(
+        context,
+        user_name,
+        lambda game: activate_remove_costume(game, target_name),
+        lambda game: game._home_pipeline.process(),
+    )
+
+
 ###################################################################################################################################################################
 @procrastinate_app.task(queue="game", pass_context=True)
 async def execute_dungeon_generate_pipeline_task(
@@ -59,111 +192,60 @@ async def execute_dungeon_generate_pipeline_task(
     user_name: str,
 ) -> None:
     """执行 dungeon generate pipeline 任务"""
-    job_id = context.job.id
-    assert job_id is not None, "运行中的任务必然有 job id"
-    try:
-        logger.info(
-            f"🚀 dungeon generate pipeline 任务开始: job_id={job_id}, user={user_name}"
-        )
-
-        game_server = get_runtime_game_server()
-
-        async with game_server.acquire(user_name):
-
-            rpg_game = await _validate_player_at_home(user_name, game_server)
-
-            # 执行副本生成流程（包含文本生成和图片生成），该流程可能比较耗时
-            await rpg_game._dungeon_generate_pipeline.process()
-
-            # 存档当前世界状态，便于调试和回放
-            await store_game_async(rpg_game)
-
-        logger.info(
-            f"✅ dungeon generate pipeline 任务完成: job_id={job_id}, user={user_name}"
-        )
-
-    except Exception as e:
-        logger.error(
-            f"❌ dungeon generate pipeline 任务失败: job_id={job_id}, user={user_name}, error={e}"
-        )
-        save_task_error(job_id, str(e))
-        raise
+    await _run_home_task(
+        context,
+        user_name,
+        lambda game: activate_generate_dungeon(game),
+        lambda game: game._dungeon_generate_pipeline.process(),
+    )
 
 
-###################################################################################################################################################################
-###################################################################################################################################################################
 ###################################################################################################################################################################
 @procrastinate_app.task(queue="game", pass_context=True)
-async def execute_home_pipeline_task(
+async def execute_home_craft_consumable_task(
     context: JobContext,
     user_name: str,
+    materials: List[str],
 ) -> None:
-    """执行 home pipeline 任务"""
-    job_id = context.job.id
-    assert job_id is not None, "运行中的任务必然有 job id"
-    try:
-        logger.info(f"🚀 home pipeline 任务开始: job_id={job_id}, user={user_name}")
-
-        game_server = get_runtime_game_server()
-
-        async with game_server.acquire(user_name):
-
-            rpg_game = await _validate_player_at_home(user_name, game_server)
-
-            # 执行 home pipeline，包含行动计划执行、状态更新、会话消息生成等逻辑，可能比较耗时
-            await rpg_game._home_pipeline.process()
-
-            # 存档当前世界状态，便于调试和回放
-            await store_game_async(rpg_game)
-
-        logger.info(f"✅ home pipeline 任务完成: job_id={job_id}, user={user_name}")
-
-    except Exception as e:
-        logger.error(
-            f"❌ home pipeline 任务失败: job_id={job_id}, user={user_name}, error={e}"
-        )
-        save_task_error(job_id, str(e))
-        raise
+    """执行消耗品合成任务"""
+    await _run_home_task(
+        context,
+        user_name,
+        lambda game: activate_craft_consumable(game, materials),
+        lambda game: game._home_craft_pipeline.process(),
+    )
 
 
-###################################################################################################################################################################
-###################################################################################################################################################################
 ###################################################################################################################################################################
 @procrastinate_app.task(queue="game", pass_context=True)
-async def execute_home_craft_pipeline_task(
+async def execute_home_craft_gear_task(
     context: JobContext,
     user_name: str,
+    materials: List[str],
 ) -> None:
-    """执行 home craft pipeline 任务"""
-    job_id = context.job.id
-    assert job_id is not None, "运行中的任务必然有 job id"
-    try:
-        logger.info(
-            f"🚀 home craft pipeline 任务开始: job_id={job_id}, user={user_name}"
-        )
+    """执行装备合成任务"""
+    await _run_home_task(
+        context,
+        user_name,
+        lambda game: activate_craft_gear_item(game, materials),
+        lambda game: game._home_craft_pipeline.process(),
+    )
 
-        game_server = get_runtime_game_server()
 
-        async with game_server.acquire(user_name):
-
-            rpg_game = await _validate_player_at_home(user_name, game_server)
-
-            # 执行 home craft pipeline，仅处理合成相关动作，可能比较耗时
-            await rpg_game._home_craft_pipeline.process()
-
-            # 存档当前世界状态，便于调试和回放
-            await store_game_async(rpg_game)
-
-        logger.info(
-            f"✅ home craft pipeline 任务完成: job_id={job_id}, user={user_name}"
-        )
-
-    except Exception as e:
-        logger.error(
-            f"❌ home craft pipeline 任务失败: job_id={job_id}, user={user_name}, error={e}"
-        )
-        save_task_error(job_id, str(e))
-        raise
+###################################################################################################################################################################
+@procrastinate_app.task(queue="game", pass_context=True)
+async def execute_home_craft_costume_task(
+    context: JobContext,
+    user_name: str,
+    materials: List[str],
+) -> None:
+    """执行时装合成任务"""
+    await _run_home_task(
+        context,
+        user_name,
+        lambda game: activate_craft_costume_item(game, materials),
+        lambda game: game._home_craft_pipeline.process(),
+    )
 
 
 ###################################################################################################################################################################

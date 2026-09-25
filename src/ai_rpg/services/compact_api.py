@@ -11,7 +11,6 @@ from ..models import (
     CompactContextRequest,
     CompactContextResponse,
 )
-from .compact_action import activate_compact_context
 from .compact_tasks import execute_compact_context_task
 from .game_server_dependencies import CurrentGameServer
 from .task_dispatch import defer_room_task
@@ -38,7 +37,6 @@ async def compact_context(
         f"/api/compact_context/v1/: user={payload.user_name} target={payload.target_name}"
     )
 
-    # 获取房间并用每玩家锁避免并发状态竞争
     current_room = game_server.get_room(payload.user_name)
     if current_room is None:
         raise HTTPException(
@@ -46,30 +44,18 @@ async def compact_context(
             detail="没有登录，请先登录",
         )
 
-    async with current_room.transaction():
-
-        # 获取游戏实例（不限制场景状态，只要游戏存在即可）
-        rpg_game = current_room.game
-        if rpg_game is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="没有游戏，请先登录",
-            )
-
-        # 激活手动压缩动作
-        success, error_detail = activate_compact_context(
-            rpg_game,
-            payload.target_name,
+    # 轻量校验：游戏实例存在（激活动作在任务内执行）
+    if current_room.game is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="没有游戏，请先登录",
         )
-        if not success:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=error_detail,
-            )
 
     # 在锁外派发 compact pipeline 任务，让任务独立持锁执行
     job_id = await defer_room_task(
-        execute_compact_context_task, user_name=payload.user_name
+        execute_compact_context_task,
+        user_name=payload.user_name,
+        target_name=payload.target_name,
     )
 
     logger.info(f"📝 创建上下文压缩任务: job_id={job_id}, user={payload.user_name}")

@@ -2,11 +2,23 @@
 副本战斗任务模块
 """
 
+from typing import List
+
 from procrastinate import JobContext
 from loguru import logger
 from ..game.dbg_game import DBGGame
 from ..game.dbg_store import store_game_async
+from ..models import MonsterComponent
 from ..pgsql import procrastinate_app, save_task_error
+from .dungeon_combat_actions import (
+    activate_all_card_draws,
+    activate_equip_gear,
+    activate_monster_play_trigger,
+    activate_pass_turn,
+    activate_play_cards_specified,
+    activate_retreat,
+    activate_use_consumable,
+)
 from .game_server_runtime import get_runtime_game_server
 
 
@@ -90,6 +102,11 @@ async def execute_retreat_task(
             if not rpg_game.is_current_room_dungeon_combat:
                 raise ValueError("当前副本房间不是战斗房间")
 
+            # 激活撤退动作
+            success, message = activate_retreat(rpg_game)
+            if not success:
+                raise ValueError(message)
+
             # 执行战斗流程让 CombatOutcomeSystem 检测到角色死亡并判定失败
             await rpg_game._dungeon_combat_room_pipeline.execute()
 
@@ -147,6 +164,11 @@ async def execute_draw_cards_task(
             if not rpg_game.current_dungeon_combat_room.combat.is_ongoing:
                 raise ValueError("战斗未在进行中")
 
+            # 激活全员抽牌动作
+            success, message = activate_all_card_draws(rpg_game)
+            if not success:
+                raise ValueError(message)
+
             # 推进战斗流程处理抽牌
             await rpg_game._dungeon_combat_room_pipeline.process()
 
@@ -168,6 +190,9 @@ async def execute_draw_cards_task(
 async def execute_play_cards_task(
     context: JobContext,
     user_name: str,
+    actor_name: str,
+    card_name: str,
+    targets: List[str],
 ) -> None:
     """执行出牌任务"""
     job_id = context.job.id
@@ -194,6 +219,17 @@ async def execute_play_cards_task(
             if not rpg_game.current_dungeon_combat_room.combat.is_ongoing:
                 raise ValueError("战斗未在进行中")
 
+            # 激活出牌动作（怪物由 MonsterPrePlaySystem 自动决策，玩家按指定卡牌出牌）
+            actor_entity = rpg_game.get_actor_entity(actor_name)
+            if actor_entity is not None and actor_entity.has(MonsterComponent):
+                success, message = activate_monster_play_trigger(rpg_game, actor_name)
+            else:
+                success, message = await activate_play_cards_specified(
+                    rpg_game, actor_name, card_name, targets
+                )
+            if not success:
+                raise ValueError(message)
+
             # 推进战斗流程处理出牌
             await rpg_game._dungeon_combat_room_pipeline.process()
 
@@ -215,6 +251,7 @@ async def execute_play_cards_task(
 async def execute_pass_turn_task(
     context: JobContext,
     user_name: str,
+    actor_name: str,
 ) -> None:
     """执行过牌任务"""
     job_id = context.job.id
@@ -241,6 +278,11 @@ async def execute_pass_turn_task(
             if not rpg_game.current_dungeon_combat_room.combat.is_ongoing:
                 raise ValueError("战斗未在进行中")
 
+            # 激活过牌动作
+            success, message = activate_pass_turn(rpg_game, actor_name)
+            if not success:
+                raise ValueError(message)
+
             # 处理战斗流水线
             await rpg_game._dungeon_combat_room_pipeline.process()
 
@@ -262,6 +304,8 @@ async def execute_pass_turn_task(
 async def execute_use_consumable_task(
     context: JobContext,
     user_name: str,
+    item_name: str,
+    targets: List[str],
 ) -> None:
     """执行使用消耗品任务"""
     job_id = context.job.id
@@ -289,6 +333,11 @@ async def execute_use_consumable_task(
             if not rpg_game.current_dungeon_combat_room.combat.is_ongoing:
                 raise ValueError("战斗未在进行中")
 
+            # 激活使用消耗品动作
+            success, message = activate_use_consumable(rpg_game, item_name, targets)
+            if not success:
+                raise ValueError(message)
+
             # 处理战斗流水线
             await rpg_game._dungeon_combat_room_pipeline.process()
 
@@ -311,6 +360,7 @@ async def execute_use_consumable_task(
 async def execute_equip_gear_task(
     context: JobContext,
     user_name: str,
+    item_name: str,
 ) -> None:
     """执行使用装备任务"""
     job_id = context.job.id
@@ -337,6 +387,11 @@ async def execute_equip_gear_task(
             # 验证战斗状态
             if not rpg_game.current_dungeon_combat_room.combat.is_ongoing:
                 raise ValueError("战斗未在进行中")
+
+            # 激活使用装备动作
+            success, message = activate_equip_gear(rpg_game, item_name)
+            if not success:
+                raise ValueError(message)
 
             # 处理战斗流水线
             await rpg_game._dungeon_combat_room_pipeline.process()

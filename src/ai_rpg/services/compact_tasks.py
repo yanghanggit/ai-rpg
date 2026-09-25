@@ -8,6 +8,7 @@ from procrastinate import JobContext
 from ..game.dbg_game import DBGGame
 from ..game.dbg_store import store_game_async
 from ..pgsql import procrastinate_app, save_task_error
+from .compact_action import activate_compact_context
 from .game_server_runtime import get_runtime_game_server
 
 
@@ -18,6 +19,7 @@ from .game_server_runtime import get_runtime_game_server
 async def execute_compact_context_task(
     context: JobContext,
     user_name: str,
+    target_name: str,
 ) -> None:
     """执行手动上下文压缩任务"""
     job_id = context.job.id
@@ -33,6 +35,11 @@ async def execute_compact_context_task(
             if rpg_game is None:
                 raise ValueError(f"游戏实例不存在: user={user_name}")
             assert isinstance(rpg_game, DBGGame), "Invalid game type"
+
+            # 激活手动压缩动作
+            success, message = activate_compact_context(rpg_game, target_name)
+            if not success:
+                raise ValueError(message)
 
             # 执行 compact pipeline，仅处理手动触发的 CompactContextAction
             await rpg_game._compact_pipeline.process()

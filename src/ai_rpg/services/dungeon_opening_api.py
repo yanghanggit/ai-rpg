@@ -45,7 +45,6 @@ async def dungeon_opening_init(
 
     logger.info(f"/api/dungeon/opening/init/v1/: user={payload.user_name}")
 
-    # 获取房间并用每玩家锁避免并发状态竞争
     current_room = game_server.get_room(payload.user_name)
     if current_room is None:
         raise HTTPException(
@@ -53,33 +52,29 @@ async def dungeon_opening_init(
             detail="没有登录，请先登录",
         )
 
-    async with current_room.transaction():
+    # 验证副本操作的前置条件
+    rpg_game = _validate_dungeon_prerequisites(
+        user_name=payload.user_name,
+        game_server=game_server,
+    )
 
-        # 验证副本操作的前置条件
-        rpg_game = _validate_dungeon_prerequisites(
-            user_name=payload.user_name,
-            game_server=game_server,
+    # 验证当前副本房间是否为开场房间
+    if not rpg_game.is_current_room_dungeon_opening:
+        logger.error(
+            f"玩家 {payload.user_name} 开场房间初始化失败: 当前副本房间不是开场房间"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="当前副本房间不是开场房间",
         )
 
-        # 验证当前副本房间是否为开场房间
-        if not rpg_game.is_current_room_dungeon_opening:
-            logger.error(
-                f"玩家 {payload.user_name} 开场房间初始化失败: 当前副本房间不是开场房间"
-            )
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="当前副本房间不是开场房间",
-            )
-
-        # 状态守护：开场房间已初始化则拒绝重复初始化
-        if rpg_game.current_dungeon_opening_room.initialized:
-            logger.error(
-                f"玩家 {payload.user_name} 开场房间初始化失败: 开场房间已初始化"
-            )
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="开场房间已初始化",
-            )
+    # 状态守护：开场房间已初始化则拒绝重复初始化
+    if rpg_game.current_dungeon_opening_room.initialized:
+        logger.error(f"玩家 {payload.user_name} 开场房间初始化失败: 开场房间已初始化")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="开场房间已初始化",
+        )
 
     # 在锁外派发开场房间初始化任务，让任务独立持锁执行
     job_id = await defer_room_task(
@@ -111,7 +106,6 @@ async def dungeon_opening_generate_spoils(
 
     logger.info(f"/api/dungeon/opening/generate_spoils/v1/: user={payload.user_name}")
 
-    # 获取房间并用每玩家锁避免并发状态竞争
     current_room = game_server.get_room(payload.user_name)
     if current_room is None:
         raise HTTPException(
@@ -119,31 +113,27 @@ async def dungeon_opening_generate_spoils(
             detail="没有登录，请先登录",
         )
 
-    async with current_room.transaction():
+    # 验证副本操作的前置条件
+    rpg_game = _validate_dungeon_prerequisites(
+        user_name=payload.user_name,
+        game_server=game_server,
+    )
 
-        # 验证副本操作的前置条件
-        rpg_game = _validate_dungeon_prerequisites(
-            user_name=payload.user_name,
-            game_server=game_server,
+    # 验证当前副本房间是否为开场房间
+    if not rpg_game.is_current_room_dungeon_opening:
+        logger.error(f"玩家 {payload.user_name} 奖励生成失败: 当前副本房间不是开场房间")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="当前副本房间不是开场房间",
         )
 
-        # 验证当前副本房间是否为开场房间
-        if not rpg_game.is_current_room_dungeon_opening:
-            logger.error(
-                f"玩家 {payload.user_name} 奖励生成失败: 当前副本房间不是开场房间"
-            )
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="当前副本房间不是开场房间",
-            )
-
-        # 状态守护：奖励生成依赖开场初始化（叙事 + 牌库）已完成
-        if not rpg_game.current_dungeon_opening_room.initialized:
-            logger.error(f"玩家 {payload.user_name} 奖励生成失败: 开场房间尚未初始化")
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="开场房间尚未初始化（叙事 + 牌库），请先调用开场初始化接口",
-            )
+    # 状态守护：奖励生成依赖开场初始化（叙事 + 牌库）已完成
+    if not rpg_game.current_dungeon_opening_room.initialized:
+        logger.error(f"玩家 {payload.user_name} 奖励生成失败: 开场房间尚未初始化")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="开场房间尚未初始化（叙事 + 牌库），请先调用开场初始化接口",
+        )
 
     # 在锁外派发奖励生成任务，让任务独立持锁执行
     job_id = await defer_room_task(
@@ -178,7 +168,6 @@ async def dungeon_opening_pick_spoils_card(
         f"actor={payload.actor_name} card={payload.card_name}"
     )
 
-    # 获取房间并用每玩家锁避免并发状态竞争
     current_room = game_server.get_room(payload.user_name)
     if current_room is None:
         raise HTTPException(
@@ -186,29 +175,27 @@ async def dungeon_opening_pick_spoils_card(
             detail="没有登录，请先登录",
         )
 
-    async with current_room.transaction():
+    # 验证副本操作的前置条件
+    rpg_game = _validate_dungeon_prerequisites(
+        user_name=payload.user_name,
+        game_server=game_server,
+    )
 
-        # 验证副本操作的前置条件
-        rpg_game = _validate_dungeon_prerequisites(
-            user_name=payload.user_name,
-            game_server=game_server,
+    # 验证当前副本房间是否为开场房间
+    if not rpg_game.is_current_room_dungeon_opening:
+        logger.error(f"玩家 {payload.user_name} 领卡失败: 当前副本房间不是开场房间")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="当前副本房间不是开场房间",
         )
 
-        # 验证当前副本房间是否为开场房间
-        if not rpg_game.is_current_room_dungeon_opening:
-            logger.error(f"玩家 {payload.user_name} 领卡失败: 当前副本房间不是开场房间")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="当前副本房间不是开场房间",
-            )
-
-        # 状态守护：领卡依赖开场初始化（叙事 + 牌库）已完成
-        if not rpg_game.current_dungeon_opening_room.initialized:
-            logger.error(f"玩家 {payload.user_name} 领卡失败: 开场房间尚未初始化")
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="开场房间尚未初始化（叙事 + 牌库），请先调用开场初始化接口",
-            )
+    # 状态守护：领卡依赖开场初始化（叙事 + 牌库）已完成
+    if not rpg_game.current_dungeon_opening_room.initialized:
+        logger.error(f"玩家 {payload.user_name} 领卡失败: 开场房间尚未初始化")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="开场房间尚未初始化（叙事 + 牌库），请先调用开场初始化接口",
+        )
 
     # 在锁外派发领卡任务，让任务独立持锁执行
     job_id = await defer_room_task(

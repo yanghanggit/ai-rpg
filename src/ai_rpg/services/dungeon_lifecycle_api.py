@@ -99,7 +99,6 @@ async def dungeon_advance_stage(
 
     logger.info(f"/api/dungeon/progress/advance_stage/v1/: user={payload.user_name}")
 
-    # 获取房间并用每玩家锁避免并发状态竞争
     current_room = game_server.get_room(payload.user_name)
     if current_room is None:
         raise HTTPException(
@@ -190,7 +189,6 @@ async def dungeon_exit(
 
     logger.info(f"/api/dungeon/exit/v1/: user={payload.user_name}")
 
-    # 获取房间并用每玩家锁避免并发状态竞争
     current_room = game_server.get_room(payload.user_name)
     if current_room is None:
         raise HTTPException(
@@ -198,33 +196,29 @@ async def dungeon_exit(
             detail="没有登录，请先登录",
         )
 
-    async with current_room.transaction():
+    # 验证副本操作的前置条件
+    dbg_game = _validate_dungeon_prerequisites(
+        user_name=payload.user_name,
+        game_server=game_server,
+    )
 
-        # 验证副本操作的前置条件
-        dbg_game = _validate_dungeon_prerequisites(
-            user_name=payload.user_name,
-            game_server=game_server,
-        )
+    # 若当前为战斗房间，验证战斗是否已结束
+    if dbg_game.is_current_room_dungeon_combat:
+        if not dbg_game.current_dungeon_combat_room.combat.is_post_combat:
+            logger.error(f"玩家 {payload.user_name} 返回家园失败: 战斗未结束")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="只能在战斗结束后回家",
+            )
 
-        # 若当前为战斗房间，验证战斗是否已结束
-        if dbg_game.is_current_room_dungeon_combat:
-            if not dbg_game.current_dungeon_combat_room.combat.is_post_combat:
-                logger.error(f"玩家 {payload.user_name} 返回家园失败: 战斗未结束")
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="只能在战斗结束后回家",
-                )
-
-        # 若当前为开场房间，验证是否已完成初始化（叙事 + 牌库）
-        elif dbg_game.is_current_room_dungeon_opening:
-            if not dbg_game.current_dungeon_opening_room.initialized:
-                logger.error(
-                    f"玩家 {payload.user_name} 返回家园失败: 开场房间尚未初始化"
-                )
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail="开场房间尚未初始化，无法退出",
-                )
+    # 若当前为开场房间，验证是否已完成初始化（叙事 + 牌库）
+    elif dbg_game.is_current_room_dungeon_opening:
+        if not dbg_game.current_dungeon_opening_room.initialized:
+            logger.error(f"玩家 {payload.user_name} 返回家园失败: 开场房间尚未初始化")
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="开场房间尚未初始化，无法退出",
+            )
 
     # 在锁外派发退出副本任务，让任务独立持锁执行
     job_id = await defer_room_task(
@@ -255,7 +249,6 @@ async def dungeon_enter(
 
     logger.info(f"/api/home/enter_dungeon/v1/: user={payload.user_name}")
 
-    # 获取房间并用每玩家锁避免并发状态竞争
     current_room = game_server.get_room(payload.user_name)
     if current_room is None:
         raise HTTPException(

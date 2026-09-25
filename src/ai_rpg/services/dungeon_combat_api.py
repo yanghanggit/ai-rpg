@@ -22,18 +22,10 @@ from ..models import (
     DungeonCombatEquipGearItemResponse,
     DungeonCombatCollectLootRequest,
     DungeonCombatCollectLootResponse,
-    MonsterComponent,
 )
 from .dungeon_lifecycle_api import _validate_dungeon_prerequisites
 from .task_dispatch import defer_room_task
 from .dungeon_combat_actions import (
-    activate_all_card_draws,
-    activate_equip_gear,
-    activate_monster_play_trigger,
-    activate_pass_turn,
-    activate_play_cards_specified,
-    activate_retreat,
-    activate_use_consumable,
     collect_loot,
 )
 from .dungeon_combat_tasks import (
@@ -73,41 +65,27 @@ async def dungeon_combat_retreat(
             detail="没有登录，请先登录",
         )
 
-    async with current_room.transaction():
+    # 验证副本操作的前置条件
+    rpg_game = _validate_dungeon_prerequisites(
+        user_name=payload.user_name,
+        game_server=game_server,
+    )
 
-        # 验证副本操作的前置条件
-        rpg_game = _validate_dungeon_prerequisites(
-            user_name=payload.user_name,
-            game_server=game_server,
+    # 验证当前副本房间是否为战斗房间
+    if not rpg_game.is_current_room_dungeon_combat:
+        logger.error(f"玩家 {payload.user_name} 撤退失败: 当前副本房间不是战斗房间")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="当前副本房间不是战斗房间",
         )
 
-        # 验证当前副本房间是否为战斗房间
-        if not rpg_game.is_current_room_dungeon_combat:
-            logger.error(f"玩家 {payload.user_name} 撤退失败: 当前副本房间不是战斗房间")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="当前副本房间不是战斗房间",
-            )
-
-        # 验证战斗是否在进行中
-        if not rpg_game.current_dungeon_combat_room.combat.is_ongoing:
-            logger.error(f"玩家 {payload.user_name} 撤退失败: 战斗未在进行中")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="只能在战斗进行中撤退",
-            )
-
-        # 同步激活撤退动作（必须在 pipeline 执行前完成）
-        success, message = activate_retreat(rpg_game)
-        if not success:
-            logger.error(f"玩家 {payload.user_name} 撤退失败: {message}")
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"撤退失败: {message}",
-            )
-
-        # 激活撤退动作成功
-        logger.info(f"玩家 {payload.user_name} 撤退动作激活成功: {message}")
+    # 验证战斗是否在进行中
+    if not rpg_game.current_dungeon_combat_room.combat.is_ongoing:
+        logger.error(f"玩家 {payload.user_name} 撤退失败: 战斗未在进行中")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="只能在战斗进行中撤退",
+        )
 
     # 在锁外派发任务，让任务独立持锁执行
     job_id = await defer_room_task(execute_retreat_task, user_name=payload.user_name)
@@ -136,7 +114,6 @@ async def dungeon_combat_init(
 
     logger.info(f"/api/dungeon/combat/init/v1/: user={payload.user_name}")
 
-    # 获取房间并用每玩家锁避免并发状态竞争
     current_room = game_server.get_room(payload.user_name)
     if current_room is None:
         raise HTTPException(
@@ -144,31 +121,29 @@ async def dungeon_combat_init(
             detail="没有登录，请先登录",
         )
 
-    async with current_room.transaction():
+    # 验证副本操作的前置条件
+    rpg_game = _validate_dungeon_prerequisites(
+        user_name=payload.user_name,
+        game_server=game_server,
+    )
 
-        # 验证副本操作的前置条件
-        rpg_game = _validate_dungeon_prerequisites(
-            user_name=payload.user_name,
-            game_server=game_server,
+    # 验证当前副本房间是否为战斗房间
+    if not rpg_game.is_current_room_dungeon_combat:
+        logger.error(
+            f"玩家 {payload.user_name} 战斗初始化失败: 当前副本房间不是战斗房间"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="当前副本房间不是战斗房间",
         )
 
-        # 验证当前副本房间是否为战斗房间
-        if not rpg_game.is_current_room_dungeon_combat:
-            logger.error(
-                f"玩家 {payload.user_name} 战斗初始化失败: 当前副本房间不是战斗房间"
-            )
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="当前副本房间不是战斗房间",
-            )
-
-        # 校验战斗处于初始化阶段
-        if not rpg_game.current_dungeon_combat_room.combat.is_initializing:
-            logger.error(f"玩家 {payload.user_name} 战斗初始化失败: 战斗未处于开始阶段")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="战斗未处于开始阶段",
-            )
+    # 校验战斗处于初始化阶段
+    if not rpg_game.current_dungeon_combat_room.combat.is_initializing:
+        logger.error(f"玩家 {payload.user_name} 战斗初始化失败: 战斗未处于开始阶段")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="战斗未处于开始阶段",
+        )
 
     # 派发战斗初始化任务（在锁外派发，让任务独立持锁执行）
     job_id = await defer_room_task(
@@ -200,7 +175,6 @@ async def dungeon_combat_collect_loot(
 
     logger.info(f"/api/dungeon/combat/collect_loot/v1/: user={payload.user_name}")
 
-    # 获取房间并用每玩家锁避免并发状态竞争
     current_room = game_server.get_room(payload.user_name)
     if current_room is None:
         raise HTTPException(
@@ -257,7 +231,6 @@ async def dungeon_combat_draw_cards(
 
     logger.info(f"/api/dungeon/combat/draw_cards/v1/: user={payload.user_name}")
 
-    # 获取房间并用每玩家锁避免并发状态竞争
     current_room = game_server.get_room(payload.user_name)
     if current_room is None:
         raise HTTPException(
@@ -265,40 +238,27 @@ async def dungeon_combat_draw_cards(
             detail="没有登录，请先登录",
         )
 
-    async with current_room.transaction():
+    # 验证副本操作的前置条件
+    rpg_game = _validate_dungeon_prerequisites(
+        user_name=payload.user_name,
+        game_server=game_server,
+    )
 
-        # 验证副本操作的前置条件
-        rpg_game = _validate_dungeon_prerequisites(
-            user_name=payload.user_name,
-            game_server=game_server,
+    # 验证当前副本房间是否为战斗房间
+    if not rpg_game.is_current_room_dungeon_combat:
+        logger.error(f"玩家 {payload.user_name} 全员抽卡失败: 当前副本房间不是战斗房间")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="当前副本房间不是战斗房间",
         )
 
-        # 验证当前副本房间是否为战斗房间
-        if not rpg_game.is_current_room_dungeon_combat:
-            logger.error(
-                f"玩家 {payload.user_name} 全员抽卡失败: 当前副本房间不是战斗房间"
-            )
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="当前副本房间不是战斗房间",
-            )
-
-        # 验证战斗是否在进行中
-        if not rpg_game.current_dungeon_combat_room.combat.is_ongoing:
-            logger.error(f"玩家 {payload.user_name} 全员抽卡失败: 战斗未在进行中")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="战斗未在进行中",
-            )
-
-        # 同步激活全员抽牌动作（必须在 pipeline 执行前完成）
-        success, message = activate_all_card_draws(rpg_game)
-        if not success:
-            logger.error(f"全员抽牌失败: {message}")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"激活全员抽牌动作失败: {message}",
-            )
+    # 验证战斗是否在进行中
+    if not rpg_game.current_dungeon_combat_room.combat.is_ongoing:
+        logger.error(f"玩家 {payload.user_name} 全员抽卡失败: 战斗未在进行中")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="战斗未在进行中",
+        )
 
     # 派发任务（在锁外派发，让任务独立持锁执行）
     job_id = await defer_room_task(execute_draw_cards_task, user_name=payload.user_name)
@@ -328,7 +288,6 @@ async def dungeon_combat_play_cards(
 
     logger.info(f"/api/dungeon/combat/play_cards/v1/: user={payload.user_name}")
 
-    # 获取房间并用每玩家锁避免并发状态竞争
     current_room = game_server.get_room(payload.user_name)
     if current_room is None:
         raise HTTPException(
@@ -336,62 +295,45 @@ async def dungeon_combat_play_cards(
             detail="没有登录，请先登录",
         )
 
-    async with current_room.transaction():
+    # 验证副本操作的前置条件
+    rpg_game = _validate_dungeon_prerequisites(
+        user_name=payload.user_name,
+        game_server=game_server,
+    )
 
-        # 验证副本操作的前置条件
-        rpg_game = _validate_dungeon_prerequisites(
-            user_name=payload.user_name,
-            game_server=game_server,
+    # 验证当前副本房间是否为战斗房间
+    if not rpg_game.is_current_room_dungeon_combat:
+        logger.error(f"玩家 {payload.user_name} 出牌失败: 当前副本房间不是战斗房间")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="当前副本房间不是战斗房间",
         )
 
-        # 验证当前副本房间是否为战斗房间
-        if not rpg_game.is_current_room_dungeon_combat:
-            logger.error(f"玩家 {payload.user_name} 出牌失败: 当前副本房间不是战斗房间")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="当前副本房间不是战斗房间",
-            )
+    # 验证战斗是否在进行中
+    if not rpg_game.current_dungeon_combat_room.combat.is_ongoing:
+        logger.error(f"玩家 {payload.user_name} 出牌失败: 战斗未在进行中")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="战斗未在进行中",
+        )
 
-        # 验证战斗是否在进行中
-        if not rpg_game.current_dungeon_combat_room.combat.is_ongoing:
-            logger.error(f"玩家 {payload.user_name} 出牌失败: 战斗未在进行中")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="战斗未在进行中",
-            )
-
-        # 验证当前回合是否存在且未完成
-        last_round = rpg_game.current_dungeon_combat_room.combat.latest_round
-        if (
-            last_round is None
-            or last_round.is_completed
-            or not last_round.draw_completed
-        ):
-            logger.error(f"玩家 {payload.user_name} 出牌失败: 当前没有未完成的回合")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="当前没有未完成的回合可供打牌",
-            )
-
-        # 同步激活动作出牌（怪物由 MonsterPrePlaySystem 自动决策，玩家按指定卡牌出牌）
-        actor_entity = rpg_game.get_actor_entity(payload.actor_name)
-        if actor_entity is not None and actor_entity.has(MonsterComponent):
-            success, message = activate_monster_play_trigger(
-                rpg_game, payload.actor_name
-            )
-        else:
-            success, message = await activate_play_cards_specified(
-                rpg_game, payload.actor_name, payload.card_name, payload.targets
-            )
-        if not success:
-            logger.error(f"玩家 {payload.user_name} 出牌失败: {message}")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"出牌失败: {message}",
-            )
+    # 验证当前回合是否存在且未完成
+    last_round = rpg_game.current_dungeon_combat_room.combat.latest_round
+    if last_round is None or last_round.is_completed or not last_round.draw_completed:
+        logger.error(f"玩家 {payload.user_name} 出牌失败: 当前没有未完成的回合")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="当前没有未完成的回合可供打牌",
+        )
 
     # 在锁外派发任务，让任务独立持锁执行
-    job_id = await defer_room_task(execute_play_cards_task, user_name=payload.user_name)
+    job_id = await defer_room_task(
+        execute_play_cards_task,
+        user_name=payload.user_name,
+        actor_name=payload.actor_name,
+        card_name=payload.card_name,
+        targets=payload.targets,
+    )
 
     logger.info(f"📝 创建出牌任务: job_id={job_id}, user={payload.user_name}")
 
@@ -417,7 +359,6 @@ async def dungeon_combat_pass_turn(
 
     logger.info(f"/api/dungeon/combat/pass_turn/v1/: user={payload.user_name}")
 
-    # 获取房间并用每玩家锁避免并发状态竞争
     current_room = game_server.get_room(payload.user_name)
     if current_room is None:
         raise HTTPException(
@@ -425,54 +366,43 @@ async def dungeon_combat_pass_turn(
             detail="没有登录，请先登录",
         )
 
-    async with current_room.transaction():
+    # 验证副本操作的前置条件
+    rpg_game = _validate_dungeon_prerequisites(
+        user_name=payload.user_name,
+        game_server=game_server,
+    )
 
-        # 验证副本操作的前置条件
-        rpg_game = _validate_dungeon_prerequisites(
-            user_name=payload.user_name,
-            game_server=game_server,
+    # 验证当前副本房间是否为战斗房间
+    if not rpg_game.is_current_room_dungeon_combat:
+        logger.error(f"玩家 {payload.user_name} 过牌失败: 当前副本房间不是战斗房间")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="当前副本房间不是战斗房间",
         )
 
-        # 验证当前副本房间是否为战斗房间
-        if not rpg_game.is_current_room_dungeon_combat:
-            logger.error(f"玩家 {payload.user_name} 过牌失败: 当前副本房间不是战斗房间")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="当前副本房间不是战斗房间",
-            )
+    # 验证战斗是否在进行中
+    if not rpg_game.current_dungeon_combat_room.combat.is_ongoing:
+        logger.error(f"玩家 {payload.user_name} 过牌失败: 战斗未在进行中")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="战斗未在进行中",
+        )
 
-        # 验证战斗是否在进行中
-        if not rpg_game.current_dungeon_combat_room.combat.is_ongoing:
-            logger.error(f"玩家 {payload.user_name} 过牌失败: 战斗未在进行中")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="战斗未在进行中",
-            )
-
-        # 验证当前回合是否存在且未完成
-        last_round = rpg_game.current_dungeon_combat_room.combat.latest_round
-        if (
-            last_round is None
-            or last_round.is_completed
-            or not last_round.draw_completed
-        ):
-            logger.error(f"玩家 {payload.user_name} 过牌失败: 当前没有未完成的回合")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="当前没有未完成的回合可供过牌",
-            )
-
-        # 同步激活过牌动作
-        success, message = activate_pass_turn(rpg_game, payload.actor_name)
-        if not success:
-            logger.error(f"玩家 {payload.user_name} 过牌失败: {message}")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"过牌失败: {message}",
-            )
+    # 验证当前回合是否存在且未完成
+    last_round = rpg_game.current_dungeon_combat_room.combat.latest_round
+    if last_round is None or last_round.is_completed or not last_round.draw_completed:
+        logger.error(f"玩家 {payload.user_name} 过牌失败: 当前没有未完成的回合")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="当前没有未完成的回合可供过牌",
+        )
 
     # 在锁外派发任务，让任务独立持锁执行
-    job_id = await defer_room_task(execute_pass_turn_task, user_name=payload.user_name)
+    job_id = await defer_room_task(
+        execute_pass_turn_task,
+        user_name=payload.user_name,
+        actor_name=payload.actor_name,
+    )
 
     logger.info(f"📝 创建过牌任务: job_id={job_id}, user={payload.user_name}")
 
@@ -501,7 +431,6 @@ async def dungeon_combat_use_consumable(
         f"item={payload.item_name}"
     )
 
-    # 获取房间并用每玩家锁避免并发状态竞争
     current_room = game_server.get_room(payload.user_name)
     if current_room is None:
         raise HTTPException(
@@ -509,61 +438,45 @@ async def dungeon_combat_use_consumable(
             detail="没有登录，请先登录",
         )
 
-    async with current_room.transaction():
+    # 验证副本操作的前置条件
+    rpg_game = _validate_dungeon_prerequisites(
+        user_name=payload.user_name,
+        game_server=game_server,
+    )
 
-        # 验证副本操作的前置条件
-        rpg_game = _validate_dungeon_prerequisites(
-            user_name=payload.user_name,
-            game_server=game_server,
+    # 验证当前副本房间是否为战斗房间
+    if not rpg_game.is_current_room_dungeon_combat:
+        logger.error(
+            f"玩家 {payload.user_name} 使用消耗品失败: 当前副本房间不是战斗房间"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="当前副本房间不是战斗房间",
         )
 
-        # 验证当前副本房间是否为战斗房间
-        if not rpg_game.is_current_room_dungeon_combat:
-            logger.error(
-                f"玩家 {payload.user_name} 使用消耗品失败: 当前副本房间不是战斗房间"
-            )
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="当前副本房间不是战斗房间",
-            )
-
-        # 验证战斗是否在进行中
-        if not rpg_game.current_dungeon_combat_room.combat.is_ongoing:
-            logger.error(f"玩家 {payload.user_name} 使用消耗品失败: 战斗未在进行中")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="战斗未在进行中",
-            )
-
-        # 验证当前回合是否存在且未完成
-        last_round = rpg_game.current_dungeon_combat_room.combat.latest_round
-        if (
-            last_round is None
-            or last_round.is_completed
-            or not last_round.draw_completed
-        ):
-            logger.error(
-                f"玩家 {payload.user_name} 使用消耗品失败: 当前没有未完成的回合"
-            )
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="当前没有未完成的回合",
-            )
-
-        # 同步激活使用消耗品动作
-        success, message = activate_use_consumable(
-            rpg_game, payload.item_name, payload.targets
+    # 验证战斗是否在进行中
+    if not rpg_game.current_dungeon_combat_room.combat.is_ongoing:
+        logger.error(f"玩家 {payload.user_name} 使用消耗品失败: 战斗未在进行中")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="战斗未在进行中",
         )
-        if not success:
-            logger.error(f"玩家 {payload.user_name} 使用消耗品失败: {message}")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"使用消耗品失败: {message}",
-            )
+
+    # 验证当前回合是否存在且未完成
+    last_round = rpg_game.current_dungeon_combat_room.combat.latest_round
+    if last_round is None or last_round.is_completed or not last_round.draw_completed:
+        logger.error(f"玩家 {payload.user_name} 使用消耗品失败: 当前没有未完成的回合")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="当前没有未完成的回合",
+        )
 
     # 在锁外派发任务，让任务独立持锁执行
     job_id = await defer_room_task(
-        execute_use_consumable_task, user_name=payload.user_name
+        execute_use_consumable_task,
+        user_name=payload.user_name,
+        item_name=payload.item_name,
+        targets=payload.targets,
     )
 
     logger.info(f"📝 创建使用消耗品任务: job_id={job_id}, user={payload.user_name}")
@@ -593,7 +506,6 @@ async def dungeon_combat_equip_gear(
         f"item={payload.item_name}"
     )
 
-    # 获取房间并用每玩家锁避免并发状态竞争
     current_room = game_server.get_room(payload.user_name)
     if current_room is None:
         raise HTTPException(
@@ -601,56 +513,43 @@ async def dungeon_combat_equip_gear(
             detail="没有登录，请先登录",
         )
 
-    async with current_room.transaction():
+    # 验证副本操作的前置条件
+    rpg_game = _validate_dungeon_prerequisites(
+        user_name=payload.user_name,
+        game_server=game_server,
+    )
 
-        # 验证副本操作的前置条件
-        rpg_game = _validate_dungeon_prerequisites(
-            user_name=payload.user_name,
-            game_server=game_server,
+    # 验证当前副本房间是否为战斗房间
+    if not rpg_game.is_current_room_dungeon_combat:
+        logger.error(f"玩家 {payload.user_name} 使用装备失败: 当前副本房间不是战斗房间")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="当前副本房间不是战斗房间",
         )
 
-        # 验证当前副本房间是否为战斗房间
-        if not rpg_game.is_current_room_dungeon_combat:
-            logger.error(
-                f"玩家 {payload.user_name} 使用装备失败: 当前副本房间不是战斗房间"
-            )
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="当前副本房间不是战斗房间",
-            )
+    # 验证战斗是否在进行中
+    if not rpg_game.current_dungeon_combat_room.combat.is_ongoing:
+        logger.error(f"玩家 {payload.user_name} 使用装备失败: 战斗未在进行中")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="战斗未在进行中",
+        )
 
-        # 验证战斗是否在进行中
-        if not rpg_game.current_dungeon_combat_room.combat.is_ongoing:
-            logger.error(f"玩家 {payload.user_name} 使用装备失败: 战斗未在进行中")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="战斗未在进行中",
-            )
-
-        # 验证当前回合是否存在且未完成
-        last_round = rpg_game.current_dungeon_combat_room.combat.latest_round
-        if (
-            last_round is None
-            or last_round.is_completed
-            or not last_round.draw_completed
-        ):
-            logger.error(f"玩家 {payload.user_name} 使用装备失败: 当前没有未完成的回合")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="当前没有未完成的回合",
-            )
-
-        # 同步激活使用装备动作
-        success, message = activate_equip_gear(rpg_game, payload.item_name)
-        if not success:
-            logger.error(f"玩家 {payload.user_name} 使用装备失败: {message}")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"使用装备失败: {message}",
-            )
+    # 验证当前回合是否存在且未完成
+    last_round = rpg_game.current_dungeon_combat_room.combat.latest_round
+    if last_round is None or last_round.is_completed or not last_round.draw_completed:
+        logger.error(f"玩家 {payload.user_name} 使用装备失败: 当前没有未完成的回合")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="当前没有未完成的回合",
+        )
 
     # 在锁外派发任务，让任务独立持锁执行
-    job_id = await defer_room_task(execute_equip_gear_task, user_name=payload.user_name)
+    job_id = await defer_room_task(
+        execute_equip_gear_task,
+        user_name=payload.user_name,
+        item_name=payload.item_name,
+    )
 
     logger.info(f"📝 创建使用装备任务: job_id={job_id}, user={payload.user_name}")
 

@@ -5,8 +5,8 @@
 并发模型
 --------
 * ``GameServer`` 只负责房间的**注册 / 注销**，用内部 ``asyncio.Lock`` 保证注册表
-  变更（create / remove）的原子性；``has_room`` / ``get_room`` 是单事件循环下的
-  原子只读操作。
+  变更（create / remove）的原子性；``has_room`` / ``get_room`` / ``snapshot_rooms``
+  是单事件循环下的原子只读操作。
 * 房间**内部状态**的一致性由 ``PlayerRoom`` 自己的锁负责，统一通过
   ``async with game_server.acquire(user_name) as room:`` 进入。
 * 移除房间时 ``remove_room`` 会等待该房间进行中的事务结束再关闭，避免后台任务
@@ -66,6 +66,15 @@ class GameServer:
         return room
 
     ###############################################################################################################################################
+    def snapshot_rooms(self) -> List[PlayerRoom]:
+        """返回当前房间的只读快照（不持锁、不刷新活跃时间、不复制游戏状态）。
+
+        在无 ``await`` 的瞬间拷贝引用，得到某一时刻的一致视图，供定时器等遍历使用；
+        快照中的房间可能随后被移除/关闭，权威判断仍应走 ``acquire``。
+        """
+        return list(self._rooms.values())
+
+    ###############################################################################################################################################
     async def create_room(self, user_name: str) -> PlayerRoom:
         """为指定玩家创建新房间；房间已存在时抛 ``RoomAlreadyExistsError``。"""
         async with self._lock:
@@ -106,8 +115,8 @@ class GameServer:
         deadline = current - ttl
         reaped: List[str] = []
 
-        # 遍历所有房间，尝试回收空闲房间
-        for name, room in list(self._rooms.items()):
+        # 遍历房间快照，尝试回收空闲房间
+        for room in self.snapshot_rooms():
 
             # 尝试回收空闲房间，如果房间仍然忙或未达到回收条件则跳过
             if not await room.evict_if_idle(deadline):
@@ -115,11 +124,11 @@ class GameServer:
 
             # 从注册表中移除已回收的房间
             async with self._lock:
-                if self._rooms.get(name) is room:
-                    self._rooms.pop(name, None)
+                if self._rooms.get(room.username) is room:
+                    self._rooms.pop(room.username, None)
 
             # 将已回收的房间加入回收列表
-            reaped.append(name)
+            reaped.append(room.username)
 
         # 返回所有已回收的房间列表
         return reaped

@@ -50,6 +50,11 @@ class PlayerRoom:
     def is_closed(self) -> bool:
         return self._closed
 
+    @property
+    def is_busy(self) -> bool:
+        """是否有进行中的事务（供定时器/回收器等需非阻塞判断的场景使用）。"""
+        return self._lock.locked()
+
     def touch(self) -> None:
         """刷新房间活跃时间。"""
         self._last_active_at = time.monotonic()

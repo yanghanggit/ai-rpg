@@ -38,6 +38,7 @@ from ai_rpg.services.entity_details import (
     entity_details_api_router,
 )
 from ai_rpg.services.game_server_runtime import bind_runtime_game_server
+from ai_rpg.services.gameplay_scheduler import run_gameplay_scheduler
 from ai_rpg.services.home_api import home_api_router
 from ai_rpg.services.login import login_api_router
 from ai_rpg.services.new_game import new_game_api_router
@@ -79,6 +80,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             reaper_task = asyncio.create_task(
                 _room_reaper(game_server, room_ttl, reaper_interval)
             )
+        tick_interval = float(os.environ.get("GAME_TICK_INTERVAL_SECONDS", "60"))
+        scheduler_task: Optional[asyncio.Task[None]] = None
+        if tick_interval > 0:
+            scheduler_task = asyncio.create_task(
+                run_gameplay_scheduler(game_server, tick_interval)
+            )
         try:
             yield
         finally:
@@ -86,6 +93,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
                 reaper_task.cancel()
                 with contextlib.suppress(asyncio.CancelledError):
                     await asyncio.wait_for(reaper_task, timeout=10)
+            if scheduler_task is not None:
+                scheduler_task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await asyncio.wait_for(scheduler_task, timeout=10)
             worker_task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await asyncio.wait_for(worker_task, timeout=10)

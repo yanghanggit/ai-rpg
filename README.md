@@ -66,6 +66,18 @@ curl http://127.0.0.1:8000/
 pm2 start ecosystem.config.js
 ```
 
+### 后台定时任务
+
+服务器在 `lifespan` 内启动两个进程内定时循环（与 `GameServer` 同进程 / 同事件循环）：
+
+| 环境变量 | 默认 | 说明 |
+| --- | --- | --- |
+| `GAME_ROOM_REAP_INTERVAL_SECONDS` | `60` | 空闲房间回收的扫描间隔 |
+| `GAME_ROOM_TTL_SECONDS` | `1800` | 房间空闲多久后被回收；`<=0` 关闭回收 |
+| `GAME_TICK_INTERVAL_SECONDS` | `60` | 游戏玩法定时器（`services/gameplay_scheduler.py`）的间隔；`<=0` 关闭 |
+
+游戏玩法定时器目前仅为骨架（`on_room_tick` 为空实现），用于后续添加“定时查看 ECS 状态并触发玩法”的逻辑。
+
 ### 面向 AI 代理的工具（非人工操作）
 
 游戏的「操作」由 AI 代理驱动，日常无需人手动执行。本仓库提供两条代理路径，

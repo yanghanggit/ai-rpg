@@ -38,7 +38,7 @@ from ai_rpg.services.dungeon_state import dungeon_state_api_router
 from ai_rpg.services.entity_details import (
     entity_details_api_router,
 )
-from ai_rpg.services.game_server_dependencies import get_game_server
+from ai_rpg.services.game_server_runtime import bind_runtime_game_server
 from ai_rpg.services.home_api import home_api_router
 from ai_rpg.services.login import login_api_router
 from ai_rpg.services.new_game import new_game_api_router
@@ -67,6 +67,9 @@ async def _room_reaper(game_server: GameServer, ttl: float, interval: float) -> 
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """在 FastAPI 生命周期内打开 Procrastinate 并嵌入运行 worker（与 GameServer 单例同进程/同事件循环）"""
     async with procrastinate_app.open_async():
+        game_server = GameServer()
+        app.state.game_server = game_server
+        bind_runtime_game_server(game_server)
         worker_task = asyncio.create_task(
             procrastinate_app.run_worker_async(install_signal_handlers=False)
         )
@@ -75,7 +78,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         reaper_task: Optional[asyncio.Task[None]] = None
         if room_ttl > 0:
             reaper_task = asyncio.create_task(
-                _room_reaper(get_game_server(), room_ttl, reaper_interval)
+                _room_reaper(game_server, room_ttl, reaper_interval)
             )
         try:
             yield

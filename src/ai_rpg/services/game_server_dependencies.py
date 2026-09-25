@@ -1,23 +1,20 @@
-"""游戏服务器依赖注入模块
+"""游戏服务器依赖注入模块。
 
-提供 FastAPI 依赖注入的游戏服务器单例实例。
+HTTP 请求从 ``app.state`` 获取进程级 GameServer；后台任务见 ``game_server_runtime``。
 """
 
-from typing import Annotated, Optional
-from fastapi import Depends
+from typing import Annotated
+
+from fastapi import Depends, Request
+
 from ..game.game_server import GameServer
 
 
-_game_server_instance: Optional[GameServer] = None
-
-
 ###############################################################################################################################################
-def get_game_server() -> GameServer:
-    """获取游戏服务器单例实例"""
-    global _game_server_instance
-    if _game_server_instance is None:
-        _game_server_instance = GameServer()
-    return _game_server_instance
+def get_game_server(request: Request) -> GameServer:
+    """FastAPI 依赖：从 ``app.state`` 获取进程级 GameServer。"""
+    game_server: GameServer = request.app.state.game_server
+    return game_server
 
 
 ###############################################################################################################################################

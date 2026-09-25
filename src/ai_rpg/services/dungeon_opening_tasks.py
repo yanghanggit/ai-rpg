@@ -7,7 +7,7 @@ from loguru import logger
 from ..game.dbg_game import DBGGame
 from ..game.dbg_store import store_game_async
 from ..pgsql import procrastinate_app, save_task_error
-from .game_server_dependencies import get_game_server
+from .game_server_runtime import get_runtime_game_server
 from .dungeon_opening_actions import (
     activate_generate_spoils,
     activate_pick_spoils_card,
@@ -29,7 +29,7 @@ async def execute_opening_room_init_task(
 
         logger.info(f"🚀 开场房间初始化任务开始: job_id={job_id}, user={user_name}")
 
-        game_server = get_game_server()
+        game_server = get_runtime_game_server()
 
         # 获取房间并用每玩家锁避免并发状态竞争
         async with game_server.acquire(user_name) as room:
@@ -79,7 +79,7 @@ async def execute_generate_spoils_task(
 
         logger.info(f"🚀 奖励生成任务开始: job_id={job_id}, user={user_name}")
 
-        game_server = get_game_server()
+        game_server = get_runtime_game_server()
 
         # 获取房间并用每玩家锁避免并发状态竞争
         async with game_server.acquire(user_name) as room:
@@ -135,7 +135,7 @@ async def execute_pick_spoils_card_task(
             f"actor={actor_name}, card={card_name}"
         )
 
-        game_server = get_game_server()
+        game_server = get_runtime_game_server()
 
         # 获取房间并用每玩家锁避免并发状态竞争
         async with game_server.acquire(user_name) as room:

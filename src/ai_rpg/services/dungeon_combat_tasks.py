@@ -7,7 +7,7 @@ from loguru import logger
 from ..game.dbg_game import DBGGame
 from ..game.dbg_store import store_game_async
 from ..pgsql import procrastinate_app, save_task_error
-from .game_server_dependencies import get_game_server
+from .game_server_runtime import get_runtime_game_server
 
 
 ###################################################################################################################################################################
@@ -25,7 +25,7 @@ async def execute_init_combat_task(
 
         logger.info(f"🚀 战斗初始化任务开始: job_id={job_id}, user={user_name}")
 
-        game_server = get_game_server()
+        game_server = get_runtime_game_server()
 
         # 获取房间并用每玩家锁避免并发状态竞争
         async with game_server.acquire(user_name) as room:
@@ -75,7 +75,7 @@ async def execute_retreat_task(
 
         logger.info(f"🚀 撤退任务开始: job_id={job_id}, user={user_name}")
 
-        game_server = get_game_server()
+        game_server = get_runtime_game_server()
 
         # 获取房间并用每玩家锁避免并发状态竞争
         async with game_server.acquire(user_name) as room:
@@ -128,7 +128,7 @@ async def execute_draw_cards_task(
 
         logger.info(f"🚀 抽卡任务开始: job_id={job_id}, user={user_name}")
 
-        game_server = get_game_server()
+        game_server = get_runtime_game_server()
 
         # 获取房间并用每玩家锁避免并发状态竞争
         async with game_server.acquire(user_name) as room:
@@ -175,7 +175,7 @@ async def execute_play_cards_task(
     try:
         logger.info(f"🚀 出牌任务开始: job_id={job_id}, user={user_name}")
 
-        game_server = get_game_server()
+        game_server = get_runtime_game_server()
 
         # 获取房间并用每玩家锁避免并发状态竞争
         async with game_server.acquire(user_name) as room:
@@ -222,7 +222,7 @@ async def execute_pass_turn_task(
     try:
         logger.info(f"🚀 过牌任务开始: job_id={job_id}, user={user_name}")
 
-        game_server = get_game_server()
+        game_server = get_runtime_game_server()
 
         # 获取房间并用每玩家锁避免并发状态竞争
         async with game_server.acquire(user_name) as room:
@@ -270,7 +270,7 @@ async def execute_use_consumable_task(
 
         logger.info(f"🚀 使用消耗品任务开始: job_id={job_id}, user={user_name}")
 
-        game_server = get_game_server()
+        game_server = get_runtime_game_server()
 
         # 获取房间并用每玩家锁避免并发状态竞争
         async with game_server.acquire(user_name) as room:
@@ -319,7 +319,7 @@ async def execute_equip_gear_task(
 
         logger.info(f"🚀 使用装备任务开始: job_id={job_id}, user={user_name}")
 
-        game_server = get_game_server()
+        game_server = get_runtime_game_server()
 
         # 获取房间并用每玩家锁避免并发状态竞争
         async with game_server.acquire(user_name) as room:

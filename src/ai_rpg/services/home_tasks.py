@@ -9,7 +9,7 @@ from ..game.dbg_game import DBGGame
 from ..game.dbg_store import store_game_async
 from ..game.game_server import GameServer
 from ..pgsql import procrastinate_app, save_task_error
-from .game_server_dependencies import get_game_server
+from .game_server_runtime import get_runtime_game_server
 
 
 ###################################################################################################################################################################
@@ -66,7 +66,7 @@ async def execute_dungeon_generate_pipeline_task(
             f"🚀 dungeon generate pipeline 任务开始: job_id={job_id}, user={user_name}"
         )
 
-        game_server = get_game_server()
+        game_server = get_runtime_game_server()
 
         async with game_server.acquire(user_name):
 
@@ -104,7 +104,7 @@ async def execute_home_pipeline_task(
     try:
         logger.info(f"🚀 home pipeline 任务开始: job_id={job_id}, user={user_name}")
 
-        game_server = get_game_server()
+        game_server = get_runtime_game_server()
 
         async with game_server.acquire(user_name):
 
@@ -142,7 +142,7 @@ async def execute_home_craft_pipeline_task(
             f"🚀 home craft pipeline 任务开始: job_id={job_id}, user={user_name}"
         )
 
-        game_server = get_game_server()
+        game_server = get_runtime_game_server()
 
         async with game_server.acquire(user_name):
 

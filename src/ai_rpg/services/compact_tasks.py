@@ -27,13 +27,11 @@ async def execute_compact_context_task(
 
         game_server = get_game_server()
 
-        current_room = game_server.get_room(user_name)
-        if current_room is None or current_room._dbg_game is None:
-            raise ValueError(f"游戏实例不存在: user={user_name}")
+        async with game_server.acquire(user_name) as room:
 
-        async with current_room._lock:
-
-            rpg_game = current_room._dbg_game
+            rpg_game = room.game
+            if rpg_game is None:
+                raise ValueError(f"游戏实例不存在: user={user_name}")
             assert isinstance(rpg_game, DBGGame), "Invalid game type"
 
             # 执行 compact pipeline，仅处理手动触发的 CompactContextAction

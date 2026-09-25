@@ -13,8 +13,8 @@ GameServer，并 patch 掉 `activate_*` 与 procrastinate 的 `defer_async`。
 """
 
 import asyncio
-from contextlib import contextmanager
-from typing import Any, Dict, Iterator, Tuple, cast
+from contextlib import asynccontextmanager, contextmanager
+from typing import Any, AsyncGenerator, Dict, Iterator, Tuple, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -39,6 +39,15 @@ class _FakeRoom:
     def __init__(self, game: Any) -> None:
         self._lock = asyncio.Lock()
         self._dbg_game = game
+
+    @property
+    def game(self) -> Any:
+        return self._dbg_game
+
+    @asynccontextmanager
+    async def transaction(self) -> AsyncGenerator[Any, None]:
+        async with self._lock:
+            yield self
 
 
 class _FakeGameServer:

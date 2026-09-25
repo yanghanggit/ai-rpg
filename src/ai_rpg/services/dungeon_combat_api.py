@@ -72,7 +72,7 @@ async def dungeon_combat_retreat(
             detail="没有登录，请先登录",
         )
 
-    async with current_room._lock:
+    async with current_room.transaction():
 
         # 验证副本操作的前置条件
         rpg_game = _validate_dungeon_prerequisites(
@@ -143,7 +143,7 @@ async def dungeon_combat_init(
             detail="没有登录，请先登录",
         )
 
-    async with current_room._lock:
+    async with current_room.transaction():
 
         # 验证副本操作的前置条件
         rpg_game = _validate_dungeon_prerequisites(
@@ -205,7 +205,7 @@ async def dungeon_combat_collect_loot(
             detail="没有登录，请先登录",
         )
 
-    async with current_room._lock:
+    async with current_room.transaction():
 
         # 验证副本操作的前置条件
         dbg_game = _validate_dungeon_prerequisites(
@@ -262,7 +262,7 @@ async def dungeon_combat_draw_cards(
             detail="没有登录，请先登录",
         )
 
-    async with current_room._lock:
+    async with current_room.transaction():
 
         # 验证副本操作的前置条件
         rpg_game = _validate_dungeon_prerequisites(
@@ -333,7 +333,7 @@ async def dungeon_combat_play_cards(
             detail="没有登录，请先登录",
         )
 
-    async with current_room._lock:
+    async with current_room.transaction():
 
         # 验证副本操作的前置条件
         rpg_game = _validate_dungeon_prerequisites(
@@ -422,7 +422,7 @@ async def dungeon_combat_pass_turn(
             detail="没有登录，请先登录",
         )
 
-    async with current_room._lock:
+    async with current_room.transaction():
 
         # 验证副本操作的前置条件
         rpg_game = _validate_dungeon_prerequisites(
@@ -506,7 +506,7 @@ async def dungeon_combat_use_consumable(
             detail="没有登录，请先登录",
         )
 
-    async with current_room._lock:
+    async with current_room.transaction():
 
         # 验证副本操作的前置条件
         rpg_game = _validate_dungeon_prerequisites(
@@ -596,7 +596,7 @@ async def dungeon_combat_equip_gear(
             detail="没有登录，请先登录",
         )
 
-    async with current_room._lock:
+    async with current_room.transaction():
 
         # 验证副本操作的前置条件
         rpg_game = _validate_dungeon_prerequisites(

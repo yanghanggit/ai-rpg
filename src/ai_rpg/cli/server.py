@@ -2,7 +2,7 @@ import asyncio
 import contextlib
 import os
 import sys
-from typing import AsyncIterator
+from typing import AsyncGenerator
 
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -11,10 +11,16 @@ import click
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
 from starlette.types import Scope
 
+from ai_rpg.game.game_server import (
+    RoomAlreadyExistsError,
+    RoomNotFoundError,
+)
+from ai_rpg.game.player_room import RoomClosedError
 from ai_rpg.models import (
     ASSETS_URL_PREFIX,
     ApiRouteInfo,
@@ -48,7 +54,7 @@ load_dotenv()
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """在 FastAPI 生命周期内打开 Procrastinate 并嵌入运行 worker（与 GameServer 单例同进程/同事件循环）"""
     async with procrastinate_app.open_async():
         worker_task = asyncio.create_task(
@@ -63,6 +69,28 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(lifespan=lifespan)
+
+
+############################################################################################################
+# 房间并发模型相关的领域异常 → HTTP 状态码映射
+############################################################################################################
+@app.exception_handler(RoomNotFoundError)
+async def _handle_room_not_found(
+    request: Request, exc: RoomNotFoundError
+) -> JSONResponse:
+    return JSONResponse(status_code=404, content={"detail": "没有房间，请先登录"})
+
+
+@app.exception_handler(RoomClosedError)
+async def _handle_room_closed(request: Request, exc: RoomClosedError) -> JSONResponse:
+    return JSONResponse(status_code=404, content={"detail": "房间已关闭，请重新登录"})
+
+
+@app.exception_handler(RoomAlreadyExistsError)
+async def _handle_room_already_exists(
+    request: Request, exc: RoomAlreadyExistsError
+) -> JSONResponse:
+    return JSONResponse(status_code=409, content={"detail": "房间已存在"})
 
 
 @app.get(path="/", response_model=ServerInfoResponse)

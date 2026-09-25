@@ -1,17 +1,54 @@
-"""游戏服务器模块"""
+"""游戏服务器模块。
 
-from typing import Dict, Optional
+职责：进程内玩家房间注册表（``user_name -> PlayerRoom``）。
+
+并发模型
+--------
+* ``GameServer`` 只负责房间的**注册 / 注销**，用内部 ``asyncio.Lock`` 保证注册表
+  变更（create / remove）的原子性；``has_room`` / ``get_room`` 是单事件循环下的
+  原子只读操作。
+* 房间**内部状态**的一致性由 ``PlayerRoom`` 自己的锁负责，统一通过
+  ``async with game_server.acquire(user_name) as room:`` 进入。
+* 移除房间时 ``remove_room`` 会等待该房间进行中的事务结束再关闭，避免后台任务
+  与登出并发写坏状态。
+
+注意：注册表是进程内内存态，因此本服务不支持多 worker / 多进程部署。
+"""
+
+import asyncio
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator, Dict, Optional
+
 from .player_room import PlayerRoom
 
 
 ###############################################################################################################################################
+class RoomNotFoundError(Exception):
+    """请求的房间不存在。"""
+
+    def __init__(self, user_name: str) -> None:
+        super().__init__(f"room not found: {user_name}")
+        self.user_name: str = user_name
+
+
+###############################################################################################################################################
+class RoomAlreadyExistsError(Exception):
+    """创建房间时同名房间已存在。"""
+
+    def __init__(self, user_name: str) -> None:
+        super().__init__(f"room already exists: {user_name}")
+        self.user_name: str = user_name
+
+
+###############################################################################################################################################
 class GameServer:
-    """游戏服务器类"""
+    """游戏服务器类（进程内房间注册表）。"""
 
     def __init__(
         self,
     ) -> None:
         self._rooms: Dict[str, PlayerRoom] = {}
+        self._lock: asyncio.Lock = asyncio.Lock()  # 保护 _rooms 注册表变更
 
     ###############################################################################################################################################
     def has_room(self, user_name: str) -> bool:
@@ -24,19 +61,40 @@ class GameServer:
         return self._rooms.get(user_name, None)
 
     ###############################################################################################################################################
-    def create_room(self, user_name: str) -> PlayerRoom:
-        """为指定玩家创建新房间"""
-        if self.has_room(user_name):
-            assert False, f"room {user_name} already exists"
-        room = PlayerRoom(user_name)
-        self._rooms[user_name] = room
+    async def create_room(self, user_name: str) -> PlayerRoom:
+        """为指定玩家创建新房间；房间已存在时抛 ``RoomAlreadyExistsError``。"""
+        async with self._lock:
+            if user_name in self._rooms:
+                raise RoomAlreadyExistsError(user_name)
+            room = PlayerRoom(user_name)
+            self._rooms[user_name] = room
+            return room
+
+    ###############################################################################################################################################
+    async def remove_room(self, user_name: str) -> Optional[PlayerRoom]:
+        """移除并关闭指定玩家的房间。
+
+        先从注册表摘除（后续 ``get_room`` 立即不可见），再等待该房间进行中的事务
+        结束后关闭它，确保不会在任务运行时清空状态。房间不存在时返回 ``None``。
+        """
+        async with self._lock:
+            room = self._rooms.pop(user_name, None)
+        if room is not None:
+            await room.close()
         return room
 
     ###############################################################################################################################################
-    def remove_room(self, room: PlayerRoom) -> None:
-        """移除指定的房间"""
-        user_name = room._username
-        assert user_name in self._rooms
-        self._rooms.pop(user_name, None)
+    @asynccontextmanager
+    async def acquire(self, user_name: str) -> AsyncGenerator[PlayerRoom, None]:
+        """获取房间并在其事务锁内执行；房间不存在时抛 ``RoomNotFoundError``。
+
+        这是进入房间临界区的**统一入口**，后台任务应优先使用它，避免重复
+        ``get_room`` + 手动取锁。
+        """
+        room = self.get_room(user_name)
+        if room is None:
+            raise RoomNotFoundError(user_name)
+        async with room.transaction():
+            yield room
 
     ###############################################################################################################################################

@@ -35,14 +35,12 @@ async def execute_exit_dungeon_task(
         game_server = get_game_server()
 
         # 获取房间并用每玩家锁避免并发状态竞争
-        current_room = game_server.get_room(user_name)
-        if current_room is None or current_room._dbg_game is None:
-            raise ValueError(f"游戏实例不存在: user={user_name}")
-
-        async with current_room._lock:
+        async with game_server.acquire(user_name) as room:
 
             # 验证游戏实例类型
-            rpg_game = current_room._dbg_game
+            rpg_game = room.game
+            if rpg_game is None:
+                raise ValueError(f"游戏实例不存在: user={user_name}")
             assert isinstance(rpg_game, DBGGame), "Invalid game type"
 
             # 退出副本并返回家园（同步，内部自带状态守卫）

@@ -60,7 +60,7 @@ def _validate_dungeon_prerequisites(
     ), f"_validate_dungeon_prerequisites: room is None for {user_name}"
 
     # 2. 验证游戏实例存在
-    if current_room._dbg_game is None:
+    if current_room.game is None:
         logger.error(f"副本操作失败: 玩家 {user_name} 没有游戏实例")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -68,7 +68,7 @@ def _validate_dungeon_prerequisites(
         )
 
     # 3. 获取并验证游戏实例类型
-    dbg_game = current_room._dbg_game
+    dbg_game = current_room.game
 
     # 4. 验证玩家在副本状态
     if not dbg_game.is_player_in_dungeon_stage:
@@ -106,7 +106,7 @@ async def dungeon_advance_stage(
             detail="没有登录，请先登录",
         )
 
-    async with current_room._lock:
+    async with current_room.transaction():
 
         # 验证副本操作的前置条件
         rpg_game = _validate_dungeon_prerequisites(
@@ -197,7 +197,7 @@ async def dungeon_exit(
             detail="没有登录，请先登录",
         )
 
-    async with current_room._lock:
+    async with current_room.transaction():
 
         # 验证副本操作的前置条件
         dbg_game = _validate_dungeon_prerequisites(
@@ -260,7 +260,7 @@ async def dungeon_enter(
             detail="没有登录，请先登录",
         )
 
-    async with current_room._lock:
+    async with current_room.transaction():
         # 验证前置条件（玩家必须处于家园模式）
         rpg_game = await _validate_player_at_home(
             payload.user_name,

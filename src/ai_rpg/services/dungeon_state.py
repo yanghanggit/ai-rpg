@@ -44,7 +44,7 @@ async def get_dungeon_state(
     # 获取房间实例并检查 DBG 游戏是否存在
     current_room = game_server.get_room(user_name)
     assert current_room is not None, "get_dungeon_state: room instance is None"
-    if current_room._dbg_game is None:
+    if current_room.game is None:
         logger.error(f"view_dungeon: {user_name} has no game")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -53,7 +53,7 @@ async def get_dungeon_state(
 
     # 返回副本状态
     return DungeonStateResponse(
-        dungeon=current_room._dbg_game.current_dungeon,
+        dungeon=current_room.game.current_dungeon,
     )
 
 
@@ -84,7 +84,7 @@ async def get_dungeon_room(
     # 获取房间实例并检查 DBG 游戏是否存在
     current_room = game_server.get_room(user_name)
     assert current_room is not None, "get_dungeon_room: room instance is None"
-    if current_room._dbg_game is None:
+    if current_room.game is None:
         logger.error(f"get_dungeon_room: {user_name} has no game")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -92,7 +92,7 @@ async def get_dungeon_room(
         )
 
     # 获取当前副本房间，current_room_index == -1 或超出范围时返回 None
-    current_dungeon_room = current_room._dbg_game.current_dungeon.current_room
+    current_dungeon_room = current_room.game.current_dungeon.current_room
     if current_dungeon_room is None:
         logger.error(f"get_dungeon_room: {user_name} has no current dungeon room")
         raise HTTPException(

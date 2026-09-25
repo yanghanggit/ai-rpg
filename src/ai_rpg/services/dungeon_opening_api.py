@@ -52,7 +52,7 @@ async def dungeon_opening_init(
             detail="没有登录，请先登录",
         )
 
-    async with current_room._lock:
+    async with current_room.transaction():
 
         # 验证副本操作的前置条件
         rpg_game = _validate_dungeon_prerequisites(
@@ -118,7 +118,7 @@ async def dungeon_opening_generate_spoils(
             detail="没有登录，请先登录",
         )
 
-    async with current_room._lock:
+    async with current_room.transaction():
 
         # 验证副本操作的前置条件
         rpg_game = _validate_dungeon_prerequisites(
@@ -183,7 +183,7 @@ async def dungeon_opening_pick_spoils_card(
             detail="没有登录，请先登录",
         )
 
-    async with current_room._lock:
+    async with current_room.transaction():
 
         # 验证副本操作的前置条件
         rpg_game = _validate_dungeon_prerequisites(

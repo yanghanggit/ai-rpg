@@ -28,14 +28,12 @@ async def execute_init_combat_task(
         game_server = get_game_server()
 
         # 获取房间并用每玩家锁避免并发状态竞争
-        current_room = game_server.get_room(user_name)
-        if current_room is None or current_room._dbg_game is None:
-            raise ValueError(f"游戏实例不存在: user={user_name}")
-
-        async with current_room._lock:
+        async with game_server.acquire(user_name) as room:
 
             # 验证游戏实例类型
-            rpg_game = current_room._dbg_game
+            rpg_game = room.game
+            if rpg_game is None:
+                raise ValueError(f"游戏实例不存在: user={user_name}")
             assert isinstance(rpg_game, DBGGame), "Invalid game type"
 
             # 验证当前副本房间是否为战斗房间
@@ -80,14 +78,12 @@ async def execute_retreat_task(
         game_server = get_game_server()
 
         # 获取房间并用每玩家锁避免并发状态竞争
-        current_room = game_server.get_room(user_name)
-        if current_room is None or current_room._dbg_game is None:
-            raise ValueError(f"游戏实例不存在: user={user_name}")
-
-        async with current_room._lock:
+        async with game_server.acquire(user_name) as room:
 
             # 验证战斗状态
-            rpg_game = current_room._dbg_game
+            rpg_game = room.game
+            if rpg_game is None:
+                raise ValueError(f"游戏实例不存在: user={user_name}")
             assert isinstance(rpg_game, DBGGame), "Invalid game type"
 
             # 验证当前副本房间是否为战斗房间
@@ -135,14 +131,12 @@ async def execute_draw_cards_task(
         game_server = get_game_server()
 
         # 获取房间并用每玩家锁避免并发状态竞争
-        current_room = game_server.get_room(user_name)
-        if current_room is None or current_room._dbg_game is None:
-            raise ValueError(f"游戏实例不存在: user={user_name}")
-
-        async with current_room._lock:
+        async with game_server.acquire(user_name) as room:
 
             # 验证游戏实例类型
-            rpg_game = current_room._dbg_game
+            rpg_game = room.game
+            if rpg_game is None:
+                raise ValueError(f"游戏实例不存在: user={user_name}")
             assert isinstance(rpg_game, DBGGame), "Invalid game type"
 
             # 验证当前副本房间是否为战斗房间
@@ -184,14 +178,12 @@ async def execute_play_cards_task(
         game_server = get_game_server()
 
         # 获取房间并用每玩家锁避免并发状态竞争
-        current_room = game_server.get_room(user_name)
-        if current_room is None or current_room._dbg_game is None:
-            raise ValueError(f"游戏实例不存在: user={user_name}")
-
-        async with current_room._lock:
+        async with game_server.acquire(user_name) as room:
 
             # 验证游戏实例类型
-            rpg_game = current_room._dbg_game
+            rpg_game = room.game
+            if rpg_game is None:
+                raise ValueError(f"游戏实例不存在: user={user_name}")
             assert isinstance(rpg_game, DBGGame), "Invalid game type"
 
             # 验证当前副本房间是否为战斗房间
@@ -233,14 +225,12 @@ async def execute_pass_turn_task(
         game_server = get_game_server()
 
         # 获取房间并用每玩家锁避免并发状态竞争
-        current_room = game_server.get_room(user_name)
-        if current_room is None or current_room._dbg_game is None:
-            raise ValueError(f"游戏实例不存在: user={user_name}")
-
-        async with current_room._lock:
+        async with game_server.acquire(user_name) as room:
 
             # 验证游戏实例类型
-            rpg_game = current_room._dbg_game
+            rpg_game = room.game
+            if rpg_game is None:
+                raise ValueError(f"游戏实例不存在: user={user_name}")
             assert isinstance(rpg_game, DBGGame), "Invalid game type"
 
             # 验证当前副本房间是否为战斗房间
@@ -283,14 +273,12 @@ async def execute_use_consumable_task(
         game_server = get_game_server()
 
         # 获取房间并用每玩家锁避免并发状态竞争
-        current_room = game_server.get_room(user_name)
-        if current_room is None or current_room._dbg_game is None:
-            raise ValueError(f"游戏实例不存在: user={user_name}")
-
-        async with current_room._lock:
+        async with game_server.acquire(user_name) as room:
 
             # 验证游戏实例类型
-            rpg_game = current_room._dbg_game
+            rpg_game = room.game
+            if rpg_game is None:
+                raise ValueError(f"游戏实例不存在: user={user_name}")
             assert isinstance(rpg_game, DBGGame), "Invalid game type"
 
             # 验证当前副本房间是否为战斗房间
@@ -334,14 +322,12 @@ async def execute_equip_gear_task(
         game_server = get_game_server()
 
         # 获取房间并用每玩家锁避免并发状态竞争
-        current_room = game_server.get_room(user_name)
-        if current_room is None or current_room._dbg_game is None:
-            raise ValueError(f"游戏实例不存在: user={user_name}")
-
-        async with current_room._lock:
+        async with game_server.acquire(user_name) as room:
 
             # 验证游戏实例类型
-            rpg_game = current_room._dbg_game
+            rpg_game = room.game
+            if rpg_game is None:
+                raise ValueError(f"游戏实例不存在: user={user_name}")
             assert isinstance(rpg_game, DBGGame), "Invalid game type"
 
             # 验证当前副本房间是否为战斗房间

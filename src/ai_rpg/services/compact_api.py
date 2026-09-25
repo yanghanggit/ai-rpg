@@ -45,10 +45,10 @@ async def compact_context(
             detail="没有登录，请先登录",
         )
 
-    async with current_room._lock:
+    async with current_room.transaction():
 
         # 获取游戏实例（不限制场景状态，只要游戏存在即可）
-        rpg_game = current_room._dbg_game
+        rpg_game = current_room.game
         if rpg_game is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

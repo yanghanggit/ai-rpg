@@ -70,14 +70,6 @@ async def new_game(
         blueprint_path.read_text(encoding="utf-8")
     )
 
-    # 创建玩家客户端
-    room._player_session = PlayerSession(
-        name=payload.user_name,
-        actor=blueprint_data.player_actor,
-        game=payload.game_name,
-    )
-    assert room._player_session is not None, "房间玩家客户端实例不存在"
-
     # 重新生成world
     world_data = WorldState(
         entity_counter=1000,
@@ -87,27 +79,35 @@ async def new_game(
         blueprint=blueprint_data,
     )
 
-    # 依赖注入，创建新的游戏
-    assert world_data is not None, "WorldState data must exist to create a game"
-    room._dbg_game = DBGGame(
-        name=payload.game_name,
-        player_session=room._player_session,
-        world=world_data,
-    )
+    # 所有房间状态变更都在事务锁内完成，避免与其他请求 / 后台任务并发写坏状态
+    async with room.transaction():
 
-    # 根据蓝图构建游戏实例，并刷新实体数据到world中
-    assert (
-        len(room._dbg_game._world.entities) == 0
-    ), "测试阶段，游戏中不应该有实体数据！"
-    room._dbg_game.build_from_blueprint()
+        # 创建玩家客户端
+        player_session = PlayerSession(
+            name=payload.user_name,
+            actor=blueprint_data.player_actor,
+            game=payload.game_name,
+        )
 
-    # 执行游戏初始化逻辑，确保游戏状态正确设置，准备好接受玩家的操作
-    await room._dbg_game.initialize()
+        # 依赖注入，创建新的游戏
+        game = DBGGame(
+            name=payload.game_name,
+            player_session=player_session,
+            world=world_data,
+        )
 
-    # 存档初始世界状态，便于调试和回放
-    await store_game_async(room._dbg_game)
+        # 绑定房间的游戏与会话实例（唯一写入入口）
+        room.bind(game=game, player_session=player_session)
+
+        # 根据蓝图构建游戏实例，并刷新实体数据到world中
+        assert len(game._world.entities) == 0, "测试阶段，游戏中不应该有实体数据！"
+        game.build_from_blueprint()
+
+        # 执行游戏初始化逻辑，确保游戏状态正确设置，准备好接受玩家的操作
+        await game.initialize()
+
+        # 存档初始世界状态，便于调试和回放
+        await store_game_async(game)
 
     # 返回成功响应
-    return NewGameResponse(
-        blueprint=blueprint_data, player_session=room._player_session
-    )
+    return NewGameResponse(blueprint=blueprint_data, player_session=player_session)

@@ -40,7 +40,7 @@ async def get_stages_state(
     assert current_room is not None, "get_stages_state: room instance is None"
 
     # 根据游戏类型获取游戏实例
-    rpg_game = current_room._dbg_game
+    rpg_game = current_room.game
     if rpg_game is None:
         logger.error(f"get_stages_messages: {user_name} has no RPG game")
         raise HTTPException(

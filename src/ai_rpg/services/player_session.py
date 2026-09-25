@@ -45,7 +45,7 @@ async def get_session_messages(
     assert current_room is not None, "get_session_messages: room instance is None"
 
     # 获取 DBG 游戏实例
-    rpg_game = current_room._dbg_game
+    rpg_game = current_room.game
     assert rpg_game is not None, "get_session_messages: DBG game instance is None"
     if rpg_game is None:
         logger.error(f"get_session_messages: {user_name} has no game")

@@ -85,7 +85,7 @@ async def home_player_speak(
             detail="没有登录，请先登录",
         )
 
-    async with current_room._lock:
+    async with current_room.transaction():
 
         # 验证前置条件并获取游戏实例
         rpg_game = await _validate_player_at_home(
@@ -142,7 +142,7 @@ async def home_player_switch_stage(
             detail="没有登录，请先登录",
         )
 
-    async with current_room._lock:
+    async with current_room.transaction():
 
         # 验证前置条件并获取游戏实例
         rpg_game = await _validate_player_at_home(
@@ -197,7 +197,7 @@ async def home_advance(
             detail="没有登录，请先登录",
         )
 
-    async with current_room._lock:
+    async with current_room.transaction():
 
         # 验证前置条件并获取游戏实例
         rpg_game = await _validate_player_at_home(
@@ -247,7 +247,7 @@ async def home_generate_dungeon(
             detail="没有登录，请先登录",
         )
 
-    async with current_room._lock:
+    async with current_room.transaction():
         # 验证前置条件并获取游戏实例
         rpg_game = await _validate_player_at_home(
             payload.user_name,
@@ -293,7 +293,7 @@ async def home_add_party_member(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"找不到游戏房间: user={payload.user_name}",
         )
-    async with current_room._lock:
+    async with current_room.transaction():
         dbg_game = await _validate_player_at_home(payload.user_name, game_server)
         success, error_detail = add_party_member(dbg_game, payload.member_name)
         if not success:
@@ -320,7 +320,7 @@ async def home_remove_party_member(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"找不到游戏房间: user={payload.user_name}",
         )
-    async with current_room._lock:
+    async with current_room.transaction():
         dbg_game = await _validate_player_at_home(payload.user_name, game_server)
         success, error_detail = remove_party_member(dbg_game, payload.member_name)
         if not success:
@@ -349,7 +349,7 @@ async def home_item_move_to_inventory(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"找不到游戏房间: user={payload.user_name}",
         )
-    async with current_room._lock:
+    async with current_room.transaction():
         dbg_game = await _validate_player_at_home(payload.user_name, game_server)
         moved: List[str] = []
         for name in payload.item_names:
@@ -383,7 +383,7 @@ async def home_item_move_to_storage(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"找不到游戏房间: user={payload.user_name}",
         )
-    async with current_room._lock:
+    async with current_room.transaction():
         dbg_game = await _validate_player_at_home(payload.user_name, game_server)
         moved: List[str] = []
         for name in payload.item_names:
@@ -419,7 +419,7 @@ async def home_wear_costume(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"找不到游戏房间: user={payload.user_name}",
         )
-    async with current_room._lock:
+    async with current_room.transaction():
         dbg_game = await _validate_player_at_home(payload.user_name, game_server)
         success, error_detail = activate_wear_costume(
             dbg_game, payload.item_name, payload.target_name
@@ -458,7 +458,7 @@ async def home_remove_costume(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"找不到游戏房间: user={payload.user_name}",
         )
-    async with current_room._lock:
+    async with current_room.transaction():
         dbg_game = await _validate_player_at_home(payload.user_name, game_server)
         success, error_detail = activate_remove_costume(dbg_game, payload.target_name)
         if not success:
@@ -500,7 +500,7 @@ async def home_craft_consumable(
             detail="没有登录，请先登录",
         )
 
-    async with current_room._lock:
+    async with current_room.transaction():
         dbg_game = await _validate_player_at_home(payload.user_name, game_server)
         success, error_detail = activate_craft_consumable(
             dbg_game, list(payload.materials)
@@ -542,7 +542,7 @@ async def home_craft_gear_item(
             detail="没有登录，请先登录",
         )
 
-    async with current_room._lock:
+    async with current_room.transaction():
         dbg_game = await _validate_player_at_home(payload.user_name, game_server)
         success, error_detail = activate_craft_gear_item(
             dbg_game, list(payload.materials)
@@ -584,7 +584,7 @@ async def home_craft_costume_item(
             detail="没有登录，请先登录",
         )
 
-    async with current_room._lock:
+    async with current_room.transaction():
         dbg_game = await _validate_player_at_home(payload.user_name, game_server)
         success, error_detail = activate_craft_costume_item(
             dbg_game, list(payload.materials)

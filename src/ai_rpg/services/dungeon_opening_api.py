@@ -18,6 +18,7 @@ from ..models import (
     DungeonOpeningPickSpoilsCardResponse,
 )
 from .dungeon_lifecycle_api import _validate_dungeon_prerequisites
+from .task_dispatch import defer_room_task
 from .dungeon_opening_tasks import (
     execute_generate_spoils_task,
     execute_opening_room_init_task,
@@ -81,8 +82,8 @@ async def dungeon_opening_init(
             )
 
     # 在锁外派发开场房间初始化任务，让任务独立持锁执行
-    job_id = await execute_opening_room_init_task.defer_async(
-        user_name=payload.user_name
+    job_id = await defer_room_task(
+        execute_opening_room_init_task, user_name=payload.user_name
     )
     logger.info(f"📝 创建开场房间初始化任务: job_id={job_id}, user={payload.user_name}")
 
@@ -145,7 +146,9 @@ async def dungeon_opening_generate_spoils(
             )
 
     # 在锁外派发奖励生成任务，让任务独立持锁执行
-    job_id = await execute_generate_spoils_task.defer_async(user_name=payload.user_name)
+    job_id = await defer_room_task(
+        execute_generate_spoils_task, user_name=payload.user_name
+    )
     logger.info(f"📝 创建奖励生成任务: job_id={job_id}, user={payload.user_name}")
 
     # 返回奖励生成任务启动成功的响应
@@ -208,7 +211,8 @@ async def dungeon_opening_pick_spoils_card(
             )
 
     # 在锁外派发领卡任务，让任务独立持锁执行
-    job_id = await execute_pick_spoils_card_task.defer_async(
+    job_id = await defer_room_task(
+        execute_pick_spoils_card_task,
         user_name=payload.user_name,
         actor_name=payload.actor_name,
         card_name=payload.card_name,

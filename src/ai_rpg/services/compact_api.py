@@ -14,6 +14,7 @@ from ..models import (
 from .compact_action import activate_compact_context
 from .compact_tasks import execute_compact_context_task
 from .game_server_dependencies import CurrentGameServer
+from .task_dispatch import defer_room_task
 
 ###################################################################################################################################################################
 compact_api_router = APIRouter()
@@ -67,7 +68,9 @@ async def compact_context(
             )
 
     # 在锁外派发 compact pipeline 任务，让任务独立持锁执行
-    job_id = await execute_compact_context_task.defer_async(user_name=payload.user_name)
+    job_id = await defer_room_task(
+        execute_compact_context_task, user_name=payload.user_name
+    )
 
     logger.info(f"📝 创建上下文压缩任务: job_id={job_id}, user={payload.user_name}")
 

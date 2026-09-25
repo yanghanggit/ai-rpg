@@ -11,16 +11,10 @@ import click
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
 from starlette.types import Scope
 
-from ai_rpg.game.game_server import (
-    RoomAlreadyExistsError,
-    RoomNotFoundError,
-)
-from ai_rpg.game.player_room import RoomClosedError
 from ai_rpg.models import (
     ASSETS_URL_PREFIX,
     ApiRouteInfo,
@@ -47,6 +41,7 @@ from ai_rpg.services.home_api import home_api_router
 from ai_rpg.services.login import login_api_router
 from ai_rpg.services.new_game import new_game_api_router
 from ai_rpg.services.player_session import player_session_api_router
+from ai_rpg.services.room_error_handlers import register_room_error_handlers
 from ai_rpg.services.stages_state import stages_state_api_router
 from ai_rpg.services.tasks_api import tasks_api_router
 
@@ -69,28 +64,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 
 app = FastAPI(lifespan=lifespan)
-
-
-############################################################################################################
-# 房间并发模型相关的领域异常 → HTTP 状态码映射
-############################################################################################################
-@app.exception_handler(RoomNotFoundError)
-async def _handle_room_not_found(
-    request: Request, exc: RoomNotFoundError
-) -> JSONResponse:
-    return JSONResponse(status_code=404, content={"detail": "没有房间，请先登录"})
-
-
-@app.exception_handler(RoomClosedError)
-async def _handle_room_closed(request: Request, exc: RoomClosedError) -> JSONResponse:
-    return JSONResponse(status_code=404, content={"detail": "房间已关闭，请重新登录"})
-
-
-@app.exception_handler(RoomAlreadyExistsError)
-async def _handle_room_already_exists(
-    request: Request, exc: RoomAlreadyExistsError
-) -> JSONResponse:
-    return JSONResponse(status_code=409, content={"detail": "房间已存在"})
+register_room_error_handlers(app)
 
 
 @app.get(path="/", response_model=ServerInfoResponse)

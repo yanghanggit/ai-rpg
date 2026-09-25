@@ -23,6 +23,9 @@ from fastapi.testclient import TestClient
 
 from ai_rpg.services.game_server_dependencies import get_game_server
 from ai_rpg.services.home_api import home_api_router
+from ai_rpg.services.home_tasks import execute_home_pipeline_task
+from ai_rpg.services.room_error_handlers import register_room_error_handlers
+from ai_rpg.services.task_dispatch import RoomBusyError
 
 SPEAK_PATH = "/api/home/player/speak/v1/"
 SWITCH_PATH = "/api/home/player/switch_stage/v1/"
@@ -66,6 +69,7 @@ def _build_app(game_server: Any) -> FastAPI:
     app = FastAPI()
     app.include_router(home_api_router)
     app.dependency_overrides[get_game_server] = lambda: game_server
+    register_room_error_handlers(app)
     return app
 
 
@@ -97,15 +101,14 @@ def _patch_home_action(
     activate_result: Tuple[bool, str],
     job_id: int = 123,
 ) -> Iterator[Tuple[MagicMock, AsyncMock]]:
-    """替换 `activate_*` 与 procrastinate 的 `defer_async`，隔离外部副作用。"""
+    """替换 `activate_*` 与任务派发助手，隔离外部副作用。"""
     activate = MagicMock(return_value=activate_result)
-    task = MagicMock()
-    task.defer_async = AsyncMock(return_value=job_id)
+    defer = AsyncMock(return_value=job_id)
     with (
         patch(f"ai_rpg.services.home_api.{activate_name}", activate),
-        patch("ai_rpg.services.home_api.execute_home_pipeline_task", task),
+        patch("ai_rpg.services.home_api.defer_room_task", defer),
     ):
-        yield activate, task.defer_async
+        yield activate, defer
 
 
 @pytest.fixture
@@ -182,7 +185,7 @@ def test_speak_happy_path(client: TestClient, game: _FakeGame) -> None:
     assert response.json()["job_id"] == 123
     # payload 字段必须按名字传给 activate，而不是塞进 arguments 字典
     activate.assert_called_once_with(game, target="小明", content="你好")
-    defer.assert_awaited_once_with(user_name="u1")
+    defer.assert_awaited_once_with(execute_home_pipeline_task, user_name="u1")
 
 
 def test_switch_stage_happy_path(client: TestClient, game: _FakeGame) -> None:
@@ -195,7 +198,7 @@ def test_switch_stage_happy_path(client: TestClient, game: _FakeGame) -> None:
     assert response.status_code == 200
     assert response.json()["job_id"] == 123
     activate.assert_called_once_with(game, stage_name="酒馆")
-    defer.assert_awaited_once_with(user_name="u1")
+    defer.assert_awaited_once_with(execute_home_pipeline_task, user_name="u1")
 
 
 # ---------------------------------------------------------------------------
@@ -261,6 +264,32 @@ def test_switch_stage_returns_404_when_not_logged_in(
         json={"user_name": "u1", "game_name": "g1", "stage_name": "酒馆"},
     )
     assert response.status_code == 404
+
+
+def test_speak_returns_409_when_room_busy(client: TestClient) -> None:
+    """重复派发被 queueing_lock 拦截时返回 409。"""
+    with (
+        patch(
+            "ai_rpg.services.home_api.activate_speak_action",
+            MagicMock(return_value=(True, "")),
+        ),
+        patch(
+            "ai_rpg.services.home_api.defer_room_task",
+            AsyncMock(side_effect=RoomBusyError("u1")),
+        ),
+    ):
+        response = client.post(
+            SPEAK_PATH,
+            json={
+                "user_name": "u1",
+                "game_name": "g1",
+                "target": "小明",
+                "content": "你好",
+            },
+        )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "该房间已有任务在进行中，请稍后重试"
 
 
 @pytest.mark.parametrize(

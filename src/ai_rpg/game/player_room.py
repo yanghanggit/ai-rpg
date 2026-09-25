@@ -4,6 +4,7 @@
 """
 
 import asyncio
+import time
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator, Final, Optional
 
@@ -30,6 +31,7 @@ class PlayerRoom:
         self._player_session: Optional[PlayerSession] = None
         self._lock: asyncio.Lock = asyncio.Lock()  # 每玩家锁，防止并发状态竞争
         self._closed: bool = False
+        self._last_active_at: float = time.monotonic()
 
     ###############################################################################################################################################
     @property
@@ -53,10 +55,15 @@ class PlayerRoom:
         """是否有房间事务正在执行。"""
         return self._lock.locked()
 
+    def touch(self) -> None:
+        """刷新房间活跃时间。"""
+        self._last_active_at = time.monotonic()
+
     ###############################################################################################################################################
     @asynccontextmanager
     async def transaction(self) -> AsyncGenerator["PlayerRoom", None]:
         """进入房间临界区，仅用于写变更。"""
+        self.touch()
         async with self._lock:
             if self._closed:
                 raise RoomClosedError(self._username)
@@ -76,5 +83,27 @@ class PlayerRoom:
             self._closed = True
             self._dbg_game = None
             self._player_session = None
+
+    ###############################################################################################################################################
+    async def evict_if_idle(self, deadline: float) -> bool:
+        """若房间不忙且活跃时间早于 deadline，则退出游戏并关闭；返回是否已关闭。"""
+        if self._lock.locked():
+            return False
+
+        async with self._lock:
+
+            # 检查房间是否已关闭或仍然活跃
+            if self._closed or self._last_active_at > deadline:
+                return False
+
+            # 退出游戏并关闭房间
+            if self._dbg_game is not None:
+                self._dbg_game.exit()
+
+            # 标记房间为已关闭并清理游戏与会话实例
+            self._closed = True
+            self._dbg_game = None
+            self._player_session = None
+            return True
 
     ###############################################################################################################################################

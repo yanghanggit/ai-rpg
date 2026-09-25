@@ -2,7 +2,7 @@ import asyncio
 import contextlib
 import os
 import sys
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Optional
 
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -15,6 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from loguru import logger
 from starlette.types import Scope
 
+from ai_rpg.game.game_server import GameServer
 from ai_rpg.models import (
     ASSETS_URL_PREFIX,
     ApiRouteInfo,
@@ -37,6 +38,7 @@ from ai_rpg.services.dungeon_state import dungeon_state_api_router
 from ai_rpg.services.entity_details import (
     entity_details_api_router,
 )
+from ai_rpg.services.game_server_dependencies import get_game_server
 from ai_rpg.services.home_api import home_api_router
 from ai_rpg.services.login import login_api_router
 from ai_rpg.services.new_game import new_game_api_router
@@ -48,6 +50,19 @@ from ai_rpg.services.tasks_api import tasks_api_router
 load_dotenv()
 
 
+async def _room_reaper(game_server: GameServer, ttl: float, interval: float) -> None:
+    """周期性回收空闲超时且不在忙的房间。"""
+    while True:
+        await asyncio.sleep(interval)
+        try:
+            reaped = await game_server.reap_expired(ttl)
+        except Exception as e:
+            logger.error(f"room reaper error: {e}")
+            continue
+        if reaped:
+            logger.info(f"🧹 回收空闲房间: {reaped}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """在 FastAPI 生命周期内打开 Procrastinate 并嵌入运行 worker（与 GameServer 单例同进程/同事件循环）"""
@@ -55,9 +70,20 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         worker_task = asyncio.create_task(
             procrastinate_app.run_worker_async(install_signal_handlers=False)
         )
+        room_ttl = float(os.environ.get("GAME_ROOM_TTL_SECONDS", "1800"))
+        reaper_interval = float(os.environ.get("GAME_ROOM_REAP_INTERVAL_SECONDS", "60"))
+        reaper_task: Optional[asyncio.Task[None]] = None
+        if room_ttl > 0:
+            reaper_task = asyncio.create_task(
+                _room_reaper(get_game_server(), room_ttl, reaper_interval)
+            )
         try:
             yield
         finally:
+            if reaper_task is not None:
+                reaper_task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await asyncio.wait_for(reaper_task, timeout=10)
             worker_task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await asyncio.wait_for(worker_task, timeout=10)

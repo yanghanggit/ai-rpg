@@ -1,12 +1,10 @@
-"""神器·出牌后仲裁系统模块。
+"""神器·出牌后仲裁系统。
 
-神器是独立实体（其 system_message 即人设）。在一次出牌/消耗品仲裁完成后，本系统找出
-当前战斗作用域内（当前舞台 + 场上存活角色所持有）、挂有 PostArbitrationComponent 的神器实体，
-逐一以神器实体自身为 agent，依其人设中的「神器修正规则」做覆盖式结算：
-读取属性 → 判定规则是否触发（如「第 N 回合」）→ 写入 HP → 提交仲裁结果（战斗日志/叙事）。
+出牌/消耗品仲裁完成后，以作用域内的神器实体为 agent，按其人设中的「神器修正规则」执行覆盖式结算。
 
-神器作为 agent 会在自身记忆中持续积累每次结算（prompt / 工具轨迹 / 结果）；
-同时把「发生了什么」写入场景实体记忆，并广播本次事件，使场景与场上角色均获得记忆。
+关键约束：
+- 作用域 = 当前舞台 + 场上存活角色所持有的、挂有 PostArbitrationComponent 的神器，不跨场景。
+- 神器自身即 agent（人设 = system_message）；结算写入神器记忆，并写入场景、广播给场上角色。
 """
 
 import json
@@ -40,7 +38,6 @@ from ..models import (
 )
 from ..utils import prompt_builder
 from .arbitration_prompt_builders import (
-    NARRATIVE_DESCRIPTION,
     build_arbitration_broadcast,
     build_stats_update_notification,
 )
@@ -57,51 +54,49 @@ def _build_artifact_post_arbitration_prompt(
     party_names: str,
     monster_names: str,
 ) -> str:
-    """构建神器仲裁提示词：回合数/神器身份与持有者/场上阵营注入。
+    """构建一次神器仲裁的任务提示词：只注入本次动态上下文（回合 / 持有者 / 存活阵营）。
 
-    神器自身的修正规则已写入其人设（system_message）的「神器修正规则」段，
-    此处只补足本次结算所需的动态上下文。
+    神器人设与「神器修正规则」已在 system_message，此处不重复。
     """
     return f"""# 第 {current_round_number} 回合：神器修正结算（工具调用模式）
 
-你是在一次「战斗结算/消耗品使用结算」之后被唤醒的神器「{artifact_name}」，负责落实你自身人设中的「神器修正规则」。这些修正规则发生在该次结算之后，属覆盖式修正。
+一次「战斗结算/消耗品使用结算」已完成。请依据你人设中的「神器修正规则」，执行本次覆盖式修正。
 
-## 当前回合数
+## 本次上下文
 
-第 {current_round_number} 回合
-
-## 你的身份
-
-- 神器全名：{artifact_name}
-- 持有者：{holder_name}
-
-## 场上阵营（当前存活）
-
-- 队伍方：{party_names}
-- 怪物方：{monster_names}
+- 当前回合数：第 {current_round_number} 回合
+- 神器：{artifact_name}（持有者：{holder_name}）
+- 队伍方（存活）：{party_names}
+- 怪物方（存活）：{monster_names}
 
 ## 结算规则
 
-- 你只能通过下方工具读取/写入数据，禁止引入工具未提供的机制。
-- 严格依据你人设中「神器修正规则」的语义结算；规则未写明的效果不得凭空添加。
-- 只有当规则的触发条件满足时（例如「第 N 回合」且当前回合数恰为 N）才执行该规则；条件不满足则本回合不产生任何 HP 变更。
-- 对每个受影响角色调用 set_entity_hp 写入最终 HP。
-- 目标 HP = max(0, min(计算后 HP, 最大 HP))。
+- 规则 = 「触发条件」+「效果」：先按规则原文的触发条件（如「第 N 回合」）与当前回合数判定，只有触发才执行效果；规则未写明的效果不得添加。
+- 「无论本次出牌/消耗品如何结算」「必定」「必须」等措辞只强调效果力度/覆盖性，不改变触发条件；未触发时不得产生任何 HP 变更。
+- 未触发：不调用 set_entity_hp，直接 submit_arbitration，combat_log 写明「触发条件未满足，无 HP 变更」及各方当前 HP。
+- 已触发：对每个受影响角色调用一次 set_entity_hp 写入最终 HP（自动 clamp 到 0~最大HP）。
+- 只能通过下方工具读写数据；判定与数值只取自本次 get_entity_stats、当前回合数与规则原文，不得套用记忆中的过往结论或数值。
 
-## 工具使用流程
+## 一致性契约
 
-1. 调用 get_entity_stats 读取所有可能受影响角色的当前属性（可在同一次回复中并发调用多个）。
-2. 依据「神器修正规则」的触发条件与语义结算，得出每个受影响角色的最终 HP。
-3. 对每个受影响角色调用 set_entity_hp 写入最终 HP（可在同一次回复中并发调用多个）。
-4. 调用 submit_arbitration 提交最终结果，结束本次仲裁。
+submit_arbitration 的 combat_log / narrative 必须与本次实际调用过的 set_entity_hp 完全一致：改了谁、改成多少就写谁、写多少；未改不得声称已改，已改不得声称未改。
 
-## submit_arbitration 字段说明
+## 工具流程
 
-### combat_log（简名 = 全名最后一段）
+1. get_entity_stats 读取可能受影响角色（可并发）。
+2. 判定触发；触发则 set_entity_hp 写入最终 HP，未触发则跳过本步。
+3. submit_arbitration 提交，combat_log / narrative 与第 2 步实际行为一致。
 
-示例：`[纸钱方孔|第2回合] HP:英雄 12→0 阿秀 8→0`
+## combat_log 格式（简名 = 全名最后一段）
 
-{NARRATIVE_DESCRIPTION}"""
+- 已触发：`[<神器简名>|<当前回合数>] HP:<角色A> a→b <角色B> c→d`
+- 未触发：`[<神器简名>|<当前回合数>] 触发条件未满足，无 HP 变更；<角色A> a/a <角色B> c/c`
+
+### narrative
+
+60-120 字，第三人称外部视角，纯感官描写，无数字 / 术语 / 内心。
+以你自身人设中的意象为底色，写出「神器修正规则」本次如何显形——作用于谁、以什么样的感官痕迹留下结果；规则未触发时，则写出「无事发生」的克制观感。
+描写须与 combat_log 的 HP 变化一致，不得虚构规则之外的效果。"""
 
 
 ###########################################################################################################################################
@@ -128,7 +123,7 @@ GET_ENTITY_STATS_TOOL: Final[ToolDefinition] = ToolDefinition(
 SET_ENTITY_HP_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="set_entity_hp",
-        description="设置指定战斗角色的当前生命值（自动 clamp 到 0~最大HP）。对每个受影响角色都必须调用一次。",
+        description="设置指定战斗角色的当前生命值（自动 clamp 到 0~最大HP）。仅当你的人设规则在本次回合触发、且该角色确实受影响时，才对其调用一次；未触发时禁止调用本工具。",
         parameters={
             "type": "object",
             "properties": {
@@ -150,7 +145,7 @@ SET_ENTITY_HP_TOOL: Final[ToolDefinition] = ToolDefinition(
 SUBMIT_ARBITRATION_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="submit_arbitration",
-        description="提交本次神器仲裁的最终结果（战斗日志、演出叙事）。调用后本次仲裁结束。",
+        description="提交本次神器仲裁的最终结果（战斗日志、演出叙事）。combat_log/narrative 必须与本次实际调用过的 set_entity_hp 完全一致。调用后本次仲裁结束。",
         parameters={
             "type": "object",
             "properties": {
@@ -181,7 +176,7 @@ class _ArbitrationContext(BaseModel):
 
 
 def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
-    """处理 get_entity_stats 工具调用：返回角色的 HP 与格挡。"""
+    """读取角色当前 HP 与格挡。"""
     entity = game.get_actor_entity(entity_name)
     if entity is None:
         return f"错误：找不到战斗角色 {entity_name}"
@@ -194,7 +189,7 @@ def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
 def _handle_set_entity_hp(
     game: DBGGame, ctx: _ArbitrationContext, entity_name: str, hp: int
 ) -> str:
-    """处理 set_entity_hp 工具调用：暂存最终 HP，等待仲裁结束后统一落库。"""
+    """暂存最终 HP，待仲裁结束后统一落库。"""
     entity = game.get_actor_entity(entity_name)
     if entity is None:
         return f"错误：找不到战斗角色 {entity_name}"
@@ -209,7 +204,7 @@ def _handle_submit_arbitration(
     combat_log: str,
     narrative: str,
 ) -> str:
-    """处理 submit_arbitration 工具调用：提交最终仲裁结果。"""
+    """记录最终仲裁结果。"""
     ctx.combat_log = combat_log
     ctx.narrative = narrative
     return "仲裁结果已提交"
@@ -251,7 +246,7 @@ class ArtifactPostArbitrationSystem(ReactiveProcessor):
 
     #######################################################################################################################################
     async def _run_artifact_arbitration(self, action_entity: Entity) -> None:
-        """驱动一次动作后、作用域内所有命中神器的完整临时 agent 仲裁流程。"""
+        """对一次动作触发的、作用域内所有命中神器逐一仲裁。"""
 
         # 场景实体（当前战斗舞台）
         stage_entity = self._game.resolve_stage_entity(action_entity)
@@ -329,8 +324,7 @@ class ArtifactPostArbitrationSystem(ReactiveProcessor):
         # 仲裁结果容器：handler 通过 partial 绑定写入，避免闭包。
         ctx = _ArbitrationContext()
 
-        # 神器自身即 agent：直接使用其真实记忆列表，让本次结算（prompt / 工具轨迹 / 结果）
-        # 完整写入神器实体记忆，供后续运行点继续积累上下文。
+        # 直接使用神器真实记忆，使本次 prompt / 工具轨迹 / 结果都写入其记忆。
         artifact_memory = self._game.get_agent_memory(artifact_entity)
         assert artifact_memory.messages, "神器实体缺少首条 SystemMessage"
         messages = artifact_memory.messages
@@ -385,7 +379,7 @@ class ArtifactPostArbitrationSystem(ReactiveProcessor):
         ctx: _ArbitrationContext,
         prompt: str,
     ) -> None:
-        """应用临时 agent 的神器仲裁结果：广播事件、写入 HP、记录回合日志。"""
+        """落库本次仲裁结果：HP / 记忆 / 广播 / 回合日志。"""
 
         assert ctx.combat_log is not None, "combat_log 不应为 None"
         assert ctx.narrative is not None, "narrative 不应为 None"
@@ -401,8 +395,7 @@ class ArtifactPostArbitrationSystem(ReactiveProcessor):
                 )
                 return
 
-        # 把本次「发生了什么」写入场景实体记忆，供场景与参战角色通过广播获得记忆；
-        # 同时把结果补写进神器自身记忆（agent_loop 已写入 prompt 与工具轨迹）。
+        # 写入场景记忆并补写神器记忆（agent_loop 已写 prompt 与工具轨迹）。
         result_content = json.dumps(
             {
                 "combat_log": combat_log,

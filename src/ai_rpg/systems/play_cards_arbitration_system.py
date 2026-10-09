@@ -32,7 +32,7 @@ from ..models import (
 from ..utils import prompt_builder
 from .arbitration_prompt_builders import (
     CALC_RULES_SECTION,
-    NARRATIVE_DESCRIPTION,
+    CARD_NARRATIVE_DESCRIPTION,
     build_arbitration_broadcast,
     build_stats_update_notification,
 )
@@ -169,7 +169,7 @@ get_entity_stats 返回的「受击卡牌」仅列出带受击词缀（on_hit_af
 多段示例：`[英雄|回旋镖→石缝蜥:3x3次,伤害7] HP:石缝蜥 15→8`{spread.log_example}
 阵亡跳过：`[出牌者简名|已阵亡，卡牌无法执行]`
 
-{NARRATIVE_DESCRIPTION}"""
+{CARD_NARRATIVE_DESCRIPTION}"""
 
 
 @prompt_builder

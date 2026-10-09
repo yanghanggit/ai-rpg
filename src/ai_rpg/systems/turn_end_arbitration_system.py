@@ -32,7 +32,7 @@ from ..models import (
 from ..utils import prompt_builder
 from .arbitration_prompt_builders import (
     CALC_RULES_SECTION,
-    NARRATIVE_DESCRIPTION,
+    CARD_NARRATIVE_DESCRIPTION,
     build_arbitration_broadcast,
     build_stats_update_notification,
 )
@@ -123,7 +123,7 @@ def _build_turn_end_arbitration_tool_prompt(
 
 示例：`[纸人|回合结束·灼烧→英雄:2伤害] HP:英雄 15→13`
 
-{NARRATIVE_DESCRIPTION}"""
+{CARD_NARRATIVE_DESCRIPTION}"""
 
 
 @prompt_builder

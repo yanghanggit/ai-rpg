@@ -36,7 +36,6 @@ from ..models import (
 )
 from ..utils import prompt_builder
 from .arbitration_prompt_builders import (
-    NARRATIVE_DESCRIPTION,
     build_arbitration_broadcast,
     build_stats_update_notification,
 )
@@ -105,7 +104,11 @@ def _build_consumable_arbitration_prompt(
 
 示例：`[治愈药水→英雄] HP:英雄 8→13`
 
-{NARRATIVE_DESCRIPTION}"""
+### narrative
+
+60-120 字，第三人称外部视角，纯感官描写，无数字 / 术语 / 内心。
+以物品「描述」与本次「效果提示」为素材，写出使用该消耗品的动作，以及随之发生的感官变化（气味、温度、色泽、触感、姿态等）；不得引入物品描述与效果提示之外的机制。
+若使用改变了某个人或物的状态，描写须体现这一改变，为后续叙事留下可推断的当前状态。"""
 
 
 ###########################################################################################################################################

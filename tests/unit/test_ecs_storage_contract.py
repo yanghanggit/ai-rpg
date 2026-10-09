@@ -5,12 +5,13 @@
 锁定二者之间的接口契约，确保后续再动存储时不会悄悄破坏现有流程。
 """
 
+import json
 import uuid
 from typing import Iterator
 
 import pytest
 
-from ai_rpg.entitas import Entity
+from ai_rpg.entitas import Component, Entity
 from ai_rpg.game.rpg_entity_manager import RPGEntityManager
 from ai_rpg.models import (
     COMPONENT_TYPES,
@@ -147,3 +148,55 @@ class TestIndexHandleContract:
 
         assert {entity} == {entity}
         assert isinstance(entity, Entity)
+
+
+class TestContextSnapshotContract:
+    """Stage B 护栏：name-keyed 的 serialize_context / restore_context。"""
+
+    def test_context_snapshot_round_trip(self) -> None:
+        tag_cls = create_component_type("SnapshotTag", value=(int, ...))
+
+        source = RPGEntityManager()
+        hero = source._create_entity("hero")
+        hero.add(IdentityComponent, "hero", 1, _new_id())
+
+        goblin = source._create_entity("goblin")
+        goblin.add(IdentityComponent, "goblin", 2, _new_id())
+        goblin.set(tag_cls, tag_cls.model_validate({"value": 7}))
+
+        data = source.serialize_context()
+        assert list(data) == ["hero", "goblin"]
+        assert data["goblin"][tag_cls.__name__] == {"value": 7}
+
+        # 走一遍 JSON（模拟落盘再读回）
+        reloaded = json.loads(json.dumps(data))
+
+        target = RPGEntityManager()
+        restored = target.restore_context(reloaded)
+
+        assert set(restored) == {"hero", "goblin"}
+        assert target.get_entity_by_name("hero") is restored["hero"]
+        assert restored["hero"].get(IdentityComponent).creation_order == 1
+        assert restored["goblin"].get(tag_cls).model_dump() == {"value": 7}
+
+    def test_serialize_context_skips_unregistered_components(self) -> None:
+        class Unregistered(Component):
+            value: int
+
+        manager = RPGEntityManager()
+        entity = manager._create_entity("probe")
+        entity.add(IdentityComponent, "probe", 1, _new_id())
+        entity.set(Unregistered, Unregistered(value=1))
+
+        data = manager.serialize_context()
+
+        assert "Unregistered" not in data["probe"]
+        assert "IdentityComponent" in data["probe"]
+
+    def test_restore_context_requires_empty_context(self) -> None:
+        manager = RPGEntityManager()
+        existing = manager._create_entity("existing")
+        existing.add(IdentityComponent, "existing", 1, _new_id())
+
+        with pytest.raises(AssertionError, match="empty context"):
+            manager.restore_context({})

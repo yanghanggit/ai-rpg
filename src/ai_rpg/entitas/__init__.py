@@ -20,6 +20,17 @@ from .processor_interfaces import (
 )
 from .processor_pipeline import ProcessorPipeline
 from .reactive_processor import ReactiveProcessor
+from .serialization import (
+    ComponentData,
+    ComponentFilter,
+    ComponentResolver,
+    ContextData,
+    EntityData,
+    dump_context,
+    dump_entities,
+    dump_entity,
+    load_context,
+)
 
 __all__ = [
     "Entity",
@@ -36,6 +47,15 @@ __all__ = [
     "TearDownProcessor",
     "ReactiveProcessor",
     "Event",
+    "ComponentData",
+    "EntityData",
+    "ContextData",
+    "ComponentResolver",
+    "ComponentFilter",
+    "dump_entity",
+    "dump_entities",
+    "dump_context",
+    "load_context",
     "AlreadyAddedComponent",
     "MissingComponent",
     "MissingEntity",

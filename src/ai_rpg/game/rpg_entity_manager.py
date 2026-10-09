@@ -1,8 +1,16 @@
-from typing import Dict, List, Optional, Set, override
+from typing import Dict, List, Optional, Set, Type, override
 
 from loguru import logger
 
-from ..entitas import Context, Entity, Matcher
+from ..entitas import (
+    Component,
+    Context,
+    ContextData,
+    Entity,
+    Matcher,
+    dump_context,
+    load_context,
+)
 from ..models import (
     COMPONENT_TYPES,
     ActorComponent,
@@ -16,6 +24,12 @@ from ..models import (
     resolve_component_type,
     serialize_component,
 )
+
+
+###############################################################################################################################################
+def _is_persistable_component(comp_type: Type[Component]) -> bool:
+    """组件类型是否已注册（只有注册过的组件才会被整体序列化）。"""
+    return COMPONENT_TYPES.get(comp_type.__name__) is not None
 
 
 ###############################################################################################################################################
@@ -106,6 +120,18 @@ class RPGEntityManager(Context):
                 entity.set(comp_class, restore_comp)
 
         return deserialized_entities
+
+    ###############################################################################################################################################
+    def serialize_context(self) -> ContextData:
+        """将整个 Context 的核心导出为 name-keyed 的 ContextData（只含已注册组件）。"""
+        return dump_context(self, component_filter=_is_persistable_component)
+
+    ###############################################################################################################################################
+    def restore_context(self, data: ContextData) -> Dict[str, Entity]:
+        """从 name-keyed 的 ContextData 还原 Context 核心，并重建名称索引。"""
+        restored = load_context(self, data, resolve_component_type)
+        self._entity_name_index.update(restored)
+        return restored
 
     ###############################################################################################################################################
     def get_world_entity(self, world_name: str) -> Optional[Entity]:

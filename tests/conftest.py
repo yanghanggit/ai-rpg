@@ -30,7 +30,7 @@ def sample_game() -> DBGGame:
     dungeon = Dungeon(name="", rooms=[], profile="")
     world = WorldState(
         entity_counter=1000,
-        entities=[],
+        entities={},
         agent_memories={},
         dungeon=dungeon,
         blueprint=blueprint,

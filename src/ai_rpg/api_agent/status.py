@@ -9,8 +9,9 @@
 - 玩家角色名（player_actor）可通过 PlayerComponent 反查，因此调用方无需预先登录态。
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
+from ..entitas import ComponentData, EntityData
 from ..models import (
     AppearanceComponent,
     CharacterStatsComponent,
@@ -42,12 +43,12 @@ from .server_client import (
 
 
 ########################################################################################################################
-def component_data(entity: Any, component_name: str) -> Optional[Dict[str, Any]]:
-    """在实体序列化数据中按组件类名取原始 dict。"""
-    for component in entity.components:
-        if component.name == component_name:
-            return dict(component.data)
-    return None
+def component_data(
+    components: EntityData, component_name: str
+) -> Optional[ComponentData]:
+    """在实体的组件 dict 中按组件类名取原始 dict。"""
+    data = components.get(component_name)
+    return dict(data) if data is not None else None
 
 
 ########################################################################################################################
@@ -62,13 +63,13 @@ def find_stage_of_actor(
 
 
 ########################################################################################################################
-def role_of(entity: Any) -> str:
+def role_of(components: EntityData) -> str:
     """依据阵营标记组件返回 "player" / "npc" / "monster" / "unknown"。"""
-    if component_data(entity, PlayerComponent.__name__) is not None:
+    if component_data(components, PlayerComponent.__name__) is not None:
         return "player"
-    if component_data(entity, NPCComponent.__name__) is not None:
+    if component_data(components, NPCComponent.__name__) is not None:
         return "npc"
-    if component_data(entity, MonsterComponent.__name__) is not None:
+    if component_data(components, MonsterComponent.__name__) is not None:
         return "monster"
     return "unknown"
 
@@ -91,16 +92,16 @@ async def resolve_player_actor(
         raise RuntimeError(
             "未找到玩家实体（PlayerComponent）；请确认已 new-game，或用 --actor 显式指定"
         )
-    return str(resp.entities[0].name)
+    return next(iter(resp.entities))
 
 
 ########################################################################################################################
-def _entity_summary(entity: Any) -> Dict[str, Any]:
+def _entity_summary(name: str, components: EntityData) -> Dict[str, Any]:
     """把单个实体压缩成代理决策所需的摘要（角色/生死/属性/能量/格挡/手牌）。"""
-    summary: Dict[str, Any] = {"name": entity.name, "role": role_of(entity)}
-    summary["dead"] = component_data(entity, DeathComponent.__name__) is not None
+    summary: Dict[str, Any] = {"name": name, "role": role_of(components)}
+    summary["dead"] = component_data(components, DeathComponent.__name__) is not None
 
-    stats_data = component_data(entity, CharacterStatsComponent.__name__)
+    stats_data = component_data(components, CharacterStatsComponent.__name__)
     if stats_data is not None:
         stats = compute_effective_stats(CharacterStatsComponent(**stats_data).stats)
         summary["hp"] = stats.hp
@@ -108,18 +109,18 @@ def _entity_summary(entity: Any) -> Dict[str, Any]:
         summary["attack"] = stats.attack
         summary["defense"] = stats.defense
 
-    round_stats_data = component_data(entity, RoundStatsComponent.__name__)
+    round_stats_data = component_data(components, RoundStatsComponent.__name__)
     if round_stats_data is not None:
         summary["energy"] = RoundStatsComponent(**round_stats_data).energy
 
-    hand_data = component_data(entity, HandComponent.__name__)
+    hand_data = component_data(components, HandComponent.__name__)
     hand = HandComponent(**hand_data) if hand_data is not None else None
     summary["block"] = compute_hand_block(hand)
     summary["hand"] = (
         [card.model_dump(mode="json") for card in hand.cards] if hand else []
     )
 
-    appearance = component_data(entity, AppearanceComponent.__name__)
+    appearance = component_data(components, AppearanceComponent.__name__)
     if appearance is not None:
         summary["appearance"] = AppearanceComponent(**appearance).appearance
 
@@ -163,19 +164,20 @@ async def _fetch_storage_items(user_name: str, game_name: str) -> List[Dict[str,
     )
     if not resp.entities:
         return []
-    for component in resp.entities[0].components:
-        if component.name == StorageComponent.__name__:
-            storage = StorageComponent(**component.data)
-            return [item.model_dump(mode="json") for item in storage.items]
-    return []
+    components = next(iter(resp.entities.values()))
+    storage_data = component_data(components, StorageComponent.__name__)
+    if storage_data is None:
+        return []
+    storage = StorageComponent(**storage_data)
+    return [item.model_dump(mode="json") for item in storage.items]
 
 
 ########################################################################################################################
-def _player_extras(player_entity: Any) -> Dict[str, Any]:
+def _player_extras(components: EntityData) -> Dict[str, Any]:
     """从玩家实体取队伍名单与随身背包。"""
-    roster_data = component_data(player_entity, PartyRosterComponent.__name__)
+    roster_data = component_data(components, PartyRosterComponent.__name__)
     roster = list(PartyRosterComponent(**roster_data).members) if roster_data else []
-    inventory_data = component_data(player_entity, InventoryComponent.__name__)
+    inventory_data = component_data(components, InventoryComponent.__name__)
     inventory = (
         [
             item.model_dump(mode="json")
@@ -188,13 +190,15 @@ def _player_extras(player_entity: Any) -> Dict[str, Any]:
 
 
 ########################################################################################################################
-def _opening_info(room: OpeningRoom, party_entities: List[Any]) -> Dict[str, Any]:
+def _opening_info(
+    room: OpeningRoom, party_entities: List[Tuple[str, EntityData]]
+) -> Dict[str, Any]:
     """开场房间：初始化标记 + 奖励候选/已领取队列。"""
     candidate_cards: List[Dict[str, Any]] = []
     claimed_cards: List[Dict[str, Any]] = []
     by_actor: List[Dict[str, Any]] = []
-    for entity in party_entities:
-        spoils_data = component_data(entity, SpoilsComponent.__name__)
+    for actor_name, components in party_entities:
+        spoils_data = component_data(components, SpoilsComponent.__name__)
         if spoils_data is None:
             continue
         spoils = SpoilsComponent(**spoils_data)
@@ -204,7 +208,7 @@ def _opening_info(room: OpeningRoom, party_entities: List[Any]) -> Dict[str, Any
         claimed_cards.extend(claimed)
         by_actor.append(
             {
-                "actor": entity.name,
+                "actor": actor_name,
                 "candidate_cards": candidates,
                 "claimed_cards": claimed,
             }
@@ -255,8 +259,7 @@ async def build_status(
     entity_names = ([stage_name] if stage_name else []) + actor_names
 
     details_resp = await fetch_entities_details(user_name, game_name, entity_names)
-    entities = list(details_resp.entities)
-    entities_by_name = {entity.name: entity for entity in entities}
+    entities_by_name = details_resp.entities
 
     # 场景描述
     stage_block: Dict[str, Any] = {"name": stage_name, "actors": actor_names}
@@ -274,7 +277,10 @@ async def build_status(
         "game_name": game_name,
         "player_actor": player_actor,
         "stage": stage_block,
-        "entities": [_entity_summary(entity) for entity in entities],
+        "entities": [
+            _entity_summary(name, components)
+            for name, components in entities_by_name.items()
+        ],
     }
 
     # 副本 / 战斗
@@ -293,7 +299,9 @@ async def build_status(
     }
 
     party_entities = [
-        entities_by_name[name] for name in actor_names if name in entities_by_name
+        (name, entities_by_name[name])
+        for name in actor_names
+        if name in entities_by_name
     ]
 
     if isinstance(room, CombatRoom):

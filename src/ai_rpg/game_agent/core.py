@@ -43,7 +43,7 @@ async def create_and_initialize_game(
     # 创建游戏世界数据实例，并将蓝图和副本赋值到其中
     world_data = WorldState(
         entity_counter=1000,
-        entities=[],
+        entities={},
         agent_memories={},
         dungeon=dungeon,
         blueprint=world_blueprint,

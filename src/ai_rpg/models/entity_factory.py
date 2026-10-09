@@ -144,7 +144,7 @@ def create_world(
     world = World(
         name=name,
         system_message="",
-        components=[],
+        components={},
     )
 
     # 系统提示词词
@@ -196,7 +196,7 @@ def create_artifact(
         name=name,
         system_message="",
         modifiers=list(modifiers),
-        components=[],
+        components={},
     )
 
     # 修正规则以列表形式落入人设，供神器 agent 在运行时自行解释

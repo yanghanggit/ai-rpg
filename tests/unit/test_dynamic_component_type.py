@@ -4,7 +4,7 @@
 - registry.create_component_type 动态创建组件类（含幂等与字段定义）
 - registry.resolve_component_type 惰性重建动态组件（含按 data 推断字段）
 - DBGGame.create_stage_entities 挂载 Stage.components
-- RPGEntityManager.deserialize_entities 跨进程重建动态组件
+- RPGEntityManager.restore_context 跨进程重建动态组件
 """
 
 import uuid
@@ -18,7 +18,6 @@ from ai_rpg.entitas.components import Component
 from ai_rpg.game.rpg_entity_manager import RPGEntityManager
 from ai_rpg.models import (
     COMPONENT_TYPES,
-    ComponentSerialization,
     HomeComponent,
     IdentityComponent,
     Stage,
@@ -49,7 +48,7 @@ def _make_stage_model(name: str, component_name: str) -> Stage:
         profile="测试场景",
         system_message=f"{name} 的系统消息",
         actors=[],
-        components=[ComponentSerialization(name=component_name, data={"name": name})],
+        components={component_name: {"name": name}},
     )
 
 
@@ -158,9 +157,9 @@ class TestCreateStageEntitiesDynamicComponent:
 
 
 ############################################################################################################
-# RPGEntityManager.deserialize_entities 集成
+# RPGEntityManager.restore_context 集成
 ############################################################################################################
-class TestDeserializeEntitiesDynamicComponent:
+class TestRestoreContextDynamicComponent:
     def test_rebuilds_dynamic_component_from_serialization(self) -> None:
         tag_name = "deser_001"
         tag_cls = create_component_type(tag_name, name=(str, ...))
@@ -170,16 +169,16 @@ class TestDeserializeEntitiesDynamicComponent:
         entity.add(IdentityComponent, "场景.序列化测试", 1, str(uuid.uuid4()))
         entity.set(tag_cls, tag_cls.model_validate({"name": "场景.序列化测试"}))
 
-        serialized = source.serialize_entities({entity})
+        serialized = source.serialize_context()
 
         # 模拟全新进程：动态类不在注册表中
         del COMPONENT_TYPES[tag_name]
         assert tag_name not in COMPONENT_TYPES
 
         target = RPGEntityManager()
-        restored = target.deserialize_entities(serialized)
+        restored = target.restore_context(serialized)
 
-        restored_entity = next(iter(restored))
+        restored_entity = next(iter(restored.values()))
         assert tag_name in COMPONENT_TYPES  # 反序列化时已惰性重建
         rebuilt_cls = COMPONENT_TYPES[tag_name]
         assert restored_entity.name == "场景.序列化测试"

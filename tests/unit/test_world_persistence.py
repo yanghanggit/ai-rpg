@@ -13,9 +13,7 @@ from ai_rpg.game import world_persistence
 from ai_rpg.models import (
     AgentMemory,
     Blueprint,
-    ComponentSerialization,
     Dungeon,
-    EntitySerialization,
     PlayerSession,
     SpeakEvent,
     WorldState,
@@ -42,7 +40,7 @@ def _make_blueprint(name: str = "demo") -> Blueprint:
 def _make_world(entity_counter: int = 1) -> WorldState:
     return WorldState(
         entity_counter=entity_counter,
-        entities=[],
+        entities={},
         dungeon=Dungeon(name="dungeon_a", rooms=[], profile=""),
         blueprint=_make_blueprint(),
         agent_memories={},
@@ -130,24 +128,18 @@ class TestRoundTrip:
 
     def test_entities_round_trip(self, tmp_path: Path) -> None:
         world = _make_world()
-        world.entities = [
-            EntitySerialization(
-                name="goblin",
-                components=[ComponentSerialization(name="stats", data={"hp": 10})],
-            ),
-            EntitySerialization(
-                name="slime",
-                components=[ComponentSerialization(name="stats", data={"hp": 3})],
-            ),
-        ]
+        world.entities = {
+            "goblin": {"stats": {"hp": 10}},
+            "slime": {"stats": {"hp": 3}},
+        }
         save_dir = tmp_path / "snap"
         assert world_persistence.save_world(
             world, _make_player_session(), tmp_path, save_dir
         )
 
         restored_world, _ = world_persistence.restore_world(save_dir)
-        assert [e.name for e in restored_world.entities] == ["goblin", "slime"]
-        assert restored_world.entities[0].components[0].data == {"hp": 10}
+        assert list(restored_world.entities) == ["goblin", "slime"]
+        assert restored_world.entities["goblin"] == {"stats": {"hp": 10}}
 
     def test_world_state_json_excludes_split_fields(self, tmp_path: Path) -> None:
         """world_state.json 应排除独立存储的字段。"""

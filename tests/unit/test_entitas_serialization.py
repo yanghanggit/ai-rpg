@@ -1,8 +1,8 @@
-"""entitas 核心 dump / load 单元测试（Stage A 护栏）。
+"""entitas 核心 dump / load 单元测试。
 
-Stage A 让 entitas 自己定义 name-keyed 的 ``ContextData`` 表示与
-``dump_*`` / ``load_context``，且不依赖 ``models.registry``：组件类型解析靠注入的
-``ComponentResolver``。本文件锁定该核心行为，确保后续接入存档时不被破坏。
+entitas 自己定义 name-keyed 的 ``ContextData`` 表示与 ``dump_*`` / ``load_context``，
+且不依赖 ``models.registry``：组件类型解析靠注入的 ``ComponentResolver``。本文件
+锁定该核心行为（含 ``dump_components``），确保后续接入存档时不被破坏。
 """
 
 import json
@@ -16,6 +16,7 @@ from ai_rpg.entitas import (
     Context,
     ContextData,
     Matcher,
+    dump_components,
     dump_context,
     dump_entities,
     dump_entity,
@@ -94,6 +95,24 @@ class TestDump:
 
         with pytest.raises(AssertionError, match="has no name"):
             dump_context(context)
+
+
+class TestDumpComponents:
+    def test_wraps_component_instances(self) -> None:
+        assert dump_components(Position(x=1.0, y=2.0), Marker()) == {
+            "Position": {"x": 1.0, "y": 2.0},
+            "Marker": {},
+        }
+
+    def test_empty_returns_empty_mapping(self) -> None:
+        assert dump_components() == {}
+
+    def test_result_loads_into_context(self) -> None:
+        data: ContextData = {"e": dump_components(Position(x=1.0, y=2.0))}
+
+        restored = load_context(Context(), data, _resolve)
+
+        assert restored["e"].get(Position) == Position(x=1.0, y=2.0)
 
 
 class TestLoad:

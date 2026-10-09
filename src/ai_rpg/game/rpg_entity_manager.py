@@ -1,7 +1,5 @@
 from typing import Dict, List, Optional, Set, Type, override
 
-from loguru import logger
-
 from ..entitas import (
     Component,
     Context,
@@ -9,20 +7,18 @@ from ..entitas import (
     Entity,
     Matcher,
     dump_context,
+    dump_entities,
     load_context,
 )
 from ..models import (
     COMPONENT_TYPES,
     ActorComponent,
     DungeonComponent,
-    EntitySerialization,
     HomeComponent,
-    IdentityComponent,
     PlayerComponent,
     StageComponent,
     WorldComponent,
     resolve_component_type,
-    serialize_component,
 )
 
 
@@ -59,67 +55,10 @@ class RPGEntityManager(Context):
         return super().destroy_entity(entity)
 
     ###############################################################################################################################################
-    def _serialize_entity(self, entity: Entity) -> EntitySerialization:
-        """序列化单个实体（内部方法）。"""
-        components = [
-            serialize_component(value)
-            for key, value in entity.iter_component_items()
-            if COMPONENT_TYPES.get(key.__name__) is not None
-        ]
-        return EntitySerialization(name=entity.name, components=components)
-
-    ###############################################################################################################################################
-    def serialize_entities(self, entities: Set[Entity]) -> List[EntitySerialization]:
-        """将实体集合序列化为可持久化的数据结构。"""
-        entity_serializations: List[EntitySerialization] = []
-
-        entities_copy = list(entities)
-
-        # 保证有顺序。防止set引起的顺序不一致。
-        sort_actors = sorted(
-            entities_copy,
-            key=lambda entity: entity.get(IdentityComponent).creation_order,
-        )
-
-        # 遍历排序后的实体列表，依次序列化每个实体并添加到结果列表中
-        for entity in sort_actors:
-            entity_serialization = self._serialize_entity(entity)
-            entity_serializations.append(entity_serialization)
-
-        return entity_serializations
-
-    ###############################################################################################################################################
-    def deserialize_entities(self, entities: List[EntitySerialization]) -> Set[Entity]:
-        """从序列化数据还原实体集合。"""
-        deserialized_entities: Set[Entity] = set()
-
-        for entity_serialization in entities:
-
-            assert (
-                self.get_entity_by_name(entity_serialization.name) is None
-            ), f"Entity with name already exists: {entity_serialization.name}"
-
-            entity = self._create_entity(entity_serialization.name)
-            deserialized_entities.add(entity)  # 添加到返回的集合中
-
-            for comp_serialization in entity_serialization.components:
-
-                comp_class = resolve_component_type(
-                    comp_serialization.name, comp_serialization.data
-                )
-
-                # 使用 Pydantic 的方式直接从字典创建实例
-                restore_comp = comp_class(**comp_serialization.data)
-                assert (
-                    restore_comp is not None
-                ), f"Failed to restore component {comp_class.__name__} for entity {entity_serialization.name}"
-
-                logger.debug(
-                    f"comp_class = {comp_class.__name__}, comp = {restore_comp}"
-                )
-                entity.set(comp_class, restore_comp)
-
-        return deserialized_entities
+    def serialize_entities(self, entities: Set[Entity]) -> ContextData:
+        """将实体集合导出为 name-keyed 的 ContextData（只含已注册组件）。"""
+        ordered = sorted(entities, key=lambda entity: entity.index)
+        return dump_entities(ordered, component_filter=_is_persistable_component)
 
     ###############################################################################################################################################
     def serialize_context(self) -> ContextData:

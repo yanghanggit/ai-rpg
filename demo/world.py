@@ -6,6 +6,7 @@
 from typing import Dict, Final, List
 from uuid import uuid4
 
+from ai_rpg.entitas import dump_components
 from ai_rpg.models import (
     Actor,
     ActorType,
@@ -41,7 +42,6 @@ from ai_rpg.models import (
     create_artifact,
     create_stage,
     create_world,
-    serialize_component,
 )
 
 from .card_prototypes import (
@@ -229,22 +229,20 @@ def create_actor_paper_doll() -> Actor:
         system_rules=SYSTEM_RULES,
     )
 
-    paper_doll.components = [
-        serialize_component(
-            DeckComponent(
-                name=paper_doll.name,
-                cards=[
-                    # 3 张基础攻击
-                    _make_attack_card(),
-                    _make_attack_card(),
-                    _make_attack_card(),
-                    # 2 张基础防御
-                    _make_defense_card(),
-                    _make_defense_card(),
-                ],
-            )
+    paper_doll.components = dump_components(
+        DeckComponent(
+            name=paper_doll.name,
+            cards=[
+                # 3 张基础攻击
+                _make_attack_card(),
+                _make_attack_card(),
+                _make_attack_card(),
+                # 2 张基础防御
+                _make_defense_card(),
+                _make_defense_card(),
+            ],
         )
-    ]
+    )
 
     return paper_doll
 
@@ -290,12 +288,12 @@ def create_shrine_ruins_dungeon() -> Dungeon:
         system_rules=SYSTEM_RULES,
     )
     # 标记型组件：决定该神器在「出牌/消耗品仲裁后」运行
-    artifact_paper_money.components = [
-        serialize_component(PostArbitrationComponent(name=artifact_paper_money.name))
-    ]
+    artifact_paper_money.components = dump_components(
+        PostArbitrationComponent(name=artifact_paper_money.name)
+    )
 
-    stage_shrine_courtyard.components.append(
-        serialize_component(
+    stage_shrine_courtyard.components.update(
+        dump_components(
             ReliquaryComponent(
                 name=stage_shrine_courtyard.name,
                 artifacts=[artifact_paper_money],
@@ -375,62 +373,56 @@ def create_wuming() -> Actor:
         system_rules=SYSTEM_RULES,
     )
 
-    actor.components = [
-        serialize_component(
-            DeckComponent(
-                name=actor.name,
-                cards=[
-                    # 3 张基础攻击
-                    _make_attack_card(),
-                    _make_attack_card(),
-                    _make_attack_card(),
-                    # 测试用卡牌
-                    _make_defense_card(),
-                    _make_defense_card(),
-                ],
-            )
+    actor.components = dump_components(
+        DeckComponent(
+            name=actor.name,
+            cards=[
+                # 3 张基础攻击
+                _make_attack_card(),
+                _make_attack_card(),
+                _make_attack_card(),
+                # 测试用卡牌
+                _make_defense_card(),
+                _make_defense_card(),
+            ],
         ),
-        serialize_component(
-            WornCostumeComponent(
-                name=actor.name,
-                item=CostumeItem(
-                    name="时装.旧长衫",
-                    description="一件洗至发硬的旧长衫，袖口与领口已微微起毛。穿在身上像一件被反复浆洗过的旧衣——干净，但带着洗不掉的时间痕迹。",
+        WornCostumeComponent(
+            name=actor.name,
+            item=CostumeItem(
+                name="时装.旧长衫",
+                description="一件洗至发硬的旧长衫，袖口与领口已微微起毛。穿在身上像一件被反复浆洗过的旧衣——干净，但带着洗不掉的时间痕迹。",
+            ),
+        ),
+        InventoryComponent(
+            name=actor.name,
+            items=[
+                GearItem(
+                    name="装备.缠麻短刃",
+                    description="一柄由旧铁剪反复磨砺而成的短刃，刃身仍留着暗红锈斑，握柄裹着泛黄的麻绳。挥动时刃口会拖出一道若有若无的暗红残影，仿佛把周遭的光都裁开一线；贴近刃脊处有极轻的嗡鸣，像每一次出鞘都藏着比伤口更深的念想。",
+                    cards=[_make_gear_offense_card()],
                 ),
-            )
+                GearItem(
+                    name="装备.缠麻护具",
+                    description="由多层泛黄麻绳与旧纱布反复衬叠而成的护具，表面缝着几道几近褪尽的暗红符痕，像被谁以禁制之法重新绞合过。穿上后衣料之间会发出极轻的窸窣声，仿佛有看不见的丝线贴着躯干缓缓游走，将迫近的寒意都缓去半拍。",
+                    cards=[_make_gear_defense_card()],
+                ),
+                ConsumableItem(
+                    name="消耗品.吗啡针剂",
+                    description="一支从洋馆药柜里找到的玻璃针剂，液体呈淡琥珀色。针管上有细小裂纹但封口尚好。注射后迅速镇痛止血，但会留下短暂的眩晕感。",
+                    count=1,
+                    on_use_prompt=["注射后迅速镇痛止血：使单个目标恢复 4 点 HP。"],
+                ),
+                ConsumableItem(
+                    name="消耗品.纸钱爆散",
+                    description="一叠写满朱砂字的纸钱，折叠成团后用香灰填塞。用力掘向地面后会爆散，纸片与香灰横飞，对场上所有敌人造成伤害。某些东西格外惧怕这个。",
+                    count=1,
+                    on_use_prompt=[
+                        "用力掘向地面，纸钱与香灰爆散：对目标造成 2 点伤害。"
+                    ],
+                ),
+            ],
         ),
-        serialize_component(
-            InventoryComponent(
-                name=actor.name,
-                items=[
-                    GearItem(
-                        name="装备.缠麻短刃",
-                        description="一柄由旧铁剪反复磨砺而成的短刃，刃身仍留着暗红锈斑，握柄裹着泛黄的麻绳。挥动时刃口会拖出一道若有若无的暗红残影，仿佛把周遭的光都裁开一线；贴近刃脊处有极轻的嗡鸣，像每一次出鞘都藏着比伤口更深的念想。",
-                        cards=[_make_gear_offense_card()],
-                    ),
-                    GearItem(
-                        name="装备.缠麻护具",
-                        description="由多层泛黄麻绳与旧纱布反复衬叠而成的护具，表面缝着几道几近褪尽的暗红符痕，像被谁以禁制之法重新绞合过。穿上后衣料之间会发出极轻的窸窣声，仿佛有看不见的丝线贴着躯干缓缓游走，将迫近的寒意都缓去半拍。",
-                        cards=[_make_gear_defense_card()],
-                    ),
-                    ConsumableItem(
-                        name="消耗品.吗啡针剂",
-                        description="一支从洋馆药柜里找到的玻璃针剂，液体呈淡琥珀色。针管上有细小裂纹但封口尚好。注射后迅速镇痛止血，但会留下短暂的眩晕感。",
-                        count=1,
-                        on_use_prompt=["注射后迅速镇痛止血：使单个目标恢复 4 点 HP。"],
-                    ),
-                    ConsumableItem(
-                        name="消耗品.纸钱爆散",
-                        description="一叠写满朱砂字的纸钱，折叠成团后用香灰填塞。用力掘向地面后会爆散，纸片与香灰横飞，对场上所有敌人造成伤害。某些东西格外惧怕这个。",
-                        count=1,
-                        on_use_prompt=[
-                            "用力掘向地面，纸钱与香灰爆散：对目标造成 2 点伤害。"
-                        ],
-                    ),
-                ],
-            )
-        ),
-    ]
+    )
 
     return actor
 
@@ -454,31 +446,27 @@ def create_guzhiqiu() -> Actor:
         system_rules=SYSTEM_RULES,
     )
 
-    actor.components = [
-        serialize_component(
-            DeckComponent(
-                name=actor.name,
-                cards=[
-                    # 3 张基础攻击
-                    _make_attack_card(),
-                    _make_attack_card(),
-                    _make_attack_card(),
-                    # 2 张基础防御
-                    _make_defense_card(),
-                    _make_defense_card(),
-                ],
-            )
+    actor.components = dump_components(
+        DeckComponent(
+            name=actor.name,
+            cards=[
+                # 3 张基础攻击
+                _make_attack_card(),
+                _make_attack_card(),
+                _make_attack_card(),
+                # 2 张基础防御
+                _make_defense_card(),
+                _make_defense_card(),
+            ],
         ),
-        serialize_component(
-            WornCostumeComponent(
-                name=actor.name,
-                item=CostumeItem(
-                    name="时装.灰布长衫",
-                    description="一件半旧的深灰色棉布长衫，袖口微微磨损，右袖外侧有一块洗不掉的墨渍。剪裁合身但不束缚，方便在书案与画台间俯身劳作。穿在身上整洁素净，透着修书人特有的利落。",
-                ),
-            )
+        WornCostumeComponent(
+            name=actor.name,
+            item=CostumeItem(
+                name="时装.灰布长衫",
+                description="一件半旧的深灰色棉布长衫，袖口微微磨损，右袖外侧有一块洗不掉的墨渍。剪裁合身但不束缚，方便在书案与画台间俯身劳作。穿在身上整洁素净，透着修书人特有的利落。",
+            ),
         ),
-    ]
+    )
 
     return actor
 
@@ -582,9 +570,7 @@ def create_dungeon_generation() -> World:
 - 同场景有多个生物时，须在形态类型、活动方式、威胁风格上有所区别，避免重复""",
     )
 
-    world.components = [
-        serialize_component(DungeonGenerationComponent(name=world.name))
-    ]
+    world.components = dump_components(DungeonGenerationComponent(name=world.name))
 
     return world
 
@@ -628,7 +614,7 @@ def create_illustration_prompt() -> World:
 - 只输出画面，不解释创作思路。""",
     )
 
-    world.components = [serialize_component(IllustrationComponent(name=world.name))]
+    world.components = dump_components(IllustrationComponent(name=world.name))
 
     return world
 
@@ -668,7 +654,7 @@ def create_player_action_audit() -> World:
 - 拒绝时给出简短明确的理由""",
     )
 
-    world.components = [serialize_component(PlayerAuditComponent(name=world.name))]
+    world.components = dump_components(PlayerAuditComponent(name=world.name))
 
     return world
 
@@ -711,7 +697,7 @@ XXXX 部分简洁有辨识度，避免使用数字后缀。
 两类材料的混合使用应产生合理的化学反应——不是量变，而是质变：锈铁剪裹上浸过香灰的旧麻绳后，不再是"剪子加布条"，而是一件带诡谲锋芒的装备。""",
     )
 
-    world.components = [serialize_component(GearWorkshopComponent(name=world.name))]
+    world.components = dump_components(GearWorkshopComponent(name=world.name))
 
     return world
 
@@ -741,9 +727,7 @@ def create_consumable_workshop() -> World:
 成品须呈现诡谲、反常、民俗仪式感，其寻常来源只能以极克制的感官细节暗示，不得破坏诡谲层面的氛围。""",
     )
 
-    world.components = [
-        serialize_component(ConsumableWorkshopComponent(name=world.name))
-    ]
+    world.components = dump_components(ConsumableWorkshopComponent(name=world.name))
 
     return world
 
@@ -775,7 +759,7 @@ def create_costume_workshop() -> World:
 成品在民国街头必须看起来自然、合理；其诡谲来源只能以极克制的感官细节暗示，不得点名来源、不得破坏寻常层面的审美。""",
     )
 
-    world.components = [serialize_component(CostumeWorkshopComponent(name=world.name))]
+    world.components = dump_components(CostumeWorkshopComponent(name=world.name))
 
     return world
 
@@ -802,7 +786,7 @@ def create_consumable_arbitrator() -> World:
 - 只裁决本次消耗品使用，不越界改动无关角色或场景以外的任何状态。""",
     )
 
-    world.components = [serialize_component(ConsumableComponent(name=world.name))]
+    world.components = dump_components(ConsumableComponent(name=world.name))
 
     return world
 
@@ -830,7 +814,7 @@ def create_dungeon_director() -> World:
 - 只输出总结正文，不要额外解释或客套。""",
     )
 
-    world.components = [serialize_component(DungeonDirectorComponent(name=world.name))]
+    world.components = dump_components(DungeonDirectorComponent(name=world.name))
 
     return world
 
@@ -873,7 +857,7 @@ def create_world_director() -> World:
 - 输出以「判断 + 决策/指令」为主，简洁明确，不要冗长叙事。""",
     )
 
-    world.components = [serialize_component(WorldDirectorComponent(name=world.name))]
+    world.components = dump_components(WorldDirectorComponent(name=world.name))
 
     return world
 
@@ -895,75 +879,73 @@ def create_storage() -> World:
 你是游戏世界的全局储物箱，负责保管角色存放的各类道具（材料、消耗品、装备、时装）。你不主动参与叙事，也不与角色对话；仅作为库存数据的载体，供合成、穿装、移动等系统读写。当被询问库存时，你只如实呈现当前库存内容，不虚构不存在的道具。""",
     )
 
-    world.components = [
-        serialize_component(
-            StorageComponent(
-                name=world.name,
-                items=[
-                    ConsumableItem(
-                        name="消耗品.止血药粉",
-                        description="一小纸包灰白色粉末，闻起来有股辛辣的草药味。洒在伤口上会引起短暂刺痛，随后迅速止血。",
-                        count=2,
-                        on_use_prompt=[
-                            "将药粉洒在伤口上迅速止血：使单个友方目标恢复 3 点 HP。"
-                        ],
-                    ),
-                    ConsumableItem(
-                        name="消耗品.香灰投掷包",
-                        description="道观废墟中收集的冷灰色香灰，用旧报纸卷成小包。掷向单个敌人可造成灼烧伤害，香灰对某些东西格外有效。",
-                        count=2,
-                        on_use_prompt=[
-                            "将香灰包掷向单个敌人，香灰灼烧其躯体：对该目标造成 3 点伤害。"
-                        ],
-                    ),
-                    MaterialItem(
-                        name="材料.符纸残片",
-                        description="几张残破的黄色符纸，朱砂字迹已模糊不可辨认。在暗处指尖触碰时有微微发热的感觉。",
-                        count=3,
-                    ),
-                    MaterialItem(
-                        name="材料.旧麻绳",
-                        description="洋馆地窖的一捆旧麻绳，已泛黄，但韧劲仍在。可用于绑扎或简单防护。",
-                        count=2,
-                    ),
-                    MaterialItem(
-                        name="材料.锈铁剪",
-                        description="洋馆杂物间里的一把旧铁剪，刃口锈迹斑斑却仍锋利。经打磨可改制成短刃。",
-                        count=2,
-                    ),
-                    MaterialItem(
-                        name="材料.香灰",
-                        description="从坍塌道观的香炉中收集的灰烬，呈反常的冷灰色。干燥时触感冰凉，遇水会产生微量热量。",
-                        count=3,
-                    ),
-                    MaterialItem(
-                        name="材料.司命甲片",
-                        description="猎杀上位存在脱落的碎片，成分与火山玻璃相似，在光线下折射出不自然的深红色光泽。",
-                        count=2,
-                    ),
-                    MaterialItem(
-                        name="材料.靛蓝布料",
-                        description="从旧式长衫上裁下的靛蓝色棉布，颜色经过反复浆洗已变为沉稳的灰蓝。质地柔软，适合缝制衣物或衬里。",
-                        count=3,
-                    ),
-                    MaterialItem(
-                        name="材料.铜质纽扣",
-                        description="从旧衣物上拆下的铜制纽扣，表面氧化后呈深绿色但结构完好。可作为装备连接件或饰品零件。",
-                        count=2,
-                    ),
-                    MaterialItem(
-                        name="材料.旧纱布",
-                        description="洋馆杂物间的一卷旧纱布，已微微泛黄。透气性好，适合做绷带或轻质内衬。",
-                        count=3,
-                    ),
-                    MaterialItem(
-                        name="材料.逆流晶砂",
-                        description="从一条逆流河岸边收集的细砂，在掌心静置时会缓慢地逆向滚动，违背肉眼可辨的物理直觉。",
-                        count=2,
-                    ),
-                ],
-            )
+    world.components = dump_components(
+        StorageComponent(
+            name=world.name,
+            items=[
+                ConsumableItem(
+                    name="消耗品.止血药粉",
+                    description="一小纸包灰白色粉末，闻起来有股辛辣的草药味。洒在伤口上会引起短暂刺痛，随后迅速止血。",
+                    count=2,
+                    on_use_prompt=[
+                        "将药粉洒在伤口上迅速止血：使单个友方目标恢复 3 点 HP。"
+                    ],
+                ),
+                ConsumableItem(
+                    name="消耗品.香灰投掷包",
+                    description="道观废墟中收集的冷灰色香灰，用旧报纸卷成小包。掷向单个敌人可造成灼烧伤害，香灰对某些东西格外有效。",
+                    count=2,
+                    on_use_prompt=[
+                        "将香灰包掷向单个敌人，香灰灼烧其躯体：对该目标造成 3 点伤害。"
+                    ],
+                ),
+                MaterialItem(
+                    name="材料.符纸残片",
+                    description="几张残破的黄色符纸，朱砂字迹已模糊不可辨认。在暗处指尖触碰时有微微发热的感觉。",
+                    count=3,
+                ),
+                MaterialItem(
+                    name="材料.旧麻绳",
+                    description="洋馆地窖的一捆旧麻绳，已泛黄，但韧劲仍在。可用于绑扎或简单防护。",
+                    count=2,
+                ),
+                MaterialItem(
+                    name="材料.锈铁剪",
+                    description="洋馆杂物间里的一把旧铁剪，刃口锈迹斑斑却仍锋利。经打磨可改制成短刃。",
+                    count=2,
+                ),
+                MaterialItem(
+                    name="材料.香灰",
+                    description="从坍塌道观的香炉中收集的灰烬，呈反常的冷灰色。干燥时触感冰凉，遇水会产生微量热量。",
+                    count=3,
+                ),
+                MaterialItem(
+                    name="材料.司命甲片",
+                    description="猎杀上位存在脱落的碎片，成分与火山玻璃相似，在光线下折射出不自然的深红色光泽。",
+                    count=2,
+                ),
+                MaterialItem(
+                    name="材料.靛蓝布料",
+                    description="从旧式长衫上裁下的靛蓝色棉布，颜色经过反复浆洗已变为沉稳的灰蓝。质地柔软，适合缝制衣物或衬里。",
+                    count=3,
+                ),
+                MaterialItem(
+                    name="材料.铜质纽扣",
+                    description="从旧衣物上拆下的铜制纽扣，表面氧化后呈深绿色但结构完好。可作为装备连接件或饰品零件。",
+                    count=2,
+                ),
+                MaterialItem(
+                    name="材料.旧纱布",
+                    description="洋馆杂物间的一卷旧纱布，已微微泛黄。透气性好，适合做绷带或轻质内衬。",
+                    count=3,
+                ),
+                MaterialItem(
+                    name="材料.逆流晶砂",
+                    description="从一条逆流河岸边收集的细砂，在掌心静置时会缓慢地逆向滚动，违背肉眼可辨的物理直觉。",
+                    count=2,
+                ),
+            ],
         ),
-    ]
+    )
 
     return world

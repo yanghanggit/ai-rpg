@@ -3,10 +3,10 @@ from typing import Dict, List, final
 
 from pydantic import BaseModel, Field
 
+from ..entitas import ContextData
 from .blueprint import Blueprint
 from .dungeon import AnyDungeonRoom, Dungeon
 from .player_session import PlayerSession
-from .serialization import EntitySerialization
 from .session_message import SessionMessage
 from .task import TaskSnapshot
 
@@ -485,7 +485,7 @@ class StagesStateResponse(BaseModel):
 
 @final
 class EntitiesDetailsResponse(BaseModel):
-    entities: List[EntitySerialization]
+    entities: ContextData
 
 
 ################################################################################################################

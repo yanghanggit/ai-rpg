@@ -64,6 +64,48 @@ await pipeline.execute()
 pipeline.cleanup()
 ```
 
+## 序列化（dump / load）
+
+以**实体名作 key** 的纯 dict 表示，只保存「重建 Context 核心」所需的组件；`pools` /
+`handles` / `groups` / 事件接线 / 名称索引等运行期成员一律不存，加载时重建。
+
+```python
+ComponentData = dict[str, Any]              # 组件字段名 -> 值
+EntityData    = dict[str, ComponentData]    # 组件类型名 -> 组件数据
+ContextData   = dict[str, EntityData]       # 实体名 -> 实体数据
+
+dump_entity(entity, *, component_filter=None) -> EntityData
+dump_components(*components) -> EntityData                      # 由组件实例直接构造
+dump_entities(entities, *, component_filter=None) -> ContextData
+dump_context(context, *, component_filter=None) -> ContextData  # 按 slot index 顺序
+load_context(context, data, resolve_type) -> dict[str, Entity]  # 注入 resolver，静默写入
+```
+
+```python
+from ai_rpg.entitas import Context, dump_components, dump_context, load_context
+
+
+# 导出：{"hero": {"Position": {"x": 1.0, "y": 2.0}}}
+data = dump_context(context)
+
+# 蓝图/工厂里直接构造：{"Position": {"x": 1.0, "y": 2.0}, "Marker": {}}
+entity_data = dump_components(Position(x=1.0, y=2.0), Marker())
+
+
+# 还原进一个空 Context（组件类型名 -> 类 由调用方注入）
+def resolve(name: str, comp_data: dict) -> type:
+    return {"Position": Position, "Marker": Marker}[name]
+
+
+restored = load_context(Context(), data, resolve)
+```
+
+契约：
+
+- `dump_*` 要求实体 `name` **非空且唯一**（重名会静默丢数据）。
+- `load_context` 仅用于**空 Context**；直接写 storage、**不触发组件事件**，故分组应在 load 之后创建。
+- entitas 不认识组件注册表：类型解析由 `resolve_type` 注入（游戏层用 `resolve_component_type`）。
+
 ## 设计要点
 
 - **index 化存储**：组件按类型分池 `dict[type, list]`，用实体 `index` 直寻址（sparse-set / SoA）。

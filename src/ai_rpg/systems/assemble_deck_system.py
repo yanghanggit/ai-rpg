@@ -41,7 +41,6 @@ from ..models import (
     IllustrateDungeonAction,
     SystemMessage,
     apply_affix_design,
-    serialize_component,
 )
 from ..paths import DUNGEONS_DIR
 from ..pgsql import (
@@ -398,9 +397,8 @@ class AssembleDeckSystem(ReactiveProcessor):
             cards = make_default_deck_cards()
             is_fallback = True
 
-        actor.components = [
-            serialize_component(DeckComponent(name=actor.name, cards=cards))
-        ]
+        deck = DeckComponent(name=actor.name, cards=cards)
+        actor.components = {DeckComponent.__name__: deck.model_dump()}
         return not is_fallback
 
     ####################################################################################################################################

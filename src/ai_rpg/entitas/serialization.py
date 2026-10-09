@@ -62,6 +62,18 @@ def dump_entity(
     return data
 
 
+def dump_components(*components: Component) -> EntityData:
+    """Dumps component instances into a single :data:`EntityData` mapping.
+
+    Convenient when building an entity's component dict outside a live context,
+    e.g. blueprint definitions. Each type name maps to that component's data.
+
+    :param components: Component instances to dump
+    :return: Component type name -> component data
+    """
+    return {type(comp).__name__: comp.model_dump() for comp in components}
+
+
 def dump_entities(
     entities: Iterable[Entity],
     *,

@@ -5,25 +5,10 @@
 
 from typing import Dict, List, Optional, Tuple
 
-from ..entitas.components import Component
 from .card import Card
 from .character_stats import CharacterStats
 from .components import HandComponent
 from .items import AnyItem, ConsumableItem, ItemType, MaterialItem
-from .serialization import ComponentSerialization
-
-
-def serialize_component(component: Component) -> ComponentSerialization:
-    """将组件实例序列化为 ComponentSerialization。
-
-    name 统一取自组件运行时类名，与反序列化时 registry 的查表 key 保持一致，
-    避免调用处手写 ``X.__name__`` 与 ``data`` 实例不一致。
-    """
-
-    return ComponentSerialization(
-        name=type(component).__name__,
-        data=component.model_dump(),
-    )
 
 
 def compute_effective_stats(base_stats: CharacterStats) -> CharacterStats:

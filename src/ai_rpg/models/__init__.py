@@ -15,7 +15,6 @@ from .items import *
 from .messages import *
 from .player_session import *
 from .registry import *
-from .serialization import *
 from .session_message import *
 from .target_type import *
 from .task import *

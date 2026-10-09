@@ -1,8 +1,8 @@
-"""ECS ↔ 存储契约测试（Step 1 的护栏）。
+"""ECS ↔ 存储契约测试。
 
-这一步只重构了 entitas 核心（entity 变句柄、组件存入 context pools），存储流程
-（``world_persistence`` / ``RPGEntityManager.serialize_entities``）保持不变。本文件
-锁定二者之间的接口契约，确保后续再动存储时不会悄悄破坏现有流程。
+护栏一（Step 1）：entitas 核心的句柄 / pools 语义不变。
+护栏二（Stage C）：name-keyed 的 ``serialize_context`` / ``restore_context``
+与 ``world_persistence`` 之间的接口契约。
 """
 
 import json
@@ -15,7 +15,6 @@ from ai_rpg.entitas import Component, Entity
 from ai_rpg.game.rpg_entity_manager import RPGEntityManager
 from ai_rpg.models import (
     COMPONENT_TYPES,
-    EntitySerialization,
     IdentityComponent,
     create_component_type,
 )
@@ -34,42 +33,18 @@ def _new_id() -> str:
     return str(uuid.uuid4())
 
 
-class TestSerializeDeserializeContract:
-    def test_round_trip_through_entity_serialization(self) -> None:
-        tag_cls = create_component_type("ContractTag", value=(int, ...))
-
+class TestContextDataSerialization:
+    def test_serialize_context_orders_by_slot_index(self) -> None:
         source = RPGEntityManager()
-        hero = source._create_entity("hero")
-        hero.add(IdentityComponent, "hero", 1, _new_id())
+        first = source._create_entity("first")
+        first.add(IdentityComponent, "first", 9, _new_id())
+        second = source._create_entity("second")
+        second.add(IdentityComponent, "second", 2, _new_id())
 
-        goblin = source._create_entity("goblin")
-        goblin.add(IdentityComponent, "goblin", 2, _new_id())
-        goblin.set(tag_cls, tag_cls.model_validate({"value": 7}))
+        data = source.serialize_context()
 
-        serialized = source.serialize_entities(source.entities)
-        assert [s.name for s in serialized] == ["hero", "goblin"]
-
-        # world_persistence 会先落成 JSON 再读回，这里模拟同样的往返。
-        raws = [s.model_dump_json() for s in serialized]
-        reloaded = [EntitySerialization.model_validate_json(raw) for raw in raws]
-
-        target = RPGEntityManager()
-        restored = target.deserialize_entities(reloaded)
-        by_name = {entity.name: entity for entity in restored}
-
-        assert by_name["hero"].get(IdentityComponent).creation_order == 1
-        assert by_name["goblin"].has(tag_cls)
-        assert by_name["goblin"].get(tag_cls).model_dump() == {"value": 7}
-
-    def test_serialize_sorts_by_creation_order(self) -> None:
-        source = RPGEntityManager()
-        late = source._create_entity("late")
-        late.add(IdentityComponent, "late", 9, _new_id())
-        early = source._create_entity("early")
-        early.add(IdentityComponent, "early", 2, _new_id())
-
-        serialized = source.serialize_entities(source.entities)
-        assert [s.name for s in serialized] == ["early", "late"]
+        # 按 slot index（即创建顺序）导出，与 creation_order 字段无关
+        assert list(data) == ["first", "second"]
 
     def test_destroyed_entity_is_not_serialized(self) -> None:
         manager = RPGEntityManager()
@@ -81,8 +56,9 @@ class TestSerializeDeserializeContract:
         live = manager._create_entity("live")
         live.add(IdentityComponent, "live", 2, _new_id())
 
-        serialized = manager.serialize_entities(manager.entities)
-        assert [s.name for s in serialized] == ["live"]
+        data = manager.serialize_context()
+
+        assert list(data) == ["live"]
 
     def test_serialization_reads_components_via_public_api(self) -> None:
         manager = RPGEntityManager()

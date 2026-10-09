@@ -84,12 +84,10 @@ class ArtifactInitializationSystem(ExecuteProcessor):
                 )
 
                 # 特殊组件，根据 artifact.components 数据驱动动态添加
-                for comp_serialization in artifact.components:
-                    comp_class = resolve_component_type(
-                        comp_serialization.name, comp_serialization.data
-                    )
-                    restore_comp = comp_class(**comp_serialization.data)
+                for comp_name, comp_data in artifact.components.items():
+                    comp_class = resolve_component_type(comp_name, comp_data)
+                    restore_comp = comp_class(**comp_data)
                     logger.debug(
-                        f"为 Artifact 实体 {artifact_entity.name} 添加 {comp_serialization.name}"
+                        f"为 Artifact 实体 {artifact_entity.name} 添加 {comp_name}"
                     )
                     artifact_entity.set(comp_class, restore_comp)

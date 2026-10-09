@@ -1,11 +1,11 @@
-from typing import Dict, List, final
+from typing import Dict, final
 
 from pydantic import BaseModel, Field
 
+from ..entitas import ContextData
 from .agent_memory import AgentMemory
 from .blueprint import Blueprint
 from .dungeon import Dungeon
-from .serialization import EntitySerialization
 
 
 ###############################################################################################################################################
@@ -13,7 +13,7 @@ from .serialization import EntitySerialization
 @final
 class WorldState(BaseModel):
     entity_counter: int
-    entities: List[EntitySerialization] = []
+    entities: ContextData = {}
     dungeon: Dungeon = Field(
         default_factory=lambda: Dungeon(name="", rooms=[], profile="")
     )

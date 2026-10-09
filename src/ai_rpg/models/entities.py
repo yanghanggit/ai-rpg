@@ -4,9 +4,9 @@ from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
+from ..entitas import EntityData
 from .assets_meta import AssetKey
 from .character_stats import CharacterStats
-from .serialization import ComponentSerialization
 
 
 ###############################################################################################################################################
@@ -36,7 +36,7 @@ class Actor(BaseModel):
     base_body: str
     system_message: str
     character_stats: CharacterStats
-    components: List[ComponentSerialization] = []
+    components: EntityData = {}
     assets: Dict[AssetKey, str] = Field(
         default_factory=dict
     )  # 场景插图等资源：AssetKey -> meta 路径（.assets/image/<file>.meta）
@@ -50,7 +50,7 @@ class Stage(BaseModel):
     profile: str
     system_message: str
     actors: List[Actor]
-    components: List[ComponentSerialization] = []
+    components: EntityData = {}
     assets: Dict[AssetKey, str] = Field(
         default_factory=dict
     )  # 场景插图等资源：AssetKey -> meta 路径（.assets/image/<file>.meta）
@@ -61,7 +61,7 @@ class Stage(BaseModel):
 class World(BaseModel):
     name: str
     system_message: str
-    components: List[ComponentSerialization] = []
+    components: EntityData = {}
 
 
 ###############################################################################################################################################
@@ -74,7 +74,7 @@ class Artifact(BaseModel):
     name: str
     system_message: str
     modifiers: List[str] = []  # 对持有者或环境的属性修正列表
-    components: List[ComponentSerialization] = []  # 挂载在神器上的组件序列化列表
+    components: EntityData = {}  # 挂载在神器上的组件序列化列表
     uuid: str = Field(default_factory=lambda: str(uuid4()))  # 全局唯一标识符
     assets: Dict[AssetKey, str] = Field(
         default_factory=dict

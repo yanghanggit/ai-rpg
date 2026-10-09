@@ -76,7 +76,7 @@ class RPGGame(BaseGame, RPGAgentMemory, RPGEntityManager, RPGGamePipelineManager
             return self
 
         # 从序列化数据中恢复实体状态
-        self.deserialize_entities(self._world.entities)
+        self.restore_context(self._world.entities)
         return self
 
     ###############################################################################################################################################
@@ -84,7 +84,7 @@ class RPGGame(BaseGame, RPGAgentMemory, RPGEntityManager, RPGGamePipelineManager
         """保存当前游戏世界状态到持久化存储，并生成调试快照"""
         # 生成快照
         assert len(self._entities) > 0, "游戏中没有实体，不能生成快照"
-        self._world.entities = self.serialize_entities(self._entities)
+        self._world.entities = self.serialize_context()
         return self
 
     ###############################################################################################################################################

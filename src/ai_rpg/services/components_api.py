@@ -1,7 +1,7 @@
 """组件名清单接口模块。
 
 `COMPONENT_TYPES` 是 ECS 组件类名的唯一事实源（`models/components.py` 里每个
-`@register_component_type` 的类名）。`ComponentSerialization.name` 在契约里只是
+`@register_component_type` 的类名）。组件 dump 里以组件类名作 key，在契约里只是
 `string`（后端还支持 `create_component_type` 动态类，无法收窄成枚举），前端拿不到
 这层约束，类名拼错只会静默读不到数据。本接口把注册表的键暴露出来，供前端
 `scripts/genApi.mjs` 生成编译期清单使用。

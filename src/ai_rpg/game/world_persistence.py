@@ -15,12 +15,12 @@ from typing import Any, Dict, List, Optional, Tuple, cast
 from loguru import logger
 from pydantic import TypeAdapter
 
+from ..entitas import EntityData
 from ..models import (
     AgentMemory,
     Blueprint,
     ChatMessage,
     Dungeon,
-    EntitySerialization,
     PlayerSession,
     SessionMessage,
     WorldState,
@@ -112,10 +112,11 @@ def restore_world(save_dir: Path) -> Tuple[WorldState, PlayerSession]:
     # 将 agent_memories 赋值给 world 对象
     world.agent_memories = agent_memories
 
-    # 从 entities/ 目录重建 entities
-    world.entities = [
-        EntitySerialization.model_validate_json(raw) for raw in entity_raws
-    ]
+    # 从 entities/ 目录重建 entities（文件名即实体名）
+    world.entities = {
+        path.stem: _load_entity_data(raw)
+        for raw, path in zip(entity_raws, entity_files)
+    }
 
     # 从 dungeon/ 目录重建 dungeon
     if dungeon_raws:
@@ -192,9 +193,14 @@ def save_world(
     # 保存 player_session.jsonl
     files.append(("player_session.jsonl", _build_session_jsonl(player_session)))
 
-    # 保存实体数据
-    for entity in world.entities:
-        files.append((f"entities/{entity.name}.json", entity.model_dump_json()))
+    # 保存实体数据（name-keyed：文件名即实体名，内容为该实体的组件 dict）
+    for entity_name, entity_data in world.entities.items():
+        files.append(
+            (
+                f"entities/{entity_name}.json",
+                json.dumps(entity_data, ensure_ascii=False),
+            )
+        )
 
     # 保存代理记忆数据
     sep: str = "-" * 100
@@ -270,6 +276,12 @@ def save_world(
         shutil.rmtree(tmp_dir, ignore_errors=True)
         logger.error(f"存档失败: {e}")
         return False
+
+
+###############################################################################################################################################
+def _load_entity_data(raw: str) -> EntityData:
+    """读取单个实体文件的组件 dict（文件名另行作为实体名）。"""
+    return cast(EntityData, json.loads(raw))
 
 
 ###############################################################################################################################################

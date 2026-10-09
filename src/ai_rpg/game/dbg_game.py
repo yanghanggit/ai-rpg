@@ -253,15 +253,11 @@ class DBGGame(RPGGame):
             )
 
             # 特殊组件，根据 world_model.components 数据驱动动态添加
-            for comp_serialization in world_model.components:
-                comp_class = COMPONENT_TYPES.get(comp_serialization.name)
-                assert (
-                    comp_class is not None
-                ), f"未知组件类型: {comp_serialization.name}"
-                restore_comp = comp_class(**comp_serialization.data)
-                logger.debug(
-                    f"为 World 实体 {world_entity.name} 添加 {comp_serialization.name}"
-                )
+            for comp_name, comp_data in world_model.components.items():
+                comp_class = COMPONENT_TYPES.get(comp_name)
+                assert comp_class is not None, f"未知组件类型: {comp_name}"
+                restore_comp = comp_class(**comp_data)
+                logger.debug(f"为 World 实体 {world_entity.name} 添加 {comp_name}")
                 world_entity.set(comp_class, restore_comp)
 
             # 添加到返回值
@@ -328,15 +324,11 @@ class DBGGame(RPGGame):
                     assert False, f"未知的 ActorType: {actor_model.type}"
 
             # 特殊组件，根据 actor_model.components 数据驱动动态添加
-            for comp_serialization in actor_model.components:
-                comp_class = COMPONENT_TYPES.get(comp_serialization.name)
-                assert (
-                    comp_class is not None
-                ), f"未知组件类型: {comp_serialization.name}"
-                restore_comp = comp_class(**comp_serialization.data)
-                logger.debug(
-                    f"为 Actor 实体 {actor_entity.name} 添加 {comp_serialization.name}"
-                )
+            for comp_name, comp_data in actor_model.components.items():
+                comp_class = COMPONENT_TYPES.get(comp_name)
+                assert comp_class is not None, f"未知组件类型: {comp_name}"
+                restore_comp = comp_class(**comp_data)
+                logger.debug(f"为 Actor 实体 {actor_entity.name} 添加 {comp_name}")
                 actor_entity.set(comp_class, restore_comp)
 
             # 做一些判断
@@ -395,14 +387,10 @@ class DBGGame(RPGGame):
 
             # 特殊组件，根据 stage_model.components 数据驱动动态添加
             # （含每个 Stage 的唯一标记组件，跨进程反序列化时惰性重建）
-            for comp_serialization in stage_model.components:
-                comp_class = resolve_component_type(
-                    comp_serialization.name, comp_serialization.data
-                )
-                restore_comp = comp_class(**comp_serialization.data)
-                logger.debug(
-                    f"为 Stage 实体 {stage_entity.name} 添加 {comp_serialization.name}"
-                )
+            for comp_name, comp_data in stage_model.components.items():
+                comp_class = resolve_component_type(comp_name, comp_data)
+                restore_comp = comp_class(**comp_data)
+                logger.debug(f"为 Stage 实体 {stage_entity.name} 添加 {comp_name}")
                 stage_entity.set(comp_class, restore_comp)
 
             ## 重新设置Actor和stage的关系

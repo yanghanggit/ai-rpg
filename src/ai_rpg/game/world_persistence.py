@@ -167,7 +167,7 @@ def save_world(
             ├── blueprint/{blueprint_name}.json
             ├── entities/{entity}.json ...
             ├── memories/{agent}.jsonl, {agent}.meta.json, {agent}_buffer.txt ...
-            ├── dungeon/{dungeon_name}.json
+            ├── dungeon/{dungeon_name}.json    # 空副本（name 为空）落为 dungeon/.empty.json
     """
 
     # 如果未指定 save_dir，则根据玩家名、游戏名和时间戳生成目录
@@ -238,10 +238,9 @@ def save_world(
         (f"blueprint/{world.blueprint.name}.json", world.blueprint.model_dump_json())
     )
 
-    # 保存地下城数据
-    files.append(
-        (f"dungeon/{world.dungeon.name}.json", world.dungeon.model_dump_json())
-    )
+    # 保存地下城数据（空副本写占位文件名 ".empty.json"，避免产生 ".json"）
+    dungeon_filename = world.dungeon.name if world.dungeon.name != "" else ".empty"
+    files.append((f"dungeon/{dungeon_filename}.json", world.dungeon.model_dump_json()))
 
     # 先写临时目录，全部成功后原子替换为正式存档目录
     tmp_dir = save_dir.parent / f".{save_dir.name}.tmp-{os.getpid()}"

@@ -141,6 +141,21 @@ class TestRoundTrip:
         assert list(restored_world.entities) == ["goblin", "slime"]
         assert restored_world.entities["goblin"] == {"stats": {"hp": 10}}
 
+    def test_empty_dungeon_is_persisted_as_placeholder(self, tmp_path: Path) -> None:
+        """空副本（name 为空）落盘为 dungeon/.empty.json；还原时得到空副本。"""
+        world = _make_world()
+        world.dungeon = Dungeon(name="", rooms=[], profile="")
+        save_dir = tmp_path / "snap"
+        assert world_persistence.save_world(
+            world, _make_player_session(), tmp_path, save_dir
+        )
+
+        dungeon_dir = save_dir / "dungeon"
+        assert [p.name for p in dungeon_dir.glob("*.json")] == [".empty.json"]
+
+        restored_world, _ = world_persistence.restore_world(save_dir)
+        assert restored_world.dungeon.name == ""
+
     def test_world_state_json_excludes_split_fields(self, tmp_path: Path) -> None:
         """world_state.json 应排除独立存储的字段。"""
         world = _make_world()

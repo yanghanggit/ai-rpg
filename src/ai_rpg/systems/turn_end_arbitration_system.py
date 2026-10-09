@@ -27,6 +27,7 @@ from ..models import (
     MonsterComponent,
     PartyMemberComponent,
     PassTurnAction,
+    render_labeled_str_list,
 )
 from ..utils import prompt_builder
 from .arbitration_prompt_builders import (
@@ -43,23 +44,25 @@ TURN_END_AFFIX_RULES: Final[
     str
 ] = """## 回合结束词缀
 
-你是这些卡牌的持有者，也是本次回合结束结算的仲裁者。每张卡牌的 `source` 是它的来源（生成/注入者名称）；词缀若提及「非 source 者」，指当前持有者（当其不等于该卡牌 source 时）。依各卡牌词缀描述结算，受影响目标由词缀描述与场上存活角色自行判断；持有者自身也可成为目标。不引入词缀未提及的新机制。"""
+你是这些卡牌的持有者，也是本次回合结束结算的仲裁者。每张卡牌的 `source` 是它的来源（生成/注入者名称）；词缀若提及「非 source 者」，指当前持有者（当其不等于该卡牌 source 时）。回回合结束词缀可能有多条，均为独立规则，须**逐条全部结算**；依各卡牌词缀描述结算，受影响目标由词缀描述与场上存活角色自行判断；持有者自身也可成为目标。不引入词缀未提及的新机制。"""
 
 
 @prompt_builder
 def _build_turn_end_card_lines(card: Card) -> str:
     """输出一张带回合结束词缀的卡参与仲裁的数据字段。"""
-    affixes = "、".join(card.on_turn_end_affixes) if card.on_turn_end_affixes else "无"
     source = card.source or "未知"
-    return (
-        f"- 卡牌：{card.name}\n"
-        f"- source（来源/注入者）：{source}\n"
-        f"- 叙事（description）：{card.description}\n"
-        f"- damage：{card.damage}（单次伤害）\n"
-        f"- hit_count：{card.hit_count}（攻击次数）\n"
-        f"- block：{card.block}\n"
-        f"- 回合结束词缀：{affixes}"
-    )
+    lines = [
+        f"- 卡牌：{card.name}",
+        f"- source（来源/注入者）：{source}",
+        f"- 叙事（description）：{card.description}",
+        f"- damage：{card.damage}（单次伤害）",
+        f"- hit_count：{card.hit_count}（攻击次数）",
+        f"- block：{card.block}",
+        render_labeled_str_list(
+            "- 回合结束词缀", card.on_turn_end_affixes, indent="    "
+        ),
+    ]
+    return "\n".join(lines)
 
 
 def _build_alive_actor_lines(alive_actor_names: List[str]) -> str:
@@ -110,7 +113,7 @@ def _build_turn_end_arbitration_tool_prompt(
 ## 工具使用流程
 
 1. 调用 get_entity_stats 读取「持有者」与所有可能受影响角色的当前属性（可在同一次回复中并发调用多个）。
-2. 依据「计算规则」与各卡牌「回合结束词缀」结算，得出每个受影响角色的最终 HP。
+2. 依据「计算规则」与各卡牌「回合结束词缀」逐条全部结算，得出每个受影响角色的最终 HP。
 3. 对每个受影响角色（含持有者与所有目标）调用 set_entity_hp 写入最终 HP（可在同一次回复中并发调用多个）。
 4. 调用 submit_arbitration 提交最终结果，结束本次仲裁。
 

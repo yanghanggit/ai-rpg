@@ -39,6 +39,7 @@ from ..models import (
     CombatRoom,
     DeckComponent,
     IllustrateDungeonAction,
+    NormalizedStrList,
     SystemMessage,
     apply_affix_design,
 )
@@ -89,9 +90,9 @@ class _DeckCardPick(BaseModel):
     prototype_id: str
     name: str
     description: str
-    on_play_affixes: Optional[List[str]] = None
-    on_hit_affixes: Optional[List[str]] = None
-    on_turn_end_affixes: Optional[List[str]] = None
+    on_play_affixes: Optional[NormalizedStrList] = None
+    on_hit_affixes: Optional[NormalizedStrList] = None
+    on_turn_end_affixes: Optional[NormalizedStrList] = None
 
 
 ####################################################################################################################################
@@ -146,17 +147,20 @@ SUBMIT_DECK_CARD_TOOL: Final[ToolDefinition] = ToolDefinition(
                 "on_play_affixes": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "本卡打出时结算的即时词缀（可选），格式 `[词缀名]:机械结算描述`。仅当原型该槽非空时可提交；须满足字段锚点与数值护栏，否则整槽回退原型。",
+                    "maxItems": 3,
+                    "description": "本卡打出时结算的即时词缀（可选，多值列表）：每个元素是一条完整独立词缀，格式 `[词缀名]:机械结算描述`；禁止把一条词缀拆成多个元素或把多条合并进一个元素；无则 []。仅当原型该槽非空时可提交；须满足字段锚点与数值护栏，否则整槽回退原型。",
                 },
                 "on_hit_affixes": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "本卡持有者被命中时触发的受击词缀（可选），格式同上。仅当原型该槽非空时可提交。",
+                    "maxItems": 3,
+                    "description": "本卡持有者被命中时触发的受击词缀（可选，多值列表）：每个元素是一条完整独立词缀，格式同上；禁止拆分或合并；无则 []。仅当原型该槽非空时可提交。",
                 },
                 "on_turn_end_affixes": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "持有者每次 pass turn 结算的回合结束词缀（可选），格式同上。仅当原型该槽非空时可提交。",
+                    "maxItems": 3,
+                    "description": "持有者每次 pass turn 结算的回合结束词缀（可选，多值列表）：每个元素是一条完整独立词缀，格式同上；禁止拆分或合并；无则 []。仅当原型该槽非空时可提交。",
                 },
             },
             "required": ["prototype_id", "name", "description"],
@@ -225,9 +229,9 @@ def _handle_submit_deck_card(
     prototype_id: str,
     name: str,
     description: str,
-    on_play_affixes: Optional[List[str]] = None,
-    on_hit_affixes: Optional[List[str]] = None,
-    on_turn_end_affixes: Optional[List[str]] = None,
+    on_play_affixes: Optional[NormalizedStrList] = None,
+    on_hit_affixes: Optional[NormalizedStrList] = None,
+    on_turn_end_affixes: Optional[NormalizedStrList] = None,
 ) -> str:
     """处理 submit_deck_card 工具调用：校验并暂存一张卡牌的选定与设计。"""
     assert name.strip(), "name 不能为空"

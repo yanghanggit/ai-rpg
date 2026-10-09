@@ -18,6 +18,7 @@ from ..models import (
     Card,
     ChatMessage,
     CraftGearItemAction,
+    NormalizedStrList,
     StorageComponent,
     SystemMessage,
     TargetType,
@@ -37,9 +38,9 @@ class _CraftGearSpec(BaseModel):
 
     name: str = ""
     description: str = ""
-    on_play_affixes: List[str] = []
-    on_hit_affixes: List[str] = []
-    on_turn_end_affixes: List[str] = []
+    on_play_affixes: NormalizedStrList = []
+    on_hit_affixes: NormalizedStrList = []
+    on_turn_end_affixes: NormalizedStrList = []
     playable: bool = True
     exhaust: bool = False
     retain: bool = False
@@ -105,17 +106,20 @@ SUBMIT_GEAR_TOOL: Final[ToolDefinition] = ToolDefinition(
                         "on_play_affixes": {
                             "type": "array",
                             "items": {"type": "string"},
-                            "description": "即时词缀；本卡被打出时结算，仅本次出牌生效；无则 []",
+                            "maxItems": 3,
+                            "description": "即时词缀（多值列表）；本卡被打出时结算，仅本次出牌生效；每个元素是一条完整独立词缀，格式 `[词缀名]:机械结算描述`，禁止拆分或合并；无则 []",
                         },
                         "on_hit_affixes": {
                             "type": "array",
                             "items": {"type": "string"},
-                            "description": "受击词缀；持有者被本次出牌命中时触发；无则 []",
+                            "maxItems": 3,
+                            "description": "受击词缀（多值列表）；持有者被本次出牌命中时触发；每个元素是一条完整独立词缀，禁止拆分或合并；无则 []",
                         },
                         "on_turn_end_affixes": {
                             "type": "array",
                             "items": {"type": "string"},
-                            "description": "回合结束词缀；持有者每次 pass turn 结算一次；无则 []",
+                            "maxItems": 3,
+                            "description": "回合结束词缀（多值列表）；持有者每次 pass turn 结算一次；每个元素是一条完整独立词缀，禁止拆分或合并；无则 []",
                         },
                         "playable": {
                             "type": "boolean",

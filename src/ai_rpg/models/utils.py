@@ -9,6 +9,7 @@ from .card import Card
 from .character_stats import CharacterStats
 from .components import HandComponent
 from .items import AnyItem, ConsumableItem, ItemType, MaterialItem
+from .str_list import normalize_str_list
 
 
 def compute_effective_stats(base_stats: CharacterStats) -> CharacterStats:
@@ -37,7 +38,12 @@ def _item_stack_key(item: AnyItem) -> Optional[Tuple[object, ...]]:
     if isinstance(item, MaterialItem):
         return (ItemType.MATERIAL_ITEM, item.name)
     if isinstance(item, ConsumableItem):
-        return (ItemType.CONSUMABLE_ITEM, item.name, tuple(item.on_use_prompt))
+        # 多值效果提示：全部元素参与堆叠身份（与仲裁逐条全部结算保持一致）。
+        return (
+            ItemType.CONSUMABLE_ITEM,
+            item.name,
+            tuple(normalize_str_list(item.on_use_prompt)),
+        )
     return None
 
 

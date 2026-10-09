@@ -33,6 +33,7 @@ from ..models import (
     DeathComponent,
     DeckComponent,
     InitializeDeckAction,
+    render_labeled_str_list,
 )
 from ..utils import batch_run_boolean_tasks, prompt_builder
 
@@ -115,11 +116,23 @@ def _format_card_for_prompt(card: Card) -> str:
         f"block={card.block} target_type={card.target_type.value} self_target={card.self_target}",
     ]
     if card.on_play_affixes:
-        lines.append(f"  on_play_affixes（只读）: {card.on_play_affixes}")
+        lines.append(
+            render_labeled_str_list(
+                "  on_play_affixes（只读）", card.on_play_affixes, indent="    "
+            )
+        )
     if card.on_hit_affixes:
-        lines.append(f"  on_hit_affixes（只读）: {card.on_hit_affixes}")
+        lines.append(
+            render_labeled_str_list(
+                "  on_hit_affixes（只读）", card.on_hit_affixes, indent="    "
+            )
+        )
     if card.on_turn_end_affixes:
-        lines.append(f"  on_turn_end_affixes（只读）: {card.on_turn_end_affixes}")
+        lines.append(
+            render_labeled_str_list(
+                "  on_turn_end_affixes（只读）", card.on_turn_end_affixes, indent="    "
+            )
+        )
 
     flags: List[str] = []
     if not card.playable:

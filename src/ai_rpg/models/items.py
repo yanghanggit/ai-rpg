@@ -7,6 +7,7 @@ from uuid import uuid4
 from pydantic import BaseModel, Field
 
 from .card import Card
+from .str_list import NormalizedStrList
 
 
 ###############################################################################################################################################
@@ -63,9 +64,9 @@ class ConsumableItem(Item):
     type: Literal[ItemType.CONSUMABLE_ITEM] = Field(
         default=ItemType.CONSUMABLE_ITEM, frozen=True
     )
-    on_use_prompt: List[str] = (
+    on_use_prompt: NormalizedStrList = (
         []
-    )  # 使用效果提示词列表；每个 str 是一条完整描述，当前使用 [0] 作为本次使用仲裁的完整效果提示（注入临时 agent）
+    )  # 使用效果提示词列表（多值）：每个 str 是一条完整、独立的效果提示；仲裁时逐条全部结算
     resources: Sequence["AnyItem"] = Field(
         default_factory=list
     )  # 合成时消耗的原料列表；未必是 MaterialItem（保留 AnyItem 扩展余地）

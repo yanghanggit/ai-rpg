@@ -13,6 +13,7 @@ from . import (
     StageType,
     World,
 )
+from .str_list import render_str_list
 
 
 #######################################################################################################################################
@@ -199,8 +200,8 @@ def create_artifact(
         components={},
     )
 
-    # 修正规则以列表形式落入人设，供神器 agent 在运行时自行解释
-    rules = "\n".join(f"- {modifier}" for modifier in modifiers)
+    # 修正规则以列表形式逐条落入人设，供神器 agent 在运行时自行解释
+    rules = render_str_list(modifiers)
 
     # 系统提示词词
     artifact.system_message = f"""# {artifact.name}

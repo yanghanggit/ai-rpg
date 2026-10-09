@@ -38,8 +38,10 @@ from ..models import (
     Card,
     DeathComponent,
     GenerateSpoilsAction,
+    NormalizedStrList,
     SpoilsComponent,
     apply_affix_design,
+    render_labeled_str_list,
 )
 from ..pgsql import get_card_prototype, list_card_prototype_index
 from ..utils import batch_run_boolean_tasks, prompt_builder
@@ -68,10 +70,10 @@ class _SpoilsCardEdit(BaseModel):
     uuid: str
     name: str
     description: str
-    # 三类词缀：agent 在原型已存在的槽位内重新设计；缺省则保留原型。
-    on_play_affixes: Optional[List[str]] = None
-    on_hit_affixes: Optional[List[str]] = None
-    on_turn_end_affixes: Optional[List[str]] = None
+    # 三类词缀（多值）：agent 在原型已存在的槽位内重新设计；缺省则保留原型。
+    on_play_affixes: Optional[NormalizedStrList] = None
+    on_hit_affixes: Optional[NormalizedStrList] = None
+    on_turn_end_affixes: Optional[NormalizedStrList] = None
 
 
 #######################################################################################################################################
@@ -97,17 +99,20 @@ SUBMIT_SPOILS_CARD_TOOL: Final[ToolDefinition] = ToolDefinition(
                 "on_play_affixes": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "本卡打出时结算的即时词缀（可选），格式 `[词缀名]:机械结算描述`。仅当原型该槽非空时可提交；须满足字段锚点与数值护栏，否则整槽回退原型。",
+                    "maxItems": 3,
+                    "description": "本卡打出时结算的即时词缀（可选，多值列表）：每个元素是一条完整独立词缀，格式 `[词缀名]:机械结算描述`；禁止把一条词缀拆成多个元素或把多条合并进一个元素；无则 []。仅当原型该槽非空时可提交；须满足字段锚点与数值护栏，否则整槽回退原型。",
                 },
                 "on_hit_affixes": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "本卡持有者被命中时触发的受击词缀（可选），格式同上。仅当原型该槽非空时可提交；须满足字段锚点与数值护栏。",
+                    "maxItems": 3,
+                    "description": "本卡持有者被命中时触发的受击词缀（可选，多值列表）：每个元素是一条完整独立词缀，格式同上；禁止拆分或合并；无则 []。仅当原型该槽非空时可提交；须满足字段锚点与数值护栏。",
                 },
                 "on_turn_end_affixes": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "持有者每次 pass turn 结算的回合结束词缀（可选），格式同上。仅当原型该槽非空时可提交；须满足字段锚点与数值护栏。",
+                    "maxItems": 3,
+                    "description": "持有者每次 pass turn 结算的回合结束词缀（可选，多值列表）：每个元素是一条完整独立词缀，格式同上；禁止拆分或合并；无则 []。仅当原型该槽非空时可提交；须满足字段锚点与数值护栏。",
                 },
             },
             "required": ["uuid", "name", "description"],
@@ -132,9 +137,9 @@ def _handle_submit_spoils_card(
     uuid: str,
     name: str,
     description: str,
-    on_play_affixes: Optional[List[str]] = None,
-    on_hit_affixes: Optional[List[str]] = None,
-    on_turn_end_affixes: Optional[List[str]] = None,
+    on_play_affixes: Optional[NormalizedStrList] = None,
+    on_hit_affixes: Optional[NormalizedStrList] = None,
+    on_turn_end_affixes: Optional[NormalizedStrList] = None,
 ) -> str:
     """处理 submit_spoils_card 工具调用：校验并暂存一张候选卡的设计。"""
     assert uuid, "uuid 不能为空"
@@ -188,15 +193,27 @@ def _format_card_for_prompt(candidate: _Candidate) -> str:
     # 原型词缀：既是槽位声明，也是设计失败时的回退参考。
     if card.on_play_affixes:
         lines.append(
-            f"  on_play_affixes（原型回退参考，需重设计）: {card.on_play_affixes}"
+            render_labeled_str_list(
+                "  on_play_affixes（原型回退参考，需重设计）",
+                card.on_play_affixes,
+                indent="    ",
+            )
         )
     if card.on_hit_affixes:
         lines.append(
-            f"  on_hit_affixes（原型回退参考，需重设计）: {card.on_hit_affixes}"
+            render_labeled_str_list(
+                "  on_hit_affixes（原型回退参考，需重设计）",
+                card.on_hit_affixes,
+                indent="    ",
+            )
         )
     if card.on_turn_end_affixes:
         lines.append(
-            f"  on_turn_end_affixes（原型回退参考，需重设计）: {card.on_turn_end_affixes}"
+            render_labeled_str_list(
+                "  on_turn_end_affixes（原型回退参考，需重设计）",
+                card.on_turn_end_affixes,
+                indent="    ",
+            )
         )
 
     return "\n".join(lines)

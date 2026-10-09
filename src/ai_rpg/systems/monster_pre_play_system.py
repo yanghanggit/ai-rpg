@@ -23,6 +23,7 @@ from ..models import (
     PassTurnAction,
     PlayCardsAction,
     TargetType,
+    render_labeled_str_list,
 )
 from ..utils import extract_json, prompt_builder
 
@@ -74,12 +75,11 @@ def _format_card(card: Card) -> str:
         f"- 【{card.name}】{card.description}",
         f"  费用{card.cost} 伤害{card.damage}×{card.hit_count}段 格挡{card.block} "
         f"目标:{_target_label(card)} {'可出' if card.playable else '不可出'}",
-    ]
-
-    affix_parts = [
-        f"即时词缀:{'、'.join(card.on_play_affixes) if card.on_play_affixes else '无'}",
-        f"受击词缀:{'、'.join(card.on_hit_affixes) if card.on_hit_affixes else '无'}",
-        f"回合结束词缀:{'、'.join(card.on_turn_end_affixes) if card.on_turn_end_affixes else '无'}",
+        render_labeled_str_list("  即时词缀", card.on_play_affixes, indent="    "),
+        render_labeled_str_list("  受击词缀", card.on_hit_affixes, indent="    "),
+        render_labeled_str_list(
+            "  回合结束词缀", card.on_turn_end_affixes, indent="    "
+        ),
     ]
 
     flags = []
@@ -90,9 +90,8 @@ def _format_card(card: Card) -> str:
     if card.ethereal:
         flags.append("虚无")
     if flags:
-        affix_parts.append("特性:" + "、".join(flags))
+        lines.append("  特性:" + "、".join(flags))
 
-    lines.append("  " + " | ".join(affix_parts))
     return "\n".join(lines)
 
 
@@ -100,13 +99,16 @@ def _format_card(card: Card) -> str:
 @prompt_builder
 def _format_revealed_opponent_card(card: Card, monster_name: str) -> str:
     """格式化对手手牌中向怪物亮出的卡牌（带受击词缀，或来源为本怪物）。"""
-    tags = []
+    lines = [f"    - 【{card.name}】{card.description}"]
     if card.on_hit_affixes:
-        tags.append(f"受击词缀:{'、'.join(card.on_hit_affixes)}")
+        lines.append(
+            render_labeled_str_list(
+                "      受击词缀", card.on_hit_affixes, indent="        "
+            )
+        )
     if card.source == monster_name:
-        tags.append("来源你")
-    suffix = f"（{'；'.join(tags)}）" if tags else ""
-    return f"- 【{card.name}】{card.description}{suffix}"
+        lines.append("      来源你")
+    return "\n".join(lines)
 
 
 #######################################################################################################################################
@@ -119,8 +121,7 @@ def _format_opponent(view: _OpponentView, monster_name: str) -> str:
     if view.revealed_cards:
         lines.append("  向你亮出的手牌（带受击词缀，或来源为你）：")
         lines.extend(
-            "    " + _format_revealed_opponent_card(c, monster_name)
-            for c in view.revealed_cards
+            _format_revealed_opponent_card(c, monster_name) for c in view.revealed_cards
         )
     return "\n".join(lines)
 

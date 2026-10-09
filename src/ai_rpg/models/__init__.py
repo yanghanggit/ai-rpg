@@ -16,6 +16,7 @@ from .messages import *
 from .player_session import *
 from .registry import *
 from .session_message import *
+from .str_list import *
 from .target_type import *
 from .task import *
 from .utils import *

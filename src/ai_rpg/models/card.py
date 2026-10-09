@@ -12,6 +12,7 @@ from uuid import uuid4
 from loguru import logger
 from pydantic import BaseModel, Field, model_validator
 
+from .str_list import NormalizedStrList, normalize_str_list
 from .target_type import TargetType
 
 
@@ -22,15 +23,15 @@ class Card(BaseModel):
 
     name: str
     description: str  # 叙事锚点：不含数值，不重述其它字段已确定的效果
-    on_play_affixes: List[str] = (
+    on_play_affixes: NormalizedStrList = (
         []
-    )  # 即时词缀；格式"[名称]:触发倾向描述"；本卡被打出时结算，仅本次出牌生效；无则 []
-    on_hit_affixes: List[str] = (
+    )  # 即时词缀（多值）：每个元素是一条完整独立词缀，格式"[名称]:触发倾向描述"；本卡被打出时结算，仅本次出牌生效；无则 []
+    on_hit_affixes: NormalizedStrList = (
         []
-    )  # 受击词缀；格式"[名称]:触发倾向描述"；持有者被本次出牌命中时触发；无则 []
-    on_turn_end_affixes: List[str] = (
+    )  # 受击词缀（多值）：持有者被本次出牌命中时触发；无则 []
+    on_turn_end_affixes: NormalizedStrList = (
         []
-    )  # 回合结束词缀；格式"[名称]:触发倾向描述"；持有者每次 pass turn 结算一次，只结算持有者本人手牌中带该词缀的牌；无则 []
+    )  # 回合结束词缀（多值）：持有者每次 pass turn 结算一次，只结算持有者本人手牌中带该词缀的牌；无则 []
     playable: bool = True  # 是否可出牌；False 时系统阻止出牌操作
     exhaust: bool = False  # 出牌后永久归入 ExhaustPile，不进入 DiscardPile 循环
     retain: bool = (
@@ -81,6 +82,8 @@ AFFIX_DESIGN_SPEC: Final[
 ] = """## 词缀设计规范
 
 词缀是你在骨架字段之上为角色设计的**增益 / 减益规则**，格式 `[词缀名]:机械结算描述`。它会被仲裁 LLM 直接执行，因此必须机制明确、可核验。
+
+三个时机的字段都是**多值列表**：每个元素是一条完整、独立的词缀；禁止把一条词缀拆成多个元素，也禁止把多条词缀合并进一个元素。无词缀时该槽返回 `[]`。
 
 三个时机：
 
@@ -287,11 +290,13 @@ def apply_affix_design(
                 fallbacks.append(f"{affix_field}: 原型该槽为空，忽略设计提交")
             continue
 
-        if not affix_list:
+        # 生成侧清洗：去空白、丢空项、按序去重；清洗后为空则整槽回退原型。
+        cleaned = normalize_str_list(affix_list)
+        if not cleaned:
             fallbacks.append(f"{affix_field}: 设计为空，整槽回退原型")
             continue
 
-        for affix in affix_list:
+        for affix in cleaned:
             result = validate_affix_slot(affix_field, affix, card)
             if not result.ok:
                 fallbacks.append(
@@ -299,7 +304,7 @@ def apply_affix_design(
                 )
                 break
         else:
-            setattr(card, affix_field, [a.strip() for a in affix_list])
-            applied += len(affix_list)
+            setattr(card, affix_field, cleaned)
+            applied += len(cleaned)
 
     return applied, fallbacks

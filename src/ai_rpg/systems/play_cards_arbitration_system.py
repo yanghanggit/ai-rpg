@@ -27,6 +27,7 @@ from ..models import (
     PlayCardsAction,
     RoundStatsComponent,
     TargetType,
+    render_labeled_str_list,
 )
 from ..utils import prompt_builder
 from .arbitration_prompt_builders import (
@@ -89,18 +90,17 @@ def _build_round_action_info_lines(
 @prompt_builder
 def _build_card_data_lines(card: Card) -> str:
     """输出一张卡参与仲裁的全部数据字段（出牌侧：含即时词缀与来源，排除系统管理字段）。"""
-    on_play = "、".join(card.on_play_affixes) if card.on_play_affixes else "无"
-    source = card.source or "未知"
-    return (
-        f"- 卡牌：{card.name}\n"
-        f"- source（来源/注入者）：{source}\n"
-        f"- 叙事（description）：{card.description}\n"
-        f"- cost：{card.cost}\n"
-        f"- damage：{card.damage}（单次伤害）\n"
-        f"- hit_count：{card.hit_count}（攻击次数）\n"
-        f"- block：{card.block}\n"
-        f"- 即时词缀：{on_play}"
-    )
+    lines = [
+        f"- 卡牌：{card.name}",
+        f"- source（来源/注入者）：{card.source or '未知'}",
+        f"- 叙事（description）：{card.description}",
+        f"- cost：{card.cost}",
+        f"- damage：{card.damage}（单次伤害）",
+        f"- hit_count：{card.hit_count}（攻击次数）",
+        f"- block：{card.block}",
+        render_labeled_str_list("- 即时词缀", card.on_play_affixes, indent="    "),
+    ]
+    return "\n".join(lines)
 
 
 @prompt_builder
@@ -143,12 +143,12 @@ def _build_combat_arbitration_tool_prompt(
 
 ## 即时词缀
 
-若列出即时词缀，须确保其被实际执行；可与结算规则泛化结合，但不引入词缀未提及的新机制。
+即时词缀是逐条列出的独立规则；若列出，须**逐条全部执行**（列表中每一条都触发一次），可与结算规则泛化结合，但不引入词缀未提及的新机制。
 
 ## 受击词缀
 
 get_entity_stats 返回的「受击卡牌」仅列出带受击词缀（on_hit_affixes）的卡牌，用于结算受击效果；它**不是**完整手牌清单，其中展示的 block 为该卡牌自身的格挡值，角色总格挡以 `BLOCK` 字段为准。
-「受击词缀」仅在**该实体是本次出牌的目标**时触发；出牌者自身的受击词缀不触发（除非出牌者也同时是目标）。依词缀描述结算（如 [反伤] 对出牌者造成伤害），受击词缀的数值以该卡牌在 get_entity_stats 中返回的 damage 字段为准，不引入词缀未提及的新机制。
+受击词缀可能有多条，均为独立规则，须**逐条全部结算**。「受击词缀」仅在**该实体是本次出牌的目标**时触发；出牌者自身的受击词缀不触发（除非出牌者也同时是目标）。依词缀描述结算（如 [反伤] 对出牌者造成伤害），受击词缀的数值以该卡牌在 get_entity_stats 中返回的 damage 字段为准，不引入词缀未提及的新机制。
 
 ## source 字段
 

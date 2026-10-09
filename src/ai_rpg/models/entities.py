@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 from ..entitas import EntityData
 from .assets_meta import AssetKey
 from .character_stats import CharacterStats
+from .str_list import NormalizedStrList
 
 
 ###############################################################################################################################################
@@ -73,7 +74,9 @@ class Artifact(BaseModel):
 
     name: str
     system_message: str
-    modifiers: List[str] = []  # 对持有者或环境的属性修正列表
+    modifiers: NormalizedStrList = (
+        []
+    )  # 对持有者或环境的属性修正列表（多值）：每个元素是一条完整、独立的修正规则
     components: EntityData = {}  # 挂载在神器上的组件序列化列表
     uuid: str = Field(default_factory=lambda: str(uuid4()))  # 全局唯一标识符
     assets: Dict[AssetKey, str] = Field(

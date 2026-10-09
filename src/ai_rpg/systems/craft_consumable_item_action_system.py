@@ -11,6 +11,7 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..models import (
     CraftConsumableItemAction,
+    NormalizedStrList,
     StorageComponent,
     append_item_with_stacking,
     deduct_materials,
@@ -26,7 +27,7 @@ class _CraftConsumableResponse(BaseModel):
 
     name: str = ""
     description: str = ""
-    on_use_prompt: List[str] = []
+    on_use_prompt: NormalizedStrList = []
 
 
 #######################################################################################################################################
@@ -58,7 +59,7 @@ def _build_craft_prompt(materials: List[MaterialItem]) -> str:
 
 - **name**：消耗品全名，采用「消耗品.XXXX」命名格式，体现材料特性与用途，简洁有辨识度
 - **description**：物品描述，30-60字，说明外观、气味或使用感受，体现材料的来源与效果想象
-- **on_use_prompt**：使用效果提示词，`[字符串]` 列表，当前仅使用第一项（`[0]`）作为整段效果提示；用一句话说清「对谁、造成什么、数值多少」
+- **on_use_prompt**：使用效果提示词（多值列表）；每个元素是一条完整、独立的效果提示，用一句话说清「对谁、造成什么、数值多少」；若有多条互不相关的效果，请拆成多条元素；**禁止把一条效果拆成多个元素，也禁止把多条效果合并进一个元素**
 
 ## on_use_prompt 能力边界
 
@@ -70,7 +71,7 @@ def _build_craft_prompt(materials: List[MaterialItem]) -> str:
 {{
   "name": "消耗品.XXX",
   "description": "...",
-  "on_use_prompt": ["对目标造成 3 点伤害。"]
+  "on_use_prompt": ["对目标造成 3 点伤害。", "使该目标恢复 2 点 HP。"]
 }}
 ```
 

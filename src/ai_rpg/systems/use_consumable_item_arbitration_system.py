@@ -32,6 +32,7 @@ from ..models import (
     HumanMessage,
     UseConsumableItemAction,
     WorldComponent,
+    render_labeled_str_list,
 )
 from ..utils import prompt_builder
 from .arbitration_prompt_builders import (
@@ -56,10 +57,12 @@ def _build_consumable_arbitration_prompt(
     """构建消耗品仲裁提示词：发起人/目标/场景内参与人员/效果提示词全部注入。"""
     target_names = "、".join(targets) if targets else "无"
     stage_actors = "、".join(stage_actor_names) if stage_actor_names else "无"
-    effect_prompt = (
-        item.on_use_prompt[0]
+    effect_prompt_block = (
+        render_labeled_str_list(
+            "- 效果提示（逐条全部结算）", item.on_use_prompt, indent="  "
+        )
         if item.on_use_prompt
-        else "（未提供额外效果提示，仅依据物品描述合理推断）"
+        else "- 效果提示：（未提供额外效果提示，仅依据物品描述合理推断）"
     )
 
     return f"""# 第 {current_round_number} 回合：消耗品使用结算（工具调用模式）
@@ -72,7 +75,7 @@ def _build_consumable_arbitration_prompt(
 
 - 名称：{item.name}
 - 描述：{item.description}
-- 效果提示：{effect_prompt}
+{effect_prompt_block}
 
 ## 目标
 
@@ -85,7 +88,7 @@ def _build_consumable_arbitration_prompt(
 ## 结算规则
 
 - 你只能通过下方工具读取/写入数据，禁止引入工具未提供的机制。
-- 严格依据「效果提示」与物品「描述」结算本次使用；效果提示未写明的效果不得凭空添加。
+- 严格依据「效果提示」与物品「描述」结算本次使用；效果提示可能包含多条独立效果，须**逐条全部结算**；效果提示未写明的效果不得凭空添加。
 - 对每个受影响角色（至少包含发起人与所有目标，即使 HP 无变化也保持原值）调用 set_entity_hp 写入最终 HP。
 - 目标 HP = max(0, min(计算后 HP, 最大 HP))。
 

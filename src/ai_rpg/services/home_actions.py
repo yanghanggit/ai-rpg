@@ -30,6 +30,7 @@ from ..models import (
     TransStageAction,
     WearCostumeAction,
     WorldComponent,
+    append_item_with_stacking,
 )
 
 
@@ -378,9 +379,9 @@ def move_item_to_inventory(
         logger.error(f"移动道具到背包失败: {error_detail}")
         return False, error_detail
 
-    # 将道具从储物箱中移除，并添加到玩家随身背包中。
+    # 将道具从储物箱中移除，并合并入玩家随身背包中。
     new_storage_items = [item for item in storage.items if item is not target]
-    new_inventory_items = list(inventory.items) + [target]
+    new_inventory_items = append_item_with_stacking(list(inventory.items), target)
 
     # 使用 ECS 的 replace 方法更新储物箱和玩家随身背包的组件数据。
     storage_entity.replace(StorageComponent, storage.name, new_storage_items)
@@ -417,9 +418,9 @@ def move_item_to_storage(
         logger.error(f"移动道具到储物箱失败: {error_detail}")
         return False, error_detail
 
-    # 将道具从玩家随身背包中移除，并添加到全局储物箱中。
+    # 将道具从玩家随身背包中移除，并合并入全局储物箱中。
     new_inventory_items = [item for item in inventory.items if item is not target]
-    new_storage_items = list(storage.items) + [target]
+    new_storage_items = append_item_with_stacking(list(storage.items), target)
 
     # 使用 ECS 的 replace 方法更新玩家随身背包和全局储物箱的组件数据。
     player_entity.replace(InventoryComponent, player_entity.name, new_inventory_items)

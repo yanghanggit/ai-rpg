@@ -12,8 +12,10 @@ from ..game.dbg_game import DBGGame
 from ..models import (
     CraftCostumeItemAction,
     StorageComponent,
+    append_item_with_stacking,
+    deduct_materials,
 )
-from ..models.items import AnyItem, CostumeItem, ItemType, MaterialItem
+from ..models.items import CostumeItem, MaterialItem
 from ..utils import extract_json, prompt_builder
 
 
@@ -175,28 +177,10 @@ class CraftCostumeItemActionSystem(ReactiveProcessor):
         material_names: List[str],
         new_item: CostumeItem,
     ) -> None:
-        """扣减已用材料（count 递减，归零则移除），追加制作品到 StorageComponent。"""
+        """扣减已用材料（跨同名条目结转、归零移除），并入制作品到 StorageComponent。"""
         storage = storage_entity.get(StorageComponent)
 
-        # 统计需要扣减的数量
-        deduct: Dict[str, int] = {}
-        for name in material_names:
-            deduct[name] = deduct.get(name, 0) + 1
-
-        updated_items: List[AnyItem] = []
-        for item in storage.items:
-            if item.type == ItemType.MATERIAL_ITEM and item.name in deduct:
-                remaining = item.count - deduct[item.name]
-                deduct[item.name] = 0  # 单个 item 对象只扣一次
-                if remaining > 0:
-                    assert isinstance(item, MaterialItem)
-                    copied = item.model_copy(deep=True)
-                    copied.count = remaining
-                    updated_items.append(copied)
-                # remaining <= 0：归零，不追加（即从列表移除）
-            else:
-                updated_items.append(item)
-
-        updated_items.append(new_item)
+        updated_items = deduct_materials(storage.items, material_names)
+        updated_items = append_item_with_stacking(updated_items, new_item)
 
         storage_entity.replace(StorageComponent, storage.name, updated_items)

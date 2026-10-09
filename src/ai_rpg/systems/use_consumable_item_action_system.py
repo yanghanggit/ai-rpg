@@ -11,6 +11,7 @@ from ..models import (
     InventoryComponent,
     NoneEvent,
     UseConsumableItemAction,
+    consume_item_by_uuid,
 )
 from ..utils import prompt_builder
 
@@ -83,19 +84,13 @@ class UseConsumableItemActionSystem(ReactiveProcessor):
         ), "UseConsumableItemActionSystem: player 缺少 InventoryComponent"
 
         inventory_comp = player_entity.get(InventoryComponent)
-        updated_items = []
-        consumed = False
-        for inv_item in inventory_comp.items:
-            if not consumed and inv_item.uuid == item.uuid:
-                consumed = True
-                if inv_item.count > 1:
-                    inv_item.count -= 1
-                    updated_items.append(inv_item)
-                # count == 1：不追加，即移除
-            else:
-                updated_items.append(inv_item)
+        updated_items, consumed = consume_item_by_uuid(
+            inventory_comp.items, item.uuid
+        )
         if consumed:
-            inventory_comp.items = updated_items
+            player_entity.replace(
+                InventoryComponent, inventory_comp.name, updated_items
+            )
 
         if not consumed:
             logger.warning(

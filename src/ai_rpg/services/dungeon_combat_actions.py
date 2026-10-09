@@ -32,6 +32,7 @@ from ..models import (
     PlayCardsAction,
     RetreatAction,
     UseConsumableItemAction,
+    merge_item_stacks,
 )
 
 
@@ -591,7 +592,7 @@ def collect_loot(
     loot_items = loot_comp.items
 
     inventory_comp = player_entity.get(InventoryComponent)
-    new_inventory = list(inventory_comp.items) + loot_items
+    new_inventory = merge_item_stacks(list(inventory_comp.items) + loot_items)
 
     player_entity.replace(InventoryComponent, inventory_comp.name, new_inventory)
     player_entity.remove(LootComponent)

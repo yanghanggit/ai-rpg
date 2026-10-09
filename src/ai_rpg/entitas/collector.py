@@ -5,7 +5,7 @@ from .entity import Entity
 from .group import Group, GroupEvent
 
 
-class Collector(object):
+class Collector:
     """A collector observes groups and collects entities based on group events.
 
     The collector monitors one or more groups for entity additions, removals,

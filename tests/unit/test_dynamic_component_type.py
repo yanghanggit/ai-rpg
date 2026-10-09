@@ -13,7 +13,7 @@ from typing import Any, Iterator
 import pytest
 from pydantic import ValidationError
 
-from ai_rpg.entitas import Entity
+from ai_rpg.entitas import Context
 from ai_rpg.entitas.components import Component
 from ai_rpg.game.rpg_entity_manager import RPGEntityManager
 from ai_rpg.models import (
@@ -88,8 +88,7 @@ class TestCreateComponentType:
     def test_usable_as_marker_on_entity(self) -> None:
         cls = create_component_type("TestDynamicOnEntity")
 
-        entity = Entity()
-        entity.activate(1)
+        entity = Context().create_entity()
         entity.add(cls)
 
         assert entity.has(cls)

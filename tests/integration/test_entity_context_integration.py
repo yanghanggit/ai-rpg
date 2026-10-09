@@ -3,7 +3,7 @@ Integration tests for Entity and Context working together.
 """
 
 from ai_rpg.entitas import Context, Entity, Matcher
-from ai_rpg.entitas.testing import Health, Name, Position, Score, Velocity
+from ecs_testing import Health, Name, Position, Score, Velocity
 
 
 class TestEntityContextIntegration:
@@ -253,8 +253,8 @@ class TestEntityContextIntegration:
         assert entity1 not in group2.entities
         assert entity2 not in group1.entities
 
-    def test_entity_reuse_maintains_group_consistency(self) -> None:
-        """Test that entity reuse maintains group consistency."""
+    def test_destroyed_entity_stays_out_of_groups(self) -> None:
+        """Destroying an entity removes it from groups; new entities are independent."""
         context = Context()
 
         # Create and destroy entity
@@ -267,20 +267,21 @@ class TestEntityContextIntegration:
         context.destroy_entity(entity)
         assert len(health_group.entities) == 0
 
-        # Reuse entity with different components
-        reused_entity = context.create_entity()
-        assert reused_entity is entity  # Same object
+        # A newly created entity gets a fresh slot and is independent.
+        new_entity = context.create_entity()
+        assert new_entity is not entity
+        assert new_entity.index != entity.index
 
         # Add different component
-        reused_entity.add(Position, 5, 5)
+        new_entity.add(Position, 5, 5)
 
         position_group = context.get_group(Matcher(Position))
 
         # Health group should still be empty
         assert len(health_group.entities) == 0
-        # Position group should have the reused entity
+        # Position group should have the new entity
         assert len(position_group.entities) == 1
-        assert reused_entity in position_group.entities
+        assert new_entity in position_group.entities
 
     def test_performance_scenario(self) -> None:
         """Test performance scenario with many entities and operations."""

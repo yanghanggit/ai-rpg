@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Optional, Set
 
 from .components import Component
+from .context_protocol import ContextProtocol
 from .entity import Entity
 from .event import Event
 from .exceptions import GroupSingleEntity
@@ -16,42 +17,46 @@ class GroupEvent(Enum):
     ADDED_OR_REMOVED = 3
 
 
-class Group(object):
+class Group:
     """Represents a group of entities that match a specified matcher.
 
     Use context.get_group(matcher) to get a group of entities which
     match the specified matcher. Calling context.get_group(matcher) with
     the same matcher will always return the same instance of the group.
 
-    The created group is managed by the context and will always be up to
-    date. It will automatically add entities that match the matcher or
-    remove entities as soon as they don't match the matcher anymore.
+    Internally the group stores entity *indices* rather than entity objects;
+    :attr:`entities` materializes handles on demand through the owning context.
     """
 
-    def __init__(self, matcher: Matcher) -> None:
+    def __init__(self, context: ContextProtocol, matcher: Matcher) -> None:
         """Initializes a new instance of the Group class.
 
+        :param context: The owning query store (used to evaluate matches)
         :param matcher: The matcher used to determine if an entity belongs to this group
         """
         #: Occurs when an entity gets added.
-        self.on_entity_added = Event()
+        self.on_entity_added: Event = Event()
 
         #: Occurs when an entity gets removed.
-        self.on_entity_removed = Event()
+        self.on_entity_removed: Event = Event()
 
         #: Occurs when a component of an entity in the group gets replaced.
-        self.on_entity_updated = Event()
+        self.on_entity_updated: Event = Event()
 
-        self._matcher = matcher
-        self._entities: Set[Entity] = set()
+        self._context: ContextProtocol = context
+        self._matcher: Matcher = matcher
+        self._indices: Set[int] = set()
 
     @property
     def entities(self) -> Set[Entity]:
         """Gets the set of entities in this group.
 
+        The set is rebuilt on each access from the tracked indices.
+
         :return: Set of entities in this group
         """
-        return self._entities
+        context = self._context
+        return {context.entity_at(index) for index in self._indices}
 
     @property
     def entity_count(self) -> int:
@@ -59,7 +64,7 @@ class Group(object):
 
         :return: Number of entities in this group
         """
-        return len(self._entities)
+        return len(self._indices)
 
     @property
     def matcher(self) -> Matcher:
@@ -76,10 +81,10 @@ class Group(object):
         :return: The single entity if group contains exactly one entity, None if empty
         :raises GroupSingleEntity: If the group has more than one entity
         """
-        count = len(self._entities)
+        count = len(self._indices)
 
         if count == 1:
-            return next(iter(self._entities))
+            return self._context.entity_at(next(iter(self._indices)))
         if count == 0:
             return None
 
@@ -87,92 +92,56 @@ class Group(object):
             f"Cannot get a single entity from a group containing {count} entities.", ""
         )
 
-    def handle_entity_silently(self, entity: Entity) -> None:
-        """Handles an entity without triggering events.
-
-        This is used by the context to manage the group during initialization.
-
-        :param entity: The entity to handle
-        """
-        if self._matcher.matches(entity):
-            self._add_entity_silently(entity)
+    # ------------------------------------------------------------------ #
+    # Index based internals (used by the context)
+    # ------------------------------------------------------------------ #
+    def handle_index_silently(self, index: int) -> None:
+        """Adds/removes an index without triggering events."""
+        if self._context.matches_index(index, self._matcher):
+            self._add_index_silently(index)
         else:
-            self._remove_entity_silently(entity)
+            self._remove_index_silently(index)
 
-    def handle_entity(self, entity: Entity, component: Component) -> None:
-        """Handles an entity and triggers appropriate events.
-
-        This is used by the context to manage the group during runtime.
-
-        :param entity: The entity to handle
-        :param component: The component involved in the change
-        """
-        if self._matcher.matches(entity):
-            self._add_entity(entity, component)
+    def handle_index(self, index: int, component: Component) -> None:
+        """Adds/removes an index and triggers the appropriate events."""
+        if self._context.matches_index(index, self._matcher):
+            self._add_index(index, component)
         else:
-            self._remove_entity(entity, component)
+            self._remove_index(index, component)
 
-    def update_entity(
-        self, entity: Entity, previous_comp: Component, new_comp: Component
+    def update_index(
+        self, index: int, previous_comp: Component, new_comp: Component
     ) -> None:
-        """Updates an entity after component replacement.
-
-        This is used by the context to manage the group when components are replaced.
-
-        :param entity: The entity that was updated
-        :param previous_comp: The component that was replaced
-        :param new_comp: The new component
-        """
-        if entity in self._entities:
+        """Notifies the group that a component of one of its members changed."""
+        if index in self._indices:
+            entity = self._context.entity_at(index)
             self.on_entity_removed(entity, previous_comp)
             self.on_entity_added(entity, new_comp)
             self.on_entity_updated(entity, previous_comp, new_comp)
 
-    def _add_entity_silently(self, entity: Entity) -> bool:
-        """Adds an entity to the group without triggering events.
-
-        :param entity: The entity to add
-        :return: True if the entity was added, False if it was already in the group
-        """
-        if entity not in self._entities:
-            self._entities.add(entity)
+    def _add_index_silently(self, index: int) -> bool:
+        if index not in self._indices:
+            self._indices.add(index)
             return True
         return False
 
-    def _add_entity(self, entity: Entity, component: Component) -> None:
-        """Adds an entity to the group and triggers the on_entity_added event.
+    def _add_index(self, index: int, component: Component) -> None:
+        if self._add_index_silently(index):
+            self.on_entity_added(self._context.entity_at(index), component)
 
-        :param entity: The entity to add
-        :param component: The component involved in the addition
-        """
-        entity_added = self._add_entity_silently(entity)
-        if entity_added:
-            self.on_entity_added(entity, component)
-
-    def _remove_entity_silently(self, entity: Entity) -> bool:
-        """Removes an entity from the group without triggering events.
-
-        :param entity: The entity to remove
-        :return: True if the entity was removed, False if it was not in the group
-        """
-        if entity in self._entities:
-            self._entities.remove(entity)
+    def _remove_index_silently(self, index: int) -> bool:
+        if index in self._indices:
+            self._indices.remove(index)
             return True
         return False
 
-    def _remove_entity(self, entity: Entity, component: Component) -> None:
-        """Removes an entity from the group and triggers the on_entity_removed event.
-
-        :param entity: The entity to remove
-        :param component: The component involved in the removal
-        """
-        entity_removed = self._remove_entity_silently(entity)
-        if entity_removed:
-            self.on_entity_removed(entity, component)
+    def _remove_index(self, index: int, component: Component) -> None:
+        if self._remove_index_silently(index):
+            self.on_entity_removed(self._context.entity_at(index), component)
 
     def __repr__(self) -> str:
         """Returns a string representation of the Group.
 
         :return: String representation showing the matcher and entity count
         """
-        return f"<Group [{self._matcher}] ({len(self._entities)} entities)>"
+        return f"<Group [{self._matcher}] ({len(self._indices)} entities)>"

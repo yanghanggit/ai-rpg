@@ -1,18 +1,25 @@
 """
-entitas.entity
-~~~~~~~~~~~~~~
-An entity is a container holding data to represent certain
-objects in your application. You can add, replace or remove data
-from entities.
+An entity is a lightweight *handle* that identifies a single row inside the
+component storage owned by its :class:`~ai_rpg.entitas.context.Context`.
 
-Those containers are called 'components'. They are represented by
-Pydantic BaseModel classes for enhanced functionality including
-data validation, serialization, and documentation.
+The entity itself never owns component data. It only keeps:
+
+- ``_context``: the :class:`Context` that stores its components,
+- ``_index``: the dense slot index inside that context,
+- ``_name`` : optional human readable name (managed by the game layer).
+
+Handle identity is object identity: a live entity is represented by exactly one
+handle object, and destroying it clears the context's reference to that object.
+
+Components are Pydantic ``BaseModel`` classes for validation and serialization.
 """
 
-from typing import Any, Dict, Tuple, Type, TypeVar, cast
+from __future__ import annotations
+
+from typing import Any, List, Tuple, Type, TypeVar, cast
 
 from .components import Component
+from .context_protocol import ContextProtocol
 from .event import Event
 from .exceptions import AlreadyAddedComponent, EntityNotEnabled, MissingComponent
 
@@ -20,55 +27,60 @@ from .exceptions import AlreadyAddedComponent, EntityNotEnabled, MissingComponen
 ComponentT = TypeVar("ComponentT", bound=Component)
 
 
-class Entity(object):
-    """Use context.create_entity() to create a new entity and
-    context.destroy_entity() to destroy it.
-    You can add, replace and remove components to an entity.
+class Entity:
+    """A lightweight handle to a row of components owned by a context.
+
+    Entities are always created through ``context.create_entity()`` and
+    destroyed with ``context.destroy_entity(entity)``. The handle carries no
+    component data itself: components live in the owning context's pools and
+    are addressed by the handle's dense ``index``.
+
+    You can add, replace and remove components through this handle; the data is
+    always stored by the underlying context, never on the handle.
     """
 
-    def __init__(self) -> None:
+    __slots__ = (
+        "_context",
+        "_index",
+        "_name",
+        "on_component_added",
+        "on_component_removed",
+        "on_component_replaced",
+    )
 
-        self._name = ""
+    def __init__(self, context: ContextProtocol, index: int) -> None:
+        #: The context that owns this entity's component storage.
+        self._context: ContextProtocol = context
+
+        #: Dense slot index inside the context.
+        self._index: int = index
+
+        #: Optional human readable name (managed by RPGEntityManager).
+        self._name: str = ""
 
         #: Occurs when a component gets added.
-        self.on_component_added = Event()
+        self.on_component_added: Event = Event()
 
         #: Occurs when a component gets removed.
-        self.on_component_removed = Event()
+        self.on_component_removed: Event = Event()
 
         #: Occurs when a component gets replaced.
-        self.on_component_replaced = Event()
+        self.on_component_replaced: Event = Event()
 
-        #: Dictionary mapping component type and component instance.
-        self._components: Dict[Type[Component], Component] = {}
-
-        #: Each entity has its own unique creationIndex which will be
-        #: set by the context when you create the entity.
-        self._creation_index = 0
-
-        #: The context manages the state of an entity.
-        #: Active entities are enabled, destroyed entities are not.
-        self._is_enabled = False
-
-    def activate(self, creation_index: int) -> None:
-        """Activates the entity with a unique creation index.
-
-        This method is called internally by the context when the entity
-        is created. It sets the creation index and enables the entity.
-
-        :param creation_index: Unique index assigned by the context
-        """
-        self._creation_index = creation_index
-        self._is_enabled = True
-
+    # ------------------------------------------------------------------ #
+    # Lifecycle
+    # ------------------------------------------------------------------ #
     def _ensure_enabled(self, operation: str, comp_type: Type[Component]) -> None:
-        """Ensures the entity is enabled before performing operations.
+        """Ensures the entity is still live before performing operations.
+
+        An entity is live while its context still holds this exact handle object
+        for the slot; destroying the entity clears that reference.
 
         :param operation: The operation being performed (for error messages)
         :param comp_type: The component type involved
         :raises EntityNotEnabled: If the entity is not enabled
         """
-        if not self._is_enabled:
+        if not self._context.store_is_valid(self):
             raise EntityNotEnabled(
                 f"Cannot {operation} component '{comp_type.__name__}': {self} is not enabled."
             )
@@ -100,6 +112,9 @@ class Entity(object):
         kwargs = dict(zip(field_names, args))
         return comp_type(**kwargs)
 
+    # ------------------------------------------------------------------ #
+    # Component operations
+    # ------------------------------------------------------------------ #
     def add(self, comp_type: Type[Component], *args: Any) -> None:
         """Adds a component to the entity.
 
@@ -116,7 +131,7 @@ class Entity(object):
             )
 
         new_comp = self._create_component(comp_type, *args)
-        self._components[comp_type] = new_comp
+        self._context.store_add(self._index, comp_type, new_comp)
         self.on_component_added(self, new_comp)
 
     def remove(self, comp_type: Type[Component]) -> None:
@@ -150,13 +165,13 @@ class Entity(object):
             self.add(comp_type, *args)
 
     def _replace(self, comp_type: Type[Component], args: Any) -> None:
-        previous_comp = self._components[comp_type]
+        previous_comp = self._context.store_get(self._index, comp_type)
         if args is None:
-            del self._components[comp_type]
+            self._context.store_remove(self._index, comp_type)
             self.on_component_removed(self, previous_comp)
         else:
             new_comp = self._create_component(comp_type, *args)
-            self._components[comp_type] = new_comp
+            self._context.store_replace(self._index, comp_type, new_comp)
             self.on_component_replaced(self, previous_comp, new_comp)
 
     def get(self, comp_type: Type[ComponentT]) -> ComponentT:
@@ -171,7 +186,7 @@ class Entity(object):
                 f"Cannot get non-existing component '{comp_type.__name__}' from {self}."
             )
 
-        return cast(ComponentT, self._components[comp_type])
+        return cast(ComponentT, self._context.store_get(self._index, comp_type))
 
     def has(self, *args: Type[Component]) -> bool:
         """Checks if the entity has all components of the given type(s).
@@ -179,11 +194,9 @@ class Entity(object):
         :param args: Component types to check
         :return: True if all component types are present, False otherwise
         """
-        if len(args) == 1:
-            return args[0] in self._components
-
-        # Use generator expression for better performance
-        return all(comp_type in self._components for comp_type in args)
+        context = self._context
+        index = self._index
+        return all(context.store_has(index, comp_type) for comp_type in args)
 
     def has_any(self, *args: Type[Component]) -> bool:
         """Checks if the entity has any component of the given type(s).
@@ -191,29 +204,9 @@ class Entity(object):
         :param args: Component types to check
         :return: True if any component type is present, False otherwise
         """
-        return any(comp_type in self._components for comp_type in args)
-
-    def remove_all(self) -> None:
-        """Removes all components from the entity."""
-        for comp_type in list(self._components):
-            self._replace(comp_type, None)
-
-    def destroy(self) -> None:
-        """Destroys the entity by disabling it and removing all components.
-
-        This method is used internally. Don't call it yourself.
-        Use context.destroy_entity(entity) instead.
-        """
-        self._is_enabled = False
-        self.remove_all()
-
-    def __repr__(self) -> str:
-        """Returns a string representation of the entity.
-
-        Format: <Entity_0 [Position(x=1, y=2, z=3)]>
-        """
-        component_strs = [str(comp) for comp in self._components.values()]
-        return f"<Entity_{self._creation_index} [{', '.join(component_strs)}]>"
+        context = self._context
+        index = self._index
+        return any(context.store_has(index, comp_type) for comp_type in args)
 
     def set(self, comp_type: Type[Component], comp_obj: Component) -> None:
         """Sets a component instance directly on the entity.
@@ -233,34 +226,68 @@ class Entity(object):
                 f"Cannot set another component '{comp_type.__name__}' to {self}."
             )
 
-        self._components[comp_type] = comp_obj
+        self._context.store_add(self._index, comp_type, comp_obj)
         self.on_component_added(self, comp_obj)
 
+    def remove_all(self) -> None:
+        """Removes all components from the entity."""
+        for comp_type in self.component_types:
+            self._replace(comp_type, None)
+
+    # ------------------------------------------------------------------ #
+    # Introspection
+    # ------------------------------------------------------------------ #
     @property
     def name(self) -> str:
         """Gets the entity's name."""
         return self._name
 
+    @name.setter
+    def name(self, value: str) -> None:
+        """Sets the entity's name."""
+        self._name = value
+
     @property
-    def creation_index(self) -> int:
-        """Gets the entity's creation index."""
-        return self._creation_index
+    def index(self) -> int:
+        """Gets the entity's dense slot index inside its context."""
+        return self._index
 
     @property
     def is_enabled(self) -> bool:
-        """Gets whether the entity is enabled."""
-        return self._is_enabled
+        """Whether this handle still points at a live entity.
+
+        Derived from the context: a handle is live while the context's slot still
+        holds this exact handle object.
+        """
+        return bool(self._context.store_is_valid(self))
 
     @property
     def component_count(self) -> int:
         """Gets the number of components attached to this entity."""
-        return len(self._components)
+        return len(self._context.store_component_types(self._index))
 
     @property
     def component_types(self) -> Tuple[Type[Component], ...]:
         """Gets a tuple of all component types attached to this entity."""
-        return tuple(self._components.keys())
+        return tuple(self._context.store_component_types(self._index))
 
     def get_all_components(self) -> Tuple[Component, ...]:
         """Gets a tuple of all component instances attached to this entity."""
-        return tuple(self._components.values())
+        return tuple(self._context.store_components(self._index))
+
+    def iter_component_items(self) -> List[Tuple[Type[Component], Component]]:
+        """Returns ``(component_type, component)`` pairs attached to this entity."""
+        types = self._context.store_component_types(self._index)
+        get = self._context.store_get
+        return [(comp_type, get(self._index, comp_type)) for comp_type in types]
+
+    # ------------------------------------------------------------------ #
+    # Representation
+    # ------------------------------------------------------------------ #
+    def __repr__(self) -> str:
+        """Returns a string representation of the entity.
+
+        Format: <Entity_0 [Position(x=1, y=2, z=3)]> where ``0`` is the slot index.
+        """
+        component_strs = [str(comp) for comp in self.get_all_components()]
+        return f"<Entity_{self._index} [{', '.join(component_strs)}]>"

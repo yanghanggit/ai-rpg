@@ -7,7 +7,12 @@ import pytest
 
 from ai_rpg.entitas import Context, Entity, Matcher
 from ai_rpg.entitas.components import Component
-from ai_rpg.entitas.testing import Counter, Health, Marker, Position, ResourcePool
+from ecs_testing import Counter, Health, Marker, Position, ResourcePool
+
+
+def _new_entity() -> Entity:
+    """Creates a fresh context-bound entity for a single-component test."""
+    return Context().create_entity()
 
 
 class TestPydanticComponents:
@@ -15,8 +20,7 @@ class TestPydanticComponents:
 
     def test_component_creation_and_validation(self) -> None:
         """Test that Pydantic components are created and validated correctly."""
-        entity = Entity()
-        entity.activate(1)
+        entity = _new_entity()
 
         # Test normal component creation
         entity.add(Position, 10.0, 20.0)
@@ -33,8 +37,7 @@ class TestPydanticComponents:
 
     def test_component_validation_errors(self) -> None:
         """Test that Pydantic validation works correctly."""
-        entity = Entity()
-        entity.activate(1)
+        entity = _new_entity()
 
         # Test negative health value
         with pytest.raises(ValueError, match="Health value must be non-negative"):
@@ -50,8 +53,7 @@ class TestPydanticComponents:
 
     def test_component_without_fields(self) -> None:
         """Test component without fields (Marker)."""
-        entity = Entity()
-        entity.activate(1)
+        entity = _new_entity()
 
         # Should work with no arguments
         entity.add(Marker)
@@ -60,15 +62,13 @@ class TestPydanticComponents:
         assert isinstance(marker, Component)
 
         # Should fail with arguments
-        entity2 = Entity()
-        entity2.activate(2)
+        entity2 = _new_entity()
         with pytest.raises(ValueError, match="expects no arguments"):
             entity2.add(Marker, "extra_arg")
 
     def test_component_wrong_argument_count(self) -> None:
         """Test error handling for wrong number of arguments."""
-        entity = Entity()
-        entity.activate(1)
+        entity = _new_entity()
 
         # Too few arguments
         with pytest.raises(ValueError, match="expects 2 arguments"):
@@ -80,8 +80,7 @@ class TestPydanticComponents:
 
     def test_component_serialization(self) -> None:
         """Test that Pydantic components can be serialized."""
-        entity = Entity()
-        entity.activate(1)
+        entity = _new_entity()
 
         entity.add(Position, 10.0, 20.0)
         entity.add(Health, 100, 150)
@@ -106,8 +105,7 @@ class TestPydanticComponents:
 
     def test_component_representation(self) -> None:
         """Test component string representation."""
-        entity = Entity()
-        entity.activate(1)
+        entity = _new_entity()
 
         entity.add(Position, 10.0, 20.0)
         entity.add(Health, 100, 150)
@@ -166,8 +164,7 @@ class TestPydanticComponents:
 
     def test_mutable_component(self) -> None:
         """Test that components can be modified after creation."""
-        entity = Entity()
-        entity.activate(1)
+        entity = _new_entity()
 
         # Add a counter component
         entity.add(Counter, 5)
@@ -187,8 +184,7 @@ class TestPydanticComponents:
 
     def test_mutable_component_methods(self) -> None:
         """Test methods on mutable components that modify their state."""
-        entity = Entity()
-        entity.activate(1)
+        entity = _new_entity()
 
         # Add a resource pool with methods
         entity.add(ResourcePool, 50, 100)

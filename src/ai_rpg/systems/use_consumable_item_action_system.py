@@ -84,9 +84,7 @@ class UseConsumableItemActionSystem(ReactiveProcessor):
         ), "UseConsumableItemActionSystem: player 缺少 InventoryComponent"
 
         inventory_comp = player_entity.get(InventoryComponent)
-        updated_items, consumed = consume_item_by_uuid(
-            inventory_comp.items, item.uuid
-        )
+        updated_items, consumed = consume_item_by_uuid(inventory_comp.items, item.uuid)
         if consumed:
             player_entity.replace(
                 InventoryComponent, inventory_comp.name, updated_items

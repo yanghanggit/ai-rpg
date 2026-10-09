@@ -1,10 +1,10 @@
 from typing import List
 
-from ..entitas import Processors
+from ..entitas import ProcessorPipeline
 
 
 ###################################################################################################################################################################
-class RPGGameProcessPipeline(Processors):
+class RPGGameProcessPipeline(ProcessorPipeline):
     """RPG游戏流程管道，管理处理器的执行和生命周期"""
 
     def __init__(self) -> None:

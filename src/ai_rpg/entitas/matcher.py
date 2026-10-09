@@ -1,7 +1,10 @@
-from typing import Any, Optional, Tuple, Type
+from typing import Iterable, Optional, Tuple, Type, Union
 
 from .components import Component
 from .entity import Entity
+
+#: 单个组件类型，或它的任意可迭代集合（tuple / list / ...）。
+ComponentTypes = Union[Type[Component], Iterable[Type[Component]]]
 
 
 def get_expr_repr(expr: Optional[Tuple[Type[Component], ...]]) -> str:
@@ -13,7 +16,7 @@ def get_expr_repr(expr: Optional[Tuple[Type[Component], ...]]) -> str:
     return "" if expr is None else ",".join([x.__name__ for x in expr])
 
 
-class Matcher(object):
+class Matcher:
     """Represents a matcher for entities in the ECS framework.
 
     A matcher defines criteria for filtering entities based on their components.
@@ -23,7 +26,13 @@ class Matcher(object):
     - none_of: Entity must have NONE of the specified components
     """
 
-    def __init__(self, *args: Type[Component], **kwargs: Any) -> None:
+    def __init__(
+        self,
+        *args: Type[Component],
+        all_of: Optional[ComponentTypes] = None,
+        any_of: Optional[ComponentTypes] = None,
+        none_of: Optional[ComponentTypes] = None,
+    ) -> None:
         """Initializes a new instance of the Matcher class.
 
         :param *args: Component types that all entities must have (shorthand for all_of)
@@ -33,35 +42,33 @@ class Matcher(object):
         """
         # Ensure all component type collections are tuples (hashable)
         self._all: Optional[Tuple[Type[Component], ...]] = self._ensure_tuple(
-            args if args else kwargs.get("all_of", None)
+            args if args else all_of
         )
-        self._any: Optional[Tuple[Type[Component], ...]] = self._ensure_tuple(
-            kwargs.get("any_of", None)
-        )
-        self._none: Optional[Tuple[Type[Component], ...]] = self._ensure_tuple(
-            kwargs.get("none_of", None)
-        )
+        self._any: Optional[Tuple[Type[Component], ...]] = self._ensure_tuple(any_of)
+        self._none: Optional[Tuple[Type[Component], ...]] = self._ensure_tuple(none_of)
 
-    def _ensure_tuple(self, value: Any) -> Optional[Tuple[Type[Component], ...]]:
+    def _ensure_tuple(
+        self, value: Optional[ComponentTypes]
+    ) -> Optional[Tuple[Type[Component], ...]]:
         """Ensures the given value is a tuple of component types or None.
 
-        :param value: Value to convert (can be None, tuple, list, or single component type)
+        :param value: Value to convert (None, a tuple/list, or a single type)
         :return: Tuple of component types or None
         """
         if value is None:
             return None
-        elif isinstance(value, tuple):
-            return value
-        elif isinstance(value, list):
+        if isinstance(value, tuple):
             return tuple(value)
-        elif isinstance(value, type) and issubclass(value, Component):
+        if isinstance(value, list):
+            return tuple(value)
+        if isinstance(value, type) and issubclass(value, Component):
             return (value,)
-        else:
-            # Try to convert iterable to tuple
-            try:
-                return tuple(value)
-            except (TypeError, ValueError):
-                raise TypeError(f"Invalid component type specification: {value}")
+
+        # Try to convert any other iterable to a tuple
+        try:
+            return tuple(value)
+        except (TypeError, ValueError):
+            raise TypeError(f"Invalid component type specification: {value}")
 
     @property
     def all_of(self) -> Optional[Tuple[Type[Component], ...]]:

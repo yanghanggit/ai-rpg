@@ -1,6 +1,4 @@
 """
-entitas.components
-~~~~~~~~~~~~~~~~~
 Base classes and utilities for creating components in the ECS system.
 Provides both namedtuple compatibility and Pydantic BaseModel support.
 """

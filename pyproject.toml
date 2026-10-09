@@ -114,7 +114,7 @@ pretty = true
 incremental = true
 cache_dir = ".mypy_cache"
 ignore_missing_imports = false
-mypy_path = "src"
+mypy_path = "src:tests"
 
 [tool.pytest.ini_options]
 # 测试发现
@@ -122,8 +122,8 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-# 导入：显式把 src 与仓库根加入 sys.path；importlib 模式不做隐式 sys.path 注入
-pythonpath = ["src"]
+# 导入：显式把 src 与 tests 加入 sys.path；importlib 模式不做隐式 sys.path 注入
+pythonpath = ["src", "tests"]
 addopts = "-v --tb=short --strict-markers --import-mode=importlib"
 # asyncio
 asyncio_mode = "auto"
@@ -156,6 +156,9 @@ exclude = [
 ]
 line-length = 88
 target-version = "py312"
+
+# 让 ruff 把仓库根、src/ 与 tests/ 下的一级模块都识别为第一方（无需点名具体模块）
+src = [".", "src", "tests"]
 
 [tool.ruff.lint]
 # 启用规则：未使用导入、重复导入、import排序等

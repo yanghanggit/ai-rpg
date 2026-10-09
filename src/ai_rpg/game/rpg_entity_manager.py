@@ -33,7 +33,7 @@ class RPGEntityManager(Context):
     def _create_entity(self, name: str) -> Entity:
         """创建并注册一个新实体（内部方法）。"""
         entity = super().create_entity()
-        entity._name = str(name)
+        entity.name = str(name)
         self._entity_name_index[name] = entity
         return entity
 
@@ -49,7 +49,7 @@ class RPGEntityManager(Context):
         """序列化单个实体（内部方法）。"""
         components = [
             serialize_component(value)
-            for key, value in entity._components.items()
+            for key, value in entity.iter_component_items()
             if COMPONENT_TYPES.get(key.__name__) is not None
         ]
         return EntitySerialization(name=entity.name, components=components)

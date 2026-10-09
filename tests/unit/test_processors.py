@@ -1,5 +1,5 @@
 """
-Tests for the Processors module in entitas framework.
+Tests for the ProcessorPipeline module in entitas framework.
 """
 
 from typing import Dict, List
@@ -7,19 +7,19 @@ from unittest.mock import Mock
 
 import pytest
 
+from ai_rpg.entitas import (
+    CleanupProcessor,
+    ExecuteProcessor,
+    InitializeProcessor,
+    ProcessorPipeline,
+    ReactiveProcessor,
+    TearDownProcessor,
+)
 from ai_rpg.entitas.context import Context
 from ai_rpg.entitas.entity import Entity
 from ai_rpg.entitas.group import GroupEvent
 from ai_rpg.entitas.matcher import Matcher
-from ai_rpg.entitas.processors import (
-    CleanupProcessor,
-    ExecuteProcessor,
-    InitializeProcessor,
-    Processors,
-    ReactiveProcessor,
-    TearDownProcessor,
-)
-from ai_rpg.entitas.testing import Position, Velocity
+from ecs_testing import Position, Velocity
 
 
 # Test implementations of abstract processors
@@ -122,7 +122,7 @@ class TestMultiInterfaceProcessor(
         self.operations_called.append("tear_down")
 
 
-class TestProcessors:
+class TestProcessorPipeline:
     """Test cases for all processor classes."""
 
     def test_initialize_processor_abstract(self) -> None:
@@ -220,7 +220,7 @@ class TestProcessors:
         """Test ReactiveProcessor filter method."""
         context = Context()
         processor = TestReactiveProcessor(context)
-        entity = Entity()
+        entity = context.create_entity()
 
         # Default filter returns True
         assert processor.filter(entity) is True
@@ -238,7 +238,7 @@ class TestProcessors:
         context = Context()
         processor = TestReactiveProcessor(context)
 
-        entities = [Entity(), Entity()]
+        entities = [context.create_entity(), context.create_entity()]
 
         await processor.react(entities)
 
@@ -292,9 +292,9 @@ class TestProcessors:
         processor = TestReactiveProcessor(context)
 
         # Create test entities
-        entity1 = Entity()
-        entity2 = Entity()
-        entity3 = Entity()
+        entity1 = context.create_entity()
+        entity2 = context.create_entity()
+        entity3 = context.create_entity()
 
         # Mock collector with entities
         processor._collector = Mock()
@@ -329,8 +329,8 @@ class TestProcessors:
         processor = TestReactiveProcessor(context)
 
         # Create test entities
-        entity1 = Entity()
-        entity2 = Entity()
+        entity1 = context.create_entity()
+        entity2 = context.create_entity()
 
         # Mock collector with entities
         processor._collector = Mock()
@@ -352,8 +352,8 @@ class TestProcessors:
         assert len(processor.processed_entities) == 0
 
     def test_processors_initialization(self) -> None:
-        """Test Processors container initialization."""
-        processors = Processors()
+        """Test ProcessorPipeline container initialization."""
+        processors = ProcessorPipeline()
 
         assert len(processors._initialize_processors) == 0
         assert len(processors._execute_processors) == 0
@@ -362,7 +362,7 @@ class TestProcessors:
 
     def test_processors_add_single_interface(self) -> None:
         """Test adding processors with single interfaces."""
-        processors = Processors()
+        processors = ProcessorPipeline()
 
         init_proc = TestInitializeProcessor()
         exec_proc = TestExecuteProcessor()
@@ -386,7 +386,7 @@ class TestProcessors:
 
     def test_processors_add_multi_interface(self) -> None:
         """Test adding processor with multiple interfaces."""
-        processors = Processors()
+        processors = ProcessorPipeline()
         multi_proc = TestMultiInterfaceProcessor()
 
         processors.add(multi_proc)
@@ -404,7 +404,7 @@ class TestProcessors:
 
     def test_processors_add_reactive_processor(self) -> None:
         """Test adding reactive processor."""
-        processors = Processors()
+        processors = ProcessorPipeline()
         context = Context()
         reactive_proc = TestReactiveProcessor(context)
 
@@ -420,8 +420,8 @@ class TestProcessors:
 
     @pytest.mark.asyncio
     async def test_processors_initialize_execution(self) -> None:
-        """Test Processors initialize execution."""
-        processors = Processors()
+        """Test ProcessorPipeline initialize execution."""
+        processors = ProcessorPipeline()
 
         proc1 = TestInitializeProcessor()
         proc2 = TestInitializeProcessor()
@@ -436,8 +436,8 @@ class TestProcessors:
 
     @pytest.mark.asyncio
     async def test_processors_execute_execution(self) -> None:
-        """Test Processors execute execution."""
-        processors = Processors()
+        """Test ProcessorPipeline execute execution."""
+        processors = ProcessorPipeline()
 
         proc1 = TestExecuteProcessor()
         proc2 = TestExecuteProcessor()
@@ -453,8 +453,8 @@ class TestProcessors:
         assert proc2.execute_count == 1
 
     def test_processors_cleanup_execution(self) -> None:
-        """Test Processors cleanup execution."""
-        processors = Processors()
+        """Test ProcessorPipeline cleanup execution."""
+        processors = ProcessorPipeline()
 
         proc1 = TestCleanupProcessor()
         proc2 = TestCleanupProcessor()
@@ -468,8 +468,8 @@ class TestProcessors:
         assert proc2.cleanup_called
 
     def test_processors_tear_down_execution(self) -> None:
-        """Test Processors tear down execution."""
-        processors = Processors()
+        """Test ProcessorPipeline tear down execution."""
+        processors = ProcessorPipeline()
 
         proc1 = TestTearDownProcessor()
         proc2 = TestTearDownProcessor()
@@ -485,7 +485,7 @@ class TestProcessors:
     @pytest.mark.asyncio
     async def test_processors_execution_order(self) -> None:
         """Test that processors are executed in the order they were added."""
-        processors = Processors()
+        processors = ProcessorPipeline()
 
         proc1 = TestMultiInterfaceProcessor()
         proc2 = TestMultiInterfaceProcessor()
@@ -536,7 +536,7 @@ class TestProcessors:
 
     def test_processors_activate_reactive_processors(self) -> None:
         """Test activating reactive processors."""
-        processors = Processors()
+        processors = ProcessorPipeline()
         context = Context()
 
         # Add different types of processors
@@ -561,7 +561,7 @@ class TestProcessors:
 
     def test_processors_deactivate_reactive_processors(self) -> None:
         """Test deactivating reactive processors."""
-        processors = Processors()
+        processors = ProcessorPipeline()
         context = Context()
 
         # Add different types of processors
@@ -586,7 +586,7 @@ class TestProcessors:
 
     def test_processors_clear_reactive_processors(self) -> None:
         """Test clearing reactive processors."""
-        processors = Processors()
+        processors = ProcessorPipeline()
         context = Context()
 
         # Add different types of processors
@@ -611,8 +611,8 @@ class TestProcessors:
 
     def test_processors_nested_reactive_operations(self) -> None:
         """Test reactive operations on nested processor containers."""
-        main_processors = Processors()
-        nested_processors = Processors()
+        main_processors = ProcessorPipeline()
+        nested_processors = ProcessorPipeline()
         context = Context()
 
         # Add reactive processor to nested container
@@ -642,7 +642,7 @@ class TestProcessors:
     @pytest.mark.asyncio
     async def test_processors_full_lifecycle(self) -> None:
         """Test complete processor lifecycle."""
-        processors = Processors()
+        processors = ProcessorPipeline()
         context = Context()
 
         # Add various processors
@@ -723,7 +723,7 @@ class TestProcessors:
             def tear_down(self) -> None:
                 raise RuntimeError("TearDown error")
 
-        processors = Processors()
+        processors = ProcessorPipeline()
 
         # Test initialize error
         processors.add(ErrorInitializeProcessor())
@@ -731,19 +731,19 @@ class TestProcessors:
             await processors.initialize()
 
         # Test execute error
-        processors = Processors()  # Reset
+        processors = ProcessorPipeline()  # Reset
         processors.add(ErrorExecuteProcessor())
         with pytest.raises(RuntimeError, match="Execute error"):
             await processors.execute()
 
         # Test cleanup error
-        processors = Processors()  # Reset
+        processors = ProcessorPipeline()  # Reset
         processors.add(ErrorCleanupProcessor())
         with pytest.raises(RuntimeError, match="Cleanup error"):
             processors.cleanup()
 
         # Test tear down error
-        processors = Processors()  # Reset
+        processors = ProcessorPipeline()  # Reset
         processors.add(ErrorTearDownProcessor())
         with pytest.raises(RuntimeError, match="TearDown error"):
             processors.tear_down()

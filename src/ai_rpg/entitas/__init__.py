@@ -1,7 +1,5 @@
 from .collector import Collector
 from .components import Component
-
-# from .entity_index import PrimaryEntityIndex, EntityIndex
 from .context import Context
 from .entity import Entity
 from .event import Event
@@ -14,14 +12,14 @@ from .exceptions import (
 )
 from .group import Group, GroupEvent
 from .matcher import Matcher
-from .processors import (
+from .processor_interfaces import (
     CleanupProcessor,
     ExecuteProcessor,
     InitializeProcessor,
-    Processors,
-    ReactiveProcessor,
     TearDownProcessor,
 )
+from .processor_pipeline import ProcessorPipeline
+from .reactive_processor import ReactiveProcessor
 
 __all__ = [
     "Entity",
@@ -31,7 +29,7 @@ __all__ = [
     "GroupEvent",
     "Collector",
     "Component",
-    "Processors",
+    "ProcessorPipeline",
     "InitializeProcessor",
     "ExecuteProcessor",
     "CleanupProcessor",

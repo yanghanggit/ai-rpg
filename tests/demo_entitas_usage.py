@@ -4,7 +4,7 @@ This demonstrates the basic usage patterns tested in our test suite.
 """
 
 from ai_rpg.entitas import Context, Matcher
-from ai_rpg.entitas.testing import Health, Name, Position, Score, Velocity
+from ecs_testing import Health, Name, Position, Score, Velocity
 
 
 def main() -> None:
@@ -131,7 +131,7 @@ def main() -> None:
             vel = entity.get(Velocity)
             components.append(f"Vel: ({vel.dx}, {vel.dy})")
 
-        print(f"  {entity._creation_index}: {', '.join(components)}")
+        print(f"  {entity.index}: {', '.join(components)}")
 
 
 if __name__ == "__main__":

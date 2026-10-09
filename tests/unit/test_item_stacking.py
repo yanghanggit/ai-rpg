@@ -26,7 +26,9 @@ from ai_rpg.models.utils import (
 
 
 def _consumable(name: str, prompt: str, count: int = 1) -> ConsumableItem:
-    return ConsumableItem(name=name, description=f"{name} 的描述", on_use_prompt=[prompt], count=count)
+    return ConsumableItem(
+        name=name, description=f"{name} 的描述", on_use_prompt=[prompt], count=count
+    )
 
 
 def _material(name: str, count: int = 1) -> MaterialItem:
@@ -90,7 +92,7 @@ def test_material_different_name_not_stacked() -> None:
 
 def test_does_not_mutate_inputs() -> None:
     existing = _material("材料.旧麻绳", count=2)
-    original = [existing]
+    original: List[AnyItem] = [existing]
 
     append_item_with_stacking(original, _material("材料.旧麻绳", count=1))
 
@@ -158,7 +160,9 @@ def test_merge_item_stacks_collapses_same_identity() -> None:
 
 
 def test_deduct_single_entry_partial() -> None:
-    result = deduct_materials([_material("材料.旧麻绳", count=3)], ["材料.旧麻绳", "材料.旧麻绳"])
+    result = deduct_materials(
+        [_material("材料.旧麻绳", count=3)], ["材料.旧麻绳", "材料.旧麻绳"]
+    )
 
     assert len(result) == 1
     assert isinstance(result[0], MaterialItem)
@@ -166,7 +170,9 @@ def test_deduct_single_entry_partial() -> None:
 
 
 def test_deduct_single_entry_exact_removes_entry() -> None:
-    result = deduct_materials([_material("材料.旧麻绳", count=2)], ["材料.旧麻绳", "材料.旧麻绳"])
+    result = deduct_materials(
+        [_material("材料.旧麻绳", count=2)], ["材料.旧麻绳", "材料.旧麻绳"]
+    )
 
     assert result == []
 
@@ -174,7 +180,10 @@ def test_deduct_single_entry_exact_removes_entry() -> None:
 def test_deduct_carries_remainder_across_duplicate_entries() -> None:
     """回归：第一个同名条目不足以覆盖需求时，余量必须结转到后续条目。"""
 
-    items: List[AnyItem] = [_material("材料.符纸残片", count=1), _material("材料.符纸残片", count=3)]
+    items: List[AnyItem] = [
+        _material("材料.符纸残片", count=1),
+        _material("材料.符纸残片", count=3),
+    ]
 
     result = deduct_materials(items, ["材料.符纸残片", "材料.符纸残片"])
 
@@ -201,7 +210,9 @@ def test_deduct_keeps_unrelated_items() -> None:
 
 def test_deduct_raises_when_demand_unmet() -> None:
     with pytest.raises(AssertionError):
-        deduct_materials([_material("材料.旧麻绳", count=1)], ["材料.旧麻绳", "材料.旧麻绳"])
+        deduct_materials(
+            [_material("材料.旧麻绳", count=1)], ["材料.旧麻绳", "材料.旧麻绳"]
+        )
 
 
 # ---------------------------------------------------------------------------

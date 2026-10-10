@@ -70,8 +70,9 @@ from .card_prototypes import (
 #   - 阵营信息、核心矛盾、结局方向——属于叙事层，非公共知识
 #   - 任何"这个世界的真相是……"式的解释性陈述
 #
-# 副本=梦境的语义不写在这里，而是直接写进 SYSTEM_RULES（「全局规则」段）
-# 的「副本」「场景移动」条目——它属于规则层，不属于战役大背景。
+# 副本=梦境的语义不写在这里，而是写在独立的 DUNGEON_RULES 常量中，
+# 与内容无关的 SYSTEM_RULES 拼接为 SYSTEM_RULES_FINAL 后注入——
+# 它不属于战役大背景，而是随全局规则一并下发。
 # 「黄金十年后期」为系统层时间锚点，仅供 LLM 校准时代氛围，不进入角色台词。
 #
 # 原则：一个刚苏醒的失忆角色读了这段，只知道自己所处的时代和氛围，
@@ -93,10 +94,12 @@ CAMPAIGN_SETTING: Final[str] = (
 #       现已移入本文件——规则与战役设定一并封存在 demo/，引擎保持内容无关。
 #
 # 应包含：
-#   - 角色扮演契约、游戏实体、实体全名、根属性、战斗规则、场景移动、扮演与事实
-#     等所有实体必须共同遵守的规则
-#   - 副本=梦境的语义：直接写在「副本」与「场景移动」条目内，实体读到规则
-#     即按梦的语义行动，不再依赖 CAMPAIGN_SETTING 的"适配指令"做二次诠释
+#   - 角色扮演契约、游戏实体、实体全名、根属性、战斗规则、扮演与事实、场景移动
+#     等所有实体必须共同遵守的纯机制规则
+#
+# 副本（含"副本=梦境"的故事语义）不属于纯机制规则，故抽离到独立的
+# DUNGEON_RULES 常量；最终注入的 system_rules 字段由
+# SYSTEM_RULES_FINAL = SYSTEM_RULES + DUNGEON_RULES 拼接而成。
 #
 # 原则：规则直接陈述，无需回读远置的抽象设定。
 # ---------------------------------------------------------------------------
@@ -115,7 +118,6 @@ SYSTEM_RULES: Final[
 - **角色**：人、动物、怪物等可交互生命体。
 - **场景**：角色活动地点，角色行为仅限于所在场景。
 - **世界**：全局叙事者和规则管理器，跨场景协调事件，维护规则一致性。
-- **副本**：进入副本即进入梦境——副本不是地理上的远方，而是一段坠入的梦。副本由多个顺序**房间**构成，每间对应一处**场景**与特定挑战，其形态不限，可呈任意形态。
 
 **实体全名**
 
@@ -136,13 +138,25 @@ SYSTEM_RULES: Final[
 - **格挡（block）**：卡牌可携带 block 数值；持有在手牌中的卡牌，其 block 之和累加进持有者的有效防御（防御 = 基础防御 + 装备加成 + 手牌 block 之和）；出牌后该卡离手，其 block 不再计入。
 - **效果载体（Card）**：Card 是唯一的效果载体，只产生即时效果，可挂载词缀；效果均仅归角色持有。
 
-**场景移动**
-
-场景切换为叙事跳跃，代表角色已完成移动；旅途过程不在游戏内呈现，收到离开或到达通知时视为自然发生。进出副本即入梦与醒来：入睡便坠入梦境（进入副本），醒来便离开梦境——旅途由现实赶路变为梦境的切换，而非地理上的移动。
-
 **扮演与事实**
 
-世界的公共事实（建筑历史、地名由来、机构沿革）须从外部知识库获取，不由角色编造；角色的推断、意见与猜测是扮演的合法部分，但禁止凭空编造客观事实或声称知道人设未赋予的公共知识。"""
+世界的公共事实（建筑历史、地名由来、机构沿革）须从外部知识库获取，不由角色编造；角色的推断、意见与猜测是扮演的合法部分，但禁止凭空编造客观事实或声称知道人设未赋予的公共知识。
+
+**场景移动**
+
+场景切换为叙事跳跃，代表角色已完成移动；旅途过程不在游戏内呈现，收到离开或到达通知时视为自然发生。"""
+
+
+#######################################################################################################################################
+DUNGEON_RULES: Final[
+    str
+] = """**副本**
+
+副本由多个顺序**房间**构成，每间对应一处**场景**与特定挑战，其形态不限，可呈任意形态。进入副本即进入梦境——副本不是地理上的远方，而是一段坠入的梦。进出副本即入梦与醒来：入睡便坠入梦境（进入副本），醒来便离开梦境——旅途由现实赶路变为梦境的切换，而非地理上的移动。"""
+
+
+#######################################################################################################################################
+SYSTEM_RULES_FINAL: Final[str] = SYSTEM_RULES + "\n\n" + DUNGEON_RULES
 
 
 # ---------------------------------------------------------------------------
@@ -226,7 +240,7 @@ def create_actor_paper_doll() -> Actor:
         base_body="一具等人高的纸扎人偶，竹条骨架上糊着泛黄的白纸。面部用朱砂绘出简易五官——眉、眼、鼻、嘴皆为寥寥数笔，笑容弧度固定。身穿纸制的深蓝长衫，襟口与袖缘裱着褪色的金边纸。手指为五根细竹签，尖端微弯。整体极轻，静止时像被遗忘的摆设。",
         character_stats=CharacterStats(),
         campaign_setting=CAMPAIGN_SETTING,
-        system_rules=SYSTEM_RULES,
+        system_rules=SYSTEM_RULES_FINAL,
     )
 
     paper_doll.components = dump_components(
@@ -260,7 +274,7 @@ def create_shrine_ruins_dungeon() -> Dungeon:
 庙祠的山门已经完全倒塌，只剩两根石柱歪斜地插在瓦砾堆里。门后的前院在暮色中只是一个模糊的轮廓——隐约能看到倾倒的香炉和地面散落的圆形纸钱。
 空气中有一股陈旧纸张与干燥竹骨的气味，淡得像记忆一样不真实。小径在距山门废墟三步之处戛然而止，仿佛连脚下的路也不愿再靠近。""",
         campaign_setting=CAMPAIGN_SETTING,
-        system_rules=SYSTEM_RULES,
+        system_rules=SYSTEM_RULES_FINAL,
     )
 
     # ── 战斗房间 ──
@@ -271,7 +285,7 @@ def create_shrine_ruins_dungeon() -> Dungeon:
 正前方是殿门，门扇只剩一扇半掩着，门楣上的匾额歪斜悬挂，字迹已模糊不可辨。殿内隐约可见一尊神像的背影——它面向后墙，而非殿门。
 院中一座三足铜香炉倾倒在地，香灰洒成扇形，灰堆表面留有细长的拖痕。院角散落着几件纸扎残件——半只纸马、一朵褪色的纸花、一只纸人的断手。地面随处可见圆形纸钱，但无论站在哪个位置，纸钱上的方孔都似乎正对着你。""",
         campaign_setting=CAMPAIGN_SETTING,
-        system_rules=SYSTEM_RULES,
+        system_rules=SYSTEM_RULES_FINAL,
     )
 
     # 战斗场景神器：神器本身是独立实体，由 ReliquaryComponent 声明其归属（持有者）
@@ -285,7 +299,7 @@ def create_shrine_ruins_dungeon() -> Dungeon:
             "在第二回合的战斗结算/消耗品使用结算之后，满院纸钱将夺走闯入者的生气：队伍方所有角色生命耗尽（HP 归零），无论本次出牌/使用消耗品如何结算，最终结果都必须体现队伍方全员倒下、无力再战。",
         ],
         campaign_setting=CAMPAIGN_SETTING,
-        system_rules=SYSTEM_RULES,
+        system_rules=SYSTEM_RULES_FINAL,
     )
     # 标记型组件：决定该神器在「出牌/消耗品仲裁后」运行
     artifact_paper_money.components = dump_components(
@@ -323,7 +337,7 @@ def create_wuming_room() -> Stage:
         stage_type=StageType.HOME,
         profile="""你是司氏宅邸二楼的一间卧室，久无人住。一张铁架床靠墙而放，被褥半旧，叠得并不整齐；床头一个歪斜的矮柜，柜面落着一层薄灰。一扇木窗正对庭院，窗外荒草没膝，一直蔓延到远处的锈蚀铁门，更远处是终年不散的灰白雾气。墙纸受潮卷边，露出灰褐的底子；天花板一角有水渍晕痕。房门虚掩，门外是铺着旧地毯的走廊，静得能听见灰尘落下的声音。空气里有旧木、积尘与轻微霉味混合的气息。""",
         campaign_setting=CAMPAIGN_SETTING,
-        system_rules=SYSTEM_RULES,
+        system_rules=SYSTEM_RULES_FINAL,
     )
     return stage
 
@@ -337,7 +351,7 @@ def create_guzhiqiu_room() -> Stage:
         stage_type=StageType.HOME,
         profile="""你是司氏宅邸一楼的一间客房，比二楼的卧室稍大，靠墙立着衣柜与梳妆台，镜面蒙尘，照不清人脸。床铺整洁，被角被细心掖好，显然近期有人住过。窗朝西，黄昏时能望见荒草尽头的天光。地上铺着褪色的旧地毯，桌上有半截燃过的蜡烛和一摞旧书。房门关着，门外走廊偶尔传来极轻的脚步声——像是住在这里的人在走动，又像是风。""",
         campaign_setting=CAMPAIGN_SETTING,
-        system_rules=SYSTEM_RULES,
+        system_rules=SYSTEM_RULES_FINAL,
     )
     return stage
 
@@ -351,7 +365,7 @@ def create_entrance_hall() -> Stage:
         stage_type=StageType.HOME,
         profile="""你是司氏宅邸的门厅，两层通高，一道弧形楼梯通向二楼。地面铺着黑白相间的大理石，踩上去有回音。正中悬着一盏落满灰的水晶吊灯，早已不亮。两侧墙上挂着几幅蒙尘的旧油画，画中人面目在昏暗里看不真切。大门紧闭，门缝透不进一丝风，门外听不见任何声音——仿佛整座洋馆被从世界其余部分切了下来。门厅一侧有扇虚掩的门通向客厅，另一侧是一条通向里间的走廊，隐入暗处。""",
         campaign_setting=CAMPAIGN_SETTING,
-        system_rules=SYSTEM_RULES,
+        system_rules=SYSTEM_RULES_FINAL,
     )
     return stage
 
@@ -370,7 +384,7 @@ def create_wuming() -> Actor:
         base_body="年近三十的男性，喉结微凸，肩宽而骨架分明。身穿洗至发硬的旧长衫。身形偏瘦但不单薄，肤色偏浅。面容轮廓分明，下颌线条硬朗，眼下有淡淡的暗沉，眼神沉默时像在看某个他人看不见的地方。手腕内侧有几道已结痂的浅痕。手指细长，关节明显。",
         character_stats=CharacterStats(),
         campaign_setting=CAMPAIGN_SETTING,
-        system_rules=SYSTEM_RULES,
+        system_rules=SYSTEM_RULES_FINAL,
     )
 
     actor.components = dump_components(
@@ -443,7 +457,7 @@ def create_guzhiqiu() -> Actor:
         base_body="二十五岁上下的女性，身穿半旧的深灰色长衫。骨架纤细，体态偏瘦，肩窄，锁骨稍显。肤色较浅，眼下有长期少眠留下的淡淡暗沉。右手中指有长期握笔形成的淡色压痕。眼神锐利，与瘦弱的外表形成反差——那是一种近乎本能的审视目光，仿佛每一样进入视野的东西都在被拆解、归类。",
         character_stats=CharacterStats(),
         campaign_setting=CAMPAIGN_SETTING,
-        system_rules=SYSTEM_RULES,
+        system_rules=SYSTEM_RULES_FINAL,
     )
 
     actor.components = dump_components(
@@ -491,7 +505,7 @@ def create_ruins_blueprint(game_name: str) -> Blueprint:
         name=game_name,
         player_actor=actor_wuming.name,
         campaign_setting=CAMPAIGN_SETTING,
-        system_rules=SYSTEM_RULES,
+        system_rules=SYSTEM_RULES_FINAL,
         knowledge_base=KNOWLEDGE_BASE,
         stages=[
             stage_wuming_room,
@@ -520,7 +534,7 @@ def create_dungeon_generation() -> World:
     world = create_world(
         name="世界.副本生成系统",
         campaign_setting=CAMPAIGN_SETTING,
-        system_rules=SYSTEM_RULES,
+        system_rules=SYSTEM_RULES_FINAL,
         role_rules="""## 大傩本质
 
 副本发生在大傩——一个由司命（上位存在）意志直接塑造的扭曲东方领域。大傩并非固定地理空间，而是遵循梦境逻辑的流动现实：空间可以断裂，因果可以倒置，熟悉之物可以被陌生化。每次生成的副本是大傩的一个独立切面，呈现为一个扭曲的场景序列。
@@ -582,7 +596,7 @@ def create_illustration_prompt() -> World:
     world = create_world(
         name="世界.插图提示词",
         campaign_setting=CAMPAIGN_SETTING,
-        system_rules=SYSTEM_RULES,
+        system_rules=SYSTEM_RULES_FINAL,
         role_rules="""## 插图提示词职责
 
 你是游戏世界的插图提示词编排系统，负责把副本的场景设定转化成可直接交给图像模型（文生图）的正向提示词与负面提示词。你不参与叙事，只专注于「怎样把这个场景画出来」。
@@ -626,7 +640,7 @@ def create_player_action_audit() -> World:
     world = create_world(
         name="世界.玩家行动审计系统",
         campaign_setting=CAMPAIGN_SETTING,
-        system_rules=SYSTEM_RULES,
+        system_rules=SYSTEM_RULES_FINAL,
         role_rules="""## 玩家行动审计系统职责
 
 你是游戏世界的内容合规审核系统，负责对玩家输入的语言类指令（说话、私聊、公告等）进行合规审查。
@@ -666,7 +680,7 @@ def create_gear_workshop() -> World:
     world = create_world(
         name="世界.装备工坊",
         campaign_setting=CAMPAIGN_SETTING,
-        system_rules=SYSTEM_RULES,
+        system_rules=SYSTEM_RULES_FINAL,
         role_rules="""## 装备工坊职责
 
 你是游戏世界的装备工坊系统，负责根据玩家提交的材料，创意合成装备。
@@ -709,7 +723,7 @@ def create_consumable_workshop() -> World:
     world = create_world(
         name="世界.消耗品工坊",
         campaign_setting=CAMPAIGN_SETTING,
-        system_rules=SYSTEM_RULES,
+        system_rules=SYSTEM_RULES_FINAL,
         role_rules="""## 消耗品工坊职责
 
 你是游戏世界的消耗品工坊系统，只制作消耗品，不合成装备或时装。
@@ -739,7 +753,7 @@ def create_costume_workshop() -> World:
     world = create_world(
         name="世界.时装工坊",
         campaign_setting=CAMPAIGN_SETTING,
-        system_rules=SYSTEM_RULES,
+        system_rules=SYSTEM_RULES_FINAL,
         role_rules="""## 时装工坊职责
 
 你是游戏世界的时装工坊系统，只制作时装，不合成消耗品或装备。
@@ -771,7 +785,7 @@ def create_consumable_arbitrator() -> World:
     world = create_world(
         name="世界.消耗品仲裁",
         campaign_setting=CAMPAIGN_SETTING,
-        system_rules=SYSTEM_RULES,
+        system_rules=SYSTEM_RULES_FINAL,
         role_rules="""## 消耗品仲裁职责
 
 你是游戏世界的消耗品效果仲裁者。当一名角色在战斗中使用消耗品时，你被临时唤醒，作为该次消耗品使用效果的裁决者。
@@ -798,7 +812,7 @@ def create_dungeon_director() -> World:
     world = create_world(
         name="世界.副本导演",
         campaign_setting=CAMPAIGN_SETTING,
-        system_rules=SYSTEM_RULES,
+        system_rules=SYSTEM_RULES_FINAL,
         role_rules="""## 副本导演职责
 
 你是副本导演，扮演当前正在游玩的这一个副本本身。你能感知副本内每一个场景与每一个角色身上发生过的一切，随着副本的推进逐步积累记忆：副本开局时记录起始场景，此后每当一个房间结束都会收到该房间内的事实记录。
@@ -826,7 +840,7 @@ def create_world_director() -> World:
     world = create_world(
         name="世界.世界导演",
         campaign_setting=CAMPAIGN_SETTING,
-        system_rules=SYSTEM_RULES,
+        system_rules=SYSTEM_RULES_FINAL,
         role_rules="""## 人设
 
 你是「大傩」的塑造者，一位癫狂的上位存在（司命）。你的意志直接塑造大傩——那是一个遵循梦境逻辑的流动现实，而非固定地理。每次生成的副本，都是你的意志在大傩中展开的一个独立切面、一场梦。
@@ -873,7 +887,7 @@ def create_storage() -> World:
     world = create_world(
         name="世界.储物箱",
         campaign_setting=CAMPAIGN_SETTING,
-        system_rules=SYSTEM_RULES,
+        system_rules=SYSTEM_RULES_FINAL,
         role_rules="""## 储物箱职责
 
 你是游戏世界的全局储物箱，负责保管角色存放的各类道具（材料、消耗品、装备、时装）。你不主动参与叙事，也不与角色对话；仅作为库存数据的载体，供合成、穿装、移动等系统读写。当被询问库存时，你只如实呈现当前库存内容，不虚构不存在的道具。""",

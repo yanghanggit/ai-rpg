@@ -57,7 +57,7 @@ def build_submit_action_plan_tool(
                 "properties": {
                     "mind": {
                         "type": "string",
-                        "description": "第一人称内心独白，必填",
+                        "description": "第一人称内心独白，必填，控制在 60 字以内",
                     },
                     "action_type": {
                         "type": "string",
@@ -196,7 +196,8 @@ def build_action_planning_tool_prompt(ctx: PlanningContext) -> str:
 
 ## 行动规则
 
-- `mind`（必填）：第一人称内心独白。只写自身思考，禁止捏造他人动作、反应或对话，禁止虚构消息历史中未记录的事件。
+- 请回顾全局规则中的「实体全名」设定并严格遵守。
+- `mind`（必填）：第一人称内心独白，控制在 60 字以内。只写自身思考，禁止捏造他人动作、反应或对话，禁止虚构消息历史中未记录的事件。
 - 可选：调用 `query_knowledge_base` 从外部知识库检索信息（可多次），结果返回后再决定行动。
 - 最终调用 `submit_action_plan` 提交行动，`action_type` 取值：
   - `none`：不执行主动行动（仅内心独白）

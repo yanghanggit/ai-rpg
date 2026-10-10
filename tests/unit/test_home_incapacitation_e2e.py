@@ -6,7 +6,7 @@
      - 不能规划行动（HomeNpcPlanSystem.filter 拒绝）
      - 不能收集信息（add_human_message 断言失败）
      - 不能加入队伍名单（add_party_member 拒绝）
-     - 不能激活行动计划（activate_plan_action 拒绝）
+     - 批量推进只要含失能者就整单拒绝（activate_plan_action 拒绝，调用方负责过滤）
      - 已从玩家队伍名单移除
 """
 
@@ -81,6 +81,7 @@ async def test_incapacitation_end_to_end(sample_game: DBGGame) -> None:
     player.add(PartyRosterComponent, "角色.玩家", ["角色.NPC_A"])
 
     npc = _make_npc(game, "角色.NPC_A", "场景.家园", lives=0)
+    healthy = _make_npc(game, "角色.NPC_B", "场景.家园", lives=3)
     game.add_system_message(npc, SystemMessage(content="sys"))
     game.add_human_message(npc, HumanMessage(content="memory-1"))
     game.add_human_message(npc, HumanMessage(content="memory-2"))
@@ -113,11 +114,12 @@ async def test_incapacitation_end_to_end(sample_game: DBGGame) -> None:
     assert ok is False
     assert "失能" in err
 
-    # 4. 不能激活行动计划，且不会挂上 PlanAction
-    ok, err = activate_plan_action(game, ["角色.NPC_A"])
+    # 4. 批量推进：只要含一个失能者就整单拒绝（过滤责任在调用方）
+    ok, err = activate_plan_action(game, ["角色.NPC_A", "角色.NPC_B"])
     assert ok is False
     assert "失能" in err
     assert not npc.has(PlanAction)
+    assert not healthy.has(PlanAction)
 
     # 5. 不能收集信息
     with pytest.raises(AssertionError):

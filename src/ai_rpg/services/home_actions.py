@@ -149,7 +149,8 @@ def activate_plan_action(dbg_game: DBGGame, actor_names: List[str]) -> Tuple[boo
         logger.error(f"激活行动计划失败: {error_detail}")
         return False, error_detail
 
-    # 逐一校验角色：必须存在、必须是 NPC 阵营角色（含玩家自身）、必须在家园场景中。
+    # 逐一校验角色：必须存在、必须是 NPC 阵营角色（含玩家自身）、必须在家园场景中、且未失能。
+    # 只要有任一角色已永久失能就整单拒绝——调用方（客户端）负责在请求前把失能者过滤掉。
     resolved_entities = []
     for actor_name in actor_names:
 

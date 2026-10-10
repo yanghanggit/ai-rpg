@@ -62,6 +62,26 @@ def set_character_hp(entity: Entity, hp: int) -> CharacterStats:
 
 
 #################################################################################################################################################
+def mark_dead(entity: Entity) -> CharacterStats:
+    """将角色标记为战败：剩余生命数（lives）扣 1（下限 0）并挂载 DeathComponent。
+
+    战死 / 超时判负 / 撤退均视为一次战败，统一走此入口。
+    幂等：已带 DeathComponent 的实体不会重复扣减 lives。
+    """
+    assert entity.has(ActorComponent), f"{entity.name} 缺少 ActorComponent"
+    assert entity.has(
+        CharacterStatsComponent
+    ), f"{entity.name} 缺少 CharacterStatsComponent"
+
+    stats_comp = entity.get(CharacterStatsComponent)
+    if not entity.has(DeathComponent):
+        stats_comp.stats.lives = max(0, stats_comp.stats.lives - 1)
+        entity.replace(DeathComponent, entity.name)
+
+    return compute_character_stats(entity)
+
+
+#################################################################################################################################################
 def get_energy(entity: Entity) -> int:
     """获取角色实体的当前回合剩余行动次数（RoundStatsComponent.energy）。"""
     round_stats = entity.get(RoundStatsComponent)

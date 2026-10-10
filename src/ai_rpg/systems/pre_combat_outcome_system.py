@@ -5,6 +5,7 @@ from typing import Final, final, override
 from loguru import logger
 
 from ..entitas import ExecuteProcessor
+from ..game.dbg_combat_processor import mark_dead
 from ..game.dbg_game import DBGGame
 from ..models import (
     DeathComponent,
@@ -46,4 +47,4 @@ class PreCombatOutcomeSystem(ExecuteProcessor):
                 logger.info(
                     f"战斗超过 {_MAX_COMBAT_ROUNDS} 回合，强制友方失败：{entity.name}"
                 )
-                entity.replace(DeathComponent, entity.name)
+                mark_dead(entity)

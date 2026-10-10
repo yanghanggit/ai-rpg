@@ -5,7 +5,7 @@ from typing import Final, final, override
 from loguru import logger
 
 from ..entitas import ExecuteProcessor, Matcher
-from ..game.dbg_combat_processor import compute_character_stats
+from ..game.dbg_combat_processor import compute_character_stats, mark_dead
 from ..game.dbg_game import DBGGame
 from ..models import (
     CharacterStatsComponent,
@@ -47,4 +47,4 @@ class DeathSystem(ExecuteProcessor):
                 self._game.add_human_message(
                     entity, HumanMessage(content=_build_death_notification())
                 )
-                entity.replace(DeathComponent, entity.name)
+                mark_dead(entity)

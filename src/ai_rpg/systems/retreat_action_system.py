@@ -5,8 +5,9 @@ from typing import Dict, List, final, override
 from loguru import logger
 
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
+from ..game.dbg_combat_processor import mark_dead
 from ..game.dbg_game import DBGGame
-from ..models import DeathComponent, HumanMessage, PartyMemberComponent, RetreatAction
+from ..models import HumanMessage, PartyMemberComponent, RetreatAction
 from ..utils import prompt_builder
 
 
@@ -71,7 +72,7 @@ class RetreatActionSystem(ReactiveProcessor):
         ), f"Entity {entity.name} must have PartyMemberComponent"
 
         # 标记为死亡，后续 CombatOutcomeSystem 会检测并触发战斗失败流程
-        entity.replace(DeathComponent, entity.name)
+        mark_dead(entity)
         logger.info(f"撤退: 角色 {entity.name} 标记为死亡")
 
         # 解析所在场景，生成撤退叙事消息并写入对话历史

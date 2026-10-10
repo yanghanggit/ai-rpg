@@ -26,8 +26,8 @@ from ai_rpg.rag import add_documents
 from demo import (
     CARD_PROTOTYPES,
     DEFAULT_DECK_BUILD,
-    create_ruins_blueprint,
-    create_shrine_ruins_dungeon,
+    create_deepdive_blueprint,
+    create_ledger_dungeon,
 )
 
 
@@ -63,7 +63,7 @@ def _setup_dungeons() -> None:
     logger.info("🚀 保存演示副本...")
 
     dungeons = [
-        create_shrine_ruins_dungeon(),  # 坍塌庙祠副本
+        create_ledger_dungeon(),  # 账房副本
     ]
 
     for dungeon in dungeons:
@@ -79,7 +79,7 @@ def _setup_blueprints() -> None:
     """将演示游戏世界蓝图序列化为 JSON 文件，存入 BLUEPRINTS_DIR"""
     logger.info("🚀 保存演示游戏蓝图...")
 
-    blueprint_game1 = create_ruins_blueprint(GAME_1)
+    blueprint_game1 = create_deepdive_blueprint(GAME_1)
     path_game1 = BLUEPRINTS_DIR / f"{GAME_1}.json"
     path_game1.write_text(blueprint_game1.model_dump_json(indent=4), encoding="utf-8")
     logger.success(f"✅ {GAME_1}.json 已保存至 {path_game1.absolute()}")

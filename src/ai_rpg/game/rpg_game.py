@@ -6,6 +6,7 @@ from overrides import override
 from ..entitas import Entity
 from ..models import (
     AnyAgentEvent,
+    IncapacitatedComponent,
     PlayerSession,
     WorldState,
 )
@@ -115,8 +116,17 @@ class RPGGame(BaseGame, RPGAgentMemory, RPGEntityManager, RPGGamePipelineManager
         agent_event: AnyAgentEvent,
     ) -> None:
         """向指定实体集合发送通知，并同步到玩家客户端"""
+
         # 正常的添加记忆。
+        # 已永久失能的实体不再接收任何信息（彻底失能：既不规划行动，也不收集信息）。
         for entity in entities:
+
+            # 检查实体是否已永久失能，如果是则跳过记忆写入。
+            if entity.has(IncapacitatedComponent):
+                logger.debug(f"notify_entities: {entity.name} 已永久失能，跳过记忆写入")
+                continue
+
+            # 向实体添加人类消息，表示它接收到的事件内容。
             self.add_human_message(entity, HumanMessage(content=agent_event.message))
 
         # 最后都要发给客户端。

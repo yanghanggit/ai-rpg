@@ -13,6 +13,7 @@ from typing import Any, List, cast
 import pytest
 
 from ai_rpg.entitas.entity import Entity
+from ai_rpg.models import IncapacitatedComponent
 from ai_rpg.models.messages import AIMessage, HumanMessage, SystemMessage
 
 # ---------------------------------------------------------------------------
@@ -53,6 +54,13 @@ class TestAddHumanMessage:
         msg = msgs[0]
         assert isinstance(msg, HumanMessage)
         assert msg.content == "hello"
+
+    def test_rejects_incapacitated_entity(self, game: Any, actor: Entity) -> None:
+        """已永久失能的实体不允许再写入记忆。"""
+        actor.add(IncapacitatedComponent, actor.name)
+
+        with pytest.raises(AssertionError):
+            game.add_human_message(actor, HumanMessage(content="should fail"))
 
     def test_kwargs_stored_as_extra_fields(self, game: Any, actor: Entity) -> None:
         """Extra kwargs are attached to the message via Pydantic extra='allow'."""

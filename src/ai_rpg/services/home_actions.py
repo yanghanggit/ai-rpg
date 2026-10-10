@@ -17,6 +17,7 @@ from ..models import (
     GearWorkshopComponent,
     GenerateDungeonAction,
     HomeComponent,
+    IncapacitatedComponent,
     InventoryComponent,
     ItemType,
     MaterialItem,
@@ -168,6 +169,11 @@ def activate_plan_action(dbg_game: DBGGame, actor_names: List[str]) -> Tuple[boo
             logger.error(f"激活行动计划失败: {error_detail}")
             return False, error_detail
 
+        if actor_entity.has(IncapacitatedComponent):
+            error_detail = f"角色 {actor_name} 已永久失能，无法激活行动计划"
+            logger.error(f"激活行动计划失败: {error_detail}")
+            return False, error_detail
+
         resolved_entities.append(actor_entity)
 
     # 校验全部通过后再统一挂载，避免部分角色已挂载、部分校验失败导致的状态不一致。
@@ -207,6 +213,12 @@ def add_party_member(dbg_game: DBGGame, member_name: str) -> Tuple[bool, str]:
     # 检查角色是否为玩家自身，如果是则无法加入队伍。
     if member_entity.has(PlayerComponent):
         error_detail = "不能将玩家自身加入队伍名单"
+        logger.error(f"添加队伍成员失败: {error_detail}")
+        return False, error_detail
+
+    # 已永久失能的角色无法再进入副本，故不允许加入队伍名单。
+    if member_entity.has(IncapacitatedComponent):
+        error_detail = f"角色 {member_name} 已永久失能，无法加入队伍名单"
         logger.error(f"添加队伍成员失败: {error_detail}")
         return False, error_detail
 
@@ -467,6 +479,12 @@ def activate_wear_costume(
         AppearanceComponent
     ), f"目标角色 {target_name!r} 缺少 AppearanceComponent"
 
+    # 已永久失能的角色不接受任何外观操作。
+    if target_entity.has(IncapacitatedComponent):
+        error_detail = f"角色 {target_entity.name} 已永久失能，无法更新外观"
+        logger.error(f"激活穿装失败: {error_detail}")
+        return False, error_detail
+
     # 穿装要求 item_name 必须非空；脱装请使用 activate_remove_costume。
     if not item_name:
         error_detail = "时装名称不能为空，如需脱下时装请调用 activate_remove_costume"
@@ -527,6 +545,12 @@ def activate_remove_costume(dbg_game: DBGGame, target_name: str) -> Tuple[bool, 
     assert target_entity.has(
         AppearanceComponent
     ), f"目标角色 {target_name!r} 缺少 AppearanceComponent"
+
+    # 已永久失能的角色不接受任何外观操作。
+    if target_entity.has(IncapacitatedComponent):
+        error_detail = f"角色 {target_entity.name} 已永久失能，无法更新外观"
+        logger.error(f"激活脱装失败: {error_detail}")
+        return False, error_detail
 
     logger.debug(f"激活脱装: {target_entity.name}")
     target_entity.replace(RemoveCostumeAction, target_entity.name)

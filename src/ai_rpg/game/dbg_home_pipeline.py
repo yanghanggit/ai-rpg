@@ -21,6 +21,9 @@ def create_home_pipeline(game: BaseGame) -> RPGGameProcessPipeline:
         EnvironmentInitializationSystem,
     )
     from ..systems.epilogue_system import EpilogueSystem
+    from ..systems.home_npc_incapacitation_system import (
+        HomeNpcIncapacitationSystem,
+    )
     from ..systems.home_npc_plan_system import HomeNpcPlanSystem
     from ..systems.home_player_plan_system import HomePlayerPlanSystem
     from ..systems.player_action_audit_system import PlayerActionAuditSystem
@@ -47,6 +50,8 @@ def create_home_pipeline(game: BaseGame) -> RPGGameProcessPipeline:
     # 规划系统-环境初始化系统-角色系统
     processors.add(EnvironmentInitializationSystem(dbg_game))
     processors.add(HomePlayerPlanSystem(dbg_game))
+    # NPC 失能系统：必须先于 HomeNpcPlanSystem，lives 耗尽的 NPC 不再参与规划
+    processors.add(HomeNpcIncapacitationSystem(dbg_game))
     processors.add(HomeNpcPlanSystem(dbg_game))
 
     # 动作处理相关的系统

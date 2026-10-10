@@ -20,6 +20,7 @@ from ..models import (
     DeathComponent,
     EnvironmentComponent,
     HandComponent,
+    IncapacitatedComponent,
     InventoryComponent,
     MonsterComponent,
     NPCComponent,
@@ -100,6 +101,9 @@ def _entity_summary(name: str, components: EntityData) -> Dict[str, Any]:
     """把单个实体压缩成代理决策所需的摘要（角色/生死/属性/能量/格挡/手牌）。"""
     summary: Dict[str, Any] = {"name": name, "role": role_of(components)}
     summary["dead"] = component_data(components, DeathComponent.__name__) is not None
+    summary["incapacitated"] = (
+        component_data(components, IncapacitatedComponent.__name__) is not None
+    )
 
     stats_data = component_data(components, CharacterStatsComponent.__name__)
     if stats_data is not None:
@@ -108,6 +112,7 @@ def _entity_summary(name: str, components: EntityData) -> Dict[str, Any]:
         summary["max_hp"] = stats.max_hp
         summary["attack"] = stats.attack
         summary["defense"] = stats.defense
+        summary["lives"] = stats.lives
 
     round_stats_data = component_data(components, RoundStatsComponent.__name__)
     if round_stats_data is not None:

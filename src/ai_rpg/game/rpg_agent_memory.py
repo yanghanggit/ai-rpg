@@ -3,7 +3,7 @@ from typing import Callable, Dict, List, Sequence
 from loguru import logger
 
 from ..entitas import Entity
-from ..models import AgentMemory, WorldState
+from ..models import AgentMemory, IncapacitatedComponent, WorldState
 from ..models.messages import (
     AIMessage,
     BaseMessage,
@@ -61,6 +61,9 @@ class RPGAgentMemory:
     ###############################################################################################################################################
     def add_human_message(self, entity: Entity, human_message: HumanMessage) -> None:
         """添加用户消息到实体的LLM记忆"""
+        assert not entity.has(
+            IncapacitatedComponent
+        ), f"实体 {entity.name} 已永久失能，不应再写入记忆"
         agent_memory = self.get_agent_memory(entity)
         agent_memory.messages.append(human_message)
 

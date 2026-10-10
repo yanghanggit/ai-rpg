@@ -20,6 +20,7 @@ from ai_rpg.entitas.entity import Entity
 from ai_rpg.models import (
     ActorComponent,
     IdentityComponent,
+    IncapacitatedComponent,
     StageComponent,
 )
 from ai_rpg.models.agent_event import NoneEvent
@@ -224,6 +225,39 @@ class TestNotifyEntities:
         before = len(game._player_session.session_messages)
         game.notify_entities({actor}, _agent_event("event1"))
         assert len(game._player_session.session_messages) == before + 1
+
+    def test_notify_skips_incapacitated_entity(self, game: Any, actor: Entity) -> None:
+        """已永久失能的实体不接收事件（不写入记忆）。"""
+        actor.add(IncapacitatedComponent, actor.name)
+
+        game.notify_entities({actor}, _agent_event("should be skipped"))
+
+        memory = game.get_agent_memory(actor)
+        assert all(msg.content != "should be skipped" for msg in memory.messages)
+
+    def test_notify_incapacitated_still_sends_to_player(
+        self, game: Any, actor: Entity
+    ) -> None:
+        """失能实体不写记忆，但事件仍要同步给玩家客户端。"""
+        actor.add(IncapacitatedComponent, actor.name)
+        before = len(game._player_session.session_messages)
+
+        game.notify_entities({actor}, _agent_event("player still sees this"))
+
+        assert len(game._player_session.session_messages) == before + 1
+
+    def test_notify_mixed_set_only_writes_to_living(
+        self, game: Any, actor: Entity, second_actor: Entity
+    ) -> None:
+        """混合集合中，只有未失能实体写入记忆。"""
+        actor.add(IncapacitatedComponent, actor.name)
+
+        game.notify_entities({actor, second_actor}, _agent_event("mixed"))
+
+        assert all(
+            msg.content != "mixed" for msg in game.get_agent_memory(actor).messages
+        )
+        assert game.get_agent_memory(second_actor).messages[-1].content == "mixed"
 
     def test_notify_empty_set_still_sends_to_player(self, game: Any) -> None:
         """实体集合为空时，玩家仍收到事件（session_messages 增加）。"""

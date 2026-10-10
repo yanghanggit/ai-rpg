@@ -19,6 +19,7 @@ from ..models import (
     Dungeon,
     DungeonComponent,
     HumanMessage,
+    IncapacitatedComponent,
     PartyMemberComponent,
     PartyRosterComponent,
 )
@@ -126,6 +127,9 @@ def enter_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, str]:
         assert not party_member.has(
             DeathComponent
         ), f"队伍成员 {party_member.name} 已死亡，无法进入副本"
+        assert not party_member.has(
+            IncapacitatedComponent
+        ), f"队伍成员 {party_member.name} 已永久失能，无法进入副本"
         logger.info(f"队伍成员: {party_member.name}，目标副本：{dungeon.name}")
 
     # 推进索引（-1 → 0）

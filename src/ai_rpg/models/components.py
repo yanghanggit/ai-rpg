@@ -190,6 +190,19 @@ class CharacterStatsComponent(Component):
 ############################################################################################################
 @final
 @register_component_type
+class IncapacitatedComponent(Component):
+    """标记角色已永久丧失行动能力。
+
+    任何系统不得再为其发起行动（规划/出牌等）；实体本身仍保留。
+    命名与具体成因无关，可复用于各种「失去行动力」的情形。
+    """
+
+    name: str
+
+
+############################################################################################################
+@final
+@register_component_type
 class PlayerAuditComponent(Component):
     """标记世界实体具有玩家行动审计功能。"""
 

@@ -53,5 +53,5 @@
 | [上下文窗口管理（Context Window Management）](wiki/context-window-management.md) | 应对 agent 记忆膨胀的两种减量手段：精简提示词、阈值触发压缩（以上下文占比为信号） |
 | [角色自持内容生成（Actor Intrinsic Generation）](wiki/actor-intrinsic-generation.md) | 以角色为 agent 生成自身持久内容（候选卡、外观）时的取材边界：只取内化身份，排除当前场景等易变外部信息 |
 | [家园规划系统（Home Plan Action）](wiki/home-plan-action.md) | PlanAction 信号驱动的行动规划：工具调用式决策、query 先查后决策、玩家影子工具轨迹对齐 |
-| [新故事设计草稿：《大渊》](wiki/新故事设计草稿.md) | 作者头脑风暴草稿（不进入正式设计/demo）：双重世界、核心冲突、角色与玩法方向 |
+| [《深潜》设计草稿](wiki/cyberpunk-story-draft.md) | 作者头脑风暴草稿（不进入正式设计/demo）：赛博朋克双重世界（现实/网络空间）、核心冲突、角色与玩法方向 |
 | [战役设定与全局规则（CAMPAIGN_SETTING / SYSTEM_RULES）](wiki/campaign-setting-rules-bridge.md) | 故事层两字段的分层（均封存在 demo/）、抽象设定的惰性知识问题、事件级引用提示的桥接方案、插图风格改由世界实体承载 |

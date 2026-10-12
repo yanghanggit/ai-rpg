@@ -1,5 +1,8 @@
 """
 游戏实体工厂模块。
+
+system prompt 段序原则：内容向的「游戏设定」「角色/场景/神器设定」「基础体型」等在前，
+具备规则效果的「全局规则」在后——让 agent 先建立人物与世界观，最后读到必须遵守的规则。
 """
 
 from typing import List
@@ -54,24 +57,24 @@ def create_actor(
 
     # 系统提示词词
     actor.system_message = f"""# {actor.name}
-    
+
 你扮演角色: {actor.name}
 
 ## 游戏设定
 
 {campaign_setting}
 
-## 全局规则
-
-{system_rules}
-
 ## 角色设定
 
 {profile}
 
-## 基础体型
+### 基础体型
 
-{base_body}"""
+{base_body}
+
+## 全局规则
+
+{system_rules}"""
 
     return actor
 
@@ -106,20 +109,20 @@ def create_stage(
 
     # 系统提示词词
     stage.system_message = f"""# {stage.name}
-    
+
 你扮演场景: {stage.name}
 
 ## 游戏设定
 
 {campaign_setting}
 
-## 全局规则
-
-{system_rules}
-
 ## 场景设定
 
-{profile}"""
+{profile}
+
+## 全局规则
+
+{system_rules}"""
 
     return stage
 
@@ -157,11 +160,11 @@ def create_world(
 
 {campaign_setting}
 
+{role_rules}
+
 ## 全局规则
 
-{system_rules}
-
-{role_rules}"""
+{system_rules}"""
 
     return world
 
@@ -212,16 +215,16 @@ def create_artifact(
 
 {campaign_setting}
 
-## 全局规则
-
-{system_rules}
-
 ## 神器设定
 
 {profile}
 
 ## 神器修正规则
 
-{rules}"""
+{rules}
+
+## 全局规则
+
+{system_rules}"""
 
     return artifact

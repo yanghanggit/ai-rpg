@@ -136,9 +136,7 @@ def _handle_record_image_prompts(
         )
 
     # 内容合法性校验：拒绝空值、占位符与过短提示词，避免把垃圾提示词送进图像模型
-    invalid = [
-        item.target for item in items if _is_invalid_prompt(item.prompt)
-    ]
+    invalid = [item.target for item in items if _is_invalid_prompt(item.prompt)]
     if invalid:
         return (
             f"错误：以下 target 的 prompt 为空、占位符或过短：{invalid}。"

@@ -1,7 +1,11 @@
-.PHONY: install test lint format clean dev-install uv-install show-structure check help
+.PHONY: install test lint format clean clean-temp dev-install uv-install show-structure check help
 
 # 默认目标：显示帮助信息
 .DEFAULT_GOAL := help
+
+# 游戏运行时临时目录（对应 src/ai_rpg/paths.py 的 WORLDS_DIR / DEBUG_CACHE_DIR / CHAT_DUMP_DIR / LOGS_DIR）
+# 注意：.blueprints / .dungeons（启动配置）与 .assets/image（图像资产）不在此列，不会被清理。
+GAME_TEMP_DIRS := .worlds .debug_cache .chat_dumps logs
 
 # 推荐：uv 环境完整设置
 install:
@@ -38,8 +42,14 @@ lint:
 format:
 	uv run black .
 
-# 清理构建文件
-clean:
+# 清理游戏运行时临时文件（存档 / 调试缓存 / chat dump / 日志）
+clean-temp:
+	@echo "🧹 清理游戏临时目录: $(GAME_TEMP_DIRS)"
+	rm -rf $(GAME_TEMP_DIRS)
+	@echo "✅ 游戏临时文件清理完成！"
+
+# 清理构建文件（并调用 clean-temp 一并清理游戏临时文件）
+clean: clean-temp
 	rm -rf build/ dist/ *.egg-info/
 	rm -rf .mypy_cache .pytest_cache .ruff_cache
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
@@ -78,7 +88,8 @@ help:
 	@echo "🔧 开发工具:"
 	@echo "  show-structure - 📁 显示项目结构"
 	@echo "  check          - ✅ 检查项目和环境状态"
-	@echo "  clean          - 🧹 清理构建文件"
+	@echo "  clean-temp     - 🧹 清理游戏运行时临时文件（存档/缓存/日志）"
+	@echo "  clean          - 🧹 清理构建文件（含 clean-temp）"
 	@echo "  help           - ❓ 显示此帮助信息"
 	@echo ""
 	@echo "💡 推荐工作流:"

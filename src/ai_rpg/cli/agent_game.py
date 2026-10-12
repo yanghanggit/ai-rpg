@@ -29,8 +29,8 @@
   combat-init     --snapshot PATH                               战斗房间初始化（INITIALIZATION → ONGOING）
   opening-init    --snapshot PATH                               开场房间初始化（叙事 + 牌库）
   draw-cards      --snapshot PATH                               全员抽牌
-  play-cards-specified --snapshot PATH --actor A --card C [--targets T...]  指定角色出牌（怪物 AI 自动出牌）
-  pass-turn       --snapshot PATH --actor A                     跳过出牌
+  play-cards-specified --snapshot PATH --actor A --card C [--targets T...]  指定角色出一张牌（怪物由 AI 决策出牌或过牌）
+  pass-turn       --snapshot PATH --actor A                     过牌/交出行动权（我方与怪物均适用）
   use-consumable  --snapshot PATH --item I [--targets T...]  使用消耗品
   equip-gear      --snapshot PATH --item I                      装备 GearItem
   retreat         --snapshot PATH                               主动撤退（结算为失败，成员死亡）
@@ -42,7 +42,11 @@
 
 ==== 典型流程 ====
   家园：new → stages → advance(循环) / speak / switch-stage → enter-dungeon
-  副本（战斗房间）：enter-dungeon → combat-init → draw-cards → play-cards-specified(循环至战斗结束)
+  副本（战斗房间）：enter-dungeon → combat-init → draw-cards
+        → 循环：按当前行动者 play-cards-specified / use-consumable / equip-gear，随后 pass-turn 交出行动权
+          —— 出牌、用消耗品、装备均不结束行动窗口；所有存活角色都过牌后本回合结束，需再 draw-cards
+          —— 怪物：play-cards-specified 触发 AI 决策。若 AI 出牌，需再 pass-turn(怪物) 交出行动权；
+                  若 AI 自行过牌，系统已在同一次调用内完成过牌，不要再对其 pass-turn
         胜利 → collect-loot → next-dungeon → combat-init（或 opening-init，视新房间类型）
         失败 → exit-dungeon
         战斗中途撤退 → retreat → exit-dungeon
@@ -465,18 +469,23 @@ def draw_cards(snapshot: str) -> None:
 @click.option(
     "--card",
     required=True,
-    help="要打出的卡牌名称（须存在于该角色手牌中）",
+    help="要打出的卡牌名称（须存在于该角色手牌中）。怪物由 AI 决策，此参数仅占位。",
 )
 @click.option(
     "--targets",
     multiple=True,
     default=(),
-    help="目标角色名，可重复使用（如 --targets 怪物.野猪）",
+    help="目标角色名，可重复使用（如 --targets 怪物.野猪）。怪物由 AI 决策，此参数仅占位。",
 )
 def play_cards_specified(
     snapshot: str, actor: str, card: str, targets: Tuple[str, ...]
 ) -> None:
-    """指定角色出牌（怪物则由 AI 自动出牌）并归档。需战斗进行中且 draw-cards 之后。"""
+    """指定角色出一张牌并归档。需战斗进行中且 draw-cards 之后。
+
+    出牌不结束行动窗口——我方出牌后需再 pass-turn 才交出行动权。
+    怪物：本命令触发其 AI 决策（选一张牌或过牌）。若 AI 出牌，行动权仍在该怪物，
+    需再对其执行 pass-turn；若 AI 自行过牌，同一次调用内已完成过牌，不要再 pass-turn。
+    """
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
@@ -514,10 +523,14 @@ def play_cards_specified(
 @click.option(
     "--actor",
     required=True,
-    help="过牌角色全名（如 角色.某某）",
+    help="过牌角色全名（如 角色.某某 或 怪物.某某）",
 )
 def pass_turn(snapshot: str, actor: str) -> None:
-    """指定角色跳过出牌并归档。需战斗进行中。"""
+    """指定当前行动者过牌（交出行动权）并归档。需战斗进行中。
+
+    适用于任意当前行动者（我方与怪物同等）：把该角色记入本回合已完成列表、清空其剩余能量
+    并推进 current_actor。所有存活角色都过牌后本回合结束，需再 draw-cards 开启下一回合。
+    """
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():

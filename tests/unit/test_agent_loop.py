@@ -180,3 +180,122 @@ async def test_failed_terminal_tool_retries_next_round() -> None:
     assert messages[4].type == "tool"
     assert messages[4].content == "ok"
     assert messages[4].tool_call_id == "call_good"
+
+
+#######################################################################################################################################
+@pytest.mark.asyncio
+async def test_stop_without_terminal_tool_is_retried_then_succeeds() -> None:
+    """声明了终止工具时，LLM 直接 stop 不应视为成功；注入纠偏提示后重试直至调用终止工具。"""
+    submit_tool = _build_terminal_tool("submit")
+
+    # 第一轮：LLM 以普通文本作答并 stop，未调用终止工具
+    fake_stop = _FakeClient(AIMessage(content="这就是最终结果"), "stop", [])
+
+    # 第二轮：纠偏后正常调用终止工具
+    good_tool_call = ToolCall(
+        id="call_submit",
+        function=ToolCall.Function(name="submit", arguments=json.dumps({})),
+    )
+    fake_good = _FakeClient(
+        _build_ai_message("submit", {}), "tool_calls", [good_tool_call]
+    )
+
+    calls = []
+
+    def submit_handler() -> str:
+        calls.append(1)
+        return "ok"
+
+    messages: list[ChatMessage] = []
+    with patch("ai_rpg.deepseek.agent_loop.DeepSeekClient") as mock_client:
+        mock_client.side_effect = [fake_stop, fake_good]
+        ok = await agent_loop(
+            name="test",
+            prompt="go",
+            messages=messages,
+            tools=[submit_tool],
+            handlers={"submit": submit_handler},
+            terminal_tools=[submit_tool],
+        )
+
+    assert ok is True
+    assert len(calls) == 1  # 终止工具最终被调用一次
+    # messages: human(prompt), ai(stop), human(nudge), ai(tool_call), tool(ok)
+    assert len(messages) == 5
+    assert messages[2].type == "human"
+    assert "终止工具" in messages[2].content
+    assert messages[4].type == "tool"
+    assert messages[4].content == "ok"
+
+
+#######################################################################################################################################
+@pytest.mark.asyncio
+async def test_stop_without_terminal_tool_exhausts_retries_returns_false() -> None:
+    """LLM 连续多次 stop 且始终不调用终止工具时，应返回 False 而非误报成功。"""
+    submit_tool = _build_terminal_tool("submit")
+    fake_stop = _FakeClient(AIMessage(content="答案"), "stop", [])
+
+    calls = []
+
+    def submit_handler() -> str:
+        calls.append(1)
+        return "ok"
+
+    messages: list[ChatMessage] = []
+    with patch("ai_rpg.deepseek.agent_loop.DeepSeekClient") as mock_client:
+        # 连续 3 次 stop：第 1、2 次触发纠偏，第 3 次超过上限
+        mock_client.side_effect = [fake_stop, fake_stop, fake_stop]
+        ok = await agent_loop(
+            name="test",
+            prompt="go",
+            messages=messages,
+            tools=[submit_tool],
+            handlers={"submit": submit_handler},
+            terminal_tools=[submit_tool],
+        )
+
+    assert ok is False
+    assert calls == []  # 终止工具从未被调用
+
+
+#######################################################################################################################################
+@pytest.mark.asyncio
+async def test_max_terminal_nudges_param_is_honored() -> None:
+    """max_terminal_nudges 控制纠偏次数：设为 1 时，第 2 次 stop 即失败（默认 2 则尚可重试）。"""
+    submit_tool = _build_terminal_tool("submit")
+    fake_stop = _FakeClient(AIMessage(content="答案"), "stop", [])
+
+    messages: list[ChatMessage] = []
+    with patch("ai_rpg.deepseek.agent_loop.DeepSeekClient") as mock_client:
+        mock_client.side_effect = [fake_stop, fake_stop]
+        ok = await agent_loop(
+            name="test",
+            prompt="go",
+            messages=messages,
+            tools=[submit_tool],
+            handlers={"submit": lambda: "ok"},
+            terminal_tools=[submit_tool],
+            max_terminal_nudges=1,
+        )
+
+    assert ok is False
+
+
+#######################################################################################################################################
+@pytest.mark.asyncio
+async def test_stop_without_terminal_tools_returns_true() -> None:
+    """未声明终止工具时，stop 仍应视为正常结束（保持原有语义）。"""
+    messages: list[ChatMessage] = []
+    fake_stop = _FakeClient(AIMessage(content="done"), "stop", [])
+    with patch("ai_rpg.deepseek.agent_loop.DeepSeekClient") as mock_client:
+        mock_client.return_value = fake_stop
+        ok = await agent_loop(
+            name="test",
+            prompt="go",
+            messages=messages,
+            tools=[],
+            handlers={},
+        )
+
+    assert ok is True
+    assert len(messages) == 2

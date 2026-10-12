@@ -318,7 +318,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
                     "submit_arbitration": partial(_handle_submit_arbitration, ctx),
                 },
                 max_rounds=6,
-                tool_choice="auto",
+                tool_choice="required",
                 terminal_tools=[SUBMIT_ARBITRATION_TOOL],
             )
         except Exception as e:

@@ -71,11 +71,12 @@ def _build_artifact_post_arbitration_prompt(
 
 ## 结算规则
 
-- 规则 = 「触发条件」+「效果」：先按规则原文的触发条件（如「第 N 回合」）与当前回合数判定，只有触发才执行效果；规则未写明的效果不得添加。
+- 规则 = 「触发条件」+「效果」：先按规则原文的触发条件（如「第 N 回合」「本回合首次结算」「仅触发一次」）与当前回合数判定，只有触发才执行效果；规则未写明的效果不得添加。
 - 「无论本次出牌/消耗品如何结算」「必定」「必须」等措辞只强调效果力度/覆盖性，不改变触发条件；未触发时不得产生任何 HP 变更。
-- 未触发：不调用 set_entity_hp，直接 submit_arbitration，combat_log 写明「触发条件未满足，无 HP 变更」及各方当前 HP。
+- **一次性效果不得重复触发**：若规则含「仅触发一次」「触发一次」「此后不再触发」等表述，或效果本身是一次性变身（如「被逼出凶性」），则该效果在本场战斗内只应生效一次。你可以结合自己在本场战斗中的记忆判断是否已触发过：若记忆中已有你触发该效果的记录，本次视为未触发。
+- 未触发（尚未满足触发条件，或一次性效果已触发过）：不调用 set_entity_hp，直接 submit_arbitration，combat_log 写明「触发条件未满足／已触发过，无 HP 变更」及各方当前 HP。
 - 已触发：对每个受影响角色调用一次 set_entity_hp 写入最终 HP（自动 clamp 到 0~最大HP）。
-- 只能通过下方工具读写数据；判定与数值只取自本次 get_entity_stats、当前回合数与规则原文，不得套用记忆中的过往结论或数值。
+- 结算**数值**只取自本次 get_entity_stats 的返回结果，禁止套用记忆中的数值；但判断「一次性效果是否已触发过」属于**触发状态**，允许参考你自己在本场战斗中的记忆。
 
 ## 一致性契约
 
@@ -345,7 +346,7 @@ class ArtifactPostArbitrationSystem(ReactiveProcessor):
                     "submit_arbitration": partial(_handle_submit_arbitration, ctx),
                 },
                 max_rounds=6,
-                tool_choice="auto",
+                tool_choice="required",
                 terminal_tools=[SUBMIT_ARBITRATION_TOOL],
             )
         except Exception as e:

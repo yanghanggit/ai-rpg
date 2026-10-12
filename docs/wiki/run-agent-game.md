@@ -42,6 +42,20 @@
 1. `enter-dungeon` / `next-dungeon` 只负责**传送/推进房间**（对应 `/api/home/enter_dungeon/v1/` 与 `/api/dungeon/progress/advance_stage/v1/`），不初始化新房间；
 2. 房间初始化需由代理根据新房间类型再显式发起一步：战斗房间用 `combat-init`（对应 `/api/dungeon/combat/init/v1/`），开场房间用 `opening-init`（对应 `/api/dungeon/opening/init/v1/`）。
 
+### 战斗回合的推进粒度：出牌 ≠ 过牌
+
+战斗内每个角色的**行动窗口**都只由显式 `pass-turn` 关闭；出牌、用消耗品、装备物化都不结束窗口：
+
+- `play-cards-specified` 只打出一张牌，**不交出行动权**；`use-consumable` / `equip-gear` 同样不推进。
+- `pass-turn --actor X` 把 X 记入本回合 `completed_actors`、清空其剩余能量并推进 `current_actor`；当所有存活角色都已过牌，本回合结束，需再次 `draw-cards` 开启下一回合。
+- 该规则**对我方与怪物同等适用**。轮到怪物时，`play-cards-specified --actor 怪物.X` 触发其 AI 决策（选一张牌或过牌）：
+  - AI **决定出牌** → 行动权仍在该怪物，需再执行 `pass-turn --actor 怪物.X` 才交出行动权；
+  - AI **决定过牌** → 系统在同一次调用内已完成过牌，此时**不要**再对该怪物 `pass-turn`（它已不是当前行动者，调用会失败）。
+
+因此代理的稳定做法是：每执行一个战斗动作后重新读取 `current_actor`，再据此选择下一步。`ai_rpg/api_agent/flow.py::suggest_actions` 对当前行动者同时给出 `play-cards` 与 `pass-turn` 两种建议，即体现这一协议；服务端本地任务层的 `execute_pass_turn_task` 也接受任意角色名。
+
+→ 参见：[战斗管道（Combat Pipeline）](combat-pipeline.md) 的「回合（Round）与行动（turn）」。
+
 AI 代理无需感知内部游戏对象，只需根据当前存档的模式选择合法命令；`services` 层的前置条件校验失败时直接返回错误，动作模块据此提前 return，不会调用归档、不产出损坏存档。
 
 ---

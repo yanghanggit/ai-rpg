@@ -20,7 +20,6 @@ def compute_effective_stats(base_stats: CharacterStats) -> CharacterStats:
         max_hp=base_stats.max_hp,
         attack=base_stats.attack,
         defense=base_stats.defense,
-        lives=base_stats.lives,
     )
 
 

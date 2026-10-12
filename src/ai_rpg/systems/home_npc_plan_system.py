@@ -12,7 +12,6 @@ from ..game import DBGGame
 from ..models import (
     ActorComponent,
     AnnounceAction,
-    IncapacitatedComponent,
     MindEvent,
     NPCComponent,
     PlanAction,
@@ -56,7 +55,6 @@ class HomeNpcPlanSystem(ReactiveProcessor):
             and entity.has(ActorComponent)
             and entity.has(NPCComponent)
             and not entity.has(PlayerComponent)
-            and not entity.has(IncapacitatedComponent)
         )
 
     #######################################################################################################################################

@@ -4,13 +4,13 @@ from demo.card_prototypes import (
     DeckBuild,
 )
 from demo.world import (
-    create_deepdive_blueprint,
-    create_ledger_dungeon,
+    create_beast_lair_dungeon,
+    create_demo_blueprint,
 )
 
 __all__ = [
-    "create_deepdive_blueprint",
-    "create_ledger_dungeon",
+    "create_demo_blueprint",
+    "create_beast_lair_dungeon",
     "CARD_PROTOTYPES",
     "DEFAULT_DECK_BUILD",
     "DeckBuild",

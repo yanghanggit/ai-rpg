@@ -55,6 +55,6 @@
 
 ## 关联
 
-- 当前故事的扩展内容来源。→ 参见：[《深潜》设计草稿](cyberpunk-story-draft.md)
+- 当前故事的扩展内容来源。→ 参见：[奇幻故事设计草稿（作品名待定）](fantasy-story-draft.md)
 - 副本概念的生成与实体化。→ 参见：[副本生成管道（Dungeon Generation Pipeline）](dungeon-generation.md)
 - 插图风格字段的消费方。→ 参见：[副本插图生成系统（Step 5）](../../src/ai_rpg/systems/illustrate_dungeon_action_system.py)

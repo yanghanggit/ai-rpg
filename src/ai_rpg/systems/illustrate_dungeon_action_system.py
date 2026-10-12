@@ -28,6 +28,25 @@ from ..utils import prompt_builder
 _IMAGE_WIDTH: Final[int] = 1344  # 16:9 横屏（nano-banana 原生宽高比）
 _IMAGE_HEIGHT: Final[int] = 768
 
+# 正向提示词最短长度保护：过短几乎必然是占位/偷懒输出
+_MIN_PROMPT_LENGTH: Final[int] = 20
+# LLM 偶发偷懒时会把字段填成这些占位值；命中即视为非法
+_PLACEHOLDER_TOKENS: Final[frozenset[str]] = frozenset(
+    {"placeholder", "todo", "tbd", "n/a", "na", "none", "null", "...", "同上"}
+)
+
+
+def _is_invalid_prompt(text: str) -> bool:
+    """判断提示词是否为无效值（空 / 占位符 / 过短）。"""
+    stripped = (text or "").strip()
+    if not stripped:
+        return True
+    if stripped.lower().strip("。.") in _PLACEHOLDER_TOKENS:
+        return True
+    if "placeholder" in stripped.lower():
+        return True
+    return len(stripped) < _MIN_PROMPT_LENGTH
+
 
 ####################################################################################################################################
 @final
@@ -116,6 +135,17 @@ def _handle_record_image_prompts(
             f"重复={duplicated}。必须恰好覆盖：{expected_targets}"
         )
 
+    # 内容合法性校验：拒绝空值、占位符与过短提示词，避免把垃圾提示词送进图像模型
+    invalid = [
+        item.target for item in items if _is_invalid_prompt(item.prompt)
+    ]
+    if invalid:
+        return (
+            f"错误：以下 target 的 prompt 为空、占位符或过短：{invalid}。"
+            "必须为每个 target 写出完整、具体、可独立送进图像模型的中文正向提示词，"
+            "请修正后重新调用 record_image_prompts。"
+        )
+
     result.images = items
     for item in items:
         logger.info(
@@ -142,16 +172,11 @@ def _build_image_prompts_prompt(
             f'### 房间 {index}：{room.stage.name}（target="{room.stage.name}"）\n'
             f"- 场景设定：{room.stage.profile}"
         )
-        if room.stage.actors:
-            actors = "\n".join(f"  - {actor.base_body}" for actor in room.stage.actors)
-            sections.append(f"- 场景中的生物：\n{actors}")
-        else:
-            sections.append("- 场景中的生物：无")
 
     scenes = "\n\n".join(sections)
     return f"""# 任务：为副本「{dungeon_name}」编排全部插图的文生图提示词
 
-本次共需出图 {total} 张：1 张副本封面与 {len(rooms)} 张房间插图。请依据你的视觉方向与提示词写作要求，分别为每一张图写一条正向提示词与一条负面提示词。
+本次共需出图 {total} 张：1 张副本封面与 {len(rooms)} 张房间插图。所有插图一律为纯环境画面，只描绘场景本身，不得出现任何人物、动物、怪物或其他生物（包括其剪影与残影）。请依据你的视觉方向与提示词写作要求，分别为每一张图写一条正向提示词与一条负面提示词。
 
 ## 副本整体设定
 

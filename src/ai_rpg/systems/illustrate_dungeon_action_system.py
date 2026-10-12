@@ -217,8 +217,8 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
             f"[IllustrateDungeonActionSystem] react: 收到 IllustrateDungeonAction 事件，"
             f"准备生成图片，entities count={len(entities)}"
         )
-        for entity in entities:
-            await self._generate_images(entity)
+        # for entity in entities:
+        #     await self._generate_images(entity)
 
     ####################################################################################################################################
     async def _generate_images(self, entity: Entity) -> None:

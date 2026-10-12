@@ -81,40 +81,39 @@ AFFIX_DESIGN_SPEC: Final[
     str
 ] = """## 词缀设计规范
 
-词缀是你在骨架字段之上为角色设计的**增益 / 减益规则**，格式 `[词缀名]:机械结算描述`。它会被仲裁 LLM 直接执行，因此必须机制明确、可核验。
+词缀是你为角色设计的**增益 / 减益规则**，格式 `[词缀名]:机械结算描述`（词缀名可自由创造）。每个词缀槽是**多值列表**：一个元素＝一条完整词缀，禁止拆分或合并；无词缀时留空。词缀由仲裁 LLM 直接执行，效果必须落在下述「结算原语」内、机制明确可核验。
 
-三个时机的字段都是**多值列表**：每个元素是一条完整、独立的词缀；禁止把一条词缀拆成多个元素，也禁止把多条词缀合并进一个元素。无词缀时该槽返回 `[]`。
+### 一、结算原语（效果的硬边界）
 
-三个时机：
+仲裁只能读 `HP` / 最大 `HP`、`BLOCK`（手牌 block 之和），以及**获取状态的工具**返回的带 `on_hit_affixes` 手牌（含其 `source` / `damage` / `hit_count` / `block` / 词缀）；只能写 `HP`。由此：
+
+- **伤害**＝写 `HP`，仅由本卡 `damage` / `hit_count` 与目标 `block` 算出。
+- **状态就是牌**：无独立状态存储，角色「状态」＝其手牌中承载词缀的牌。要施加持续状态，就设计 `transferable=True` 的牌投进对方手牌，由牌自带的 `on_hit_affixes` / `on_turn_end_affixes` 持续结算（禁止「叠加 X 标记」这类无牌承载的状态）。
+- **时间类修饰**（`本回合内` / `持续 N 回合` / `直到…`）须由牌承载才能跨结算保留。
+- **结构性效果**（抽牌 / 弃牌 / 移牌 / 能量 / 额外行动，或改 `playable` / `exhaust` / `retain` / `ethereal` / `transferable`）不属于词缀，由骨架字段与数据流转负责。
+
+落在此范围外的效果一律不被结算，请改写或删除。
+
+### 二、三个时机
 
 - `on_play_affixes`：本卡打出时结算，仅本次出牌生效。
 - `on_hit_affixes`：本卡持有者被本次出牌命中时触发。
 - `on_turn_end_affixes`：持有者每次 pass turn 结算一次（只结算其本人手牌中带该词缀的牌）。
 
-### 一、字段锚点（硬性）
+### 三、书写约定与数值限制
 
-- 涉及**伤害**：描述中必须出现 `damage`，如 `对目标造成本卡 damage×2 的伤害`。
-- 涉及**格挡 / 无视防御**：描述中必须出现 `block`，如 `无视目标 block`。
-- 涉及**当前持有者**（可转移牌尤其）：必须用 `非 source 者` 指代，如 `对非 source 者结算本卡 damage 的持续伤害`。
-- 作用对象只用规范称谓：`自身` / `出牌者` / `目标` / `本卡持有者` / `非 source 者`。
-
-### 二、数值限制（只能引用字段 + 护栏内倍率）
-
-- 伤害只能引用本卡 `damage`；格挡只能引用本卡 `block`；段数只能引用本卡 `hit_count`。
-- 倍率范围：
+- 数值来源要写清：伤害写 `damage`（如 `对目标造成本卡 damage×2 的伤害`），格挡 / 无视防御写 `block`（如 `无视目标 block`），段数写 `hit_count`。
+- 作用对象只用规范称谓：`自身` / `出牌者` / `目标` / `本卡持有者` / `非 source 者`（＝持有者，且持有者 ≠ 本卡 `source`）。`on_turn_end_affixes` 无「出牌者 / 目标」，只能用 `自身` / `本卡持有者` / `非 source 者` / 场上存活角色。
+- 数值只能引用本卡字段，倍率上限：
   - `on_play_affixes`：`damage×1..3`、`block×1..3`、`hit_count×1..2`
   - `on_hit_affixes`：`damage×1..3`、`block×1..3`
   - `on_turn_end_affixes`：`damage×1..2`、`block×1..3`
-- **禁止任何独立数值**（固定伤害、固定回合数、固定层数等）；状态标记只给名字，不给数字。
-- 若本卡 `damage` 为 0，不得凭空造成伤害，只能用具名状态标记或引用 `block` 表达收益。
+- **禁止任何独立数值**（固定伤害、固定回合数等）；本卡 `damage=0` 时不得凭空造成伤害，只能引用 `block` 或用牌承载持续效果。
 
-### 三、自身设计（角色视角）
+### 四、设计方向（示例）
 
-- 从调色板选择对你的角色有利的方向：强健自身 `damage`、无视敌方格挡、反伤、持续伤害、挂状态标记、转嫁负面、分发增益/格挡、蓄势等。
-- 可引用自由命名的状态标记（如「火焰」「破绽」），以与其它牌产生协同；命名与消费由你自行做出合理设计。
-- 词缀名可自由创造；机械结算描述必须保持上述字段锚点与数值限制。
+强健自身 `damage`、无视敌方格挡、反伤、持续伤害（`transferable` 投毒）、转嫁负面、分发增益 / 格挡、蓄势等。
 """
-
 
 #######################################################################################################################################
 BUILD_CARD_FIELD_DESCRIPTION: Final[
@@ -135,7 +134,7 @@ BUILD_CARD_FIELD_DESCRIPTION: Final[
 | `cost` | 出牌费用（消耗 energy）；默认 1 |
 | `damage` | 单次伤害；默认 0 |
 | `hit_count` | 攻击次数，多段各自独立结算；默认 1 |
-| `block` | 手牌持有期间提供的格挡；默认 0 |
+| `block` | 手牌持有期间提供的格挡，累加进持有者的有效防御；默认 0 |
 | `self_target` | 锁定出牌者自身；true 时无需 targets |
 | `target_type` | 目标类型（见下表）；`self_target=true` 时忽略 |
 
@@ -176,10 +175,6 @@ _MULTIPLIER_RE: Final[re.Pattern[str]] = re.compile(
 )
 _DIGIT_RE: Final[re.Pattern[str]] = re.compile(r"\d+")
 
-_DAMAGE_WORDS: Final[Tuple[str, ...]] = ("伤害", "受损")
-_BLOCK_WORDS: Final[Tuple[str, ...]] = ("格挡", "防御")
-_HOLDER_WORDS: Final[Tuple[str, ...]] = ("持有者", "持牌人", "牌主", "非 source")
-
 
 #######################################################################################################################################
 @final
@@ -208,7 +203,13 @@ def validate_affix_slot(
     affix: str,
     card: Card,
 ) -> AffixValidationResult:
-    """校验一条 agent 设计的词缀是否满足字段锚点与数值护栏。"""
+    """校验一条 agent 设计的词缀是否满足**硬不变量**。
+
+    只守计算端必须保证的东西：时机 schema、多值格式、非空、占位符、
+    数值预算（禁独立数字 + 倍率护栏）、时机与骨架 flag 的一致性。
+    语义是否「可被仲裁结算」不在这里用正则猜——它由「结算原语」契约与
+    agent 提交前自检负责（见 `AFFIX_DESIGN_SPEC`）。
+    """
     if affix_field not in _MAX_MULTIPLIERS:
         return AffixValidationResult(False, f"未知词缀时机 {affix_field!r}")
 
@@ -229,17 +230,6 @@ def validate_affix_slot(
         return AffixValidationResult(False, "机械结算描述为空")
     if "词缀名" in name or "何种" in desc or "待设计" in desc:
         return AffixValidationResult(False, "仍是占位符，请替换为具体设计")
-
-    # 字段锚点：涉及某类语义时必须显式写出对应字段名。
-    if any(word in desc for word in _DAMAGE_WORDS) and "damage" not in desc:
-        return AffixValidationResult(False, "涉及伤害必须显式引用 `damage` 字段")
-    if any(word in desc for word in _BLOCK_WORDS) and "block" not in desc:
-        return AffixValidationResult(False, "涉及格挡/防御必须显式引用 `block` 字段")
-    if card.transferable and any(word in desc for word in _HOLDER_WORDS):
-        if "source" not in desc:
-            return AffixValidationResult(
-                False, "可转移牌涉及持有者必须显式引用 `source` / 非 source 者"
-            )
 
     # 数值限制：只允许 `字段×N`，且 N 在护栏内；其余数字一律视为独立数值。
     limits = _MAX_MULTIPLIERS[affix_field]

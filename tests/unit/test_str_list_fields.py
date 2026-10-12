@@ -116,7 +116,9 @@ def test_apply_dedupes_and_drops_blank_affixes() -> None:
 def test_one_invalid_affix_falls_back_whole_slot() -> None:
     card = _card()
     applied, fallbacks = apply_affix_design(
-        "角色.无名", card, {"on_play_affixes": [AFFIX_A, "[断裂]:打出时造成伤害"]}
+        "角色.无名",
+        card,
+        {"on_play_affixes": [AFFIX_A, "[断裂]:打出时对目标造成本卡 damage×9 的伤害"]},
     )
     assert applied == 0
     assert len(fallbacks) == 1

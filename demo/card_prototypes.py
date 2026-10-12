@@ -7,7 +7,7 @@
   - `Card` 的机械字段（cost/damage/hit_count/block/target_type/self_target/flags）
     是只读骨架，agent 只能引用；
   - `Card` 的三类词缀是「槽位声明 + 校验失败时的回退参考」，已写成字段引用式
-    （`本卡 damage×N` / `block` / `非 source 者` / 具名状态标记）；
+    （`本卡 damage×N` / `block` / `非 source 者` / 状态即牌）；
   - `Card` 的 `name` / `description` 不作为教学内容（`description` 留空，生成时
     由角色重写），教学文本集中在 `meta.summary` / `meta.guide`。
 
@@ -181,10 +181,10 @@ SPREAD_PROTOTYPE: Final[Card] = Card(
 
 
 MARK_PROTOTYPE: Final[Card] = Card(
-    name="传染标记",
+    name="转嫁破绽",
     description="",
     on_play_affixes=[],
-    on_hit_affixes=["[标记]:被命中时为自身叠加「破绽」标记"],
+    on_hit_affixes=["[破绽]:被命中时对自身结算本卡 damage×1 的伤害"],
     on_turn_end_affixes=[],
     playable=True,
     exhaust=False,
@@ -192,7 +192,7 @@ MARK_PROTOTYPE: Final[Card] = Card(
     ethereal=False,
     transferable=True,
     cost=1,
-    damage=0,
+    damage=1,
     hit_count=1,
     block=0,
     target_type=TargetType.SINGLE,
@@ -201,7 +201,7 @@ MARK_PROTOTYPE: Final[Card] = Card(
 
 
 PIERCE_PROTOTYPE: Final[Card] = Card(
-    name="破甲输出",
+    name="穿甲输出",
     description="",
     on_play_affixes=["[穿甲]:本卡 damage 结算时无视目标 block"],
     on_hit_affixes=[],
@@ -221,11 +221,11 @@ PIERCE_PROTOTYPE: Final[Card] = Card(
 
 
 SELF_LOOP_PROTOTYPE: Final[Card] = Card(
-    name="自我循环",
+    name="自我调息",
     description="",
     on_play_affixes=[],
     on_hit_affixes=[],
-    on_turn_end_affixes=["[循环]:回合结束时为自身叠加「蓄势」标记"],
+    on_turn_end_affixes=["[调息]:回合结束时为自身恢复本卡 block×1 的生命"],
     playable=True,
     exhaust=False,
     retain=True,
@@ -234,7 +234,7 @@ SELF_LOOP_PROTOTYPE: Final[Card] = Card(
     cost=1,
     damage=0,
     hit_count=1,
-    block=0,
+    block=1,
     target_type=TargetType.SINGLE,
     self_target=True,
 )
@@ -361,9 +361,9 @@ AOE_PROTOTYPE: Final[Card] = Card(
 
 
 AOE_DEBUFF_PROTOTYPE: Final[Card] = Card(
-    name="群体减益",
+    name="群体穿甲",
     description="",
-    on_play_affixes=["[诅咒]:打出时对目标阵营叠加「虚弱」标记"],
+    on_play_affixes=["[穿甲]:打出时本卡 damage 结算时无视目标 block"],
     on_hit_affixes=[],
     on_turn_end_affixes=[],
     playable=True,
@@ -372,7 +372,7 @@ AOE_DEBUFF_PROTOTYPE: Final[Card] = Card(
     ethereal=False,
     transferable=False,
     cost=1,
-    damage=0,
+    damage=1,
     hit_count=1,
     block=0,
     target_type=TargetType.ALL,
@@ -423,18 +423,20 @@ THORNS_PROTOTYPE: Final[Card] = Card(
 
 
 PASSIVE_PROTOTYPE: Final[Card] = Card(
-    name="常驻被动",
+    name="蛰伏",
     description="",
     on_play_affixes=[],
     on_hit_affixes=[],
-    on_turn_end_affixes=["[常驻]:回合结束时为自身叠加「护持」标记"],
+    on_turn_end_affixes=[
+        "[蛰伏]:回合结束时对场上存活的一名敌方角色结算本卡 damage×1 的伤害"
+    ],
     playable=False,
     exhaust=False,
     retain=True,
     ethereal=False,
     transferable=False,
     cost=1,
-    damage=0,
+    damage=1,
     hit_count=1,
     block=0,
     target_type=TargetType.SINGLE,
@@ -467,7 +469,7 @@ SUPPORT_PROTOTYPE: Final[Card] = Card(
     description="",
     on_play_affixes=[],
     on_hit_affixes=[],
-    on_turn_end_affixes=["[增益]:回合结束时使非 source 者获得「鼓舞」标记"],
+    on_turn_end_affixes=["[支援]:回合结束时为自身恢复本卡 block×1 的生命"],
     playable=True,
     exhaust=False,
     retain=False,
@@ -476,7 +478,7 @@ SUPPORT_PROTOTYPE: Final[Card] = Card(
     cost=1,
     damage=0,
     hit_count=1,
-    block=0,
+    block=1,
     target_type=TargetType.SINGLE,
     self_target=False,
 )
@@ -503,11 +505,11 @@ SHIELD_TRANSFER_PROTOTYPE: Final[Card] = Card(
 
 
 AOE_BUFF_PROTOTYPE: Final[Card] = Card(
-    name="群体增益",
+    name="群体鼓舞",
     description="",
-    on_play_affixes=[],
+    on_play_affixes=["[鼓舞]:打出时为目标阵营全体恢复本卡 block×1 的生命"],
     on_hit_affixes=[],
-    on_turn_end_affixes=["[增益]:回合结束时为自身叠加「鼓舞」标记"],
+    on_turn_end_affixes=[],
     playable=True,
     exhaust=False,
     retain=False,
@@ -516,7 +518,7 @@ AOE_BUFF_PROTOTYPE: Final[Card] = Card(
     cost=1,
     damage=0,
     hit_count=1,
-    block=0,
+    block=1,
     target_type=TargetType.ALL,
     self_target=False,
 )
@@ -527,7 +529,7 @@ AOE_BUFF_PROTOTYPE: Final[Card] = Card(
 GEAR_OFFENSE_PROTOTYPE: Final[Card] = Card(
     name="装备.名字",
     description="",
-    on_play_affixes=["[词缀名]:<设计：打出时对本卡 damage 或目标 block 的具体操作>"],
+    on_play_affixes=["[锋锐]:打出时对目标额外结算本卡 damage×1 的伤害"],
     on_hit_affixes=[],
     on_turn_end_affixes=[],
     playable=True,
@@ -548,7 +550,7 @@ GEAR_DEFENSE_PROTOTYPE: Final[Card] = Card(
     name="装备.名字",
     description="",
     on_play_affixes=[],
-    on_hit_affixes=["[词缀名]:<设计：被命中时对出牌者/自身的 damage 或 block 操作>"],
+    on_hit_affixes=["[震击]:被命中时对出牌者结算本卡 block×1 的伤害"],
     on_turn_end_affixes=[],
     playable=True,
     exhaust=False,
@@ -569,9 +571,7 @@ GEAR_CONTAGION_PROTOTYPE: Final[Card] = Card(
     description="",
     on_play_affixes=[],
     on_hit_affixes=[],
-    on_turn_end_affixes=[
-        "[词缀名]:<设计：回合结束时对非 source 者的 damage 或 block 操作>"
-    ],
+    on_turn_end_affixes=["[腐蚀]:回合结束时对非 source 者结算本卡 damage×1 的持续伤害"],
     playable=True,
     exhaust=False,
     retain=True,
@@ -677,7 +677,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             card_type="手牌",
             archetype="攻击端",
             archetype_subtype="前端伤害",
-            name="破甲输出",
+            name="穿甲输出",
             summary="即时词缀（增益）让本次伤害穿透防御。",
             guide=(
                 "字段：on_play_affixes=[穿甲]、SINGLE。即时词缀（增益）直接增强本次出牌伤害，"
@@ -789,11 +789,12 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             card_type="手牌",
             archetype="攻击端",
             archetype_subtype="铺垫性攻击支持",
-            name="传染标记",
-            summary="把受击减益转嫁给敌人，可再被即时词缀引爆。",
+            name="转嫁破绽",
+            summary="把受击易伤投递给敌人，状态由这张牌本身承载。",
             guide=(
-                "字段：transferable=True、on_hit_affixes=[标记]。副本进入目标手牌并保留 source，"
-                "配合「非 source 者」反噬，或后续用即时词缀针对该减益收割。"
+                "字段：transferable=True、on_hit_affixes=[破绽]、damage=1。出牌后副本进入目标手牌并"
+                "保留 source；目标被命中时按本卡 damage 追加伤害。无需独立状态存储——『破绽』就是"
+                "这张留在对方手上的牌。"
             ),
             keywords=("transferable", "on_hit_affixes"),
         ),
@@ -805,11 +806,11 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             card_type="手牌",
             archetype="攻击端",
             archetype_subtype="铺垫性攻击支持",
-            name="自我循环",
-            summary="锁定自身 + 保留，每回合叠增益。",
+            name="自我调息",
+            summary="锁定自身 + 保留，每回合末回复生命。",
             guide=(
-                "字段：self_target=True、retain=True、on_turn_end_affixes=[循环]。"
-                "每回合给自己叠状态，为后续输出/防御做铺垫。"
+                "字段：self_target=True、retain=True、block=1、on_turn_end_affixes=[调息]。"
+                "牌跨回合留在手牌，每次 pass turn 按本卡 block 回复生命；持续效果由这张牌本身承载。"
             ),
             keywords=("self_target", "retain", "on_turn_end_affixes"),
         ),
@@ -821,11 +822,11 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             card_type="手牌",
             archetype="攻击端",
             archetype_subtype="铺垫性攻击支持",
-            name="群体减益",
-            summary="ALL + 敌阵营，群体减益。",
+            name="群体穿甲",
+            summary="ALL + 敌阵营，群体无视防御的打击。",
             guide=(
-                "字段：ALL + 敌阵营锚点 + 即时词缀（减益）。一轮给整队挂负面，"
-                "为后续伤害做铺垫。"
+                "字段：ALL + 敌阵营锚点、damage=1、on_play_affixes=[穿甲]。一轮对整队结算无视 block "
+                "的伤害，为后续输出做铺垫。"
             ),
             keywords=("all", "on_play_affixes"),
         ),
@@ -875,11 +876,11 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             card_type="手牌",
             archetype="防御端",
             archetype_subtype="成长性防御",
-            name="常驻被动",
-            summary="不可出 + 保留，每回合末结算持续状态。",
+            name="蛰伏",
+            summary="不可出 + 保留，每回合末袭扰敌人。",
             guide=(
-                "字段：playable=False、retain=True、on_turn_end_affixes=[常驻]。"
-                "不可出但持有，收益（或减益）在每次 pass turn 结算。"
+                "字段：playable=False、retain=True、damage=1、on_turn_end_affixes=[蛰伏]。"
+                "不可出但持有，每次 pass turn 对场上一名敌方角色结算伤害；持续效果由这张牌本身承载。"
             ),
             keywords=("playable", "retain", "on_turn_end_affixes"),
         ),
@@ -925,10 +926,10 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             archetype="防御端",
             archetype_subtype="特殊防御机制",
             name="支援分发",
-            summary="转嫁增益给友方。",
+            summary="转嫁持续恢复给友方。",
             guide=(
-                "字段：transferable=True、on_turn_end_affixes=[增益]。"
-                "目标由 target_type 决定，传友分发增益（状态保护/支援）。"
+                "字段：transferable=True、block=1、on_turn_end_affixes=[支援]。"
+                "出牌后副本进入友方手牌，其持有者每次 pass turn 按本卡 block 回复生命。"
             ),
             keywords=("transferable", "on_turn_end_affixes"),
         ),
@@ -956,10 +957,11 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             card_type="手牌",
             archetype="防御端",
             archetype_subtype="特殊防御机制",
-            name="群体增益",
-            summary="ALL + 己方锚点，群体增益。",
+            name="群体鼓舞",
+            summary="ALL + 己方锚点，群体即时回复。",
             guide=(
-                "字段：ALL + 己方锚点 + 增益词缀。作用于己方阵营全体（状态保护/支援）。"
+                "字段：ALL + 己方锚点、block=1、on_play_affixes=[鼓舞]。以友方为锚点展开己方阵营，"
+                "打出时对全体按本卡 block 回复生命。"
             ),
             keywords=("all", "on_turn_end_affixes"),
         ),

@@ -132,10 +132,8 @@ SYSTEM_RULES: Final[
 
 ### 战斗专用规则
 
-- **回合制无位置与命中**：无空间位置与移动、无概率命中与闪避，攻击与效果必定生效；hit_count 仅表示重复结算次数。
-- **词缀（affix）**：特殊效果名称可自由创造，一律以词缀表达（不含数值的触发信号）；仅影响本次结算，不产生跨回合的持续效果。
-- **格挡（block）**：卡牌可携带 block 数值；持有在手牌中的卡牌，其 block 之和累加进持有者的有效防御（防御 = 基础防御 + 装备加成 + 手牌 block 之和）；出牌后该卡离手，其 block 不再计入。
-- **效果载体（Card）**：Card 是唯一的效果载体，只产生即时效果，可挂载词缀；效果均仅归角色持有。
+- **回合制无位置与命中**：无空间位置与移动、无概率命中与闪避，攻击与效果必定生效。
+- **效果载体（Card）**：Card 是效果与状态的唯一载体；不存在独立的状态 / buff 存储。
 
 ### 扮演与事实
 
@@ -210,24 +208,24 @@ def _make_defense_card() -> Card:
 
 
 def _make_gear_offense_card() -> Card:
-    """旧铁剑卡牌：机械字段沿用 GEAR_OFFENSE_PROTOTYPE，仅改写叙事与词缀。"""
+    """旧铁剑卡牌：模拟工坊合成的具体产物——骨架沿自 GEAR_OFFENSE_PROTOTYPE，
+    name/description/词缀/数值为本装备专属（词缀名刻意异于原型模板）。"""
     card = _copy_prototype(GEAR_OFFENSE_PROTOTYPE)
     card.name = "装备.旧铁剑"
     card.description = "一柄来历不明的旧铁剑，剑身有几处崩口，握柄缠着磨旧的皮绳。挥动时刃口带起一道沉闷的风声，像每一击都压着经年累月的力气；贴近剑格处锈迹斑斑，握在手里却比看上去更沉。"
-    card.on_play_affixes = [
-        "[劈砍]:出牌时剑刃自上而下重重劈落，令本次攻击的创口更深、更难收口"
-    ]
+    card.damage += 1  # 剑身沉重，较原型模板 +1
+    card.on_play_affixes = ["[劈砍]:打出时对目标额外结算本卡 damage×1 的伤害"]
     return card
 
 
 def _make_gear_defense_card() -> Card:
-    """木盾卡牌：机械字段沿用 GEAR_DEFENSE_PROTOTYPE，仅改写叙事与词缀。"""
+    """木盾卡牌：模拟工坊合成的具体产物——骨架沿自 GEAR_DEFENSE_PROTOTYPE，
+    name/description/词缀/数值为本装备专属。"""
     card = _copy_prototype(GEAR_DEFENSE_PROTOTYPE)
     card.name = "装备.木盾"
     card.description = "一面用厚木板拼成的圆盾，边缘包着一圈铁皮，盾面刻着几道深浅不一的旧痕。举在身前时能把大半来势稳稳卸向一侧，木纹深处透着一股久经磕碰的韧劲。"
-    card.on_hit_affixes = [
-        "[格挡]:持有期间受到攻击时圆盾顺势一沉，将冲击卸向一侧，稳稳托住佩戴者的身形"
-    ]
+    card.block += 1  # 厚木板坚韧，较原型模板 +1
+    card.on_hit_affixes = ["[震击]:被命中时对出牌者结算本卡 block×1 的伤害"]
     return card
 
 

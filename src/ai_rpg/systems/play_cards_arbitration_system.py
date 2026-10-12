@@ -159,7 +159,7 @@ get_entity_stats 返回的「受击卡牌」仅列出带受击词缀（on_hit_af
 1. 调用 get_entity_stats 读取「出牌者」与所有「目标」的当前属性与受击词缀（可在同一次回复中并发调用多个）。
 2. 依据「计算规则」结算，得出每个受影响角色的最终 HP。
 3. 对每个受影响角色（含出牌者与所有目标）调用 set_entity_hp 写入最终 HP（可在同一次回复中并发调用多个）。
-4. 调用 submit_arbitration 提交最终结果，结束本次仲裁。
+4. 调用 submit_arbitration 提交最终结果，结束本次仲裁；若某条词缀无法按上述计算规则结算，把它原文放进 unsettled_affixes。
 
 ## submit_arbitration 字段说明
 
@@ -230,7 +230,7 @@ SET_ENTITY_HP_TOOL: Final[ToolDefinition] = ToolDefinition(
 SUBMIT_ARBITRATION_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="submit_arbitration",
-        description="提交本次仲裁的最终结果（战斗日志、演出叙事）。调用后本次仲裁结束。",
+        description="提交本次仲裁的最终结果（战斗日志、演出叙事、无法结算的词缀）。调用后本次仲裁结束。",
         parameters={
             "type": "object",
             "properties": {
@@ -241,6 +241,11 @@ SUBMIT_ARBITRATION_TOOL: Final[ToolDefinition] = ToolDefinition(
                 "narrative": {
                     "type": "string",
                     "description": "60-120 字第三人称演出叙事",
+                },
+                "unsettled_affixes": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "可选：无法按上述计算规则结算的词缀原文列表（如要求抽牌/回能/额外行动，或凭空叠加没有牌承载的标记），仅供系统统计，不计入结算。",
                 },
             },
             "required": ["combat_log", "narrative"],
@@ -258,6 +263,7 @@ class _ArbitrationContext(BaseModel):
     hp_changes: Dict[str, int] = Field(default_factory=dict)
     combat_log: Optional[str] = None
     narrative: Optional[str] = None
+    unsettled_affixes: List[str] = Field(default_factory=list)
 
 
 ###########################################################################################################################################
@@ -314,10 +320,13 @@ def _handle_submit_arbitration(
     ctx: _ArbitrationContext,
     combat_log: str,
     narrative: str,
+    unsettled_affixes: Optional[List[str]] = None,
 ) -> str:
     """处理 submit_arbitration 工具调用。"""
     ctx.combat_log = combat_log
     ctx.narrative = narrative
+    if unsettled_affixes:
+        ctx.unsettled_affixes = [str(a) for a in unsettled_affixes if str(a).strip()]
     return "仲裁结果已提交"
 
 
@@ -479,6 +488,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                     {
                         "combat_log": combat_log,
                         "narrative": narrative,
+                        "unsettled_affixes": ctx.unsettled_affixes,
                     },
                     ensure_ascii=False,
                 )
@@ -504,6 +514,12 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             ),
             exclude_entities={stage_entity},
         )
+
+        # 词缀 telemetry：记录仲裁器无法按计算规则结算的词缀
+        for affix in ctx.unsettled_affixes:
+            logger.warning(
+                f"[PlayCardsArbitrationSystem] 词缀无法按计算规则结算（telemetry）: {affix}"
+            )
 
         # 更新每个受影响实体的 HP 状态
         for entity_name, hp in hp_changes.items():

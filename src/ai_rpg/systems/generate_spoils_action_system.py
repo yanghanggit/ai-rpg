@@ -190,6 +190,20 @@ def _format_card_for_prompt(candidate: _Candidate) -> str:
     if flags:
         lines.append(f"  特性（只读）: {', '.join(flags)}")
 
+    # 明确可提交的词缀槽位，避免 agent 对空槽提交后被静默忽略。
+    designable_slots = [
+        field
+        for field in ("on_play_affixes", "on_hit_affixes", "on_turn_end_affixes")
+        if getattr(card, field)
+    ]
+    if designable_slots:
+        lines.append(
+            f"  可重设计词缀槽位: {'、'.join(designable_slots)}"
+            "（其余词缀槽为空，不可提交；对空槽的提交会被忽略）"
+        )
+    else:
+        lines.append("  可重设计词缀槽位: 无（本卡无词缀槽，仅设计 name/description）")
+
     # 原型词缀：既是槽位声明，也是设计失败时的回退参考。
     if card.on_play_affixes:
         lines.append(

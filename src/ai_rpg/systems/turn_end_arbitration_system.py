@@ -44,7 +44,7 @@ TURN_END_AFFIX_RULES: Final[
     str
 ] = """## 回合结束词缀
 
-你是这些卡牌的持有者，也是本次回合结束结算的仲裁者。每张卡牌的 `source` 是它的来源（生成/注入者名称）；词缀若提及「非 source 者」，指当前持有者（当其不等于该卡牌 source 时）。回回合结束词缀可能有多条，均为独立规则，须**逐条全部结算**；依各卡牌词缀描述结算，受影响目标由词缀描述与场上存活角色自行判断；持有者自身也可成为目标。不引入词缀未提及的新机制。"""
+你是这些卡牌的持有者，也是本次回合结束结算的仲裁者。每张卡牌的 `source` 是它的来源（生成/注入者名称）；词缀若提及「非 source 者」，指当前持有者（当其不等于该卡牌 source 时）。回合结束词缀可能有多条，均为独立规则，须**逐条全部结算**；依各卡牌词缀描述结算，受影响目标由词缀描述与场上存活角色自行判断；持有者自身也可成为目标。不引入词缀未提及的新机制。"""
 
 
 @prompt_builder
@@ -115,7 +115,7 @@ def _build_turn_end_arbitration_tool_prompt(
 1. 调用 get_entity_stats 读取「持有者」与所有可能受影响角色的当前属性（可在同一次回复中并发调用多个）。
 2. 依据「计算规则」与各卡牌「回合结束词缀」逐条全部结算，得出每个受影响角色的最终 HP。
 3. 对每个受影响角色（含持有者与所有目标）调用 set_entity_hp 写入最终 HP（可在同一次回复中并发调用多个）。
-4. 调用 submit_arbitration 提交最终结果，结束本次仲裁。
+4. 调用 submit_arbitration 提交最终结果，结束本次仲裁；若某条词缀无法按上述计算规则结算，把它原文放进 unsettled_affixes。
 
 ## submit_arbitration 字段说明
 
@@ -184,7 +184,7 @@ SET_ENTITY_HP_TOOL: Final[ToolDefinition] = ToolDefinition(
 SUBMIT_ARBITRATION_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="submit_arbitration",
-        description="提交本次回合结束仲裁的最终结果（战斗日志、演出叙事）。调用后本次仲裁结束。",
+        description="提交本次回合结束仲裁的最终结果（战斗日志、演出叙事、无法结算的词缀）。调用后本次仲裁结束。",
         parameters={
             "type": "object",
             "properties": {
@@ -195,6 +195,11 @@ SUBMIT_ARBITRATION_TOOL: Final[ToolDefinition] = ToolDefinition(
                 "narrative": {
                     "type": "string",
                     "description": "60-120 字第三人称演出叙事",
+                },
+                "unsettled_affixes": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "可选：无法按上述计算规则结算的词缀原文列表（如要求抽牌/回能/额外行动，或凭空叠加没有牌承载的标记），仅供系统统计，不计入结算。",
                 },
             },
             "required": ["combat_log", "narrative"],
@@ -212,6 +217,7 @@ class _TurnEndArbitrationContext(BaseModel):
     hp_changes: Dict[str, int] = Field(default_factory=dict)
     combat_log: Optional[str] = None
     narrative: Optional[str] = None
+    unsettled_affixes: List[str] = Field(default_factory=list)
 
 
 def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
@@ -241,10 +247,13 @@ def _handle_submit_arbitration(
     ctx: _TurnEndArbitrationContext,
     combat_log: str,
     narrative: str,
+    unsettled_affixes: Optional[List[str]] = None,
 ) -> str:
     """处理 submit_arbitration 工具调用。"""
     ctx.combat_log = combat_log
     ctx.narrative = narrative
+    if unsettled_affixes:
+        ctx.unsettled_affixes = [str(a) for a in unsettled_affixes if str(a).strip()]
     return "仲裁结果已提交"
 
 
@@ -388,6 +397,7 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
                     {
                         "combat_log": combat_log,
                         "narrative": narrative,
+                        "unsettled_affixes": ctx.unsettled_affixes,
                     },
                     ensure_ascii=False,
                 )
@@ -423,6 +433,12 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
                 narrative=narrative,
             ),
         )
+
+        # 词缀 telemetry：记录仲裁器无法按计算规则结算的词缀
+        for affix in ctx.unsettled_affixes:
+            logger.warning(
+                f"[TurnEndArbitrationSystem] 词缀无法按计算规则结算（telemetry）: {affix}"
+            )
 
         # 更新每个受影响实体的 HP 状态
         for entity_name, hp in hp_changes.items():

@@ -34,7 +34,8 @@ def test_valid_affix_design_accepted() -> None:
     assert results[0].on_play_affixes == ["[燃痕]:打出时对目标造成本卡 damage×2 的伤害"]
 
 
-def test_affix_missing_field_anchor_rejected() -> None:
+def test_affix_without_field_anchor_accepted() -> None:
+    # 字段锚点已从硬校验降为书写约定；「造成伤害」但未写 damage 仍可提交。
     results: List[_CraftGearSpec] = []
     reply = _handle_submit_gear(
         results,
@@ -43,9 +44,8 @@ def test_affix_missing_field_anchor_rejected() -> None:
         card=_card(on_play_affixes=["[燃痕]:打出时对目标造成伤害"]),
     )
 
-    assert reply.startswith("错误")
-    assert "damage" in reply
-    assert results == []
+    assert not reply.startswith("错误")
+    assert len(results) == 1
 
 
 def test_placeholder_affix_rejected() -> None:

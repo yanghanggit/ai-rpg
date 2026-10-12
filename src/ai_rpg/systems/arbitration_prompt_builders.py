@@ -31,7 +31,7 @@ CARD_NARRATIVE_DESCRIPTION: Final[
 
 CALC_RULES_SECTION: Final[
     str
-] = """## 计算规则
+] = f"""## 计算规则
 
 - **伤害**：单段有效伤害 = max(0, damage − 目标 BLOCK)，共 hit_count 段；总有效伤害 = 各段之和（词缀追加伤害再累加）。出牌者 HP 为 0 则跳过结算。
 - **BLOCK**：只取本次 `get_entity_stats` 的 `BLOCK`（手牌 block 之和），禁止再叠加或从记忆补算；扣血时不得二次扣除、也不得整体作废。

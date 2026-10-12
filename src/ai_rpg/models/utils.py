@@ -112,26 +112,37 @@ def consume_item_by_uuid(
     """
     updated: List[AnyItem] = []
     consumed = False
+
     for item in items:
         if not consumed and item.uuid == item_uuid:
+            # 命中首个匹配项，数量减 1 或移除
             consumed = True
             if item.count > 1:
                 copied = item.model_copy(deep=True)
                 copied.count -= 1
                 updated.append(copied)
+
             # count == 1：归零，不追加（即从列表移除）
         else:
             updated.append(item)
+
+    # 返回更新后的列表和是否命中标志
     return updated, consumed
 
 
 def apply_stats_to_card(card: Card, stats: CharacterStats) -> Card:
     """将角色属性叠加到卡牌上并返回该卡牌（原地修改）。
 
-    规则：卡牌自身 damage/block 非 0 时，分别叠加角色的 attack/defense。
+    规则：`damage` / `block` **为正数**时分别叠加角色 `attack` / `defense`；
+    为 0 表示不承载该类数值；为负表示「削减量」（如传给对方的破甲牌），是 debuff
+    幅度，不随持有者属性变化，原样保留。
     """
-    if card.damage != 0:
+
+    # 仅在 damage 为正数时叠加角色攻击
+    if card.damage > 0:
         card.damage += stats.attack
-    if card.block != 0:
+
+    # 仅在 block 为正数时叠加角色防御
+    if card.block > 0:
         card.block += stats.defense
     return card

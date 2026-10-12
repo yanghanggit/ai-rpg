@@ -29,28 +29,29 @@ def test_valid_field_anchored_affix_passes() -> None:
     assert result.ok
 
 
-def test_damage_without_damage_field_fails() -> None:
+def test_damage_without_damage_field_is_allowed() -> None:
+    # 字段锚点是「书写约定」而非硬拦截：可结算性交给结算原语契约与 agent 自检。
     result = validate_affix_slot(
         "on_play_affixes", "[断筋]:打出时对目标造成伤害", _card()
     )
-    assert not result.ok
-    assert "damage" in result.reason
+    assert result.ok
 
 
-def test_block_without_block_field_fails() -> None:
+def test_block_without_block_field_is_allowed() -> None:
     result = validate_affix_slot("on_play_affixes", "[铁壁]:打出时获得格挡", _card())
-    assert not result.ok
-    assert "block" in result.reason
+    assert result.ok
 
 
-def test_transferable_holder_requires_source() -> None:
+def test_transferable_holder_allowed_without_source() -> None:
     card = _card(transferable=True)
-    bad = validate_affix_slot("on_play_affixes", "[推手]:打出时对持有者叠加标记", card)
-    good = validate_affix_slot(
+    holder = validate_affix_slot(
+        "on_play_affixes", "[推手]:打出时对持有者叠加标记", card
+    )
+    non_source = validate_affix_slot(
         "on_play_affixes", "[推手]:打出时对非 source 者叠加标记", card
     )
-    assert not bad.ok
-    assert good.ok
+    assert holder.ok
+    assert non_source.ok
 
 
 def test_non_transferable_holder_needs_no_source() -> None:
@@ -145,7 +146,7 @@ def test_valid_design_is_applied() -> None:
 
 def test_invalid_design_falls_back_whole_slot() -> None:
     card = _card()
-    submitted = {"on_play_affixes": ["[断筋]:打出时对目标造成伤害"]}
+    submitted = {"on_play_affixes": ["[断筋]:打出时对目标造成本卡 damage×9 的伤害"]}
 
     applied, fallbacks = apply_affix_design("角色.无名", card, submitted)
 

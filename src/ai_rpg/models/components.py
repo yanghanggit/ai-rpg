@@ -180,6 +180,20 @@ class DeathComponent(Component):
 ############################################################################################################
 @final
 @register_component_type
+class StressComponent(Component):
+    """压力（死亡计数）：角色每经历一次战败（战死/超时判负/撤退）累加 1。
+
+    与 DeathComponent 不同：DeathComponent 在复活时会被移除，且不带任何惩罚；
+    StressComponent 跨副本持久保留，用于记录角色累计死亡次数，供后续 gameplay 读取。
+    """
+
+    name: str
+    value: int  # 累计压力值（即累计死亡次数）
+
+
+############################################################################################################
+@final
+@register_component_type
 class CharacterStatsComponent(Component):
     """存储角色战斗属性（HP、攻击力、防御力等）。"""
 

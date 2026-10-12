@@ -19,6 +19,7 @@ from ..models import (
     PartyMemberComponent,
     Round,
     RoundStatsComponent,
+    StressComponent,
     TargetType,
     compute_effective_stats,
     compute_hand_block,
@@ -62,15 +63,29 @@ def set_character_hp(entity: Entity, hp: int) -> CharacterStats:
 
 
 #################################################################################################################################################
+def add_stress(entity: Entity, amount: int = 1) -> int:
+    """累加角色压力值（死亡计数），返回累加后的最新值。"""
+    current = entity.get(StressComponent).value if entity.has(StressComponent) else 0
+    new_value = current + amount
+    entity.replace(StressComponent, entity.name, new_value)
+    return new_value
+
+
+#################################################################################################################################################
 def mark_dead(entity: Entity) -> CharacterStats:
-    """将角色标记为战败：挂载 DeathComponent。
+    """将角色标记为战败：挂载 DeathComponent，并使压力 +1。
 
     战死 / 超时判负 / 撤退均视为一次战败，统一走此入口。
+    DeathComponent 会在复活时移除且无惩罚，故以 StressComponent 累计死亡次数；
+    已是死亡状态时重复调用不会重复累加压力。
     """
     assert entity.has(ActorComponent), f"{entity.name} 缺少 ActorComponent"
     assert entity.has(
         CharacterStatsComponent
     ), f"{entity.name} 缺少 CharacterStatsComponent"
+
+    if not entity.has(DeathComponent):
+        add_stress(entity)
 
     entity.replace(DeathComponent, entity.name)
 

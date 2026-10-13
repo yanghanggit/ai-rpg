@@ -33,17 +33,17 @@ def compute_hand_block(hand_component: Optional[HandComponent]) -> int:
 def _item_stack_key(item: AnyItem) -> Optional[Tuple[ItemType, str, Tuple[str, ...]]]:
     """返回道具的堆叠身份键；不可堆叠的道具返回 None。
 
-    堆叠规则的唯一定义处：材料按名称、消耗品按名称与效果提示词、装备/时装不堆叠。
+    堆叠规则的唯一定义处：材料按名称、消耗品按名称与修正规则、装备/时装不堆叠。
     """
     if isinstance(item, MaterialItem):
         # 材料没有额外堆叠维度，第三位用空元组占位，与消耗品保持同构的三元组键。
         return (ItemType.MATERIAL_ITEM, item.name, ())
     if isinstance(item, ConsumableItem):
-        # 多值效果提示：全部元素参与堆叠身份（与仲裁逐条全部结算保持一致）。
+        # 多值修正规则：全部元素参与堆叠身份（与仲裁逐条全部结算保持一致）。
         return (
             ItemType.CONSUMABLE_ITEM,
             item.name,
-            tuple(normalize_str_list(item.on_use_prompt)),
+            tuple(normalize_str_list(item.modifiers)),
         )
     return None
 

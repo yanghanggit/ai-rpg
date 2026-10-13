@@ -33,7 +33,7 @@
 
 | 文档 | 简介 |
 | ------ | ------ |
-| [消耗品系统（ConsumableItem）](wiki/consumable-item.md) | 消耗品的数据模型、战斗使用管道、使用效果提示词（on_use_prompt）设计 |
+| [消耗品系统（ConsumableItem）](wiki/consumable-item.md) | 消耗品的数据模型、战斗使用管道、修正规则（modifiers）设计 |
 | [装备系统（GearItem）](wiki/gear-item.md) | 装备的数据模型、装备物化为手牌的管道、战斗结束归还 |
 | [工坊合成管道（Craft Pipeline）](wiki/craft-pipeline.md) | 工坊合成的核心哲学：机制与内容分离、配置注入路径、材料驱动的创意生成 |
 | [材料系统（MaterialItem）](wiki/material-item.md) | 材料的数据模型、工坊合成管道（消耗品/装备/时装三类产物）、与其他物品类型的关系 |

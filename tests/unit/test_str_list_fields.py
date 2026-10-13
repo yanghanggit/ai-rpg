@@ -6,7 +6,7 @@
 - 模型层 ``NormalizedStrList`` 注解自动清洗；
 - 词缀「逐条校验 + 整槽置空」支持多条；
 - 各消费端（出牌/回合结束/怪物决策/消耗品仲裁）逐条渲染全部条目；
-- 消耗品堆叠身份纳入全部效果提示。
+- 消耗品堆叠身份纳入全部修正规则。
 """
 
 from ai_rpg.models import (
@@ -69,9 +69,9 @@ def test_card_affix_fields_are_normalized() -> None:
     assert card.on_play_affixes == [AFFIX_A, AFFIX_B]
 
 
-def test_consumable_prompt_is_normalized() -> None:
-    item = ConsumableItem(name="消耗品.x", description="", on_use_prompt=[" a ", ""])
-    assert item.on_use_prompt == ["a"]
+def test_consumable_modifiers_is_normalized() -> None:
+    item = ConsumableItem(name="消耗品.x", description="", modifiers=[" a ", ""])
+    assert item.modifiers == ["a"]
 
 
 def test_artifact_modifiers_are_normalized() -> None:
@@ -156,7 +156,7 @@ def test_consumable_prompt_renders_all_effect_prompts() -> None:
     item = ConsumableItem(
         name="消耗品.x",
         description="描述",
-        on_use_prompt=["对目标造成 3 点伤害。", "使目标恢复 2 点 HP。"],
+        modifiers=["对目标造成 3 点伤害。", "使目标恢复 2 点 HP。"],
     )
     text = _build_consumable_arbitration_prompt("角色.测试", item, [], 1, [])
     assert "对目标造成 3 点伤害。" in text
@@ -165,12 +165,12 @@ def test_consumable_prompt_renders_all_effect_prompts() -> None:
 
 
 # ---------------------------------------------------------------------------
-# 消耗品堆叠身份纳入全部效果提示
+# 消耗品堆叠身份纳入全部修正规则
 # ---------------------------------------------------------------------------
 
 
 def _consumable(prompts: list[str]) -> ConsumableItem:
-    return ConsumableItem(name="消耗品.x", description="描述", on_use_prompt=prompts)
+    return ConsumableItem(name="消耗品.x", description="描述", modifiers=prompts)
 
 
 def test_same_multi_prompts_stack() -> None:

@@ -1,7 +1,7 @@
 """使用消耗品仲裁系统模块。
 
 借世界实体「世界.消耗品仲裁」作为临时 agent（LLM），在工具边界内结算消耗品使用效果：
-读取属性 → 依效果提示词结算 → 写入 HP → 提交仲裁结果（战斗日志/叙事）。
+读取属性 → 依修正规则结算 → 写入 HP → 提交仲裁结果（战斗日志/叙事）。
 仅把「发生了什么」写入场景实体记忆；
 临时 agent 的对话上下文仅在本次结算过程中累积，结束后不写回宿主世界实体的持久记忆。
 """
@@ -49,15 +49,15 @@ def _build_consumable_arbitration_prompt(
     current_round_number: int,
     stage_actor_names: List[str],
 ) -> str:
-    """构建消耗品仲裁提示词：发起人/目标/场景内参与人员/效果提示词全部注入。"""
+    """构建消耗品仲裁提示词：发起人/目标/场景内参与人员/修正规则全部注入。"""
     target_names = "、".join(targets) if targets else "无"
     stage_actors = "、".join(stage_actor_names) if stage_actor_names else "无"
     effect_prompt_block = (
         render_labeled_str_list(
-            "- 效果提示（逐条全部结算）", item.on_use_prompt, indent="  "
+            "- 修正规则（modifiers，逐条全部结算）", item.modifiers, indent="  "
         )
-        if item.on_use_prompt
-        else "- 效果提示：（未提供额外效果提示，仅依据物品描述合理推断）"
+        if item.modifiers
+        else "- 修正规则（modifiers）：（未提供，仅依据物品描述合理推断）"
     )
 
     return f"""# 第 {current_round_number} 回合：消耗品使用结算（工具调用模式）
@@ -83,14 +83,14 @@ def _build_consumable_arbitration_prompt(
 ## 结算规则
 
 - 你只能通过下方工具读取/写入数据，禁止引入工具未提供的机制。
-- 严格依据「效果提示」与物品「描述」结算本次使用；效果提示可能包含多条独立效果，须**逐条全部结算**；效果提示未写明的效果不得凭空添加。
+- 严格依据「修正规则（modifiers）」与物品「描述」结算本次使用；修正规则可能包含多条独立规则，须**逐条全部结算**；修正规则未写明的效果不得凭空添加。
 - 对每个受影响角色（至少包含发起人与所有目标，即使 HP 无变化也保持原值）调用 {SET_ENTITY_HP_TOOL.function.name} 写入最终 HP。
 - 目标 HP = max(0, min(计算后 HP, 最大 HP))。
 
 ## 工具使用流程
 
 1. 调用 {GET_ENTITY_STATS_TOOL.function.name} 读取「发起人」与「目标」的当前属性（可在同一次回复中并发调用多个）。
-2. 依据「效果提示」「描述」结算，得出每个受影响角色的最终 HP。
+2. 依据「修正规则」「描述」结算，得出每个受影响角色的最终 HP。
 3. 对每个受影响角色调用 {SET_ENTITY_HP_TOOL.function.name} 写入最终 HP（可在同一次回复中并发调用多个）。
 4. 调用 {SUBMIT_ARBITRATION_TOOL.function.name} 提交最终结果，结束本次仲裁。
 
@@ -103,7 +103,7 @@ def _build_consumable_arbitration_prompt(
 ### narrative
 
 60-120 字，第三人称外部视角，纯感官描写，无数字 / 术语 / 内心。
-以物品「描述」与本次「效果提示」为素材，写出使用该消耗品的动作，以及随之发生的感官变化（气味、温度、色泽、触感、姿态等）；不得引入物品描述与效果提示之外的机制。
+以物品「描述」与本次「修正规则（modifiers）」为素材，写出使用该消耗品的动作，以及随之发生的感官变化（气味、温度、色泽、触感、姿态等）；不得引入物品描述与修正规则之外的机制。
 若使用改变了某个人或物的状态，描写须体现这一改变，为后续叙事留下可推断的当前状态。"""
 
 

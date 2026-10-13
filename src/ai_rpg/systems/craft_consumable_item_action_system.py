@@ -27,7 +27,7 @@ class _CraftConsumableResponse(BaseModel):
 
     name: str = ""
     description: str = ""
-    on_use_prompt: NormalizedStrList = []
+    modifiers: NormalizedStrList = []
 
 
 #######################################################################################################################################
@@ -48,17 +48,17 @@ def _build_craft_prompt(materials: List[MaterialItem]) -> str:
 
 - **name**：消耗品全名，采用「消耗品.XXXX」命名格式，体现材料特性与用途，简洁有辨识度
 - **description**：物品描述，30-60字，说明外观、气味或使用感受，体现材料的来源与效果想象
-- **on_use_prompt**：使用效果提示词（多值列表）；每个元素是一条完整、独立的效果提示，用一句话说清「对谁、造成什么、数值多少」；若有多条互不相关的效果，请拆成多条元素；**禁止把一条效果拆成多个元素，也禁止把多条效果合并进一个元素**
+- **modifiers**：修正规则（多值列表）；每个元素是一条完整、独立的规则，用一句话说清「对谁、造成什么、数值多少」；若有多条互不相关的效果，请拆成多条元素；**禁止把一条效果拆成多个元素，也禁止把多条效果合并进一个元素**
 
-## on_use_prompt 能力边界
+## modifiers 能力边界
 
-消耗品的「使用效果提示词」会交给战斗结算 agent 执行，该 agent 仅能：
-- 读取发起者与目标的 HP/总格挡；
+消耗品的「修正规则」会交给临时仲裁 agent 执行，该 agent 仅有以下工具：
+- 读取发起者与目标的 HP / 最大 HP / 总格挡；
 - 修改受影响角色的 HP（0 ≤ HP ≤ 最大 HP）；
-- 提交战斗日志、演出叙事与场景环境快照。
+- 提交战斗日志与演出叙事。
 
-因此 on_use_prompt 只能描述「对目标（或发起者）造成伤害 / 恢复 HP」这类可被解释的即时效果，并可用感官描写暗示表现方式；
-禁止描述状态效果、属性增减、道具增减、跨回合持续效果等战斗结算 agent 无法解释的机制。
+因此 modifiers 只能描述「对目标（或发起者）造成伤害 / 恢复 HP」这类能被上述工具解释的即时效果，并可用感官描写暗示表现方式；
+禁止描述状态效果、属性增减、道具增减、跨回合持续效果，以及任何上述工具解释不了的机制。
 
 ## 输出格式
 
@@ -66,7 +66,7 @@ def _build_craft_prompt(materials: List[MaterialItem]) -> str:
 {{
   "name": "消耗品.XXX",
   "description": "...",
-  "on_use_prompt": ["对目标造成 3 点伤害。", "使该目标恢复 2 点 HP。"]
+  "modifiers": ["对目标造成 3 点伤害。", "使该目标恢复 2 点 HP。"]
 }}
 ```
 
@@ -119,7 +119,7 @@ class CraftConsumableItemActionSystem(ReactiveProcessor):
         new_item = ConsumableItem(
             name=result.name,
             description=result.description,
-            on_use_prompt=result.on_use_prompt,
+            modifiers=result.modifiers,
             resources=action.material_items,
         )
 
@@ -127,7 +127,7 @@ class CraftConsumableItemActionSystem(ReactiveProcessor):
         self._update_storage(storage_entity, action.material_names, new_item)
         logger.info(
             f"[CraftConsumableActionSystem] 合成完成: {new_item.name} "
-            f"(on_use_prompt={new_item.on_use_prompt})"
+            f"(modifiers={new_item.modifiers})"
         )
 
     ####################################################################################################################################

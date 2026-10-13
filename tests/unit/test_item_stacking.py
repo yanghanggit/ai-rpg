@@ -1,7 +1,7 @@
 """库存道具堆叠与材料扣减纯函数的单元测试。
 
 覆盖：
-- append_item_with_stacking：材料按名称堆叠、消耗品按名称 + 效果提示词堆叠，装备不堆叠；
+- append_item_with_stacking：材料按名称堆叠、消耗品按名称 + 修正规则堆叠，装备不堆叠；
 - merge_item_stacks：整表归一化；
 - deduct_materials：跨同名条目结转，修复「第一个条目不足时少扣」的缺陷；
 - consume_item_by_uuid：按 uuid 消耗一个数量（>1 递减、==1 移除），不就地修改。
@@ -27,7 +27,7 @@ from ai_rpg.models.utils import (
 
 def _consumable(name: str, prompt: str, count: int = 1) -> ConsumableItem:
     return ConsumableItem(
-        name=name, description=f"{name} 的描述", on_use_prompt=[prompt], count=count
+        name=name, description=f"{name} 的描述", modifiers=[prompt], count=count
     )
 
 

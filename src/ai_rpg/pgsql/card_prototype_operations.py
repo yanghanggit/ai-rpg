@@ -75,6 +75,36 @@ def save_card_prototype(
 
 
 ############################################################################################################
+def delete_card_prototypes(prototype_ids: List[str]) -> int:
+    """删除指定的卡牌原型，返回实际删除行数（开发 / 测试用）。
+
+    与 `save_card_prototype` 配套：`flush_card_prototypes` 用它把库里不在目标集合中的
+    原型清掉，从而让 `generate-spoils` 的随机抽样退化为确定抽样（定点测试）。
+    """
+
+    if not prototype_ids:
+        return 0
+
+    db = SessionLocal()
+    try:
+        rows = (
+            db.query(CardPrototypeDB)
+            .filter(CardPrototypeDB.prototype_id.in_(prototype_ids))
+            .all()
+        )
+        for row in rows:
+            db.delete(row)
+        db.commit()
+        return len(rows)
+    except Exception as e:
+        db.rollback()
+        logger.error(f"❌ 删除卡牌原型失败: {e}")
+        raise e
+    finally:
+        db.close()
+
+
+############################################################################################################
 def list_card_prototype_index(
     card_type: Optional[str] = None,
     archetype: Optional[str] = None,

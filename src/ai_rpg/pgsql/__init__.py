@@ -7,6 +7,7 @@ from typing import List
 from .base import *
 from .card_prototype import CardPrototypeDB
 from .card_prototype_operations import (
+    delete_card_prototypes,
     get_card_prototype,
     get_card_prototype_by_name,
     list_card_prototype_index,
@@ -41,6 +42,7 @@ __all__: List[str] = [
     "CardPrototypeDB",
     # Card prototype operations
     "save_card_prototype",
+    "delete_card_prototypes",
     "list_card_prototype_index",
     "get_card_prototype",
     "get_card_prototype_by_name",

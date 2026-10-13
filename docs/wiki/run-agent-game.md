@@ -60,6 +60,18 @@ AI 代理无需感知内部游戏对象，只需根据当前存档的模式选�
 
 ---
 
+## 卡牌原型的开发循环
+
+改动 `demo/card_prototypes.py` 或词缀设计规范后，若想反复观察「角色 agent 把原型设计成了什么」，完整的 `scripts/setup_demo.py` 太重——它会 drop 数据库并重刷蓝图 / 副本 / RAG；开发循环只需要「把原型刷进库」这一小步。
+
+`scripts/flush_card_prototypes.py` 就是这一步：只 upsert 原型（可选默认牌单），并逐条打印「新增 / 更新 / 未变」与变化的字段；`--only` / `--card-type` 收敛刷写范围，`--prune` 把库收敛到指定集合，`--dry-run` 只看不写。
+
+关键能力是 `--prune`：库被收敛成「只剩要测的原型」后，`generate-spoils` 的随机抽样退化为确定抽样，于是可以定点复现同一原型的词缀设计。观测端配 `scripts/inspect_spoils.py`，它打印某个快照里 Spoils 候选的完整字段与逐条词缀的校验结果。
+
+循环形态：改原型 → 刷库 → 对停在开场房间的存档 `generate-spoils` → 读设计结果与 `.chat_dumps`。`--prune` 只影响其它仍从库读原型的流程（默认牌单物化、工坊示例检索），重跑一次全量刷即可恢复。
+
+---
+
 ## 日志追溯
 
 每次调用生成独立日志文件，路径为 `logs/run_agent_game_{timestamp}.log`，时间戳与新存档一致，便于将一条存档与其对应的完整执行日志一一对应。

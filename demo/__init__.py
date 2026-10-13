@@ -1,6 +1,7 @@
 from demo.card_prototypes import (
     CARD_PROTOTYPES,
     DEFAULT_DECK_BUILD,
+    CardPrototype,
     DeckBuild,
 )
 from demo.world import (
@@ -13,5 +14,6 @@ __all__ = [
     "create_beast_lair_dungeon",
     "CARD_PROTOTYPES",
     "DEFAULT_DECK_BUILD",
+    "CardPrototype",
     "DeckBuild",
 ]

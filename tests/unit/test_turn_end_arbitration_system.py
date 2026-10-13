@@ -51,6 +51,7 @@ def mock_game() -> MagicMock:
     game.current_dungeon_combat_room.combat.is_ongoing = True
     game.current_dungeon_combat_room.combat.rounds = [object()]
     stage = MagicMock()
+    stage.name = "场景.测试密室"
     game.resolve_stage_entity.return_value = stage
     game.get_agent_memory.return_value = SimpleNamespace(messages=[])
     return game
@@ -119,7 +120,7 @@ class TestTurnEndArbitrationSystem:
         mock_agent_loop.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_react_with_holder_calls_agent_loop(
+    async def test_stage_arbitrates_turn_end(
         self, context: Context, mock_game: MagicMock
     ) -> None:
         system = TurnEndArbitrationSystem(mock_game)
@@ -141,4 +142,8 @@ class TestTurnEndArbitrationSystem:
 
         assert mock_agent_loop.await_count == 1
         assert mock_agent_loop.await_args is not None
-        assert mock_agent_loop.await_args.kwargs["name"] == "怪物.纸人"
+        # 仲裁者是所在场景，不是持有者本人
+        assert mock_agent_loop.await_args.kwargs["name"] == "场景.测试密室"
+        mock_game.get_agent_memory.assert_called_with(
+            mock_game.resolve_stage_entity.return_value
+        )

@@ -145,6 +145,7 @@ def _build_combat_arbitration_tool_prompt(
 
 {GET_ENTITY_STATS_TOOL.function.name} 返回的「受击卡牌」仅列出带受击词缀（on_hit_affixes）的卡牌，用于结算受击效果；它**不是**完整手牌清单，其中展示的 block 为该卡牌自身的单牌格挡值，角色的总格挡以 {GET_ENTITY_STATS_TOOL.function.name} 返回的「总格挡」为准。
 受击词缀可能有多条，均为独立规则，须**逐条全部结算**。「受击词缀」仅在**该实体是本次出牌的目标**时触发；出牌者自身的受击词缀不触发（除非出牌者也同时是目标）。依词缀描述结算（如 [反伤] 对出牌者造成伤害），受击词缀的数值以该卡牌在 {GET_ENTITY_STATS_TOOL.function.name} 中返回的 damage 字段为准，不引入词缀未提及的新机制。
+受击词缀的结算对象是**出牌者**，与目标是否阵亡无关：即使目标在本次结算中被击倒，其受击词缀仍须照常结算，不得因目标已倒而略过。
 
 ## source 字段
 

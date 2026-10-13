@@ -1,8 +1,12 @@
-"""回合结束仲裁系统模块。"""
+"""回合结束仲裁系统模块。
+
+仲裁者与出牌仲裁一致：由**所在场景（stage）**担任，结果写入 stage 记忆并全场景广播；
+被结算的是发起 pass turn 的行动者（持有者）手牌中带回合结束词缀的卡牌。
+"""
 
 import json
 from functools import partial
-from typing import Dict, Final, List, Optional, Set, final
+from typing import Dict, Final, List, Optional, final
 
 from loguru import logger
 from overrides import override
@@ -85,7 +89,11 @@ def _build_turn_end_arbitration_tool_prompt(
 
     return f"""# 第 {current_round_number} 回合：回合结束结算（工具调用模式）
 
-你是 {holder_name}，你正持有以下带回合结束词缀的卡牌；现在是你的回合结束（pass turn）时刻，由你作为仲裁者结算这些词缀的效果。
+## 回合结束的持有者
+
+{holder_name}
+
+其回合结束（pass turn）时，由你结算以下带回合结束词缀的卡牌的效果。
 
 ## 回合结束词缀卡牌
 
@@ -99,11 +107,11 @@ def _build_turn_end_arbitration_tool_prompt(
 
 ## 回合结束词缀
 
-你是这些卡牌的持有者，也是本次回合结束结算的仲裁者。每张卡牌的 `source` 是它的来源（生成/注入者名称）；词缀若提及「非 source 者」，指当前持有者（当其不等于该卡牌 source 时）。回合结束词缀可能有多条，均为独立规则，须**逐条全部结算**；依各卡牌词缀描述结算，受影响目标由词缀描述与场上存活角色自行判断；持有者自身也可成为目标。不引入词缀未提及的新机制。
+{holder_name} 是这些卡牌的持有者；每张卡牌的 `source` 是它的来源（生成/注入者名称）；词缀若提及「非 source 者」，指持有者 {holder_name}（当其不等于该卡牌 source 时）。回合结束词缀可能有多条，均为独立规则，须**逐条全部结算**；依各卡牌词缀描述结算，受影响目标由词缀描述与场上存活角色自行判断；持有者自身也可成为目标。不引入词缀未提及的新机制。
 
 ## 工具使用流程（严格按顺序，逐行推演，不得跳步）
 
-1. **读**：对【持有者】与【每一个可能受影响的角色】分别调用 {GET_ENTITY_STATS_TOOL.function.name}，拿到各自的 HP / 最大 HP 与总格挡（可在同一次回复中并发调用多个）。
+1. **读**：对【持有者 {holder_name}】与【每一个可能受影响的角色】分别调用 {GET_ENTITY_STATS_TOOL.function.name}，拿到各自的 HP / 最大 HP 与总格挡（可在同一次回复中并发调用多个）。
 2. **算**：逐张卡、逐条词缀结算——每一条词缀各自写成结算式里的一项，按「计算规则 · 结算」逐行推出每个受影响角色的最终 HP。（这是你自己的推理步骤，务必逐行落笔，不得跳步或心算省略。）
 3. **写**：对每个受影响角色（含持有者与所有目标）调用 {SET_ENTITY_HP_TOOL.function.name}，hp 直接填第 2 步算出的最终 HP（可在同一次回复中并发调用多个）。
 4. **提交**：调用 {SUBMIT_ARBITRATION_TOOL.function.name} 提交最终结果，结束本次仲裁；combat_log 的每个「旧→新」与「伤害 Z」**逐字抄自上一步 {SET_ENTITY_HP_TOOL.function.name} 的返回**（形如「HP 将更新为 13/15（15 → 13，本次扣减 2）」），不得另行心算或改数；若某条词缀无法按上述计算规则结算，把它原文放进 unsettled_affixes。
@@ -273,7 +281,7 @@ def _handle_submit_arbitration(
 ###########################################################################################################################################
 @final
 class TurnEndArbitrationSystem(ReactiveProcessor):
-    """响应 PassTurnAction 事件，对发起 pass turn 的行动者持有回合结束词缀卡牌进行仲裁结算。"""
+    """响应 PassTurnAction，由所在场景（stage）仲裁行动者手牌中的回合结束词缀。"""
 
     def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
@@ -343,9 +351,9 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
 
         try:
             ok = await agent_loop(
-                name=pass_turn_entity.name,
+                name=stage_entity.name,
                 prompt=prompt,
-                messages=self._game.get_agent_memory(pass_turn_entity).messages,
+                messages=self._game.get_agent_memory(stage_entity).messages,
                 tools=[
                     GET_ENTITY_STATS_TOOL,
                     SET_ENTITY_HP_TOOL,
@@ -391,7 +399,7 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
         holder: Entity,
         ctx: _TurnEndArbitrationContext,
     ) -> None:
-        """应用单个持有者的回合结束仲裁结果：写持有者记忆、更新受影响角色 HP、定向广播。"""
+        """应用单个持有者的回合结束仲裁结果：写场景记忆、更新受影响角色 HP、全场景广播。"""
 
         assert ctx.combat_log is not None, "combat_log 不应为 None"
         assert ctx.narrative is not None, "narrative 不应为 None"
@@ -407,10 +415,10 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
                 )
                 return
 
-        # 仲裁者是持卡人（holder），结果写入 holder 自身记忆，而非 stage。
+        # 仲裁者是所在场景（stage），与出牌仲裁一致：结果写入 stage 记忆。
         # agent_loop 已原地写入完整提示词与工具调用轨迹，这里仅补记干净的结构化结果。
         self._game.add_ai_message(
-            entity=holder,
+            entity=stage_entity,
             ai_message=AIMessage(
                 content=json.dumps(
                     {
@@ -423,24 +431,14 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
             ),
         )
 
-        # 受影响实体 = 被 LLM 调用「写回 HP 工具」的角色（去重）
-        affected_entities: Set[Entity] = set()
-        for entity_name in hp_changes:
-            entity = self._game.get_actor_entity(entity_name)
-            if entity is None:
-                logger.error(
-                    f"TurnEndArbitrationSystem: 无法找到受影响角色: {entity_name}"
-                )
-                return
-            affected_entities.add(entity)
-
-        # 定向广播：只通知受影响实体（不走 broadcast_to_stage 的全场景广播）
+        # 全场景广播（与出牌仲裁一致）：除受影响角色外，持有者与旁观者也需知道回合结束
+        # 发生了什么——持有者自身 HP 未必变化（如只伤害对手的词缀）。
         current_round_number = len(
             self._game.current_dungeon_combat_room.combat.rounds or []
         )
-        self._game.notify_entities(
-            affected_entities,
-            CombatArbitrationEvent(
+        self._game.broadcast_to_stage(
+            entity=stage_entity,
+            agent_event=CombatArbitrationEvent(
                 message=_build_turn_end_arbitration_broadcast(
                     combat_log,
                     narrative,
@@ -451,6 +449,7 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
                 combat_log=combat_log,
                 narrative=narrative,
             ),
+            exclude_entities={stage_entity},
         )
 
         # 词缀 telemetry：记录仲裁器无法按计算规则结算的词缀

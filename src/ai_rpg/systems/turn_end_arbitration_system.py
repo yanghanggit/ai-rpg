@@ -30,10 +30,7 @@ from ..models import (
     render_labeled_str_list,
 )
 from ..utils import prompt_builder
-from .arbitration_prompt_builders import (
-    CALC_RULES_SECTION,
-    CARD_NARRATIVE_DESCRIPTION,
-)
+from .arbitration_prompt_builders import build_calc_rules_section
 
 
 ###########################################################################################################################################
@@ -98,7 +95,7 @@ def _build_turn_end_arbitration_tool_prompt(
 
 {alive_lines}
 
-{CALC_RULES_SECTION}
+{build_calc_rules_section(GET_ENTITY_STATS_TOOL.function.name, SET_ENTITY_HP_TOOL.function.name)}
 
 ## 回合结束词缀
 
@@ -106,18 +103,22 @@ def _build_turn_end_arbitration_tool_prompt(
 
 ## 工具使用流程（严格按顺序，逐行推演，不得跳步）
 
-1. **读**：对【持有者】与【每一个可能受影响的角色】分别调用 get_entity_stats，拿到各自的 HP / 最大 HP 与总格挡（可在同一次回复中并发调用多个）。
+1. **读**：对【持有者】与【每一个可能受影响的角色】分别调用 {GET_ENTITY_STATS_TOOL.function.name}，拿到各自的 HP / 最大 HP 与总格挡（可在同一次回复中并发调用多个）。
 2. **算**：逐张卡、逐条词缀结算——每一条词缀各自写成结算式里的一项，按「计算规则 · 结算」逐行推出每个受影响角色的最终 HP。（这是你自己的推理步骤，务必逐行落笔，不得跳步或心算省略。）
-3. **写**：对每个受影响角色（含持有者与所有目标）调用 set_entity_hp，hp 直接填第 2 步算出的最终 HP（可在同一次回复中并发调用多个）。
-4. **提交**：调用 submit_arbitration 提交最终结果，结束本次仲裁；combat_log 的每个「旧→新」与「伤害 Z」**逐字抄自上一步 set_entity_hp 的返回**（形如「HP 将更新为 13/15（15 → 13，本次扣减 2）」），不得另行心算或改数；若某条词缀无法按上述计算规则结算，把它原文放进 unsettled_affixes。
+3. **写**：对每个受影响角色（含持有者与所有目标）调用 {SET_ENTITY_HP_TOOL.function.name}，hp 直接填第 2 步算出的最终 HP（可在同一次回复中并发调用多个）。
+4. **提交**：调用 {SUBMIT_ARBITRATION_TOOL.function.name} 提交最终结果，结束本次仲裁；combat_log 的每个「旧→新」与「伤害 Z」**逐字抄自上一步 {SET_ENTITY_HP_TOOL.function.name} 的返回**（形如「HP 将更新为 13/15（15 → 13，本次扣减 2）」），不得另行心算或改数；若某条词缀无法按上述计算规则结算，把它原文放进 unsettled_affixes。
 
-## submit_arbitration 字段说明
+## {SUBMIT_ARBITRATION_TOOL.function.name} 字段说明
 
 ### combat_log（简名 = 全名最后一段）
 
 示例：`[纸人|回合结束·灼烧→英雄:2伤害] HP:英雄 15→13`
 
-{CARD_NARRATIVE_DESCRIPTION}"""
+### narrative
+
+60-120 字，第三人称外部视角，纯感官描写，无数字 / 术语 / 内心。
+以本次结算所用卡牌的「叙事（description）」为素材，把卡牌意象延展成一段外部可见的动作或现象；不得引入卡牌与其词缀之外的机制。
+若卡牌效果改变了某个人或物的状态，描写须体现这一改变，为后续叙事留下可推断的当前状态。"""
 
 
 @prompt_builder
@@ -226,7 +227,7 @@ class _TurnEndArbitrationContext(BaseModel):
 
 
 def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
-    """处理 get_entity_stats 工具调用：返回指定角色的 HP 与总格挡。"""
+    """处理「获取状态工具」调用：返回指定角色的 HP 与总格挡。"""
     entity = game.get_actor_entity(entity_name)
     if entity is None:
         return f"错误：找不到战斗角色 {entity_name}"
@@ -242,7 +243,7 @@ def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
 def _handle_set_entity_hp(
     game: DBGGame, ctx: _TurnEndArbitrationContext, entity_name: str, hp: int
 ) -> str:
-    """处理 set_entity_hp 工具调用。"""
+    """处理「写回 HP 工具」调用。"""
     entity = game.get_actor_entity(entity_name)
     if entity is None:
         return f"错误：找不到战斗角色 {entity_name}"
@@ -261,7 +262,7 @@ def _handle_submit_arbitration(
     narrative: str,
     unsettled_affixes: Optional[List[str]] = None,
 ) -> str:
-    """处理 submit_arbitration 工具调用。"""
+    """处理「提交仲裁结果工具」调用。"""
     ctx.combat_log = combat_log
     ctx.narrative = narrative
     if unsettled_affixes:
@@ -422,7 +423,7 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
             ),
         )
 
-        # 受影响实体 = 被 LLM 调用 set_entity_hp 的角色（去重）
+        # 受影响实体 = 被 LLM 调用「写回 HP 工具」的角色（去重）
         affected_entities: Set[Entity] = set()
         for entity_name in hp_changes:
             entity = self._game.get_actor_entity(entity_name)

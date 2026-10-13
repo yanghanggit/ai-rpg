@@ -84,17 +84,17 @@ def _build_consumable_arbitration_prompt(
 
 - 你只能通过下方工具读取/写入数据，禁止引入工具未提供的机制。
 - 严格依据「效果提示」与物品「描述」结算本次使用；效果提示可能包含多条独立效果，须**逐条全部结算**；效果提示未写明的效果不得凭空添加。
-- 对每个受影响角色（至少包含发起人与所有目标，即使 HP 无变化也保持原值）调用 set_entity_hp 写入最终 HP。
+- 对每个受影响角色（至少包含发起人与所有目标，即使 HP 无变化也保持原值）调用 {SET_ENTITY_HP_TOOL.function.name} 写入最终 HP。
 - 目标 HP = max(0, min(计算后 HP, 最大 HP))。
 
 ## 工具使用流程
 
-1. 调用 get_entity_stats 读取「发起人」与「目标」的当前属性（可在同一次回复中并发调用多个）。
+1. 调用 {GET_ENTITY_STATS_TOOL.function.name} 读取「发起人」与「目标」的当前属性（可在同一次回复中并发调用多个）。
 2. 依据「效果提示」「描述」结算，得出每个受影响角色的最终 HP。
-3. 对每个受影响角色调用 set_entity_hp 写入最终 HP（可在同一次回复中并发调用多个）。
-4. 调用 submit_arbitration 提交最终结果，结束本次仲裁。
+3. 对每个受影响角色调用 {SET_ENTITY_HP_TOOL.function.name} 写入最终 HP（可在同一次回复中并发调用多个）。
+4. 调用 {SUBMIT_ARBITRATION_TOOL.function.name} 提交最终结果，结束本次仲裁。
 
-## submit_arbitration 字段说明
+## {SUBMIT_ARBITRATION_TOOL.function.name} 字段说明
 
 ### combat_log（简名 = 全名最后一段）
 
@@ -208,7 +208,7 @@ class _ArbitrationContext(BaseModel):
 
 ###########################################################################################################################################
 def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
-    """处理 get_entity_stats 工具调用：返回角色的 HP 与总格挡。"""
+    """处理「获取状态工具」调用：返回角色的 HP 与总格挡。"""
     entity = game.get_actor_entity(entity_name)
     if entity is None:
         return f"错误：找不到战斗角色 {entity_name}"
@@ -221,7 +221,7 @@ def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
 def _handle_set_entity_hp(
     game: DBGGame, ctx: _ArbitrationContext, entity_name: str, hp: int
 ) -> str:
-    """处理 set_entity_hp 工具调用：暂存最终 HP，等待仲裁结束后统一落库。"""
+    """处理「写回 HP 工具」调用：暂存最终 HP，等待仲裁结束后统一落库。"""
     entity = game.get_actor_entity(entity_name)
     if entity is None:
         return f"错误：找不到战斗角色 {entity_name}"
@@ -236,7 +236,7 @@ def _handle_submit_arbitration(
     combat_log: str,
     narrative: str,
 ) -> str:
-    """处理 submit_arbitration 工具调用：提交最终仲裁结果。"""
+    """处理「提交仲裁结果工具」调用：提交最终仲裁结果。"""
     ctx.combat_log = combat_log
     ctx.narrative = narrative
     return "仲裁结果已提交"
@@ -357,7 +357,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             return
 
         # 通知覆盖保证：发起人 + 所有目标（去重）都必须收到通知；
-        # 若 LLM 未对某个实体调用 set_entity_hp（例如其 HP 未变化），则补记其当前 HP。
+        # 若 LLM 未对某个实体调用「写回 HP 工具」（例如其 HP 未变化），则补记其当前 HP。
         notify_names = list(dict.fromkeys([actor_entity.name, *action.targets]))
         for notify_name in notify_names:
             if notify_name in ctx.hp_changes:

@@ -30,10 +30,7 @@ from ..models import (
     render_labeled_str_list,
 )
 from ..utils import prompt_builder
-from .arbitration_prompt_builders import (
-    CALC_RULES_SECTION,
-    CARD_NARRATIVE_DESCRIPTION,
-)
+from .arbitration_prompt_builders import build_calc_rules_section
 
 
 ###########################################################################################################################################
@@ -142,25 +139,25 @@ def _build_combat_arbitration_tool_prompt(
 
 {round_action_info}
 
-{CALC_RULES_SECTION}
+{build_calc_rules_section(GET_ENTITY_STATS_TOOL.function.name, SET_ENTITY_HP_TOOL.function.name)}
 
 ## 受击词缀
 
-get_entity_stats 返回的「受击卡牌」仅列出带受击词缀（on_hit_affixes）的卡牌，用于结算受击效果；它**不是**完整手牌清单，其中展示的 block 为该卡牌自身的单牌格挡值，角色的总格挡以 get_entity_stats 返回的「总格挡」为准。
-受击词缀可能有多条，均为独立规则，须**逐条全部结算**。「受击词缀」仅在**该实体是本次出牌的目标**时触发；出牌者自身的受击词缀不触发（除非出牌者也同时是目标）。依词缀描述结算（如 [反伤] 对出牌者造成伤害），受击词缀的数值以该卡牌在 get_entity_stats 中返回的 damage 字段为准，不引入词缀未提及的新机制。
+{GET_ENTITY_STATS_TOOL.function.name} 返回的「受击卡牌」仅列出带受击词缀（on_hit_affixes）的卡牌，用于结算受击效果；它**不是**完整手牌清单，其中展示的 block 为该卡牌自身的单牌格挡值，角色的总格挡以 {GET_ENTITY_STATS_TOOL.function.name} 返回的「总格挡」为准。
+受击词缀可能有多条，均为独立规则，须**逐条全部结算**。「受击词缀」仅在**该实体是本次出牌的目标**时触发；出牌者自身的受击词缀不触发（除非出牌者也同时是目标）。依词缀描述结算（如 [反伤] 对出牌者造成伤害），受击词缀的数值以该卡牌在 {GET_ENTITY_STATS_TOOL.function.name} 中返回的 damage 字段为准，不引入词缀未提及的新机制。
 
 ## source 字段
 
-`source` 为卡牌的来源（生成/注入者名称），空字符串表示来源未知；出牌卡牌与 get_entity_stats 返回的受击卡牌都会携带各自的 `source`。词缀若提及「非 source 者」，指当前持有者（当其不等于本卡 `source` 时）。
+`source` 为卡牌的来源（生成/注入者名称），空字符串表示来源未知；出牌卡牌与 {GET_ENTITY_STATS_TOOL.function.name} 返回的受击卡牌都会携带各自的 `source`。词缀若提及「非 source 者」，指当前持有者（当其不等于本卡 `source` 时）。
 
 ## 工具使用流程（严格按顺序，逐行推演，不得跳步）
 
-1. **读**：对【出牌者】与【每一个目标】分别调用 get_entity_stats，拿到各自的 HP / 最大 HP 与总格挡（可在同一次回复中并发调用多个）。
+1. **读**：对【出牌者】与【每一个目标】分别调用 {GET_ENTITY_STATS_TOOL.function.name}，拿到各自的 HP / 最大 HP 与总格挡（可在同一次回复中并发调用多个）。
 2. **算**：对每个目标，按「计算规则 · 结算」逐行写出结算式——先写基础段，再把本卡即时词缀**逐条**写成词缀段，最后求和得到该目标的最终 HP。（这是你自己的推理步骤，务必逐行落笔，不得跳步或心算省略。）
-3. **写**：对每个受影响角色（含出牌者与所有目标）调用 set_entity_hp，hp 直接填第 2 步算出的最终 HP（可在同一次回复中并发调用多个）。
-4. **提交**：调用 submit_arbitration 提交最终结果，结束本次仲裁；combat_log 的每个「旧→新」与「伤害 Z」**逐字抄自上一步 set_entity_hp 的返回**（形如「HP 将更新为 7/20（20 → 7，本次扣减 13）」），不得另行心算或改数；若某条词缀无法按上述计算规则结算，把它原文放进 unsettled_affixes。
+3. **写**：对每个受影响角色（含出牌者与所有目标）调用 {SET_ENTITY_HP_TOOL.function.name}，hp 直接填第 2 步算出的最终 HP（可在同一次回复中并发调用多个）。
+4. **提交**：调用 {SUBMIT_ARBITRATION_TOOL.function.name} 提交最终结果，结束本次仲裁；combat_log 的每个「旧→新」与「伤害 Z」**逐字抄自上一步 {SET_ENTITY_HP_TOOL.function.name} 的返回**（形如「HP 将更新为 7/20（20 → 7，本次扣减 13）」），不得另行心算或改数；若某条词缀无法按上述计算规则结算，把它原文放进 unsettled_affixes。
 
-## submit_arbitration 字段说明
+## {SUBMIT_ARBITRATION_TOOL.function.name} 字段说明
 
 ### combat_log（简名 = 全名最后一段）
 
@@ -168,7 +165,11 @@ get_entity_stats 返回的「受击卡牌」仅列出带受击词缀（on_hit_af
 多段示例：`[英雄|回旋镖→石缝蜥:3x3次,伤害7] HP:石缝蜥 15→8`{spread.log_example}
 阵亡跳过：`[出牌者简名|已阵亡，卡牌无法执行]`
 
-{CARD_NARRATIVE_DESCRIPTION}"""
+### narrative
+
+60-120 字，第三人称外部视角，纯感官描写，无数字 / 术语 / 内心。
+以本次结算所用卡牌的「叙事（description）」为素材，把卡牌意象延展成一段外部可见的动作或现象；不得引入卡牌与其词缀之外的机制。
+若卡牌效果改变了某个人或物的状态，描写须体现这一改变，为后续叙事留下可推断的当前状态。"""
 
 
 @prompt_builder
@@ -287,7 +288,7 @@ def _collect_hand_on_hit_cards(entity: Entity) -> List[Card]:
 
 ###########################################################################################################################################
 def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
-    """处理 get_entity_stats 工具调用：返回 HP/总格挡 + 参与受击仲裁的手牌卡牌数据。"""
+    """处理「获取状态工具」调用：返回 HP/总格挡 + 参与受击仲裁的手牌卡牌数据。"""
     entity = game.get_actor_entity(entity_name)
     if entity is None:
         return f"错误：找不到战斗角色 {entity_name}"
@@ -318,7 +319,7 @@ def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
 def _handle_set_entity_hp(
     game: DBGGame, ctx: _ArbitrationContext, entity_name: str, hp: int
 ) -> str:
-    """处理 set_entity_hp 工具调用。"""
+    """处理「写回 HP 工具」调用。"""
     entity = game.get_actor_entity(entity_name)
     if entity is None:
         return f"错误：找不到战斗角色 {entity_name}"
@@ -337,7 +338,7 @@ def _handle_submit_arbitration(
     narrative: str,
     unsettled_affixes: Optional[List[str]] = None,
 ) -> str:
-    """处理 submit_arbitration 工具调用。"""
+    """处理「提交仲裁结果工具」调用。"""
     ctx.combat_log = combat_log
     ctx.narrative = narrative
     if unsettled_affixes:
@@ -456,7 +457,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             return
 
         # 通知覆盖保证：行动者 + 所有目标（去重，行动者可能同时是目标）都必须收到通知。
-        # 若 LLM 未对某个实体调用 set_entity_hp（例如其 HP 未变化），则补记其当前 HP，
+        # 若 LLM 未对某个实体调用「写回 HP 工具」（例如其 HP 未变化），则补记其当前 HP，
         # 确保下方统一落库时仍会向其发送「生命值已更新」通知。
         notify_names = list(
             dict.fromkeys([actor_entity.name, *play_cards_action.targets])

@@ -70,19 +70,19 @@ def _build_artifact_post_arbitration_prompt(
 - 规则 = 「触发条件」+「效果」：先按规则原文的触发条件（如「第 N 回合」「本回合首次结算」「仅触发一次」）与当前回合数判定，只有触发才执行效果；规则未写明的效果不得添加。
 - 「无论本次出牌/消耗品如何结算」「必定」「必须」等措辞只强调效果力度/覆盖性，不改变触发条件；未触发时不得产生任何 HP 变更。
 - **一次性效果不得重复触发**：若规则含「仅触发一次」「触发一次」「此后不再触发」等表述，或效果本身是一次性变身（如「被逼出凶性」），则该效果在本场战斗内只应生效一次。你可以结合自己在本场战斗中的记忆判断是否已触发过：若记忆中已有你触发该效果的记录，本次视为未触发。
-- 未触发（尚未满足触发条件，或一次性效果已触发过）：不调用 set_entity_hp，直接 submit_arbitration，combat_log 写明「触发条件未满足／已触发过，无 HP 变更」及各方当前 HP。
-- 已触发：对每个受影响角色调用一次 set_entity_hp 写入最终 HP（自动 clamp 到 0~最大HP）。
-- 结算**数值**只取自本次 get_entity_stats 的返回结果，禁止套用记忆中的数值；但判断「一次性效果是否已触发过」属于**触发状态**，允许参考你自己在本场战斗中的记忆。
+- 未触发（尚未满足触发条件，或一次性效果已触发过）：不调用 {SET_ENTITY_HP_TOOL.function.name}，直接 {SUBMIT_ARBITRATION_TOOL.function.name}，combat_log 写明「触发条件未满足／已触发过，无 HP 变更」及各方当前 HP。
+- 已触发：对每个受影响角色调用一次 {SET_ENTITY_HP_TOOL.function.name} 写入最终 HP（自动 clamp 到 0~最大HP）。
+- 结算**数值**只取自本次 {GET_ENTITY_STATS_TOOL.function.name} 的返回结果，禁止套用记忆中的数值；但判断「一次性效果是否已触发过」属于**触发状态**，允许参考你自己在本场战斗中的记忆。
 
 ## 一致性契约
 
-submit_arbitration 的 combat_log / narrative 必须与本次实际调用过的 set_entity_hp 完全一致：改了谁、改成多少就写谁、写多少；未改不得声称已改，已改不得声称未改。
+{SUBMIT_ARBITRATION_TOOL.function.name} 的 combat_log / narrative 必须与本次实际调用过的 {SET_ENTITY_HP_TOOL.function.name} 完全一致：改了谁、改成多少就写谁、写多少；未改不得声称已改，已改不得声称未改。
 
 ## 工具流程
 
-1. get_entity_stats 读取可能受影响角色（可并发）。
-2. 判定触发；触发则 set_entity_hp 写入最终 HP，未触发则跳过本步。
-3. submit_arbitration 提交，combat_log / narrative 与第 2 步实际行为一致。
+1. {GET_ENTITY_STATS_TOOL.function.name} 读取可能受影响角色（可并发）。
+2. 判定触发；触发则 {SET_ENTITY_HP_TOOL.function.name} 写入最终 HP，未触发则跳过本步。
+3. {SUBMIT_ARBITRATION_TOOL.function.name} 提交，combat_log / narrative 与第 2 步实际行为一致。
 
 ## combat_log 格式（简名 = 全名最后一段）
 
@@ -165,7 +165,9 @@ SET_ENTITY_HP_TOOL: Final[ToolDefinition] = ToolDefinition(
 SUBMIT_ARBITRATION_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="submit_arbitration",
-        description="提交本次神器仲裁的最终结果（战斗日志、演出叙事）。combat_log/narrative 必须与本次实际调用过的 set_entity_hp 完全一致。调用后本次仲裁结束。",
+        description="提交本次神器仲裁的最终结果（战斗日志、演出叙事）。"
+        f"combat_log/narrative 必须与本次实际调用过的 {SET_ENTITY_HP_TOOL.function.name} 完全一致。"
+        "调用后本次仲裁结束。",
         parameters={
             "type": "object",
             "properties": {

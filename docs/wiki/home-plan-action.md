@@ -29,6 +29,6 @@ NPC 的循环原地写入持久记忆，真实工具调用轨迹（工具调用 
 
 ## 跨系统关联
 
-- 上游：家园动作服务挂载 `PlanAction` 与玩家动作组件 → 参见：[AI 操作 CLI（run_agent_game.py）](run-agent-game.md)
+- 上游：家园动作服务挂载 `PlanAction` 与玩家动作组件 → 参见：[AI 操作 CLI（dbg_agent_game.py）](run-agent-game.md)
 - 下游：`SpeakAction` / `WhisperAction` / `AnnounceAction` / `TransStageAction` 由对应动作系统消费并广播；`ActionCleanupSystem` 每帧清理动作组件
 - `query_knowledge_base` 复用公共知识检索，替代原 `QueryAction` 组件链路 → 参见：[公共知识检索系统（RAG）](rag-knowledge-base.md)

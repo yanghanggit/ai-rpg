@@ -1,4 +1,4 @@
-"""AI 操作工具 —— 基于快照的无状态游戏推进 CLI。
+"""DBG AI 操作工具 —— 基于快照的无状态游戏推进 CLI。
 
 每条命令 = 读快照 → 执行动作 → 写新快照。命令间无持久内存，状态全在 .worlds/ 中。
 存档位置：.worlds/{user}/{game}/{timestamp}/（含 world_state.json / player_session.json）
@@ -82,7 +82,7 @@ def _setup_logger(log_file_path: Path) -> None:
     logger.info(f"日志配置: 级别={LOG_LEVEL}, 文件路径={log_file_path}")
 
 
-from ai_rpg.game_agent.combat import (
+from ai_rpg.dbg_game_agent.combat import (
     collect_loot_game,
     draw_cards_game,
     equip_gear_game,
@@ -92,14 +92,14 @@ from ai_rpg.game_agent.combat import (
     retreat_game,
     use_consumable_game,
 )
-from ai_rpg.game_agent.compact import compact_context_game
-from ai_rpg.game_agent.core import create_and_initialize_game
-from ai_rpg.game_agent.dungeon import (
+from ai_rpg.dbg_game_agent.compact import compact_context_game
+from ai_rpg.dbg_game_agent.core import create_and_initialize_game
+from ai_rpg.dbg_game_agent.dungeon import (
     enter_dungeon_game,
     exit_dungeon_and_return_home_game,
     next_dungeon_game,
 )
-from ai_rpg.game_agent.home import (
+from ai_rpg.dbg_game_agent.home import (
     add_party_member_game,
     advance_game,
     generate_dungeon_game,
@@ -109,7 +109,7 @@ from ai_rpg.game_agent.home import (
     stages_game,
     switch_stage_game,
 )
-from ai_rpg.game_agent.items import (
+from ai_rpg.dbg_game_agent.items import (
     craft_consumable_game,
     craft_costume_game,
     craft_gear_item_game,
@@ -118,7 +118,7 @@ from ai_rpg.game_agent.items import (
     remove_costume_game,
     wear_costume_game,
 )
-from ai_rpg.game_agent.opening import (
+from ai_rpg.dbg_game_agent.opening import (
     generate_spoils_game,
     init_opening_game,
     pick_spoils_card_game,

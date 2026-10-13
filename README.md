@@ -85,8 +85,8 @@ pm2 start ecosystem.config.js
 
 | 命令 | 用途 | 文档 |
 | --- | --- | --- |
-| `ai-rpg-agent-game` | 离线、快照驱动推进（可回溯、可复现） | [docs/wiki/run-agent-game.md](docs/wiki/run-agent-game.md) |
-| `ai-rpg-agent-api` | 通过 HTTP 走查服务器 API | [docs/wiki/run-agent-api.md](docs/wiki/run-agent-api.md) |
+| `ai-rpg-dbg-agent-game` | 离线、快照驱动推进（可回溯、可复现） | [docs/wiki/run-agent-game.md](docs/wiki/run-agent-game.md) |
+| `ai-rpg-dbg-agent-api` | 通过 HTTP 走查服务器 API | [docs/wiki/run-agent-api.md](docs/wiki/run-agent-api.md) |
 
 `uv run <命令> --help` 可列出全部子命令。
 

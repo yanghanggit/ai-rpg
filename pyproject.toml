@@ -87,8 +87,8 @@ dev = [
 
 [project.scripts]
 ai-rpg-server = "ai_rpg.cli.server:main"
-ai-rpg-agent-game = "ai_rpg.cli.agent_game:main"
-ai-rpg-agent-api = "ai_rpg.cli.agent_api:main"
+ai-rpg-dbg-agent-game = "ai_rpg.cli.dbg_agent_game:main"
+ai-rpg-dbg-agent-api = "ai_rpg.cli.dbg_agent_api:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -1,4 +1,4 @@
-"""run_agent_api 的 SSE 任务等待回归测试。
+"""dbg_agent_api 的 SSE 任务等待回归测试。
 
 重点覆盖历史 bug：TaskSnapshot 即使是**成功**也会序列化出 ``"error": null``，
 因此不能以 ``"error" in data`` 判定失败——只有不带 ``status`` 字段的才是错误封套。
@@ -10,8 +10,8 @@ import httpx
 import pytest
 from procrastinate.jobs import Status as ProcrastinateJobStatus
 
-from ai_rpg.api_agent.config import server_config
-from ai_rpg.api_agent.server_client import (
+from ai_rpg.dbg_api_agent.config import server_config
+from ai_rpg.dbg_api_agent.server_client import (
     TaskFailedError,
     watch_task_until_done,
 )

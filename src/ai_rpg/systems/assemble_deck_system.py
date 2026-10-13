@@ -48,20 +48,18 @@ from ..models import (
 from ..paths import DUNGEONS_DIR
 from ..pgsql import (
     get_card_prototype,
-    get_card_prototype_by_name,
     get_default_deck_card_jsons,
     list_card_prototype_index,
 )
 from ..utils import batch_run_boolean_tasks, prompt_builder
 
-
 ####################################################################################################################################
-def _materialize_prototype_card(name: str) -> Card:
-    """按原型名从 pgsql 取出卡牌原型并物化为独立 Card（新 uuid，source 留空）。"""
-    proto = get_card_prototype_by_name(name, card_type="手牌")
-    card = Card.model_validate(json.loads(proto.card_json))
-    card.uuid = str(uuid4())
-    return card
+# def _materialize_prototype_card(name: str) -> Card:
+#     """按原型名从 pgsql 取出卡牌原型并物化为独立 Card（新 uuid，source 留空）。"""
+#     proto = get_card_prototype_by_name(name, card_type="手牌")
+#     card = Card.model_validate(json.loads(proto.card_json))
+#     card.uuid = str(uuid4())
+#     return card
 
 
 def make_default_deck_cards() -> List[Card]:

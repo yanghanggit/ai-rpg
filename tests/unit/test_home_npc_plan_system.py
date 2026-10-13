@@ -24,8 +24,7 @@ from ai_rpg.models import (
     TransStageAction,
     WhisperAction,
 )
-from ai_rpg.systems.home_npc_plan_system import HomeNpcPlanSystem
-from ai_rpg.systems.home_planning import PlanResult
+from ai_rpg.systems.home_npc_plan_system import HomeNpcPlanSystem, _PlanResult
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -103,7 +102,7 @@ class TestApplySubmittedAction:
         stage._name = "场景.石台广场"
         mock_game.resolve_stage_entity.return_value = stage
 
-        result = PlanResult(
+        result = _PlanResult(
             submitted=True,
             mind="有点热",
             action_type="speak",
@@ -122,7 +121,7 @@ class TestApplySubmittedAction:
     ) -> None:
         entity = _make_actor(context)
 
-        result = PlanResult(
+        result = _PlanResult(
             submitted=True,
             mind="",
             action_type="trans_stage",
@@ -138,7 +137,7 @@ class TestApplySubmittedAction:
     ) -> None:
         entity = _make_actor(context)
 
-        result = PlanResult(submitted=True, mind="", action_type="none")
+        result = _PlanResult(submitted=True, mind="", action_type="none")
         system._apply_submitted_action(entity, result)
 
         assert not entity.has(SpeakAction)
@@ -168,7 +167,7 @@ class TestReact:
         npc1 = _make_actor(context, "角色.NPC_A")
         npc2 = _make_actor(context, "角色.NPC_B")
 
-        def _fake_run(entity: Entity, result: PlanResult) -> bool:
+        def _fake_run(entity: Entity, result: _PlanResult) -> bool:
             # 同步占位：react 构建任务列表时会立即调用 _run_agent_loop，
             # 这里直接标记 submitted，便于验证后续串行落库。
             result.submitted = True

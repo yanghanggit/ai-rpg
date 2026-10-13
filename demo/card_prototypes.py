@@ -162,7 +162,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
                 "字段：on_play_affixes、SINGLE。这是一条「取数」引导，不是成品规则——"
                 "请在骨架之上选一个（或组合）内建数值，写成你自己的一条 on_play 词缀"
                 "（格式 `[词缀名]:机械结算描述`）。可选数值：本卡 damage/hit_count；"
-                "目标的 BLOCK/当前 HP/最大 HP；自身的 HP/BLOCK。"
+                "目标的总格挡/当前 HP/最大 HP；自身的 HP/总格挡。"
                 "可选方向：无视目标格挡直伤、借目标格挡加重本次伤害、"
                 "借目标当前 HP 加重伤害、借自身气血搏命等。"
             ),

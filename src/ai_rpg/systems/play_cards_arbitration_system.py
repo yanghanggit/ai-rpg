@@ -89,16 +89,15 @@ def _build_round_action_info_lines(
 
 @prompt_builder
 def _build_card_data_lines(card: Card) -> str:
-    """输出一张卡参与仲裁的全部数据字段（出牌侧：含即时词缀与来源，排除系统管理字段）。"""
+    """输出一张卡参与仲裁的数值字段（词缀单列于「即时词缀」段，来源与叙事一并带上）。"""
     lines = [
         f"- 卡牌：{card.name}",
         f"- source（来源/注入者）：{card.source or '未知'}",
         f"- 叙事（description）：{card.description}",
         f"- cost：{card.cost}",
-        f"- damage：{card.damage}（单次伤害）",
-        f"- hit_count：{card.hit_count}（攻击次数）",
-        f"- block：{card.block}",
-        render_labeled_str_list("- 即时词缀", card.on_play_affixes, indent="    "),
+        f"- damage（本卡单次伤害）：{card.damage}",
+        f"- hit_count（本卡攻击次数）：{card.hit_count}",
+        f"- block（本卡单牌格挡值）：{card.block}",
     ]
     return "\n".join(lines)
 
@@ -126,10 +125,16 @@ def _build_combat_arbitration_tool_prompt(
 
 {actor_name}
 
-## 出牌
+## 本卡数据（本卡 = 本次实际打出的牌）
 
 {_build_card_data_lines(card)}
 {spread.hit_assignment}
+
+## 即时词缀（共 {len(card.on_play_affixes)} 条，逐条结算，一条都不能漏）
+
+{render_labeled_str_list("- 即时词缀", card.on_play_affixes, indent="    ")}
+
+即时词缀是逐条列出的独立规则；每列出的一条都触发一次，须**逐条全部结算**，并按「计算规则 · 结算」第 2 步把每一条各自写成结算式里的一项；不得合并、不得省略，也不引入词缀未提及的新机制。
 
 ## 目标
 
@@ -141,25 +146,21 @@ def _build_combat_arbitration_tool_prompt(
 
 {CALC_RULES_SECTION}
 
-## 即时词缀
-
-即时词缀是逐条列出的独立规则；若列出，须**逐条全部执行**（列表中每一条都触发一次），可与结算规则泛化结合，但不引入词缀未提及的新机制。
-
 ## 受击词缀
 
-get_entity_stats 返回的「受击卡牌」仅列出带受击词缀（on_hit_affixes）的卡牌，用于结算受击效果；它**不是**完整手牌清单，其中展示的 block 为该卡牌自身的格挡值，角色总格挡以 `BLOCK` 字段为准。
+get_entity_stats 返回的「受击卡牌」仅列出带受击词缀（on_hit_affixes）的卡牌，用于结算受击效果；它**不是**完整手牌清单，其中展示的 block 为该卡牌自身的单牌格挡值，角色的总格挡以 get_entity_stats 返回的「总格挡」为准。
 受击词缀可能有多条，均为独立规则，须**逐条全部结算**。「受击词缀」仅在**该实体是本次出牌的目标**时触发；出牌者自身的受击词缀不触发（除非出牌者也同时是目标）。依词缀描述结算（如 [反伤] 对出牌者造成伤害），受击词缀的数值以该卡牌在 get_entity_stats 中返回的 damage 字段为准，不引入词缀未提及的新机制。
 
 ## source 字段
 
-`source` 为卡牌的来源（生成/注入者名称），空字符串表示来源未知；出牌卡牌与 get_entity_stats 返回的受击卡牌都会携带各自的 `source`。
+`source` 为卡牌的来源（生成/注入者名称），空字符串表示来源未知；出牌卡牌与 get_entity_stats 返回的受击卡牌都会携带各自的 `source`。词缀若提及「非 source 者」，指当前持有者（当其不等于本卡 `source` 时）。
 
-## 工具使用流程
+## 工具使用流程（严格按顺序，逐行推演，不得跳步）
 
-1. 调用 get_entity_stats 读取「出牌者」与所有「目标」的当前属性与受击词缀（可在同一次回复中并发调用多个）。
-2. 依据「计算规则」结算，得出每个受影响角色的最终 HP。
-3. 对每个受影响角色（含出牌者与所有目标）调用 set_entity_hp 写入最终 HP（可在同一次回复中并发调用多个）。
-4. 调用 submit_arbitration 提交最终结果，结束本次仲裁；若某条词缀无法按上述计算规则结算，把它原文放进 unsettled_affixes。
+1. **读**：对【出牌者】与【每一个目标】分别调用 get_entity_stats，拿到各自的 HP / 最大 HP 与总格挡（可在同一次回复中并发调用多个）。
+2. **算**：对每个目标，按「计算规则 · 结算」逐行写出结算式——先写基础段，再把本卡即时词缀**逐条**写成词缀段，最后求和得到该目标的最终 HP。（这是你自己的推理步骤，务必逐行落笔，不得跳步或心算省略。）
+3. **写**：对每个受影响角色（含出牌者与所有目标）调用 set_entity_hp，hp 直接填第 2 步算出的最终 HP（可在同一次回复中并发调用多个）。
+4. **提交**：调用 submit_arbitration 提交最终结果，结束本次仲裁；combat_log 的每个「旧→新」与「伤害 Z」**逐字抄自上一步 set_entity_hp 的返回**（形如「HP 将更新为 7/20（20 → 7，本次扣减 13）」），不得另行心算或改数；若某条词缀无法按上述计算规则结算，把它原文放进 unsettled_affixes。
 
 ## submit_arbitration 字段说明
 
@@ -190,7 +191,7 @@ def _build_combat_arbitration_broadcast(
 GET_ENTITY_STATS_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="get_entity_stats",
-        description="读取指定战斗角色的当前生命值（HP/最大HP）与格挡（BLOCK，手牌 block 之和）及其手牌中带受击词缀的卡牌（含这些卡牌的 source/damage/hit_count/block 等数据）。用于获取发起者与目标当前状态。",
+        description="读取指定战斗角色的当前生命值（HP/最大HP）与总格挡（其手牌 block 之和）及其手牌中带受击词缀的卡牌（含这些卡牌的 source/damage/hit_count/block 等数据）。用于获取发起者与目标当前状态。",
         parameters={
             "type": "object",
             "properties": {
@@ -277,7 +278,7 @@ def _collect_hand_on_hit_cards(entity: Entity) -> List[Card]:
 
 ###########################################################################################################################################
 def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
-    """处理 get_entity_stats 工具调用：返回 HP/格挡 + 参与受击仲裁的手牌卡牌数据。"""
+    """处理 get_entity_stats 工具调用：返回 HP/总格挡 + 参与受击仲裁的手牌卡牌数据。"""
     entity = game.get_actor_entity(entity_name)
     if entity is None:
         return f"错误：找不到战斗角色 {entity_name}"
@@ -288,18 +289,20 @@ def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
     # 收集角色手牌中所有带受击词缀的卡牌（持有期间参与受击仲裁）
     hit_cards = _collect_hand_on_hit_cards(entity)
     if hit_cards:
-        cards_str = "；".join(
-            f"{c.name}(source={c.source or '未知'}, description={c.description}, cost={c.cost}, "
-            f"damage={c.damage}, hit_count={c.hit_count}, block={c.block}, 受击词缀={c.on_hit_affixes})"
+        cards_str = "\n".join(
+            f"    - {c.name}（source={c.source or '未知'}, description={c.description}, cost={c.cost}, "
+            f"damage={c.damage}, hit_count={c.hit_count}, 单牌 block={c.block}, 受击词缀={c.on_hit_affixes}）"
             for c in hit_cards
         )
     else:
-        cards_str = "无"
+        cards_str = "    - 无"
 
     return (
-        f"{entity_name}: HP {stats.hp}/{stats.max_hp} | "
-        f"BLOCK {hand_block} | "
-        f"受击卡牌（仅含带受击词缀的卡牌，非完整手牌）: {cards_str}"
+        f"【{entity_name}】\n"
+        f"- HP：{stats.hp}/{stats.max_hp}\n"
+        f"- 总格挡（角色级＝该角色手牌 block 之和；结算伤害时只减这个数）：{hand_block}\n"
+        f"- 受击卡牌（仅列出带受击词缀的卡牌，不是完整手牌；下面每张卡的 `单牌 block` 只是它自己那张牌的格挡值，**不是**上面的总格挡）：\n"
+        f"{cards_str}"
     )
 
 
@@ -313,7 +316,10 @@ def _handle_set_entity_hp(
     stats = compute_character_stats(entity)
     clamped = max(0, min(int(hp), stats.max_hp))
     ctx.hp_changes[entity_name] = clamped
-    return f"{entity_name} HP 将更新为 {clamped}/{stats.max_hp}"
+    return (
+        f"{entity_name} HP 将更新为 {clamped}/{stats.max_hp}"
+        f"（{stats.hp} → {clamped}，本次扣减 {stats.hp - clamped}）"
+    )
 
 
 def _handle_submit_arbitration(

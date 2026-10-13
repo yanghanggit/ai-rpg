@@ -42,6 +42,7 @@ from ..models import (
 )
 from ..paths import DUNGEONS_DIR
 from ..pgsql import (
+    CardPrototypeIndexEntry,
     get_card_prototype,
     get_default_deck_card_jsons,
     list_card_prototype_index,
@@ -190,7 +191,7 @@ FINISH_DECK_TOOL: Final[ToolDefinition] = ToolDefinition(
 
 
 ####################################################################################################################################
-def _handle_list_card_prototypes(index: List[Dict[str, object]]) -> str:
+def _handle_list_card_prototypes(index: List[CardPrototypeIndexEntry]) -> str:
     """处理 list_card_prototypes 工具调用：返回缓存的手牌原型索引纵览。"""
     payload = [
         {
@@ -399,7 +400,7 @@ class AssembleDeckSystem(ReactiveProcessor):
         )
 
         # 预取一次手牌原型索引，供所有并发 agent_loop 共享（list_card_prototypes 返回缓存）
-        index: List[Dict[str, object]] = []
+        index: List[CardPrototypeIndexEntry] = []
         try:
             index = list_card_prototype_index(card_type="手牌")
         except Exception as e:
@@ -444,7 +445,7 @@ class AssembleDeckSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     async def _assemble_actor_deck(
-        self, actor: Actor, index: List[Dict[str, object]]
+        self, actor: Actor, index: List[CardPrototypeIndexEntry]
     ) -> bool:
         """为单个角色组建并挂载牌库；返回 True 表示使用原型牌库，False 表示回退默认。"""
         try:
@@ -466,7 +467,7 @@ class AssembleDeckSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     async def _build_cards(
-        self, actor: Actor, index: List[Dict[str, object]]
+        self, actor: Actor, index: List[CardPrototypeIndexEntry]
     ) -> Tuple[List[Card], bool]:
         """让 actor 通过工具自选 5 张原型并润色；返回 (牌列表, 是否回退)。"""
         if not index:
@@ -474,7 +475,7 @@ class AssembleDeckSystem(ReactiveProcessor):
             return make_default_deck_cards(), True
 
         picks: List[_DeckCardPick] = []
-        valid_ids: Set[str] = {str(item["prototype_id"]) for item in index}
+        valid_ids: Set[str] = {item["prototype_id"] for item in index}
         prototype_cards: Dict[str, Card] = {}
         for pid in valid_ids:
             try:

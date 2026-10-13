@@ -7,13 +7,20 @@ import asyncio
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Final, List, Optional, final
+from typing import Dict, Final, List, Optional, final
 
 from loguru import logger
 from pydantic import BaseModel
 
 from ai_rpg.embedding_model.sentence_transformer import embedding_model
-from ai_rpg.models import Blueprint, Dungeon
+from ai_rpg.entitas import EntityData
+from ai_rpg.models import (
+    Artifact,
+    ArtifactComponent,
+    Blueprint,
+    Dungeon,
+    ReliquaryComponent,
+)
 from ai_rpg.models.entities import Stage, World
 from ai_rpg.paths import BLUEPRINTS_DIR, DEBUG_CACHE_DIR, DUNGEONS_DIR
 from ai_rpg.pgsql import (
@@ -96,39 +103,28 @@ def _setup_blueprints() -> Blueprint:
 ########################################################################################################
 ########################################################################################################
 ########################################################################################################
-def _iter_artifacts(components: object) -> List[Dict[str, Any]]:
+def _iter_artifacts(components: EntityData) -> List[Artifact]:
     """从实体的 components(EntityData) 中递归提取所有 Artifact 定义。
 
-    Artifact 可能以两种形式内嵌于组件中：
+    序列化后的组件里，Artifact 只可能出现于两条路径：
     - ``ArtifactComponent.artifact``：神器实体自包含的完整定义
     - ``ReliquaryComponent.artifacts``：持有者声明的神器列表
+    神器自身还可挂载 components（其中可能再嵌套上述组件），故沿这两条路径继续下钻。
     """
-    found: List[Dict[str, Any]] = []
+    found: List[Artifact] = []
 
-    def _walk(node: object) -> None:
-        if isinstance(node, BaseModel):
-            node = node.model_dump()
-        if isinstance(node, dict):
-            artifact_comp = node.get("ArtifactComponent")
-            if isinstance(artifact_comp, dict) and isinstance(
-                artifact_comp.get("artifact"), dict
-            ):
-                found.append(artifact_comp["artifact"])
-            reliquary_comp = node.get("ReliquaryComponent")
-            if isinstance(reliquary_comp, dict):
-                for artifact in reliquary_comp.get("artifacts") or []:
-                    artifact = (
-                        artifact.model_dump()
-                        if isinstance(artifact, BaseModel)
-                        else artifact
-                    )
-                    if isinstance(artifact, dict):
-                        found.append(artifact)
-            for value in node.values():
-                _walk(value)
-        elif isinstance(node, list):
-            for item in node:
-                _walk(item)
+    def _walk(data: EntityData) -> None:
+        raw_artifact = data.get(ArtifactComponent.__name__)
+        if raw_artifact is not None:
+            artifact = ArtifactComponent.model_validate(raw_artifact).artifact
+            found.append(artifact)
+            _walk(artifact.components)
+
+        raw_reliquary = data.get(ReliquaryComponent.__name__)
+        if raw_reliquary is not None:
+            for artifact in ReliquaryComponent.model_validate(raw_reliquary).artifacts:
+                found.append(artifact)
+                _walk(artifact.components)
 
     _walk(components)
     return found
@@ -148,13 +144,13 @@ def _collect_entity_records(
     def _add(kind: str, name: str, system_message: str) -> None:
         records.append((kind, name, system_message or ""))
 
-    def _add_artifacts(components: object) -> None:
+    def _add_artifacts(components: EntityData) -> None:
         for artifact in _iter_artifacts(components):
-            name = str(artifact.get("name", ""))
-            if name in seen_artifacts:  # 同一神器在多个 ReliquaryComponent 中重复声明
+            # 同一神器可能在多个 ReliquaryComponent 中重复声明
+            if artifact.name in seen_artifacts:
                 continue
-            seen_artifacts.add(name)
-            _add("Artifact", name, artifact.get("system_message", "") or "")
+            seen_artifacts.add(artifact.name)
+            _add("Artifact", artifact.name, artifact.system_message)
 
     for stage in stages:
         _add("Stage", stage.name, stage.system_message)

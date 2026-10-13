@@ -85,9 +85,9 @@ AFFIX_DESIGN_SPEC: Final[
 
 ### 一、结算原语（效果的硬边界）
 
-仲裁只能读 `HP` / 最大 `HP`、`BLOCK`（手牌 block 之和），以及**获取状态的工具**返回的带 `on_hit_affixes` 手牌（含其 `source` / `damage` / `hit_count` / `block` / 词缀）；只能写 `HP`。由此：
+仲裁只能读 `HP` / 最大 `HP`、总格挡（角色级＝其手牌 block 之和），以及**获取状态的工具**返回的带 `on_hit_affixes` 手牌（含其 `source` / `damage` / `hit_count` / `block` / 词缀）；只能写 `HP`。由此：
 
-- **伤害**＝写 `HP`，仅由本卡 `damage` / `hit_count` 与目标 `block` 算出。
+- **伤害**＝写 `HP`，仅由本卡 `damage` / `hit_count` 与目标的总格挡算出。
 - **状态就是牌**：无独立状态存储，角色「状态」＝其手牌中承载词缀的牌。要施加持续状态，就设计 `transferable=True` 的牌投进对方手牌，由牌自带的 `on_hit_affixes` / `on_turn_end_affixes` 持续结算（禁止「叠加 X 标记」这类无牌承载的状态）。
 - **时间类修饰**（`本回合内` / `持续 N 回合` / `直到…`）须由牌承载才能跨结算保留。
 - **结构性效果**（抽牌 / 弃牌 / 移牌 / 能量 / 额外行动，或改 `playable` / `exhaust` / `retain` / `ethereal` / `transferable`）不属于词缀，由骨架字段与数据流转负责。
@@ -104,13 +104,13 @@ AFFIX_DESIGN_SPEC: Final[
 
 - 可引用的**内建数值**（仲裁阶段会全量给出，你只需选用于你的规则）：
   - 本卡：`damage` / `block` / `hit_count`；
-  - 目标：`HP` / 最大 `HP` / `BLOCK`；
-  - 自身：`HP` / `BLOCK`。
+  - 目标：`HP` / 最大 `HP` / 总格挡；
+  - 自身：`HP` / 总格挡。
 - **格式（硬要求）**：每条词缀必须是 `[词缀名]:机械结算描述`；**方括号必须写**（写成 `名:描述` 会被判不合法，整槽置空）。
-- 数值来源要写清：伤害写明 `damage`（如 `本卡 damage×2`）或目标内建值（如 `目标的 BLOCK` / `目标当前 HP`）；格挡写 `block`；段数写 `hit_count`。
+- 数值来源要写清：伤害写明 `damage`（如 `本卡 damage×2`）或目标内建值（如 `目标的总格挡` / `目标当前 HP`）；格挡写 `block`；段数写 `hit_count`。
 - 作用对象只用规范称谓：`自身` / `出牌者` / `目标` / `本卡持有者` / `非 source 者`（＝持有者，且持有者 ≠ 本卡 `source`）。`on_turn_end_affixes` 无「出牌者 / 目标」，只能用 `自身` / `本卡持有者` / `非 source 者` / 场上存活角色。
 - 引用**本卡字段**的 `×N` 有上限：`on_play` `damage×1..3` / `block×1..3` / `hit_count×1..2`；`on_hit` `damage×1..3` / `block×1..3`；`on_turn_end` `damage×1..2` / `block×1..3`。
-- **数值优先引用内建值**（本卡 `damage` / `block` / `hit_count`、目标 / 自身的 `HP` / `BLOCK`）；写死具体数字不随角色属性成长，且本卡 `damage=0` 时不得凭空造成伤害——请优先用 `block`、内建值，或用牌承载持续效果。
+- **数值优先引用内建值**（本卡 `damage` / `block` / `hit_count`、目标 / 自身的 `HP` / 总格挡）；写死具体数字不随角色属性成长，且本卡 `damage=0` 时不得凭空造成伤害——请优先用 `block`、内建值，或用牌承载持续效果。
 
 ### 四、设计方向（示例）
 

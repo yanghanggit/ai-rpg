@@ -6,12 +6,25 @@
 """
 
 import json
-from typing import Dict, List, Optional
+from typing import List, Optional, TypedDict
 
 from loguru import logger
 
 from .card_prototype import CardPrototypeDB
 from .client import SessionLocal
+
+
+############################################################################################################
+class CardPrototypeIndexEntry(TypedDict):
+    """一级披露索引条目（`list_card_prototype_index` 的返回值元素）。"""
+
+    prototype_id: str
+    card_type: str
+    archetype: str
+    archetype_subtype: str
+    name: str
+    summary: str
+    keywords: List[str]
 
 
 ############################################################################################################
@@ -108,7 +121,7 @@ def delete_card_prototypes(prototype_ids: List[str]) -> int:
 def list_card_prototype_index(
     card_type: Optional[str] = None,
     archetype: Optional[str] = None,
-) -> List[Dict[str, object]]:
+) -> List[CardPrototypeIndexEntry]:
     """列出一级披露索引（不含 guide / card_json），可按 card_type / archetype 过滤。"""
 
     db = SessionLocal()

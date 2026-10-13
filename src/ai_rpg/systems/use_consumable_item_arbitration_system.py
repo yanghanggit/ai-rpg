@@ -117,7 +117,7 @@ def _build_consumable_arbitration_prompt(
 GET_ENTITY_STATS_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="get_entity_stats",
-        description="读取指定战斗角色的当前生命值（HP/最大HP）与格挡（BLOCK，手牌 block 之和）。用于获取发起者与目标当前状态。",
+        description="读取指定战斗角色的当前生命值（HP/最大HP）与总格挡（其手牌 block 之和）。用于获取发起者与目标当前状态。",
         parameters={
             "type": "object",
             "properties": {
@@ -189,14 +189,14 @@ class _ArbitrationContext(BaseModel):
 
 ###########################################################################################################################################
 def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
-    """处理 get_entity_stats 工具调用：返回角色的 HP 与格挡。"""
+    """处理 get_entity_stats 工具调用：返回角色的 HP 与总格挡。"""
     entity = game.get_actor_entity(entity_name)
     if entity is None:
         return f"错误：找不到战斗角色 {entity_name}"
 
     stats = compute_character_stats(entity)
     hand_block = compute_character_hand_block(entity)
-    return f"{entity_name}: HP {stats.hp}/{stats.max_hp} | " f"BLOCK {hand_block}"
+    return f"{entity_name}: HP {stats.hp}/{stats.max_hp} | " f"总格挡 {hand_block}"
 
 
 def _handle_set_entity_hp(

@@ -30,13 +30,14 @@ def compute_hand_block(hand_component: Optional[HandComponent]) -> int:
     return sum(card.block for card in hand_component.cards)
 
 
-def _item_stack_key(item: AnyItem) -> Optional[Tuple[object, ...]]:
+def _item_stack_key(item: AnyItem) -> Optional[Tuple[ItemType, str, Tuple[str, ...]]]:
     """返回道具的堆叠身份键；不可堆叠的道具返回 None。
 
     堆叠规则的唯一定义处：材料按名称、消耗品按名称与效果提示词、装备/时装不堆叠。
     """
     if isinstance(item, MaterialItem):
-        return (ItemType.MATERIAL_ITEM, item.name)
+        # 材料没有额外堆叠维度，第三位用空元组占位，与消耗品保持同构的三元组键。
+        return (ItemType.MATERIAL_ITEM, item.name, ())
     if isinstance(item, ConsumableItem):
         # 多值效果提示：全部元素参与堆叠身份（与仲裁逐条全部结算保持一致）。
         return (
@@ -54,13 +55,21 @@ def append_item_with_stacking(items: List[AnyItem], new_item: AnyItem) -> List[A
     """
     key = _item_stack_key(new_item)
     if key is not None:
+
+        # 尝试在已有堆叠中寻找可合并的条目
         for index, item in enumerate(items):
+
+            # 检查当前条目是否与新道具的堆叠身份键匹配
             if _item_stack_key(item) == key:
+
+                # 找到可合并的堆叠条目，创建其深拷贝并增加数量
                 merged = item.model_copy(deep=True)
                 merged.count += new_item.count
                 updated = list(items)
                 updated[index] = merged
                 return updated
+
+    # 没有找到可合并的堆叠条目，直接追加新道具
     return list(items) + [new_item]
 
 
@@ -71,7 +80,9 @@ def merge_item_stacks(items: List[AnyItem]) -> List[AnyItem]:
     """
     merged: List[AnyItem] = []
     for item in items:
+        # 将当前道具尝试合并到已有堆叠中，如果无法合并则直接追加
         merged = append_item_with_stacking(merged, item)
+
     return merged
 
 
@@ -82,19 +93,26 @@ def deduct_materials(items: List[AnyItem], material_names: List[str]) -> List[An
     """
     remaining: Dict[str, int] = {}
     for name in material_names:
+        # 统计每种材料的需求数量
         remaining[name] = remaining.get(name, 0) + 1
 
     updated: List[AnyItem] = []
     for item in items:
+
+        # 如果当前条目是材料且仍有剩余需求，则按数量扣减
         if item.type == ItemType.MATERIAL_ITEM and remaining.get(item.name, 0) > 0:
             take = min(item.count, remaining[item.name])
             remaining[item.name] -= take
             left = item.count - take
+
+            # 如果扣减后仍有剩余数量，则创建其深拷贝并更新数量，追加到结果列表中
             if left > 0:
                 copied = item.model_copy(deep=True)
                 copied.count = left
                 updated.append(copied)
         else:
+
+            # 当前条目不是材料或已满足需求，直接追加到结果列表中
             updated.append(item)
 
     assert all(

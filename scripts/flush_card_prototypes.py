@@ -57,7 +57,7 @@ def _print_db_index() -> None:
     print(f"库中卡牌原型：{len(index)} 个")
     for row in index:
         print(
-            f"  {str(row['prototype_id']):<18} "
+            f"  {row['prototype_id']:<18} "
             f"[{row['card_type']}/{row['archetype']}] {row['name']}"
         )
 
@@ -191,7 +191,7 @@ def main(
     pruned = 0
     planned_prune = 0
     if prune:
-        current = {str(row["prototype_id"]) for row in list_card_prototype_index()}
+        current = {row["prototype_id"] for row in list_card_prototype_index()}
         to_delete = sorted(current - target_ids)
         planned_prune = len(to_delete)
         if to_delete:

@@ -106,7 +106,7 @@ submit_arbitration 的 combat_log / narrative 必须与本次实际调用过的 
 GET_ENTITY_STATS_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="get_entity_stats",
-        description="读取指定战斗角色的当前生命值（HP/最大HP）与格挡（BLOCK，手牌 block 之和）。用于获取可能受影响角色当前状态。",
+        description="读取指定战斗角色的当前生命值（HP/最大HP）与总格挡（其手牌 block 之和）。用于获取可能受影响角色当前状态。",
         parameters={
             "type": "object",
             "properties": {
@@ -177,14 +177,14 @@ class _ArbitrationContext(BaseModel):
 
 
 def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
-    """读取角色当前 HP 与格挡。"""
+    """读取角色当前 HP 与总格挡。"""
     entity = game.get_actor_entity(entity_name)
     if entity is None:
         return f"错误：找不到战斗角色 {entity_name}"
 
     stats = compute_character_stats(entity)
     hand_block = compute_character_hand_block(entity)
-    return f"{entity_name}: HP {stats.hp}/{stats.max_hp} | BLOCK {hand_block}"
+    return f"{entity_name}: HP {stats.hp}/{stats.max_hp} | 总格挡 {hand_block}"
 
 
 def _handle_set_entity_hp(

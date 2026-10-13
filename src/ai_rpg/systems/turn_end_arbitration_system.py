@@ -55,9 +55,9 @@ def _build_turn_end_card_lines(card: Card) -> str:
         f"- 卡牌：{card.name}",
         f"- source（来源/注入者）：{source}",
         f"- 叙事（description）：{card.description}",
-        f"- damage：{card.damage}（单次伤害）",
-        f"- hit_count：{card.hit_count}（攻击次数）",
-        f"- block：{card.block}",
+        f"- damage（单卡单次伤害）：{card.damage}",
+        f"- hit_count（单卡攻击次数）：{card.hit_count}",
+        f"- block（本卡单牌格挡值）：{card.block}",
         render_labeled_str_list(
             "- 回合结束词缀", card.on_turn_end_affixes, indent="    "
         ),
@@ -110,12 +110,12 @@ def _build_turn_end_arbitration_tool_prompt(
 
 {TURN_END_AFFIX_RULES}
 
-## 工具使用流程
+## 工具使用流程（严格按顺序，逐行推演，不得跳步）
 
-1. 调用 get_entity_stats 读取「持有者」与所有可能受影响角色的当前属性（可在同一次回复中并发调用多个）。
-2. 依据「计算规则」与各卡牌「回合结束词缀」逐条全部结算，得出每个受影响角色的最终 HP。
-3. 对每个受影响角色（含持有者与所有目标）调用 set_entity_hp 写入最终 HP（可在同一次回复中并发调用多个）。
-4. 调用 submit_arbitration 提交最终结果，结束本次仲裁；若某条词缀无法按上述计算规则结算，把它原文放进 unsettled_affixes。
+1. **读**：对【持有者】与【每一个可能受影响的角色】分别调用 get_entity_stats，拿到各自的 HP / 最大 HP 与总格挡（可在同一次回复中并发调用多个）。
+2. **算**：逐张卡、逐条词缀结算——每一条词缀各自写成结算式里的一项，按「计算规则 · 结算」逐行推出每个受影响角色的最终 HP。（这是你自己的推理步骤，务必逐行落笔，不得跳步或心算省略。）
+3. **写**：对每个受影响角色（含持有者与所有目标）调用 set_entity_hp，hp 直接填第 2 步算出的最终 HP（可在同一次回复中并发调用多个）。
+4. **提交**：调用 submit_arbitration 提交最终结果，结束本次仲裁；combat_log 的每个「旧→新」与「伤害 Z」**逐字抄自上一步 set_entity_hp 的返回**（形如「HP 将更新为 13/15（15 → 13，本次扣减 2）」），不得另行心算或改数；若某条词缀无法按上述计算规则结算，把它原文放进 unsettled_affixes。
 
 ## submit_arbitration 字段说明
 
@@ -144,7 +144,7 @@ def _build_turn_end_arbitration_broadcast(
 GET_ENTITY_STATS_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="get_entity_stats",
-        description="读取指定战斗角色的当前生命值（HP/最大HP）与格挡（BLOCK，手牌 block 之和）。用于获取持有者与目标当前状态。",
+        description="读取指定战斗角色的当前生命值（HP/最大HP）与总格挡（其手牌 block 之和）。用于获取持有者与目标当前状态。",
         parameters={
             "type": "object",
             "properties": {
@@ -221,13 +221,17 @@ class _TurnEndArbitrationContext(BaseModel):
 
 
 def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
-    """处理 get_entity_stats 工具调用：返回指定角色的 HP 与格挡。"""
+    """处理 get_entity_stats 工具调用：返回指定角色的 HP 与总格挡。"""
     entity = game.get_actor_entity(entity_name)
     if entity is None:
         return f"错误：找不到战斗角色 {entity_name}"
     stats = compute_character_stats(entity)
     hand_block = compute_character_hand_block(entity)
-    return f"{entity_name}: HP {stats.hp}/{stats.max_hp} | " f"BLOCK {hand_block}"
+    return (
+        f"【{entity_name}】\n"
+        f"- HP：{stats.hp}/{stats.max_hp}\n"
+        f"- 总格挡（角色级＝该角色手牌 block 之和；结算伤害时只减这个数）：{hand_block}"
+    )
 
 
 def _handle_set_entity_hp(
@@ -240,7 +244,10 @@ def _handle_set_entity_hp(
     stats = compute_character_stats(entity)
     clamped = max(0, min(int(hp), stats.max_hp))
     ctx.hp_changes[entity_name] = clamped
-    return f"{entity_name} HP 将更新为 {clamped}/{stats.max_hp}"
+    return (
+        f"{entity_name} HP 将更新为 {clamped}/{stats.max_hp}"
+        f"（{stats.hp} → {clamped}，本次扣减 {stats.hp - clamped}）"
+    )
 
 
 def _handle_submit_arbitration(

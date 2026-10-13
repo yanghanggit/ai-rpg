@@ -46,7 +46,11 @@ from ..models import (
     render_labeled_str_list,
     validate_affix_slot,
 )
-from ..pgsql import get_card_prototype, list_card_prototype_index
+from ..pgsql import (
+    CardPrototypeIndexEntry,
+    get_card_prototype,
+    list_card_prototype_index,
+)
 from ..utils import batch_run_boolean_tasks, prompt_builder
 
 #######################################################################################################################################
@@ -475,7 +479,7 @@ class GenerateSpoilsActionSystem(ReactiveProcessor):
     def _materialize_candidates(
         self,
         entity: Entity,
-        index: List[Dict[str, object]],
+        index: List[CardPrototypeIndexEntry],
     ) -> List[_Candidate]:
         """从原型索引随机抽取并物化为独立候选（换新 uuid、回填 source、附设计指导）。"""
 
@@ -485,7 +489,7 @@ class GenerateSpoilsActionSystem(ReactiveProcessor):
         for entry in sample:
             prototype_id = entry["prototype_id"]
             try:
-                proto = get_card_prototype(str(prototype_id))
+                proto = get_card_prototype(prototype_id)
                 card = Card.model_validate(json.loads(proto.card_json))
             except Exception as e:
                 logger.error(

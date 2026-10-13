@@ -3,7 +3,7 @@
 整合演示世界的全局设定、副本、蓝图与各世界实体工厂函数。
 """
 
-from typing import Dict, Final, List
+from typing import Dict, Final, List, Optional
 from uuid import uuid4
 
 from ai_rpg.entitas import dump_components
@@ -207,6 +207,63 @@ def _make_defense_card() -> Card:
     return _copy_skeleton(DEFENSE_SKELETON)
 
 
+def _make_alpha_wolf_deck() -> List[Card]:
+    """头狼牌库：模拟 AssembleDeckSystem 产物——原型骨架 + 手写 name/description/词缀，
+    并已设 `source`（战斗初始化因此幂等跳过，不会覆盖叙事，形状与正规流程一致）。"""
+
+    def build(
+        skeleton: Card,
+        name: str,
+        description: str,
+        on_play: Optional[List[str]] = None,
+        on_hit: Optional[List[str]] = None,
+        on_turn_end: Optional[List[str]] = None,
+    ) -> Card:
+        card = _copy_skeleton(skeleton)
+        card.name = name
+        card.description = description
+        card.on_play_affixes = on_play or []
+        card.on_hit_affixes = on_hit or []
+        card.on_turn_end_affixes = on_turn_end or []
+        card.source = "怪物.头狼"
+        return card
+
+    return [
+        build(
+            ATTACK_SKELETON,
+            "暗处绕袭",
+            "他不从正面来。肩背压得极低，先绕到你视线的另一侧，等你把注意力交给别处，才把头一份重量交给牙齿。",
+            on_play=[
+                "[绕袭]:打出时，若目标的总格挡为 0，则本次伤害额外加上本卡 damage 的伤害"
+            ],
+        ),
+        build(
+            ATTACK_SKELETON,
+            "骨堆叼撕",
+            "骨头堆里翻出来的那些残骸，他不挑。咬住就不松口，甩头，撕开——那是这片林子里最旧的吃法。",
+        ),
+        build(
+            ATTACK_SKELETON,
+            "残眼扑咬",
+            "那只眼睛早就没了，剩下那只却比谁都能看清你重心在哪。他扑的从来不是你举起的那一侧。",
+        ),
+        build(
+            DEFENSE_SKELETON,
+            "缩身护喉",
+            "挨过太多下了。他把身子缩成一团，把咽喉、腹下这些软处收进自己的影子里，只留一层皮毛和肌肉朝外。",
+            on_hit=["[护喉]:本卡持有者被命中时，对出牌者结算本卡 block 的伤害"],
+        ),
+        build(
+            DEFENSE_SKELETON,
+            "旧疤结痂",
+            "旧伤在他身上结成了另一层皮。你以为割开了他，其实只是又给他添了一道比原先更硬的地方。",
+            on_turn_end=[
+                "[结痂]:回合结束时，对场上的一名存活敌方角色结算本卡 block 的伤害"
+            ],
+        ),
+    ]
+
+
 def _make_gear_offense_card() -> Card:
     """旧铁剑卡牌：模拟工坊合成的具体产物——骨架沿自 GEAR_OFFENSE_SKELETON，
     name/description/词缀/数值为本装备专属（词缀名刻意异于原型模板）。"""
@@ -246,15 +303,7 @@ def create_alpha_wolf() -> Actor:
     wolf.components = dump_components(
         DeckComponent(
             name=wolf.name,
-            cards=[
-                # 3 张基础攻击
-                _make_attack_card(),
-                _make_attack_card(),
-                _make_attack_card(),
-                # 2 张基础防御
-                _make_defense_card(),
-                _make_defense_card(),
-            ],
+            cards=_make_alpha_wolf_deck(),
         )
     )
 

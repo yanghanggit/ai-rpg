@@ -363,7 +363,7 @@ def _setup_card_prototypes() -> None:
             name=proto.meta.name,
             summary=proto.meta.summary,
             guide=proto.meta.guide,
-            card_json=proto.card.model_dump_json(),
+            card_json=proto.skeleton.model_dump_json(),
             keywords=list(proto.meta.keywords),
         )
         logger.info(

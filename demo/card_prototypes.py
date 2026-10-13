@@ -1,37 +1,45 @@
-"""卡牌原型注册表
+"""卡牌原型：类型定义、注册表与默认牌单。
 
-本文件创建「卡牌原型」：与游戏内容完全解耦的**骨架 + 设计指导**，供 Agent 工具检索后
-作为上下文，由角色 agent 在此之上设计自己的卡牌。
+`CardPrototypeMeta` / `CardPrototype` 定义「卡牌原型 = 骨架 `Card` + 教学元数据」的
+schema；`CARD_PROTOTYPES` 是全部原型的注册表，供 setup_demo 灌库、flush_card_prototypes
+快刷、运行时按 `card_type` / `archetype` 检索。
 
-原型复用 `Card` 模型，但承担三重职责：
-  - `Card` 的机械字段（cost/damage/hit_count/block/target_type/self_target/flags）
-    是只读骨架，agent 只能引用；
-  - `Card` 的三类词缀是「槽位声明 + 校验失败时的回退参考」，已写成字段引用式
-    （`本卡 damage×N` / `block` / `非 source 者` / 状态即牌）；
-  - `Card` 的 `name` / `description` 不作为教学内容（`description` 留空，生成时
-    由角色重写），教学文本集中在 `meta.summary` / `meta.guide`。
-
-每个原型在底部注册表中附带元数据，支持**逐级披露**：
-  - 一级（列表 / 检索）：返回 `meta.name` + `meta.summary` + `meta.keywords`；
-  - 二级（展开）：返回 `Card` 的完整字段与 `meta.guide` 完整设计指导。
-
-分类采用「三端化思维」，每项元数据标注两个维度：
-  - `card_type`：应用场景（`手牌` / `装备`）；
-  - `archetype` + `archetype_subtype`：三端大类与小类（攻击端 / 防御端；运转端暂无字段，
-    不进入原型）。
-
-小类词汇见「三端化思维」文档：
-  - 攻击端：前端伤害 / 成长性伤害 / 铺垫性攻击支持
-  - 防御端：前端防御 / 成长性防御 / 特殊防御机制
-
-后续新增原型时，在下方追加全局实例并登记到 `CARD_PROTOTYPES` 即可。
-默认牌库（兜底牌库）的组成由底部的 `DEFAULT_DECK_BUILD` 声明，运行时不再硬编码卡名与份数。
+骨架 `Card` 的定义与分类说明见 `demo/card_skeletons.py`。
+逐级披露：一级 `meta.name` / `meta.summary` / `meta.keywords`；二级 `skeleton` 全字段 + `meta.guide`。
 """
 
 from dataclasses import dataclass
 from typing import Final, List, Tuple
 
-from ai_rpg.models import Card, TargetType
+from ai_rpg.models import Card
+from demo.card_skeletons import (
+    AOE_BUFF_SKELETON,
+    AOE_DEBUFF_SKELETON,
+    AOE_SKELETON,
+    ATTACK_SKELETON,
+    BULWARK_SKELETON,
+    BURST_SKELETON,
+    DEADLINE_SKELETON,
+    DEFENSE_SKELETON,
+    DOT_SKELETON,
+    FINISHER_SKELETON,
+    FLEETING_SKELETON,
+    FOCUS_SKELETON,
+    GEAR_CONTAGION_SKELETON,
+    GEAR_DEFENSE_SKELETON,
+    GEAR_OFFENSE_SKELETON,
+    MARK_SKELETON,
+    PASSIVE_SKELETON,
+    PIERCE_SKELETON,
+    PLATE_SKELETON,
+    SACRIFICE_SKELETON,
+    SELF_LOOP_SKELETON,
+    SHIELD_TRANSFER_SKELETON,
+    SPREAD_SKELETON,
+    SUPPORT_SKELETON,
+    THORNS_SKELETON,
+    THROW_SKELETON,
+)
 
 
 @dataclass(frozen=True)
@@ -50,583 +58,17 @@ class CardPrototypeMeta:
 
 @dataclass(frozen=True)
 class CardPrototype:
-    """一个已注册的卡牌原型 = 原型 Card + 检索元数据。"""
+    """一个已注册的卡牌原型 = 骨架 Card + 检索元数据。"""
 
-    card: Card
+    skeleton: Card
     meta: CardPrototypeMeta
 
 
-# ── 基础卡牌原型 ──────────────────────────────────────────────
-
-ATTACK_PROTOTYPE: Final[Card] = Card(
-    name="基础攻击",
-    description="",
-    on_play_affixes=[],
-    on_hit_affixes=[],
-    on_turn_end_affixes=[],
-    playable=True,
-    exhaust=False,
-    retain=False,
-    ethereal=False,
-    transferable=False,
-    cost=1,
-    damage=2,
-    hit_count=1,
-    block=0,
-    target_type=TargetType.SINGLE,
-    self_target=False,
-)
-
-
-DEFENSE_PROTOTYPE: Final[Card] = Card(
-    name="基础防御",
-    description="",
-    on_play_affixes=[],
-    on_hit_affixes=[],
-    on_turn_end_affixes=[],
-    playable=True,
-    exhaust=False,
-    retain=False,
-    ethereal=False,
-    transferable=False,
-    cost=1,
-    damage=0,
-    hit_count=1,
-    block=1,
-    target_type=TargetType.SINGLE,
-    self_target=True,
-)
-
-
-# ── 攻击端原型 ──────────────────────────────────────────────
-
-BURST_PROTOTYPE: Final[Card] = Card(
-    name="一次性爆发",
-    description="",
-    on_play_affixes=[],
-    on_hit_affixes=[],
-    on_turn_end_affixes=[],
-    playable=True,
-    exhaust=True,
-    retain=False,
-    ethereal=False,
-    transferable=False,
-    cost=3,
-    damage=6,
-    hit_count=1,
-    block=0,
-    target_type=TargetType.SINGLE,
-    self_target=False,
-)
-
-
-SACRIFICE_PROTOTYPE: Final[Card] = Card(
-    name="代价爆发",
-    description="",
-    on_play_affixes=[
-        "[词缀名]:打出时取一个内建数值对自身结算代价"
-        "（自损方向；候选取数——本卡 damage/block/hit_count、自身 HP/BLOCK）"
-    ],
-    on_hit_affixes=[],
-    on_turn_end_affixes=[],
-    playable=True,
-    exhaust=True,
-    retain=False,
-    ethereal=False,
-    transferable=False,
-    cost=2,
-    damage=5,
-    hit_count=1,
-    block=0,
-    target_type=TargetType.SINGLE,
-    self_target=False,
-)
-
-
-FOCUS_PROTOTYPE: Final[Card] = Card(
-    name="集火连击",
-    description="",
-    on_play_affixes=[],
-    on_hit_affixes=[],
-    on_turn_end_affixes=[],
-    playable=True,
-    exhaust=False,
-    retain=False,
-    ethereal=False,
-    transferable=False,
-    cost=2,
-    damage=2,
-    hit_count=3,
-    block=0,
-    target_type=TargetType.SINGLE,
-    self_target=False,
-)
-
-
-SPREAD_PROTOTYPE: Final[Card] = Card(
-    name="散射清场",
-    description="",
-    on_play_affixes=[],
-    on_hit_affixes=[],
-    on_turn_end_affixes=[],
-    playable=True,
-    exhaust=False,
-    retain=False,
-    ethereal=False,
-    transferable=False,
-    cost=2,
-    damage=1,
-    hit_count=4,
-    block=0,
-    target_type=TargetType.SPREAD,
-    self_target=False,
-)
-
-
-MARK_PROTOTYPE: Final[Card] = Card(
-    name="转嫁破绽",
-    description="",
-    on_play_affixes=[],
-    on_hit_affixes=[
-        "[词缀名]:本卡持有者被命中时取一个内建数值对自身结算"
-        "（易伤方向；候选取数——本卡 damage、自身 BLOCK/HP、出牌者 damage/hit_count）"
-    ],
-    on_turn_end_affixes=[],
-    playable=True,
-    exhaust=False,
-    retain=False,
-    ethereal=False,
-    transferable=True,
-    cost=1,
-    damage=1,
-    hit_count=1,
-    block=0,
-    target_type=TargetType.SINGLE,
-    self_target=False,
-)
-
-
-PIERCE_PROTOTYPE: Final[Card] = Card(
-    name="借势攻击",
-    description="",
-    # 引导而非成品：以 `[词缀名]` 显形（模型化正确格式），但占位名会被校验拒（照抄必败）。
-    on_play_affixes=[
-        "[词缀名]:打出时取一个内建数值为变量对目标结算伤害（候选数值——本卡 damage/hit_count、"
-        "目标的 BLOCK/当前 HP/最大 HP、自身的 HP/BLOCK）。请把这条引导写成属于你的一条具体词缀。"
-    ],
-    on_hit_affixes=[],
-    on_turn_end_affixes=[],
-    playable=True,
-    exhaust=False,
-    retain=False,
-    ethereal=False,
-    transferable=False,
-    cost=1,
-    damage=1,
-    hit_count=1,
-    block=0,
-    target_type=TargetType.SINGLE,
-    self_target=False,
-)
-
-
-SELF_LOOP_PROTOTYPE: Final[Card] = Card(
-    name="自我调息",
-    description="",
-    on_play_affixes=[],
-    on_hit_affixes=[],
-    on_turn_end_affixes=[
-        "[词缀名]:回合结束时取一个内建数值为自身结算"
-        "（续战恢复方向；候选取数——本卡 block、自身 HP/最大 HP）"
-    ],
-    playable=True,
-    exhaust=False,
-    retain=True,
-    ethereal=False,
-    transferable=False,
-    cost=1,
-    damage=0,
-    hit_count=1,
-    block=1,
-    target_type=TargetType.SINGLE,
-    self_target=True,
-)
-
-
-FLEETING_PROTOTYPE: Final[Card] = Card(
-    name="限时机会",
-    description="",
-    on_play_affixes=[
-        "[词缀名]:打出时取一个内建数值对目标额外结算"
-        "（爆发方向；候选取数——本卡 damage/hit_count/block、目标 BLOCK/HP、自身 HP/BLOCK）"
-    ],
-    on_hit_affixes=[],
-    on_turn_end_affixes=[],
-    playable=True,
-    exhaust=False,
-    retain=False,
-    ethereal=True,
-    transferable=False,
-    cost=1,
-    damage=2,
-    hit_count=1,
-    block=0,
-    target_type=TargetType.SINGLE,
-    self_target=False,
-)
-
-
-DEADLINE_PROTOTYPE: Final[Card] = Card(
-    name="限时终结",
-    description="",
-    on_play_affixes=[],
-    on_hit_affixes=[],
-    on_turn_end_affixes=[],
-    playable=True,
-    exhaust=True,
-    retain=False,
-    ethereal=True,
-    transferable=False,
-    cost=2,
-    damage=4,
-    hit_count=1,
-    block=0,
-    target_type=TargetType.SINGLE,
-    self_target=False,
-)
-
-
-FINISHER_PROTOTYPE: Final[Card] = Card(
-    name="蓄力终结",
-    description="",
-    on_play_affixes=[],
-    on_hit_affixes=[],
-    on_turn_end_affixes=[],
-    playable=True,
-    exhaust=True,
-    retain=True,
-    ethereal=False,
-    transferable=False,
-    cost=3,
-    damage=6,
-    hit_count=1,
-    block=0,
-    target_type=TargetType.SINGLE,
-    self_target=False,
-)
-
-
-DOT_PROTOTYPE: Final[Card] = Card(
-    name="持续减益传染",
-    description="",
-    on_play_affixes=[],
-    on_hit_affixes=[],
-    on_turn_end_affixes=[
-        "[词缀名]:回合结束时取一个内建数值对非 source 者结算"
-        "（持续减益方向；候选取数——本卡 damage、目标 HP/BLOCK、自身 HP/BLOCK）"
-    ],
-    playable=True,
-    exhaust=False,
-    retain=True,
-    ethereal=False,
-    transferable=True,
-    cost=1,
-    damage=1,
-    hit_count=1,
-    block=0,
-    target_type=TargetType.SINGLE,
-    self_target=False,
-)
-
-
-THROW_PROTOTYPE: Final[Card] = Card(
-    name="一次性投掷",
-    description="",
-    on_play_affixes=[],
-    on_hit_affixes=[],
-    on_turn_end_affixes=[
-        "[词缀名]:回合结束时取一个内建数值对非 source 者结算"
-        "（持续减益方向；候选取数——本卡 damage、目标 HP/BLOCK、自身 HP/BLOCK）"
-    ],
-    playable=True,
-    exhaust=True,
-    retain=False,
-    ethereal=False,
-    transferable=True,
-    cost=1,
-    damage=1,
-    hit_count=1,
-    block=0,
-    target_type=TargetType.SINGLE,
-    self_target=False,
-)
-
-
-AOE_PROTOTYPE: Final[Card] = Card(
-    name="群体打击",
-    description="",
-    on_play_affixes=[],
-    on_hit_affixes=[],
-    on_turn_end_affixes=[],
-    playable=True,
-    exhaust=False,
-    retain=False,
-    ethereal=False,
-    transferable=False,
-    cost=2,
-    damage=2,
-    hit_count=1,
-    block=0,
-    target_type=TargetType.ALL,
-    self_target=False,
-)
-
-
-AOE_DEBUFF_PROTOTYPE: Final[Card] = Card(
-    name="群体穿甲",
-    description="",
-    on_play_affixes=[
-        "[词缀名]:打出时取一个内建数值对目标阵营结算并绕过格挡"
-        "（破防方向；候选取数——本卡 damage/hit_count、目标 BLOCK/HP）"
-    ],
-    on_hit_affixes=[],
-    on_turn_end_affixes=[],
-    playable=True,
-    exhaust=False,
-    retain=False,
-    ethereal=False,
-    transferable=False,
-    cost=1,
-    damage=1,
-    hit_count=1,
-    block=0,
-    target_type=TargetType.ALL,
-    self_target=False,
-)
-
-
-# ── 防御端原型 ──────────────────────────────────────────────
-
-BULWARK_PROTOTYPE: Final[Card] = Card(
-    name="防御蓄力",
-    description="",
-    on_play_affixes=[],
-    on_hit_affixes=[],
-    on_turn_end_affixes=[],
-    playable=True,
-    exhaust=False,
-    retain=True,
-    ethereal=False,
-    transferable=False,
-    cost=1,
-    damage=0,
-    hit_count=1,
-    block=3,
-    target_type=TargetType.SINGLE,
-    self_target=True,
-)
-
-
-THORNS_PROTOTYPE: Final[Card] = Card(
-    name="反伤壁垒",
-    description="",
-    on_play_affixes=[],
-    on_hit_affixes=[
-        "[词缀名]:被命中时取一个内建数值反制出牌者"
-        "（候选取数——出牌者 damage/HP/BLOCK、本卡 damage/block、自身 HP/BLOCK）"
-    ],
-    on_turn_end_affixes=[],
-    playable=True,
-    exhaust=False,
-    retain=True,
-    ethereal=False,
-    transferable=False,
-    cost=1,
-    damage=2,
-    hit_count=1,
-    block=2,
-    target_type=TargetType.SINGLE,
-    self_target=True,
-)
-
-
-PASSIVE_PROTOTYPE: Final[Card] = Card(
-    name="蛰伏",
-    description="",
-    on_play_affixes=[],
-    on_hit_affixes=[],
-    on_turn_end_affixes=[
-        "[词缀名]:回合结束时取一个内建数值对敌方角色结算"
-        "（袭扰方向；候选取数——本卡 damage、目标 HP/BLOCK）"
-    ],
-    playable=False,
-    exhaust=False,
-    retain=True,
-    ethereal=False,
-    transferable=False,
-    cost=1,
-    damage=1,
-    hit_count=1,
-    block=0,
-    target_type=TargetType.SINGLE,
-    self_target=True,
-)
-
-
-PLATE_PROTOTYPE: Final[Card] = Card(
-    name="常驻护甲",
-    description="",
-    on_play_affixes=[],
-    on_hit_affixes=[],
-    on_turn_end_affixes=[],
-    playable=False,
-    exhaust=False,
-    retain=True,
-    ethereal=False,
-    transferable=False,
-    cost=1,
-    damage=0,
-    hit_count=1,
-    block=3,
-    target_type=TargetType.SINGLE,
-    self_target=True,
-)
-
-
-SUPPORT_PROTOTYPE: Final[Card] = Card(
-    name="支援分发",
-    description="",
-    on_play_affixes=[],
-    on_hit_affixes=[],
-    on_turn_end_affixes=[
-        "[词缀名]:回合结束时取一个内建数值为本卡持有者结算"
-        "（持续增益方向；候选取数——本卡 block、自身 HP/最大 HP）"
-    ],
-    playable=True,
-    exhaust=False,
-    retain=False,
-    ethereal=False,
-    transferable=True,
-    cost=1,
-    damage=0,
-    hit_count=1,
-    block=1,
-    target_type=TargetType.SINGLE,
-    self_target=False,
-)
-
-
-SHIELD_TRANSFER_PROTOTYPE: Final[Card] = Card(
-    name="格挡支援",
-    description="",
-    on_play_affixes=[],
-    on_hit_affixes=[],
-    on_turn_end_affixes=[],
-    playable=True,
-    exhaust=False,
-    retain=False,
-    ethereal=False,
-    transferable=True,
-    cost=1,
-    damage=0,
-    hit_count=1,
-    block=3,
-    target_type=TargetType.SINGLE,
-    self_target=False,
-)
-
-
-AOE_BUFF_PROTOTYPE: Final[Card] = Card(
-    name="群体鼓舞",
-    description="",
-    on_play_affixes=[
-        "[词缀名]:打出时取一个内建数值为目标阵营全体结算"
-        "（群体增益方向；候选取数——本卡 block、目标/自身 HP/BLOCK）"
-    ],
-    on_hit_affixes=[],
-    on_turn_end_affixes=[],
-    playable=True,
-    exhaust=False,
-    retain=False,
-    ethereal=False,
-    transferable=False,
-    cost=1,
-    damage=0,
-    hit_count=1,
-    block=1,
-    target_type=TargetType.ALL,
-    self_target=False,
-)
-
-
-# ── 装备卡牌原型（工坊合成「选择核心 + 润色」用） ──────────────
-
-GEAR_OFFENSE_PROTOTYPE: Final[Card] = Card(
-    name="装备.名字",
-    description="",
-    on_play_affixes=[],
-    on_hit_affixes=[],
-    on_turn_end_affixes=[],
-    playable=True,
-    exhaust=False,
-    retain=False,
-    ethereal=False,
-    transferable=False,
-    cost=1,
-    damage=3,
-    hit_count=1,
-    block=0,
-    target_type=TargetType.SINGLE,
-    self_target=False,
-)
-
-
-GEAR_DEFENSE_PROTOTYPE: Final[Card] = Card(
-    name="装备.名字",
-    description="",
-    on_play_affixes=[],
-    on_hit_affixes=[],
-    on_turn_end_affixes=[],
-    playable=True,
-    exhaust=False,
-    retain=True,
-    ethereal=False,
-    transferable=False,
-    cost=1,
-    damage=0,
-    hit_count=1,
-    block=3,
-    target_type=TargetType.SINGLE,
-    self_target=False,
-)
-
-
-GEAR_CONTAGION_PROTOTYPE: Final[Card] = Card(
-    name="装备.名字",
-    description="",
-    on_play_affixes=[],
-    on_hit_affixes=[],
-    on_turn_end_affixes=[],
-    playable=True,
-    exhaust=False,
-    retain=True,
-    ethereal=False,
-    transferable=True,
-    cost=1,
-    damage=1,
-    hit_count=1,
-    block=0,
-    target_type=TargetType.SINGLE,
-    self_target=False,
-)
-
-
-# ── 注册表 ──────────────────────────────────────────────────────────
-
+#######################################################################################################################################
 CARD_PROTOTYPES: Final[List[CardPrototype]] = [
     # 手牌 / 攻击端 / 前端伤害
     CardPrototype(
-        card=ATTACK_PROTOTYPE,
+        skeleton=ATTACK_SKELETON,
         meta=CardPrototypeMeta(
             prototype_id="proto.attack",
             card_type="手牌",
@@ -644,7 +86,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
         ),
     ),
     CardPrototype(
-        card=BURST_PROTOTYPE,
+        skeleton=BURST_SKELETON,
         meta=CardPrototypeMeta(
             prototype_id="proto.burst",
             card_type="手牌",
@@ -660,7 +102,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
         ),
     ),
     CardPrototype(
-        card=SACRIFICE_PROTOTYPE,
+        skeleton=SACRIFICE_SKELETON,
         meta=CardPrototypeMeta(
             prototype_id="proto.sacrifice",
             card_type="手牌",
@@ -678,7 +120,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
         ),
     ),
     CardPrototype(
-        card=FOCUS_PROTOTYPE,
+        skeleton=FOCUS_SKELETON,
         meta=CardPrototypeMeta(
             prototype_id="proto.focus",
             card_type="手牌",
@@ -693,7 +135,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
         ),
     ),
     CardPrototype(
-        card=SPREAD_PROTOTYPE,
+        skeleton=SPREAD_SKELETON,
         meta=CardPrototypeMeta(
             prototype_id="proto.spread",
             card_type="手牌",
@@ -708,7 +150,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
         ),
     ),
     CardPrototype(
-        card=PIERCE_PROTOTYPE,
+        skeleton=PIERCE_SKELETON,
         meta=CardPrototypeMeta(
             prototype_id="proto.pierce",
             card_type="手牌",
@@ -728,7 +170,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
         ),
     ),
     CardPrototype(
-        card=FLEETING_PROTOTYPE,
+        skeleton=FLEETING_SKELETON,
         meta=CardPrototypeMeta(
             prototype_id="proto.fleeting",
             card_type="手牌",
@@ -745,7 +187,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
         ),
     ),
     CardPrototype(
-        card=DEADLINE_PROTOTYPE,
+        skeleton=DEADLINE_SKELETON,
         meta=CardPrototypeMeta(
             prototype_id="proto.deadline",
             card_type="手牌",
@@ -761,7 +203,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
         ),
     ),
     CardPrototype(
-        card=FINISHER_PROTOTYPE,
+        skeleton=FINISHER_SKELETON,
         meta=CardPrototypeMeta(
             prototype_id="proto.finisher",
             card_type="手牌",
@@ -777,7 +219,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
         ),
     ),
     CardPrototype(
-        card=AOE_PROTOTYPE,
+        skeleton=AOE_SKELETON,
         meta=CardPrototypeMeta(
             prototype_id="proto.aoe",
             card_type="手牌",
@@ -791,7 +233,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
     ),
     # 手牌 / 攻击端 / 成长性伤害
     CardPrototype(
-        card=DOT_PROTOTYPE,
+        skeleton=DOT_SKELETON,
         meta=CardPrototypeMeta(
             prototype_id="proto.dot",
             card_type="手牌",
@@ -808,7 +250,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
         ),
     ),
     CardPrototype(
-        card=THROW_PROTOTYPE,
+        skeleton=THROW_SKELETON,
         meta=CardPrototypeMeta(
             prototype_id="proto.throw",
             card_type="手牌",
@@ -826,7 +268,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
     ),
     # 手牌 / 攻击端 / 铺垫性攻击支持
     CardPrototype(
-        card=MARK_PROTOTYPE,
+        skeleton=MARK_SKELETON,
         meta=CardPrototypeMeta(
             prototype_id="proto.mark",
             card_type="手牌",
@@ -843,7 +285,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
         ),
     ),
     CardPrototype(
-        card=SELF_LOOP_PROTOTYPE,
+        skeleton=SELF_LOOP_SKELETON,
         meta=CardPrototypeMeta(
             prototype_id="proto.selfloop",
             card_type="手牌",
@@ -860,7 +302,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
         ),
     ),
     CardPrototype(
-        card=AOE_DEBUFF_PROTOTYPE,
+        skeleton=AOE_DEBUFF_SKELETON,
         meta=CardPrototypeMeta(
             prototype_id="proto.aoe_debuff",
             card_type="手牌",
@@ -878,7 +320,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
     ),
     # 手牌 / 防御端 / 前端防御
     CardPrototype(
-        card=DEFENSE_PROTOTYPE,
+        skeleton=DEFENSE_SKELETON,
         meta=CardPrototypeMeta(
             prototype_id="proto.defense",
             card_type="手牌",
@@ -898,7 +340,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
     ),
     # 手牌 / 防御端 / 成长性防御
     CardPrototype(
-        card=BULWARK_PROTOTYPE,
+        skeleton=BULWARK_SKELETON,
         meta=CardPrototypeMeta(
             prototype_id="proto.bulwark",
             card_type="手牌",
@@ -915,7 +357,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
         ),
     ),
     CardPrototype(
-        card=PASSIVE_PROTOTYPE,
+        skeleton=PASSIVE_SKELETON,
         meta=CardPrototypeMeta(
             prototype_id="proto.passive",
             card_type="手牌",
@@ -932,7 +374,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
         ),
     ),
     CardPrototype(
-        card=PLATE_PROTOTYPE,
+        skeleton=PLATE_SKELETON,
         meta=CardPrototypeMeta(
             prototype_id="proto.plate",
             card_type="手牌",
@@ -949,7 +391,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
     ),
     # 手牌 / 防御端 / 特殊防御机制
     CardPrototype(
-        card=THORNS_PROTOTYPE,
+        skeleton=THORNS_SKELETON,
         meta=CardPrototypeMeta(
             prototype_id="proto.thorns",
             card_type="手牌",
@@ -967,7 +409,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
         ),
     ),
     CardPrototype(
-        card=SUPPORT_PROTOTYPE,
+        skeleton=SUPPORT_SKELETON,
         meta=CardPrototypeMeta(
             prototype_id="proto.support",
             card_type="手牌",
@@ -984,7 +426,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
         ),
     ),
     CardPrototype(
-        card=SHIELD_TRANSFER_PROTOTYPE,
+        skeleton=SHIELD_TRANSFER_SKELETON,
         meta=CardPrototypeMeta(
             prototype_id="proto.shield_transfer",
             card_type="手牌",
@@ -1000,7 +442,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
         ),
     ),
     CardPrototype(
-        card=AOE_BUFF_PROTOTYPE,
+        skeleton=AOE_BUFF_SKELETON,
         meta=CardPrototypeMeta(
             prototype_id="proto.aoe_buff",
             card_type="手牌",
@@ -1017,7 +459,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
     ),
     # 装备
     CardPrototype(
-        card=GEAR_OFFENSE_PROTOTYPE,
+        skeleton=GEAR_OFFENSE_SKELETON,
         meta=CardPrototypeMeta(
             prototype_id="gear.offense",
             card_type="装备",
@@ -1034,7 +476,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
         ),
     ),
     CardPrototype(
-        card=GEAR_DEFENSE_PROTOTYPE,
+        skeleton=GEAR_DEFENSE_SKELETON,
         meta=CardPrototypeMeta(
             prototype_id="gear.defense",
             card_type="装备",
@@ -1051,7 +493,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
         ),
     ),
     CardPrototype(
-        card=GEAR_CONTAGION_PROTOTYPE,
+        skeleton=GEAR_CONTAGION_SKELETON,
         meta=CardPrototypeMeta(
             prototype_id="gear.contagion",
             card_type="装备",

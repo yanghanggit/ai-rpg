@@ -96,8 +96,8 @@ def create_dungeon_combat_room_pipeline(
     # 战斗初始化系统（场景侧）：注入战斗专用规则、转换战斗状态为进行中
     processors.add(CombatInitStageSystem(dbg_game))
 
-    # 牌库初始化系统：响应 InitializeDeckAction，做叙事个人化（source 已在实体构造期回填，幂等；
-    # 若被触发须在抽牌堆填充之前）
+    # 牌库初始化系统：响应 InitializeDeckAction，回填 source 并做叙事个人化（幂等；
+    # 须在抽牌堆填充之前）
     processors.add(InitializeDeckActionSystem(dbg_game))
 
     # 抽牌堆填充系统（从 DeckComponent 填 DrawPileComponent，零 LLM）

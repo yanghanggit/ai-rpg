@@ -44,11 +44,11 @@ from ai_rpg.models import (
     create_world,
 )
 
-from .card_prototypes import (
-    ATTACK_PROTOTYPE,
-    DEFENSE_PROTOTYPE,
-    GEAR_DEFENSE_PROTOTYPE,
-    GEAR_OFFENSE_PROTOTYPE,
+from .card_skeletons import (
+    ATTACK_SKELETON,
+    DEFENSE_SKELETON,
+    GEAR_DEFENSE_SKELETON,
+    GEAR_OFFENSE_SKELETON,
 )
 
 # ---------------------------------------------------------------------------
@@ -190,7 +190,7 @@ KNOWLEDGE_BASE: Final[Dict[str, List[str]]] = {
 }
 
 
-def _copy_prototype(card: Card) -> Card:
+def _copy_skeleton(card: Card) -> Card:
     """复制卡牌原型并重新生成 uuid（原型 uuid 是共享常量，副本必须各自唯一）。"""
     copied = card.model_copy(deep=True)
     copied.uuid = str(uuid4())
@@ -199,18 +199,18 @@ def _copy_prototype(card: Card) -> Card:
 
 def _make_attack_card() -> Card:
     """基础攻击原型副本（机械字段与 demo/card_prototypes.py 的「基础攻击」一致）。"""
-    return _copy_prototype(ATTACK_PROTOTYPE)
+    return _copy_skeleton(ATTACK_SKELETON)
 
 
 def _make_defense_card() -> Card:
     """基础防御原型副本（机械字段与 demo/card_prototypes.py 的「基础防御」一致）。"""
-    return _copy_prototype(DEFENSE_PROTOTYPE)
+    return _copy_skeleton(DEFENSE_SKELETON)
 
 
 def _make_gear_offense_card() -> Card:
-    """旧铁剑卡牌：模拟工坊合成的具体产物——骨架沿自 GEAR_OFFENSE_PROTOTYPE，
+    """旧铁剑卡牌：模拟工坊合成的具体产物——骨架沿自 GEAR_OFFENSE_SKELETON，
     name/description/词缀/数值为本装备专属（词缀名刻意异于原型模板）。"""
-    card = _copy_prototype(GEAR_OFFENSE_PROTOTYPE)
+    card = _copy_skeleton(GEAR_OFFENSE_SKELETON)
     card.name = "装备.旧铁剑"
     card.description = "一柄来历不明的旧铁剑，剑身有几处崩口，握柄缠着磨旧的皮绳。挥动时刃口带起一道沉闷的风声，像每一击都压着经年累月的力气；贴近剑格处锈迹斑斑，握在手里却比看上去更沉。"
     card.damage += 1  # 剑身沉重，较原型模板 +1
@@ -219,9 +219,9 @@ def _make_gear_offense_card() -> Card:
 
 
 def _make_gear_defense_card() -> Card:
-    """木盾卡牌：模拟工坊合成的具体产物——骨架沿自 GEAR_DEFENSE_PROTOTYPE，
+    """木盾卡牌：模拟工坊合成的具体产物——骨架沿自 GEAR_DEFENSE_SKELETON，
     name/description/词缀/数值为本装备专属。"""
-    card = _copy_prototype(GEAR_DEFENSE_PROTOTYPE)
+    card = _copy_skeleton(GEAR_DEFENSE_SKELETON)
     card.name = "装备.木盾"
     card.description = "一面用厚木板拼成的圆盾，边缘包着一圈铁皮，盾面刻着几道深浅不一的旧痕。举在身前时能把大半来势稳稳卸向一侧，木纹深处透着一股久经磕碰的韧劲。"
     card.block += 1  # 厚木板坚韧，较原型模板 +1

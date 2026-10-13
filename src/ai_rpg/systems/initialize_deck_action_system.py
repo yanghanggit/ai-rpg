@@ -1,8 +1,12 @@
 """牌库初始化系统：响应 InitializeDeckAction，为尚未初始化的卡牌做一次性叙事个人化润色。
 
-注意：卡牌来源（source）已在实体构造期由 DBGGame.create_actor_entities 确定性回填，
-因此本系统以 `source == ""` 判定「未初始化」的触发条件通常不再满足，该动作被触发时
-一般无待处理卡牌（保留调用点，暂不实际执行）。
+「未初始化」判据为 `source == ""`，而 `source` 由**本流程**在牌库初始化时确定性回填
+（不依赖 LLM）：先回填 source，再做叙事润色，故润色后再次触发会自动幂等跳过。设计路径
+（assemble_deck / spoils / 装备物化）已显式设置 source，直接跳过；蓝图初始牌库与兜底牌单
+则由本流程润色。
+
+时序：在 pipeline 中本系统先于 FillDrawPileSystem 执行，保证 source 回填/润色发生在
+抽牌堆复制之前。
 """
 
 from functools import partial
@@ -14,6 +18,7 @@ from typing import (
     Dict,
     Final,
     List,
+    Set,
     Tuple,
     Union,
     final,
@@ -41,7 +46,7 @@ from ..utils import batch_run_boolean_tasks, prompt_builder
 #######################################################################################################################################
 @final
 class _DeckCardEdit(BaseModel):
-    """submit_deck_card 提交的单张卡牌叙事调整（仅 name/description，结构上杜绝改属性/词缀）。"""
+    """submit_deck_polish 提交的单张卡牌叙事调整（仅 name/description，结构上杜绝改属性/词缀）。"""
 
     uuid: str
     name: str
@@ -49,9 +54,9 @@ class _DeckCardEdit(BaseModel):
 
 
 #######################################################################################################################################
-SUBMIT_DECK_CARD_TOOL: Final[ToolDefinition] = ToolDefinition(
+SUBMIT_POLISH_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
-        name="submit_deck_card",
+        name="submit_deck_polish",
         description="提交一张卡牌的叙事调整（仅 name 与 description）。每张卡各调用一次，用 uuid 精确定位目标卡。",
         parameters={
             "type": "object",
@@ -76,32 +81,40 @@ SUBMIT_DECK_CARD_TOOL: Final[ToolDefinition] = ToolDefinition(
 
 
 #######################################################################################################################################
-FINISH_DECK_TOOL: Final[ToolDefinition] = ToolDefinition(
+FINISH_POLISH_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
-        name="finish_deck",
-        description="全部卡牌均已通过 submit_deck_card 提交后调用，结束本次牌库初始化。",
+        name="finish_deck_polish",
+        description="全部卡牌均已通过 submit_deck_polish 提交后调用，结束本次牌库初始化。",
         parameters={"type": "object", "properties": {}},
     )
 )
 
 
 #######################################################################################################################################
-def _handle_submit_deck_card(
+def _handle_submit_polish(
+    valid_uuids: Set[str],
     edits: List[_DeckCardEdit],
     uuid: str,
     name: str,
     description: str,
 ) -> str:
-    """处理 submit_deck_card 工具调用：校验并暂存一张卡牌的叙事调整。"""
-    assert uuid, "uuid 不能为空"
-    edits.append(_DeckCardEdit(uuid=uuid, name=name, description=description))
-    logger.info(f"[InitializeDeckActionSystem] submit_deck_card: {uuid} → {name}")
-    return "已记录该卡牌的叙事调整。"
+    """处理 submit_deck_polish：校验 uuid 与叙事字段，不合法则返回错误让 agent 修正重提。"""
+    if uuid not in valid_uuids:
+        return f"错误：未知 uuid {uuid!r}。请使用任务清单中给出的 uuid。"
+    if not name.strip():
+        return "错误：name 不能为空。请修正后重新调用 submit_deck_polish。"
+    if not description.strip():
+        return "错误：description 不能为空。请修正后重新调用 submit_deck_polish。"
+    edits.append(
+        _DeckCardEdit(uuid=uuid, name=name.strip(), description=description.strip())
+    )
+    logger.info(f"[InitializeDeckActionSystem] submit_deck_polish: {uuid} → {name}")
+    return f"已记录第 {len(edits)} 张卡牌的叙事调整。"
 
 
 #######################################################################################################################################
-def _handle_finish_deck() -> str:
-    """处理 finish_deck 工具调用（无参，仅作为终止信号）。"""
+def _handle_finish_polish() -> str:
+    """处理 finish_deck_polish 工具调用（无参，仅作为终止信号）。"""
     return "已结束牌库初始化。"
 
 
@@ -174,8 +187,8 @@ def _build_deck_init_prompt(entity: Entity, cards: List[Card]) -> str:
 ## 工作流程
 
 1. 逐一审视每张卡（以 `uuid` 精确定位，避免同名混淆）；
-2. 为每张卡各调用一次 `submit_deck_card`（参数：uuid / name / description）；
-3. 全部提交完毕后调用 `finish_deck` 结束。"""
+2. 为每张卡各调用一次 `submit_deck_polish`（参数：uuid / name / description）；
+3. 全部提交完毕后调用 `finish_deck_polish` 结束。"""
 
 
 #######################################################################################################################################
@@ -183,11 +196,8 @@ def _build_deck_init_prompt(entity: Entity, cards: List[Card]) -> str:
 class InitializeDeckActionSystem(ReactiveProcessor):
     """响应 InitializeDeckAction，为触发角色做牌库叙事个人化润色。
 
-    幂等语义：仅处理 `source == ""` 的卡牌（视为「未初始化」），处理成功后下次自动跳过。
-
-    注意：source 的回填已前移到 DBGGame.create_actor_entities（实体构造期），
-    故该动作触发时通常已无 `source == ""` 的卡牌，本流程目前不会实际执行；
-    此处保留调用点，供后续调整「未初始化」判据时复用。
+    幂等语义：仅处理 `source == ""` 的卡牌（视为「未初始化」）；先确定性回填 source，
+    再做叙事润色，故下次触发自动跳过。设计路径已自设 source，直接跳过。
     """
 
     def __init__(self, game: DBGGame) -> None:
@@ -233,9 +243,12 @@ class InitializeDeckActionSystem(ReactiveProcessor):
 
             # 2) 每实体独立的结果容器与工具处理器
             edits: List[_DeckCardEdit] = []
+            valid_uuids: Set[str] = {c.uuid for c in targets}
             handlers: Dict[str, Callable[..., Union[str, Awaitable[str]]]] = {
-                "submit_deck_card": partial(_handle_submit_deck_card, edits),
-                "finish_deck": _handle_finish_deck,
+                "submit_deck_polish": partial(
+                    _handle_submit_polish, valid_uuids, edits
+                ),
+                "finish_deck_polish": _handle_finish_polish,
             }
 
             # 3) 组装 agent_loop 协程；messages 直接传真实记忆（原地写回）
@@ -243,9 +256,9 @@ class InitializeDeckActionSystem(ReactiveProcessor):
                 name=entity.name,
                 prompt=_build_deck_init_prompt(entity, targets),
                 messages=self._game.get_agent_memory(entity).messages,
-                tools=[SUBMIT_DECK_CARD_TOOL, FINISH_DECK_TOOL],
+                tools=[SUBMIT_POLISH_TOOL, FINISH_POLISH_TOOL],
                 handlers=handlers,
-                terminal_tools=[FINISH_DECK_TOOL],
+                terminal_tools=[FINISH_POLISH_TOOL],
                 max_rounds=6,
             )
 

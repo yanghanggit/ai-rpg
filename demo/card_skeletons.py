@@ -1,0 +1,578 @@
+"""卡牌原型骨架。
+
+每个 `*_SKELETON` 是一张与游戏内容完全解耦的骨架 `Card`：机械字段（cost / damage /
+hit_count / block / target_type / self_target / flags）是只读骨架，三类词缀是
+「可设计槽位的引导」（非空＝可设计，规范见 `AFFIX_DESIGN_SPEC`），`name` / `description`
+留空、由角色 agent 重写。
+
+骨架与教学元数据在 `demo/card_prototypes.py` 组装成卡牌原型（`CardPrototype`）。
+"""
+
+from typing import Final
+
+from ai_rpg.models import Card, TargetType
+
+#######################################################################################################################################
+# ── 基础骨架 ──────────────────────────────────────────────
+
+ATTACK_SKELETON: Final[Card] = Card(
+    name="基础攻击",
+    description="",
+    on_play_affixes=[],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[],
+    playable=True,
+    exhaust=False,
+    retain=False,
+    ethereal=False,
+    transferable=False,
+    cost=1,
+    damage=2,
+    hit_count=1,
+    block=0,
+    target_type=TargetType.SINGLE,
+    self_target=False,
+)
+
+
+DEFENSE_SKELETON: Final[Card] = Card(
+    name="基础防御",
+    description="",
+    on_play_affixes=[],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[],
+    playable=True,
+    exhaust=False,
+    retain=False,
+    ethereal=False,
+    transferable=False,
+    cost=1,
+    damage=0,
+    hit_count=1,
+    block=1,
+    target_type=TargetType.SINGLE,
+    self_target=True,
+)
+
+
+# ── 攻击端骨架 ──────────────────────────────────────────────
+
+BURST_SKELETON: Final[Card] = Card(
+    name="一次性爆发",
+    description="",
+    on_play_affixes=[],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[],
+    playable=True,
+    exhaust=True,
+    retain=False,
+    ethereal=False,
+    transferable=False,
+    cost=3,
+    damage=6,
+    hit_count=1,
+    block=0,
+    target_type=TargetType.SINGLE,
+    self_target=False,
+)
+
+
+SACRIFICE_SKELETON: Final[Card] = Card(
+    name="代价爆发",
+    description="",
+    on_play_affixes=[
+        "[词缀名]:打出时取一个内建数值对自身结算代价"
+        "（自损方向；候选取数——本卡 damage/block/hit_count、自身 HP/BLOCK）"
+    ],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[],
+    playable=True,
+    exhaust=True,
+    retain=False,
+    ethereal=False,
+    transferable=False,
+    cost=2,
+    damage=5,
+    hit_count=1,
+    block=0,
+    target_type=TargetType.SINGLE,
+    self_target=False,
+)
+
+
+FOCUS_SKELETON: Final[Card] = Card(
+    name="集火连击",
+    description="",
+    on_play_affixes=[],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[],
+    playable=True,
+    exhaust=False,
+    retain=False,
+    ethereal=False,
+    transferable=False,
+    cost=2,
+    damage=2,
+    hit_count=3,
+    block=0,
+    target_type=TargetType.SINGLE,
+    self_target=False,
+)
+
+
+SPREAD_SKELETON: Final[Card] = Card(
+    name="散射清场",
+    description="",
+    on_play_affixes=[],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[],
+    playable=True,
+    exhaust=False,
+    retain=False,
+    ethereal=False,
+    transferable=False,
+    cost=2,
+    damage=1,
+    hit_count=4,
+    block=0,
+    target_type=TargetType.SPREAD,
+    self_target=False,
+)
+
+
+MARK_SKELETON: Final[Card] = Card(
+    name="转嫁破绽",
+    description="",
+    on_play_affixes=[],
+    on_hit_affixes=[
+        "[词缀名]:本卡持有者被命中时取一个内建数值对自身结算"
+        "（易伤方向；候选取数——本卡 damage、自身 BLOCK/HP、出牌者 damage/hit_count）"
+    ],
+    on_turn_end_affixes=[],
+    playable=True,
+    exhaust=False,
+    retain=False,
+    ethereal=False,
+    transferable=True,
+    cost=1,
+    damage=1,
+    hit_count=1,
+    block=0,
+    target_type=TargetType.SINGLE,
+    self_target=False,
+)
+
+
+PIERCE_SKELETON: Final[Card] = Card(
+    name="借势攻击",
+    description="",
+    # 引导而非成品：以 `[词缀名]` 显形（模型化正确格式），但占位名会被校验拒（照抄必败）。
+    on_play_affixes=[
+        "[词缀名]:打出时取一个内建数值为变量对目标结算伤害（候选数值——本卡 damage/hit_count、"
+        "目标的 BLOCK/当前 HP/最大 HP、自身的 HP/BLOCK）。请把这条引导写成属于你的一条具体词缀。"
+    ],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[],
+    playable=True,
+    exhaust=False,
+    retain=False,
+    ethereal=False,
+    transferable=False,
+    cost=1,
+    damage=1,
+    hit_count=1,
+    block=0,
+    target_type=TargetType.SINGLE,
+    self_target=False,
+)
+
+
+SELF_LOOP_SKELETON: Final[Card] = Card(
+    name="自我调息",
+    description="",
+    on_play_affixes=[],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[
+        "[词缀名]:回合结束时取一个内建数值为自身结算"
+        "（续战恢复方向；候选取数——本卡 block、自身 HP/最大 HP）"
+    ],
+    playable=True,
+    exhaust=False,
+    retain=True,
+    ethereal=False,
+    transferable=False,
+    cost=1,
+    damage=0,
+    hit_count=1,
+    block=1,
+    target_type=TargetType.SINGLE,
+    self_target=True,
+)
+
+
+FLEETING_SKELETON: Final[Card] = Card(
+    name="限时机会",
+    description="",
+    on_play_affixes=[
+        "[词缀名]:打出时取一个内建数值对目标额外结算"
+        "（爆发方向；候选取数——本卡 damage/hit_count/block、目标 BLOCK/HP、自身 HP/BLOCK）"
+    ],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[],
+    playable=True,
+    exhaust=False,
+    retain=False,
+    ethereal=True,
+    transferable=False,
+    cost=1,
+    damage=2,
+    hit_count=1,
+    block=0,
+    target_type=TargetType.SINGLE,
+    self_target=False,
+)
+
+
+DEADLINE_SKELETON: Final[Card] = Card(
+    name="限时终结",
+    description="",
+    on_play_affixes=[],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[],
+    playable=True,
+    exhaust=True,
+    retain=False,
+    ethereal=True,
+    transferable=False,
+    cost=2,
+    damage=4,
+    hit_count=1,
+    block=0,
+    target_type=TargetType.SINGLE,
+    self_target=False,
+)
+
+
+FINISHER_SKELETON: Final[Card] = Card(
+    name="蓄力终结",
+    description="",
+    on_play_affixes=[],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[],
+    playable=True,
+    exhaust=True,
+    retain=True,
+    ethereal=False,
+    transferable=False,
+    cost=3,
+    damage=6,
+    hit_count=1,
+    block=0,
+    target_type=TargetType.SINGLE,
+    self_target=False,
+)
+
+
+DOT_SKELETON: Final[Card] = Card(
+    name="持续减益传染",
+    description="",
+    on_play_affixes=[],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[
+        "[词缀名]:回合结束时取一个内建数值对非 source 者结算"
+        "（持续减益方向；候选取数——本卡 damage、目标 HP/BLOCK、自身 HP/BLOCK）"
+    ],
+    playable=True,
+    exhaust=False,
+    retain=True,
+    ethereal=False,
+    transferable=True,
+    cost=1,
+    damage=1,
+    hit_count=1,
+    block=0,
+    target_type=TargetType.SINGLE,
+    self_target=False,
+)
+
+
+THROW_SKELETON: Final[Card] = Card(
+    name="一次性投掷",
+    description="",
+    on_play_affixes=[],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[
+        "[词缀名]:回合结束时取一个内建数值对非 source 者结算"
+        "（持续减益方向；候选取数——本卡 damage、目标 HP/BLOCK、自身 HP/BLOCK）"
+    ],
+    playable=True,
+    exhaust=True,
+    retain=False,
+    ethereal=False,
+    transferable=True,
+    cost=1,
+    damage=1,
+    hit_count=1,
+    block=0,
+    target_type=TargetType.SINGLE,
+    self_target=False,
+)
+
+
+AOE_SKELETON: Final[Card] = Card(
+    name="群体打击",
+    description="",
+    on_play_affixes=[],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[],
+    playable=True,
+    exhaust=False,
+    retain=False,
+    ethereal=False,
+    transferable=False,
+    cost=2,
+    damage=2,
+    hit_count=1,
+    block=0,
+    target_type=TargetType.ALL,
+    self_target=False,
+)
+
+
+AOE_DEBUFF_SKELETON: Final[Card] = Card(
+    name="群体穿甲",
+    description="",
+    on_play_affixes=[
+        "[词缀名]:打出时取一个内建数值对目标阵营结算并绕过格挡"
+        "（破防方向；候选取数——本卡 damage/hit_count、目标 BLOCK/HP）"
+    ],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[],
+    playable=True,
+    exhaust=False,
+    retain=False,
+    ethereal=False,
+    transferable=False,
+    cost=1,
+    damage=1,
+    hit_count=1,
+    block=0,
+    target_type=TargetType.ALL,
+    self_target=False,
+)
+
+
+# ── 防御端骨架 ──────────────────────────────────────────────
+
+BULWARK_SKELETON: Final[Card] = Card(
+    name="防御蓄力",
+    description="",
+    on_play_affixes=[],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[],
+    playable=True,
+    exhaust=False,
+    retain=True,
+    ethereal=False,
+    transferable=False,
+    cost=1,
+    damage=0,
+    hit_count=1,
+    block=3,
+    target_type=TargetType.SINGLE,
+    self_target=True,
+)
+
+
+THORNS_SKELETON: Final[Card] = Card(
+    name="反伤壁垒",
+    description="",
+    on_play_affixes=[],
+    on_hit_affixes=[
+        "[词缀名]:被命中时取一个内建数值反制出牌者"
+        "（候选取数——出牌者 damage/HP/BLOCK、本卡 damage/block、自身 HP/BLOCK）"
+    ],
+    on_turn_end_affixes=[],
+    playable=True,
+    exhaust=False,
+    retain=True,
+    ethereal=False,
+    transferable=False,
+    cost=1,
+    damage=2,
+    hit_count=1,
+    block=2,
+    target_type=TargetType.SINGLE,
+    self_target=True,
+)
+
+
+PASSIVE_SKELETON: Final[Card] = Card(
+    name="蛰伏",
+    description="",
+    on_play_affixes=[],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[
+        "[词缀名]:回合结束时取一个内建数值对敌方角色结算"
+        "（袭扰方向；候选取数——本卡 damage、目标 HP/BLOCK）"
+    ],
+    playable=False,
+    exhaust=False,
+    retain=True,
+    ethereal=False,
+    transferable=False,
+    cost=1,
+    damage=1,
+    hit_count=1,
+    block=0,
+    target_type=TargetType.SINGLE,
+    self_target=True,
+)
+
+
+PLATE_SKELETON: Final[Card] = Card(
+    name="常驻护甲",
+    description="",
+    on_play_affixes=[],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[],
+    playable=False,
+    exhaust=False,
+    retain=True,
+    ethereal=False,
+    transferable=False,
+    cost=1,
+    damage=0,
+    hit_count=1,
+    block=3,
+    target_type=TargetType.SINGLE,
+    self_target=True,
+)
+
+
+SUPPORT_SKELETON: Final[Card] = Card(
+    name="支援分发",
+    description="",
+    on_play_affixes=[],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[
+        "[词缀名]:回合结束时取一个内建数值为本卡持有者结算"
+        "（持续增益方向；候选取数——本卡 block、自身 HP/最大 HP）"
+    ],
+    playable=True,
+    exhaust=False,
+    retain=False,
+    ethereal=False,
+    transferable=True,
+    cost=1,
+    damage=0,
+    hit_count=1,
+    block=1,
+    target_type=TargetType.SINGLE,
+    self_target=False,
+)
+
+
+SHIELD_TRANSFER_SKELETON: Final[Card] = Card(
+    name="格挡支援",
+    description="",
+    on_play_affixes=[],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[],
+    playable=True,
+    exhaust=False,
+    retain=False,
+    ethereal=False,
+    transferable=True,
+    cost=1,
+    damage=0,
+    hit_count=1,
+    block=3,
+    target_type=TargetType.SINGLE,
+    self_target=False,
+)
+
+
+AOE_BUFF_SKELETON: Final[Card] = Card(
+    name="群体鼓舞",
+    description="",
+    on_play_affixes=[
+        "[词缀名]:打出时取一个内建数值为目标阵营全体结算"
+        "（群体增益方向；候选取数——本卡 block、目标/自身 HP/BLOCK）"
+    ],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[],
+    playable=True,
+    exhaust=False,
+    retain=False,
+    ethereal=False,
+    transferable=False,
+    cost=1,
+    damage=0,
+    hit_count=1,
+    block=1,
+    target_type=TargetType.ALL,
+    self_target=False,
+)
+
+
+# ── 装备骨架（工坊合成「选择核心 + 润色」用） ──────────────
+
+GEAR_OFFENSE_SKELETON: Final[Card] = Card(
+    name="装备.名字",
+    description="",
+    on_play_affixes=[],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[],
+    playable=True,
+    exhaust=False,
+    retain=False,
+    ethereal=False,
+    transferable=False,
+    cost=1,
+    damage=3,
+    hit_count=1,
+    block=0,
+    target_type=TargetType.SINGLE,
+    self_target=False,
+)
+
+
+GEAR_DEFENSE_SKELETON: Final[Card] = Card(
+    name="装备.名字",
+    description="",
+    on_play_affixes=[],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[],
+    playable=True,
+    exhaust=False,
+    retain=True,
+    ethereal=False,
+    transferable=False,
+    cost=1,
+    damage=0,
+    hit_count=1,
+    block=3,
+    target_type=TargetType.SINGLE,
+    self_target=False,
+)
+
+
+GEAR_CONTAGION_SKELETON: Final[Card] = Card(
+    name="装备.名字",
+    description="",
+    on_play_affixes=[],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[],
+    playable=True,
+    exhaust=False,
+    retain=True,
+    ethereal=False,
+    transferable=True,
+    cost=1,
+    damage=1,
+    hit_count=1,
+    block=0,
+    target_type=TargetType.SINGLE,
+    self_target=False,
+)

@@ -334,13 +334,9 @@ class DBGGame(RPGGame):
             # 做一些判断
             assert actor_entity.has(DeckComponent), "玩家角色实体必须有 DeckComponent"
 
-            # 实体构造期确定性回填卡牌来源（source）：初始牌库中持有者即生成者。
-            # 原 InitializeDeckActionSystem 中的回填逻辑前移至此处，使 source 在实体诞生时即有效。
-            deck_comp = actor_entity.get(DeckComponent)
-            assert deck_comp is not None, f"{actor_entity.name} 缺少 DeckComponent"
-            for card in deck_comp.cards:
-                if not card.source:
-                    card.source = actor_entity.name
+            # 卡牌来源（source）不在此处回填：交由 InitializeDeckActionSystem 在牌库初始化时
+            # 确定性回填。这样「source 为空」才能作为「尚未初始化」的判据，使蓝图/兜底牌库也走叙事润色；
+            # 设计路径（assemble_deck / spoils / 装备物化）会显式设置 source，从而跳过润色。
 
             # 添加到返回值
             actor_entities.append(actor_entity)

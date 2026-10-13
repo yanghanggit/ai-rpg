@@ -73,7 +73,7 @@ def _save(proto: CardPrototype) -> None:
         name=meta.name,
         summary=meta.summary,
         guide=meta.guide,
-        card_json=proto.card.model_dump_json(),
+        card_json=proto.skeleton.model_dump_json(),
         keywords=list(meta.keywords),
     )
 
@@ -124,7 +124,7 @@ def _flush_one(proto: CardPrototype, dry_run: bool) -> Tuple[str, List[str]]:
         )
         if old_value != new_value:
             changed.append(attr)
-    changed += _card_field_diff(existing.card_json, proto.card)
+    changed += _card_field_diff(existing.card_json, proto.skeleton)
 
     if not changed:
         return "未变", []

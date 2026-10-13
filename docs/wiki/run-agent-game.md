@@ -62,7 +62,7 @@ AI 代理无需感知内部游戏对象，只需根据当前存档的模式选�
 
 ## 卡牌原型的开发循环
 
-改动 `demo/card_prototypes.py` 或词缀设计规范后，若想反复观察「角色 agent 把原型设计成了什么」，完整的 `scripts/setup_demo.py` 太重——它会 drop 数据库并重刷蓝图 / 副本 / RAG；开发循环只需要「把原型刷进库」这一小步。
+改动 `demo/card_skeletons.py` / `demo/card_prototypes.py` 或词缀设计规范后，若想反复观察「角色 agent 把原型设计成了什么」，完整的 `scripts/setup_demo.py` 太重——它会 drop 数据库并重刷蓝图 / 副本 / RAG；开发循环只需要「把原型刷进库」这一小步。
 
 `scripts/flush_card_prototypes.py` 就是这一步：只 upsert 原型（可选默认牌单），并逐条打印「新增 / 更新 / 未变」与变化的字段；`--only` / `--card-type` 收敛刷写范围，`--prune` 把库收敛到指定集合，`--dry-run` 只看不写。
 

@@ -10,7 +10,7 @@
 
 - 字段语义（每个字段是什么）→ [卡牌数据模型（Card）](card.md)
 - 词缀格式与约束（怎样写才合法）→ `AFFIX_DESIGN_SPEC`（代码内单一来源）
-- 具体组合范例（原型长什么样）→ `demo/card_prototypes.py`（原型即范例）
+- 具体组合范例（原型长什么样）→ `demo/card_skeletons.py`（骨架）与 `demo/card_prototypes.py`（原型类型 + 含教学元数据的注册表）
 - 三端归类 → [三端化思维（Combat Ports）](combat-ports.md)
 
 ---

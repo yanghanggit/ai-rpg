@@ -52,7 +52,7 @@ def create_dungeon_opening_room_pipeline(
     # 开场初始化系统（角色侧）：为开场场景内的队伍成员注入场景环境信息
     processors.add(OpeningInitActorSystem(dbg_game))
 
-    # 牌库初始化系统：响应 InitializeDeckAction，做叙事个人化（source 已在实体构造期回填，幂等）
+    # 牌库初始化系统：响应 InitializeDeckAction，回填 source 并做叙事个人化（幂等）
     processors.add(InitializeDeckActionSystem(dbg_game))
 
     # 奖励生成系统：从原型库抽取候选卡并润色后装入 Spoils（响应 GenerateSpoilsAction）

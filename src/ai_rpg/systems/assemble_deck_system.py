@@ -56,6 +56,7 @@ def make_default_deck_cards() -> List[Card]:
 
     牌单由 demo/card_prototypes.py 的 `DEFAULT_DECK_BUILD` 经 setup_demo 灌库，
     本函数不关心任何卡名与份数，仅按返回顺序逐张物化为独立 Card。
+    `source` 留空，交由 InitializeDeckActionSystem 在战斗初始化时回填并叙事润色。
     """
     cards: List[Card] = []
     for card_json in get_default_deck_card_jsons():

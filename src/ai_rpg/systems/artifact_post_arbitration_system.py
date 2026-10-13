@@ -37,10 +37,6 @@ from ..models import (
     UseConsumableItemAction,
 )
 from ..utils import prompt_builder
-from .arbitration_prompt_builders import (
-    build_arbitration_broadcast,
-    build_stats_update_notification,
-)
 
 
 ###########################################################################################################################################
@@ -98,6 +94,29 @@ submit_arbitration 的 combat_log / narrative 必须与本次实际调用过的 
 60-120 字，第三人称外部视角，纯感官描写，无数字 / 术语 / 内心。
 以你自身人设中的意象为底色，写出「神器修正规则」本次如何显形——作用于谁、以什么样的感官痕迹留下结果；规则未触发时，则写出「无事发生」的克制观感。
 描写须与 combat_log 的 HP 变化一致，不得虚构规则之外的效果。"""
+
+
+@prompt_builder
+def _build_artifact_arbitration_broadcast(
+    combat_log: str, narrative: str, current_round_number: int, artifact_name: str
+) -> str:
+    """神器仲裁的广播消息生成器（第 N 回合 · 神器·<神器名>）。"""
+    return f"""# 第 {current_round_number} 回合 · 神器·{artifact_name}
+
+## 演出
+
+{narrative}
+
+## 数据日志
+
+{combat_log}"""
+
+
+@prompt_builder
+def _build_stats_update_notification(final_hp: int, max_hp: int) -> str:
+    return f"""# 你的生命值已更新
+
+当前HP: {final_hp}/{max_hp}"""
 
 
 ###########################################################################################################################################
@@ -427,15 +446,14 @@ class ArtifactPostArbitrationSystem(ReactiveProcessor):
         current_round_number = len(
             self._game.current_dungeon_combat_room.combat.rounds or []
         )
-        title = f"神器·{artifact_entity.name}"
         self._game.broadcast_to_stage(
             entity=stage_entity,
             agent_event=CombatArbitrationEvent(
-                message=build_arbitration_broadcast(
+                message=_build_artifact_arbitration_broadcast(
                     combat_log,
                     narrative,
                     current_round_number,
-                    title,
+                    artifact_entity.name,
                 ),
                 stage=stage_entity.name,
                 combat_log=combat_log,
@@ -460,7 +478,7 @@ class ArtifactPostArbitrationSystem(ReactiveProcessor):
             self._game.add_human_message(
                 entity=entity,
                 human_message=HumanMessage(
-                    content=build_stats_update_notification(
+                    content=_build_stats_update_notification(
                         after_stats.hp, after_stats.max_hp
                     )
                 ),

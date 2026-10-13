@@ -33,8 +33,6 @@ from ..utils import prompt_builder
 from .arbitration_prompt_builders import (
     CALC_RULES_SECTION,
     CARD_NARRATIVE_DESCRIPTION,
-    build_arbitration_broadcast,
-    build_stats_update_notification,
 )
 
 
@@ -126,12 +124,23 @@ def _build_turn_end_arbitration_tool_prompt(
 def _build_turn_end_arbitration_broadcast(
     combat_log: str, narrative: str, current_round_number: int, holder_name: str
 ) -> str:
-    return build_arbitration_broadcast(
-        combat_log,
-        narrative,
-        current_round_number,
-        f"{holder_name} 回合结束仲裁",
-    )
+    """回合结束仲裁的广播消息生成器（第 N 回合 · <持有者> 回合结束仲裁）。"""
+    return f"""# 第 {current_round_number} 回合 · {holder_name} 回合结束仲裁
+
+## 演出
+
+{narrative}
+
+## 数据日志
+
+{combat_log}"""
+
+
+@prompt_builder
+def _build_stats_update_notification(final_hp: int, max_hp: int) -> str:
+    return f"""# 你的生命值已更新
+
+当前HP: {final_hp}/{max_hp}"""
 
 
 ###########################################################################################################################################
@@ -466,7 +475,7 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
             self._game.add_human_message(
                 entity=entity,
                 human_message=HumanMessage(
-                    content=build_stats_update_notification(new_hp, max_hp)
+                    content=_build_stats_update_notification(new_hp, max_hp)
                 ),
             )
 

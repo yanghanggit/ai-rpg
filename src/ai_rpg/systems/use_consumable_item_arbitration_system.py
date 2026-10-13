@@ -35,10 +35,6 @@ from ..models import (
     render_labeled_str_list,
 )
 from ..utils import prompt_builder
-from .arbitration_prompt_builders import (
-    build_arbitration_broadcast,
-    build_stats_update_notification,
-)
 
 ###########################################################################################################################################
 # 仲裁提示词构建器
@@ -109,6 +105,29 @@ def _build_consumable_arbitration_prompt(
 60-120 字，第三人称外部视角，纯感官描写，无数字 / 术语 / 内心。
 以物品「描述」与本次「效果提示」为素材，写出使用该消耗品的动作，以及随之发生的感官变化（气味、温度、色泽、触感、姿态等）；不得引入物品描述与效果提示之外的机制。
 若使用改变了某个人或物的状态，描写须体现这一改变，为后续叙事留下可推断的当前状态。"""
+
+
+@prompt_builder
+def _build_consumable_arbitration_broadcast(
+    combat_log: str, narrative: str, current_round_number: int, item_name: str
+) -> str:
+    """消耗品仲裁的广播消息生成器（第 N 回合 · 使用消耗品「<物品名>」）。"""
+    return f"""# 第 {current_round_number} 回合 · 使用消耗品「{item_name}」
+
+## 演出
+
+{narrative}
+
+## 数据日志
+
+{combat_log}"""
+
+
+@prompt_builder
+def _build_stats_update_notification(final_hp: int, max_hp: int) -> str:
+    return f"""# 你的生命值已更新
+
+当前HP: {final_hp}/{max_hp}"""
 
 
 ###########################################################################################################################################
@@ -402,11 +421,11 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
         self._game.broadcast_to_stage(
             entity=stage_entity,
             agent_event=CombatArbitrationEvent(
-                message=build_arbitration_broadcast(
+                message=_build_consumable_arbitration_broadcast(
                     combat_log,
                     narrative,
                     current_round_number,
-                    f"使用消耗品「{item.name}」",
+                    item.name,
                 ),
                 stage=stage_entity.name,
                 combat_log=combat_log,
@@ -431,7 +450,7 @@ class UseConsumableItemArbitrationSystem(ReactiveProcessor):
             self._game.add_human_message(
                 entity=entity,
                 human_message=HumanMessage(
-                    content=build_stats_update_notification(
+                    content=_build_stats_update_notification(
                         after_stats.hp, after_stats.max_hp
                     )
                 ),

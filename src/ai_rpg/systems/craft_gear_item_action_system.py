@@ -87,7 +87,7 @@ GET_GEAR_EXAMPLE_TOOL: Final[ToolDefinition] = ToolDefinition(
 SUBMIT_GEAR_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="submit_gear",
-        description="提交本次合成的装备规格（名称、描述与完整卡牌规格）。调用后本次合成结束。",
+        description="提交本次合成的装备规格（名称、描述与完整卡牌规格）。校验不通过会返回错误，可按提示修正后重提；全部通过后再调用 finish_gear 结束。",
         parameters={
             "type": "object",
             "properties": {
@@ -192,6 +192,16 @@ SUBMIT_GEAR_TOOL: Final[ToolDefinition] = ToolDefinition(
 
 
 #######################################################################################################################################
+FINISH_GEAR_TOOL: Final[ToolDefinition] = ToolDefinition(
+    function=ToolFunction(
+        name="finish_gear",
+        description="装备规格已通过 submit_gear 成功提交后调用，结束本次合成。",
+        parameters={"type": "object", "properties": {}},
+    )
+)
+
+
+#######################################################################################################################################
 def _handle_list_gear_examples() -> str:
     """处理 list_gear_examples 工具调用：返回装备卡牌原型的 index 纵览。"""
     index = [
@@ -243,7 +253,7 @@ def _handle_submit_gear(
     assert name, "name 不能为空"
     spec = _CraftGearSpec(name=name, description=description, **card)
 
-    # 词缀设计校验：agent 自设计的骨架 + 词缀必须满足字段锚点与数值护栏。
+    # 词缀设计校验：agent 自设计的骨架 + 词缀必须满足词缀格式与倍率护栏。
     valid_target_types = {t.value for t in TargetType}
     if spec.target_type not in valid_target_types:
         return f"错误：target_type 无效（{spec.target_type!r}）。请修正后重新提交。"
@@ -281,7 +291,13 @@ def _handle_submit_gear(
         f"  target_type: {spec.target_type}\n"
         f"  damage: {spec.damage} / block: {spec.block} / cost: {spec.cost}"
     )
-    return spec.model_dump_json(ensure_ascii=False)
+    return f"已记录：{spec.name}。确认无误后调用 finish_gear 结束。"
+
+
+#######################################################################################################################################
+def _handle_finish_gear() -> str:
+    """处理 finish_gear 工具调用（无参，仅作为终止信号）。"""
+    return "已结束本次装备合成。"
 
 
 #######################################################################################################################################
@@ -316,7 +332,8 @@ def _build_craft_gear_prompt(materials: List[MaterialItem]) -> str:
 
 1. 准备阶段：调用 `list_gear_examples` 纵览可用装备示例的索引，结合本次投入材料筛选最相关的示例；
 2. 精读阶段：如需，调用 `get_gear_example` 获取 1~2 个最相关示例的完整卡牌规格；
-3. 提交阶段：综合材料特性与示例约束，直接调用 `submit_gear` 提交本次合成的装备规格并结束对话；提交时无需在 content 中展开长篇推导，把分析过程浓缩在内心即可。"""
+3. 提交阶段：综合材料特性与示例参照，调用 `submit_gear` 提交本次合成的装备规格；若返回错误，按提示修正后重新提交；
+4. 结束后：`submit_gear` 成功后再调用 `finish_gear` 结束对话。提交时无需在 content 中展开长篇推导，把分析过程浓缩在内心即可。"""
 
 
 #######################################################################################################################################
@@ -388,14 +405,16 @@ class CraftGearItemActionSystem(ReactiveProcessor):
                     LIST_GEAR_EXAMPLES_TOOL,
                     GET_GEAR_EXAMPLE_TOOL,
                     SUBMIT_GEAR_TOOL,
+                    FINISH_GEAR_TOOL,
                 ],
                 handlers={
                     "list_gear_examples": _handle_list_gear_examples,
                     "get_gear_example": _handle_get_gear_example,
                     "submit_gear": partial(_handle_submit_gear, specs),
+                    "finish_gear": _handle_finish_gear,
                 },
                 max_rounds=8,
-                terminal_tools=[SUBMIT_GEAR_TOOL],
+                terminal_tools=[FINISH_GEAR_TOOL],
             )
         except Exception as e:
             logger.error(f"[CraftGearItemActionSystem] agent_loop 异常: {e}")
@@ -409,7 +428,7 @@ class CraftGearItemActionSystem(ReactiveProcessor):
         # 检查 LLM 是否返回了有效的装备规格
         if not specs:
             logger.error(
-                "[CraftGearItemActionSystem] LLM 已结束但未调用 submit_gear，中止"
+                "[CraftGearItemActionSystem] LLM 结束但未成功提交装备规格，中止"
             )
             return
 

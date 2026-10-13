@@ -110,7 +110,7 @@ AFFIX_DESIGN_SPEC: Final[
 - 数值来源要写清：伤害写明 `damage`（如 `本卡 damage×2`）或目标内建值（如 `目标的 BLOCK` / `目标当前 HP`）；格挡写 `block`；段数写 `hit_count`。
 - 作用对象只用规范称谓：`自身` / `出牌者` / `目标` / `本卡持有者` / `非 source 者`（＝持有者，且持有者 ≠ 本卡 `source`）。`on_turn_end_affixes` 无「出牌者 / 目标」，只能用 `自身` / `本卡持有者` / `非 source 者` / 场上存活角色。
 - 引用**本卡字段**的 `×N` 有上限：`on_play` `damage×1..3` / `block×1..3` / `hit_count×1..2`；`on_hit` `damage×1..3` / `block×1..3`；`on_turn_end` `damage×1..2` / `block×1..3`。
-- **禁止任何独立数值**（固定伤害、固定回合数等）；本卡 `damage=0` 时不得凭空造成伤害，只能引用 `block`、目标 / 自身内建值，或用牌承载持续效果。
+- **数值优先引用内建值**（本卡 `damage` / `block` / `hit_count`、目标 / 自身的 `HP` / `BLOCK`）；写死具体数字不随角色属性成长，且本卡 `damage=0` 时不得凭空造成伤害——请优先用 `block`、内建值，或用牌承载持续效果。
 
 ### 四、设计方向（示例）
 
@@ -175,7 +175,6 @@ _MAX_MULTIPLIERS: Final[Dict[str, Dict[str, int]]] = {
 _MULTIPLIER_RE: Final[re.Pattern[str]] = re.compile(
     r"(damage|block|hit_count)\s*[×xX*]\s*(\d+)"
 )
-_DIGIT_RE: Final[re.Pattern[str]] = re.compile(r"\d+")
 
 # 词缀硬格式：`[词缀名]:机械结算描述`（方括号 + 半/全角冒号缺一不可）。
 # 与客户端 `readAffixLabel` 的解析保持一致（客户端按 `[名称]:说明` 取名）。
@@ -212,7 +211,7 @@ def validate_affix_slot(
     """校验一条 agent 设计的词缀是否满足**硬不变量**。
 
     只守计算端必须保证的东西：时机 schema、多值格式、非空、占位符、
-    数值预算（禁独立数字 + 倍率护栏）、时机与骨架 flag 的一致性。
+    倍率护栏（`字段×N` 的 N 上限）、时机与骨架 flag 的一致性。
     语义是否「可被仲裁结算」不在这里用正则猜——它由「结算原语」契约与
     agent 提交前自检负责（见 `AFFIX_DESIGN_SPEC`）。
     """
@@ -237,7 +236,7 @@ def validate_affix_slot(
     if "词缀名" in name or "何种" in desc or "待设计" in desc:
         return AffixValidationResult(False, "仍是占位符，请替换为具体设计")
 
-    # 数值限制：只允许 `字段×N`，且 N 在护栏内；其余数字一律视为独立数值。
+    # 倍率护栏：`字段×N` 的 N 需在本时机的上限内（独立数字不再拦截）。
     limits = _MAX_MULTIPLIERS[affix_field]
     for match in _MULTIPLIER_RE.finditer(desc):
         field_name, raw_n = match.group(1), match.group(2)
@@ -251,12 +250,6 @@ def validate_affix_slot(
             return AffixValidationResult(
                 False, f"`{field_name}×{n}` 超出本时机护栏上限 {limit}"
             )
-
-    scrubbed = _MULTIPLIER_RE.sub("", desc)
-    if _DIGIT_RE.search(scrubbed):
-        return AffixValidationResult(
-            False, "出现独立数值：只允许引用字段并附护栏内倍率（如 `本卡 damage×2`）"
-        )
 
     return AffixValidationResult(True)
 
@@ -307,3 +300,27 @@ def apply_affix_design(
             applied += len(cleaned)
 
     return applied, notes
+
+
+#######################################################################################################################################
+def apply_numeric_design(
+    card: Card,
+    *,
+    cost: Optional[int] = None,
+    damage: Optional[int] = None,
+    hit_count: Optional[int] = None,
+    block: Optional[int] = None,
+) -> None:
+    """把 agent 提交的骨架数值微调覆盖到 `card` 上（`None` 表示沿用原型）。
+
+    骨架数值（`cost` / `damage` / `hit_count` / `block`）不加护栏：agent 自己把握，
+    计算端只保证类型可解析。布尔与目标字段不在可调范围。
+    """
+    if cost is not None:
+        card.cost = cost
+    if damage is not None:
+        card.damage = damage
+    if hit_count is not None:
+        card.hit_count = hit_count
+    if block is not None:
+        card.block = block

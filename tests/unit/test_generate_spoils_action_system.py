@@ -63,6 +63,8 @@ def test_handle_submit_stores_all_design_fields() -> None:
         uuid=card.uuid,
         name="朱批",
         description="落款",
+        cost=2,
+        damage=3,
         on_play_affixes=["[朱批]:打出时对目标造成本卡 damage×1 的伤害"],
         on_hit_affixes=None,
         on_turn_end_affixes=[
@@ -75,6 +77,7 @@ def test_handle_submit_stores_all_design_fields() -> None:
     edit = edits[0]
     assert edit.uuid == card.uuid
     assert edit.name == "朱批"
+    assert (edit.cost, edit.damage) == (2, 3)
     assert edit.on_play_affixes == ["[朱批]:打出时对目标造成本卡 damage×1 的伤害"]
     assert edit.on_hit_affixes is None
 

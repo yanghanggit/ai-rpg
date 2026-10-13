@@ -41,6 +41,7 @@ from ..models import (
     NormalizedStrList,
     SpoilsComponent,
     apply_affix_design,
+    apply_numeric_design,
     normalize_str_list,
     render_labeled_str_list,
     validate_affix_slot,
@@ -67,11 +68,15 @@ class _Candidate:
 #######################################################################################################################################
 @final
 class _SpoilsCardEdit(BaseModel):
-    """submit_spoils_card 提交的单张候选卡设计（name/description + 三类词缀）。"""
+    """submit_spoils_card 提交的单张候选卡设计（name/description + 可选数值微调 + 三类词缀）。"""
 
     uuid: str
     name: str
     description: str
+    cost: Optional[int] = None
+    damage: Optional[int] = None
+    hit_count: Optional[int] = None
+    block: Optional[int] = None
     # 三类词缀（多值）：agent 在原型已存在的槽位内重新设计；缺省/不合格则置空。
     on_play_affixes: Optional[NormalizedStrList] = None
     on_hit_affixes: Optional[NormalizedStrList] = None
@@ -98,23 +103,39 @@ SUBMIT_SPOILS_CARD_TOOL: Final[ToolDefinition] = ToolDefinition(
                     "type": "string",
                     "description": "设计后的叙事描述（叙事锚点：不含数值，不重述字段已确定的效果）",
                 },
+                "cost": {
+                    "type": "integer",
+                    "description": "可选：在原型基础上微调本卡 cost；不给则沿用原型。",
+                },
+                "damage": {
+                    "type": "integer",
+                    "description": "可选：在原型基础上微调本卡 damage；不给则沿用原型。",
+                },
+                "hit_count": {
+                    "type": "integer",
+                    "description": "可选：在原型基础上微调本卡 hit_count（攻击次数）；不给则沿用原型。",
+                },
+                "block": {
+                    "type": "integer",
+                    "description": "可选：在原型基础上微调本卡 block（持有期格挡）；不给则沿用原型。",
+                },
                 "on_play_affixes": {
                     "type": "array",
                     "items": {"type": "string"},
                     "maxItems": 3,
-                    "description": "本卡打出时结算的即时词缀（可选，多值列表）：每个元素是一条完整独立词缀，格式 `[词缀名]:机械结算描述`；禁止把一条词缀拆成多个元素或把多条合并进一个元素；无则 []。仅当原型该槽非空（有引导）时可提交；须满足字段锚点与数值护栏，否则整槽置空。",
+                    "description": "本卡打出时结算的即时词缀（可选，多值列表）：每个元素是一条完整独立词缀，格式 `[词缀名]:机械结算描述`；禁止把一条词缀拆成多个元素或把多条合并进一个元素；无则 []。仅当原型该槽非空（有引导）时可提交；须满足词缀格式与倍率护栏，否则整槽置空。",
                 },
                 "on_hit_affixes": {
                     "type": "array",
                     "items": {"type": "string"},
                     "maxItems": 3,
-                    "description": "本卡持有者被命中时触发的受击词缀（可选，多值列表）：每个元素是一条完整独立词缀，格式同上；禁止拆分或合并；无则 []。仅当原型该槽非空时可提交；须满足字段锚点与数值护栏。",
+                    "description": "本卡持有者被命中时触发的受击词缀（可选，多值列表）：每个元素是一条完整独立词缀，格式同上；禁止拆分或合并；无则 []。仅当原型该槽非空时可提交；须满足词缀格式与倍率护栏。",
                 },
                 "on_turn_end_affixes": {
                     "type": "array",
                     "items": {"type": "string"},
                     "maxItems": 3,
-                    "description": "持有者每次 pass turn 结算的回合结束词缀（可选，多值列表）：每个元素是一条完整独立词缀，格式同上；禁止拆分或合并；无则 []。仅当原型该槽非空时可提交；须满足字段锚点与数值护栏。",
+                    "description": "持有者每次 pass turn 结算的回合结束词缀（可选，多值列表）：每个元素是一条完整独立词缀，格式同上；禁止拆分或合并；无则 []。仅当原型该槽非空时可提交；须满足词缀格式与倍率护栏。",
                 },
             },
             "required": ["uuid", "name", "description"],
@@ -140,11 +161,15 @@ def _handle_submit_spoils_card(
     uuid: str,
     name: str,
     description: str,
+    cost: Optional[int] = None,
+    damage: Optional[int] = None,
+    hit_count: Optional[int] = None,
+    block: Optional[int] = None,
     on_play_affixes: Optional[NormalizedStrList] = None,
     on_hit_affixes: Optional[NormalizedStrList] = None,
     on_turn_end_affixes: Optional[NormalizedStrList] = None,
 ) -> str:
-    """处理 submit_spoils_card：先校验词缀（硬格式 + 数值护栏），不合法则返回错误让 agent 修正重提。"""
+    """处理 submit_spoils_card：先校验词缀（硬格式 + 倍率护栏），不合法则返回错误让 agent 修正重提。"""
     card = by_uuid.get(uuid)
     if card is None:
         return f"错误：未知 uuid {uuid!r}。请使用任务清单中给出的 uuid。"
@@ -177,6 +202,10 @@ def _handle_submit_spoils_card(
             uuid=uuid,
             name=name,
             description=description,
+            cost=cost,
+            damage=damage,
+            hit_count=hit_count,
+            block=block,
             on_play_affixes=on_play_affixes,
             on_hit_affixes=on_hit_affixes,
             on_turn_end_affixes=on_turn_end_affixes,
@@ -201,7 +230,7 @@ def _format_card_for_prompt(candidate: _Candidate) -> str:
         f"  原型定位: {candidate.archetype} / {candidate.archetype_subtype}",
         f"  原型摘要: {candidate.summary}",
         f"  设计指导: {candidate.guide}",
-        f"  骨架字段（只读）: cost={card.cost} damage={card.damage} hit_count={card.hit_count} "
+        f"  骨架（数值可微调）: cost={card.cost} damage={card.damage} hit_count={card.hit_count} "
         f"block={card.block} target_type={card.target_type.value} self_target={card.self_target}",
     ]
 
@@ -279,9 +308,10 @@ def _build_spoils_prompt(entity: Entity, candidates: List[_Candidate]) -> str:
 
 {AFFIX_DESIGN_SPEC}
 
-## 骨架与设计的边界
+## 原型与设计边界
 
-- **骨架字段只读**：`cost/damage/hit_count/block/target_type/self_target/playable/exhaust/retain/ethereal/transferable` 由原型给定，你只能引用，不能改动，也不能在提交中输出。
+- **布尔与目标字段只读**：`target_type/self_target/playable/exhaust/retain/ethereal/transferable` 由原型给定，不可改动。
+- **数值可微调**：`cost/damage/hit_count/block` 可在原型基础上调整（提交时可选给出，不给则沿用原型）。
 - **词缀槽位**：只能对原型已非空的槽位（有引导）提交设计，不得新增其它时机；不提交 / 设计不合法则该槽**置空**。
 - **原型词缀只是引导**：它提示“这一槽该往哪个方向设计”，不是可照抄的成品；请按上方规范为你的角色写出具体规则。
 
@@ -394,7 +424,7 @@ class GenerateSpoilsActionSystem(ReactiveProcessor):
         # 并发执行
         outcomes = await batch_run_boolean_tasks(tasks)
 
-        # 应用结果：按 uuid 回填 name/description（硬约束），词缀经「字段锚点 + 数值护栏」校验（失败整槽置空）
+        # 应用结果：按 uuid 回填 name/description（硬约束），词缀经「硬格式 + 倍率护栏」校验（失败整槽置空）
         for (entity, candidates, edits), ok in zip(pending, outcomes):
             by_uuid = {c.card.uuid: c.card for c in candidates}
             applied = 0
@@ -409,6 +439,14 @@ class GenerateSpoilsActionSystem(ReactiveProcessor):
                     continue
                 target_card.name = edit.name
                 target_card.description = edit.description
+                # 骨架数值微调（不加护栏；None 表示沿用原型）
+                apply_numeric_design(
+                    target_card,
+                    cost=edit.cost,
+                    damage=edit.damage,
+                    hit_count=edit.hit_count,
+                    block=edit.block,
+                )
                 count, notes = apply_affix_design(
                     entity.name,
                     target_card,

@@ -62,15 +62,24 @@ def test_non_transferable_holder_needs_no_source() -> None:
     assert result.ok
 
 
-def test_independent_number_fails() -> None:
-    card = _card()
+def test_independent_number_allowed() -> None:
+    # 数值不加护栏：独立数字不再拦截（可结算性交给契约与 agent 自检）。
     result = validate_affix_slot(
         "on_play_affixes",
         "[断筋]:打出时对目标造成本卡 damage 的伤害，持续 3 回合",
-        card,
+        _card(),
     )
-    assert not result.ok
-    assert "独立数值" in result.reason
+    assert result.ok
+
+
+def test_condition_number_allowed() -> None:
+    # 「BLOCK 为 0」这类条件数字不再误杀（此前的假阳性）。
+    result = validate_affix_slot(
+        "on_play_affixes",
+        "[淬口啍铁]:若目标的 BLOCK 为 0，本卡本次 damage×2",
+        _card(),
+    )
+    assert result.ok
 
 
 def test_multiplier_forms_are_accepted() -> None:

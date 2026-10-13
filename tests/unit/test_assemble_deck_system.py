@@ -27,6 +27,8 @@ def test_submit_deck_card_stores_affix_design() -> None:
         prototype_id="proto.attack",
         name="断筋",
         description="一记短促的沉肩",
+        cost=0,
+        damage=4,
         on_play_affixes=["[断筋]:打出时对目标造成本卡 damage×2 的伤害"],
         on_hit_affixes=None,
         on_turn_end_affixes=None,
@@ -37,6 +39,7 @@ def test_submit_deck_card_stores_affix_design() -> None:
     pick = picks[0]
     assert pick.prototype_id == "proto.attack"
     assert pick.name == "断筋"
+    assert (pick.cost, pick.damage) == (0, 4)
     assert pick.on_play_affixes == ["[断筋]:打出时对目标造成本卡 damage×2 的伤害"]
     assert pick.on_hit_affixes is None
 

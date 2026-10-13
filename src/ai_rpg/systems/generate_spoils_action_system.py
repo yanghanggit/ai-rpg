@@ -397,10 +397,10 @@ class GenerateSpoilsActionSystem(ReactiveProcessor):
             edits: List[_SpoilsCardEdit] = []
             by_uuid = {c.card.uuid: c.card for c in candidates}
             handlers: Dict[str, Callable[..., Union[str, Awaitable[str]]]] = {
-                "submit_spoils_card": partial(
+                SUBMIT_SPOILS_CARD_TOOL.function.name: partial(
                     _handle_submit_spoils_card, edits, by_uuid
                 ),
-                "finish_spoils": _handle_finish_spoils,
+                FINISH_SPOILS_TOOL.function.name: _handle_finish_spoils,
             }
 
             # 组装 agent_loop 协程；messages 直接传真实记忆（原地写回）

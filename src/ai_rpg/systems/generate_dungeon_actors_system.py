@@ -24,7 +24,9 @@ from ..utils import prompt_builder
 
 
 ####################################################################################################################################
-def _build_actor_tool(combat_rooms: List[DungeonRoomData]) -> ToolDefinition:
+def _build_record_dungeon_actor_tool(
+    combat_rooms: List[DungeonRoomData],
+) -> ToolDefinition:
     """动态构建 record_dungeon_actor 工具定义。
 
     room_name 用 enum 约束为当前 combat 房间名集合，保证归属合法。
@@ -176,6 +178,7 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
             return
 
         result = _ActorsResult()
+        actor_tool = _build_record_dungeon_actor_tool(combat_rooms)
 
         success = await agent_loop(
             name=entity.name,
@@ -186,9 +189,9 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
             ),
             # 直接传入实体的持久化 agent memory：agent_loop 原地追加
             messages=self._game.get_agent_memory(entity).messages,
-            tools=[_build_actor_tool(combat_rooms)],
+            tools=[actor_tool],
             handlers={
-                "record_dungeon_actor": partial(_handle_record_dungeon_actor, result),
+                actor_tool.function.name: partial(_handle_record_dungeon_actor, result),
             },
             max_rounds=5,
         )

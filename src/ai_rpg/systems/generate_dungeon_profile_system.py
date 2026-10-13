@@ -15,7 +15,7 @@ from ..models import (
 )
 from ..utils import prompt_builder
 
-PROFILE_TOOL: Final[ToolDefinition] = ToolDefinition(
+RECORD_DUNGEON_PROFILE_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="record_dungeon_profile",
         description="记录副本的名称、整体设定写照与房间总数。",
@@ -135,9 +135,9 @@ class GenerateDungeonProfileSystem(ReactiveProcessor):
             # 直接传入实体的持久化 agent memory：agent_loop 原地追加，
             # 本步完整对话即成为后续步骤的记忆
             messages=self._game.get_agent_memory(entity).messages,
-            tools=[PROFILE_TOOL],
+            tools=[RECORD_DUNGEON_PROFILE_TOOL],
             handlers={
-                "record_dungeon_profile": partial(
+                RECORD_DUNGEON_PROFILE_TOOL.function.name: partial(
                     _handle_record_dungeon_profile, result
                 ),
             },

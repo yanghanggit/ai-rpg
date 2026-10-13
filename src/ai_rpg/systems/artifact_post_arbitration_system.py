@@ -341,9 +341,15 @@ class ArtifactPostArbitrationSystem(ReactiveProcessor):
                     SUBMIT_ARBITRATION_TOOL,
                 ],
                 handlers={
-                    "get_entity_stats": partial(_handle_get_entity_stats, self._game),
-                    "set_entity_hp": partial(_handle_set_entity_hp, self._game, ctx),
-                    "submit_arbitration": partial(_handle_submit_arbitration, ctx),
+                    GET_ENTITY_STATS_TOOL.function.name: partial(
+                        _handle_get_entity_stats, self._game
+                    ),
+                    SET_ENTITY_HP_TOOL.function.name: partial(
+                        _handle_set_entity_hp, self._game, ctx
+                    ),
+                    SUBMIT_ARBITRATION_TOOL.function.name: partial(
+                        _handle_submit_arbitration, ctx
+                    ),
                 },
                 max_rounds=6,
                 tool_choice="required",

@@ -18,7 +18,7 @@ from ..utils import prompt_builder
 
 
 ####################################################################################################################################
-def _build_rooms_tool(dungeon_room_count: int) -> ToolDefinition:
+def _build_record_dungeon_rooms_tool(dungeon_room_count: int) -> ToolDefinition:
     """动态构建 record_dungeon_rooms 工具定义。
 
     副本共 dungeon_room_count 个房间：首个为开场（opening），
@@ -182,6 +182,7 @@ class GenerateDungeonRoomsSystem(ReactiveProcessor):
         )
 
         result = _RoomsResult()
+        rooms_tool = _build_record_dungeon_rooms_tool(dungeon_room_count)
 
         success = await agent_loop(
             name=entity.name,
@@ -192,9 +193,9 @@ class GenerateDungeonRoomsSystem(ReactiveProcessor):
             ),
             # 直接传入实体的持久化 agent memory：agent_loop 原地追加
             messages=self._game.get_agent_memory(entity).messages,
-            tools=[_build_rooms_tool(dungeon_room_count)],
+            tools=[rooms_tool],
             handlers={
-                "record_dungeon_rooms": partial(_handle_record_dungeon_rooms, result),
+                rooms_tool.function.name: partial(_handle_record_dungeon_rooms, result),
             },
             max_rounds=5,
         )

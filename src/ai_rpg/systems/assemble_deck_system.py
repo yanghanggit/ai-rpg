@@ -184,7 +184,7 @@ SUBMIT_DECK_CARD_TOOL: Final[ToolDefinition] = ToolDefinition(
 FINISH_DECK_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="finish_deck",
-        description="恰好 5 张卡牌均已通过 submit_deck_card 提交后调用，结束本次牌库组建。",
+        description=f"所有卡牌均已通过 submit_deck_card 提交后调用，结束本次牌库组建。",
         parameters={"type": "object", "properties": {}},
     )
 )
@@ -501,14 +501,14 @@ class AssembleDeckSystem(ReactiveProcessor):
                     FINISH_DECK_TOOL,
                 ],
                 handlers={
-                    "list_card_prototypes": partial(
+                    LIST_CARD_PROTOTYPES_TOOL.function.name: partial(
                         _handle_list_card_prototypes, index
                     ),
-                    "get_card_prototype": _handle_get_card_prototype,
-                    "submit_deck_card": partial(
+                    GET_CARD_PROTOTYPE_TOOL.function.name: _handle_get_card_prototype,
+                    SUBMIT_DECK_CARD_TOOL.function.name: partial(
                         _handle_submit_deck_card, valid_ids, prototype_cards, picks
                     ),
-                    "finish_deck": _handle_finish_deck,
+                    FINISH_DECK_TOOL.function.name: _handle_finish_deck,
                 },
                 max_rounds=8,
                 terminal_tools=[FINISH_DECK_TOOL],

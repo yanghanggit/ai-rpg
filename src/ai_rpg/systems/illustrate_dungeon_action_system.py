@@ -67,7 +67,7 @@ class _ImagePromptsResult(BaseModel):
 
 
 ####################################################################################################################################
-def _build_image_prompts_tool(room_targets: List[str]) -> ToolDefinition:
+def _build_record_image_prompts_tool(room_targets: List[str]) -> ToolDefinition:
     """动态构建 record_image_prompts 工具定义。
 
     需覆盖 1 张封面（target="cover"）与 len(room_targets) 张房间插图
@@ -213,10 +213,11 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     async def react(self, entities: List[Entity]) -> None:
-        logger.debug(
-            f"[IllustrateDungeonActionSystem] react: 收到 IllustrateDungeonAction 事件，"
-            f"准备生成图片，entities count={len(entities)}"
-        )
+        pass
+        # logger.debug(
+        #     f"[IllustrateDungeonActionSystem] react: 收到 IllustrateDungeonAction 事件，"
+        #     f"准备生成图片，entities count={len(entities)}"
+        # )
         # for entity in entities:
         #     await self._generate_images(entity)
 
@@ -332,6 +333,7 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
         ), f"{prompt_entity.name} 缺少 system message"
         # 隔离记忆：每副本一份全新上下文（agent_loop 原地追加，用完即弃）
         messages: List[ChatMessage] = [SystemMessage(content=memory[0].content)]
+        image_prompts_tool = _build_record_image_prompts_tool(expected_targets[1:])
 
         ok = await agent_loop(
             name=prompt_entity.name,
@@ -341,9 +343,9 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
                 rooms=dungeon.rooms,
             ),
             messages=messages,
-            tools=[_build_image_prompts_tool(expected_targets[1:])],
+            tools=[image_prompts_tool],
             handlers={
-                "record_image_prompts": partial(
+                image_prompts_tool.function.name: partial(
                     _handle_record_image_prompts, result, expected_targets
                 )
             },

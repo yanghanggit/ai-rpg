@@ -54,7 +54,7 @@ class _DeckCardEdit(BaseModel):
 
 
 #######################################################################################################################################
-SUBMIT_POLISH_TOOL: Final[ToolDefinition] = ToolDefinition(
+SUBMIT_DECK_POLISH_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="submit_deck_polish",
         description="提交一张卡牌的叙事调整（仅 name 与 description）。每张卡各调用一次，用 uuid 精确定位目标卡。",
@@ -81,7 +81,7 @@ SUBMIT_POLISH_TOOL: Final[ToolDefinition] = ToolDefinition(
 
 
 #######################################################################################################################################
-FINISH_POLISH_TOOL: Final[ToolDefinition] = ToolDefinition(
+FINISH_DECK_POLISH_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="finish_deck_polish",
         description="全部卡牌均已通过 submit_deck_polish 提交后调用，结束本次牌库初始化。",
@@ -245,10 +245,10 @@ class InitializeDeckActionSystem(ReactiveProcessor):
             edits: List[_DeckCardEdit] = []
             valid_uuids: Set[str] = {c.uuid for c in targets}
             handlers: Dict[str, Callable[..., Union[str, Awaitable[str]]]] = {
-                "submit_deck_polish": partial(
+                SUBMIT_DECK_POLISH_TOOL.function.name: partial(
                     _handle_submit_polish, valid_uuids, edits
                 ),
-                "finish_deck_polish": _handle_finish_polish,
+                FINISH_DECK_POLISH_TOOL.function.name: _handle_finish_polish,
             }
 
             # 3) 组装 agent_loop 协程；messages 直接传真实记忆（原地写回）
@@ -256,9 +256,9 @@ class InitializeDeckActionSystem(ReactiveProcessor):
                 name=entity.name,
                 prompt=_build_deck_init_prompt(entity, targets),
                 messages=self._game.get_agent_memory(entity).messages,
-                tools=[SUBMIT_POLISH_TOOL, FINISH_POLISH_TOOL],
+                tools=[SUBMIT_DECK_POLISH_TOOL, FINISH_DECK_POLISH_TOOL],
                 handlers=handlers,
-                terminal_tools=[FINISH_POLISH_TOOL],
+                terminal_tools=[FINISH_DECK_POLISH_TOOL],
                 max_rounds=6,
             )
 

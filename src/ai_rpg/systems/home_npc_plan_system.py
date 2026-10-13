@@ -90,10 +90,10 @@ class HomeNpcPlanSystem(ReactiveProcessor):
             messages=self._game.get_agent_memory(entity).messages,
             tools=[QUERY_KNOWLEDGE_BASE_TOOL, submit_tool],
             handlers={
-                "query_knowledge_base": partial(
+                QUERY_KNOWLEDGE_BASE_TOOL.function.name: partial(
                     handle_query_knowledge_base, self._game
                 ),
-                "submit_action_plan": partial(handle_submit_action_plan, result),
+                submit_tool.function.name: partial(handle_submit_action_plan, result),
             },
             terminal_tools=[submit_tool],
             max_rounds=5,

@@ -78,7 +78,7 @@ def game_server_url() -> Iterator[str]:
         sys.executable,
         "-m",
         "uvicorn",
-        "ai_rpg.cli.server:app",
+        "ai_rpg.cli.dbg_server:app",
         "--host",
         "127.0.0.1",
         "--port",

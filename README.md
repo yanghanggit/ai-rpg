@@ -53,8 +53,8 @@ python -m scripts.setup_demo     # 把 demo/ 的硬编码设定刷入 .blueprint
 ### 启动游戏服务器
 
 ```bash
-uv run ai-rpg-server                  # --port 缺省读 .env 的 GAME_SERVER_PORT
-uv run ai-rpg-server --host 0.0.0.0 --port 8000
+uv run ai-rpg-dbg-server                  # --port 缺省读 .env 的 GAME_SERVER_PORT
+uv run ai-rpg-dbg-server --host 0.0.0.0 --port 8000
 
 # 验证
 curl http://127.0.0.1:8000/

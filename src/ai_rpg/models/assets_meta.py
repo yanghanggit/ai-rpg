@@ -36,7 +36,7 @@ from pydantic import BaseModel, Field, TypeAdapter, computed_field
 from ..paths import ASSETS_DIR
 
 ###############################################################################################################################################
-# 静态文件服务的 HTTP URL 前缀（与 run_game_server.py 的 app.mount 保持一致）
+# 静态文件服务的 HTTP URL 前缀（与 dbg_server.py 的 app.mount 保持一致）
 ASSETS_URL_PREFIX: Final[str] = "/assets/image"
 assert ASSETS_URL_PREFIX.startswith("/"), "URL 前缀必须以 / 开头"
 

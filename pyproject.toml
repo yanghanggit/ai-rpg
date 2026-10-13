@@ -86,7 +86,7 @@ dev = [
 ]
 
 [project.scripts]
-ai-rpg-server = "ai_rpg.cli.server:main"
+ai-rpg-dbg-server = "ai_rpg.cli.dbg_server:main"
 ai-rpg-dbg-agent-game = "ai_rpg.cli.dbg_agent_game:main"
 ai-rpg-dbg-agent-api = "ai_rpg.cli.dbg_agent_api:main"
 

@@ -5,7 +5,7 @@
 ## 定位
 
 `ai_rpg/cli/dbg_agent_api.py`（入口命令 `ai-rpg-dbg-agent-api`）是**取代原 TUI** 的服务器 API 走查入口，面向 **AI 代理**：
-通过 HTTP 逐步驱动常驻的游戏服务端（`ai-rpg-server` / `ai_rpg.cli.server:app`），供代理（或开发者）观察状态、
+通过 HTTP 逐步驱动常驻的游戏服务端（`ai-rpg-dbg-server` / `ai_rpg.cli.dbg_server:app`），供代理（或开发者）观察状态、
 触发动作、逐条验证接口契约。
 
 它**不是**产品客户端。正式玩家入口是独立仓库的 Web 客户端（`ai-rpg-web`），
@@ -18,7 +18,7 @@
 | --- | --- | --- |
 | 交互层 | 进程内直接调 `ai_rpg.services.*` | 走 HTTP（`ai_rpg.dbg_api_agent.server_client`） |
 | 状态位置 | 本地快照 `.worlds/...`（一次性进程） | 服务端**内存**（常驻进程） |
-| 前提 | 无服务器 | 需 `ai-rpg-server` 在跑 |
+| 前提 | 无服务器 | 需 `ai-rpg-dbg-server` 在跑 |
 | 用途 | 服务层规则的无状态、可回溯验证 | HTTP 契约走查、交互式探索与边界试探 |
 
 ---

@@ -14,7 +14,14 @@ from ..models import (
     WornCostumeComponent,
 )
 from ..models.items import CostumeItem
-from .appearance_prompt_builders import build_remove_costume_message
+from ..utils import prompt_builder
+
+
+############################################################################################################
+@prompt_builder
+def _build_remove_costume_message(entity_name: str, base_body: str) -> str:
+    """构建脱下时装后的外观更新消息。"""
+    return f"# {entity_name} 的外观已更新\n时装已移除，外观恢复为基础体型。\n当前外观：{base_body}"
 
 
 ############################################################################################################
@@ -80,7 +87,7 @@ class RemoveCostumeActionSystem(ReactiveProcessor):
         self._game.broadcast_to_stage(
             entity,
             AppearanceUpdateEvent(
-                message=build_remove_costume_message(
+                message=_build_remove_costume_message(
                     entity.name, appearance_comp.base_body
                 ),
                 actor=entity.name,

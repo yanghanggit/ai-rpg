@@ -14,13 +14,6 @@ def build_wear_costume_message(
 
 #######################################################################################################################################
 @prompt_builder
-def build_remove_costume_message(entity_name: str, base_body: str) -> str:
-    """构建脱下时装后的外观更新消息。"""
-    return f"# {entity_name} 的外观已更新\n时装已移除，外观恢复为基础体型。\n当前外观：{base_body}"
-
-
-#######################################################################################################################################
-@prompt_builder
 def build_appearance_synthesis_prompt(
     base_body: str,
     costume_name: str,

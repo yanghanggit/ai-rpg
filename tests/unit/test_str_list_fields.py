@@ -4,7 +4,7 @@
 本文件覆盖：
 - 清洗（``normalize_str_list``）与保边界渲染（``render_*``）；
 - 模型层 ``NormalizedStrList`` 注解自动清洗；
-- 词缀「逐条校验 + 整槽回退」支持多条；
+- 词缀「逐条校验 + 整槽置空」支持多条；
 - 各消费端（出牌/回合结束/怪物决策/消耗品仲裁）逐条渲染全部条目；
 - 消耗品堆叠身份纳入全部效果提示。
 """
@@ -78,7 +78,7 @@ def test_artifact_modifiers_are_normalized() -> None:
 
 
 # ---------------------------------------------------------------------------
-# apply_affix_design：多值逐条校验 + 整槽回退
+# apply_affix_design：多值逐条校验 + 整槽置空
 # ---------------------------------------------------------------------------
 
 
@@ -113,16 +113,16 @@ def test_apply_dedupes_and_drops_blank_affixes() -> None:
     assert card.on_play_affixes == [AFFIX_A]
 
 
-def test_one_invalid_affix_falls_back_whole_slot() -> None:
+def test_one_invalid_affix_empties_whole_slot() -> None:
     card = _card()
-    applied, fallbacks = apply_affix_design(
+    applied, notes = apply_affix_design(
         "角色.无名",
         card,
         {"on_play_affixes": [AFFIX_A, "[断裂]:打出时对目标造成本卡 damage×9 的伤害"]},
     )
     assert applied == 0
-    assert len(fallbacks) == 1
-    assert card.on_play_affixes == [AFFIX_B]
+    assert len(notes) == 1
+    assert card.on_play_affixes == []
 
 
 # ---------------------------------------------------------------------------

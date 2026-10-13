@@ -81,7 +81,7 @@ AFFIX_DESIGN_SPEC: Final[
     str
 ] = """## 词缀设计规范
 
-词缀是你为角色设计的**增益 / 减益规则**，格式 `[词缀名]:机械结算描述`（词缀名可自由创造）。每个词缀槽是**多值列表**：一个元素＝一条完整词缀，禁止拆分或合并；无词缀时留空。词缀由仲裁 LLM 直接执行，效果必须落在下述「结算原语」内、机制明确可核验。
+词缀是你为角色设计的**增益 / 减益规则**。每条词缀**必须严格写成 `[词缀名]:机械结算描述`——`[` `]` 是必须原样写出的字面字符（不是占位符），与分隔符同样缺一不可**（客户端按 `[名称]:说明` 解析），词缀名可自由创造。每个词缀槽是**多值列表**：一个元素＝一条完整词缀，禁止拆分或合并；无词缀时留空。词缀由仲裁 LLM 直接执行，效果必须落在下述「结算原语」内、机制明确可核验；**格式不合法会被整槽置空**。
 
 ### 一、结算原语（效果的硬边界）
 
@@ -102,13 +102,15 @@ AFFIX_DESIGN_SPEC: Final[
 
 ### 三、书写约定与数值限制
 
-- 数值来源要写清：伤害写 `damage`（如 `对目标造成本卡 damage×2 的伤害`），格挡 / 无视防御写 `block`（如 `无视目标 block`），段数写 `hit_count`。
+- 可引用的**内建数值**（仲裁阶段会全量给出，你只需选用于你的规则）：
+  - 本卡：`damage` / `block` / `hit_count`；
+  - 目标：`HP` / 最大 `HP` / `BLOCK`；
+  - 自身：`HP` / `BLOCK`。
+- **格式（硬要求）**：每条词缀必须是 `[词缀名]:机械结算描述`；**方括号必须写**（写成 `名:描述` 会被判不合法，整槽置空）。
+- 数值来源要写清：伤害写明 `damage`（如 `本卡 damage×2`）或目标内建值（如 `目标的 BLOCK` / `目标当前 HP`）；格挡写 `block`；段数写 `hit_count`。
 - 作用对象只用规范称谓：`自身` / `出牌者` / `目标` / `本卡持有者` / `非 source 者`（＝持有者，且持有者 ≠ 本卡 `source`）。`on_turn_end_affixes` 无「出牌者 / 目标」，只能用 `自身` / `本卡持有者` / `非 source 者` / 场上存活角色。
-- 数值只能引用本卡字段，倍率上限：
-  - `on_play_affixes`：`damage×1..3`、`block×1..3`、`hit_count×1..2`
-  - `on_hit_affixes`：`damage×1..3`、`block×1..3`
-  - `on_turn_end_affixes`：`damage×1..2`、`block×1..3`
-- **禁止任何独立数值**（固定伤害、固定回合数等）；本卡 `damage=0` 时不得凭空造成伤害，只能引用 `block` 或用牌承载持续效果。
+- 引用**本卡字段**的 `×N` 有上限：`on_play` `damage×1..3` / `block×1..3` / `hit_count×1..2`；`on_hit` `damage×1..3` / `block×1..3`；`on_turn_end` `damage×1..2` / `block×1..3`。
+- **禁止任何独立数值**（固定伤害、固定回合数等）；本卡 `damage=0` 时不得凭空造成伤害，只能引用 `block`、目标 / 自身内建值，或用牌承载持续效果。
 
 ### 四、设计方向（示例）
 
@@ -175,6 +177,12 @@ _MULTIPLIER_RE: Final[re.Pattern[str]] = re.compile(
 )
 _DIGIT_RE: Final[re.Pattern[str]] = re.compile(r"\d+")
 
+# 词缀硬格式：`[词缀名]:机械结算描述`（方括号 + 半/全角冒号缺一不可）。
+# 与客户端 `readAffixLabel` 的解析保持一致（客户端按 `[名称]:说明` 取名）。
+_AFFIX_FORMAT_RE: Final[re.Pattern[str]] = re.compile(
+    r"^\[([^\[\]]+)\]\s*[:：]\s*([\s\S]*)$"
+)
+
 
 #######################################################################################################################################
 @final
@@ -188,13 +196,11 @@ class AffixValidationResult:
 
 #######################################################################################################################################
 def _split_affix(affix: str) -> Optional[Tuple[str, str]]:
-    """拆分 `[词缀名]:机械结算描述`，返回 (名, 描述)；无法拆分时返回 None。"""
-    for sep in (":", "："):
-        if sep in affix:
-            name_part, desc = affix.split(sep, 1)
-            name = name_part.strip().strip("[]【】").strip()
-            return name, desc.strip()
-    return None
+    """拆分 `[词缀名]:机械结算描述`，返回 (名, 描述)；格式不符时返回 None。"""
+    match = _AFFIX_FORMAT_RE.match(affix.strip())
+    if match is None:
+        return None
+    return match.group(1).strip(), match.group(2).strip()
 
 
 #######################################################################################################################################
@@ -221,7 +227,7 @@ def validate_affix_slot(
     split = _split_affix(affix)
     if split is None:
         return AffixValidationResult(
-            False, "词缀缺少 `[名称]:` 分隔，无法拆分名称与机械描述"
+            False, "词缀必须形如 `[词缀名]:机械结算描述`（方括号与分隔符缺一不可）"
         )
     name, desc = split
     if not name:
@@ -261,40 +267,43 @@ def apply_affix_design(
     card: Card,
     submitted: Mapping[str, Optional[List[str]]],
 ) -> Tuple[int, List[str]]:
-    """应用 agent 设计的词缀；任一槽校验失败则整槽回退原型。
+    """把 agent 设计的词缀应用到 `card` 上，返回 (成功应用的条数, 说明列表)。
 
-    `submitted` 为「字段名 → 设计后的词缀列表」；值为 None 表示该槽未提交（保留原型）。
-    返回 (成功应用的词缀条数, 回退原因列表)。
+    槽位语义（方法论：定量骨架 + 变量词缀）：
+    - 原型中**非空**的词缀槽是「**引导**」，只用来标记该槽可设计，**不是**回退答案；
+    - 该槽最终值只取 agent 的**合法**提交；未提交 / 设计为空 / 不合法，一律**置空**；
+    - 原型为空的槽不是可设计槽，任何提交都被忽略。
+
+    `submitted` 为「字段名 → 设计后的词缀列表」。
     """
     applied = 0
-    fallbacks: List[str] = []
+    notes: List[str] = []
 
     for affix_field in AFFIX_FIELDS:
-        affix_list = submitted.get(affix_field)
-        if affix_list is None:
+        if not getattr(card, affix_field):
+            if submitted.get(affix_field):
+                notes.append(f"{affix_field}: 原型该槽无引导，忽略设计提交")
             continue
 
-        original: List[str] = list(getattr(card, affix_field))
-        if not original:
-            if affix_list:
-                fallbacks.append(f"{affix_field}: 原型该槽为空，忽略设计提交")
-            continue
-
-        # 生成侧清洗：去空白、丢空项、按序去重；清洗后为空则整槽回退原型。
-        cleaned = normalize_str_list(affix_list)
+        cleaned = normalize_str_list(submitted.get(affix_field) or [])
         if not cleaned:
-            fallbacks.append(f"{affix_field}: 设计为空，整槽回退原型")
+            setattr(card, affix_field, [])
+            notes.append(f"{affix_field}: 未提交或设计为空，置空（原型仅为引导）")
             continue
 
-        for affix in cleaned:
-            result = validate_affix_slot(affix_field, affix, card)
-            if not result.ok:
-                fallbacks.append(
-                    f"{affix_field}: {result.reason}（{entity_name} 卡「{card.name}」整槽回退原型）"
-                )
-                break
+        results = [
+            (affix, validate_affix_slot(affix_field, affix, card)) for affix in cleaned
+        ]
+        invalid = [(affix, result.reason) for affix, result in results if not result.ok]
+        if invalid:
+            setattr(card, affix_field, [])
+            detail = "；".join(f"{affix!r}（{reason}）" for affix, reason in invalid)
+            notes.append(
+                f"{affix_field}: 不合法，整槽置空"
+                f"（{entity_name} 卡「{card.name}」）— {detail}"
+            )
         else:
             setattr(card, affix_field, cleaned)
             applied += len(cleaned)
 
-    return applied, fallbacks
+    return applied, notes

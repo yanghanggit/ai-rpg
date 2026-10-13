@@ -1,15 +1,28 @@
 """AssembleDeckSystem 提交入口（词缀随牌设计）的单元测试。"""
 
+from ai_rpg.models import Card
 from ai_rpg.systems.assemble_deck_system import (
     _DeckCardPick,
     _handle_submit_deck_card,
 )
 
 
+def _prototype_cards() -> dict[str, Card]:
+    """带一个可设计槽（非空=有引导）的骨架卡，供提交校验用。"""
+    card = Card(
+        name="基础攻击",
+        description="",
+        damage=2,
+        on_play_affixes=["[引导]:打出时取一个内建数值对目标造成伤害"],
+    )
+    return {"proto.attack": card}
+
+
 def test_submit_deck_card_stores_affix_design() -> None:
     picks: list[_DeckCardPick] = []
     result = _handle_submit_deck_card(
         {"proto.attack"},
+        _prototype_cards(),
         picks,
         prototype_id="proto.attack",
         name="断筋",
@@ -32,6 +45,7 @@ def test_submit_deck_card_rejects_unknown_prototype() -> None:
     picks: list[_DeckCardPick] = []
     result = _handle_submit_deck_card(
         {"proto.attack"},
+        _prototype_cards(),
         picks,
         prototype_id="proto.不存在",
         name="断筋",
@@ -39,4 +53,21 @@ def test_submit_deck_card_rejects_unknown_prototype() -> None:
     )
 
     assert result.startswith("错误")
+    assert picks == []
+
+
+def test_submit_deck_card_rejects_invalid_affix() -> None:
+    # 缺方括号：handler 应返回错误且不记录，让 agent 修正重提。
+    picks: list[_DeckCardPick] = []
+    result = _handle_submit_deck_card(
+        {"proto.attack"},
+        _prototype_cards(),
+        picks,
+        prototype_id="proto.attack",
+        name="断筋",
+        description="描述",
+        on_play_affixes=["断筋:打出时对目标造成本卡 damage×2 的伤害"],
+    )
+
+    assert "错误" in result
     assert picks == []

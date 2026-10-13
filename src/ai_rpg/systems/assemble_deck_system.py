@@ -42,6 +42,8 @@ from ..models import (
     NormalizedStrList,
     SystemMessage,
     apply_affix_design,
+    normalize_str_list,
+    validate_affix_slot,
 )
 from ..paths import DUNGEONS_DIR
 from ..pgsql import (
@@ -148,7 +150,7 @@ SUBMIT_DECK_CARD_TOOL: Final[ToolDefinition] = ToolDefinition(
                     "type": "array",
                     "items": {"type": "string"},
                     "maxItems": 3,
-                    "description": "本卡打出时结算的即时词缀（可选，多值列表）：每个元素是一条完整独立词缀，格式 `[词缀名]:机械结算描述`；禁止把一条词缀拆成多个元素或把多条合并进一个元素；无则 []。仅当原型该槽非空时可提交；须满足字段锚点与数值护栏，否则整槽回退原型。",
+                    "description": "本卡打出时结算的即时词缀（可选，多值列表）：每个元素是一条完整独立词缀，格式 `[词缀名]:机械结算描述`；禁止把一条词缀拆成多个元素或把多条合并进一个元素；无则 []。仅当原型该槽非空（有引导）时可提交；须满足字段锚点与数值护栏，否则整槽置空。",
                 },
                 "on_hit_affixes": {
                     "type": "array",
@@ -225,6 +227,7 @@ def _handle_get_card_prototype(prototype_id: str) -> str:
 ####################################################################################################################################
 def _handle_submit_deck_card(
     valid_ids: Set[str],
+    prototype_cards: Dict[str, Card],
     picks: List[_DeckCardPick],
     prototype_id: str,
     name: str,
@@ -233,7 +236,7 @@ def _handle_submit_deck_card(
     on_hit_affixes: Optional[NormalizedStrList] = None,
     on_turn_end_affixes: Optional[NormalizedStrList] = None,
 ) -> str:
-    """处理 submit_deck_card 工具调用：校验并暂存一张卡牌的选定与设计。"""
+    """处理 submit_deck_card：校验原型 id 与词缀，不合法则返回错误让 agent 修正重提。"""
     assert name.strip(), "name 不能为空"
     assert description.strip(), "description 不能为空"
     if prototype_id not in valid_ids:
@@ -241,6 +244,31 @@ def _handle_submit_deck_card(
             f"错误：未知原型 id {prototype_id!r}。"
             "可用 id 请通过 list_card_prototypes 查询。"
         )
+
+    card = prototype_cards.get(prototype_id)
+    if card is not None:
+        problems: List[str] = []
+        for field, submitted in (
+            ("on_play_affixes", on_play_affixes),
+            ("on_hit_affixes", on_hit_affixes),
+            ("on_turn_end_affixes", on_turn_end_affixes),
+        ):
+            items = normalize_str_list(submitted or [])
+            if not getattr(card, field):
+                if items:
+                    problems.append(f"{field} 不可设计（原型该槽无引导），请勿提交")
+                continue
+            for affix in items:
+                result = validate_affix_slot(field, affix, card)
+                if not result.ok:
+                    problems.append(f"{field}: {affix!r} → {result.reason}")
+        if problems:
+            detail = "\n".join(f"- {p}" for p in problems)
+            return (
+                "错误：词缀不合法，本卡未记录。请修正后重新调用 submit_deck_card：\n"
+                + detail
+            )
+
     picks.append(
         _DeckCardPick(
             prototype_id=prototype_id,
@@ -279,7 +307,7 @@ def _build_deck_prompt(actor_name: str) -> str:
 ## 骨架与设计的边界
 
 - **骨架字段只读**：`cost/damage/hit_count/block/target_type/self_target/playable/exhaust/retain/ethereal/transferable` 由原型给定，你只能引用，不能改动，也不能在提交中输出。
-- **词缀槽位**：只能对 `get_card_prototype` 返回的 `card` 中已非空的槽位提交设计，不得新增其它时机；不提交则保留原型，提交不合法则整槽回退原型。
+- **词缀槽位**：只能对 `get_card_prototype` 返回的 `card` 中已非空（有引导）的槽位提交设计，不得新增其它时机；不提交 / 设计不合法则该槽置空。
 - **你来设计**：`name`、`description`，以及上述槽位内的词缀全文。
 
 ## 工作流程
@@ -416,6 +444,14 @@ class AssembleDeckSystem(ReactiveProcessor):
 
         picks: List[_DeckCardPick] = []
         valid_ids: Set[str] = {str(item["prototype_id"]) for item in index}
+        prototype_cards: Dict[str, Card] = {}
+        for pid in valid_ids:
+            try:
+                prototype_cards[pid] = Card.model_validate(
+                    json.loads(get_card_prototype(pid).card_json)
+                )
+            except Exception as e:
+                logger.error(f"[AssembleDeckSystem] 预取原型 {pid} 失败: {e}")
         # 上下文隔离：以 actor 自己的 system_message 为唯一上下文，
         # 传入全新列表（agent_loop 原地追加），结束后丢弃 → 选完自动「失忆」。
         messages: List[ChatMessage] = [SystemMessage(content=actor.system_message)]
@@ -437,7 +473,7 @@ class AssembleDeckSystem(ReactiveProcessor):
                     ),
                     "get_card_prototype": _handle_get_card_prototype,
                     "submit_deck_card": partial(
-                        _handle_submit_deck_card, valid_ids, picks
+                        _handle_submit_deck_card, valid_ids, prototype_cards, picks
                     ),
                     "finish_deck": _handle_finish_deck,
                 },
@@ -476,8 +512,8 @@ class AssembleDeckSystem(ReactiveProcessor):
                 card.source = actor.name
                 card.name = pick.name
                 card.description = pick.description
-                # 词缀：在原型骨架上重设计；不合法则整槽回退原型
-                _, fallbacks = apply_affix_design(
+                # 词缀：在原型引导下重设计；不合法则整槽置空
+                _, notes = apply_affix_design(
                     actor.name,
                     card,
                     {
@@ -486,8 +522,8 @@ class AssembleDeckSystem(ReactiveProcessor):
                         "on_turn_end_affixes": pick.on_turn_end_affixes,
                     },
                 )
-                for reason in fallbacks:
-                    logger.warning(f"[AssembleDeckSystem] {reason}")
+                for note in notes:
+                    logger.warning(f"[AssembleDeckSystem] {note}")
                 cards.append(card)
         except Exception as e:
             logger.error(f"[AssembleDeckSystem] {actor.name} 物化卡牌失败: {e}")

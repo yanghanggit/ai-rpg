@@ -2,7 +2,7 @@
 
 原型提供「骨架字段 + 设计指导」，agent 在此之上为本角色设计 `name` / `description`
 与三类词缀（增益/减益规则）。词缀设计由 `validate_affix_slot` / `apply_affix_design` 校验，
-任一槽不满足字段锚点/数值护栏则整槽回退原型。
+不合格则整槽置空（原型词缀只作引导，不作回退答案）。
 """
 
 import json
@@ -41,7 +41,9 @@ from ..models import (
     NormalizedStrList,
     SpoilsComponent,
     apply_affix_design,
+    normalize_str_list,
     render_labeled_str_list,
+    validate_affix_slot,
 )
 from ..pgsql import get_card_prototype, list_card_prototype_index
 from ..utils import batch_run_boolean_tasks, prompt_builder
@@ -70,7 +72,7 @@ class _SpoilsCardEdit(BaseModel):
     uuid: str
     name: str
     description: str
-    # 三类词缀（多值）：agent 在原型已存在的槽位内重新设计；缺省则保留原型。
+    # 三类词缀（多值）：agent 在原型已存在的槽位内重新设计；缺省/不合格则置空。
     on_play_affixes: Optional[NormalizedStrList] = None
     on_hit_affixes: Optional[NormalizedStrList] = None
     on_turn_end_affixes: Optional[NormalizedStrList] = None
@@ -100,7 +102,7 @@ SUBMIT_SPOILS_CARD_TOOL: Final[ToolDefinition] = ToolDefinition(
                     "type": "array",
                     "items": {"type": "string"},
                     "maxItems": 3,
-                    "description": "本卡打出时结算的即时词缀（可选，多值列表）：每个元素是一条完整独立词缀，格式 `[词缀名]:机械结算描述`；禁止把一条词缀拆成多个元素或把多条合并进一个元素；无则 []。仅当原型该槽非空时可提交；须满足字段锚点与数值护栏，否则整槽回退原型。",
+                    "description": "本卡打出时结算的即时词缀（可选，多值列表）：每个元素是一条完整独立词缀，格式 `[词缀名]:机械结算描述`；禁止把一条词缀拆成多个元素或把多条合并进一个元素；无则 []。仅当原型该槽非空（有引导）时可提交；须满足字段锚点与数值护栏，否则整槽置空。",
                 },
                 "on_hit_affixes": {
                     "type": "array",
@@ -134,6 +136,7 @@ FINISH_SPOILS_TOOL: Final[ToolDefinition] = ToolDefinition(
 #######################################################################################################################################
 def _handle_submit_spoils_card(
     edits: List[_SpoilsCardEdit],
+    by_uuid: Dict[str, Card],
     uuid: str,
     name: str,
     description: str,
@@ -141,8 +144,34 @@ def _handle_submit_spoils_card(
     on_hit_affixes: Optional[NormalizedStrList] = None,
     on_turn_end_affixes: Optional[NormalizedStrList] = None,
 ) -> str:
-    """处理 submit_spoils_card 工具调用：校验并暂存一张候选卡的设计。"""
-    assert uuid, "uuid 不能为空"
+    """处理 submit_spoils_card：先校验词缀（硬格式 + 数值护栏），不合法则返回错误让 agent 修正重提。"""
+    card = by_uuid.get(uuid)
+    if card is None:
+        return f"错误：未知 uuid {uuid!r}。请使用任务清单中给出的 uuid。"
+
+    problems: List[str] = []
+    for field, submitted in (
+        ("on_play_affixes", on_play_affixes),
+        ("on_hit_affixes", on_hit_affixes),
+        ("on_turn_end_affixes", on_turn_end_affixes),
+    ):
+        items = normalize_str_list(submitted or [])
+        if not getattr(card, field):
+            if items:
+                problems.append(f"{field} 不可设计（原型该槽无引导），请勿提交")
+            continue
+        for affix in items:
+            result = validate_affix_slot(field, affix, card)
+            if not result.ok:
+                problems.append(f"{field}: {affix!r} → {result.reason}")
+
+    if problems:
+        detail = "\n".join(f"- {p}" for p in problems)
+        return (
+            "错误：词缀不合法，本卡未记录。请修正后重新调用 submit_spoils_card：\n"
+            + detail
+        )
+
     edits.append(
         _SpoilsCardEdit(
             uuid=uuid,
@@ -204,11 +233,11 @@ def _format_card_for_prompt(candidate: _Candidate) -> str:
     else:
         lines.append("  可重设计词缀槽位: 无（本卡无词缀槽，仅设计 name/description）")
 
-    # 原型词缀：既是槽位声明，也是设计失败时的回退参考。
+    # 原型词缀：只作槽位声明与设计引导；不是回退答案（不合格则置空）。
     if card.on_play_affixes:
         lines.append(
             render_labeled_str_list(
-                "  on_play_affixes（原型回退参考，需重设计）",
+                "  on_play_affixes（原型引导，需实例化为具体规则）",
                 card.on_play_affixes,
                 indent="    ",
             )
@@ -216,7 +245,7 @@ def _format_card_for_prompt(candidate: _Candidate) -> str:
     if card.on_hit_affixes:
         lines.append(
             render_labeled_str_list(
-                "  on_hit_affixes（原型回退参考，需重设计）",
+                "  on_hit_affixes（原型引导，需实例化为具体规则）",
                 card.on_hit_affixes,
                 indent="    ",
             )
@@ -224,7 +253,7 @@ def _format_card_for_prompt(candidate: _Candidate) -> str:
     if card.on_turn_end_affixes:
         lines.append(
             render_labeled_str_list(
-                "  on_turn_end_affixes（原型回退参考，需重设计）",
+                "  on_turn_end_affixes（原型引导，需实例化为具体规则）",
                 card.on_turn_end_affixes,
                 indent="    ",
             )
@@ -253,8 +282,8 @@ def _build_spoils_prompt(entity: Entity, candidates: List[_Candidate]) -> str:
 ## 骨架与设计的边界
 
 - **骨架字段只读**：`cost/damage/hit_count/block/target_type/self_target/playable/exhaust/retain/ethereal/transferable` 由原型给定，你只能引用，不能改动，也不能在提交中输出。
-- **词缀槽位**：只能对原型已非空的槽位提交设计，不得新增其它时机；不提交则保留原型词缀，提交不合法则整槽回退原型。
-- **原型词缀只是回退参考**：它不是你必须照抄的答案；请按上方规范为你的角色设计更贴合的版本。
+- **词缀槽位**：只能对原型已非空的槽位（有引导）提交设计，不得新增其它时机；不提交 / 设计不合法则该槽**置空**。
+- **原型词缀只是引导**：它提示“这一槽该往哪个方向设计”，不是可照抄的成品；请按上方规范为你的角色写出具体规则。
 
 ## 叙事与边界
 
@@ -265,7 +294,7 @@ def _build_spoils_prompt(entity: Entity, candidates: List[_Candidate]) -> str:
 ## 工作流程
 
 1. 逐一审视每张卡（以 `uuid` 精确定位，避免同名混淆）：读骨架字段与设计指导，判断该卡能为你的角色带来什么收益/代价；
-2. 为每张卡各调用一次 `submit_spoils_card`：提交 `uuid` / `name` / `description`；对原型已存在的词缀槽位，提交你设计好的 `on_play_affixes` / `on_hit_affixes` / `on_turn_end_affixes`（合法则采用，不合法整槽回退原型）；
+2. 为每张卡各调用一次 `submit_spoils_card`：提交 `uuid` / `name` / `description`；对原型已存在的词缀槽位，提交你设计好的 `on_play_affixes` / `on_hit_affixes` / `on_turn_end_affixes`（合法则采用；未提交或不合法则该槽置空）；
 3. 全部提交完毕后调用 `finish_spoils` 结束。"""
 
 
@@ -332,8 +361,11 @@ class GenerateSpoilsActionSystem(ReactiveProcessor):
 
             # 每实体独立的结果容器与工具处理器
             edits: List[_SpoilsCardEdit] = []
+            by_uuid = {c.card.uuid: c.card for c in candidates}
             handlers: Dict[str, Callable[..., Union[str, Awaitable[str]]]] = {
-                "submit_spoils_card": partial(_handle_submit_spoils_card, edits),
+                "submit_spoils_card": partial(
+                    _handle_submit_spoils_card, edits, by_uuid
+                ),
                 "finish_spoils": _handle_finish_spoils,
             }
 
@@ -362,7 +394,7 @@ class GenerateSpoilsActionSystem(ReactiveProcessor):
         # 并发执行
         outcomes = await batch_run_boolean_tasks(tasks)
 
-        # 应用结果：按 uuid 回填 name/description（硬约束），词缀经「字段锚点 + 数值护栏」校验（失败整槽回退原型）
+        # 应用结果：按 uuid 回填 name/description（硬约束），词缀经「字段锚点 + 数值护栏」校验（失败整槽置空）
         for (entity, candidates, edits), ok in zip(pending, outcomes):
             by_uuid = {c.card.uuid: c.card for c in candidates}
             applied = 0
@@ -377,7 +409,7 @@ class GenerateSpoilsActionSystem(ReactiveProcessor):
                     continue
                 target_card.name = edit.name
                 target_card.description = edit.description
-                count, fallbacks = apply_affix_design(
+                count, notes = apply_affix_design(
                     entity.name,
                     target_card,
                     {
@@ -387,8 +419,8 @@ class GenerateSpoilsActionSystem(ReactiveProcessor):
                     },
                 )
                 affixes_applied += count
-                for reason in fallbacks:
-                    logger.warning(f"[GenerateSpoilsActionSystem] {reason}")
+                for note in notes:
+                    logger.warning(f"[GenerateSpoilsActionSystem] {note}")
                 applied += 1
 
             # 装入 Spoils（replace 覆盖旧内容；claimed_cards 为空队列）

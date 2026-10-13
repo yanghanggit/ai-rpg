@@ -1,4 +1,4 @@
-"""卡牌词缀设计校验（`validate_affix_slot`）与「整槽回退」（`apply_affix_design`）的单元测试。"""
+"""卡牌词缀设计校验（`validate_affix_slot`）与「非法置空」（`apply_affix_design`）的单元测试。"""
 
 from ai_rpg.models import (
     Card,
@@ -123,6 +123,15 @@ def test_placeholder_fails() -> None:
     assert not result.ok
 
 
+def test_missing_brackets_fails() -> None:
+    # 硬格式：方括号必需（客户端按 `[名称]:说明` 解析）。
+    result = validate_affix_slot(
+        "on_play_affixes", "断筋:打出时对目标造成本卡 damage×2 的伤害", _card()
+    )
+    assert not result.ok
+    assert "方括号" in result.reason
+
+
 def test_on_play_rejected_for_unplayable_card() -> None:
     result = validate_affix_slot(
         "on_play_affixes", "[诅咒]:打出时对目标施加减益", _card(playable=False)
@@ -144,41 +153,42 @@ def test_valid_design_is_applied() -> None:
     assert card.on_play_affixes == ["[断筋]:打出时对目标造成本卡 damage×2 的伤害"]
 
 
-def test_invalid_design_falls_back_whole_slot() -> None:
+def test_invalid_design_empties_slot() -> None:
     card = _card()
     submitted = {"on_play_affixes": ["[断筋]:打出时对目标造成本卡 damage×9 的伤害"]}
 
-    applied, fallbacks = apply_affix_design("角色.无名", card, submitted)
+    applied, notes = apply_affix_design("角色.无名", card, submitted)
 
     assert applied == 0
-    assert len(fallbacks) == 1
-    assert card.on_play_affixes == ["[诅咒]:打出时对目标施加减益"]
+    assert len(notes) == 1
+    assert card.on_play_affixes == []
 
 
-def test_empty_design_falls_back_to_prototype() -> None:
+def test_empty_design_empties_slot() -> None:
     card = _card()
-    applied, fallbacks = apply_affix_design("角色.无名", card, {"on_play_affixes": []})
+    applied, notes = apply_affix_design("角色.无名", card, {"on_play_affixes": []})
 
     assert applied == 0
-    assert len(fallbacks) == 1
-    assert card.on_play_affixes == ["[诅咒]:打出时对目标施加减益"]
+    assert len(notes) == 1
+    assert card.on_play_affixes == []
 
 
 def test_design_for_empty_slot_is_ignored() -> None:
-    card = _card(on_hit_affixes=[])
-    applied, fallbacks = apply_affix_design(
+    card = _card(on_play_affixes=[], on_hit_affixes=[])
+    applied, notes = apply_affix_design(
         "角色.无名", card, {"on_hit_affixes": ["[逆鳞]:被命中时反击"]}
     )
 
     assert applied == 0
-    assert len(fallbacks) == 1
+    assert len(notes) == 1
     assert card.on_hit_affixes == []
 
 
-def test_omitted_slot_keeps_prototype() -> None:
+def test_omitted_slot_empties_slot() -> None:
+    # 原型词缀是「引导」而非回退答案：不提交即置空。
     card = _card()
-    applied, fallbacks = apply_affix_design("角色.无名", card, {})
+    applied, notes = apply_affix_design("角色.无名", card, {})
 
     assert applied == 0
-    assert fallbacks == []
-    assert card.on_play_affixes == ["[诅咒]:打出时对目标施加减益"]
+    assert len(notes) == 1
+    assert card.on_play_affixes == []

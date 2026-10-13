@@ -201,9 +201,13 @@ MARK_PROTOTYPE: Final[Card] = Card(
 
 
 PIERCE_PROTOTYPE: Final[Card] = Card(
-    name="穿甲输出",
+    name="借势攻击",
     description="",
-    on_play_affixes=["[穿甲]:本卡 damage 结算时无视目标 block"],
+    # 引导而非成品：以 `[词缀名]` 显形（模型化正确格式），但占位名会被校验拒（照抄必败）。
+    on_play_affixes=[
+        "[词缀名]:打出时取一个内建数值为变量对目标结算伤害（候选数值——本卡 damage/hit_count、"
+        "目标的 BLOCK/当前 HP/最大 HP、自身的 HP/BLOCK）。请把这条引导写成属于你的一条具体词缀。"
+    ],
     on_hit_affixes=[],
     on_turn_end_affixes=[],
     playable=True,
@@ -677,11 +681,15 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             card_type="手牌",
             archetype="攻击端",
             archetype_subtype="前端伤害",
-            name="穿甲输出",
-            summary="即时词缀（增益）让本次伤害穿透防御。",
+            name="借势攻击",
+            summary="攻击端·取数：借一个内建数值把这一击做重（无视格挡 / 借目标格挡 / 借目标气血）。",
             guide=(
-                "字段：on_play_affixes=[穿甲]、SINGLE。即时词缀（增益）直接增强本次出牌伤害，"
-                "无视目标防御。"
+                "字段：on_play_affixes、SINGLE。这是一条「取数」引导，不是成品规则——"
+                "请在骨架之上选一个（或组合）内建数值，写成你自己的一条 on_play 词缀"
+                "（格式 `[词缀名]:机械结算描述`）。可选数值：本卡 damage/hit_count；"
+                "目标的 BLOCK/当前 HP/最大 HP；自身的 HP/BLOCK。"
+                "可选方向：无视目标格挡直伤、借目标格挡加重本次伤害、"
+                "借目标当前 HP 加重伤害、借自身气血搏命等。"
             ),
             keywords=("on_play_affixes", "damage", "single"),
         ),

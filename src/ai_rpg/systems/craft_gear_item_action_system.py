@@ -474,7 +474,9 @@ class CraftGearItemActionSystem(ReactiveProcessor):
             )
             return
 
-        # 根据 LLM 返回的装备规格构造 Card 对象
+        # 根据 LLM 返回的装备规格构造 Card 对象。
+        # 注意：此处不设 source——成品只是存于储物箱的装备模板，真正的持有者 source
+        # 由 EquipGearItemActionSystem._materialize_cards 在物化为手牌时回填。
         card = Card(
             name=result.name,
             description=result.description,

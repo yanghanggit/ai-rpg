@@ -198,14 +198,21 @@ def _copy_skeleton(card: Card) -> Card:
     return copied
 
 
-def _make_attack_card() -> Card:
-    """基础攻击原型副本（机械字段与 demo/card_prototypes.py 的「基础攻击」一致）。"""
-    return _copy_skeleton(ATTACK_SKELETON)
+def _make_attack_card(owner: str) -> Card:
+    """基础攻击原型副本（机械字段与 demo/card_prototypes.py 的「基础攻击」一致）。
+
+    基础攻防卡统一同名、不做叙事润色，故显式带 source（牌库入口不变量）。
+    """
+    card = _copy_skeleton(ATTACK_SKELETON)
+    card.source = owner
+    return card
 
 
-def _make_defense_card() -> Card:
+def _make_defense_card(owner: str) -> Card:
     """基础防御原型副本（机械字段与 demo/card_prototypes.py 的「基础防御」一致）。"""
-    return _copy_skeleton(DEFENSE_SKELETON)
+    card = _copy_skeleton(DEFENSE_SKELETON)
+    card.source = owner
+    return card
 
 
 def _make_alpha_wolf_deck() -> List[Card]:
@@ -434,12 +441,12 @@ def create_nameless() -> Actor:
             name=actor.name,
             cards=[
                 # 3 张基础攻击
-                _make_attack_card(),
-                _make_attack_card(),
-                _make_attack_card(),
+                _make_attack_card(actor.name),
+                _make_attack_card(actor.name),
+                _make_attack_card(actor.name),
                 # 2 张基础防御
-                _make_defense_card(),
-                _make_defense_card(),
+                _make_defense_card(actor.name),
+                _make_defense_card(actor.name),
             ],
         ),
         WornCostumeComponent(
@@ -506,12 +513,12 @@ def create_badluck() -> Actor:
             name=actor.name,
             cards=[
                 # 3 张基础攻击
-                _make_attack_card(),
-                _make_attack_card(),
-                _make_attack_card(),
+                _make_attack_card(actor.name),
+                _make_attack_card(actor.name),
+                _make_attack_card(actor.name),
                 # 2 张基础防御
-                _make_defense_card(),
-                _make_defense_card(),
+                _make_defense_card(actor.name),
+                _make_defense_card(actor.name),
             ],
         ),
         WornCostumeComponent(

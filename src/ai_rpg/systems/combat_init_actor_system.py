@@ -1,4 +1,4 @@
-"""战斗初始化系统（角色侧）：战斗触发后，为参战角色初始化临时牌堆、注入战场环境并触发初始牌库生成。"""
+"""战斗初始化系统（角色侧）：战斗触发后，为参战角色初始化临时牌堆、注入战场环境。"""
 
 from dataclasses import dataclass
 from typing import Final, List, Set, final, override
@@ -20,7 +20,6 @@ from ..models import (
     EnvironmentComponent,
     ExhaustPileComponent,
     FillDrawPileAction,
-    InitializeDeckAction,
     MonsterComponent,
     PartyMemberComponent,
 )
@@ -137,11 +136,6 @@ class CombatInitActorSystem(ExecuteProcessor):
         for actor_entity in actor_entities:
             actor_entity.replace(FillDrawPileAction, actor_entity.name)
             logger.debug(f"[{actor_entity.name}] 已添加 FillDrawPileAction")
-
-        # 所有参战角色都触发牌库初始化；幂等守卫会跳过已初始化者（如开场房已润色的队员）
-        for actor_entity in actor_entities:
-            actor_entity.replace(InitializeDeckAction, actor_entity.name)
-            logger.debug(f"[{actor_entity.name}] 已触发牌库初始化")
 
         # 怪物牌库预置校验（保留原有不变式，仅做断言）
         for actor_entity in actor_entities:

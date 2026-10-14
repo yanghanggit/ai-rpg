@@ -1,4 +1,4 @@
-"""副本开场初始化系统（角色侧）：为开场场景内的队伍成员注入场景环境信息，并为队伍成员触发牌库初始化（怪物牌库在各自战斗房间初始化）。"""
+"""副本开场初始化系统（角色侧）：为开场场景内的队伍成员注入场景环境信息。"""
 
 from dataclasses import dataclass
 from typing import Final, List, Set, final, override
@@ -14,9 +14,7 @@ from ..game.dbg_game import DBGGame
 from ..models import (
     AppearanceComponent,
     CharacterStats,
-    DeckComponent,
     EnvironmentComponent,
-    InitializeDeckAction,
     MonsterComponent,
     PartyMemberComponent,
     SpoilsComponent,
@@ -98,9 +96,7 @@ class OpeningInitActorSystem(ExecuteProcessor):
             logger.debug("当前开场房间已完成初始化，跳过开场初始化（角色侧）")
             return
 
-        logger.info(
-            "开场初始化（角色侧）开始：注入开场场景环境信息 + 为队伍成员触发牌库初始化..."
-        )
+        logger.info("开场初始化（角色侧）开始：注入开场场景环境信息...")
 
         # 获取玩家实体，player 所在场景即开场场景
         player_entity = self._game.get_player_entity()
@@ -126,10 +122,6 @@ class OpeningInitActorSystem(ExecuteProcessor):
             stage_name=current_stage_entity.name,
             environment=environment_comp.narrative,
         )
-
-        # 为队伍成员触发牌库初始化（精确控制触发对象）
-        # 注：奖励生成（GenerateSpoilsAction）已改为外部显式触发，见 services/dungeon_opening_actions.py
-        self._add_initialize_deck_actions()
 
         # 兜底：进入开场房时清掉上一局残留的奖励状态，保证守卫 `any(has(SpoilsComponent))` 从“无”开始
         self._reset_spoils_state()
@@ -237,29 +229,4 @@ class OpeningInitActorSystem(ExecuteProcessor):
                 logger.debug(f"[{entity.name}] 已清理残留 SpoilsComponent")
         logger.debug(
             f"[OpeningInitActorSystem] 残留奖励状态清理完成：{cleared} 个队伍成员"
-        )
-
-    ###################################################################################################################################################################
-    def _add_initialize_deck_actions(self) -> None:
-        """为所有队伍成员添加牌库初始化动作（精确控制触发对象）。"""
-        count = 0
-
-        party_entities = self._game.get_group(
-            Matcher(all_of=[PartyMemberComponent])
-        ).entities.copy()
-        for entity in party_entities:
-            assert entity.has(
-                PartyMemberComponent
-            ), f"角色 {entity.name} 缺少 PartyMemberComponent，不应被开场初始化选中！"
-
-            assert entity.has(
-                DeckComponent
-            ), f"队伍成员 {entity.name} 缺少 DeckComponent！"
-
-            entity.replace(InitializeDeckAction, entity.name)
-            logger.debug(f"[{entity.name}] 已触发牌库初始化（队伍）")
-            count += 1
-
-        logger.info(
-            f"[OpeningInitActorSystem] 完成，已为 {count} 个队伍成员触发牌库初始化"
         )

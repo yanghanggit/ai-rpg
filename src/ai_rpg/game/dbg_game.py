@@ -50,6 +50,29 @@ from .rpg_game_pipeline_manager import RPGGameProcessPipeline
 
 
 #################################################################################################################################################
+def _assert_deck_sources(actor_name: str, deck_comp: Optional[DeckComponent]) -> None:
+    """入口不变量：牌库中每张卡必须显式带 source，且 source 必须等于持有者。
+
+    不再有「空 source = 未初始化」的哨兵语义；source 决定词缀「非 source 者」语义与
+    怪物亮牌判定。持久牌库（DeckComponent）中的牌恒属于持有者，故在实体创建/加载时
+    强制 source == actor_name，开发期预制数据漏写或写错名字一律在此 fail-fast。
+
+    注：战斗中被注入到对手手牌的 transferable 副本（source 保留注入者）只存在于临时
+    手牌/牌堆，不会进入 DeckComponent，因此不受本断言约束。
+    """
+    assert deck_comp is not None, f"{actor_name} 缺少 DeckComponent"
+    for card in deck_comp.cards:
+        assert card.source.strip(), (
+            f"{actor_name} 的卡「{card.name}」缺少 source："
+            f"牌库中每张卡都必须显式设置 source（见 demo/world.py）"
+        )
+        assert card.source == actor_name, (
+            f"{actor_name} 的卡「{card.name}」source={card.source!r} 与持有者不符："
+            f"持久牌库中的卡 source 必须等于持有者名"
+        )
+
+
+#################################################################################################################################################
 class DBGGame(RPGGame):
     """
     DBG，Deck Building Game
@@ -334,9 +357,8 @@ class DBGGame(RPGGame):
             # 做一些判断
             assert actor_entity.has(DeckComponent), "玩家角色实体必须有 DeckComponent"
 
-            # 卡牌来源（source）不在此处回填：交由 InitializeDeckActionSystem 在牌库初始化时
-            # 确定性回填。这样「source 为空」才能作为「尚未初始化」的判据，使蓝图/兜底牌库也走叙事润色；
-            # 设计路径（assemble_deck / spoils / 装备物化）会显式设置 source，从而跳过润色。
+            # 入口不变量：预制/加载牌库的每张牌都必须显式带 source（空 source 视为数据错误）
+            _assert_deck_sources(actor_entity.name, actor_entity.get(DeckComponent))
 
             # 添加到返回值
             actor_entities.append(actor_entity)

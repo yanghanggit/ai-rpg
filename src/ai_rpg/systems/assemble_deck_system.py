@@ -52,17 +52,18 @@ from ..utils import batch_run_boolean_tasks, prompt_builder
 ####################################################################################################################################
 
 
-def make_default_deck_cards() -> List[Card]:
+def make_default_deck_cards(owner: str) -> List[Card]:
     """默认牌库：直接取数据库中的「默认牌单」，给什么用什么。
 
     牌单由 demo/card_prototypes.py 的 `DEFAULT_DECK_BUILD` 经 setup_demo 灌库，
     本函数不关心任何卡名与份数，仅按返回顺序逐张物化为独立 Card。
-    `source` 留空，交由 InitializeDeckActionSystem 在战斗初始化时回填并叙事润色。
+    `source` 回填为持有者名（牌库入口不变量：预制/兜底牌库的每张牌都必须带 source）。
     """
     cards: List[Card] = []
     for card_json in get_default_deck_card_jsons():
         card = Card.model_validate(json.loads(card_json))
         card.uuid = str(uuid4())
+        card.source = owner
         cards.append(card)
 
     assert cards, "默认牌单为空：请检查 demo/card_prototypes.py 与 setup_demo 灌库"
@@ -457,7 +458,7 @@ class AssembleDeckSystem(ReactiveProcessor):
             logger.error(
                 f"[AssembleDeckSystem] {actor.name} 牌库组建异常，回退默认: {e}"
             )
-            cards = make_default_deck_cards()
+            cards = make_default_deck_cards(actor.name)
             is_fallback = True
 
         # 构建角色的牌库组件并挂载到角色身上
@@ -472,7 +473,7 @@ class AssembleDeckSystem(ReactiveProcessor):
         """让 actor 通过工具自选 5 张原型并润色；返回 (牌列表, 是否回退)。"""
         if not index:
             logger.warning(f"[AssembleDeckSystem] {actor.name} 原型索引为空，回退默认")
-            return make_default_deck_cards(), True
+            return make_default_deck_cards(actor.name), True
 
         picks: List[_DeckCardPick] = []
         valid_ids: Set[str] = {item["prototype_id"] for item in index}
@@ -515,20 +516,20 @@ class AssembleDeckSystem(ReactiveProcessor):
             )
         except Exception as e:
             logger.error(f"[AssembleDeckSystem] {actor.name} agent_loop 异常: {e}")
-            return make_default_deck_cards(), True
+            return make_default_deck_cards(actor.name), True
 
         if not ok:
             logger.warning(
                 f"[AssembleDeckSystem] {actor.name} agent_loop 失败，回退默认"
             )
-            return make_default_deck_cards(), True
+            return make_default_deck_cards(actor.name), True
 
         if len(picks) != DECK_SIZE:
             logger.warning(
                 f"[AssembleDeckSystem] {actor.name} 提交 {len(picks)} 张卡牌"
                 f"（需 {DECK_SIZE}），回退默认"
             )
-            return make_default_deck_cards(), True
+            return make_default_deck_cards(actor.name), True
 
         cards: List[Card] = []
         try:
@@ -542,7 +543,7 @@ class AssembleDeckSystem(ReactiveProcessor):
                         f"（card_type={proto.card_type!r}）"
                     )
                 card = Card.model_validate(json.loads(proto.card_json))
-                # 原型 uuid 是共享常量，必须换新；source 回填持有者名（与牌库初始化一致）
+                # 原型 uuid 是共享常量，必须换新；source 回填持有者名（牌库入口不变量）
                 card.uuid = str(uuid4())
                 card.source = actor.name
                 card.name = pick.name
@@ -579,7 +580,7 @@ class AssembleDeckSystem(ReactiveProcessor):
 
             # 物化卡牌失败，回退默认牌库
             logger.error(f"[AssembleDeckSystem] {actor.name} 物化卡牌失败: {e}")
-            return make_default_deck_cards(), True
+            return make_default_deck_cards(actor.name), True
 
         logger.info(
             f"[AssembleDeckSystem] {actor.name} 组建原型牌库: "

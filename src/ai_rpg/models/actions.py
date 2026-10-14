@@ -340,16 +340,6 @@ class EquipGearItemAction(Component):
 @final
 @register_action_component_type
 @register_component_type
-class InitializeDeckAction(Component):
-    """触发为角色回填牌库来源并做叙事个人化。"""
-
-    name: str
-
-
-############################################################################################################
-@final
-@register_action_component_type
-@register_component_type
 class GenerateSpoilsAction(Component):
     """触发为角色生成候选奖励（SpoilsComponent），当前生成候选卡牌。"""
 

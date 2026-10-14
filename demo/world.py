@@ -14,7 +14,6 @@ from ai_rpg.models import (
     Card,
     CharacterStats,
     CombatRoom,
-    ConsumableComponent,
     ConsumableItem,
     ConsumableWorkshopComponent,
     CostumeItem,
@@ -45,6 +44,9 @@ from ai_rpg.models import (
 
 from .card_skeletons import (
     ATTACK_SKELETON,
+    CONSUMABLE_AOE_SKELETON,
+    CONSUMABLE_SINGLE_SKELETON,
+    CONSUMABLE_SPREAD_SKELETON,
     DEFENSE_SKELETON,
     GEAR_DEFENSE_SKELETON,
     GEAR_OFFENSE_SKELETON,
@@ -293,6 +295,26 @@ def _make_gear_defense_card() -> Card:
     return card
 
 
+def _make_consumable_card(
+    skeleton: Card,
+    name: str,
+    description: str,
+    *,
+    damage: int,
+    hit_count: Optional[int] = None,
+    on_play_affixes: Optional[List[str]] = None,
+) -> Card:
+    """消耗品内置卡牌：骨架固定 0 费/一次性（见 consume 模型校验），本阶段只做伤害。"""
+    card = _copy_skeleton(skeleton)
+    card.name = name
+    card.description = description
+    card.damage = damage
+    if hit_count is not None:
+        card.hit_count = hit_count
+    card.on_play_affixes = on_play_affixes or []
+    return card
+
+
 ########################################################################################################################
 def create_alpha_wolf() -> Actor:
     """创建头狼怪物实例。"""
@@ -466,16 +488,30 @@ def create_nameless() -> Actor:
                     cards=[_make_gear_defense_card()],
                 ),
                 ConsumableItem(
-                    name="消耗品.治疗药水",
-                    description="一只粗陶小瓶，塞着软木塞，瓶里是暗绿色的药液，闻着有草药的苦味。饮下后伤口会以肉眼可见的速度收口。",
+                    name="消耗品.灼血药剂",
+                    description="一只粗陶小瓶，塞着软木塞，瓶里是暗绿的药液，闻着有草药的辛辣苦味。洒出时药液腾起一缕灼热的酸雾，蚀入皮肉。",
                     count=1,
-                    modifiers=["饮下治疗药水：使单个目标恢复 4 点 HP。"],
+                    cards=[
+                        _make_consumable_card(
+                            CONSUMABLE_SINGLE_SKELETON,
+                            "消耗品.灼血药剂",
+                            "小瓶抧出，暗绿的药液泼向对方，辛辣的酸雾随之腾起。",
+                            damage=4,
+                        )
+                    ],
                 ),
                 ConsumableItem(
                     name="消耗品.爆裂卷轴",
                     description="一卷用麻布缠紧的羊皮卷，展开后是朱砂绘成的爆裂符文，边缘已熏得焦黑。掷出后会轰然炸开，碎片与热浪四溅。",
                     count=1,
-                    modifiers=["掷出爆裂卷轴，符文轰然炸开：对目标造成 2 点伤害。"],
+                    cards=[
+                        _make_consumable_card(
+                            CONSUMABLE_AOE_SKELETON,
+                            "消耗品.爆裂卷轴",
+                            "麻布崩开，朱砂符文轰然炸响，碎片与热浪四向溅开。",
+                            damage=2,
+                        )
+                    ],
                 ),
             ],
         ),
@@ -559,7 +595,6 @@ def create_demo_blueprint(game_name: str) -> Blueprint:
             create_gear_workshop(),
             create_consumable_workshop(),
             create_costume_workshop(),
-            create_consumable_arbitrator(),
             create_dungeon_director(),
             create_world_director(),
             create_storage(),
@@ -780,7 +815,14 @@ def create_consumable_workshop() -> World:
 
 投入材料若来自凡俗层面，必须转译为奇幻世界能理解并接受的形态：
 铁锭可锻作投掷用的飞刃，兽皮可鞣作护符的衬里，木片可刻成一次性符文，粗布可浸作引火的药捻。
-成品须呈现奇幻世界的质感，其凡俗来源只能以极克制的感官细节暗示，不得破坏世界的氛围。""",
+成品须呈现奇幻世界的质感，其凡俗来源只能以极克制的感官细节暗示，不得破坏世界的氛围。
+
+## 效果载体（内置卡牌）
+
+消耗品的效果由一张内置卡牌（Card）承载，在战斗中使用时会物化为手牌并作为普通牌打出。
+消耗品卡固定 **0 费且一次性**（用后即消耗），本阶段**只做伤害**：以材料的特质为灵感，
+将它转化为卡牌的伤害、段数与目标方式（单体 / 全体 / 散射）。物品描述只写感官与使用动作，
+不出现数值与机制词汇；具体卡牌字段与词缀由合成任务提示词给出。""",
     )
 
     world.components = dump_components(ConsumableWorkshopComponent(name=world.name))
@@ -820,30 +862,9 @@ def create_costume_workshop() -> World:
 
 
 ###############################################################################################################################
-def create_consumable_arbitrator() -> World:
-    """创建消耗品仲裁世界（临时 agent 宿主：结算消耗品使用效果）。"""
-
-    world = create_world(
-        name="世界.消耗品仲裁",
-        campaign_setting=CAMPAIGN_SETTING,
-        system_rules=SYSTEM_RULES_FINAL,
-        role_rules="""## 消耗品仲裁职责
-
-你扮演游戏世界的消耗品效果仲裁者。当一名角色在战斗中使用消耗品时，你被临时唤醒，作为该次消耗品使用效果的裁决者。
-
-你只能在系统提供的工具边界内行动：读取角色的当前属性、写入角色的最终生命值、提交本次仲裁的最终结果（战斗日志、演出叙事）。
-
-## 结算原则
-
-- 严格依据本次任务提示词中的「消耗品描述」与「修正规则（modifiers）」结算，修正规则未写明的效果不得凭空添加。
-- 数值计算保持克制与合理，不超出消耗品描述与修正规则的语义范围。
-- 演出叙事必须植根于当前世界观与场景环境，用感官描写呈现，不出现游戏机制术语。
-- 只裁决本次消耗品使用，不越界改动无关角色或场景以外的任何状态。""",
-    )
-
-    world.components = dump_components(ConsumableComponent(name=world.name))
-
-    return world
+# 消耗品仲裁世界实体已随「消耗品内置卡牌」重构移除：
+# 消耗品现在物化为手牌后走出牌仲裁（PlayCardsArbitrationSystem），不再需要独立的临时 agent。
+###############################################################################################################################
 
 
 ###############################################################################################################################
@@ -937,17 +958,30 @@ def create_storage() -> World:
             name=world.name,
             items=[
                 ConsumableItem(
-                    name="消耗品.治疗药水",
-                    description="一只粗陶小瓶，塞着软木塞，瓶里是暗绿色的药液，闻着有草药的苦味。饮下后伤口会以肉眼可见的速度收口。",
+                    name="消耗品.灼血药剂",
+                    description="一只粗陶小瓶，塞着软木塞，瓶里是暗绿的药液，闻着有草药的辛辣苦味。洒出时药液腾起一缕灼热的酸雾，蚀入皮肉。",
                     count=2,
-                    modifiers=["饮下治疗药水：使单个友方目标恢复 3 点 HP。"],
+                    cards=[
+                        _make_consumable_card(
+                            CONSUMABLE_SINGLE_SKELETON,
+                            "消耗品.灼血药剂",
+                            "小瓶抧出，暗绿的药液泼向对方，辛辣的酸雾随之腾起。",
+                            damage=4,
+                        )
+                    ],
                 ),
                 ConsumableItem(
                     name="消耗品.震击卷轴",
                     description="一卷用旧麻布包着的羊皮纸，展开后是朱砂画成的符文，笔迹潦草。掷出时符文会迸出一瞬的电弧。",
                     count=2,
-                    modifiers=[
-                        "掷出震击卷轴，符文迸发灼烧目标：对单个敌人造成 3 点伤害。"
+                    cards=[
+                        _make_consumable_card(
+                            CONSUMABLE_SPREAD_SKELETON,
+                            "消耗品.震击卷轴",
+                            "羊皮纸展开，朱砂符文迸出一瞬电弧，灼烧着场上众人。",
+                            damage=3,
+                            hit_count=2,
+                        )
                     ],
                 ),
                 MaterialItem(

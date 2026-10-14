@@ -306,7 +306,6 @@ async def execute_use_consumable_task(
     context: JobContext,
     user_name: str,
     item_name: str,
-    targets: List[str],
 ) -> None:
     """执行使用消耗品任务"""
     job_id = context.job.id
@@ -335,7 +334,7 @@ async def execute_use_consumable_task(
                 raise ValueError("战斗未在进行中")
 
             # 激活使用消耗品动作
-            success, message = activate_use_consumable(rpg_game, item_name, targets)
+            success, message = activate_use_consumable(rpg_game, item_name)
             if not success:
                 raise ValueError(message)
 

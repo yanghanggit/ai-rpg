@@ -260,15 +260,6 @@ class CostumeWorkshopComponent(Component):
 ############################################################################################################
 @final
 @register_component_type
-class ConsumableComponent(Component):
-    """标记世界实体具有消耗品使用仲裁职责（LLM 驱动，作为临时 agent 结算消耗品效果）。"""
-
-    name: str
-
-
-############################################################################################################
-@final
-@register_component_type
 class ReliquaryComponent(Component):
     """神器容器组件：Actor/Stage 均可携带，承载该实体携带的神器列表。"""
 

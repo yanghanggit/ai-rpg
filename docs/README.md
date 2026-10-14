@@ -33,7 +33,7 @@
 
 | 文档 | 简介 |
 | ------ | ------ |
-| [消耗品系统（ConsumableItem）](wiki/consumable-item.md) | 消耗品的数据模型、战斗使用管道、修正规则（modifiers）设计 |
+| [消耗品系统（ConsumableItem）](wiki/consumable-item.md) | 消耗品的数据模型、内置卡牌与战斗使用管道 |
 | [装备系统（GearItem）](wiki/gear-item.md) | 装备的数据模型、装备物化为手牌的管道、战斗结束归还 |
 | [工坊合成管道（Craft Pipeline）](wiki/craft-pipeline.md) | 工坊合成的核心哲学：机制与内容分离、配置注入路径、材料驱动的创意生成 |
 | [材料系统（MaterialItem）](wiki/material-item.md) | 材料的数据模型、工坊合成管道（消耗品/装备/时装三类产物）、与其他物品类型的关系 |
@@ -43,7 +43,7 @@
 | [副本生成管道（Dungeon Generation Pipeline）](wiki/dungeon-generation.md) | 核心哲学：机制与内容分离、四步接力管道的分工意图与设计决策、与工坊合成的架构对比 |
 | [副本导演（Dungeon Director）](wiki/dungeon-director.md) | 全局单例、俯瞰当前副本的有状态记忆积累设计：入口身份锁定、逐房间事实追加、副本结束总结移交世界导演并重置 |
 | [战斗管道（Combat Pipeline）](wiki/combat-pipeline.md) | ECS 处理器链的架构设计：管道心跳驱动、牌库预置与抽牌堆确定性填充、仲裁的三方归属、回合行动序列与生命周期阶段 |
-| [神器（Artifact）](wiki/artifact.md) | 第一公民实体：内容作者写修正规则，由 `ReliquaryComponent` 声明归属，运行点由标记组件表达，出牌/消耗品仲裁后由神器自身实体作为临时 agent 自行判定并执行，机制与内容分离 |
+| [神器（Artifact）](wiki/artifact.md) | 第一公民实体：内容作者写修正规则，由 `ReliquaryComponent` 声明归属，运行点由标记组件表达，出牌仲裁后由神器自身实体作为临时 agent 自行判定并执行，机制与内容分离 |
 | [卡牌数据模型（Card）](wiki/card.md) | Card 字段的三层结构（确定性骨架 / 语义词缀 / 生命周期流转）、来源引用（source）与「确定性骨架 + LLM 语义」的设计取舍 |
 | [卡牌设计指南（Card Design）](wiki/card-design.md) | 面向内容作者的设计方法论：设计总原则、布尔字段硬约束、字段设计含义、词缀设计方法（字段/词缀/范例均指向各自单一来源） |
 | [三端化思维（攻击端 / 防御端 / 运转端）](wiki/combat-ports.md) | 端口化思维方法论：攻击端（前端/成长性/铺垫）、防御端（前端/成长性/特殊）、运转端（过牌/加费/启动）及其与 Card 字段的映射 |

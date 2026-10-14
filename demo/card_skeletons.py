@@ -576,3 +576,69 @@ GEAR_CONTAGION_SKELETON: Final[Card] = Card(
     target_type=TargetType.SINGLE,
     self_target=False,
 )
+
+
+# ── 消耗品骨架（工坊合成「选择核心 + 润色」用） ──────────────
+#
+# 消耗品卡固定 0 费（cost=0）且一次性（exhaust=True）：战斗中由 UseConsumableItemAction
+# 物化进手牌后正常打出，用完进 ExhaustPile。本阶段只做伤害型（damage>0、block=0、
+# self_target=False），效果直接由 Card.damage 承载。
+
+CONSUMABLE_SINGLE_SKELETON: Final[Card] = Card(
+    name="消耗品.名字",
+    description="",
+    on_play_affixes=[],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[],
+    playable=True,
+    exhaust=True,
+    retain=False,
+    ethereal=False,
+    transferable=False,
+    cost=0,
+    damage=4,
+    hit_count=1,
+    block=0,
+    target_type=TargetType.SINGLE,
+    self_target=False,
+)
+
+
+CONSUMABLE_AOE_SKELETON: Final[Card] = Card(
+    name="消耗品.名字",
+    description="",
+    on_play_affixes=[],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[],
+    playable=True,
+    exhaust=True,
+    retain=False,
+    ethereal=False,
+    transferable=False,
+    cost=0,
+    damage=2,
+    hit_count=1,
+    block=0,
+    target_type=TargetType.ALL,
+    self_target=False,
+)
+
+
+CONSUMABLE_SPREAD_SKELETON: Final[Card] = Card(
+    name="消耗品.名字",
+    description="",
+    on_play_affixes=[],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[],
+    playable=True,
+    exhaust=True,
+    retain=False,
+    ethereal=False,
+    transferable=False,
+    cost=0,
+    damage=2,
+    hit_count=2,
+    block=0,
+    target_type=TargetType.SPREAD,
+    self_target=False,
+)

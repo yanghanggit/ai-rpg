@@ -106,9 +106,7 @@ def suggest_actions(status: Dict[str, Any]) -> List[str]:
                             f"--card <card> [--target <entity>]"
                         )
                     actions.append(f"combat pass-turn --actor {current_actor}")
-                    actions.append(
-                        "combat use-consumable --item <item> [--target <entity>]"
-                    )
+                    actions.append("combat use-consumable --item <item>")
                     actions.append("combat equip-gear --item <item>")
                     actions.append("combat retreat")
 

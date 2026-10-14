@@ -67,9 +67,6 @@ def create_dungeon_combat_room_pipeline(
     from ..systems.use_consumable_item_action_system import (
         UseConsumableItemActionSystem,
     )
-    from ..systems.use_consumable_item_arbitration_system import (
-        UseConsumableItemArbitrationSystem,
-    )
     from .dbg_game import DBGGame
 
     dbg_game = cast(DBGGame, game)
@@ -122,9 +119,8 @@ def create_dungeon_combat_room_pipeline(
     processors.add(ExhaustCardsActionSystem(dbg_game))
     processors.add(ExhaustEtherealCardsSystem(dbg_game))
 
-    # 仲裁系统：出牌、使用消耗品
+    # 仲裁系统：出牌（消耗品已物化为普通手牌，随出牌一同结算）
     processors.add(PlayCardsArbitrationSystem(dbg_game))
-    processors.add(UseConsumableItemArbitrationSystem(dbg_game))
 
     # 场景神器仲裁系统：在出牌/消耗品仲裁之后，由当前场景（stage）结算其携带的神器修正规则
     processors.add(ArtifactPostArbitrationSystem(dbg_game))

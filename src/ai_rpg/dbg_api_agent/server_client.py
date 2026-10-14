@@ -529,7 +529,6 @@ async def dungeon_combat_use_consumable(
     user_name: str,
     game_name: str,
     item_name: str,
-    targets: List[str],
 ) -> DungeonCombatUseConsumableItemResponse:
     """使用玩家背包内消耗品，返回任务ID。"""
     async with build_client(10) as client:
@@ -539,7 +538,6 @@ async def dungeon_combat_use_consumable(
                 user_name=user_name,
                 game_name=game_name,
                 item_name=item_name,
-                targets=targets,
             ).model_dump(),
         )
         response.raise_for_status()

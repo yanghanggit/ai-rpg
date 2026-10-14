@@ -19,6 +19,9 @@ from demo.card_skeletons import (
     ATTACK_SKELETON,
     BULWARK_SKELETON,
     BURST_SKELETON,
+    CONSUMABLE_AOE_SKELETON,
+    CONSUMABLE_SINGLE_SKELETON,
+    CONSUMABLE_SPREAD_SKELETON,
     DEADLINE_SKELETON,
     DEFENSE_SKELETON,
     DOT_SKELETON,
@@ -510,6 +513,58 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
                 "速度被动示例：speed=0（中性，速度被动可与打法无关）。"
             ),
             keywords=("transferable", "retain"),
+        ),
+    ),
+    # 消耗品（0 费一次性伤害卡）
+    CardPrototype(
+        skeleton=CONSUMABLE_SINGLE_SKELETON,
+        meta=CardPrototypeMeta(
+            prototype_id="consumable.single",
+            card_type="消耗品",
+            archetype="攻击端",
+            archetype_subtype="单体伤害",
+            name="单体伤害消耗品",
+            summary="结构示例：0 费一次性的单体伤害消耗品（damage=4；无词缀，词缀自行设计）。",
+            guide=(
+                "结构：cost=0、exhaust=True、target_type=SINGLE、self_target=False、"
+                "damage=4、hit_count=1、block=0。只示范「0 费即时打单体伤害」的骨架；"
+                "示例刻意不带词缀——词缀的时机与内容由你依材料与词缀规范自行设计。"
+            ),
+            keywords=("damage", "single"),
+        ),
+    ),
+    CardPrototype(
+        skeleton=CONSUMABLE_AOE_SKELETON,
+        meta=CardPrototypeMeta(
+            prototype_id="consumable.aoe",
+            card_type="消耗品",
+            archetype="攻击端",
+            archetype_subtype="群体伤害",
+            name="群体伤害消耗品",
+            summary="结构示例：0 费一次性的阵营全体伤害消耗品（damage=2、target_type=ALL）。",
+            guide=(
+                "结构：cost=0、exhaust=True、target_type=ALL、self_target=False、"
+                "damage=2、hit_count=1、block=0。示范「以单个敌人为锚点、结算全阵营敌人」"
+                "的骨架；示例刻意不带词缀——词缀由你依规范自行设计。"
+            ),
+            keywords=("damage", "all"),
+        ),
+    ),
+    CardPrototype(
+        skeleton=CONSUMABLE_SPREAD_SKELETON,
+        meta=CardPrototypeMeta(
+            prototype_id="consumable.spread",
+            card_type="消耗品",
+            archetype="攻击端",
+            archetype_subtype="散射伤害",
+            name="散射伤害消耗品",
+            summary="结构示例：0 费一次性的散射伤害消耗品（damage=2、hit_count=2、SPREAD）。",
+            guide=(
+                "结构：cost=0、exhaust=True、target_type=SPREAD、self_target=False、"
+                "damage=2、hit_count=2、block=0。示范「多段随机分配到敌方阵营」的骨架；"
+                "示例刻意不带词缀——词缀由你依规范自行设计。"
+            ),
+            keywords=("damage", "spread", "hit_count"),
         ),
     ),
 ]

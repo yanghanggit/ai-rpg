@@ -19,7 +19,7 @@
 | `phases` | 生效运行点，`List[ArtifactPhase]`，默认 `[POST_ARBITRATION]` |
 | `uuid` | 全局唯一标识符 |
 
-`ArtifactPhase` 是运行点枚举，目前只有 `POST_ARBITRATION`（出牌/消耗品仲裁之后）。新增运行点时，定义新的枚举值并由对应仲裁系统按 `phases` 过滤自己所负责的神器。
+`ArtifactPhase` 是运行点枚举，目前只有 `POST_ARBITRATION`（出牌仲裁之后）。新增运行点时，定义新的枚举值并由对应仲裁系统按 `phases` 过滤自己所负责的神器。
 
 ## 挂载
 
@@ -27,7 +27,7 @@
 
 ## 仲裁时如何生效
 
-出牌/消耗品仲裁由各自系统先完成一次结算。随后 `ArtifactPostArbitrationSystem` 响应 `PlayCardsAction` / `UseConsumableItemAction`：
+出牌仲裁由场景实体先完成一次结算。随后 `ArtifactPostArbitrationSystem` 响应 `PlayCardsAction`：
 
 1. 由动作实体定位当前战斗舞台（stage），汇集该 stage 与场上存活角色 `ReliquaryComponent` 中 `phases` 命中 `POST_ARBITRATION` 的神器（按 uuid 去重）；无则跳过。
 2. 以 **stage 实体为仲裁者**（与出牌、回合结束仲裁一致）：提示词注入当前回合数、场上存活阵营，以及每个神器的 `description`、`source`（未指定时取携带者）与 `modifiers`；工具面为 `get_entity_stats` / `set_entity_hp` / `submit_arbitration`。
@@ -44,7 +44,7 @@
 - 机制与内容分离：场景规则是数据，不是硬编码进仲裁系统的分支；运行点用 `ArtifactPhase` 表达，可扩展。
 - 仲裁者归一：神器、出牌、回合结束三者均由 stage 仲裁，共享同一套工具面、记忆与广播路径。
 - 借重 LLM 的灵活性：规则由 stage 在运行时按需解释，而非系统预先筛选注入，保留内容表达的空间。
-- 场景级而非卡牌级：神器规则对该场景内所有出牌/消耗品仲裁生效，是背景约束；卡牌词缀则属于单次出牌/受击结算。
+- 场景级而非卡牌级：神器规则对该场景内所有出牌仲裁生效，是背景约束；卡牌词缀则属于单次出牌/受击结算。
 
 → 参见：[战斗管道（Combat Pipeline）](combat-pipeline.md)（出牌仲裁与各仲裁者的归属）
 → 参见：[卡牌数据模型（Card）](card.md)（卡牌词缀的单次结算语义）

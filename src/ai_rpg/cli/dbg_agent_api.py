@@ -702,15 +702,12 @@ def combat_pass_turn_cmd(user: str, game: str, actor_name: str) -> None:
 @combat_group.command("use-consumable")
 @identity_options
 @click.option("--item", "item_name", required=True, help="消耗品名")
-@click.option("--target", "targets", multiple=True, help="目标实体名（可多次）")
-def combat_use_consumable_cmd(
-    user: str, game: str, item_name: str, targets: Tuple[str, ...]
-) -> None:
-    """使用背包内消耗品（队伍级，不推进行动权）。"""
+def combat_use_consumable_cmd(user: str, game: str, item_name: str) -> None:
+    """使用背包内消耗品（队伍级，不推进行动权；物化为手牌后需再出牌）。"""
 
     async def go() -> Dict[str, Any]:
         return await _await_task(
-            await dungeon_combat_use_consumable(user, game, item_name, list(targets))
+            await dungeon_combat_use_consumable(user, game, item_name)
         )
 
     _run("combat use-consumable", go())

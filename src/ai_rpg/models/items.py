@@ -4,10 +4,9 @@ from enum import StrEnum, unique
 from typing import Annotated, List, Literal, Sequence, Union, final
 from uuid import uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from .card import Card
-from .str_list import NormalizedStrList
 
 
 ###############################################################################################################################################
@@ -60,17 +59,37 @@ class CostumeItem(Item):
 
 #######################################################################################################################################
 class ConsumableItem(Item):
-    """消耗品类，继承自物品基类"""
+    """消耗品类，继承自物品基类。
+
+    与 GearItem 对称：效果由内置卡牌承载（cards），战斗中物化为手牌后走普通出牌逻辑。
+    消耗品卡固定 0 费（cost=0）且一次性（exhaust=True），由下方校验强制。
+    """
 
     type: Literal[ItemType.CONSUMABLE_ITEM] = Field(
         default=ItemType.CONSUMABLE_ITEM, frozen=True
     )
-    modifiers: NormalizedStrList = (
+    cards: List[Card] = (
         []
-    )  # 修正规则列表（多值）：每个元素是一条完整、独立的规则，交由临时仲裁 agent 依其工具能力自主解释、逐条全部结算
+    )  # 内置卡牌列表：战斗中物化为手牌后正常打出；每张卡必须 cost=0 且 exhaust=True
     resources: Sequence["AnyItem"] = Field(
         default_factory=list
     )  # 合成时消耗的原料列表；未必是 MaterialItem（保留 AnyItem 扩展余地）
+
+    @model_validator(mode="after")
+    def _enforce_zero_cost_and_exhaust(self) -> "ConsumableItem":
+        """消耗品卡固定 0 费且一次性：拦截 cost != 0 或 exhaust=False 的规格。"""
+        for card in self.cards:
+            if card.cost != 0:
+                raise ValueError(
+                    f"消耗品「{self.name}」的卡牌「{card.name}」cost 必须为 0"
+                    f"（当前 {card.cost}）。"
+                )
+            if not card.exhaust:
+                raise ValueError(
+                    f"消耗品「{self.name}」的卡牌「{card.name}」必须 exhaust=True"
+                    "（一次性）。"
+                )
+        return self
 
 
 #######################################################################################################################################

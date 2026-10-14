@@ -1,16 +1,18 @@
 """库存道具堆叠与材料扣减纯函数的单元测试。
 
 覆盖：
-- append_item_with_stacking：材料按名称堆叠、消耗品按名称 + 修正规则堆叠，装备不堆叠；
+- append_item_with_stacking：材料按名称堆叠、消耗品按名称 + 内置卡牌规格堆叠，装备不堆叠；
 - merge_item_stacks：整表归一化；
 - deduct_materials：跨同名条目结转，修复「第一个条目不足时少扣」的缺陷；
-- consume_item_by_uuid：按 uuid 消耗一个数量（>1 递减、==1 移除），不就地修改。
+- consume_item_by_uuid：按 uuid 消耗一个数量（>1 递减、==1 移除），不就地修改；
+- remove_item_by_uuid：按 uuid 移除整条道具（含全部 count），未命中时原样返回。
 """
 
 from typing import List
 
 import pytest
 
+from ai_rpg.models import Card
 from ai_rpg.models.items import (
     AnyItem,
     ConsumableItem,
@@ -22,12 +24,20 @@ from ai_rpg.models.utils import (
     consume_item_by_uuid,
     deduct_materials,
     merge_item_stacks,
+    remove_item_by_uuid,
 )
 
 
-def _consumable(name: str, prompt: str, count: int = 1) -> ConsumableItem:
+def _consumable(name: str, damage: int = 3, count: int = 1) -> ConsumableItem:
+    card = Card(
+        name=name,
+        description=f"{name} 的描述",
+        cost=0,
+        exhaust=True,
+        damage=damage,
+    )
     return ConsumableItem(
-        name=name, description=f"{name} 的描述", modifiers=[prompt], count=count
+        name=name, description=f"{name} 的描述", cards=[card], count=count
     )
 
 
@@ -41,7 +51,7 @@ def _material(name: str, count: int = 1) -> MaterialItem:
 
 
 def test_appends_consumable_to_empty_list() -> None:
-    new_item = _consumable("消耗品.止血药粉", "恢复 3 点 HP。")
+    new_item = _consumable("消耗品.灼血药剂", 3)
 
     result = append_item_with_stacking([], new_item)
 
@@ -49,9 +59,9 @@ def test_appends_consumable_to_empty_list() -> None:
     assert result[0].count == 1
 
 
-def test_consumable_stacks_same_name_and_prompt() -> None:
-    existing = _consumable("消耗品.止血药粉", "恢复 3 点 HP。", count=2)
-    new_item = _consumable("消耗品.止血药粉", "恢复 3 点 HP。", count=3)
+def test_consumable_stacks_same_name_and_card() -> None:
+    existing = _consumable("消耗品.灼血药剂", 3, count=2)
+    new_item = _consumable("消耗品.灼血药剂", 3, count=3)
 
     result = append_item_with_stacking([existing], new_item)
 
@@ -62,9 +72,9 @@ def test_consumable_stacks_same_name_and_prompt() -> None:
     assert merged.uuid == existing.uuid  # 保留旧条目身份
 
 
-def test_consumable_same_name_different_prompt_not_stacked() -> None:
-    existing = _consumable("消耗品.止血药粉", "恢复 3 点 HP。")
-    new_item = _consumable("消耗品.止血药粉", "造成 2 点伤害。")
+def test_consumable_same_name_different_card_not_stacked() -> None:
+    existing = _consumable("消耗品.灼血药剂", 3)
+    new_item = _consumable("消耗品.灼血药剂", 2)
 
     result = append_item_with_stacking([existing], new_item)
 
@@ -122,7 +132,7 @@ def test_merges_into_first_matching_stack() -> None:
 
 
 def test_returns_new_list_with_material_appended() -> None:
-    items: List[AnyItem] = [_consumable("消耗品.止血药粉", "恢复 3 点 HP。")]
+    items: List[AnyItem] = [_consumable("消耗品.灼血药剂", 3)]
 
     result = append_item_with_stacking(items, _material("材料.旧麻绳"))
 
@@ -139,9 +149,9 @@ def test_returns_new_list_with_material_appended() -> None:
 def test_merge_item_stacks_collapses_same_identity() -> None:
     items: List[AnyItem] = [
         _material("材料.旧麻绳", count=2),
-        _consumable("消耗品.止血药粉", "恢复 3 点 HP。", count=1),
+        _consumable("消耗品.灼血药剂", 3, count=1),
         _material("材料.旧麻绳", count=3),
-        _consumable("消耗品.止血药粉", "恢复 3 点 HP。", count=2),
+        _consumable("消耗品.灼血药剂", 3, count=2),
         GearItem(name="装备.缠麻短刃", description="一柄短刃"),
         GearItem(name="装备.缠麻短刃", description="一柄短刃"),
     ]
@@ -196,7 +206,7 @@ def test_deduct_carries_remainder_across_duplicate_entries() -> None:
 def test_deduct_keeps_unrelated_items() -> None:
     items: List[AnyItem] = [
         _material("材料.旧麻绳", count=5),
-        _consumable("消耗品.止血药粉", "恢复 3 点 HP。", count=2),
+        _consumable("消耗品.灼血药剂", 3, count=2),
     ]
 
     result = deduct_materials(items, ["材料.旧麻绳"])
@@ -221,7 +231,7 @@ def test_deduct_raises_when_demand_unmet() -> None:
 
 
 def test_consume_decrements_when_count_above_one() -> None:
-    item = _consumable("消耗品.止血药粉", "恢复 3 点 HP。", count=2)
+    item = _consumable("消耗品.灼血药剂", 3, count=2)
 
     result, consumed = consume_item_by_uuid([item], item.uuid)
 
@@ -233,7 +243,7 @@ def test_consume_decrements_when_count_above_one() -> None:
 
 
 def test_consume_removes_entry_when_last_count() -> None:
-    item = _consumable("消耗品.止血药粉", "恢复 3 点 HP。", count=1)
+    item = _consumable("消耗品.灼血药剂", 3, count=1)
 
     result, consumed = consume_item_by_uuid([item], item.uuid)
 
@@ -242,7 +252,7 @@ def test_consume_removes_entry_when_last_count() -> None:
 
 
 def test_consume_missing_uuid_returns_unchanged_flag_false() -> None:
-    item = _consumable("消耗品.止血药粉", "恢复 3 点 HP。", count=2)
+    item = _consumable("消耗品.灼血药剂", 3, count=2)
 
     result, consumed = consume_item_by_uuid([item], "不存在的-uuid")
 
@@ -251,10 +261,44 @@ def test_consume_missing_uuid_returns_unchanged_flag_false() -> None:
 
 
 def test_consume_only_first_matching_uuid() -> None:
-    first = _consumable("消耗品.止血药粉", "恢复 3 点 HP。", count=2)
-    second = _consumable("消耗品.止血药粉", "恢复 3 点 HP。", count=2)
+    first = _consumable("消耗品.灼血药剂", 3, count=2)
+    second = _consumable("消耗品.灼血药剂", 3, count=2)
 
     result, consumed = consume_item_by_uuid([first, second], first.uuid)
 
     assert consumed is True
     assert [i.count for i in result] == [1, 2]
+
+
+# ---------------------------------------------------------------------------
+# remove_item_by_uuid
+# ---------------------------------------------------------------------------
+
+
+def test_remove_whole_stack_by_uuid() -> None:
+    item = _consumable("消耗品.灼血药剂", 3, count=3)
+
+    result, removed = remove_item_by_uuid([item], item.uuid)
+
+    assert removed is item
+    assert result == []
+    assert item.count == 3  # 不就地修改原对象
+
+
+def test_remove_missing_uuid_returns_unchanged_and_none() -> None:
+    item = _consumable("消耗品.灼血药剂", 3, count=2)
+
+    result, removed = remove_item_by_uuid([item], "不存在的-uuid")
+
+    assert removed is None
+    assert result == [item]
+
+
+def test_remove_only_first_matching_uuid() -> None:
+    first = _consumable("消耗品.灼血药剂", 3, count=2)
+    second = _consumable("消耗品.灼血药剂", 3, count=4)
+
+    result, removed = remove_item_by_uuid([first, second], first.uuid)
+
+    assert removed is first
+    assert result == [second]

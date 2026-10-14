@@ -131,7 +131,6 @@ async def use_consumable_game(
     world: WorldState,
     player_session: PlayerSession,
     item: str,
-    targets: List[str],
     save_dir: Path,
 ) -> DBGGame:
     """让当前行动者使用队伍背包内的消耗品并归档。需战斗进行中且当前回合未完成。"""
@@ -150,7 +149,7 @@ async def use_consumable_game(
         logger.error("use-consumable 当前没有未完成且已抽牌的回合可供使用消耗品")
         return terminal_game
 
-    success, message = activate_use_consumable(terminal_game, item, list(targets))
+    success, message = activate_use_consumable(terminal_game, item)
     if not success:
         logger.error(f"use-consumable 失败: {message}")
         return terminal_game

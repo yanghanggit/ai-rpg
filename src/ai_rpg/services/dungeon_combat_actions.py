@@ -8,7 +8,6 @@ from loguru import logger
 
 from ..entitas import Entity, Matcher
 from ..game.dbg_combat_processor import (
-    get_alive_actors_in_stage,
     get_alive_monsters_in_stage,
     get_alive_party_members_in_stage,
     get_current_turn_actor,
@@ -325,9 +324,8 @@ def activate_retreat(
 def activate_use_consumable(
     dbg_game: DBGGame,
     item_name: str,
-    targets: List[str],
 ) -> Tuple[bool, str]:
-    """使用队伍背包内的指定消耗品。"""
+    """使用队伍背包内的指定消耗品：扣减库存并把其内置卡牌物化进当前行动者手牌。"""
 
     # 检查玩家是否在副本阶段，如果不是则无法使用消耗品。
     if not dbg_game.is_player_in_dungeon_stage:
@@ -378,6 +376,14 @@ def activate_use_consumable(
         logger.error(msg)
         return False, msg
 
+    if not current_actor_entity.has(HandComponent):
+        msg = (
+            f"使用消耗品失败：当前行动角色 {current_actor_name} "
+            "缺少手牌组件（HandComponent）"
+        )
+        logger.error(msg)
+        return False, msg
+
     # 队伍背包：消耗品统一由 player 持有。
     player_entity = dbg_game.get_player_entity()
     assert player_entity is not None, "activate_use_consumable: player_entity is None"
@@ -400,22 +406,10 @@ def activate_use_consumable(
         logger.error(msg)
         return False, msg
 
-    # 目标由调用方显式给出（target_type 已移除），仅校验均为当前场景存活角色。
-    alive_names = {
-        e.name for e in get_alive_actors_in_stage(dbg_game, current_actor_entity)
-    }
-    invalid_targets = [t for t in targets if t not in alive_names]
-    if invalid_targets:
-        msg = (
-            f"使用消耗品失败：目标 {invalid_targets} 不在当前场景存活角色列表中: "
-            f"{sorted(alive_names)}"
-        )
-        logger.error(msg)
-        return False, msg
-
+    # 目标由后续出牌步骤（PlayCardsAction）决定，使用消耗品本身不解析目标。
     logger.debug(
         f"为当前行动者 {current_actor_entity.name} 激活消耗品使用，"
-        f"物品: {selected_item.name} 目标: {targets}"
+        f"物品: {selected_item.name}"
     )
 
     # 将使用消耗品的动作挂在当前行动者实体上。
@@ -423,7 +417,6 @@ def activate_use_consumable(
         UseConsumableItemAction,
         current_actor_entity.name,
         selected_item,
-        list(targets),
     )
 
     # 返回成功消息，表示已成功激活消耗品的使用。

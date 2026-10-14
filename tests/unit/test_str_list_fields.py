@@ -5,8 +5,8 @@
 - 清洗（``normalize_str_list``）与保边界渲染（``render_*``）；
 - 模型层 ``NormalizedStrList`` 注解自动清洗；
 - 词缀「逐条校验 + 整槽置空」支持多条；
-- 各消费端（出牌/回合结束/怪物决策/消耗品仲裁）逐条渲染全部条目；
-- 消耗品堆叠身份纳入全部修正规则。
+- 各消费端（出牌/回合结束/怪物决策）逐条渲染全部条目；
+- 消耗品堆叠身份纳入内置卡牌规格。
 """
 
 from ai_rpg.models import (
@@ -24,9 +24,6 @@ from ai_rpg.systems.play_cards_arbitration_system import (
     _build_combat_arbitration_tool_prompt,
 )
 from ai_rpg.systems.turn_end_arbitration_system import _build_turn_end_card_lines
-from ai_rpg.systems.use_consumable_item_arbitration_system import (
-    _build_consumable_arbitration_prompt,
-)
 
 AFFIX_A = "[穿甲]:本卡 damage 结算时无视目标 block"
 AFFIX_B = "[自损]:打出时对自身结算本卡 damage×1 的伤害"
@@ -67,11 +64,6 @@ def test_card_affix_fields_are_normalized() -> None:
         on_play_affixes=[" " + AFFIX_A + " ", "", AFFIX_A, AFFIX_B],
     )
     assert card.on_play_affixes == [AFFIX_A, AFFIX_B]
-
-
-def test_consumable_modifiers_is_normalized() -> None:
-    item = ConsumableItem(name="消耗品.x", description="", modifiers=[" a ", ""])
-    assert item.modifiers == ["a"]
 
 
 def test_artifact_modifiers_are_normalized() -> None:
@@ -152,37 +144,24 @@ def test_monster_decision_lines_render_all_affixes_separately() -> None:
     assert f"{AFFIX_A}、{AFFIX_B}" not in text
 
 
-def test_consumable_prompt_renders_all_effect_prompts() -> None:
-    item = ConsumableItem(
-        name="消耗品.x",
-        description="描述",
-        modifiers=["对目标造成 3 点伤害。", "使目标恢复 2 点 HP。"],
+# ---------------------------------------------------------------------------
+# 消耗品堆叠身份纳入内置卡牌规格
+# ---------------------------------------------------------------------------
+
+
+def _consumable(damage: int) -> ConsumableItem:
+    card = Card(
+        name="消耗品.x", description="描述", cost=0, exhaust=True, damage=damage
     )
-    text = _build_consumable_arbitration_prompt("角色.测试", item, [], 1, [])
-    assert "对目标造成 3 点伤害。" in text
-    assert "使目标恢复 2 点 HP。" in text
-    assert "逐条全部结算" in text
+    return ConsumableItem(name="消耗品.x", description="描述", cards=[card])
 
 
-# ---------------------------------------------------------------------------
-# 消耗品堆叠身份纳入全部修正规则
-# ---------------------------------------------------------------------------
-
-
-def _consumable(prompts: list[str]) -> ConsumableItem:
-    return ConsumableItem(name="消耗品.x", description="描述", modifiers=prompts)
-
-
-def test_same_multi_prompts_stack() -> None:
-    prompts = ["对目标造成 3 点伤害。", "使目标恢复 2 点 HP。"]
-    result = append_item_with_stacking([_consumable(prompts)], _consumable(prompts))
+def test_same_card_spec_stacks() -> None:
+    result = append_item_with_stacking([_consumable(3)], _consumable(3))
     assert len(result) == 1
     assert result[0].count == 2
 
 
-def test_different_extra_prompt_does_not_stack() -> None:
-    result = append_item_with_stacking(
-        [_consumable(["对目标造成 3 点伤害。", "使目标恢复 2 点 HP。"])],
-        _consumable(["对目标造成 3 点伤害。"]),
-    )
+def test_different_card_spec_does_not_stack() -> None:
+    result = append_item_with_stacking([_consumable(3)], _consumable(5))
     assert len(result) == 2

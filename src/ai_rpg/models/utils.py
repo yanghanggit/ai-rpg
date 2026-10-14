@@ -37,20 +37,40 @@ def compute_hand_block(hand_component: Optional[HandComponent]) -> int:
     return sum(card.block for card in hand_component.cards)
 
 
-def _item_stack_key(item: AnyItem) -> Optional[Tuple[ItemType, str, Tuple[str, ...]]]:
+def _card_signature(card: Card) -> Tuple[object, ...]:
+    """卡牌的机械签名：参与堆叠身份的功能字段（排除 uuid / source / 叙事文本）。"""
+    return (
+        card.damage,
+        card.hit_count,
+        card.block,
+        card.cost,
+        card.target_type.value,
+        card.self_target,
+        card.playable,
+        card.exhaust,
+        card.retain,
+        card.ethereal,
+        card.transferable,
+        tuple(normalize_str_list(card.on_play_affixes)),
+        tuple(normalize_str_list(card.on_hit_affixes)),
+        tuple(normalize_str_list(card.on_turn_end_affixes)),
+    )
+
+
+def _item_stack_key(item: AnyItem) -> Optional[Tuple[object, ...]]:
     """返回道具的堆叠身份键；不可堆叠的道具返回 None。
 
-    堆叠规则的唯一定义处：材料按名称、消耗品按名称与修正规则、装备/时装不堆叠。
+    堆叠规则的唯一定义处：材料按名称、消耗品按名称与内置卡牌规格、装备/时装不堆叠。
     """
     if isinstance(item, MaterialItem):
         # 材料没有额外堆叠维度，第三位用空元组占位，与消耗品保持同构的三元组键。
         return (ItemType.MATERIAL_ITEM, item.name, ())
     if isinstance(item, ConsumableItem):
-        # 多值修正规则：全部元素参与堆叠身份（与仲裁逐条全部结算保持一致）。
+        # 内置卡牌的全部功能字段参与堆叠身份：同一份规格才合并。
         return (
             ItemType.CONSUMABLE_ITEM,
             item.name,
-            tuple(normalize_str_list(item.modifiers)),
+            tuple(_card_signature(card) for card in item.cards),
         )
     return None
 
@@ -153,6 +173,25 @@ def consume_item_by_uuid(
 
     # 返回更新后的列表和是否命中标志
     return updated, consumed
+
+
+def remove_item_by_uuid(
+    items: List[AnyItem], item_uuid: str
+) -> Tuple[List[AnyItem], Optional[AnyItem]]:
+    """按 uuid 移除整条道具（含其全部 count），返回（新列表, 被移除的道具）。
+
+    仅移除首个匹配项；未命中时被移除项为 None，列表原样返回；不修改入参。
+    """
+    updated: List[AnyItem] = []
+    removed: Optional[AnyItem] = None
+
+    for item in items:
+        if removed is None and item.uuid == item_uuid:
+            removed = item
+        else:
+            updated.append(item)
+
+    return updated, removed
 
 
 def apply_stats_to_card(card: Card, stats: CharacterStats) -> Card:

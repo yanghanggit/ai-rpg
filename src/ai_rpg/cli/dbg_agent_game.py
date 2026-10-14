@@ -566,14 +566,8 @@ def pass_turn(snapshot: str, actor: str) -> None:
     required=True,
     help="要使用的消耗品名称（须存在于队伍背包中）",
 )
-@click.option(
-    "--targets",
-    multiple=True,
-    default=(),
-    help="目标角色名，可重复传入多个（如 --targets 怪物.野猪）；目标须为当前场景存活角色，由服务端校验",
-)
-def use_consumable(snapshot: str, item: str, targets: Tuple[str, ...]) -> None:
-    """由当前行动者使用队伍背包内的消耗品并归档。需战斗进行中。"""
+def use_consumable(snapshot: str, item: str) -> None:
+    """由当前行动者使用队伍背包内的消耗品并归档：扣库存并把其内置卡牌物化进手牌，需再出牌才结算。"""
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
@@ -594,9 +588,7 @@ def use_consumable(snapshot: str, item: str, targets: Tuple[str, ...]) -> None:
     logger.info(f"读取存档：{snapshot_path}")
     logger.info(f"本次存档目录：{_save_dir}")
 
-    asyncio.run(
-        use_consumable_game(world, player_session, item, list(targets), _save_dir)
-    )
+    asyncio.run(use_consumable_game(world, player_session, item, _save_dir))
 
 
 ###############################################################################################################################################

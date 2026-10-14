@@ -46,7 +46,7 @@
 
 战斗内每个角色的**行动窗口**都只由显式 `pass-turn` 关闭；出牌、用消耗品、装备物化都不结束窗口：
 
-- `play-cards-specified` 只打出一张牌，**不交出行动权**；`use-consumable` / `equip-gear` 同样不推进。
+- `play-cards-specified` 只打出一张牌，**不交出行动权**；`use-consumable`（把消耗品内置卡牌物化进手牌） / `equip-gear`（把装备物化为手牌）同样不推进——它们只改变手牌，效果要靠之后的出牌结算。
 - `pass-turn --actor X` 把 X 记入本回合 `completed_actors`、清空其剩余能量并推进 `current_actor`；当所有存活角色都已过牌，本回合结束，需再次 `draw-cards` 开启下一回合。
 - 该规则**对我方与怪物同等适用**。轮到怪物时，`play-cards-specified --actor 怪物.X` 触发其 AI 决策（选一张牌或过牌）：
   - AI **决定出牌** → 行动权仍在该怪物，需再执行 `pass-turn --actor 怪物.X` 才交出行动权；

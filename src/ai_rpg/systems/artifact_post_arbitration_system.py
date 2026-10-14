@@ -28,7 +28,6 @@ from ..models import (
     HumanMessage,
     PlayCardsAction,
     ReliquaryComponent,
-    UseConsumableItemAction,
     render_labeled_str_list,
 )
 from ..utils import prompt_builder
@@ -247,7 +246,7 @@ def _handle_submit_arbitration(
 ###########################################################################################################################################
 @final
 class ArtifactPostArbitrationSystem(ReactiveProcessor):
-    """响应 PlayCardsAction / UseConsumableItemAction，由所在场景（stage）结算其携带的神器修正规则。"""
+    """响应 PlayCardsAction，由所在场景（stage）结算其携带的神器修正规则。"""
 
     def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
@@ -258,13 +257,12 @@ class ArtifactPostArbitrationSystem(ReactiveProcessor):
     def get_trigger(self) -> Dict[Matcher, GroupEvent]:
         return {
             Matcher(PlayCardsAction): GroupEvent.ADDED,
-            Matcher(UseConsumableItemAction): GroupEvent.ADDED,
         }
 
     #######################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(PlayCardsAction) or entity.has(UseConsumableItemAction)
+        return entity.has(PlayCardsAction)
 
     #######################################################################################################################################
     async def react(self, entities: List[Entity]) -> None:

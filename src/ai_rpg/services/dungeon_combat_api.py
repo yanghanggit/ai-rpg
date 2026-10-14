@@ -477,7 +477,6 @@ async def dungeon_combat_use_consumable(
         execute_use_consumable_task,
         user_name=payload.user_name,
         item_name=payload.item_name,
-        targets=payload.targets,
     )
 
     logger.info(f"📝 创建使用消耗品任务: job_id={job_id}, user={payload.user_name}")

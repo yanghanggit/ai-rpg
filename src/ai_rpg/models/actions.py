@@ -318,11 +318,10 @@ class CraftCostumeItemAction(Component):
 @register_action_component_type
 @register_component_type
 class UseConsumableItemAction(Component):
-    """触发当前行动者使用队伍背包内的消耗品；效果仲裁暂留空，后续接入。"""
+    """触发当前行动者使用队伍背包内的消耗品：扣减库存并把其内置卡牌物化进手牌。"""
 
     name: str
     item: ConsumableItem  # 使用的消耗品对象（从队伍背包 InventoryComponent 检索后填入）
-    targets: List[str]  # 目标角色名列表（由调用方显式传入）
 
 
 ############################################################################################################

@@ -34,7 +34,7 @@ from ..models import (
     render_labeled_str_list,
 )
 from ..utils import prompt_builder
-from .arbitration_prompt_builders import build_calc_rules_section
+from .arbitration_prompt_builders import ArbitrationKind, build_calc_rules_section
 
 
 ###########################################################################################################################################
@@ -103,11 +103,17 @@ def _build_turn_end_arbitration_tool_prompt(
 
 {alive_lines}
 
-{build_calc_rules_section(GET_ENTITY_STATS_TOOL.function.name, SET_ENTITY_HP_TOOL.function.name)}
+{build_calc_rules_section(GET_ENTITY_STATS_TOOL.function.name, SET_ENTITY_HP_TOOL.function.name, ArbitrationKind.TURN_END)}
 
 ## 回合结束词缀
 
 {holder_name} 是这些卡牌的持有者；每张卡牌的 `source` 是它的来源（生成/注入者名称）；词缀若提及「非 source 者」，指持有者 {holder_name}（当其不等于该卡牌 source 时）。回合结束词缀可能有多条，均为独立规则，须**逐条全部结算**；依各卡牌词缀描述结算，受影响目标由词缀描述与场上存活角色自行判断；持有者自身也可成为目标。不引入词缀未提及的新机制。
+
+## 受击词缀
+
+{GET_ENTITY_STATS_TOOL.function.name} 返回的「受击卡牌」仅列出带受击词缀（on_hit_affixes）的卡牌，用于结算受击效果；它**不是**完整手牌清单，其中展示的 block 为该卡牌自身的单牌格挡值，角色的总格挡以 {GET_ENTITY_STATS_TOOL.function.name} 返回的「总格挡」为准。
+受击词缀可能有多条，均为独立规则，须**逐条全部结算**。「受击词缀」仅在**该实体是本次回合结束结算中受到伤害的目标**时触发；持有者自身的受击词缀不触发（除非持有者也同时是本次结算中受到伤害的目标）。依词缀描述结算（如 [反伤] 对造成本次伤害的一方造成伤害），受击词缀的数值以该卡牌在 {GET_ENTITY_STATS_TOOL.function.name} 中返回的 damage 字段为准，不引入词缀未提及的新机制。
+受击词缀的结算对象是**造成本次伤害的持有者 {holder_name}**，与目标是否阵亡无关：即使目标在本次结算中被击倒，其受击词缀仍须照常结算，不得因目标已倒而略过。
 
 ## 工具使用流程（严格按顺序，逐行推演，不得跳步）
 
@@ -158,7 +164,7 @@ def _build_stats_update_notification(final_hp: int, max_hp: int) -> str:
 GET_ENTITY_STATS_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="get_entity_stats",
-        description="读取指定战斗角色的当前生命值（HP/最大HP）与总格挡（其手牌 block 之和）。用于获取持有者与目标当前状态。",
+        description="读取指定战斗角色的当前生命值（HP/最大HP）与总格挡（其手牌 block 之和）及其手牌中带受击词缀的卡牌（含这些卡牌的 source/damage/hit_count/block 等数据）。用于获取持有者与目标当前状态。",
         parameters={
             "type": "object",
             "properties": {
@@ -234,17 +240,40 @@ class _TurnEndArbitrationContext(BaseModel):
     unsettled_affixes: List[str] = Field(default_factory=list)
 
 
+def _collect_hand_on_hit_cards(entity: Entity) -> List[Card]:
+    """收集角色手牌中所有带受击词缀的卡牌（持有期间参与受击仲裁）。"""
+    hand = entity.get(HandComponent) if entity.has(HandComponent) else None
+    if hand is None:
+        return []
+    return [card for card in hand.cards if card.on_hit_affixes]
+
+
 def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
-    """处理「获取状态工具」调用：返回指定角色的 HP 与总格挡。"""
+    """处理「获取状态工具」调用：返回 HP/总格挡 + 参与受击仲裁的手牌卡牌数据。"""
     entity = game.get_actor_entity(entity_name)
     if entity is None:
         return f"错误：找不到战斗角色 {entity_name}"
+
     stats = compute_character_stats(entity)
     hand_block = compute_character_hand_block(entity)
+
+    # 收集角色手牌中所有带受击词缀的卡牌（持有期间参与受击仲裁）
+    hit_cards = _collect_hand_on_hit_cards(entity)
+    if hit_cards:
+        cards_str = "\n".join(
+            f"    - {c.name}（source={c.source or '未知'}, description={c.description}, cost={c.cost}, "
+            f"damage={c.damage}, hit_count={c.hit_count}, 单牌 block={c.block}, 受击词缀={c.on_hit_affixes}）"
+            for c in hit_cards
+        )
+    else:
+        cards_str = "    - 无"
+
     return (
         f"【{entity_name}】\n"
         f"- HP：{stats.hp}/{stats.max_hp}\n"
-        f"- 总格挡（角色级＝该角色手牌 block 之和；结算伤害时只减这个数）：{hand_block}"
+        f"- 总格挡（角色级＝该角色手牌 block 之和；结算伤害时只减这个数）：{hand_block}\n"
+        f"- 受击卡牌（仅列出带受击词缀的卡牌，不是完整手牌；下面每张卡的 `单牌 block` 只是它自己那张牌的格挡值，**不是**上面的总格挡）：\n"
+        f"{cards_str}"
     )
 
 

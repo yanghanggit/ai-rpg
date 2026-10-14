@@ -30,7 +30,7 @@ from ..models import (
     render_labeled_str_list,
 )
 from ..utils import prompt_builder
-from .arbitration_prompt_builders import build_calc_rules_section
+from .arbitration_prompt_builders import ArbitrationKind, build_calc_rules_section
 
 
 ###########################################################################################################################################
@@ -139,7 +139,7 @@ def _build_combat_arbitration_tool_prompt(
 
 {round_action_info}
 
-{build_calc_rules_section(GET_ENTITY_STATS_TOOL.function.name, SET_ENTITY_HP_TOOL.function.name)}
+{build_calc_rules_section(GET_ENTITY_STATS_TOOL.function.name, SET_ENTITY_HP_TOOL.function.name, ArbitrationKind.PLAY_CARDS)}
 
 ## 受击词缀
 

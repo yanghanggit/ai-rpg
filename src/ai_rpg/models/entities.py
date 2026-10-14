@@ -1,13 +1,11 @@
 from enum import StrEnum, unique
 from typing import Dict, List, final
-from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
 from ..entitas import EntityData
 from .assets_meta import AssetKey
 from .character_stats import CharacterStats
-from .str_list import NormalizedStrList
 
 
 ###############################################################################################################################################
@@ -63,25 +61,6 @@ class World(BaseModel):
     name: str
     system_message: str
     components: EntityData = {}
-
-
-###############################################################################################################################################
-# Artifact / Artefact (神器/古物)：比“Relic”的使用更普遍，是许多游戏的标准命名之一。它强调物品的强大力量和古老属性，是品类里的“万金油”。
-# 神器是第一公民实体：拥有独立名称、人设（system_message）与可挂载组件，由持有者实体通过 ReliquaryComponent 声明归属。
-@final
-class Artifact(BaseModel):
-    """Artifact / Artefact (神器/古物)：独立实体，其人设即其作为 agent 的 system_message。"""
-
-    name: str
-    system_message: str
-    modifiers: NormalizedStrList = (
-        []
-    )  # 对持有者或环境的属性修正列表（多值）：每个元素是一条完整、独立的修正规则
-    components: EntityData = {}  # 挂载在神器上的组件序列化列表
-    uuid: str = Field(default_factory=lambda: str(uuid4()))  # 全局唯一标识符
-    assets: Dict[AssetKey, str] = Field(
-        default_factory=dict
-    )  # 场景插图等资源：AssetKey -> meta 路径（.assets/image/<file>.meta）
 
 
 ###############################################################################################################################################

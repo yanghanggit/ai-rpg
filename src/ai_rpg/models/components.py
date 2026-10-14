@@ -5,9 +5,9 @@ from typing import List, final
 from pydantic import Field
 
 from ..entitas.components import Component
+from .artifact import Artifact
 from .card import Card
 from .character_stats import CharacterStats
-from .entities import Artifact
 from .items import AnyItem, CostumeItem, GearItem
 from .registry import register_component_type
 
@@ -269,21 +269,6 @@ class ConsumableComponent(Component):
 ############################################################################################################
 @final
 @register_component_type
-class ArtifactComponent(Component):
-    """标记实体为神器，承载神器完整定义，并记录其持有者。
-
-    holder 为持有者实体全名，作用类似 ActorComponent.current_stage；
-    artifact 为神器的完整模型（人设、挂载组件等），使神器实体自包含。
-    """
-
-    name: str
-    holder: str  # 持有者实体全名
-    artifact: Artifact  # 神器完整定义
-
-
-############################################################################################################
-@final
-@register_component_type
 class ReliquaryComponent(Component):
     """神器容器组件：Actor/Stage 均可携带，承载该实体携带的神器列表。"""
 
@@ -422,12 +407,3 @@ class EquippedGearComponent(Component):
 
     name: str
     items: List[GearItem]
-
-
-############################################################################################################
-@final
-@register_component_type
-class PostArbitrationComponent(Component):
-    """出牌/消耗品仲裁后触发的效果组件。"""
-
-    name: str

@@ -148,6 +148,9 @@ async def advance_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, st
 
     # 进入战斗房间时创建战斗实例并初始化
     if isinstance(next_room, CombatRoom):
+        assert (
+            next_room.combat.state == CombatState.NONE
+        ), f"{next_room.stage.name} 战斗已初始化，同一战斗房间不可重开"
         combat = Combat(name=next_stage_entity.name)
         combat.state = CombatState.INITIALIZATION
         next_room.combat = combat

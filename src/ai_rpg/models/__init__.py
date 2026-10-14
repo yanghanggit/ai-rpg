@@ -2,6 +2,7 @@ from .actions import *
 from .agent_event import *
 from .agent_memory import *
 from .api import *
+from .artifact import *
 from .assets_meta import *
 from .blueprint import *
 from .card import *

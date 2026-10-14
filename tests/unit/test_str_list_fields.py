@@ -75,7 +75,7 @@ def test_consumable_modifiers_is_normalized() -> None:
 
 
 def test_artifact_modifiers_are_normalized() -> None:
-    artifact = Artifact(name="神器.x", system_message="", modifiers=[" r ", ""])
+    artifact = Artifact(name="神器.x", description="", modifiers=[" r ", ""])
     assert artifact.modifiers == ["r"]
 
 

@@ -149,6 +149,9 @@ def enter_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, str]:
 
     # 若是战斗房间则创建战斗实例并初始化；开场房间仅做场景传送，不创建战斗
     if isinstance(current_room, CombatRoom):
+        assert (
+            current_room.combat.state == CombatState.NONE
+        ), f"{current_room.stage.name} 战斗已初始化，同一战斗房间不可重开"
         combat = Combat(name=stage_entity.name)
         combat.state = CombatState.INITIALIZATION
         current_room.combat = combat

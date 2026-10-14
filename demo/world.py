@@ -30,7 +30,6 @@ from ai_rpg.models import (
     MaterialItem,
     OpeningRoom,
     PlayerAuditComponent,
-    PostArbitrationComponent,
     ReliquaryComponent,
     Stage,
     StageType,
@@ -346,21 +345,16 @@ def create_beast_lair_dungeon() -> Dungeon:
         system_rules=SYSTEM_RULES_FINAL,
     )
 
-    # 战斗场景神器：神器本身是独立实体，由 ReliquaryComponent 声明其归属（持有者）
+    # 战斗场景神器：神器与 Card 同级，由 ReliquaryComponent 声明由本场景携带
     artifact_totem = create_artifact(
         name="神器.兽骨图腾",
-        profile="""你扮演荒狼巢深处的「兽骨图腾」——一堆由历代头狼的头骨与长骨垒成的古老图腾。你不是被谁握在手里的器物，也不是法器，只是兽群世代选中的"王位"：头狼在此起卧、磨爪、长嚎，把自己的气息一层层留在骨头上。
-你没有意志，也不发出声音，却承载着这片林子里最原始的凶性。你记得每一头在此称王的狼，也记得它们各自倒下的模样。
-你的凶性一旦被逼出，便只发作一次：在本场战斗的第二回合、首次结算之后，头狼跃上你长嚎，四野的狼群应声暴起；此后无论还有多少次结算，都不会再被唤醒。""",
+        source="场景.狼巢深处",
+        description="""荒狼巢深处的一堆兽骨图腾——由历代头狼的头骨与长骨垒成的古老图腾。它不是被谁握在手里的器物，也不是法器，而是兽群世代选中的"王位"：头狼在此起卧、磨爪、长嚎，把自己的气息一层层留在骨头上。
+它没有意志，也不发出声音，却承载着这片林子里最原始的凶性。它记得每一头在此称王的狼，也记得它们各自倒下的模样。
+它的凶性一旦被逼出，便只发作一次：在本场战斗的第二回合、首次结算之后，头狼跃上图腾发出长嚎，四野的狼群应声暴起；此后无论还有多少次结算，都不会再被唤醒。""",
         modifiers=[
             "本场战斗仅触发一次：在第二回合的首次战斗结算/消耗品使用结算之后，兽骨图腾被逼出凶性——头狼跃上图腾发出长嚎，四野狼群应声暴起增援，无视格挡地对队伍方全体各自强行结算 4 点伤害。无论触发时的本次出牌/使用消耗品如何结算，最终结果都必须体现队伍方全员各自损失这 4 点 HP。该效果一经触发，本场战斗内不再重复：即使第二回合内还有后续出牌或消耗品结算，也不得再次触发，不产生任何 HP 变更。",
         ],
-        campaign_setting=CAMPAIGN_SETTING,
-        system_rules=SYSTEM_RULES_FINAL,
-    )
-    # 标记型组件：决定该神器在「出牌/消耗品仲裁后」运行
-    artifact_totem.components = dump_components(
-        PostArbitrationComponent(name=artifact_totem.name)
     )
 
     stage_den.components.update(

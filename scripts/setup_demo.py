@@ -13,13 +13,9 @@ from loguru import logger
 from pydantic import BaseModel
 
 from ai_rpg.embedding_model.sentence_transformer import embedding_model
-from ai_rpg.entitas import EntityData
 from ai_rpg.models import (
-    Artifact,
-    ArtifactComponent,
     Blueprint,
     Dungeon,
-    ReliquaryComponent,
 )
 from ai_rpg.models.entities import Stage, World
 from ai_rpg.paths import BLUEPRINTS_DIR, DEBUG_CACHE_DIR, DUNGEONS_DIR
@@ -103,65 +99,25 @@ def _setup_blueprints() -> Blueprint:
 ########################################################################################################
 ########################################################################################################
 ########################################################################################################
-def _iter_artifacts(components: EntityData) -> List[Artifact]:
-    """从实体的 components(EntityData) 中递归提取所有 Artifact 定义。
-
-    序列化后的组件里，Artifact 只可能出现于两条路径：
-    - ``ArtifactComponent.artifact``：神器实体自包含的完整定义
-    - ``ReliquaryComponent.artifacts``：持有者声明的神器列表
-    神器自身还可挂载 components（其中可能再嵌套上述组件），故沿这两条路径继续下钻。
-    """
-    found: List[Artifact] = []
-
-    def _walk(data: EntityData) -> None:
-        raw_artifact = data.get(ArtifactComponent.__name__)
-        if raw_artifact is not None:
-            artifact = ArtifactComponent.model_validate(raw_artifact).artifact
-            found.append(artifact)
-            _walk(artifact.components)
-
-        raw_reliquary = data.get(ReliquaryComponent.__name__)
-        if raw_reliquary is not None:
-            for artifact in ReliquaryComponent.model_validate(raw_reliquary).artifacts:
-                found.append(artifact)
-                _walk(artifact.components)
-
-    _walk(components)
-    return found
-
-
-########################################################################################################
 def _collect_entity_records(
     stages: List[Stage], worlds: List[World]
 ) -> List[tuple[str, str, str]]:
-    """收集若干 Stage / Actor / World / Artifact 的 (类型, 名称, system_message)。
+    """收集若干 Stage / Actor / World 的 (类型, 名称, system_message)。
 
-    Actor 内嵌于 Stage，Artifact 内嵌于 Actor / Stage / World 的组件中，故一并递归提取。
+    Actor 内嵌于 Stage，故一并提取。
     """
     records: List[tuple[str, str, str]] = []
-    seen_artifacts: set[str] = set()
 
     def _add(kind: str, name: str, system_message: str) -> None:
         records.append((kind, name, system_message or ""))
 
-    def _add_artifacts(components: EntityData) -> None:
-        for artifact in _iter_artifacts(components):
-            # 同一神器可能在多个 ReliquaryComponent 中重复声明
-            if artifact.name in seen_artifacts:
-                continue
-            seen_artifacts.add(artifact.name)
-            _add("Artifact", artifact.name, artifact.system_message)
-
     for stage in stages:
         _add("Stage", stage.name, stage.system_message)
-        _add_artifacts(stage.components)
         for actor in stage.actors:
             _add("Actor", actor.name, actor.system_message)
-            _add_artifacts(actor.components)
 
     for world in worlds:
         _add("World", world.name, world.system_message)
-        _add_artifacts(world.components)
 
     return records
 

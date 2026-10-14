@@ -108,6 +108,7 @@ def _entity_summary(name: str, components: EntityData) -> Dict[str, Any]:
         summary["max_hp"] = stats.max_hp
         summary["attack"] = stats.attack
         summary["defense"] = stats.defense
+        summary["speed"] = stats.speed
 
     round_stats_data = component_data(components, RoundStatsComponent.__name__)
     if round_stats_data is not None:

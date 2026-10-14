@@ -9,7 +9,11 @@ from typing import Dict, Final, List, Set, final, override
 from loguru import logger
 
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
-from ..game.dbg_combat_processor import get_alive_actors_in_stage, get_energy
+from ..game.dbg_combat_processor import (
+    compute_character_stats,
+    get_alive_actors_in_stage,
+    get_energy,
+)
 from ..game.dbg_game import DBGGame
 from ..models import (
     CharacterStatsComponent,
@@ -30,8 +34,11 @@ from ..models import (
 class ActionOrderStrategy(StrEnum):
     """战斗回合中角色行动顺序的排序策略"""
 
-    RANDOM = "random"  # 随机打乱（默认）
-    CREATION_ORDER = "creation_order"  # 按实体创建顺序（creation_order 小的靠前）
+    SPEED = "speed"  # 按速度降序（默认；速度相同按实体创建顺序升序）
+    RANDOM = "random"  # 随机打乱（测试用）
+    CREATION_ORDER = (
+        "creation_order"  # 按实体创建顺序（creation_order 小的靠前，测试用）
+    )
 
 
 @final
@@ -46,7 +53,7 @@ class CombatRoundStartSystem(ReactiveProcessor):
     def __init__(
         self,
         game: DBGGame,
-        strategy: ActionOrderStrategy = ActionOrderStrategy.RANDOM,
+        strategy: ActionOrderStrategy = ActionOrderStrategy.SPEED,
     ) -> None:
         super().__init__(game)
         self._game: Final[DBGGame] = game
@@ -109,8 +116,10 @@ class CombatRoundStartSystem(ReactiveProcessor):
         # 快照必须在 start_new_round 之后构建，此时 RoundStatsComponent 已按新回合重置
         if self._strategy == ActionOrderStrategy.RANDOM:
             snapshot_entities = self._shuffled_actors_by_round(actors_in_stage)
-        else:  # CREATION_ORDER（含未知策略回退）
+        elif self._strategy == ActionOrderStrategy.CREATION_ORDER:
             snapshot_entities = self._sorted_actors_by_creation_order(actors_in_stage)
+        else:  # SPEED（默认；含未知策略回退）
+            snapshot_entities = self._sorted_actors_by_speed(actors_in_stage)
 
         new_round.action_order = [entity.name for entity in snapshot_entities]
         new_round.current_actor = (
@@ -159,6 +168,18 @@ class CombatRoundStartSystem(ReactiveProcessor):
         """从给定的角色集合中，筛选本回合仍有行动力的角色并按创建顺序升序排列。"""
         eligible: List[Entity] = [entity for entity in actors if get_energy(entity) > 0]
         eligible.sort(key=lambda entity: entity.get(IdentityComponent).creation_order)
+        return eligible
+
+    ############################################################################################################
+    def _sorted_actors_by_speed(self, actors: Set[Entity]) -> List[Entity]:
+        """筛选本回合仍有行动力的角色，按有效速度降序排列；速度相同按创建顺序升序（先创建先出手）。"""
+        eligible: List[Entity] = [entity for entity in actors if get_energy(entity) > 0]
+        eligible.sort(
+            key=lambda entity: (
+                -compute_character_stats(entity).speed,
+                entity.get(IdentityComponent).creation_order,
+            )
+        )
         return eligible
 
     ################################################################################################################

@@ -13,14 +13,12 @@ from .str_list import normalize_str_list
 
 
 def compute_effective_stats(base_stats: CharacterStats) -> CharacterStats:
-    """返回角色的基础属性（当前不做任何加成，仅作副本返回）。"""
+    """返回角色的有效属性（当前不做任何加成，仅返回深拷贝副本）。
 
-    return CharacterStats(
-        hp=base_stats.hp,
-        max_hp=base_stats.max_hp,
-        attack=base_stats.attack,
-        defense=base_stats.defense,
-    )
+    使用 model_copy 整对象复制，新增字段无需在此同步，避免漏拷贝（如 speed）。
+    """
+
+    return base_stats.model_copy(deep=True)
 
 
 def compute_hand_block(hand_component: Optional[HandComponent]) -> int:

@@ -166,6 +166,7 @@ def _build_context_block(
     """构建出牌决策提示词共享的上下文块（状态/序列/手牌/对手）。"""
     self_info = (
         f"HP {stats.hp}/{stats.max_hp} | "
+        f"速度 {stats.speed} | "
         f"剩余能量 {energy}（每打出一张牌需支付其「费用 cost」点能量）"
     )
     cards_lines = "\n".join(_format_card(c) for c in hand_cards)

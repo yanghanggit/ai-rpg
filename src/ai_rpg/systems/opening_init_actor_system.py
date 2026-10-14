@@ -58,7 +58,9 @@ def _build_opening_init_prompt(
     actor_stats: CharacterStats,
 ) -> str:
     """生成副本开场场景感知通知"""
-    attrs_prompt = f"HP:{actor_stats.hp}/{actor_stats.max_hp}"
+    attrs_prompt = (
+        f"HP:{actor_stats.hp}/{actor_stats.max_hp} | 速度:{actor_stats.speed}"
+    )
 
     return f"""# 副本开场场景感知通知
 

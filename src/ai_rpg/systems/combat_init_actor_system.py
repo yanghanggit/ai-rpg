@@ -61,7 +61,9 @@ def _build_combat_init_prompt(
     actor_stats: CharacterStats,
 ) -> str:
     """生成战斗初始化通知"""
-    attrs_prompt = f"HP:{actor_stats.hp}/{actor_stats.max_hp}"
+    attrs_prompt = (
+        f"HP:{actor_stats.hp}/{actor_stats.max_hp} | 速度:{actor_stats.speed}"
+    )
 
     return f"""# 战斗触发通知
 

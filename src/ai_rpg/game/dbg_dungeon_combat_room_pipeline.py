@@ -106,9 +106,7 @@ def create_dungeon_combat_room_pipeline(
     # 战斗核心动作处理相关的系统
     # 注意：CombatRoundStartSystem 与 DrawCardsActionSystem 相邻、顺序不可对调：
     # 前者监听 DrawCardsAction 开启新回合，后者抓牌，顺序即因果链（先开回合，后抓牌）。
-    processors.add(
-        CombatRoundStartSystem(dbg_game, strategy=ActionOrderStrategy.CREATION_ORDER)
-    )
+    processors.add(CombatRoundStartSystem(dbg_game, strategy=ActionOrderStrategy.SPEED))
     processors.add(DrawCardsActionSystem(dbg_game))
     # processors.add(
     #     MonsterMemoryProbeSystem(dbg_game)

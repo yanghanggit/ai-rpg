@@ -7,18 +7,27 @@ from typing import Dict, List, Optional, Tuple
 
 from .card import Card
 from .character_stats import CharacterStats
-from .components import HandComponent
+from .components import EquippedGearComponent, HandComponent
 from .items import AnyItem, ConsumableItem, ItemType, MaterialItem
 from .str_list import normalize_str_list
 
 
-def compute_effective_stats(base_stats: CharacterStats) -> CharacterStats:
-    """返回角色的有效属性（当前不做任何加成，仅返回深拷贝副本）。
+def compute_effective_stats(
+    base_stats: CharacterStats,
+    equipped_gear: Optional[EquippedGearComponent] = None,
+) -> CharacterStats:
+    """返回角色的有效属性（深拷贝 base_stats，再叠加已装备件带来的修正）。
 
-    使用 model_copy 整对象复制，新增字段无需在此同步，避免漏拷贝（如 speed）。
+    目前装备只提供 `speed` 被动：在装备登记（`EquippedGearComponent`）期间，其速度
+    修正线性累加。装备的 damage / block 已经由物化出的卡牌承载（`apply_stats_to_card`），
+    因此此处**不**叠加装备的 attack / defense，避免与卡牌通道重复计算。
+    不 clamp：速度可正可负，保留保真求和。
     """
 
-    return base_stats.model_copy(deep=True)
+    effective = base_stats.model_copy(deep=True)
+    if equipped_gear is not None:
+        effective.speed += sum(item.speed for item in equipped_gear.items)
+    return effective
 
 
 def compute_hand_block(hand_component: Optional[HandComponent]) -> int:

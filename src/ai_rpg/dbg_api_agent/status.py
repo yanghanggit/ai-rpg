@@ -9,7 +9,7 @@
 - 玩家角色名（player_actor）可通过 PlayerComponent 反查，因此调用方无需预先登录态。
 """
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, NotRequired, Optional, Tuple, TypedDict
 
 from ..entitas import ComponentData, EntityData
 from ..models import (
@@ -19,6 +19,7 @@ from ..models import (
     CombatRoom,
     DeathComponent,
     EnvironmentComponent,
+    EquippedGearComponent,
     HandComponent,
     InventoryComponent,
     MonsterComponent,
@@ -96,14 +97,52 @@ async def resolve_player_actor(
 
 
 ########################################################################################################################
-def _entity_summary(name: str, components: EntityData) -> Dict[str, Any]:
+class EntitySummary(TypedDict):
+    """`_entity_summary` 的结构化输出。
+
+    `name` / `role` / `dead` / `block` / `hand` 所有实体都有；
+    `hp` / `max_hp` / `attack` / `defense` / `speed` 仅在 `CharacterStatsComponent` 存在时出现，
+    `energy` 仅在 `RoundStatsComponent` 存在时出现，`appearance` 仅在 `AppearanceComponent` 存在时出现。
+    """
+
+    name: str
+    role: str
+    dead: bool
+    block: int
+    hand: List[Dict[str, Any]]
+    hp: NotRequired[int]
+    max_hp: NotRequired[int]
+    attack: NotRequired[int]
+    defense: NotRequired[int]
+    speed: NotRequired[int]
+    energy: NotRequired[int]
+    appearance: NotRequired[str]
+
+
+########################################################################################################################
+def _entity_summary(name: str, components: EntityData) -> EntitySummary:
     """把单个实体压缩成代理决策所需的摘要（角色/生死/属性/能量/格挡/手牌）。"""
-    summary: Dict[str, Any] = {"name": name, "role": role_of(components)}
-    summary["dead"] = component_data(components, DeathComponent.__name__) is not None
+
+    hand_data = component_data(components, HandComponent.__name__)
+    hand = HandComponent(**hand_data) if hand_data is not None else None
+
+    summary: EntitySummary = {
+        "name": name,
+        "role": role_of(components),
+        "dead": component_data(components, DeathComponent.__name__) is not None,
+        "block": compute_hand_block(hand),
+        "hand": [card.model_dump(mode="json") for card in hand.cards] if hand else [],
+    }
 
     stats_data = component_data(components, CharacterStatsComponent.__name__)
     if stats_data is not None:
-        stats = compute_effective_stats(CharacterStatsComponent(**stats_data).stats)
+        gear_data = component_data(components, EquippedGearComponent.__name__)
+        equipped_gear = (
+            EquippedGearComponent(**gear_data) if gear_data is not None else None
+        )
+        stats = compute_effective_stats(
+            CharacterStatsComponent(**stats_data).stats, equipped_gear
+        )
         summary["hp"] = stats.hp
         summary["max_hp"] = stats.max_hp
         summary["attack"] = stats.attack
@@ -113,13 +152,6 @@ def _entity_summary(name: str, components: EntityData) -> Dict[str, Any]:
     round_stats_data = component_data(components, RoundStatsComponent.__name__)
     if round_stats_data is not None:
         summary["energy"] = RoundStatsComponent(**round_stats_data).energy
-
-    hand_data = component_data(components, HandComponent.__name__)
-    hand = HandComponent(**hand_data) if hand_data is not None else None
-    summary["block"] = compute_hand_block(hand)
-    summary["hand"] = (
-        [card.model_dump(mode="json") for card in hand.cards] if hand else []
-    )
 
     appearance = component_data(components, AppearanceComponent.__name__)
     if appearance is not None:

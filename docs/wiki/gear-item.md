@@ -24,6 +24,17 @@
 
 ---
 
+## 装备级被动：速度（speed）
+
+每件装备带一个整数 `speed`（可正可负，工坊生成护栏 -2..+3，默认 0）。它在装备被登记到角色 `EquippedGearComponent` 期间，**线性累加**进该角色的有效速度（`compute_effective_stats`），从而影响回合开始的 `action_order`：速度高者先手，同速按实体创建顺序。
+
+- 装备的伤害 / 格挡**只**由它的 `cards` 承载（物化时按持有者 `attack` / `defense` 叠加）；`speed` 是唯一的装备级被动，不写进卡牌。
+- 生效时机遵循回合快照：战斗中装备后，**下一回合**起生效；战斗结束归还装备后恢复。
+
+→ 参见：[战斗管道（Combat Pipeline）](combat-pipeline.md)（行动顺序与快照语义）
+
+---
+
 ## 战斗结束归还
 
 装备从 player 背包移出时，会同时登记在当前行动者身上的 `EquippedGearComponent` 暂存列表（允许多个角色各持多件）。`CombatPileTeardownSystem` 在战斗后遍历这些登记，把装备归还 player 背包并清除登记。装备以「物化 → 打出 → 归还」完成一个战斗生命周期，跨战斗仍可再次物化。

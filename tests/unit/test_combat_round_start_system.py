@@ -8,6 +8,8 @@ from ai_rpg.game.dbg_game import DBGGame
 from ai_rpg.models import (
     ActorComponent,
     CharacterStatsComponent,
+    EquippedGearComponent,
+    GearItem,
     IdentityComponent,
     RoundStatsComponent,
 )
@@ -68,3 +70,18 @@ def test_zero_energy_actors_are_excluded() -> None:
     ordered = _system()._sorted_actors_by_speed({active, exhausted})
 
     assert [e.name for e in ordered] == ["active"]
+
+
+def test_equipped_gear_speed_changes_order() -> None:
+    context = Context()
+    base = _make_actor(context, "base", speed=1, creation_order=1)
+    geared = _make_actor(context, "geared", speed=0, creation_order=2)
+    geared.add(
+        EquippedGearComponent,
+        "geared",
+        [GearItem(name="装备.疾风靴", description="", speed=5)],
+    )
+
+    ordered = _system()._sorted_actors_by_speed({base, geared})
+
+    assert [e.name for e in ordered] == ["geared", "base"]

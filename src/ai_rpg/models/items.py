@@ -37,6 +37,7 @@ class GearItem(Item):
     """装备类（武器、防具、饰品等），继承自物品基类"""
 
     type: Literal[ItemType.GEAR_ITEM] = Field(default=ItemType.GEAR_ITEM, frozen=True)
+    speed: int = 0  # 装备级被动速度修正，可正可负；装备登记期间累加进持有者有效速度
     resources: Sequence["AnyItem"] = Field(
         default_factory=list
     )  # 合成时消耗的原料列表；未必是 MaterialItem（保留 AnyItem 扩展余地）

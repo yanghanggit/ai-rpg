@@ -129,7 +129,7 @@ SYSTEM_RULES: Final[
 - **hp / max_hp**：当前/最大生命值；
 - **attack**：基础攻击力；
 - **defense**：基础防御力；
-- **speed**：行动速度，决定战斗中每回合的行动顺序，数值越大越先出手；数值相同时先创建的角色先出手。
+- **speed**：行动速度；
 
 ### 战斗专用规则
 
@@ -455,11 +455,13 @@ def create_nameless() -> Actor:
                 GearItem(
                     name="装备.旧铁剑",
                     description="一柄来历不明的旧铁剑，剑身有几处崩口，握柄缠着磨旧的皮绳。挥动时刃口带起一道沉闷的风声，像每一击都压着经年累月的力气；贴近剑格处锈迹斑斑，握在手里却比看上去更沉。",
+                    speed=1,
                     cards=[_make_gear_offense_card()],
                 ),
                 GearItem(
                     name="装备.木盾",
                     description="一面用厚木板拼成的圆盾，边缘包着一圈铁皮，盾面刻着几道深浅不一的旧痕。举在身前时能把大半来势稳稳卸向一侧，木纹深处透着一股久经磕碰的韧劲。",
+                    speed=-1,
                     cards=[_make_gear_defense_card()],
                 ),
                 ConsumableItem(

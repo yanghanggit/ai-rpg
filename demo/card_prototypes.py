@@ -471,6 +471,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
                 "结构：target_type=SINGLE、self_target=False、damage=3、hit_count=1、"
                 "block=0、cost=1。只示范「出牌即打伤害」的骨架；示例刻意不带词缀——"
                 "词缀的时机与内容由你依材料与词缀规范自行设计（不是本示例的字段）。"
+                "速度被动示例：speed=+1（轻捷的进攻装备，先手更早）。"
             ),
             keywords=("damage", "single"),
         ),
@@ -488,6 +489,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
                 "结构：self_target=False、damage=0、block=3、cost=1、retain=True。"
                 "示范「持有即加防、跨回合留下」的骨架；示例刻意不带词缀——"
                 "词缀由你依规范自行设计。"
+                "速度被动示例：speed=-1（厚重的防御装备，后手更晚）。"
             ),
             keywords=("block", "retain"),
         ),
@@ -505,6 +507,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
                 "结构：transferable=True、retain=True、damage=1、hit_count=1、"
                 "block=0、target_type=SINGLE。示范「出牌后落到对手手里」的骨架；"
                 "示例刻意不带词缀——词缀由你依规范自行设计。"
+                "速度被动示例：speed=0（中性，速度被动可与打法无关）。"
             ),
             keywords=("transferable", "retain"),
         ),

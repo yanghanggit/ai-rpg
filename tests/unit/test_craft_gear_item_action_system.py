@@ -72,3 +72,32 @@ def test_invalid_target_type_rejected() -> None:
 
     assert reply.startswith("错误")
     assert results == []
+
+
+def test_speed_out_of_range_rejected() -> None:
+    results: List[_CraftGearSpec] = []
+    reply = _handle_submit_gear(
+        results,
+        name="装备.燃骨刀",
+        description="以兽骨为柄、燃痕为刃",
+        card=_card(),
+        speed=99,
+    )
+
+    assert reply.startswith("错误")
+    assert results == []
+
+
+def test_speed_within_range_accepted_and_persisted() -> None:
+    results: List[_CraftGearSpec] = []
+    reply = _handle_submit_gear(
+        results,
+        name="装备.燃骨刀",
+        description="以兽骨为柄、燃痕为刃",
+        card=_card(),
+        speed=-2,
+    )
+
+    assert not reply.startswith("错误")
+    assert len(results) == 1
+    assert results[0].speed == -2

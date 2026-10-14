@@ -30,14 +30,21 @@ from ..models.items import GearItem, MaterialItem
 from ..pgsql import get_card_prototype, list_card_prototype_index
 from ..utils import prompt_builder
 
+#######################################################################################################################################
+# 装备速度修正的生成护栏（工坊提交校验与示例教学共用）。速度可正可负，
+# 决定战斗回合行动顺序；装备的 damage/block 走卡牌通道，速度是唯一的装备级被动。
+GEAR_SPEED_MIN: Final[int] = -2
+GEAR_SPEED_MAX: Final[int] = 3
+
 
 #######################################################################################################################################
 @final
 class _CraftGearSpec(BaseModel):
-    """submit_gear 提交的完整装备规格：名称/描述 + 卡牌字段。"""
+    """submit_gear 提交的完整装备规格：名称/描述 + 速度被动 + 卡牌字段。"""
 
     name: str = ""
     description: str = ""
+    speed: int = 0  # 装备级被动速度修正（可正可负），与 card 字段无关
     on_play_affixes: NormalizedStrList = []
     on_hit_affixes: NormalizedStrList = []
     on_turn_end_affixes: NormalizedStrList = []
@@ -98,6 +105,14 @@ SUBMIT_GEAR_TOOL: Final[ToolDefinition] = ToolDefinition(
                 "description": {
                     "type": "string",
                     "description": "物品描述，30-60字，说明外观、手感或穿戴感受",
+                },
+                "speed": {
+                    "type": "integer",
+                    "description": (
+                        "装备级被动速度修正，可正可负：决定战斗回合行动顺序，数值越大越先出手，"
+                        f"同速按创建顺序。允许范围 {GEAR_SPEED_MIN}..{GEAR_SPEED_MAX}，默认 0。"
+                        "注意：装备的伤害/格挡由 card 承载，speed 是唯一的装备级被动。"
+                    ),
                 },
                 "card": {
                     "type": "object",
@@ -185,7 +200,7 @@ SUBMIT_GEAR_TOOL: Final[ToolDefinition] = ToolDefinition(
                     ],
                 },
             },
-            "required": ["name", "description", "card"],
+            "required": ["name", "description", "speed", "card"],
         },
     )
 )
@@ -248,10 +263,16 @@ def _handle_submit_gear(
     name: str,
     description: str,
     card: Dict[str, Any],
+    speed: int = 0,
 ) -> str:
     """处理 submit_gear 工具调用：校验并暂存装备规格。"""
     assert name, "name 不能为空"
-    spec = _CraftGearSpec(name=name, description=description, **card)
+    if not (GEAR_SPEED_MIN <= speed <= GEAR_SPEED_MAX):
+        return (
+            f"错误：speed 必须在 {GEAR_SPEED_MIN}..{GEAR_SPEED_MAX} 之间（当前 {speed}）。"
+            "请修正后重新调用 submit_gear。"
+        )
+    spec = _CraftGearSpec(name=name, description=description, speed=speed, **card)
 
     # 词缀设计校验：agent 自设计的骨架 + 词缀必须满足词缀格式与倍率护栏。
     valid_target_types = {t.value for t in TargetType}
@@ -288,6 +309,7 @@ def _handle_submit_gear(
     logger.info(
         f"[CraftGearItemActionSystem] submit_gear 执行:\n"
         f"  name: {spec.name}\n"
+        f"  speed: {spec.speed}\n"
         f"  target_type: {spec.target_type}\n"
         f"  damage: {spec.damage} / block: {spec.block} / cost: {spec.cost}"
     )
@@ -318,6 +340,10 @@ def _build_craft_gear_prompt(materials: List[MaterialItem]) -> str:
 
 - **name**：装备全名，采用「装备.XXXX」命名格式，体现材料特性与装备类型，简洁有辨识度
 - **description**：物品描述，30-60字，说明外观、手感或穿戴感受，体现材料的来源与工艺痕迹
+- **speed**：装备级被动速度修正，整数，可正可负，范围 {GEAR_SPEED_MIN}..{GEAR_SPEED_MAX}，默认 0。
+  它决定战斗回合的行动顺序（数值越大越先出手，同速按创建顺序），在装备登记期间累加。
+  装备的伤害 / 格挡**只能**通过下方 `card` 表达，`speed` 是唯一的装备级被动。
+  叙事取向：轻捷灵便 → 正值；沉重笨拙 → 负值。
 
 ## 卡牌规格（card）
 
@@ -466,6 +492,7 @@ class CraftGearItemActionSystem(ReactiveProcessor):
         new_item = GearItem(
             name=result.name,
             description=result.description,
+            speed=result.speed,
             resources=action.material_items,
             cards=[card],
         )

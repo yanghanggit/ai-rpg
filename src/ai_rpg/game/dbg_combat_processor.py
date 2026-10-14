@@ -13,6 +13,7 @@ from ..models import (
     DeathComponent,
     DiscardPileComponent,
     DrawPileComponent,
+    EquippedGearComponent,
     ExhaustPileComponent,
     HandComponent,
     MonsterComponent,
@@ -36,7 +37,10 @@ def compute_character_stats(entity: Entity) -> CharacterStats:
     ), f"{entity.name} 缺少 CharacterStatsComponent"
 
     stats_comp = entity.get(CharacterStatsComponent)
-    return compute_effective_stats(stats_comp.stats)
+    equipped_gear = (
+        entity.get(EquippedGearComponent) if entity.has(EquippedGearComponent) else None
+    )
+    return compute_effective_stats(stats_comp.stats, equipped_gear)
 
 
 #################################################################################################################################################

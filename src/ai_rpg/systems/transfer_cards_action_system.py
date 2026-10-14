@@ -69,10 +69,11 @@ class TransferCardsActionSystem(ReactiveProcessor):
                 # ):
                 #     continue
 
+                # 自传递：目标即出牌者本人时，同样复制一份留在其手牌。
+                # self_target 与 transferable 已互斥，故该分支只由「显式把自身选为目标」触发。
                 if target_name == play_cards_action.name:
-                    # 跳过将卡牌传递给自己
                     logger.debug(
-                        f"transfer_card: 跳过将卡牌传递给自己（{target_name}）？这是什么打法？故意复制牌的？"
+                        f"transfer_card: 自传递，复制一份「{card.name}」回 {target_name} 手牌"
                     )
 
                 # 将卡牌 copy 到目标手牌

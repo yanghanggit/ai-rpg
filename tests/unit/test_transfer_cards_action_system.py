@@ -130,6 +130,27 @@ class TestTransferCardsActionSystem:
         assert card not in source.get(HandComponent).cards
         assert len(target.get(HandComponent).cards) == 1
 
+    async def test_self_target_copies_back_to_source(
+        self, context: Context, mock_game: MagicMock, system: TransferCardsActionSystem
+    ) -> None:
+        """显式把自身选为目标时，自传递复制一份回源手牌。"""
+        source = _make_actor(context, "角色.无名")
+        _stub_actor_lookup(mock_game, {"角色.无名": source})
+
+        card = _make_card()
+        original_uuid = card.uuid
+        source.get(HandComponent).cards.append(card)
+        source.add(PlayCardsAction, "角色.无名", card, ["角色.无名"])
+
+        await system.react([source])
+
+        hand = source.get(HandComponent).cards
+        assert len(hand) == 1
+        copied = hand[0]
+        assert copied is not card
+        assert copied.uuid != original_uuid
+        assert copied.source == card.source
+
     async def test_skips_when_not_ongoing(
         self, context: Context, mock_game: MagicMock, system: TransferCardsActionSystem
     ) -> None:

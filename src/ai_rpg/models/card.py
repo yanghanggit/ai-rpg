@@ -48,9 +48,27 @@ class Card(BaseModel):
     target_type: TargetType = (
         TargetType.SINGLE
     )  # 目标类型，决定目标约束策略；self_target=True 时忽略
-    self_target: bool = False  # 锁定自身；True 时目标即出牌者本人，无需 targets
+    self_target: bool = (
+        False  # 锁定自身；True 时目标即出牌者本人，无需 targets；与 transferable 互斥
+    )
     source: str = ""  # 卡牌来源（生成/注入者）名称；空字符串表示来源未知
     uuid: str = Field(default_factory=lambda: str(uuid4()))  # 全局唯一标识符
+
+    @model_validator(mode="after")
+    def _reject_flag_conflicts(self) -> "Card":
+        """硬约束（拦截）：禁止语义互斥的布尔组合，构造即失败。
+
+        目前只收编 `self_target` × `transferable`；其余死组合仍走
+        `_warn_flag_conflicts` 的告警路径，待后续统一为「硬约束 raise」。
+        """
+        if self.self_target and self.transferable:
+            raise ValueError(
+                f"Card「{self.name}」同时开启 self_target 与 transferable："
+                "self_target 锁定自身并跳过目标解析，transferable 依赖解析出的目标列表"
+                "分发副本，二者互斥。若要自传递复制，请用 target_type=SINGLE 把自身"
+                "作为显式目标。"
+            )
+        return self
 
     @model_validator(mode="after")
     def _warn_flag_conflicts(self) -> "Card":
@@ -139,6 +157,7 @@ BUILD_CARD_FIELD_DESCRIPTION: Final[
 
 - `retain` 与 `ethereal` 互斥，禁止同时为 true：二者同属「回合边界手中牌去向」的两极，同时开启时 ethereal（pass turn 即消耗）先于 retain（回合末保留）生效，retain 失效。
 - `transferable` 与 `exhaust` 均为「被打出时」结算，故为 true 时要求 `playable=true`；`playable=false` 时牌不可出，二者永不触发，属无效组合。
+- `self_target` 与 `transferable` 互斥，禁止同时为 true：`self_target` 锁定自身并跳过目标解析，`transferable` 依赖解析出的目标列表把副本分发到各目标手牌，二者语义冲突。若要自传递复制，请用 `target_type=SINGLE` 把自身作为显式目标。
 
 ### 目标类型（target_type）
 

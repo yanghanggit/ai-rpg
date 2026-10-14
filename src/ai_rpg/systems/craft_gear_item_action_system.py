@@ -154,7 +154,7 @@ SUBMIT_GEAR_TOOL: Final[ToolDefinition] = ToolDefinition(
                         },
                         "transferable": {
                             "type": "boolean",
-                            "description": "出牌时从源手牌移除本体并复制到目标手牌；默认 false",
+                            "description": "出牌时从源手牌移除本体并复制到目标手牌；默认 false。与 self_target 互斥",
                         },
                         "cost": {
                             "type": "integer",
@@ -174,7 +174,7 @@ SUBMIT_GEAR_TOOL: Final[ToolDefinition] = ToolDefinition(
                         },
                         "self_target": {
                             "type": "boolean",
-                            "description": "锁定出牌者自身；true 时无需 targets",
+                            "description": "锁定出牌者自身；true 时无需 targets。与 transferable 互斥",
                         },
                         "target_type": {
                             "type": "string",
@@ -278,6 +278,12 @@ def _handle_submit_gear(
     valid_target_types = {t.value for t in TargetType}
     if spec.target_type not in valid_target_types:
         return f"错误：target_type 无效（{spec.target_type!r}）。请修正后重新提交。"
+    if spec.transferable and spec.self_target:
+        return (
+            "错误：transferable 与 self_target 互斥，不能同时为 true。"
+            "self_target 会锁定自身并跳过目标解析，transferable 需要解析出的目标来分发副本，二者语义冲突。"
+            "若要「自传递复制」，请把 target_type 设为 single 并选择自身为目标。"
+        )
     probe = Card(
         name=spec.name,
         description=spec.description,

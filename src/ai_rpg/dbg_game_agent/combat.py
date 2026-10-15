@@ -108,8 +108,12 @@ async def play_cards_specified_game(
 
     actor_entity = terminal_game.get_actor_entity(actor)
     if actor_entity is not None and actor_entity.has(MonsterComponent):
+
+        # 如果是怪物，则触发怪物的出牌逻辑，由 AI 决策出牌或过牌。
         success, message = activate_monster_play_trigger(terminal_game, actor)
+
     else:
+
         # 我方角色必须显式指定手牌；怪物才走 AI 决策，可省略 --card。
         if not card:
             message = (
@@ -118,13 +122,18 @@ async def play_cards_specified_game(
             )
             logger.error(f"play-cards-specified 失败: {message}")
             return terminal_game
+
+        # 调用指定手牌的处理函数，传入角色、手牌和目标列表，捕获异常以防止整个循环崩溃。
         success, message = await activate_play_cards_specified(
             terminal_game, actor, card, list(targets)
         )
+
+    # 检查指定手牌的处理结果，如果失败则记录错误并返回游戏状态。
     if not success:
         logger.error(f"play-cards-specified 失败: {message}")
         return terminal_game
 
+    # 指定手牌成功处理后，继续执行战斗房间的处理流水线。
     await terminal_game._dungeon_combat_room_pipeline.process()
 
     if (
@@ -133,6 +142,7 @@ async def play_cards_specified_game(
     ):
         logger.debug("在本次处理中战斗已结束，进入后处理阶段")
 
+    # 将游戏状态存储到指定目录，确保本轮操作的结果被归档。
     await store_game_async(terminal_game, save_dir)
     return terminal_game
 

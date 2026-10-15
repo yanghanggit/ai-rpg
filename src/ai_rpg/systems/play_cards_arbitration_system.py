@@ -60,9 +60,9 @@ def _build_spread_sections(
     hit_assignment = (
         f"\n## 命中分配（系统预先随机确定，共 {card.hit_count} 击）\n\n"
         f"{hit_lines}\n\n"
-        f"按上方命中分配逐段结算，final_stats 须包含**所有被命中过的不重复目标**。"
+        f"按上方命中分配逐击结算；combat_log 须覆盖**所有被命中过的不重复目标**，并对每个受影响角色各调用一次 {APPLY_DAMAGE_TOOL.function.name}。"
     )
-    log_example = "\nspread 示例：`[英雄|回旋镖→随机:3×3段,敌A×2伤害5,敌B×1伤害3] HP:敌A 15→10 敌B 12→9`"
+    log_example = "\nspread 示例：`[英雄|回旋镖→随机: 每击3×1−0×1=3; 敌A×2击=6, 敌B×1击=3] HP:敌A 15→9 敌B 12→9`"
     return _SpreadSections(hit_assignment=hit_assignment, log_example=log_example)
 
 
@@ -138,7 +138,7 @@ def _build_combat_arbitration_tool_prompt(
 
 {render_labeled_str_list("- 即时词缀", card.on_play_affixes, indent="    ")}
 
-即时词缀是逐条列出的独立规则；每列出的一条都触发一次，须**逐条全部结算**，并按「计算规则 · 结算」第 2 步把每一条各自写成结算式里的一项；不得合并、不得省略，也不引入词缀未提及的新机制。
+即时词缀是逐条列出的独立规则；每条都触发一次，须**逐条全部读取**，判断它为你给出的参数（伤害系数 / 格挡系数 / 反伤 / 吸血 / 治疗，或其它条件），据此参与「计算规则」的骨架结算；不得合并、不得省略，也不引入词缀未提及的新机制。
 
 ## 目标
 
@@ -148,13 +148,13 @@ def _build_combat_arbitration_tool_prompt(
 
 {round_action_info}
 
-{build_calc_rules_section(GET_ENTITY_STATS_TOOL.function.name, SET_ENTITY_HP_TOOL.function.name, ArbitrationKind.PLAY_CARDS)}
+{build_calc_rules_section(GET_ENTITY_STATS_TOOL.function.name, APPLY_DAMAGE_TOOL.function.name, ArbitrationKind.PLAY_CARDS)}
 
 ## 受击词缀
 
 {GET_ENTITY_STATS_TOOL.function.name} 返回的「受击卡牌」仅列出带受击词缀（on_hit_affixes）的卡牌，用于结算受击效果；它**不是**完整手牌清单，其中展示的 block 为该卡牌自身的单牌格挡值，角色的总格挡以 {GET_ENTITY_STATS_TOOL.function.name} 返回的「总格挡」为准。
-受击词缀可能有多条，均为独立规则，须**逐条全部结算**。「受击词缀」仅在**该实体是本次出牌的目标**时触发；出牌者自身的受击词缀不触发（除非出牌者也同时是目标）。依词缀描述结算（如 [反伤] 对出牌者造成伤害），受击词缀的数值以该卡牌在 {GET_ENTITY_STATS_TOOL.function.name} 中返回的 damage 字段为准，不引入词缀未提及的新机制。
-受击词缀的结算对象是**出牌者**，与目标是否阵亡无关：即使目标在本次结算中被击倒，其受击词缀仍须照常结算，不得因目标已倒而略过。
+受击词缀可能有多条，均为独立规则，须**逐条全部结算**。「受击词缀」仅在**该实体是本次出牌的目标**时触发；出牌者自身的受击词缀不触发（除非出牌者也同时是目标）。依词缀描述结算（如 [反伤] 对本次出牌者结算伤害，即骨架里的「反伤」，使其 HP 减少、不过总格挡），数值取其文案明示的字段（如 damage / block），不引入词缀未提及的新机制。
+受击词缀的结算对象是**本次出牌者**，与目标是否阵亡无关：即使目标在本次结算中被击倒，其受击词缀仍须照常结算，不得因目标已倒而略过。
 
 ## source 字段
 
@@ -163,17 +163,22 @@ def _build_combat_arbitration_tool_prompt(
 ## 工具使用流程（严格按顺序，逐行推演，不得跳步）
 
 1. **读**：对【出牌者】与【每一个目标】分别调用 {GET_ENTITY_STATS_TOOL.function.name}，拿到各自的 HP / 最大 HP 与总格挡（可在同一次回复中并发调用多个）。
-2. **算**：对每个目标，按「计算规则 · 结算」逐行写出结算式——先写基础段，再把本卡即时词缀**逐条**写成词缀段，最后求和得到该目标的最终 HP。（这是你自己的推理步骤，务必逐行落笔，不得跳步或心算省略。）
-3. **写**：对每个受影响角色（含出牌者与所有目标）调用 {SET_ENTITY_HP_TOOL.function.name}，hp 直接填第 2 步算出的最终 HP（可在同一次回复中并发调用多个）。
-4. **提交**：调用 {SUBMIT_ARBITRATION_TOOL.function.name} 提交最终结果，结束本次仲裁；combat_log 的每个「旧→新」与「伤害 Z」**逐字抄自上一步 {SET_ENTITY_HP_TOOL.function.name} 的返回**（形如「HP 将更新为 7/20（20 → 7，本次扣减 13）」），不得另行心算或改数；若某条词缀无法按上述计算规则结算，把它原文放进 unsettled_affixes。
+2. **算**：按「计算规则」的骨架逐行推演——先由词缀定出伤害系数 / 格挡系数 / 反伤 / 吸血 / 治疗，再逐次命中算出本卡合计伤害，最后落账到每个受影响角色的最终 HP。（这是你自己的推理步骤，务必逐行落笔，不得跳步或心算省略。）
+3. **写**：对每个受影响角色（含出牌者与所有目标）调用 {APPLY_DAMAGE_TOOL.function.name}，amount 直接填第 2 步算出的该角色**净扣减**（= 该角色承受的伤害 − 该角色获得的回复；正数扣血、负数净回复、0 不变）（可在同一次回复中并发调用多个）。
+4. **提交**：调用 {SUBMIT_ARBITRATION_TOOL.function.name} 提交最终结果，结束本次仲裁；combat_log 须按上方格式**写出计算过程**（参数取值 + 逐次命中的代入），其中每个「旧→新」与「伤害 Z」**逐字抄自上一步 {APPLY_DAMAGE_TOOL.function.name} 的返回**（形如「HP 将更新为 7/20（20 → 7，本次扣减 13）」），不得另行心算或改数；若某条词缀无法按上述计算规则结算，把它原文放进 unsettled_affixes。
 
 ## {SUBMIT_ARBITRATION_TOOL.function.name} 字段说明
 
-### combat_log（简名 = 全名最后一段）
+### combat_log（简名 = 全名最后一段；**必须写出计算过程**，供核对与向玩家回报）
 
-正常：`[出牌者简名|卡牌→目标:damage Xx击_count次,伤害Z] HP:目标简名 旧→新`
-多段示例：`[英雄|回旋镖→石缝蜥:3x3次,伤害7] HP:石缝蜥 15→8`{spread.log_example}
-阵亡跳过：`[出牌者简名|已阵亡，卡牌无法执行]`
+每一段 = 一个受影响角色的 HP 变化，必须显式列出参数取值与代入。**只写最终采用的代入式**，不要写试算 / 自我修正 / 元话述（如「若按此则为误」「重算」「根数据…」）：
+- 目标伤害：`[出牌者简名|卡牌→目标简名: D×伤害系数kd − B×格挡系数kb = 每击h × hit_count击 = Z] HP:目标简名 旧→新`
+- 反伤 / 吸血 / 治疗：`[来源简名|词缀名→受影响简名: v/击 × hit_count击 = V] HP:受影响简名 旧→新`
+- 系数依据：某个系数 / 反伤等取非默认值时，在段内注明依据（如把 `×2` 写成 `×2[对动物属性]`）。
+- 阵亡跳过：`[出牌者简名|已阵亡，卡牌无法执行]`
+
+单段示例：`[坏运气|基础攻击→头狼: 5×1−4×1=每击1 ×1击=1] HP:头狼 4→3；[头狼|护喉→坏运气: 反伤2/击 ×1击=2] HP:坏运气 10→8`
+多段示例：`[英雄|回旋镖→石缝蜥: 3×1−0×1=每击3 ×3击=9] HP:石缝蜥 15→6`{spread.log_example}
 
 ### narrative
 
@@ -226,10 +231,10 @@ GET_ENTITY_STATS_TOOL: Final[ToolDefinition] = ToolDefinition(
 )
 
 
-SET_ENTITY_HP_TOOL: Final[ToolDefinition] = ToolDefinition(
+APPLY_DAMAGE_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
-        name="set_entity_hp",
-        description="设置指定战斗角色的当前生命值（自动 clamp 到 0~最大HP）。对每个受影响角色（含发起者与所有目标）都必须调用一次。",
+        name="apply_damage",
+        description="对指定战斗角色结算本次的净伤害：amount 为本次结算对该角色的净 HP 扣减（正数=扣血，负数=净回复，0=不变），工具自动 clamp 到 0~最大HP。对每个受影响角色（含发起者与所有目标）都必须调用一次。",
         parameters={
             "type": "object",
             "properties": {
@@ -237,12 +242,12 @@ SET_ENTITY_HP_TOOL: Final[ToolDefinition] = ToolDefinition(
                     "type": "string",
                     "description": "角色全名",
                 },
-                "hp": {
+                "amount": {
                     "type": "integer",
-                    "description": "结算后的新生命值（0 ≤ hp ≤ 最大HP）",
+                    "description": "本次结算对该角色的净 HP 扣减：正数扣血、负数净回复、0 不变",
                 },
             },
-            "required": ["entity_name", "hp"],
+            "required": ["entity_name", "amount"],
         },
     )
 )
@@ -257,7 +262,7 @@ SUBMIT_ARBITRATION_TOOL: Final[ToolDefinition] = ToolDefinition(
             "properties": {
                 "combat_log": {
                     "type": "string",
-                    "description": "战斗数据日志",
+                    "description": "战斗数据日志；须写出计算过程（参数取值与逐次命中的代入），供核对与向玩家回报。",
                 },
                 "narrative": {
                     "type": "string",
@@ -326,15 +331,15 @@ def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
     )
 
 
-def _handle_set_entity_hp(
-    game: DBGGame, ctx: _ArbitrationContext, entity_name: str, hp: int
+def _handle_apply_damage(
+    game: DBGGame, ctx: _ArbitrationContext, entity_name: str, amount: int
 ) -> str:
-    """处理「写回 HP 工具」调用。"""
+    """处理「结算净伤害工具」调用：按净扣减 amount 计算并写入新 HP。"""
     entity = game.get_actor_entity(entity_name)
     if entity is None:
         return f"错误：找不到战斗角色 {entity_name}"
     stats = compute_character_stats(entity)
-    clamped = max(0, min(int(hp), stats.max_hp))
+    clamped = max(0, min(stats.hp - int(amount), stats.max_hp))
     ctx.hp_changes[entity_name] = clamped
     return (
         f"{entity_name} HP 将更新为 {clamped}/{stats.max_hp}"
@@ -438,15 +443,15 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                 messages=self._game.get_agent_memory(stage_entity).messages,
                 tools=[
                     GET_ENTITY_STATS_TOOL,
-                    SET_ENTITY_HP_TOOL,
+                    APPLY_DAMAGE_TOOL,
                     SUBMIT_ARBITRATION_TOOL,
                 ],
                 handlers={
                     GET_ENTITY_STATS_TOOL.function.name: partial(
                         _handle_get_entity_stats, self._game
                     ),
-                    SET_ENTITY_HP_TOOL.function.name: partial(
-                        _handle_set_entity_hp, self._game, ctx
+                    APPLY_DAMAGE_TOOL.function.name: partial(
+                        _handle_apply_damage, self._game, ctx
                     ),
                     SUBMIT_ARBITRATION_TOOL.function.name: partial(
                         _handle_submit_arbitration, ctx
@@ -467,7 +472,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             return
 
         # 通知覆盖保证：行动者 + 所有目标（去重，行动者可能同时是目标）都必须收到通知。
-        # 若 LLM 未对某个实体调用「写回 HP 工具」（例如其 HP 未变化），则补记其当前 HP，
+        # 若 LLM 未对某个实体调用「净伤害工具」（例如其 HP 未变化），则补记其当前 HP，
         # 确保下方统一落库时仍会向其发送「生命值已更新」通知。
         notify_names = list(
             dict.fromkeys([actor_entity.name, *play_cards_action.targets])

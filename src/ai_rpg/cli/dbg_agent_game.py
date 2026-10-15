@@ -62,11 +62,11 @@ import click
 from loguru import logger
 
 # 仅在本 CLI 运行时启用 chat dump（调试用途）
-from ai_rpg.deepseek import DeepSeekClient
+from ai_rpg.deepseek import chat_dump
 from ai_rpg.game import restore_world
 from ai_rpg.paths import LOGS_DIR, WORLDS_DIR
 
-DeepSeekClient.chat_dump_enabled = True
+chat_dump.chat_dump_enabled = True
 
 LOG_LEVEL: Final[str] = "DEBUG"
 

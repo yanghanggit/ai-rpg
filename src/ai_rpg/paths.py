@@ -25,18 +25,6 @@ WORLDS_DIR.mkdir(parents=True, exist_ok=True)
 assert WORLDS_DIR.exists(), f"找不到目录: {WORLDS_DIR}"
 
 ###########################################################################################################################################
-# 开发期 AI 响应磁盘缓存目录（基于 messages+prompt hash，避免重复调用 AI 接口）
-DEBUG_CACHE_DIR: Path = Path(".debug_cache")
-DEBUG_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-assert DEBUG_CACHE_DIR.exists(), f"找不到目录: {DEBUG_CACHE_DIR}"
-
-###########################################################################################################################################
-# chat dump 存储目录（项目根目录下）
-CHAT_DUMP_DIR: Path = Path(".chat_dumps")
-CHAT_DUMP_DIR.mkdir(parents=True, exist_ok=True)
-assert CHAT_DUMP_DIR.exists(), f"找不到目录: {CHAT_DUMP_DIR}"
-
-###########################################################################################################################################
 # 资源资产目录（raw 资源 + 同名 .meta）
 ASSETS_DIR: Path = Path(".assets/image")
 ASSETS_DIR.mkdir(parents=True, exist_ok=True)

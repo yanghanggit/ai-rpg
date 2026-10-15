@@ -15,7 +15,6 @@ temperature 参数默认为 1.0。
 
 import os
 import time
-from datetime import datetime
 from typing import (
     Any,
     Dict,
@@ -34,14 +33,8 @@ from dotenv import load_dotenv
 from loguru import logger
 from pydantic import BaseModel
 
-from ..models.messages import (
-    AIMessage,
-    BaseMessage,
-    HumanMessage,
-    ToolMessage,
-    get_buffer_string,
-)
-from ..paths import CHAT_DUMP_DIR
+from ..models.messages import AIMessage, BaseMessage, ToolMessage
+from . import chat_dump
 from .errors import DeepSeekError, ErrorKind
 
 load_dotenv()
@@ -125,9 +118,6 @@ class DeepSeekClient:
         MODEL_FLASH: 1_000_000,
         MODEL_PRO: 1_000_000,
     }
-
-    # chat dump 全局开关（默认关闭）；dbg_agent_game.py 等调试入口会在运行时打开
-    chat_dump_enabled: bool = False
 
     ################################################################################################################################################################################
     @classmethod
@@ -574,8 +564,8 @@ class DeepSeekClient:
                 logger.info("=" * 60)
 
             # 记录完整对话内容以供调试分析
-            if DeepSeekClient.chat_dump_enabled:
-                self._dump_chat()
+            if chat_dump.chat_dump_enabled:
+                chat_dump.dump_chat(self)
 
         else:
 
@@ -584,59 +574,3 @@ class DeepSeekClient:
 
             # 记录并抛出统一错误：非 200 视为 api 类失败，retryable 由状态码判定。
             _fail("api", f"HTTP {response.status_code}", response.status_code)
-
-    ################################################################################################################################################################################
-    def _dump_chat(self) -> None:
-        """将本次 chat() 完整对话写入 .chat_dumps/ 下的 Markdown 文件。"""
-
-        try:
-
-            # 拷贝 messages，再把本轮 prompt / response 分别补齐，
-            # 使全部消息（含本轮）统一交给 get_buffer_string.
-            messages: List[BaseMessage] = list(self._messages)
-
-            # 仅在 prompt 非空时追加本轮 prompt：continuation 模式下 prompt 为空，
-            # 不应产生一条幽灵空 Human 消息。
-            if self._prompt:
-                messages.append(HumanMessage(content=self._prompt))
-
-            # 追加本轮 response：优先用原始 AIMessage（保留 tool_calls 等 additional_kwargs）；
-            # 仅当响应缺失（如 200 但空 choices）时才退化为纯文本。
-            if self._response_ai_message is not None:
-                messages.append(self._response_ai_message)
-            else:
-                messages.append(AIMessage(content=self.response_content))
-
-            # 提取对话内容为字符串，带有分隔符和角色标记；
-            # chat dump 用于调试，需渲染 tool_calls（否则工具调用显示为空 AI:）。
-            _SEP = "-" * 86
-            content = get_buffer_string(
-                messages,
-                system_prefix="\n" + _SEP + "\nSystem",
-                human_prefix="\n" + _SEP + "\nHuman",
-                ai_prefix="\n" + _SEP + "\nAI",
-                tool_prefix="\n" + _SEP + "\nTool",
-                render_tool_calls=True,
-            )
-
-            # Reasoning（可选）
-            if self.response_reasoning_content:
-                content += "\n" + _SEP + "\n" + self.response_reasoning_content
-
-            # 内容结束。
-            content += "\n"
-
-            # 写入文件，文件名格式为：YYYYMMDD_HHMMSS_microseconds_name.txt
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-            dump_file = CHAT_DUMP_DIR / f"{timestamp}_{self._name}.txt"
-            CHAT_DUMP_DIR.mkdir(parents=True, exist_ok=True)
-            dump_file.write_text(content, encoding="utf-8")
-            logger.debug(f"chat dump saved: {dump_file}")
-
-        except Exception as e:
-
-            logger.warning(
-                f"_dump_chat failed for '{self._name}': {type(e).__name__}: {e}"
-            )
-
-    ################################################################################################################################################################################

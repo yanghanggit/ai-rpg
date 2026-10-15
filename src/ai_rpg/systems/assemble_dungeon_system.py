@@ -1,7 +1,6 @@
 """副本组装系统"""
 
-from pathlib import Path
-from typing import Dict, Final, List, Optional, Set, final, override
+from typing import Dict, Final, List, Set, final, override
 
 from loguru import logger
 
@@ -20,7 +19,6 @@ from ..models import (
 )
 from ..models.dungeon_generation import DungeonBlueprint
 from ..models.entity_factory import create_actor, create_stage
-from ..paths import DEBUG_CACHE_DIR
 
 
 ####################################################################################################################################
@@ -65,15 +63,6 @@ class AssembleDungeonSystem(ReactiveProcessor):
 
         # 组装 Dungeon 实体树（牌库由后置的 AssembleDeckSystem 负责填充）
         dungeon = self._build_dungeon(blueprint)
-        if dungeon is None:
-            return
-
-        # 保存 DungeonBlueprint 副本到 DEBUG_CACHE_DIR（便于调试）
-        debug_path: Path = DEBUG_CACHE_DIR / f"{dungeon_name}.blueprint.json"
-        debug_path.write_text(blueprint.model_dump_json(indent=4), encoding="utf-8")
-        logger.info(
-            f"[AssembleDungeonSystem] DungeonBlueprint 已保存（调试）: {debug_path}"
-        )
 
         # 衔接 Step 4.5：怪物牌库组建（随后由其写 Dungeon JSON / 发插图 / 重置 memory）
         entity.replace(AssembleDeckAction, entity.name, dungeon)
@@ -99,7 +88,7 @@ class AssembleDungeonSystem(ReactiveProcessor):
         return unique
 
     ####################################################################################################################################
-    def _build_dungeon(self, blueprint: DungeonBlueprint) -> Optional[Dungeon]:
+    def _build_dungeon(self, blueprint: DungeonBlueprint) -> Dungeon:
         """将 DungeonBlueprint 组装为完整 Dungeon 实体树（纯数据，无 LLM 调用）。"""
         seen_room_names: set[str] = set()
         seen_actor_names: set[str] = set()
@@ -145,6 +134,8 @@ class AssembleDungeonSystem(ReactiveProcessor):
                     )
                     # 牌库由 AssembleDeckSystem 后续从卡牌原型库组建并润色
                     actors.append(actor)
+
+                # 将 actors 分配给 stage，并创建 CombatRoom 实体
                 stage.actors = actors
                 rooms.append(CombatRoom(stage=stage))
                 logger.info(

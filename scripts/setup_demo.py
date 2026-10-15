@@ -18,7 +18,7 @@ from ai_rpg.models import (
     Dungeon,
 )
 from ai_rpg.models.entities import Stage, World
-from ai_rpg.paths import BLUEPRINTS_DIR, DEBUG_CACHE_DIR, DUNGEONS_DIR
+from ai_rpg.paths import BLUEPRINTS_DIR, DUNGEONS_DIR
 from ai_rpg.pgsql import (
     pgsql_create_database,
     pgsql_drop_database,
@@ -60,6 +60,12 @@ TEST_USER = UserAccount(
 GAME_1: Final[str] = (
     "Game1"  # unity 客户端目前是一定会链接到这个游戏的，所以这个名字暂时不能改。
 )
+
+###########################################################################################################################################
+# 系统提示词快照输出目录（项目根目录下）
+DEBUG_CACHE_DIR: Final[Path] = Path(".debug_cache")
+DEBUG_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+assert DEBUG_CACHE_DIR.exists(), f"找不到目录: {DEBUG_CACHE_DIR}"
 
 
 ########################################################################################################

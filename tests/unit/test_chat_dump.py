@@ -2,13 +2,14 @@
 
 覆盖两处开发期可观测缺口：
 - get_buffer_string 默认不渲染 tool_calls，显式开启后渲染；
-- _dump_chat 不再为空 prompt 追加幽灵 Human 消息，且保留本轮响应的 tool_calls。
+- dump_chat 不再为空 prompt 追加幽灵 Human 消息，且保留本轮响应的 tool_calls。
 """
 
 from pathlib import Path
 
 import pytest
 
+from ai_rpg.deepseek.chat_dump import dump_chat
 from ai_rpg.deepseek.client import DeepSeekClient, ToolDefinition, ToolFunction
 from ai_rpg.models.messages import AIMessage, SystemMessage, get_buffer_string
 
@@ -56,12 +57,12 @@ def test_buffer_renders_tool_calls_when_enabled() -> None:
 
 
 #######################################################################################################################################
-# _dump_chat
+# dump_chat
 #######################################################################################################################################
 def test_dump_skips_empty_prompt_and_keeps_tool_calls(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr("ai_rpg.deepseek.client.CHAT_DUMP_DIR", tmp_path)
+    monkeypatch.setattr("ai_rpg.deepseek.chat_dump.CHAT_DUMP_DIR", tmp_path)
 
     # continuation 模式：prompt 为空（靠 tools 满足构造断言），历史里只有 system
     client = DeepSeekClient(
@@ -72,7 +73,7 @@ def test_dump_skips_empty_prompt_and_keeps_tool_calls(
     )
     client._response_ai_message = _ai_with_tool_call()
 
-    client._dump_chat()
+    dump_chat(client)
 
     files = list(tmp_path.glob("*.txt"))
     assert len(files) == 1
@@ -88,7 +89,7 @@ def test_dump_skips_empty_prompt_and_keeps_tool_calls(
 def test_dump_includes_non_empty_prompt(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr("ai_rpg.deepseek.client.CHAT_DUMP_DIR", tmp_path)
+    monkeypatch.setattr("ai_rpg.deepseek.chat_dump.CHAT_DUMP_DIR", tmp_path)
 
     client = DeepSeekClient(
         name="场景.测试",
@@ -97,7 +98,7 @@ def test_dump_includes_non_empty_prompt(
     )
     client._response_ai_message = AIMessage(content="洞顶低矮")
 
-    client._dump_chat()
+    dump_chat(client)
 
     text = list(tmp_path.glob("*.txt"))[0].read_text(encoding="utf-8")
     assert "Human: 请描述环境" in text
@@ -108,7 +109,7 @@ def test_dump_falls_back_when_response_missing(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """响应缺失（200 但空 choices）时退化为纯文本，不抛异常。"""
-    monkeypatch.setattr("ai_rpg.deepseek.client.CHAT_DUMP_DIR", tmp_path)
+    monkeypatch.setattr("ai_rpg.deepseek.chat_dump.CHAT_DUMP_DIR", tmp_path)
 
     client = DeepSeekClient(
         name="场景.测试",
@@ -117,7 +118,7 @@ def test_dump_falls_back_when_response_missing(
     )
     client._response_ai_message = None
 
-    client._dump_chat()
+    dump_chat(client)
 
     text = list(tmp_path.glob("*.txt"))[0].read_text(encoding="utf-8")
     assert "AI:" in text

@@ -69,14 +69,41 @@ ChatMessage = Annotated[
 ############################################################################################################
 
 
+def _format_tool_calls(tool_calls: Any) -> str:
+    """把 `AIMessage.additional_kwargs['tool_calls']` 渲染为可读多行文本。
+
+    兼容原始 API 格式（dict）与对象形式的 ToolCall；无调用时返回空串。
+    """
+    if not isinstance(tool_calls, list) or not tool_calls:
+        return ""
+    lines: List[str] = ["[tool_calls]"]
+    for tc in tool_calls:
+        if isinstance(tc, dict):
+            function = tc.get("function") or {}
+            name = function.get("name", "?")
+            arguments = function.get("arguments", "")
+        else:
+            function = getattr(tc, "function", None)
+            name = getattr(function, "name", "?")
+            arguments = getattr(function, "arguments", "")
+        lines.append(f"  ↳ {name}({arguments})")
+    return "\n".join(lines)
+
+
+############################################################################################################
 def get_buffer_string(
     messages: Sequence[BaseMessage],
     system_prefix: str = "System",
     human_prefix: str = "Human",
     ai_prefix: str = "AI",
     tool_prefix: str = "Tool",
+    render_tool_calls: bool = False,
 ) -> str:
-    """将消息序列转换为单一字符串（用于调试、日志或 prompt 拼接）"""
+    """将消息序列转换为单一字符串（用于调试、日志或 prompt 拼接）。
+
+    ``render_tool_calls`` 为 True 时，额外渲染 `AIMessage` 的 tool_calls（默认关闭，
+    避免影响存档 buffer / 压缩留痕等既有文本的体量）。
+    """
 
     lines: List[str] = []
     for msg in messages:
@@ -91,8 +118,16 @@ def get_buffer_string(
         else:
             raise ValueError(f"不支持的消息类型: {type(msg)}")
 
+        content = msg.content
+
+        # 可选：把 AI 消息的 tool_calls 一并渲染出来
+        if render_tool_calls and isinstance(msg, AIMessage):
+            calls = _format_tool_calls(msg.additional_kwargs.get("tool_calls"))
+            if calls:
+                content = f"{content}\n{calls}" if content else calls
+
         # 拼接 role 和 content
-        lines.append(f"{role}: {msg.content}")
+        lines.append(f"{role}: {content}")
 
     # 返回拼接后的字符串
     return "\n".join(lines)

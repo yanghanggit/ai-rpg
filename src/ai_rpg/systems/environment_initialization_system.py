@@ -89,13 +89,34 @@ class EnvironmentInitializationSystem(ExecuteProcessor):
             self._build_client(stage_entity) for stage_entity in observed_stage_entities
         ]
 
-        # 批量发送请求给 AI，等待所有响应完成
-        await batch_chat(clients=chat_clients)
+        # 批量发送请求给 AI，等待所有响应完成。返回与 clients 对齐的失败列表（成功为 None）。
+        errors = await batch_chat(clients=chat_clients)
 
-        # 处理每个场景实体的 AI 响应，更新 EnvironmentComponent 并存入对话历史
-        for chat_client in chat_clients:
-            self._process_environment_response(
-                chat_client,
+        # 消费 batch 失败列表与逐条处理结果，统一记账：
+        # 1) 传输/HTTP 层失败：error 已带原因，直接记账，不再走 response 解析（避免重复告警）；
+        # 2) 请求成功但响应为空（空 choices / 空文本）：由 handler 返回 False。
+        # 本项为 best-effort：环境叙事是可选补充，失败场景仍缺组件，会在后续「有观察者」的
+        # 管线轮次里被再次纳入（惰性重试），因此此处不做同调用内重试。
+        failed_names: List[str] = []
+        for chat_client, error in zip(chat_clients, errors):
+            if error is not None:
+                logger.warning(
+                    f"EnvironmentInitializationSystem: 环境叙事请求失败 "
+                    f"name={chat_client.name} kind={error.kind} "
+                    f"status={error.status_code} retryable={error.retryable}"
+                )
+                failed_names.append(chat_client.name)
+                continue
+
+            if not self._process_environment_response(chat_client):
+                failed_names.append(chat_client.name)
+
+        # 一次汇总，交代哪些场景未生成及其后续处置
+        if failed_names:
+            logger.warning(
+                f"EnvironmentInitializationSystem: {len(failed_names)}/{len(chat_clients)}"
+                f" 个场景环境叙事未生成（{'、'.join(failed_names)}）；"
+                "它们将继续缺少 EnvironmentComponent，待后续有观察者的管线轮次自动补齐"
             )
 
     #######################################################################################################################################

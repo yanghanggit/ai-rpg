@@ -7,10 +7,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from ai_rpg.deepseek import DeepSeekError
 from ai_rpg.entitas.context import Context
 from ai_rpg.entitas.entity import Entity
 from ai_rpg.game.dbg_game import DBGGame
-from ai_rpg.models import StageComponent
+from ai_rpg.models import EnvironmentComponent, StageComponent
+from ai_rpg.models.messages import AIMessage
 from ai_rpg.systems.environment_initialization_system import (
     EnvironmentInitializationSystem,
 )
@@ -120,3 +122,56 @@ class TestObservedStagesOnly:
             await system.execute()
 
         mock_batch.assert_not_called()
+
+
+class TestFailureAccounting:
+    @pytest.mark.asyncio
+    async def test_writes_successes_and_skips_failed(
+        self,
+        context: Context,
+        mock_game: MagicMock,
+        system: EnvironmentInitializationSystem,
+    ) -> None:
+        """消费 batch 失败列表：成功场景写入组件，失败场景不写入且不再走 response 解析。"""
+        ok = _make_stage(context, "场景.兽径入口")
+        bad = _make_stage(context, "场景.佣兵公会")
+        # 用 list（而非 set）固定顺序，使 batch 返回的失败列表与 clients 对齐可预测
+        mock_game.get_group.return_value.entities = [ok, bad]
+        mock_game.get_entity_by_name.side_effect = lambda n: {
+            "场景.兽径入口": ok,
+            "场景.佣兵公会": bad,
+        }[n]
+
+        def _build(stage: Entity) -> MagicMock:
+            client = MagicMock()
+            client.name = stage.name
+            client.prompt = f"prompt:{stage.name}"
+            if stage is ok:
+                client.response_ai_message = AIMessage(content="松林窄径，泥泞湿冷")
+                client.response_content = "松林窄径，泥泞湿冷"
+            else:
+                client.response_ai_message = None
+                client.response_content = ""
+            return client
+
+        timeout = DeepSeekError("场景.佣兵公会", "timeout", kind="timeout")
+
+        with (
+            patch(
+                "ai_rpg.systems.environment_initialization_system.get_alive_actors_in_stage",
+                return_value={object()},
+            ),
+            patch.object(system, "_build_client", side_effect=_build),
+            patch(
+                "ai_rpg.systems.environment_initialization_system.batch_chat",
+                new=AsyncMock(return_value=[None, timeout]),
+            ),
+        ):
+            await system.execute()
+
+        # 成功场景写入环境叙事
+        assert ok.has(EnvironmentComponent)
+        assert ok.get(EnvironmentComponent).narrative == "松林窄径，泥泞湿冷"
+        # 失败场景未写入，且未进入 response 解析（get_entity_by_name 仅对成功项调用）
+        assert not bad.has(EnvironmentComponent)
+        mock_game.get_entity_by_name.assert_called_once_with("场景.兽径入口")

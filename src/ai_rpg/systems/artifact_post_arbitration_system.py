@@ -176,7 +176,7 @@ SET_ENTITY_HP_TOOL: Final[ToolDefinition] = ToolDefinition(
 SUBMIT_ARBITRATION_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="submit_arbitration",
-        description="提交本次神器仲裁的最终结果（战斗日志、演出叙事）。"
+        description="提交本次神器仲裁的最终结果（战斗日志、演出叙事、无法结算的规则）。"
         f"combat_log/narrative 必须与本次实际调用过的 {SET_ENTITY_HP_TOOL.function.name} 完全一致。"
         "调用后本次仲裁结束。",
         parameters={
@@ -189,6 +189,11 @@ SUBMIT_ARBITRATION_TOOL: Final[ToolDefinition] = ToolDefinition(
                 "narrative": {
                     "type": "string",
                     "description": "60-120 字第三人称演出叙事",
+                },
+                "unsettled_affixes": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "可选：无法按本次结算规则处理的原始条目列表（如要求抽牌/回能/额外行动，或凭空叠加没有牌承载的标记），仅供系统统计，不计入结算。",
                 },
             },
             "required": ["combat_log", "narrative"],
@@ -206,6 +211,7 @@ class _ArbitrationContext(BaseModel):
     hp_changes: Dict[str, int] = Field(default_factory=dict)
     combat_log: Optional[str] = None
     narrative: Optional[str] = None
+    unsettled_affixes: List[str] = Field(default_factory=list)
 
 
 def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
@@ -236,10 +242,13 @@ def _handle_submit_arbitration(
     ctx: _ArbitrationContext,
     combat_log: str,
     narrative: str,
+    unsettled_affixes: Optional[List[str]] = None,
 ) -> str:
     """记录最终仲裁结果。"""
     ctx.combat_log = combat_log
     ctx.narrative = narrative
+    if unsettled_affixes:
+        ctx.unsettled_affixes = [str(a) for a in unsettled_affixes if str(a).strip()]
     return "仲裁结果已提交"
 
 
@@ -413,6 +422,7 @@ class ArtifactPostArbitrationSystem(ReactiveProcessor):
                     {
                         "combat_log": combat_log,
                         "narrative": narrative,
+                        "unsettled_affixes": ctx.unsettled_affixes,
                     },
                     ensure_ascii=False,
                 )
@@ -440,6 +450,12 @@ class ArtifactPostArbitrationSystem(ReactiveProcessor):
             ),
             exclude_entities={stage_entity},
         )
+
+        # 规则 telemetry：记录仲裁器无法按计算规则结算的条目
+        for affix in ctx.unsettled_affixes:
+            logger.warning(
+                f"[ArtifactPostArbitrationSystem] 规则无法按计算规则结算（telemetry）: {affix}"
+            )
 
         # 落库每个受影响角色的最终 HP 并发送「生命值已更新」通知
         for entity_name, hp in hp_changes.items():

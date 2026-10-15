@@ -591,17 +591,24 @@ class DeepSeekClient:
 
         try:
 
-            # 拷贝 messages，再把本轮 prompt / response 分别补齐为 HumanMessage / AIMessage，
+            # 拷贝 messages，再把本轮 prompt / response 分别补齐，
             # 使全部消息（含本轮）统一交给 get_buffer_string.
             messages: List[BaseMessage] = list(self._messages)
 
-            # 添加本轮 prompt / response
-            messages.append(HumanMessage(content=(self._prompt)))
+            # 仅在 prompt 非空时追加本轮 prompt：continuation 模式下 prompt 为空，
+            # 不应产生一条幽灵空 Human 消息。
+            if self._prompt:
+                messages.append(HumanMessage(content=self._prompt))
 
-            # 添加本轮 response，注意 response_content 可能为空字符串，但仍然需要记录
-            messages.append(AIMessage(content=self.response_content))
+            # 追加本轮 response：优先用原始 AIMessage（保留 tool_calls 等 additional_kwargs）；
+            # 仅当响应缺失（如 200 但空 choices）时才退化为纯文本。
+            if self._response_ai_message is not None:
+                messages.append(self._response_ai_message)
+            else:
+                messages.append(AIMessage(content=self.response_content))
 
-            # 提取对话内容为字符串，带有分隔符和角色标记
+            # 提取对话内容为字符串，带有分隔符和角色标记；
+            # chat dump 用于调试，需渲染 tool_calls（否则工具调用显示为空 AI:）。
             _SEP = "-" * 86
             content = get_buffer_string(
                 messages,
@@ -609,6 +616,7 @@ class DeepSeekClient:
                 human_prefix="\n" + _SEP + "\nHuman",
                 ai_prefix="\n" + _SEP + "\nAI",
                 tool_prefix="\n" + _SEP + "\nTool",
+                render_tool_calls=True,
             )
 
             # Reasoning（可选）

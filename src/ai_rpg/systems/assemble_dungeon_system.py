@@ -9,16 +9,16 @@ from ..game.dbg_game import DBGGame
 from ..models import (
     ActorType,
     AnyDungeonRoom,
-    AssembleDeckAction,
-    AssembleDungeonAction,
     CharacterStats,
     CombatRoom,
     Dungeon,
+    GenerateDungeonAction,
     OpeningRoom,
     StageType,
 )
-from ..models.dungeon_generation import DungeonBlueprint
+from ..models.dungeon_draft import DungeonActorDraft, DungeonDraft
 from ..models.entity_factory import create_actor, create_stage
+from ..paths import DUNGEONS_DIR, DUNGEONS_DRAFTS_DIR
 
 
 ####################################################################################################################################
@@ -33,41 +33,44 @@ class AssembleDungeonSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def get_trigger(self) -> Dict[Matcher, GroupEvent]:
-        return {Matcher(AssembleDungeonAction): GroupEvent.ADDED}
+        return {Matcher(GenerateDungeonAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(AssembleDungeonAction)
+        return entity.has(GenerateDungeonAction)
 
     ####################################################################################################################################
     @override
     async def react(self, entities: List[Entity]) -> None:
-        assert len(entities) == 1, "同时存在多个 AssembleDungeonAction，数据异常"
-        entity = entities[0]
-        await self._run(entity)
+        assert len(entities) == 1, "同时存在多个 GenerateDungeonAction，数据异常"
+        await self._run()
 
     ####################################################################################################################################
-    async def _run(self, entity: Entity) -> None:
-        action_comp = entity.get(AssembleDungeonAction)
-        dungeon_name = action_comp.dungeon_name
-        blueprint = action_comp.blueprint
-
-        logger.info(f"[AssembleDungeonSystem] Step 4 开始: dungeon={dungeon_name}")
-
-        if not blueprint.rooms:
-            logger.error(
-                "[AssembleDungeonSystem] blueprint.rooms 为空，无法构建 Dungeon"
-            )
+    async def _run(self) -> None:
+        draft = self._game._dungeon_draft
+        if draft is None:
+            logger.error("[AssembleDungeonSystem] 中间过程数据缺失，跳过")
             return
 
-        # 组装 Dungeon 实体树（牌库由后置的 AssembleDeckSystem 负责填充）
-        dungeon = self._build_dungeon(blueprint)
+        if not draft.rooms:
+            logger.error("[AssembleDungeonSystem] rooms 为空，无法构建 Dungeon")
+            return
 
-        # 衔接 Step 4.5：怪物牌库组建（随后由其写 Dungeon JSON / 发插图 / 重置 memory）
-        entity.replace(AssembleDeckAction, entity.name, dungeon)
+        logger.info(f"[AssembleDungeonSystem] 开始: dungeon={draft.dungeon_name}")
+
+        # 组装 Dungeon 实体树，并把最终产物写入 DUNGEONS_DIR
+        dungeon = self._build_dungeon(draft)
+        dungeon_path = DUNGEONS_DIR / f"{dungeon.name}.json"
+        dungeon_path.write_text(dungeon.model_dump_json(indent=4), encoding="utf-8")
+
+        # 落一份中间过程数据（草稿）到 DUNGEONS_DRAFTS_DIR，便于回溯
+        draft_path = DUNGEONS_DRAFTS_DIR / f"{draft.dungeon_name}.json"
+        draft_path.write_text(draft.model_dump_json(indent=4), encoding="utf-8")
+
         logger.info(
-            f"[AssembleDungeonSystem] 添加 AssembleDeckAction: dungeon={dungeon_name}"
+            f"[AssembleDungeonSystem] 完成并保存: {dungeon_path} "
+            f"({len(dungeon.rooms)} rooms)，草稿: {draft_path}"
         )
 
     ####################################################################################################################################
@@ -88,46 +91,50 @@ class AssembleDungeonSystem(ReactiveProcessor):
         return unique
 
     ####################################################################################################################################
-    def _build_dungeon(self, blueprint: DungeonBlueprint) -> Dungeon:
-        """将 DungeonBlueprint 组装为完整 Dungeon 实体树（纯数据，无 LLM 调用）。"""
+    def _build_dungeon(self, draft: DungeonDraft) -> Dungeon:
+        """将中间过程数据组装为完整 Dungeon 实体树（纯数据，无 LLM 调用）。"""
+        actors_by_room: Dict[str, List[DungeonActorDraft]] = {}
+        for actor_draft in draft.actors:
+            actors_by_room.setdefault(actor_draft.room_name, []).append(actor_draft)
+
         seen_room_names: set[str] = set()
         seen_actor_names: set[str] = set()
         rooms: List[AnyDungeonRoom] = []
 
         # 组装每个 room 对应的房间
-        for i, room_bp in enumerate(blueprint.rooms, start=1):
+        for i, room_draft in enumerate(draft.rooms, start=1):
 
             # 处理 room_name 重复问题
-            room_name = self._deduplicate_name(seen_room_names, room_bp.room_name)
+            room_name = self._deduplicate_name(seen_room_names, room_draft.room_name)
 
             # 创建 Stage 实体
             stage = create_stage(
                 name=room_name,
                 stage_type=StageType.DUNGEON,
-                profile=room_bp.profile,
+                profile=room_draft.profile,
                 campaign_setting=self._game._world.blueprint.campaign_setting,
                 system_rules=self._game._world.blueprint.system_rules,
             )
 
             # 根据 room_type 创建对应的房间类型
-            if room_bp.room_type == "opening":
+            if room_draft.room_type == "opening":
                 stage.actors = []
                 rooms.append(OpeningRoom(stage=stage))
                 logger.info(
-                    f"[AssembleDungeonSystem] Room {i}/{len(blueprint.rooms)} 构建完成:\n"
+                    f"[AssembleDungeonSystem] Room {i}/{len(draft.rooms)} 构建完成:\n"
                     f"  type:   opening\n"
                     f"  stage:  {stage.name}"
                 )
-            elif room_bp.room_type == "combat":
+            elif room_draft.room_type == "combat":
                 actors = []
-                for actor_bp in room_bp.actors:
+                for actor_draft in actors_by_room.get(room_draft.room_name, []):
                     actor = create_actor(
                         name=self._deduplicate_name(
-                            seen_actor_names, actor_bp.actor_name
+                            seen_actor_names, actor_draft.actor_name
                         ),
                         actor_type=ActorType.MONSTER,
-                        profile=actor_bp.profile,
-                        base_body=actor_bp.base_body,
+                        profile=actor_draft.profile,
+                        base_body=actor_draft.base_body,
                         character_stats=CharacterStats(),
                         campaign_setting=self._game._world.blueprint.campaign_setting,
                         system_rules=self._game._world.blueprint.system_rules,
@@ -139,7 +146,7 @@ class AssembleDungeonSystem(ReactiveProcessor):
                 stage.actors = actors
                 rooms.append(CombatRoom(stage=stage))
                 logger.info(
-                    f"[AssembleDungeonSystem] Room {i}/{len(blueprint.rooms)} 构建完成:\n"
+                    f"[AssembleDungeonSystem] Room {i}/{len(draft.rooms)} 构建完成:\n"
                     f"  type:   combat\n"
                     f"  stage:  {stage.name}\n"
                     f"  actors ({len(actors)}): " + ", ".join(a.name for a in actors)
@@ -147,11 +154,11 @@ class AssembleDungeonSystem(ReactiveProcessor):
 
         # 组装 Dungeon 实体
         dungeon = Dungeon(
-            name=blueprint.dungeon_name,
-            profile=blueprint.profile,
+            name=draft.dungeon_name,
+            profile=draft.profile,
             rooms=rooms,
         )
         logger.info(
-            f"[AssembleDungeonSystem] Step 4 完成: {dungeon.name} ({len(dungeon.rooms)} rooms)"
+            f"[AssembleDungeonSystem] Dungeon 组装完成: {dungeon.name} ({len(dungeon.rooms)} rooms)"
         )
         return dungeon

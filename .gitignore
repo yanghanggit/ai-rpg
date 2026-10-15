@@ -66,6 +66,7 @@ htmlcov/
 .blueprints/
 .worlds/
 .dungeons/
+.dungeons_drafts/
 .debug_cache/
 .chat_dumps/
 

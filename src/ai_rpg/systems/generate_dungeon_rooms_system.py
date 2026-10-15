@@ -9,11 +9,8 @@ from pydantic import BaseModel
 from ..deepseek import ToolDefinition, ToolFunction, agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
-from ..models import (
-    GenerateDungeonActorsAction,
-    GenerateDungeonRoomsAction,
-)
-from ..models.dungeon_generation import DungeonRoomData
+from ..models import GenerateDungeonAction
+from ..models.dungeon_draft import DungeonRoomDraft
 from ..utils import prompt_builder
 
 
@@ -37,7 +34,7 @@ def _build_record_dungeon_rooms_tool(dungeon_room_count: int) -> ToolDefinition:
                 "properties": {
                     "dungeon_name": {
                         "type": "string",
-                        "description": "副本全名，与 Step 1 中的 dungeon_name 一致",
+                        "description": "副本全名，与副本设定中的 dungeon_name 一致",
                     },
                     "rooms": {
                         "type": "array",
@@ -115,7 +112,7 @@ class _RoomsResult(BaseModel):
     """record_dungeon_rooms handler 的结果容器。"""
 
     dungeon_name: Optional[str] = None
-    rooms: Optional[List[DungeonRoomData]] = None
+    rooms: Optional[List[DungeonRoomDraft]] = None
 
 
 ####################################################################################################################################
@@ -123,7 +120,7 @@ def _handle_record_dungeon_rooms(
     result: _RoomsResult, dungeon_name: str, rooms: List[Any]
 ) -> str:
     """处理 record_dungeon_rooms 工具调用。"""
-    room_items = [DungeonRoomData(**r) for r in rooms]
+    room_items = [DungeonRoomDraft(**r) for r in rooms]
     result.dungeon_name = dungeon_name
     result.rooms = room_items
     for i, room in enumerate(room_items, start=1):
@@ -155,30 +152,34 @@ class GenerateDungeonRoomsSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def get_trigger(self) -> Dict[Matcher, GroupEvent]:
-        return {Matcher(GenerateDungeonRoomsAction): GroupEvent.ADDED}
+        return {Matcher(GenerateDungeonAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(GenerateDungeonRoomsAction)
+        return entity.has(GenerateDungeonAction)
 
     ####################################################################################################################################
     @override
     async def react(self, entities: List[Entity]) -> None:
-        assert len(entities) == 1, "同时存在多个 GenerateDungeonRoomsAction，数据异常"
+        assert len(entities) == 1, "同时存在多个 GenerateDungeonAction，数据异常"
         entity = entities[0]
         await self._run(entity)
 
     ####################################################################################################################################
     async def _run(self, entity: Entity) -> None:
-        action_comp = entity.get(GenerateDungeonRoomsAction)
-        dungeon_name = action_comp.dungeon_name
-        dungeon_profile = action_comp.dungeon_profile
-        dungeon_room_count = action_comp.dungeon_room_count
+        draft = self._game._dungeon_draft
+        if draft is None:
+            logger.error("[GenerateDungeonRoomsSystem] 中间过程数据缺失，跳过")
+            return
+
+        dungeon_name = draft.dungeon_name
+        dungeon_profile = draft.profile
+        dungeon_room_count = draft.room_count
 
         logger.info(
-            f"[GenerateDungeonRoomsSystem] Step 2 开始: dungeon={dungeon_name}, "
-            f"dungeon_room_count={dungeon_room_count}"
+            f"[GenerateDungeonRoomsSystem] 开始: dungeon={dungeon_name}, "
+            f"room_count={dungeon_room_count}"
         )
 
         result = _RoomsResult()
@@ -201,12 +202,12 @@ class GenerateDungeonRoomsSystem(ReactiveProcessor):
         )
 
         if not success:
-            logger.error("[GenerateDungeonRoomsSystem] Step 2 agent_loop 失败，中止")
+            logger.error("[GenerateDungeonRoomsSystem] agent_loop 失败，中止")
             return
 
         if result.dungeon_name is None or result.rooms is None:
             logger.error(
-                "[GenerateDungeonRoomsSystem] Step 2 LLM 已 stop "
+                "[GenerateDungeonRoomsSystem] LLM 已 stop "
                 "但未调用 record_dungeon_rooms，中止"
             )
             return
@@ -235,18 +236,11 @@ class GenerateDungeonRoomsSystem(ReactiveProcessor):
                 return
 
         logger.info(
-            f"[GenerateDungeonRoomsSystem] Step 2 完成:\n"
+            f"[GenerateDungeonRoomsSystem] 完成:\n"
             f"  rooms ({len(rooms)}): " + ", ".join(r.room_name for r in rooms)
         )
 
-        # Step 3: 添加 GenerateDungeonActorsAction，携带房间列表产物
-        entity.replace(
-            GenerateDungeonActorsAction,
-            entity.name,
-            dungeon_name,
-            dungeon_profile,
-            rooms,
-        )
+        draft.rooms = rooms
         logger.info(
-            f"[GenerateDungeonRoomsSystem] 添加 GenerateDungeonActorsAction: dungeon={dungeon_name}"
+            f"[GenerateDungeonRoomsSystem] 已写入 rooms: dungeon={dungeon_name}"
         )

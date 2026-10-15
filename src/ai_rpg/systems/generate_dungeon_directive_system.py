@@ -10,10 +10,10 @@ from ..game.dbg_game import DBGGame
 from ..models import (
     AIMessage,
     GenerateDungeonAction,
-    GenerateDungeonDirectiveAction,
     HumanMessage,
     WorldDirectorComponent,
 )
+from ..models.dungeon_draft import DungeonDraft
 from ..utils import prompt_builder
 
 
@@ -53,12 +53,15 @@ class GenerateDungeonDirectiveSystem(ReactiveProcessor):
     @override
     async def react(self, entities: List[Entity]) -> None:
         assert len(entities) == 1, "同时存在多个 GenerateDungeonAction，数据异常"
-        generation_entity = entities[0]
-        await self._run(generation_entity)
+        await self._run()
 
     ####################################################################################################################################
-    async def _run(self, generation_entity: Entity) -> None:
+    async def _run(self) -> None:
         logger.info("[GenerateDungeonDirectiveSystem] 开始：世界导演推理副本创作指令")
+
+        # 新建副本生成的中间过程数据，供本次流程后续系统依次填充
+        draft = DungeonDraft()
+        self._game._dungeon_draft = draft
 
         # 1. 查找世界导演实体（允许缺失时降级为空指令）
         director_entities = self._game.get_group(
@@ -103,14 +106,9 @@ class GenerateDungeonDirectiveSystem(ReactiveProcessor):
                 AIMessage(content=directive),
             )
 
-        # 5. 挂接 GenerateDungeonDirectiveAction，将指令传递给 GenerateDungeonProfileSystem
-        #    （无论是否获得指令都挂接，保证流程持续推进；不写入副本生成系统记忆）
-        generation_entity.replace(
-            GenerateDungeonDirectiveAction,
-            generation_entity.name,
-            directive,
-        )
+        # 5. 写入中间过程数据，供 GenerateDungeonProfileSystem 读取
+        #    （无论是否获得指令都写入，保证流程持续推进；不写入副本生成系统记忆）
+        draft.directive = directive
         logger.info(
-            f"[GenerateDungeonDirectiveSystem] 已挂接 GenerateDungeonDirectiveAction: "
-            f"{generation_entity.name!r}, directive 长度={len(directive)}"
+            f"[GenerateDungeonDirectiveSystem] 已写入 directive，长度={len(directive)}"
         )

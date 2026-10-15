@@ -5,8 +5,6 @@ from typing import Dict, List, Optional, final
 
 from ..entitas.components import Component
 from .card import Card
-from .dungeon import Dungeon
-from .dungeon_generation import DungeonBlueprint, DungeonRoomData
 from .items import ConsumableItem, CostumeItem, GearItem, MaterialItem
 from .registry import register_action_component_type, register_component_type
 
@@ -154,17 +152,6 @@ class MonsterTurnAction(Component):
 
 
 ############################################################################################################
-# ── 副本生成流程（Step 0-4.5）内部衔接 Action ──────────────────────────────────────────────────────────
-# 触发链（全部在同一次 dungeon_generate_pipeline.process() 内顺序完成）：
-#   GenerateDungeonAction
-#     → GenerateDungeonDirectiveSystem (Step 0)   → GenerateDungeonDirectiveAction
-#     → GenerateDungeonProfileSystem    (Step 1)   → GenerateDungeonRoomsAction
-#     → GenerateDungeonRoomsSystem     (Step 2)   → GenerateDungeonActorsAction
-#     → GenerateDungeonActorsSystem    (Step 3)   → AssembleDungeonAction
-#     → AssembleDungeonSystem          (Step 4)   → AssembleDeckAction
-#     → AssembleDeckSystem      (Step 4.5)（当前终点）
-#     → IllustrateDungeonActionSystem  (Step 5)
-############################################################################################################
 @final
 @register_action_component_type
 @register_component_type
@@ -172,97 +159,10 @@ class GenerateDungeonAction(Component):
     """副本生成流程入口。
 
     由 home_actions.activate_generate_dungeon() 在家园状态下添加到副本生成系统实体，
-    触发 GenerateDungeonDirectiveSystem（Step 0）执行世界导演指令推理。
+    驱动 dungeon_generate_pipeline 在本次 process() 内顺序跑完整个副本创建流程。
     """
 
     name: str
-
-
-############################################################################################################
-@final
-@register_action_component_type
-@register_component_type
-class GenerateDungeonDirectiveAction(Component):
-    """Step 0→1 衔接：由 GenerateDungeonDirectiveSystem 添加，携带世界导演创作指令。
-
-    触发 GenerateDungeonProfileSystem（Step 1），其读取 directive 注入首轮 prompt。
-    """
-
-    name: str
-    directive: str = ""
-
-
-############################################################################################################
-@final
-@register_action_component_type
-@register_component_type
-class GenerateDungeonRoomsAction(Component):
-    """Step 1→2 衔接：由 GenerateDungeonProfileSystem 添加，携带副本设定产物。
-
-    触发 GenerateDungeonRoomsSystem（Step 2），其直接读取本组件的字段。
-    """
-
-    name: str
-    dungeon_name: str
-    dungeon_profile: str = ""
-    dungeon_room_count: int = 3  # 副本房间总数（含 1 个开场房间）
-
-
-############################################################################################################
-@final
-@register_action_component_type
-@register_component_type
-class GenerateDungeonActorsAction(Component):
-    """Step 2→3 衔接：由 GenerateDungeonRoomsSystem 添加，携带房间列表产物。
-
-    触发 GenerateDungeonActorsSystem（Step 3），其直接读取本组件的字段。
-    """
-
-    name: str
-    dungeon_name: str
-    dungeon_profile: str = ""
-    rooms: List[DungeonRoomData] = []
-
-
-############################################################################################################
-@final
-@register_action_component_type
-@register_component_type
-class AssembleDungeonAction(Component):
-    """Step 3→4 衔接：由 GenerateDungeonActorsSystem 添加，携带完整副本蓝图。
-
-    触发 AssembleDungeonSystem（Step 4），其直接读取本组件的 blueprint。
-    """
-
-    name: str
-    dungeon_name: str
-    blueprint: DungeonBlueprint
-
-
-############################################################################################################
-@final
-@register_action_component_type
-@register_component_type
-class AssembleDeckAction(Component):
-    """Step 4→4.5 衔接：由 AssembleDungeonSystem 添加，携带已组装的 Dungeon（牌库待填）。
-
-    触发 AssembleDeckSystem（Step 4.5），其并发为每个角色从卡牌原型库
-    组建并润色牌库，随后写盘 Dungeon JSON，并触发 Step 5 插图生成。
-    """
-
-    name: str
-    dungeon: Dungeon
-
-
-############################################################################################################
-@final
-@register_action_component_type
-@register_component_type
-class IllustrateDungeonAction(Component):
-    """Step 4.5→5 衔接：由 AssembleDeckSystem 添加，触发副本封面与 Stage 插图的并发生成。"""
-
-    name: str
-    dungeon_name: str  # 副本全名，用于定位磁盘上的 .dungeons/{dungeon_name}.json
 
 
 ############################################################################################################

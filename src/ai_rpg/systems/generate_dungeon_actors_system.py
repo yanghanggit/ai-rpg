@@ -9,23 +9,17 @@ from pydantic import BaseModel, Field
 from ..deepseek import ToolDefinition, ToolFunction, agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
-from ..models import (
-    AssembleDungeonAction,
-    GenerateDungeonActorsAction,
-)
-from ..models.dungeon_generation import (
-    DungeonActorBlueprint,
-    DungeonActorData,
-    DungeonBlueprint,
-    DungeonRoomBlueprint,
-    DungeonRoomData,
+from ..models import GenerateDungeonAction
+from ..models.dungeon_draft import (
+    DungeonActorDraft,
+    DungeonRoomDraft,
 )
 from ..utils import prompt_builder
 
 
 ####################################################################################################################################
 def _build_record_dungeon_actor_tool(
-    combat_rooms: List[DungeonRoomData],
+    combat_rooms: List[DungeonRoomDraft],
 ) -> ToolDefinition:
     """动态构建 record_dungeon_actor 工具定义。
 
@@ -71,7 +65,7 @@ def _build_record_dungeon_actor_tool(
 ####################################################################################################################################
 @prompt_builder
 def _build_dungeon_actors_prompt(
-    dungeon_name: str, profile: str, combat_rooms: List[DungeonRoomData]
+    dungeon_name: str, profile: str, combat_rooms: List[DungeonRoomDraft]
 ) -> str:
     """构建副本怪物批量生成的 LLM 提示词。"""
 
@@ -100,7 +94,7 @@ def _build_dungeon_actors_prompt(
 class _ActorsResult(BaseModel):
     """record_dungeon_actor handler 的结果容器（跨多次调用累积）。"""
 
-    actors: List[DungeonActorData] = Field(default_factory=list)
+    actors: List[DungeonActorDraft] = Field(default_factory=list)
 
 
 ####################################################################################################################################
@@ -112,7 +106,7 @@ def _handle_record_dungeon_actor(
     base_body: str,
 ) -> str:
     """处理 record_dungeon_actor 工具调用，累积到结果容器。"""
-    record = DungeonActorData(
+    record = DungeonActorDraft(
         room_name=room_name,
         actor_name=actor_name,
         profile=profile,
@@ -141,35 +135,37 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def get_trigger(self) -> Dict[Matcher, GroupEvent]:
-        return {Matcher(GenerateDungeonActorsAction): GroupEvent.ADDED}
+        return {Matcher(GenerateDungeonAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(GenerateDungeonActorsAction)
+        return entity.has(GenerateDungeonAction)
 
     ####################################################################################################################################
     @override
     async def react(self, entities: List[Entity]) -> None:
-        assert len(entities) == 1, "同时存在多个 GenerateDungeonActorsAction，数据异常"
+        assert len(entities) == 1, "同时存在多个 GenerateDungeonAction，数据异常"
         entity = entities[0]
         await self._run(entity)
 
     ####################################################################################################################################
     async def _run(self, entity: Entity) -> None:
-        action_comp = entity.get(GenerateDungeonActorsAction)
-        dungeon_name = action_comp.dungeon_name
-        dungeon_profile = action_comp.dungeon_profile
-        rooms = action_comp.rooms
+        draft = self._game._dungeon_draft
+        if draft is None:
+            logger.error("[GenerateDungeonActorsSystem] 中间过程数据缺失，跳过")
+            return
+
+        dungeon_name = draft.dungeon_name
+        dungeon_profile = draft.profile
+        rooms = draft.rooms
 
         logger.info(
-            f"[GenerateDungeonActorsSystem] Step 3 开始: dungeon={dungeon_name}, rooms={len(rooms)}"
+            f"[GenerateDungeonActorsSystem] 开始: dungeon={dungeon_name}, rooms={len(rooms)}"
         )
 
         if not rooms:
-            logger.error(
-                "[GenerateDungeonActorsSystem] Step 2 产物 rooms 为空，无法生成怪物"
-            )
+            logger.error("[GenerateDungeonActorsSystem] rooms 为空，无法生成怪物")
             return
 
         combat_rooms = [r for r in rooms if r.room_type == "combat"]
@@ -197,12 +193,12 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
         )
 
         if not success:
-            logger.error("[GenerateDungeonActorsSystem] Step 3 agent_loop 失败，中止")
+            logger.error("[GenerateDungeonActorsSystem] agent_loop 失败，中止")
             return
 
         if not result.actors:
             logger.error(
-                "[GenerateDungeonActorsSystem] Step 3 LLM 已 stop "
+                "[GenerateDungeonActorsSystem] LLM 已 stop "
                 "但未调用 record_dungeon_actor，中止"
             )
             return
@@ -210,7 +206,7 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
         # 校验归属与数量：房间必须合法，每个 combat 房间数量必须匹配
         room_name_set = {r.room_name for r in rooms}
         combat_name_set = {r.room_name for r in combat_rooms}
-        actors_by_room: Dict[str, List[DungeonActorBlueprint]] = {}
+        actors_by_room: Dict[str, List[DungeonActorDraft]] = {}
         for record in result.actors:
             if record.room_name not in room_name_set:
                 logger.error(
@@ -224,13 +220,7 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
                     f"归属 opening 房间 '{record.room_name}'，中止"
                 )
                 return
-            actors_by_room.setdefault(record.room_name, []).append(
-                DungeonActorBlueprint(
-                    actor_name=record.actor_name,
-                    profile=record.profile,
-                    base_body=record.base_body,
-                )
-            )
+            actors_by_room.setdefault(record.room_name, []).append(record)
 
         for room in combat_rooms:
             actual = len(actors_by_room.get(room.room_name, []))
@@ -241,50 +231,10 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
                 )
                 return
 
-        # 组装 DungeonBlueprint
-        blueprint = DungeonBlueprint(
-            dungeon_name=dungeon_name,
-            profile=dungeon_profile,
-        )
-        for i, room in enumerate(rooms, start=1):
-            if room.room_type == "opening":
-                room_bp = DungeonRoomBlueprint(
-                    room_type=room.room_type,
-                    room_name=room.room_name,
-                    profile=room.profile,
-                    actors=[],
-                )
-                blueprint.rooms.append(room_bp)
-                logger.info(
-                    f"[GenerateDungeonActorsSystem] Opening room {i}/{len(rooms)} 写入 blueprint:\n"
-                    f"  room_name: {room_bp.room_name}"
-                )
-                continue
-
-            room_bp = DungeonRoomBlueprint(
-                room_type=room.room_type,
-                room_name=room.room_name,
-                profile=room.profile,
-                actors=actors_by_room[room.room_name],
-            )
-            blueprint.rooms.append(room_bp)
-            logger.info(
-                f"[GenerateDungeonActorsSystem] Room+Actors {i}/{len(rooms)} 写入 blueprint:\n"
-                f"  room_name: {room_bp.room_name}\n"
-                f"  actors ({len(room_bp.actors)}): "
-                + ", ".join(a.actor_name for a in room_bp.actors)
-            )
-
+        draft.actors = result.actors
         logger.info(
-            f"[GenerateDungeonActorsSystem] Step 3 完成:\n"
-            f"  dungeon_name: {blueprint.dungeon_name}\n"
-            f"  rooms ({len(blueprint.rooms)}): "
-            + ", ".join(
-                f"{r.room_name}({len(r.actors)} actors)" for r in blueprint.rooms
-            )
-        )
-
-        entity.replace(AssembleDungeonAction, entity.name, dungeon_name, blueprint)
-        logger.info(
-            f"[GenerateDungeonActorsSystem] 添加 AssembleDungeonAction: dungeon={dungeon_name}"
+            f"[GenerateDungeonActorsSystem] 完成:\n"
+            f"  dungeon_name: {dungeon_name}\n"
+            f"  actors ({len(draft.actors)}): "
+            + ", ".join(a.actor_name for a in draft.actors)
         )

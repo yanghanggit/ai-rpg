@@ -20,6 +20,7 @@ from ..models import (
     DeckComponent,
     Dungeon,
     DungeonComponent,
+    DungeonDraft,
     HomeComponent,
     IdentityComponent,
     InventoryComponent,
@@ -86,6 +87,9 @@ class DBGGame(RPGGame):
 
         # 必须按着此顺序实现父类
         RPGGame.__init__(self, name, player_session, world)
+
+        # 副本生成的中间过程数据（与 _world 平级，不落盘，流程结束即清空）
+        self._dungeon_draft: Optional[DungeonDraft] = None
 
         # 家园流程（NPC 与玩家共用）
         self._home_pipeline: Final[RPGGameProcessPipeline] = create_home_pipeline(self)

@@ -27,12 +27,12 @@ from ..models import (
     AFFIX_DESIGN_SPEC,
     BUILD_CARD_FIELD_DESCRIPTION,
     Actor,
-    AssembleDeckAction,
     Card,
     ChatMessage,
     CombatRoom,
     DeckComponent,
-    IllustrateDungeonAction,
+    Dungeon,
+    GenerateDungeonAction,
     NormalizedStrList,
     SystemMessage,
     apply_affix_design,
@@ -40,6 +40,7 @@ from ..models import (
     normalize_str_list,
     validate_affix_slot,
 )
+from ..models.dungeon_draft import DungeonDraft
 from ..paths import DUNGEONS_DIR
 from ..pgsql import (
     CardPrototypeIndexEntry,
@@ -359,7 +360,7 @@ def _build_deck_prompt(actor_name: str) -> str:
 ####################################################################################################################################
 @final
 class AssembleDeckSystem(ReactiveProcessor):
-    """响应 AssembleDeckAction：为每个角色并发组建牌库，写盘并衔接插图。"""
+    """为每个角色并发组建牌库。"""
 
     def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
@@ -368,25 +369,41 @@ class AssembleDeckSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def get_trigger(self) -> Dict[Matcher, GroupEvent]:
-        return {Matcher(AssembleDeckAction): GroupEvent.ADDED}
+        return {Matcher(GenerateDungeonAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(AssembleDeckAction)
+        return entity.has(GenerateDungeonAction)
 
     ####################################################################################################################################
     @override
     async def react(self, entities: List[Entity]) -> None:
-        assert len(entities) == 1, "同时存在多个 AssembleDeckAction，数据异常"
-        entity = entities[0]
-        await self._run(entity)
+        assert len(entities) == 1, "同时存在多个 GenerateDungeonAction，数据异常"
+        await self._run()
 
     ####################################################################################################################################
-    async def _run(self, entity: Entity) -> None:
-        action = entity.get(AssembleDeckAction)
-        dungeon = action.dungeon
-        dungeon_name = dungeon.name
+    async def _run(self) -> None:
+        draft: Optional[DungeonDraft] = self._game._dungeon_draft
+        if draft is None or not draft.dungeon_name:
+            logger.error("[AssembleDeckSystem] 中间过程数据缺失，跳过")
+            return
+
+        dungeon_name = draft.dungeon_name
+        dungeon_path: Path = DUNGEONS_DIR / f"{dungeon_name}.json"
+        if not dungeon_path.exists():
+            logger.error(f"[AssembleDeckSystem] Dungeon 文件不存在: {dungeon_path}")
+            return
+
+        try:
+            dungeon = Dungeon.model_validate_json(
+                dungeon_path.read_text(encoding="utf-8")
+            )
+        except Exception as e:
+            logger.error(
+                f"[AssembleDeckSystem] 解析 Dungeon 失败: {e}\n路径: {dungeon_path}"
+            )
+            return
 
         combat_actors = [
             actor
@@ -396,7 +413,7 @@ class AssembleDeckSystem(ReactiveProcessor):
         ]
 
         logger.info(
-            f"[AssembleDeckSystem] Step 4.5 开始: dungeon={dungeon_name}, "
+            f"[AssembleDeckSystem] 开始: dungeon={dungeon_name}, "
             f"actors={len(combat_actors)}"
         )
 
@@ -423,7 +440,6 @@ class AssembleDeckSystem(ReactiveProcessor):
             )
 
         # 写盘最终 Dungeon JSON（含已填充的牌库）
-        dungeon_path: Path = DUNGEONS_DIR / f"{dungeon.name}.json"
         dungeon_path.write_text(dungeon.model_dump_json(indent=4), encoding="utf-8")
         logger.info(
             f"[AssembleDeckSystem] Dungeon 已保存: {dungeon_path}\n"
@@ -433,16 +449,6 @@ class AssembleDeckSystem(ReactiveProcessor):
                 for room in dungeon.rooms
             )
         )
-
-        # 衔接 Step 5：插图生成
-        entity.replace(IllustrateDungeonAction, entity.name, dungeon_name)
-        logger.info(
-            f"[AssembleDeckSystem] 添加 IllustrateDungeonAction: dungeon={dungeon_name}"
-        )
-
-        # 副本生成完成：重置副本生成系统实体（WorldComponent + DungeonGenerationComponent）
-        # 的 agent memory，仅保留首条 system prompt，清除其余全部对话
-        self._game.reset_agent_memory(entity)
 
     ####################################################################################################################################
     async def _assemble_actor_deck(

@@ -9,10 +9,7 @@ from pydantic import BaseModel
 from ..deepseek import ToolDefinition, ToolFunction, agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
-from ..models import (
-    GenerateDungeonDirectiveAction,
-    GenerateDungeonRoomsAction,
-)
+from ..models import GenerateDungeonAction
 from ..utils import prompt_builder
 
 RECORD_DUNGEON_PROFILE_TOOL: Final[ToolDefinition] = ToolDefinition(
@@ -83,11 +80,7 @@ def _build_dungeon_profile_prompt(directive: str = "") -> str:
 ####################################################################################################################################
 @final
 class GenerateDungeonProfileSystem(ReactiveProcessor):
-    """副本设定生成系统
-
-    Note:
-        - GenerateDungeonDirectiveAction 由 GenerateDungeonDirectiveSystem（Step 0）添加
-    """
+    """副本设定生成系统"""
 
     def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
@@ -96,28 +89,31 @@ class GenerateDungeonProfileSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def get_trigger(self) -> Dict[Matcher, GroupEvent]:
-        return {Matcher(GenerateDungeonDirectiveAction): GroupEvent.ADDED}
+        return {Matcher(GenerateDungeonAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(GenerateDungeonDirectiveAction)
+        return entity.has(GenerateDungeonAction)
 
     ####################################################################################################################################
     @override
     async def react(self, entities: List[Entity]) -> None:
-        assert (
-            len(entities) == 1
-        ), "同时存在多个 GenerateDungeonDirectiveAction，数据异常"
+        assert len(entities) == 1, "同时存在多个 GenerateDungeonAction，数据异常"
         entity = entities[0]
         await self._run(entity)
 
     ####################################################################################################################################
     async def _run(self, entity: Entity) -> None:
-        logger.info(f"[GenerateDungeonProfileSystem] Step 1 开始: entity={entity.name}")
+        logger.info(f"[GenerateDungeonProfileSystem] 开始: entity={entity.name}")
 
-        # 从 GenerateDungeonDirectiveAction 读取世界导演指令（可能为空）
-        directive = entity.get(GenerateDungeonDirectiveAction).directive
+        draft = self._game._dungeon_draft
+        if draft is None:
+            logger.error("[GenerateDungeonProfileSystem] 中间过程数据缺失，跳过")
+            return
+
+        # 从中间过程数据读取世界导演指令（可能为空）
+        directive = draft.directive
         if directive.strip():
             logger.info(
                 "[GenerateDungeonProfileSystem] 检测到世界导演指令，将注入首轮 prompt"
@@ -145,7 +141,7 @@ class GenerateDungeonProfileSystem(ReactiveProcessor):
         )
 
         if not success:
-            logger.error("[GenerateDungeonProfileSystem] Step 1 agent_loop 失败，中止")
+            logger.error("[GenerateDungeonProfileSystem] agent_loop 失败，中止")
             return
 
         if (
@@ -154,24 +150,20 @@ class GenerateDungeonProfileSystem(ReactiveProcessor):
             or result.dungeon_room_count is None
         ):
             logger.error(
-                "[GenerateDungeonProfileSystem] Step 1 LLM 已 stop "
+                "[GenerateDungeonProfileSystem] LLM 已 stop "
                 "但未调用 record_dungeon_profile，中止"
             )
             return
 
         logger.info(
-            f"[GenerateDungeonProfileSystem] Step 1 完成:\n"
+            f"[GenerateDungeonProfileSystem] 完成:\n"
             f"  dungeon_name: {result.dungeon_name}\n"
             f"  dungeon_profile: {result.dungeon_profile}"
         )
-        entity.replace(
-            GenerateDungeonRoomsAction,
-            entity.name,
-            result.dungeon_name,
-            result.dungeon_profile,
-            result.dungeon_room_count,
-        )
+        draft.dungeon_name = result.dungeon_name
+        draft.profile = result.dungeon_profile
+        draft.room_count = result.dungeon_room_count
         logger.info(
-            f"[GenerateDungeonProfileSystem] 添加 GenerateDungeonRoomsAction: "
-            f"dungeon={result.dungeon_name}, dungeon_room_count={result.dungeon_room_count}"
+            f"[GenerateDungeonProfileSystem] 已写入设定: "
+            f"dungeon={result.dungeon_name}, room_count={result.dungeon_room_count}"
         )

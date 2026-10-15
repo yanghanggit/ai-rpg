@@ -19,6 +19,12 @@ DUNGEONS_DIR.mkdir(parents=True, exist_ok=True)
 assert DUNGEONS_DIR.exists(), f"找不到目录: {DUNGEONS_DIR}"
 
 ###########################################################################################################################################
+# 副本生成草稿目录
+DUNGEONS_DRAFTS_DIR: Path = Path(".dungeons_drafts")
+DUNGEONS_DRAFTS_DIR.mkdir(parents=True, exist_ok=True)
+assert DUNGEONS_DRAFTS_DIR.exists(), f"找不到目录: {DUNGEONS_DRAFTS_DIR}"
+
+###########################################################################################################################################
 # 游戏世界运行时数据目录
 WORLDS_DIR: Path = Path(".worlds")
 WORLDS_DIR.mkdir(parents=True, exist_ok=True)

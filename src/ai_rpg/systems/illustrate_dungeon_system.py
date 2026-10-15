@@ -14,7 +14,7 @@ from ..models import (
     ChatMessage,
     Dungeon,
     DungeonRoom,
-    IllustrateDungeonAction,
+    GenerateDungeonAction,
     IllustrationComponent,
     ImageMeta,
     SystemMessage,
@@ -147,7 +147,7 @@ def _handle_record_image_prompts(
     result.images = items
     for item in items:
         logger.info(
-            f"[IllustrateDungeonActionSystem] record_image_prompts: "
+            f"[IllustrateDungeonSystem] record_image_prompts: "
             f"target={item.target!r}, prompt={item.prompt!r}"
         )
     return result.model_dump_json(ensure_ascii=False)
@@ -191,7 +191,7 @@ def _build_image_prompts_prompt(
 
 ####################################################################################################################################
 @final
-class IllustrateDungeonActionSystem(ReactiveProcessor):
+class IllustrateDungeonSystem(ReactiveProcessor):
     """副本图片生成系统"""
 
     def __init__(self, game: DBGGame) -> None:
@@ -202,38 +202,32 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
     @override
     def get_trigger(self) -> Dict[Matcher, GroupEvent]:
         return {
-            Matcher(IllustrateDungeonAction): GroupEvent.ADDED,
+            Matcher(GenerateDungeonAction): GroupEvent.ADDED,
         }
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(IllustrateDungeonAction)
+        return entity.has(GenerateDungeonAction)
 
     ####################################################################################################################################
     @override
     async def react(self, entities: List[Entity]) -> None:
+        # 插图生成当前禁用，仅监听入口 action
         pass
-        # logger.debug(
-        #     f"[IllustrateDungeonActionSystem] react: 收到 IllustrateDungeonAction 事件，"
-        #     f"准备生成图片，entities count={len(entities)}"
-        # )
-        # for entity in entities:
-        #     await self._generate_images(entity)
 
     ####################################################################################################################################
-    async def _generate_images(self, entity: Entity) -> None:
-        """为实体触发的副本执行图片并发生成。
-
-        Args:
-            entity: 携带 IllustrateDungeonAction 的实体（玩家实体）
-        """
-        action = entity.get(IllustrateDungeonAction)
-        dungeon_path = DUNGEONS_DIR / f"{action.dungeon_name}.json"
+    async def _generate_images(self) -> None:
+        """为当前副本执行图片并发生成（当前禁用，未挂入 react）。"""
+        draft = self._game._dungeon_draft
+        if draft is None or not draft.dungeon_name:
+            logger.error("[IllustrateDungeonSystem] 中间过程数据缺失，跳过插图生成")
+            return
+        dungeon_path = DUNGEONS_DIR / f"{draft.dungeon_name}.json"
 
         if not dungeon_path.exists():
             logger.error(
-                f"[IllustrateDungeonActionSystem] Dungeon 文件不存在: {dungeon_path}"
+                f"[IllustrateDungeonSystem] Dungeon 文件不存在: {dungeon_path}"
             )
             return
 
@@ -243,7 +237,7 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
             )
         except Exception as e:
             logger.error(
-                f"[IllustrateDungeonActionSystem] 解析 Dungeon 失败: {e}\n"
+                f"[IllustrateDungeonSystem] 解析 Dungeon 失败: {e}\n"
                 f"路径: {dungeon_path}"
             )
             return
@@ -254,7 +248,7 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
         ).entities.copy()
         if len(prompt_entities) != 1:
             logger.error(
-                f"[IllustrateDungeonActionSystem] 插图提示词实体数量异常: "
+                f"[IllustrateDungeonSystem] 插图提示词实体数量异常: "
                 f"{len(prompt_entities)}，跳过插图生成"
             )
             return
@@ -266,8 +260,7 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
         prompts = await self._compose_prompts(prompt_entity, dungeon)
         if prompts is None:
             logger.warning(
-                f"[IllustrateDungeonActionSystem][Step 5] 提示词编排失败，跳过插图: "
-                f"{dungeon.name}"
+                f"[IllustrateDungeonSystem]提示词编排失败，跳过插图: " f"{dungeon.name}"
             )
             return
 
@@ -285,32 +278,29 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
         if cover_meta is not None:
             dungeon.assets[AssetKey.COVER] = str(cover_meta.meta_path)
             logger.info(
-                f"[IllustrateDungeonActionSystem][Step 5] 封面图片生成完成: "
+                f"[IllustrateDungeonSystem]封面图片生成完成: "
                 f"{cover_meta.local_path}"
             )
         else:
-            logger.warning(
-                f"[IllustrateDungeonActionSystem][Step 5] 封面图片生成失败: {dungeon.name}"
-            )
+            logger.warning(f"[IllustrateDungeonSystem]封面图片生成失败: {dungeon.name}")
 
         # 写入各房间资源地址（失败项不写入，保持 stage.assets 原状）
         for room, meta in zip(dungeon.rooms, metas[1:]):
             if meta is not None:
                 room.stage.assets[AssetKey.ILLUSTRATION] = str(meta.meta_path)
                 logger.info(
-                    f"[IllustrateDungeonActionSystem][Step 5] 房间插图生成完成: "
+                    f"[IllustrateDungeonSystem]房间插图生成完成: "
                     f"{room.stage.name} -> {meta.local_path}"
                 )
             else:
                 logger.warning(
-                    f"[IllustrateDungeonActionSystem][Step 5] 房间插图生成失败: "
-                    f"{room.stage.name}"
+                    f"[IllustrateDungeonSystem]房间插图生成失败: " f"{room.stage.name}"
                 )
 
         # 将更新后的 dungeon（含 assets 地址）重新保存到磁盘
         dungeon_path.write_text(dungeon.model_dump_json(indent=4), encoding="utf-8")
         logger.info(
-            f"[IllustrateDungeonActionSystem] Dungeon 已更新（含 assets 地址）: {dungeon_path}"
+            f"[IllustrateDungeonSystem] Dungeon 已更新（含 assets 地址）: {dungeon_path}"
         )
 
     ####################################################################################################################################
@@ -354,14 +344,14 @@ class IllustrateDungeonActionSystem(ReactiveProcessor):
 
         if not ok:
             logger.error(
-                f"[IllustrateDungeonActionSystem] 提示词编排 agent_loop 失败: "
+                f"[IllustrateDungeonSystem] 提示词编排 agent_loop 失败: "
                 f"{dungeon.name}"
             )
             return None
 
         if len(result.images) != len(expected_targets):
             logger.error(
-                f"[IllustrateDungeonActionSystem] 提示词数量不符："
+                f"[IllustrateDungeonSystem] 提示词数量不符："
                 f"期望 {len(expected_targets)}，实际 {len(result.images)}"
             )
             return None

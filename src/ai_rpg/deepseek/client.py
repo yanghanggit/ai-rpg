@@ -16,7 +16,17 @@ temperature 参数默认为 1.0。
 import os
 import time
 from datetime import datetime
-from typing import Any, Dict, Final, List, Literal, Optional, Sequence, final
+from typing import (
+    Any,
+    Dict,
+    Final,
+    List,
+    Literal,
+    NoReturn,
+    Optional,
+    Sequence,
+    final,
+)
 
 import httpx
 import requests
@@ -32,6 +42,7 @@ from ..models.messages import (
     get_buffer_string,
 )
 from ..paths import CHAT_DUMP_DIR
+from .errors import DeepSeekError, ErrorKind
 
 load_dotenv()
 
@@ -241,6 +252,7 @@ class DeepSeekClient:
         self._finish_reason: str = ""
         self._tool_calls: List[ToolCall] = []
         self._usage: Optional[Usage] = None
+        self._error: Optional[DeepSeekError] = None
 
     ################################################################################################################################################################################
     @property
@@ -251,6 +263,12 @@ class DeepSeekClient:
     @property
     def prompt(self) -> str:
         return self._prompt
+
+    ################################################################################################################################################################################
+    @property
+    def error(self) -> Optional[DeepSeekError]:
+        """最近一次 chat() 的失败原因；成功或尚未调用时为 None。"""
+        return self._error
 
     ################################################################################################################################################################################
     @property
@@ -465,16 +483,40 @@ class DeepSeekClient:
 
         单独调用时不传 client，内部临时创建；
         batch_chat 时传入共享 client 以复用连接池。
+
+        每次调用开头重置响应态，保证同一 client 上一次的响应不会掩盖本次结果
+        （供业务层在失败后自行重试时使用）。失败时记录到 self._error 并抛出
+        DeepSeekError。
         """
+        # 重置上一次的响应态与错误记录。
+        self._response_ai_message = None
+        self._finish_reason = ""
+        self._tool_calls = []
+        self._usage = None
+        self._error = None
+
         logger.debug(f"{self._name} a_request prompt:\n{self._prompt}")
         start_time = time.time()
 
+        def _fail(
+            kind: ErrorKind, message: str, status_code: Optional[int] = None
+        ) -> NoReturn:
+            """记录并抛出统一错误：先落到 self._error，再抛出 DeepSeekError。"""
+            self._error = DeepSeekError(
+                self._name, message, kind=kind, status_code=status_code
+            )
+            raise self._error
+
         async def _do_post(http_client: httpx.AsyncClient) -> httpx.Response:
+
+            # 构建请求头部信息。
             headers = {
                 "Content-Type": "application/json",
                 "Accept": "application/json",
                 "Authorization": f"Bearer {DeepSeekClient.get_api_key()}",
             }
+
+            # 发送 POST 请求到 DeepSeek API。
             return await http_client.post(
                 url=_DEEPSEEK_API_URL,
                 headers=headers,
@@ -483,23 +525,32 @@ class DeepSeekClient:
             )
 
         try:
+
+            # 使用传入的 client 发送请求，如果没有传入则创建临时 client。
             if client is not None:
                 response = await _do_post(client)
             else:
                 async with httpx.AsyncClient() as tmp_client:
+
+                    # 创建临时 client 并发送请求。
                     response = await _do_post(tmp_client)
 
         except httpx.TimeoutException as e:
+
+            # 处理请求超时异常。
             logger.error(f"{self._name}: async timeout: {type(e).__name__}: {e}")
-            raise
+            _fail("timeout", f"async timeout: {type(e).__name__}: {e}")
+
         except httpx.ConnectError as e:
+            # 处理请求连接错误异常。
             logger.error(
                 f"{self._name}: async connection error: {type(e).__name__}: {e}"
             )
-            raise
+            _fail("connection", f"async connection error: {type(e).__name__}: {e}")
         except httpx.RequestError as e:
+            # 处理请求错误异常。
             logger.error(f"{self._name}: async request error: {type(e).__name__}: {e}")
-            raise
+            _fail("connection", f"async request error: {type(e).__name__}: {e}")
 
         elapsed = time.time() - start_time
         logger.debug(f"{self._name} a_request time: {elapsed:.2f}s")
@@ -531,12 +582,8 @@ class DeepSeekClient:
             # 记录错误响应信息
             self._handle_error_response(response.status_code, response.text)
 
-            # 向上抛出异常，方便调用方捕获处理
-            raise httpx.HTTPStatusError(
-                f"HTTP {response.status_code}",
-                request=response.request,
-                response=response,
-            )
+            # 记录并抛出统一错误：非 200 视为 api 类失败，retryable 由状态码判定。
+            _fail("api", f"HTTP {response.status_code}", response.status_code)
 
     ################################################################################################################################################################################
     def _dump_chat(self) -> None:

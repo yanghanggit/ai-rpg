@@ -107,11 +107,19 @@ def _build_combat_arbitration_tool_prompt(
     completed_actors: List[str] | None = None,
     current_actor: str | None = None,
 ) -> str:
+
+    # 构建本回合的战斗仲裁工具 prompt，包括出牌者信息、本卡数据、目标信息、回合行动信息等。
     unique_targets = list(dict.fromkeys(targets))
+
+    # 构建目标信息段落。
     target_names = "、".join(unique_targets) if unique_targets else "无"
+
+    # 构建回合行动信息段落。
     round_action_info = _build_round_action_info_lines(
         action_order, completed_actors, current_actor
     )
+
+    # 构建 SPREAD 卡牌的专属仲裁片段。
     spread = _build_spread_sections(card, targets)
 
     return f"""# 第 {current_round_number} 回合：战斗结算（工具调用模式）

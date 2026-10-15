@@ -11,13 +11,13 @@ from ..game.dbg_combat_processor import (
     get_alive_actors_in_stage,
 )
 from ..game.dbg_game import DBGGame
+from ..game.rpg_stage_environment import get_stage_environment
 from ..models import (
     AppearanceComponent,
     CharacterStats,
     DeckComponent,
     DiscardPileComponent,
     DrawPileComponent,
-    EnvironmentComponent,
     ExhaustPileComponent,
     FillDrawPileAction,
     MonsterComponent,
@@ -111,12 +111,9 @@ class CombatInitActorSystem(ExecuteProcessor):
         # 获取当前场景实体
         current_stage_entity = self._game.resolve_stage_entity(player_entity)
         assert current_stage_entity is not None, "无法找到当前场景实体！"
-        assert current_stage_entity.has(
-            EnvironmentComponent
-        ), "当前场景实体缺少 EnvironmentComponent 组件！"
 
-        # 获取场景环境组件
-        environment_comp = current_stage_entity.get(EnvironmentComponent)
+        # 读取场景环境叙事（缺失时降级为占位文案，不阻断初始化）
+        environment = get_stage_environment(current_stage_entity)
 
         # 参与战斗的角色实体列表
         actor_entities = get_alive_actors_in_stage(self._game, player_entity)
@@ -129,7 +126,7 @@ class CombatInitActorSystem(ExecuteProcessor):
         self._inject_combat_environment(
             actor_entities=actor_entities,
             stage_name=current_stage_entity.name,
-            environment=environment_comp.narrative,
+            environment=environment,
         )
 
         # 所有参战角色都需要填充抽牌堆（从 DeckComponent 洗牌填入 DrawPileComponent）

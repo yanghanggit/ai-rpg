@@ -6,7 +6,8 @@ from typing import Dict, List
 from ..entitas import Entity, Matcher
 from ..game import DBGGame
 from ..game.rpg_actor_appearances import get_actor_appearances_in_stage
-from ..models import EnvironmentComponent, HomeComponent
+from ..game.rpg_stage_environment import get_stage_environment
+from ..models import HomeComponent
 from ..utils import prompt_builder
 
 
@@ -27,7 +28,6 @@ def build_planning_context(game: DBGGame, entity: Entity) -> PlanningContext:
 
     current_stage = game.resolve_stage_entity(entity)
     assert current_stage is not None, "当前角色所在的场景不存在"
-    assert current_stage.has(EnvironmentComponent), "场景缺少 EnvironmentComponent"
 
     # 当前场景内除自身以外的所有角色外观
     other_actors_appearances = get_actor_appearances_in_stage(game, current_stage)
@@ -43,7 +43,8 @@ def build_planning_context(game: DBGGame, entity: Entity) -> PlanningContext:
 
     return PlanningContext(
         stage_name=current_stage.name,
-        stage_narrative=current_stage.get(EnvironmentComponent).narrative,
+        # 环境叙事为决策补充信息，缺失时降级为占位文案
+        stage_narrative=get_stage_environment(current_stage),
         other_actors_appearances=other_actors_appearances,
         available_stage_names=sorted(e.name for e in available_home_stages),
     )

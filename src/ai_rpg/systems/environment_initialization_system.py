@@ -5,6 +5,7 @@ from overrides import override
 
 from ..deepseek import DeepSeekClient, batch_chat
 from ..entitas import Entity, ExecuteProcessor, Matcher
+from ..game.dbg_combat_processor import get_alive_actors_in_stage
 from ..game.dbg_game import DBGGame
 from ..game.rpg_actor_appearances import get_actor_appearances_in_stage
 from ..models import (
@@ -70,9 +71,22 @@ class EnvironmentInitializationSystem(ExecuteProcessor):
             Matcher(all_of=[StageComponent], none_of=[EnvironmentComponent])
         ).entities.copy()
 
-        # 若没有需要生成环境描述的场景实体，则直接返回
+        # 「无观察 = 无推理」：游戏状态只能从 Actor 视角被观测，因此仅对场景内存在存活
+        # Actor 的场景生成环境叙事；无 Actor 的场景保持惰性（继续缺组件），待有 Actor 进入后
+        # 再自然补生成。这既省去无效推理，也避免把无关场景卷入批量请求。
+        observed_stage_entities = [
+            stage_entity
+            for stage_entity in stage_entities
+            if get_alive_actors_in_stage(self._game, stage_entity)
+        ]
+
+        # 若没有「有观察者且缺环境」的场景，则无事可做
+        if not observed_stage_entities:
+            return
+
+        # 构建每个待生成场景的请求客户端
         chat_clients: List[DeepSeekClient] = [
-            self._build_client(stage_entity) for stage_entity in stage_entities
+            self._build_client(stage_entity) for stage_entity in observed_stage_entities
         ]
 
         # 批量发送请求给 AI，等待所有响应完成

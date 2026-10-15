@@ -10,7 +10,7 @@ from ..game.dbg_combat_processor import (
     get_alive_party_members_in_stage,
 )
 from ..game.dbg_game import DBGGame
-from ..models import EnvironmentComponent
+from ..game.rpg_stage_environment import get_stage_environment
 from ..models.messages import AIMessage, HumanMessage
 from ..utils import prompt_builder
 
@@ -64,12 +64,10 @@ class CombatInitStageSystem(ExecuteProcessor):
         # 获取当前场景实体
         current_stage_entity = self._game.resolve_stage_entity(player_entity)
         assert current_stage_entity is not None, "无法找到当前场景实体！"
-        assert current_stage_entity.has(
-            EnvironmentComponent
-        ), "当前场景实体缺少 EnvironmentComponent 组件！"
 
-        # 向场景实体注入当前战斗场景状态（谁在场上、阵营分别是什么），供后续仲裁阶段作为上下文
-        environment_comp = current_stage_entity.get(EnvironmentComponent)
+        # 向场景实体注入当前战斗场景状态（谁在场上、阵营分别是什么），供后续仲裁阶段作为上下文。
+        # 环境叙事缺失时降级为占位文案，不阻断战斗初始化。
+        environment = get_stage_environment(current_stage_entity)
         party_members = get_alive_party_members_in_stage(
             current_stage_entity, self._game
         )
@@ -79,7 +77,7 @@ class CombatInitStageSystem(ExecuteProcessor):
             current_stage_entity,
             HumanMessage(
                 content=_build_stage_combat_state_prompt(
-                    environment=environment_comp.narrative,
+                    environment=environment,
                     party_names=[e.name for e in party_members],
                     monster_names=[e.name for e in monsters],
                 )

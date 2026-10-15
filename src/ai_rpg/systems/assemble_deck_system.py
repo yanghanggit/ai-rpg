@@ -177,6 +177,7 @@ SUBMIT_DECK_CARD_TOOL: Final[ToolDefinition] = ToolDefinition(
                 },
             },
             "required": ["prototype_id", "name", "description"],
+            "additionalProperties": False,
         },
     )
 )
@@ -258,8 +259,17 @@ def _handle_submit_deck_card(
     on_play_affixes: Optional[NormalizedStrList] = None,
     on_hit_affixes: Optional[NormalizedStrList] = None,
     on_turn_end_affixes: Optional[NormalizedStrList] = None,
+    **ignored: Any,
 ) -> str:
-    """处理 submit_deck_card：校验原型 id 与词缀，不合法则返回错误让 agent 修正重提。"""
+    """处理 submit_deck_card：校验原型 id 与词缀，不合法则返回错误让 agent 修正重提。
+
+    原型中只读的布尔/目标字段（target_type/self_target/playable/exhaust/retain/
+    ethereal/transferable）有时会被模型一并回传，这里统一忽略，避免因多余参数报错。
+    """
+    if ignored:
+        logger.info(
+            f"[AssembleDeckSystem] submit_deck_card 忽略只读字段: {sorted(ignored)}"
+        )
     assert name.strip(), "name 不能为空"
     assert description.strip(), "description 不能为空"
     if prototype_id not in valid_ids:
@@ -517,7 +527,7 @@ class AssembleDeckSystem(ReactiveProcessor):
                     ),
                     FINISH_DECK_TOOL.function.name: _handle_finish_deck,
                 },
-                max_rounds=8,
+                max_rounds=16,
                 terminal_tools=[FINISH_DECK_TOOL],
             )
         except Exception as e:

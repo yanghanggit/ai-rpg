@@ -1,6 +1,9 @@
-"""EnvironmentInitializationSystem 的「无观察 = 无推理」优化测试。
+"""EnvironmentInitializationSystem 的「无观察 = 无推理」观察者门槛测试。
 
-只对场景内存在存活 Actor 的场景请求环境叙事；没有 Actor 的场景保持惰性，跳过推理。
+观察者门槛：
+- Home 场景：场景内存在存活 Actor（有人）即请求环境叙事；
+- Dungeon 场景：场景内存在存活 Actor，且玩家本人在场，才请求；
+其余场景保持惰性，跳过推理。
 """
 
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -11,7 +14,13 @@ from ai_rpg.deepseek import DeepSeekError
 from ai_rpg.entitas.context import Context
 from ai_rpg.entitas.entity import Entity
 from ai_rpg.game.dbg_game import DBGGame
-from ai_rpg.models import EnvironmentComponent, StageComponent
+from ai_rpg.models import (
+    DungeonComponent,
+    EnvironmentComponent,
+    HomeComponent,
+    PlayerComponent,
+    StageComponent,
+)
 from ai_rpg.models.messages import AIMessage
 from ai_rpg.systems.environment_initialization_system import (
     EnvironmentInitializationSystem,
@@ -22,11 +31,19 @@ from ai_rpg.systems.environment_initialization_system import (
 # ---------------------------------------------------------------------------
 
 
-def _make_stage(context: Context, name: str) -> Entity:
+def _make_stage(context: Context, name: str, *, dungeon: bool = False) -> Entity:
     stage = context.create_entity()
     stage._name = name
     stage.add(StageComponent, name)
+    stage.add(DungeonComponent if dungeon else HomeComponent, name)
     return stage
+
+
+def _fake_actor(*, is_player: bool = False) -> MagicMock:
+    """构造仅需支持 .has(PlayerComponent) 语义的假 Actor。"""
+    actor = MagicMock()
+    actor.has.side_effect = lambda comp: is_player and comp is PlayerComponent
+    return actor
 
 
 def _fake_client(name: str) -> MagicMock:
@@ -62,19 +79,19 @@ def system(mock_game: MagicMock) -> EnvironmentInitializationSystem:
 
 class TestObservedStagesOnly:
     @pytest.mark.asyncio
-    async def test_only_stages_with_actors_are_inferred(
+    async def test_home_stage_with_actors_is_inferred(
         self,
         context: Context,
         mock_game: MagicMock,
         system: EnvironmentInitializationSystem,
     ) -> None:
-        """有 Actor 的场景才构建请求；无 Actor 的场景被跳过。"""
+        """Home 场景：有 Actor 即构建请求；无 Actor 的 Home 场景被跳过。"""
         observed = _make_stage(context, "场景.酒馆")
         empty = _make_stage(context, "场景.佣兵公会")
         mock_game.get_group.return_value.entities.copy.return_value = {observed, empty}
 
-        def _has_actors(_game: DBGGame, stage: Entity) -> set[object]:
-            return {object()} if stage is observed else set()
+        def _has_actors(_game: DBGGame, stage: Entity) -> set[MagicMock]:
+            return {_fake_actor()} if stage is observed else set()
 
         with (
             patch(
@@ -96,6 +113,66 @@ class TestObservedStagesOnly:
 
         sent_names = [c.name for c in mock_batch.call_args.kwargs["clients"]]
         assert sent_names == ["场景.酒馆"]
+
+    @pytest.mark.asyncio
+    async def test_dungeon_stage_without_player_is_skipped(
+        self,
+        context: Context,
+        mock_game: MagicMock,
+        system: EnvironmentInitializationSystem,
+    ) -> None:
+        """Dungeon 场景：即便有 Actor，只要玩家不在场就不构建请求。"""
+        dungeon = _make_stage(context, "副本.荒狼巢", dungeon=True)
+        mock_game.get_group.return_value.entities.copy.return_value = {dungeon}
+
+        with (
+            patch(
+                "ai_rpg.systems.environment_initialization_system.get_alive_actors_in_stage",
+                side_effect=lambda _game, _stage: {_fake_actor(), _fake_actor()},
+            ),
+            patch(
+                "ai_rpg.systems.environment_initialization_system.batch_chat",
+                new=AsyncMock(),
+            ) as mock_batch,
+        ):
+            await system.execute()
+
+        mock_batch.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_dungeon_stage_with_player_is_inferred(
+        self,
+        context: Context,
+        mock_game: MagicMock,
+        system: EnvironmentInitializationSystem,
+    ) -> None:
+        """Dungeon 场景：有 Actor 且玩家在场时才构建请求。"""
+        dungeon = _make_stage(context, "副本.荒狼巢", dungeon=True)
+        mock_game.get_group.return_value.entities.copy.return_value = {dungeon}
+
+        with (
+            patch(
+                "ai_rpg.systems.environment_initialization_system.get_alive_actors_in_stage",
+                side_effect=lambda _game, _stage: {
+                    _fake_actor(),
+                    _fake_actor(is_player=True),
+                },
+            ),
+            patch.object(
+                system,
+                "_build_client",
+                side_effect=lambda stage: _fake_client(stage.name),
+            ),
+            patch.object(system, "_process_environment_response"),
+            patch(
+                "ai_rpg.systems.environment_initialization_system.batch_chat",
+                new=AsyncMock(),
+            ) as mock_batch,
+        ):
+            await system.execute()
+
+        sent_names = [c.name for c in mock_batch.call_args.kwargs["clients"]]
+        assert sent_names == ["副本.荒狼巢"]
 
     @pytest.mark.asyncio
     async def test_no_observed_stages_skips_inference(
@@ -159,7 +236,7 @@ class TestFailureAccounting:
         with (
             patch(
                 "ai_rpg.systems.environment_initialization_system.get_alive_actors_in_stage",
-                return_value={object()},
+                return_value={_fake_actor()},
             ),
             patch.object(system, "_build_client", side_effect=_build),
             patch(

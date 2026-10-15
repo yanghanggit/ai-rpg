@@ -10,6 +10,8 @@ from ..game.dbg_game import DBGGame
 from ..game.rpg_actor_appearances import get_actor_appearances_in_stage
 from ..models import (
     EnvironmentComponent,
+    HomeComponent,
+    PlayerComponent,
     StageComponent,
 )
 from ..models.messages import HumanMessage
@@ -71,13 +73,13 @@ class EnvironmentInitializationSystem(ExecuteProcessor):
             Matcher(all_of=[StageComponent], none_of=[EnvironmentComponent])
         ).entities.copy()
 
-        # 「无观察 = 无推理」：游戏状态只能从 Actor 视角被观测，因此仅对场景内存在存活
-        # Actor 的场景生成环境叙事；无 Actor 的场景保持惰性（继续缺组件），待有 Actor 进入后
-        # 再自然补生成。这既省去无效推理，也避免把无关场景卷入批量请求。
+        # 「无观察 = 无推理」：游戏状态只能从 Actor 视角被观测，因此仅对满足观察者门槛的场景
+        # 生成环境叙事；不满足的场景保持惰性（继续缺组件），待条件满足后再自然补生成。
+        # 这既省去无效推理，也避免把无关场景卷入批量请求。
         observed_stage_entities = [
             stage_entity
             for stage_entity in stage_entities
-            if get_alive_actors_in_stage(self._game, stage_entity)
+            if self._is_observed_stage(stage_entity)
         ]
 
         # 若没有「有观察者且缺环境」的场景，则无事可做
@@ -118,6 +120,26 @@ class EnvironmentInitializationSystem(ExecuteProcessor):
                 f" 个场景环境叙事未生成（{'、'.join(failed_names)}）；"
                 "它们将继续缺少 EnvironmentComponent，待后续有观察者的管线轮次自动补齐"
             )
+
+    #######################################################################################################################################
+    def _is_observed_stage(self, stage_entity: Entity) -> bool:
+        """判断场景是否达到生成环境叙事的观察者门槛。
+
+        - Home 场景：场景内存在存活 Actor（有人）即可；
+        - Dungeon 场景：场景内存在存活 Actor，且玩家本人也在场（存活 Actor 中含 PlayerComponent）。
+        """
+        alive_actors = get_alive_actors_in_stage(self._game, stage_entity)
+
+        # 无人：无观察者，保持惰性
+        if not alive_actors:
+            return False
+
+        # Home：有人即执行
+        if stage_entity.has(HomeComponent):
+            return True
+
+        # Dungeon：除有人外，玩家本人必须在场
+        return any(actor.has(PlayerComponent) for actor in alive_actors)
 
     #######################################################################################################################################
     def _build_client(self, stage_entity: Entity) -> DeepSeekClient:

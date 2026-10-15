@@ -87,20 +87,21 @@ def _build_artifact_post_arbitration_prompt(
 - 一次性效果（含「仅触发一次」「此后不再触发」或一次性变身）：本场战斗只生效一次；结合你自己在本场战斗中的记忆判断是否已触发过，已触发则本次视为未触发。
 - 数值只取自本次 {GET_ENTITY_STATS_TOOL.function.name} 的返回，禁止套用记忆中的数字。
 - source 标识该神器的来源/归属实体；触发与叙事应以其立场进行。
-- 未触发：不调用 {SET_ENTITY_HP_TOOL.function.name}，直接 {SUBMIT_ARBITRATION_TOOL.function.name}，combat_log 写明未触发原因与各方当前 HP。
-- 已触发：对每个受影响角色各调用一次 {SET_ENTITY_HP_TOOL.function.name} 写入最终 HP（clamp 到 0~最大HP）。
+- 未触发：不调用 {CHANGE_HP_TOOL.function.name}，直接 {SUBMIT_ARBITRATION_TOOL.function.name}；combat_log 写明未触发原因。
+- 已触发：对每个受影响角色各调用一次 {CHANGE_HP_TOOL.function.name}，`delta` 为本次对其 HP 的变化量（负=扣血、正=回复）；系统自动 clamp 到 0~最大HP 并回显「旧→新」。
 - 多个神器逐一判定；未触发者不得产生 HP 变更。
 
 ## 工具流程
 
 1. {GET_ENTITY_STATS_TOOL.function.name} 读取可能受影响角色（可并发）。
-2. 判定触发；触发则 {SET_ENTITY_HP_TOOL.function.name} 写入最终 HP，未触发则跳过。
-3. {SUBMIT_ARBITRATION_TOOL.function.name} 提交；combat_log / narrative 必须与第 2 步实际调用完全一致。
+2. 判定触发；触发则 {CHANGE_HP_TOOL.function.name}（delta），未触发则跳过。
+3. {SUBMIT_ARBITRATION_TOOL.function.name} 提交；combat_log 写「神器简名 + 回合数 + 效果说明」，**不要写 HP 数字**（系统会据第 2 步自动补记 `HP:角色 旧→新`）；narrative 与之一致。
 
 ## combat_log 格式（简名 = 全名最后一段）
 
-- 已触发：`[<神器简名>|<当前回合数>] HP:<角色A> a→b <角色B> c→d`
-- 未触发：`[<神器简名>|<当前回合数>] 触发条件未满足／已触发过，无 HP 变更；<角色A> a/a <角色B> c/c`
+- 你只需写：`[<神器简名>|<当前回合数>] <效果说明>`（不写 HP 数字）。
+- 系统会自动追加：`；HP:<角色A> a→b <角色B> c→d`（仅在有 HP 变化时）。
+- 未触发：`[<神器简名>|<当前回合数>] 触发条件未满足／已触发过，无 HP 变更`。
 
 ### narrative
 
@@ -152,10 +153,10 @@ GET_ENTITY_STATS_TOOL: Final[ToolDefinition] = ToolDefinition(
 )
 
 
-SET_ENTITY_HP_TOOL: Final[ToolDefinition] = ToolDefinition(
+CHANGE_HP_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
-        name="set_entity_hp",
-        description="设置指定战斗角色的当前生命值（自动 clamp 到 0~最大HP）。仅当神器规则在本次回合触发、且该角色确实受影响时，才对其调用一次；未触发时禁止调用本工具。",
+        name="change_hp",
+        description="变更指定战斗角色的 HP：delta 为本次结算对其 HP 的变化量（负=扣血、正=回复），系统自动 clamp 到 0~最大HP 并回显规范化「旧→新」。仅当神器规则在本次触发、且该角色确实受影响时才调用一次；未触发时禁止调用本工具。",
         parameters={
             "type": "object",
             "properties": {
@@ -163,12 +164,12 @@ SET_ENTITY_HP_TOOL: Final[ToolDefinition] = ToolDefinition(
                     "type": "string",
                     "description": "角色全名",
                 },
-                "hp": {
+                "delta": {
                     "type": "integer",
-                    "description": "结算后的新生命值（0 ≤ hp ≤ 最大HP）",
+                    "description": "本次对 HP 的变化量：负=扣血、正=回复（如 −4 表示造成 4 点伤害）",
                 },
             },
-            "required": ["entity_name", "hp"],
+            "required": ["entity_name", "delta"],
         },
     )
 )
@@ -178,7 +179,7 @@ SUBMIT_ARBITRATION_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="submit_arbitration",
         description="提交本次神器仲裁的最终结果（战斗日志、演出叙事、无法结算的规则）。"
-        f"combat_log/narrative 必须与本次实际调用过的 {SET_ENTITY_HP_TOOL.function.name} 完全一致。"
+        f"combat_log 写效果说明，HP 变化由系统据实际 {CHANGE_HP_TOOL.function.name} 调用自动补记。"
         "调用后本次仲裁结束。",
         parameters={
             "type": "object",
@@ -210,6 +211,8 @@ class _ArbitrationContext(BaseModel):
     """仲裁工具 handler 的共享结果容器。"""
 
     hp_changes: Dict[str, int] = Field(default_factory=dict)
+    pending_hp: Dict[str, int] = Field(default_factory=dict)
+    hp_initial: Dict[str, int] = Field(default_factory=dict)
     combat_log: Optional[str] = None
     narrative: Optional[str] = None
     unsettled_affixes: List[str] = Field(default_factory=list)
@@ -226,17 +229,26 @@ def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
     return f"{entity_name}: HP {stats.hp}/{stats.max_hp} | 总格挡 {hand_block}"
 
 
-def _handle_set_entity_hp(
-    game: DBGGame, ctx: _ArbitrationContext, entity_name: str, hp: int
+def _handle_change_hp(
+    game: DBGGame, ctx: _ArbitrationContext, entity_name: str, delta: int
 ) -> str:
-    """暂存最终 HP，待仲裁结束后统一落库。"""
+    """按有符号 delta 变更 HP（自动 clamp），并累积规范化「旧→新」；待仲裁结束后统一落库。"""
     entity = game.get_actor_entity(entity_name)
     if entity is None:
         return f"错误：找不到战斗角色 {entity_name}"
     stats = compute_character_stats(entity)
-    clamped = max(0, min(int(hp), stats.max_hp))
-    ctx.hp_changes[entity_name] = clamped
-    return f"{entity_name} HP 将更新为 {clamped}/{stats.max_hp}"
+    old_hp = ctx.pending_hp.get(entity_name, stats.hp)
+    new_hp = max(0, min(old_hp + int(delta), stats.max_hp))
+    if entity_name not in ctx.hp_initial:
+        ctx.hp_initial[entity_name] = old_hp
+    ctx.pending_hp[entity_name] = new_hp
+    ctx.hp_changes[entity_name] = new_hp
+    changed = old_hp - new_hp  # 正=扣减
+    verb = "扣减" if changed > 0 else ("回复" if changed < 0 else "无变化")
+    return (
+        f"{entity_name} HP 将更新为 {new_hp}/{stats.max_hp}"
+        f"（{old_hp} → {new_hp}，本次{verb} {abs(changed)}）"
+    )
 
 
 def _handle_submit_arbitration(
@@ -357,15 +369,15 @@ class ArtifactPostArbitrationSystem(ReactiveProcessor):
                 messages=messages,
                 tools=[
                     GET_ENTITY_STATS_TOOL,
-                    SET_ENTITY_HP_TOOL,
+                    CHANGE_HP_TOOL,
                     SUBMIT_ARBITRATION_TOOL,
                 ],
                 handlers={
                     GET_ENTITY_STATS_TOOL.function.name: partial(
                         _handle_get_entity_stats, self._game
                     ),
-                    SET_ENTITY_HP_TOOL.function.name: partial(
-                        _handle_set_entity_hp, self._game, ctx
+                    CHANGE_HP_TOOL.function.name: partial(
+                        _handle_change_hp, self._game, ctx
                     ),
                     SUBMIT_ARBITRATION_TOOL.function.name: partial(
                         _handle_submit_arbitration, ctx
@@ -403,9 +415,14 @@ class ArtifactPostArbitrationSystem(ReactiveProcessor):
 
         assert ctx.combat_log is not None, "combat_log 不应为 None"
         assert ctx.narrative is not None, "narrative 不应为 None"
-        combat_log = ctx.combat_log
         narrative = ctx.narrative
         hp_changes = ctx.hp_changes
+        # 系统据实际 change_hp 结果渲染 HP 段（DM 只写效果说明），使日志的 HP 部分不可能与落库不符。
+        hp_tail = " ".join(
+            f"{name} {ctx.hp_initial[name]}→{hp_changes[name]}"
+            for name in ctx.hp_initial
+        )
+        combat_log = f"{ctx.combat_log}；HP:{hp_tail}" if hp_tail else ctx.combat_log
 
         # 校验 HP 变更中的实体名称（handler 已校验存在，此处兜底防御）
         for entity_name in hp_changes:

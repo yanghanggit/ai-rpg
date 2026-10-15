@@ -30,8 +30,8 @@
 出牌仲裁由场景实体先完成一次结算。随后 `ArtifactPostArbitrationSystem` 响应 `PlayCardsAction`：
 
 1. 由动作实体定位当前战斗舞台（stage），汇集该 stage 与场上存活角色 `ReliquaryComponent` 中 `phases` 命中 `POST_ARBITRATION` 的神器（按 uuid 去重）；无则跳过。
-2. 以 **stage 实体为仲裁者**（与出牌、回合结束仲裁一致）：提示词注入当前回合数、场上存活阵营，以及每个神器的 `description`、`source`（未指定时取携带者）与 `modifiers`；工具面为 `get_entity_stats` / `set_entity_hp` / `submit_arbitration`。
-3. 仲裁者依规则判定是否触发并调用 `set_entity_hp` 覆盖式写入最终 HP，提交战斗日志/叙事；结果写入 stage 记忆、广播给场上角色，并向本回合记录队列追加一条 `RoundEntryKind.ARTIFACT` 记录。
+2. 以 **stage 实体为仲裁者**（与出牌、回合结束仲裁一致）：提示词注入当前回合数、场上存活阵营，以及每个神器的 `description`、`source`（未指定时取携带者）与 `modifiers`；工具面为 `get_entity_stats` / `change_hp` / `submit_arbitration`。
+3. 仲裁者依规则判定是否触发并调用 `change_hp`（有符号 `delta`：负=扣血、正=回复）变更受影响角色 HP；**日志里的 HP 段（`旧→新`）由系统据实际 `change_hp` 结果渲染**（DM 只写效果说明），因此日志的 HP 部分不可能与落库不符。随后提交叙事；结果写入 stage 记忆、广播给场上角色，并向本回合记录队列追加一条 `RoundEntryKind.ARTIFACT` 记录。
 
 > 记忆去向：仲裁者是所在场景，每次结算（prompt、工具轨迹、结果）写入 **stage 持久记忆**；场景与场上角色通过广播获得「发生了什么」。
 

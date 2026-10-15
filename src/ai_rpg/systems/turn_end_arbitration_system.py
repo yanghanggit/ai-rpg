@@ -35,10 +35,10 @@ from ..models import (
     render_labeled_str_list,
 )
 from ..utils import prompt_builder
+from .arbitration_calculator import compute_damage, compute_effects
 from .arbitration_prompt_builders import (
     ArbitrationKind,
     build_calc_rules_section,
-    build_combat_log_section,
     build_narrative_section,
     build_on_hit_affix_section,
     build_tool_flow_section,
@@ -111,19 +111,17 @@ def _build_turn_end_arbitration_tool_prompt(
 
 {alive_lines}
 
-{build_calc_rules_section(GET_ENTITY_STATS_TOOL.function.name, APPLY_DAMAGE_TOOL.function.name, ArbitrationKind.TURN_END)}
+{build_calc_rules_section(GET_ENTITY_STATS_TOOL.function.name, ArbitrationKind.TURN_END)}
 
 ## 回合结束词缀
 
-{holder_name} 是这些卡牌的持有者；每张卡的 `source` 是它的来源（生成 / 注入者），词缀提及「非 source 者」时指持有者 {holder_name}（当其 ≠ 该卡 `source` 时）。回合结束词缀是逐条独立规则：**逐条全部读取**，判断它为哪些参数取值，据此参与骨架结算；受影响目标由词缀描述与场上存活角色自行判断（持有者自身也可成为目标），不得合并、省略或引入词缀外机制。
+{holder_name} 是这些卡牌的持有者；每张卡的 `source` 是它的来源（生成 / 注入者），词缀提及「非 source 者」时指持有者 {holder_name}（当其 ≠ 该卡 `source` 时）。回合结束词缀是逐条独立规则：**逐条全部读取**，判断它为哪些系数取值，用于后续判定；受影响目标由词缀描述与场上存活角色自行判断（持有者自身也可成为目标），不得合并、省略或引入词缀外机制。
 
 {build_on_hit_affix_section(GET_ENTITY_STATS_TOOL.function.name, ArbitrationKind.TURN_END, holder_name)}
 
-{build_tool_flow_section(GET_ENTITY_STATS_TOOL.function.name, APPLY_DAMAGE_TOOL.function.name, SUBMIT_ARBITRATION_TOOL.function.name, ArbitrationKind.TURN_END, holder_name)}
+{build_tool_flow_section(GET_ENTITY_STATS_TOOL.function.name, RESOLVE_DAMAGE_TOOL.function.name, RESOLVE_EFFECT_TOOL.function.name, SUBMIT_ARBITRATION_TOOL.function.name, ArbitrationKind.TURN_END, holder_name)}
 
 ## {SUBMIT_ARBITRATION_TOOL.function.name} 字段说明
-
-{build_combat_log_section(ArbitrationKind.TURN_END)}
 
 {build_narrative_section()}"""
 
@@ -172,23 +170,75 @@ GET_ENTITY_STATS_TOOL: Final[ToolDefinition] = ToolDefinition(
 )
 
 
-APPLY_DAMAGE_TOOL: Final[ToolDefinition] = ToolDefinition(
+RESOLVE_DAMAGE_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
-        name="apply_damage",
-        description="对指定战斗角色结算本次的净伤害：amount 为本次结算对该角色的净 HP 扣减（正数=扣血，负数=净回复，0=不变），工具自动 clamp 到 0~最大HP。对每个受影响角色（含持有者与所有目标）都必须调用一次。",
+        name="resolve_damage",
+        description="结算某目标承受的伤害：系统按 max(0, base_damage×damage_mult − 该目标总格挡×block_mult) 逐击计算（共 hits 次）并落库。你只需选定 base 与系数。对每个承伤目标调用一次。",
+        parameters={
+            "type": "object",
+            "properties": {
+                "entity_name": {"type": "string", "description": "承伤目标全名"},
+                "base_damage": {
+                    "type": "integer",
+                    "description": "伤害的基础数值（照拄卡牌 damage / block 字段，或文案明示的数字）",
+                },
+                "hits": {
+                    "type": "integer",
+                    "description": "该目标本次承受的命中次数（照拄卡牌 hit_count）",
+                },
+                "damage_mult": {"type": "number", "description": "伤害系数（默认 1）"},
+                "block_mult": {
+                    "type": "number",
+                    "description": "格挡系数（默认 1；0 表示无视格挡）",
+                },
+                "rationale": {
+                    "type": "string",
+                    "description": "该目标 base 与系数的取值依据（含卡名 / 词缀名）",
+                },
+            },
+            "required": ["entity_name", "base_damage", "hits"],
+        },
+    )
+)
+
+
+RESOLVE_EFFECT_TOOL: Final[ToolDefinition] = ToolDefinition(
+    function=ToolFunction(
+        name="resolve_effect",
+        description="结算某受效角色的反伤 / 吸血 / 治疗（均按每击 ×hits，不过格挡）：系统按「各分量 = 四舍五入(base × 对应系数)」计算净扣减并落库。对每个受效角色调用一次。",
         parameters={
             "type": "object",
             "properties": {
                 "entity_name": {
                     "type": "string",
-                    "description": "角色全名",
+                    "description": "受效角色全名（不限阵营；通常为持有者，也可为其他受影响角色）",
                 },
-                "amount": {
+                "base": {
                     "type": "integer",
-                    "description": "本次结算对该角色的净 HP 扣减：正数扣血、负数净回复、0 不变",
+                    "description": "affix 引用的基础数值（通常为本卡 damage / block 字段值，或文案明示的数字）",
+                },
+                "hits": {
+                    "type": "integer",
+                    "description": "本次结算的命中次数（即对应卡牌的 hit_count）",
+                },
+                "reflect_mult": {
+                    "type": "number",
+                    "description": "反伤系数（默认 0）：每击反伤 = base × 本系数，使该角色 HP 减少",
+                },
+                "lifesteal_mult": {
+                    "type": "number",
+                    "description": "吸血系数（默认 0）：每击吸血 = base × 本系数，使该角色 HP 增加",
+                },
+                "heal_mult": {
+                    "type": "number",
+                    "description": "治疗系数（默认 0）：每击治疗 = base × 本系数，使该角色 HP 增加",
+                },
+                "rationale": {
+                    "type": "string",
+                    "description": "base 与各系数的取值依据（含卡名 / 词缀名）",
                 },
             },
-            "required": ["entity_name", "amount"],
+            "required": ["entity_name", "base", "hits"],
         },
     )
 )
@@ -203,7 +253,7 @@ SUBMIT_ARBITRATION_TOOL: Final[ToolDefinition] = ToolDefinition(
             "properties": {
                 "combat_log": {
                     "type": "string",
-                    "description": "战斗数据日志",
+                    "description": "战斗数据日志；本仲裁由系统据 resolve_damage / resolve_effect 的调用自动生成，此处传空字符串即可。",
                 },
                 "narrative": {
                     "type": "string",
@@ -228,7 +278,8 @@ class _TurnEndArbitrationContext(BaseModel):
     """单个持有者回合结束仲裁的共享结果容器。"""
 
     hp_changes: Dict[str, int] = Field(default_factory=dict)
-    combat_log: Optional[str] = None
+    pending_hp: Dict[str, int] = Field(default_factory=dict)
+    segments: List[str] = Field(default_factory=list)
     narrative: Optional[str] = None
     unsettled_affixes: List[str] = Field(default_factory=list)
 
@@ -270,20 +321,89 @@ def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
     )
 
 
-def _handle_apply_damage(
-    game: DBGGame, ctx: _TurnEndArbitrationContext, entity_name: str, amount: int
+def _pending_hp(ctx: _TurnEndArbitrationContext, entity: Entity) -> int:
+    """取该实体在本次仲裁中的当前 HP（首次访问时以真实 HP 初始化）。"""
+    if entity.name not in ctx.pending_hp:
+        ctx.pending_hp[entity.name] = compute_character_stats(entity).hp
+    return ctx.pending_hp[entity.name]
+
+
+def _record_segment(
+    ctx: _TurnEndArbitrationContext, entity_name: str, new_hp: int, segment: str
 ) -> str:
-    """处理「结算净伤害工具」调用：按净扣减 amount 计算并写入新 HP。"""
+    """记录一次结算：更新运行中 HP、登记最终 HP、追加日志段，返回该段供工具回显。"""
+    ctx.pending_hp[entity_name] = new_hp
+    ctx.hp_changes[entity_name] = new_hp
+    ctx.segments.append(segment)
+    return segment
+
+
+def _handle_resolve_damage(
+    game: DBGGame,
+    ctx: _TurnEndArbitrationContext,
+    holder_name: str,
+    entity_name: str,
+    base_damage: int,
+    hits: int,
+    damage_mult: float = 1.0,
+    block_mult: float = 1.0,
+    rationale: str = "",
+) -> str:
+    """处理「承伤结算」：读取目标总格挡，交由纯计算模块算出伤害并登记。"""
     entity = game.get_actor_entity(entity_name)
     if entity is None:
         return f"错误：找不到战斗角色 {entity_name}"
     stats = compute_character_stats(entity)
-    clamped = max(0, min(stats.hp - int(amount), stats.max_hp))
-    ctx.hp_changes[entity_name] = clamped
-    return (
-        f"{entity_name} HP 将更新为 {clamped}/{stats.max_hp}"
-        f"（{stats.hp} → {clamped}，本次扣减 {stats.hp - clamped}）"
+    old_hp = _pending_hp(ctx, entity)
+    result = compute_damage(
+        base_damage=int(base_damage),
+        hits=int(hits),
+        block=compute_character_hand_block(entity),
+        old_hp=old_hp,
+        max_hp=stats.max_hp,
+        damage_mult=float(damage_mult),
+        block_mult=float(block_mult),
     )
+    note = f"（{rationale}）" if rationale else ""
+    segment = (
+        f"[{holder_name}→{entity_name}: {result.expr}{note}]"
+        f" HP:{entity_name} {old_hp}→{result.new_hp}"
+    )
+    return _record_segment(ctx, entity_name, result.new_hp, segment)
+
+
+def _handle_resolve_effect(
+    game: DBGGame,
+    ctx: _TurnEndArbitrationContext,
+    entity_name: str,
+    base: int,
+    hits: int,
+    reflect_mult: float = 0.0,
+    lifesteal_mult: float = 0.0,
+    heal_mult: float = 0.0,
+    rationale: str = "",
+) -> str:
+    """处理「受效结算」：反伤 / 吸血 / 治疗按 base×系数、每击，由纯计算模块算净扣减。"""
+    entity = game.get_actor_entity(entity_name)
+    if entity is None:
+        return f"错误：找不到战斗角色 {entity_name}"
+    stats = compute_character_stats(entity)
+    old_hp = _pending_hp(ctx, entity)
+    result = compute_effects(
+        base=int(base),
+        hits=int(hits),
+        old_hp=old_hp,
+        max_hp=stats.max_hp,
+        reflect_mult=float(reflect_mult),
+        lifesteal_mult=float(lifesteal_mult),
+        heal_mult=float(heal_mult),
+    )
+    note = f"（{rationale}）" if rationale else ""
+    segment = (
+        f"[{entity_name}: {result.expr}{note}]"
+        f" HP:{entity_name} {old_hp}→{result.new_hp}"
+    )
+    return _record_segment(ctx, entity_name, result.new_hp, segment)
 
 
 def _handle_submit_arbitration(
@@ -292,8 +412,8 @@ def _handle_submit_arbitration(
     narrative: str,
     unsettled_affixes: Optional[List[str]] = None,
 ) -> str:
-    """处理「提交仲裁结果工具」调用。"""
-    ctx.combat_log = combat_log
+    """处理「提交仲裁结果工具」调用。combat_log 由系统根据 resolve 调用生成，入参忽略。"""
+    del combat_log
     ctx.narrative = narrative
     if unsettled_affixes:
         ctx.unsettled_affixes = [str(a) for a in unsettled_affixes if str(a).strip()]
@@ -378,15 +498,22 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
                 messages=self._game.get_agent_memory(stage_entity).messages,
                 tools=[
                     GET_ENTITY_STATS_TOOL,
-                    APPLY_DAMAGE_TOOL,
+                    RESOLVE_DAMAGE_TOOL,
+                    RESOLVE_EFFECT_TOOL,
                     SUBMIT_ARBITRATION_TOOL,
                 ],
                 handlers={
                     GET_ENTITY_STATS_TOOL.function.name: partial(
                         _handle_get_entity_stats, self._game
                     ),
-                    APPLY_DAMAGE_TOOL.function.name: partial(
-                        _handle_apply_damage, self._game, ctx
+                    RESOLVE_DAMAGE_TOOL.function.name: partial(
+                        _handle_resolve_damage,
+                        self._game,
+                        ctx,
+                        pass_turn_entity.name,
+                    ),
+                    RESOLVE_EFFECT_TOOL.function.name: partial(
+                        _handle_resolve_effect, self._game, ctx
                     ),
                     SUBMIT_ARBITRATION_TOOL.function.name: partial(
                         _handle_submit_arbitration, ctx
@@ -402,7 +529,7 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
             )
             return
 
-        if not ok or ctx.combat_log is None or ctx.narrative is None:
+        if not ok or ctx.narrative is None:
             logger.error(
                 f"TurnEndArbitrationSystem: [{pass_turn_entity.name}] 回合结束仲裁未正常完成，跳过落库"
             )
@@ -423,9 +550,10 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
     ) -> None:
         """应用单个持有者的回合结束仲裁结果：写场景记忆、更新受影响角色 HP、全场景广播。"""
 
-        assert ctx.combat_log is not None, "combat_log 不应为 None"
         assert ctx.narrative is not None, "narrative 不应为 None"
-        combat_log = ctx.combat_log
+        combat_log = (
+            "；".join(ctx.segments) if ctx.segments else "本次回合结束无 HP 变化"
+        )
         narrative = ctx.narrative
         hp_changes = ctx.hp_changes
 

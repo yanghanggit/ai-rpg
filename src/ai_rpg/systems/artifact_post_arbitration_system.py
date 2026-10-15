@@ -28,6 +28,7 @@ from ..models import (
     HumanMessage,
     PlayCardsAction,
     ReliquaryComponent,
+    RoundEntryKind,
     render_labeled_str_list,
 )
 from ..utils import prompt_builder
@@ -487,5 +488,4 @@ class ArtifactPostArbitrationSystem(ReactiveProcessor):
         # 更新本回合的神器仲裁日志
         latest_round = self._game.current_dungeon_combat_room.combat.latest_round
         assert latest_round is not None, "latest_round 不应为 None"
-        latest_round.artifact_log.append(combat_log)
-        latest_round.artifact_narrative.append(narrative)
+        latest_round.record(RoundEntryKind.ARTIFACT, combat_log, narrative)

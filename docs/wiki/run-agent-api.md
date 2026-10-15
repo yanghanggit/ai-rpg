@@ -4,7 +4,7 @@
 
 ## 定位
 
-`ai_rpg/cli/dbg_agent_api.py`（入口命令 `ai-rpg-dbg-agent-api`）是**取代原 TUI** 的服务器 API 走查入口，面向 **AI 代理**：
+`ai_rpg/cli/dbg_agent_api.py`（入口命令 `ai-rpg-dbg-agent-api`）是面向 **AI 代理**的服务器 API 走查入口：
 通过 HTTP 逐步驱动常驻的游戏服务端（`ai-rpg-dbg-server` / `ai_rpg.cli.dbg_server:app`），供代理（或开发者）观察状态、
 触发动作、逐条验证接口契约。
 
@@ -20,20 +20,6 @@
 | 状态位置 | 本地快照 `.worlds/...`（一次性进程） | 服务端**内存**（常驻进程） |
 | 前提 | 无服务器 | 需 `ai-rpg-dbg-server` 在跑 |
 | 用途 | 服务层规则的无状态、可回溯验证 | HTTP 契约走查、交互式探索与边界试探 |
-
----
-
-## 为什么移除 TUI
-
-TUI 的职责只有「给后端开发者走查接口」，而这一职责已被两端取代：正式 UX 归 `ai-rpg-web`，
-开发者走查归 AI 代理。更关键的是，TUI 是唯一让代理**无法介入**的组件：
-
-- 全屏交互程序（Textual）需要独占 TTY（`isatty`、raw mode、alternate screen buffer）；
-- 代理的终端工具是「一次性、面向行、基于管道」的，既无法注入按键，也无法从转义码流还原屏幕；
-- `app.run()` 还会阻塞事件循环。
-
-而 HTTP 路线没有这个问题：服务端只是监听 socket 的后台进程，CLI 只是一次性 HTTP 请求，
-**全程不涉及 TTY**。
 
 ---
 
@@ -96,11 +82,11 @@ export AI_RPG_API_TOKEN=eyJ...
 
 ## 观测（status）与流程推断（suggested_actions）
 
-`status` 是核心，把原 TUI 分散在各 Screen 的取数逻辑收拢成一次结构化快照：
+`status` 是核心，把散落各处的取数逻辑收拢成一次结构化快照：
 当前模式（家园/副本）、所在场景与角色、角色属性/手牌、副本房间与初始化标记、
 开场奖励候选、战斗状态与最近回合、家园队伍/背包/储物箱、会话消息。
 
-并在 `suggested_actions` 中给出下一步建议，沉淀的正是原本编码在 TUI 路由里的流程知识：
+并在 `suggested_actions` 中给出下一步建议，沉淀的正是驱动流程推进的知识：
 
 - **家园**：`home advance` / `home speak` / `home switch-stage` / `home generate-dungeon` /
   `home enter-dungeon` / `home roster-*` / `home item-*` / `home craft-*` /

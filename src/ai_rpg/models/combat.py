@@ -1,6 +1,6 @@
 """战斗相关模型定义"""
 
-from enum import IntEnum, unique
+from enum import IntEnum, StrEnum, unique
 from typing import List, Optional, final
 
 from pydantic import BaseModel
@@ -30,6 +30,31 @@ class CombatResult(IntEnum):
 
 ###############################################################################################################################################
 @final
+@unique
+class RoundEntryKind(StrEnum):
+    """回合内一条记录的种类标记。"""
+
+    CARDS = "cards"  # 出牌 / 回合结束仲裁
+    CONSUMABLE = "consumable"  # 使用消耗品
+    GEAR = "gear"  # 装备转化
+    ARTIFACT = "artifact"  # 场景神器仲裁
+
+
+###############################################################################################################################################
+@final
+class RoundEntry(BaseModel):
+    """回合内的一条操作记录。
+
+    把原先分散的 log / narrative 合并为同一条目，使跨种类的操作先后顺序可被表达。
+    """
+
+    kind: RoundEntryKind  # 种类标记
+    log: str  # 战斗数据日志
+    narrative: str  # 叙事文本
+
+
+###############################################################################################################################################
+@final
 class Round(BaseModel):
     """战斗回合"""
 
@@ -38,22 +63,18 @@ class Round(BaseModel):
         []
     )  # 回合开始时确定的行动顺序快照（去重、按优先级排列）；写入后本回合内不再变动
     current_actor: Optional[str] = (
-        None  # 当前 turn 应行动的角色名；由系统写入，供 TUI 等无 ECS 访问的消费点读取
+        None  # 当前 turn 应行动的角色名；由系统写入，供无 ECS 访问的消费点读取
     )
     is_completed: bool = False  # 回合结束标记；
     draw_completed: bool = False  # 抽牌阶段结束标记；
-    cards_log: List[str] = []  # 出牌日志，每次 PlayCardsAction 追加一条
-    cards_narrative: List[str] = []  # 出牌叙事文本，每次 PlayCardsAction 追加一条
-    consumable_log: List[str] = []  # 消耗品日志，每次 UseConsumableItemAction 追加一条
-    consumable_narrative: List[str] = (
-        []
-    )  # 消耗品叙事文本，每次 UseConsumableItemAction 追加一条
-    consumable_use_count: int = 0  # 本回合消耗品使用次数
-    gear_log: List[str] = []  # 装备日志，每次 EquipGearItemAction 追加一条
-    gear_narrative: List[str] = []  # 装备叙事文本，每次 EquipGearItemAction 追加一条
-    gear_equip_count: int = 0  # 本回合装备使用次数
-    artifact_log: List[str] = []  # 场景神器日志，每次神器仲裁追加一条
-    artifact_narrative: List[str] = []  # 场景神器叙事文本，每次神器仲裁追加一条
+    entries: List[RoundEntry] = []  # 本回合内所有操作的记录队列（按发生顺序线性追加）
+
+    ########################################################################################################################
+    def record(self, kind: RoundEntryKind, log: str, narrative: str) -> RoundEntry:
+        """记录一条本回合内的操作。所有写点统一经由本接口，保证全局先后顺序。"""
+        entry = RoundEntry(kind=kind, log=log, narrative=narrative)
+        self.entries.append(entry)
+        return entry
 
 
 ###############################################################################################################################################

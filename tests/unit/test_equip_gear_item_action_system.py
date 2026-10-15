@@ -16,6 +16,8 @@ from ai_rpg.models import (
     HandComponent,
     InventoryComponent,
     PartyMemberComponent,
+    Round,
+    RoundEntryKind,
 )
 from ai_rpg.models.items import GearItem
 from ai_rpg.systems.equip_gear_item_action_system import EquipGearItemActionSystem
@@ -55,13 +57,10 @@ def _make_player_entity(context: Context, name: str, items: List[GearItem]) -> E
     return entity
 
 
-def _setup_mock_game(mock_game: MagicMock, player: Entity) -> MagicMock:
+def _setup_mock_game(mock_game: MagicMock, player: Entity) -> Round:
     mock_game.current_dungeon_combat_room.combat.is_ongoing = True
     mock_game.current_dungeon_combat_room.combat.rounds = [MagicMock()]
-    latest_round = MagicMock()
-    latest_round.gear_log = []
-    latest_round.gear_narrative = []
-    latest_round.gear_equip_count = 0
+    latest_round = Round()
     mock_game.current_dungeon_combat_room.combat.latest_round = latest_round
     mock_game.get_player_entity.return_value = player
     return latest_round
@@ -134,10 +133,13 @@ class TestReact:
         assert gear in actor.get(EquippedGearComponent).items
         # 生成的卡牌进入当前行动者手牌
         assert generated in actor.get(HandComponent).cards
-        # 本回合装备使用结果被记录
-        assert latest_round.gear_equip_count == 1
-        assert latest_round.gear_log
-        assert latest_round.gear_narrative
+        # 本回合装备使用结果被记入记录队列
+        gear_entries = [
+            entry for entry in latest_round.entries if entry.kind == RoundEntryKind.GEAR
+        ]
+        assert len(gear_entries) == 1
+        assert gear_entries[0].log
+        assert gear_entries[0].narrative
         # 广播装备转化通知
         mock_game.broadcast_to_stage.assert_called_once()
         _, kwargs = mock_game.broadcast_to_stage.call_args

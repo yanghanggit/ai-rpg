@@ -1,6 +1,6 @@
 """服务器世界状态观测。
 
-把原先散落在各 TUI Screen 里的「取数 + 判读」逻辑收拢成**一次**结构化快照，
+把跨越各处的「取数 + 判读」逻辑收拢成**一次**结构化快照，
 供 AI 代理（``ai_rpg/cli/dbg_agent_api.py``）调用一次 ``status`` 即可掌握当前局面。
 
 设计要点：
@@ -172,16 +172,7 @@ def _round_summary(combat: Combat) -> Optional[Dict[str, Any]]:
         "current_actor": latest.current_actor,
         "action_order": list(latest.action_order),
         "completed_actors": list(latest.completed_actors),
-        "consumable_use_count": latest.consumable_use_count,
-        "gear_equip_count": latest.gear_equip_count,
-        "cards_log": list(latest.cards_log),
-        "cards_narrative": list(latest.cards_narrative),
-        "consumable_log": list(latest.consumable_log),
-        "consumable_narrative": list(latest.consumable_narrative),
-        "gear_log": list(latest.gear_log),
-        "gear_narrative": list(latest.gear_narrative),
-        "artifact_log": list(latest.artifact_log),
-        "artifact_narrative": list(latest.artifact_narrative),
+        "entries": [entry.model_dump() for entry in latest.entries],
     }
 
 

@@ -18,6 +18,8 @@ from ai_rpg.models import (
     Card,
     HandComponent,
     InventoryComponent,
+    Round,
+    RoundEntryKind,
     UseConsumableItemAction,
 )
 from ai_rpg.models.items import ConsumableItem
@@ -73,15 +75,13 @@ def _make_player_entity(
     return entity
 
 
-def _setup_mock_dungeon(mock_game: MagicMock, *, round_count: int = 1) -> None:
+def _setup_mock_dungeon(mock_game: MagicMock, *, round_count: int = 1) -> Round:
     """为 mock_game 配置进行中的战斗状态与最新回合。"""
     mock_game.current_dungeon_combat_room.combat.is_ongoing = True
     mock_game.current_dungeon_combat_room.combat.rounds = [MagicMock()] * round_count
-    latest = MagicMock()
-    latest.consumable_log = []
-    latest.consumable_narrative = []
-    latest.consumable_use_count = 0
+    latest = Round()
     mock_game.current_dungeon_combat_room.combat.latest_round = latest
+    return latest
 
 
 # ---------------------------------------------------------------------------
@@ -274,9 +274,12 @@ class TestReact:
         await system.react([actor])
 
         latest = mock_game.current_dungeon_combat_room.combat.latest_round
-        assert latest.consumable_use_count == 1
-        assert latest.consumable_log
-        assert latest.consumable_narrative
+        consumable_entries = [
+            entry for entry in latest.entries if entry.kind == RoundEntryKind.CONSUMABLE
+        ]
+        assert len(consumable_entries) == 1
+        assert consumable_entries[0].log
+        assert consumable_entries[0].narrative
 
     @pytest.mark.asyncio
     async def test_broadcasts_notice_to_stage(

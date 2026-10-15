@@ -18,6 +18,7 @@ from ..models import (
     InventoryComponent,
     NoneEvent,
     PartyMemberComponent,
+    RoundEntryKind,
     apply_stats_to_card,
 )
 from ..utils import prompt_builder
@@ -113,16 +114,14 @@ class EquipGearItemActionSystem(ReactiveProcessor):
             f"'{'、'.join(card_names)}'"
         )
 
-        # 记录本回合装备使用结果（供 TUI 展示）
+        # 记录本回合装备使用结果
         latest_round = self._game.current_dungeon_combat_room.combat.latest_round
         if latest_round is not None:
-            latest_round.gear_log.append(
-                f"[{entity.name} 装备 {item.name}] 生成手牌「{'、'.join(card_names)}」"
+            latest_round.record(
+                RoundEntryKind.GEAR,
+                f"[{entity.name} 装备 {item.name}] 生成手牌「{'、'.join(card_names)}」",
+                "；".join(card.description for card in cards),
             )
-            latest_round.gear_narrative.append(
-                "；".join(card.description for card in cards)
-            )
-            latest_round.gear_equip_count += 1
 
         # 向场景内其他角色广播装备转化通知
         round_number = len(self._game.current_dungeon_combat_room.combat.rounds)

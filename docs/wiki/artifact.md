@@ -31,7 +31,7 @@
 
 1. 由动作实体定位当前战斗舞台（stage），汇集该 stage 与场上存活角色 `ReliquaryComponent` 中 `phases` 命中 `POST_ARBITRATION` 的神器（按 uuid 去重）；无则跳过。
 2. 以 **stage 实体为仲裁者**（与出牌、回合结束仲裁一致）：提示词注入当前回合数、场上存活阵营，以及每个神器的 `description`、`source`（未指定时取携带者）与 `modifiers`；工具面为 `get_entity_stats` / `set_entity_hp` / `submit_arbitration`。
-3. 仲裁者依规则判定是否触发并调用 `set_entity_hp` 覆盖式写入最终 HP，提交战斗日志/叙事；结果写入 stage 记忆、广播给场上角色，并追加到本回合的 `artifact_log` / `artifact_narrative`。
+3. 仲裁者依规则判定是否触发并调用 `set_entity_hp` 覆盖式写入最终 HP，提交战斗日志/叙事；结果写入 stage 记忆、广播给场上角色，并向本回合记录队列追加一条 `RoundEntryKind.ARTIFACT` 记录。
 
 > 记忆去向：仲裁者是所在场景，每次结算（prompt、工具轨迹、结果）写入 **stage 持久记忆**；场景与场上角色通过广播获得「发生了什么」。
 

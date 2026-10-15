@@ -21,6 +21,7 @@ from ..models import (
     HandComponent,
     InventoryComponent,
     NoneEvent,
+    RoundEntryKind,
     UseConsumableItemAction,
     remove_item_by_uuid,
 )
@@ -122,17 +123,15 @@ class UseConsumableItemActionSystem(ReactiveProcessor):
         hand_comp = entity.get(HandComponent)
         hand_comp.cards.extend(cards)
 
-        # 记录本回合消耗品使用结果（向 gear_log 看齐，供 TUI 展示）
+        # 记录本回合消耗品使用结果（与装备记录同队列）
         latest_round = self._game.current_dungeon_combat_room.combat.latest_round
         if latest_round is not None:
-            latest_round.consumable_log.append(
+            latest_round.record(
+                RoundEntryKind.CONSUMABLE,
                 f"[{entity.name} 使用 {item.name} ×{removed_item.count}] "
-                f"生成手牌「{'、'.join(card_names)}」"
+                f"生成手牌「{'、'.join(card_names)}」",
+                "；".join(card.description for card in cards),
             )
-            latest_round.consumable_narrative.append(
-                "；".join(card.description for card in cards)
-            )
-            latest_round.consumable_use_count += 1
 
         # 向场景内其他角色广播消耗品使用通知
         round_number = len(self._game.current_dungeon_combat_room.combat.rounds)

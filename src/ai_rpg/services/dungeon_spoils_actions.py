@@ -1,8 +1,12 @@
 """
-副本开场房间动作模块（仅开场房间/OpeningRoom 相关）
+副本奖励（Spoils）动作模块：生成 / 领卡 / 清理。
+
+奖励隶属于「非战斗房间」（开场房间等），与「是否完成开场初始化」无关：
+- 生成 / 领卡：仅要求当前所在房间不是战斗房间；
+- 清理：显式复位队伍成员的 SpoilsComponent，供房间生命周期或外部入口按需调用。
 """
 
-from typing import Tuple
+from typing import List, Tuple
 
 from loguru import logger
 
@@ -20,11 +24,54 @@ from ..models import (
 
 
 ###################################################################################################################################################################
+def clear_party_spoils(dbg_game: DBGGame) -> List[str]:
+    """移除所有队伍成员身上的 SpoilsComponent，返回被清理的成员名（无前置校验，供房间生命周期内部调用）。"""
+
+    cleared: List[str] = []
+    for entity in dbg_game.get_group(Matcher(all_of=[PartyMemberComponent])).entities:
+        if entity.has(SpoilsComponent):
+            entity.remove(SpoilsComponent)
+            cleared.append(entity.name)
+    return cleared
+
+
+###################################################################################################################################################################
+def remove_spoils(dbg_game: DBGGame) -> Tuple[bool, str]:
+    """
+    清理当前副本队伍成员的奖励状态（SpoilsComponent）。
+
+    由外部入口（CLI / API）显式调用：奖励与房间解耦后，需要复位时用此动作清空。
+    """
+
+    # 检查当前是否在玩家的副本阶段
+    if not dbg_game.is_player_in_dungeon_stage:
+        error_msg = "清理奖励失败：玩家不在副本场景中"
+        logger.error(error_msg)
+        return False, error_msg
+
+    party_member_entities = dbg_game.get_group(
+        Matcher(all_of=[PartyMemberComponent])
+    ).entities
+    assert (
+        len(party_member_entities) > 0
+    ), "清理奖励失败: 没有找到队伍成员, 至少有一个player"
+
+    cleared = clear_party_spoils(dbg_game)
+    if not cleared:
+        error_msg = "所有队伍成员均无奖励状态（SpoilsComponent），无需清理"
+        logger.warning(error_msg)
+        return False, error_msg
+
+    logger.info(f"已清理 {len(cleared)} 个队伍成员的奖励状态: {cleared}")
+    return True, f"已清理 {len(cleared)} 个队伍成员的奖励状态: {cleared}"
+
+
+###################################################################################################################################################################
 def activate_generate_spoils(
     dbg_game: DBGGame,
 ) -> Tuple[bool, str]:
     """
-    为当前开场房间内的所有队伍成员激活奖励生成动作（GenerateSpoilsAction）。
+    为当前所在非战斗房间内的所有队伍成员激活奖励生成动作（GenerateSpoilsAction）。
 
     由外部入口（CLI / API）显式调用，随后推动 _dungeon_opening_room_pipeline.process()
     让 GenerateSpoilsActionSystem 响应并生成候选奖励（SpoilsComponent）。
@@ -36,15 +83,9 @@ def activate_generate_spoils(
         logger.error(error_msg)
         return False, error_msg
 
-    # 检查当前副本房间是否为开场房间
-    if not dbg_game.is_current_room_dungeon_opening:
-        error_msg = "当前副本房间不是开场房间，无法生成奖励"
-        logger.error(error_msg)
-        return False, error_msg
-
-    # 状态守卫：奖励生成依赖开场初始化（叙事 + 牌库初始化）已完成
-    if not dbg_game.current_dungeon_opening_room.initialized:
-        error_msg = "开场房间尚未初始化（叙事 + 牌库），无法生成奖励"
+    # 检查当前副本房间是否为非战斗房间（奖励隶属于非战斗房间）
+    if dbg_game.is_current_room_dungeon_combat:
+        error_msg = "当前副本房间是战斗房间，无法生成奖励"
         logger.error(error_msg)
         return False, error_msg
 
@@ -110,15 +151,9 @@ def activate_pick_spoils_card(
         logger.error(error_msg)
         return False, error_msg
 
-    # 检查当前副本房间是否为开场房间
-    if not dbg_game.is_current_room_dungeon_opening:
-        error_msg = "当前副本房间不是开场房间，无法从 Spoils 领卡"
-        logger.error(error_msg)
-        return False, error_msg
-
-    # 状态守卫：领取依赖开场初始化（叙事 + 牌库初始化）已完成
-    if not dbg_game.current_dungeon_opening_room.initialized:
-        error_msg = "开场房间尚未初始化（叙事 + 牌库），无法从 Spoils 领卡"
+    # 检查当前副本房间是否为非战斗房间
+    if dbg_game.is_current_room_dungeon_combat:
+        error_msg = "当前副本房间是战斗房间，无法从 Spoils 领卡"
         logger.error(error_msg)
         return False, error_msg
 

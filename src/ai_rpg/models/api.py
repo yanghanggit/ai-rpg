@@ -403,19 +403,19 @@ class DungeonOpeningInitResponse(BaseModel):
 
 
 @final
-class DungeonOpeningGenerateSpoilsRequest(BaseModel):
+class DungeonSpoilsGenerateRequest(BaseModel):
     user_name: str
     game_name: str
 
 
 @final
-class DungeonOpeningGenerateSpoilsResponse(BaseModel):
+class DungeonSpoilsGenerateResponse(BaseModel):
     job_id: int
     message: str
 
 
 @final
-class DungeonOpeningPickSpoilsCardRequest(BaseModel):
+class DungeonSpoilsPickCardRequest(BaseModel):
     user_name: str
     game_name: str
     actor_name: str
@@ -423,8 +423,19 @@ class DungeonOpeningPickSpoilsCardRequest(BaseModel):
 
 
 @final
-class DungeonOpeningPickSpoilsCardResponse(BaseModel):
+class DungeonSpoilsPickCardResponse(BaseModel):
     job_id: int
+    message: str
+
+
+@final
+class DungeonSpoilsRemoveRequest(BaseModel):
+    user_name: str
+    game_name: str
+
+
+@final
+class DungeonSpoilsRemoveResponse(BaseModel):
     message: str
 
 

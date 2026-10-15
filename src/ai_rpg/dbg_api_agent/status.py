@@ -214,10 +214,10 @@ def _player_extras(components: EntityData) -> Dict[str, Any]:
 
 
 ########################################################################################################################
-def _opening_info(
-    room: OpeningRoom, party_entities: List[Tuple[str, EntityData]]
+def _spoils_info(
+    party_entities: List[Tuple[str, EntityData]],
 ) -> Dict[str, Any]:
-    """开场房间：初始化标记 + 奖励候选/已领取队列。"""
+    """非战斗房间：奖励候选/已领取队列。"""
     candidate_cards: List[Dict[str, Any]] = []
     claimed_cards: List[Dict[str, Any]] = []
     by_actor: List[Dict[str, Any]] = []
@@ -238,7 +238,6 @@ def _opening_info(
             }
         )
     return {
-        "initialized": room.initialized,
         "spoils_generated": len(by_actor) > 0,
         "candidate_cards": candidate_cards,
         "claimed_cards": claimed_cards,
@@ -317,7 +316,6 @@ async def build_status(
         "name": dungeon.name,
         "current_room_index": dungeon.current_room_index,
         "room_count": len(dungeon.rooms),
-        "setup_entities": dungeon.setup_entities,
         "room_type": room.type if room is not None else None,
         "archive_summary": dungeon.archive_summary,
     }
@@ -331,7 +329,7 @@ async def build_status(
     if isinstance(room, CombatRoom):
         status["combat"] = _combat_info(room.combat)
     elif isinstance(room, OpeningRoom):
-        status["dungeon"]["opening"] = _opening_info(room, party_entities)
+        status["dungeon"]["spoils"] = _spoils_info(party_entities)
 
     # 家园附加信息（仅在非副本态查询储物箱，避免多余往返）
     player_entity = entities_by_name.get(player_actor)

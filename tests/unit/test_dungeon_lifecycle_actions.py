@@ -5,8 +5,7 @@ and src/ai_rpg/services/dungeon_exit_action.py
 覆盖本次收紧后的状态守卫：
   - current_room_index 无效（-1 尚未进入 / 越界）时拒绝推进与退出
     （回归：防止 `dungeon.rooms[current_room_index]` 在 -1 时回绕到最后一个房间）
-  - 开场房间（OpeningRoom）未初始化时拒绝推进与退出（与 CombatRoom 对称收紧）
-  - 开场房间已初始化时，推进 / 退出正常执行
+  - 非战斗房间（OpeningRoom）可直接推进 / 退出，无需初始化状态位
 """
 
 from typing import Any, List
@@ -19,6 +18,7 @@ from ai_rpg.models import (
     DungeonComponent,
     HomeComponent,
     PartyMemberComponent,
+    SpoilsComponent,
     Stage,
     StageComponent,
     StageType,
@@ -115,26 +115,11 @@ class TestAdvanceDungeonGuards:
         assert ok is False
         assert "尚未进入" in msg
 
-    async def test_rejects_uninitialized_opening_room(self, sample_game: Any) -> None:
-        """开场房间未初始化时拒绝推进（与 CombatRoom 对称收紧）。"""
-        room0 = OpeningRoom(stage=_make_stage_model("room0"))  # initialized=False
-        room1 = OpeningRoom(stage=_make_stage_model("room1"))
-        dungeon = _make_dungeon([room0, room1], 0)
-        sample_game._world.dungeon = dungeon
-
-        _make_stage_entity(sample_game, "room1")  # 下一关场景实体（校验通过）
-        _make_party_member(sample_game, "hero", "room0")
-
-        ok, msg = await advance_dungeon(sample_game, dungeon)
-
-        assert ok is False
-        assert "尚未初始化" in msg
-        assert dungeon.current_room_index == 0
-
-    async def test_advances_initialized_opening_room(self, sample_game: Any) -> None:
-        """开场房间已初始化时正常推进到下一关。"""
+    async def test_advances_opening_room_without_initialization_flag(
+        self, sample_game: Any
+    ) -> None:
+        """非战斗房间无需初始化状态位即可推进到下一关。"""
         room0 = OpeningRoom(stage=_make_stage_model("room0"))
-        room0.initialized = True
         room1 = OpeningRoom(stage=_make_stage_model("room1"))
         dungeon = _make_dungeon([room0, room1], 0)
         sample_game._world.dungeon = dungeon
@@ -153,6 +138,25 @@ class TestAdvanceDungeonGuards:
         actor_comp = member.get(ActorComponent)
         assert actor_comp is not None
         assert actor_comp.current_stage == "room1"
+
+    async def test_advancing_into_non_combat_room_clears_stale_spoils(
+        self, sample_game: Any
+    ) -> None:
+        """进入非战斗房间时自动清理上一轮残留的奖励状态。"""
+        room0 = OpeningRoom(stage=_make_stage_model("room0"))
+        room1 = OpeningRoom(stage=_make_stage_model("room1"))
+        dungeon = _make_dungeon([room0, room1], 0)
+        sample_game._world.dungeon = dungeon
+
+        _make_stage_entity(sample_game, "room0")
+        _make_stage_entity(sample_game, "room1")
+        member = _make_party_member(sample_game, "hero", "room0")
+        member.add(SpoilsComponent, "hero", [], [])
+
+        ok, _ = await advance_dungeon(sample_game, dungeon)
+
+        assert ok is True
+        assert not member.has(SpoilsComponent)
 
 
 # ---------------------------------------------------------------------------
@@ -185,21 +189,11 @@ class TestExitDungeonGuards:
         assert ok is False
         assert "尚未进入" in msg
 
-    def test_rejects_uninitialized_opening_room(self, sample_game: Any) -> None:
-        """开场房间未初始化时拒绝退出（与 CombatRoom 对称收紧）。"""
-        room0 = OpeningRoom(stage=_make_stage_model("room0"))  # initialized=False
-        dungeon = _make_dungeon([room0], 0)
-        sample_game._world.dungeon = dungeon
-
-        ok, msg = exit_dungeon(sample_game, dungeon)
-
-        assert ok is False
-        assert "尚未初始化" in msg
-
-    def test_exits_initialized_opening_room(self, sample_game: Any) -> None:
-        """开场房间已初始化时正常退出并恢复队伍成员到家。"""
+    def test_exits_opening_room_without_initialization_flag(
+        self, sample_game: Any
+    ) -> None:
+        """非战斗房间无需初始化状态位即可退出并恢复队伍成员到家。"""
         room0 = OpeningRoom(stage=_make_stage_model("room0"))
-        room0.initialized = True
         dungeon = _make_dungeon([room0], 0)
         sample_game._world.dungeon = dungeon
 

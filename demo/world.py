@@ -27,7 +27,6 @@ from ai_rpg.models import (
     IllustrationComponent,
     InventoryComponent,
     MaterialItem,
-    OpeningRoom,
     PlayerAuditComponent,
     ReliquaryComponent,
     Stage,
@@ -345,21 +344,9 @@ def create_alpha_wolf() -> Actor:
 
 ########################################################################################################################
 def create_beast_lair_dungeon() -> Dungeon:
-    """创建荒狼巢副本。"""
+    """创建荒狼巢副本（种子实验：只含一个战斗房间，无开场叙事房）。"""
 
-    # ── 开场叙事房间 ──
-    stage_trailhead = create_stage(
-        name="场景.兽径入口",
-        stage_type=StageType.DUNGEON,
-        profile="""你扮演荒林深处通往狼巢的一条兽径——一条被野兽反复踩踏出来的窄路。
-两侧是密不透风的松林与嶙峋乱石，脚下泥地里叠着层层兽类的足迹与拖拽的痕迹，断折的树枝斜插在路旁。
-越往深处走，空气越冷，松脂与湿土的气味里混进一丝若有若无的血腥，四下安静得连鸟叫也没有。
-远处偶尔传来一声低沉的狼嗥，像是从地底透上来的。窄路尽头，一块巨岩背后透出黑黢黢的洞口——那便是巢穴的入口。""",
-        campaign_setting=CAMPAIGN_SETTING,
-        system_rules=SYSTEM_RULES_FINAL,
-    )
-
-    # ── 战斗房间 ──
+    # ── 战斗房间（唯一房间） ──
     stage_den = create_stage(
         name="场景.狼巢深处",
         stage_type=StageType.DUNGEON,
@@ -399,7 +386,6 @@ def create_beast_lair_dungeon() -> Dungeon:
         name="副本.荒狼巢",
         profile="荒狼巢静得反常。石洞里堆着兽骨与残骸，正中那堆垒起的头骨图腾在幽光里格外扎眼。空气冷而腥，黑暗深处仿佛有无数只眼睛正盯着闯入者。",
         rooms=[
-            OpeningRoom(stage=stage_trailhead),
             CombatRoom(stage=stage_den),
         ],
     )

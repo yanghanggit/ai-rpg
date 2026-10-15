@@ -134,6 +134,24 @@ class DBGGame(RPGGame):
 
     ###############################################################################################################################################
     @property
+    def is_dungeon_setup_entities(self) -> bool:
+        """检查当前副本的实体是否已全部创建。
+
+        遍历副本全部房间的 stage/actor 模型，按名字去取 entity：全都能取到即视为已 setup。
+        """
+        dungeon = self._world.dungeon
+        if not dungeon.rooms:
+            return False
+        for room in dungeon.rooms:
+            if self.get_stage_entity(room.stage.name) is None:
+                return False
+            for actor in room.stage.actors:
+                if self.get_actor_entity(actor.name) is None:
+                    return False
+        return True
+
+    ###############################################################################################################################################
+    @property
     def is_player_in_home_stage(self) -> bool:
         """检查玩家是否在家园场景中"""
         player_entity = self.get_player_entity()
@@ -168,17 +186,6 @@ class DBGGame(RPGGame):
         if self._world.dungeon.current_room is None:
             return False
         return isinstance(self._world.dungeon.current_room, CombatRoom)
-
-    ###############################################################################################################################################
-    @property
-    def current_dungeon_opening_room(self) -> OpeningRoom:
-        """断言当前处于开场房间中，返回开场房间"""
-        assert self._world.dungeon is not None, "当前副本不存在"
-        assert self._world.dungeon.current_room is not None, "当前副本房间不存在"
-        assert isinstance(
-            self._world.dungeon.current_room, OpeningRoom
-        ), "当前副本房间不是开场房间"
-        return self._world.dungeon.current_room
 
     ###############################################################################################################################################
     @property

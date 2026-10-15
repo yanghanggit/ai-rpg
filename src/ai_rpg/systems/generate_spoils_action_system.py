@@ -353,6 +353,7 @@ class GenerateSpoilsActionSystem(ReactiveProcessor):
             entity.has(GenerateSpoilsAction)
             and entity.has(ActorComponent)
             and not entity.has(DeathComponent)
+            and not entity.has(SpoilsComponent)
         )
 
     ####################################################################################################################################

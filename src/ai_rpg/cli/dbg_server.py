@@ -33,6 +33,9 @@ from ai_rpg.services.dungeon_lifecycle_api import (
 from ai_rpg.services.dungeon_opening_api import (
     dungeon_opening_api_router,
 )
+from ai_rpg.services.dungeon_spoils_api import (
+    dungeon_spoils_api_router,
+)
 from ai_rpg.services.dungeon_state import dungeon_state_api_router
 from ai_rpg.services.entity_details import (
     entity_details_api_router,
@@ -193,6 +196,7 @@ app.include_router(router=compact_api_router)
 app.include_router(router=dungeon_lifecycle_api_router)
 app.include_router(router=dungeon_combat_api_router)
 app.include_router(router=dungeon_opening_api_router)
+app.include_router(router=dungeon_spoils_api_router)
 
 
 @click.command()

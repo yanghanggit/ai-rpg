@@ -4,10 +4,10 @@
 - 副本房间路由（开场房间 vs 战斗房间）
 - 战斗回合推进（抓牌 → 出牌/过牌 → 换手 → 新回合 → 结算）
 - 战后顺序（收取战利品 → 推进关卡 → 退出）
-- 开场房间顺序（初始化 → 生成奖励 → 领卡 → 推进）
+- 非战斗房间顺序（初始化 → 生成奖励 → 领卡 → 推进）
 
 输入是 :func:`ai_rpg.dbg_api_agent.status.build_status` 产出的快照 dict，
-输出是建议的 CLI 子命令字符串列表（含 home/dungeon/opening/combat 组前缀，
+输出是建议的 CLI 子命令字符串列表（含 home/dungeon/opening/spoils/combat 组前缀，
 可直接作为 ``ai_rpg/cli/dbg_agent_api.py``（入口 ``ai-rpg-dbg-agent-api``）的参数；不含全局的 --user/--game）。
 代理据此决策，但仍以服务端的实际校验为准。
 """
@@ -53,19 +53,22 @@ def suggest_actions(status: Dict[str, Any]) -> List[str]:
         room_type = dungeon.get("room_type")
 
         if room_type == "opening":
-            opening = dungeon.get("opening") or {}
-            if not opening.get("initialized"):
+            spoils = dungeon.get("spoils") or {}
+            # 开场初始化管道内部按消息标记幂等；叙事缺失说明尚未初始化
+            has_narrative = bool((status.get("stage") or {}).get("narrative"))
+            if not has_narrative:
                 actions.append("opening init")
-            elif not opening.get("spoils_generated"):
-                actions.append("opening generate-spoils")
+            if not spoils.get("spoils_generated"):
+                actions.append("spoils generate")
             else:
-                for entry in opening.get("by_actor", []):
+                for entry in spoils.get("by_actor", []):
                     for card in entry.get("candidate_cards", []):
                         actions.append(
-                            f"opening pick-spoils-card --actor {entry['actor']} "
+                            f"spoils pick-card --actor {entry['actor']} "
                             f"--card {card.get('name')}"
                         )
                 actions.append("dungeon advance-stage")
+            actions.append("spoils remove")
             actions.append("dungeon exit")
 
         elif room_type == "combat":

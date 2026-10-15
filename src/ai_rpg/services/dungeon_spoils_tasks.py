@@ -1,0 +1,126 @@
+"""
+副本奖励（Spoils）任务模块：生成候选奖励 / 领取卡牌。
+"""
+
+from loguru import logger
+from procrastinate import JobContext
+
+from ..game.dbg_game import DBGGame
+from ..game.dbg_store import store_game_async
+from ..pgsql import procrastinate_app, save_task_error
+from .dungeon_spoils_actions import (
+    activate_generate_spoils,
+    activate_pick_spoils_card,
+)
+from .game_server_runtime import get_runtime_game_server
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
+@procrastinate_app.task(queue="game", pass_context=True)
+async def execute_generate_spoils_task(
+    context: JobContext,
+    user_name: str,
+) -> None:
+    """执行奖励生成任务（外部触发 GenerateSpoilsAction 后推动开场管道处理）"""
+    job_id = context.job.id
+    assert job_id is not None, "运行中的任务必然有 job id"
+    try:
+
+        logger.info(f"🚀 奖励生成任务开始: job_id={job_id}, user={user_name}")
+
+        game_server = get_runtime_game_server()
+
+        # 获取房间并用每玩家锁避免并发状态竞争
+        async with game_server.acquire(user_name) as room:
+
+            # 验证游戏实例类型
+            rpg_game = room.game
+            if rpg_game is None:
+                raise ValueError(f"游戏实例不存在: user={user_name}")
+            assert isinstance(rpg_game, DBGGame), "Invalid game type"
+
+            # 验证当前副本房间为非战斗房间
+            if rpg_game.is_current_room_dungeon_combat:
+                raise ValueError("当前副本房间是战斗房间")
+
+            # 外部显式激活奖励生成动作（内部含幂等守卫）
+            success, message = activate_generate_spoils(rpg_game)
+            if not success:
+                raise ValueError(f"奖励生成失败: {message}")
+
+            # 推进开场房间流程，让 GenerateSpoilsActionSystem 响应并生成奖励
+            await rpg_game._dungeon_opening_room_pipeline.process()
+
+            # 存储奖励生成后的世界状态，便于调试和回放
+            await store_game_async(rpg_game)
+
+        logger.info(f"✅ 奖励生成任务完成: job_id={job_id}, user={user_name}")
+
+    except Exception as e:
+        logger.error(
+            f"❌ 奖励生成任务失败: job_id={job_id}, user={user_name}, error={e}"
+        )
+        save_task_error(job_id, str(e))
+        raise
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################
+###################################################################################################################################################################
+@procrastinate_app.task(queue="game", pass_context=True)
+async def execute_pick_spoils_card_task(
+    context: JobContext,
+    user_name: str,
+    actor_name: str,
+    card_name: str,
+) -> None:
+    """执行从 Spoils 领取一张卡牌任务（外部触发 PickSpoilsAction 后推动开场管道处理）"""
+    job_id = context.job.id
+    assert job_id is not None, "运行中的任务必然有 job id"
+    try:
+
+        logger.info(
+            f"🚀 领卡任务开始: job_id={job_id}, user={user_name}, "
+            f"actor={actor_name}, card={card_name}"
+        )
+
+        game_server = get_runtime_game_server()
+
+        # 获取房间并用每玩家锁避免并发状态竞争
+        async with game_server.acquire(user_name) as room:
+
+            # 验证游戏实例类型
+            rpg_game = room.game
+            if rpg_game is None:
+                raise ValueError(f"游戏实例不存在: user={user_name}")
+            assert isinstance(rpg_game, DBGGame), "Invalid game type"
+
+            # 验证当前副本房间为非战斗房间
+            if rpg_game.is_current_room_dungeon_combat:
+                raise ValueError("当前副本房间是战斗房间")
+
+            # 外部显式激活领卡动作（内部含 Spoils 存在 + 卡牌检索守卫）
+            success, message = activate_pick_spoils_card(
+                rpg_game, actor_name, card_name
+            )
+            if not success:
+                raise ValueError(f"从 Spoils 领卡失败: {message}")
+
+            # 推进开场房间流程，让 PickSpoilsActionSystem 响应并把选中卡加入牌库
+            await rpg_game._dungeon_opening_room_pipeline.process()
+
+            # 存储领卡后的世界状态，便于调试和回放
+            await store_game_async(rpg_game)
+
+        logger.info(f"✅ 领卡任务完成: job_id={job_id}, user={user_name}")
+
+    except Exception as e:
+        logger.error(f"❌ 领卡任务失败: job_id={job_id}, user={user_name}, error={e}")
+        save_task_error(job_id, str(e))
+        raise
+
+
+###################################################################################################################################################################
+###################################################################################################################################################################

@@ -22,7 +22,6 @@ from ..models import (
     Dungeon,
     HomeComponent,
     HumanMessage,
-    OpeningRoom,
     PartyMemberComponent,
     SpoilsComponent,
 )
@@ -67,12 +66,6 @@ def exit_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, str]:
         if not current_room.combat.is_post_combat:
             logger.error("当前不处于战斗后状态，无法退出副本！必须先完成战斗。")
             return False, "战斗未结束，无法退出"
-
-    # 开场房间必须已完成初始化（叙事 + 牌库）才能退出
-    if isinstance(current_room, OpeningRoom):
-        if not current_room.initialized:
-            logger.error("开场房间尚未初始化，无法退出副本")
-            return False, "开场房间尚未初始化，无法退出"
 
     # 确保存在队伍成员
     party_member_entities = dbg_game.get_group(

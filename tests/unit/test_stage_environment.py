@@ -92,10 +92,8 @@ class TestOpeningInitActorSystemMissingEnvironment:
 
         game = MagicMock(spec=DBGGame)
         game.is_current_room_dungeon_opening = True
-        game.current_dungeon_opening_room.initialized = False
         game.get_player_entity.return_value = player
         game.resolve_stage_entity.return_value = stage
-        game.get_group.return_value.entities.copy.return_value = set()
 
         system = OpeningInitActorSystem(game)
 
@@ -111,8 +109,7 @@ class TestOpeningInitActorSystemMissingEnvironment:
             # 缺 EnvironmentComponent 不应抛异常
             await system.execute()
 
-        # 仍完成初始化，且注入的是占位文案
-        assert game.current_dungeon_opening_room.initialized is True
+        # 仍完成注入，且注入的是占位文案
         mock_inject.assert_called_once()
         assert (
             mock_inject.call_args.kwargs["environment"] == MISSING_ENVIRONMENT_NARRATIVE

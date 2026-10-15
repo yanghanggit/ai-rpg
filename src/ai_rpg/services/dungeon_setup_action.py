@@ -57,7 +57,7 @@ def setup_dungeon(dbg_game: DBGGame, dungeon_name: str) -> Tuple[bool, str]:
     logger.debug(f"setup_dungeon: 已将 {dungeon.name} 赋值到 world.dungeon")
 
     # 3. 幂等：实体已创建则跳过
-    if dungeon.setup_entities:
+    if dbg_game.is_dungeon_setup_entities:
         logger.debug(f"setup_dungeon: {dungeon.name} 实体已创建，跳过")
         return True, f"副本实体已存在，跳过创建: {dungeon.name}"
 
@@ -80,9 +80,6 @@ def setup_dungeon(dbg_game: DBGGame, dungeon_name: str) -> Tuple[bool, str]:
         [actor for room in dungeon.rooms for actor in room.stage.actors]
     )
     dbg_game.create_stage_entities([room.stage for room in dungeon.rooms])
-
-    # 7. 标记实体已创建
-    dungeon.setup_entities = True
 
     logger.info(f"setup_dungeon 完成: {dungeon.name}")
     return True, f"副本实体创建完成: {dungeon.name}"

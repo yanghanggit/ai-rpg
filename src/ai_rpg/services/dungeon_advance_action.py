@@ -23,7 +23,6 @@ from ..models import (
     Dungeon,
     DungeonComponent,
     HumanMessage,
-    OpeningRoom,
     PartyMemberComponent,
 )
 from ..utils import prompt_builder
@@ -31,6 +30,7 @@ from .dungeon_archive_action import (
     debug_probe_dungeon_director_reasoning,
     notify_dungeon_director_room_ended,
 )
+from .dungeon_spoils_actions import clear_party_spoils
 
 
 ###################################################################################################################################################################
@@ -101,12 +101,6 @@ async def advance_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, st
 
         assert current_room.combat.is_won, "不可能出现的情况！"
 
-    # 当前房间若是开场房间，必须已完成初始化（叙事 + 牌库）才能推进
-    if isinstance(current_room, OpeningRoom):
-        if not current_room.initialized:
-            logger.error("开场房间尚未初始化，无法推进副本关卡")
-            return False, "开场房间尚未初始化，无法推进"
-
     # =========================================================================
     # 阶段 2：执行（不可中断，不回退）
     # =========================================================================
@@ -154,6 +148,11 @@ async def advance_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, st
         combat = Combat(name=next_stage_entity.name)
         combat.state = CombatState.INITIALIZATION
         next_room.combat = combat
+    else:
+        # 进入非战斗房间时，清理上一轮残留的奖励状态（奖励与房间生命周期绑定）
+        cleared = clear_party_spoils(dbg_game)
+        if cleared:
+            logger.info(f"advance_dungeon: 已清理残留奖励状态: {cleared}")
 
     logger.info(f"advance_dungeon 完成: {dungeon.name}，进入第 {next_room_index} 关")
     return True, f"已前进到第 {next_room_index} 关"

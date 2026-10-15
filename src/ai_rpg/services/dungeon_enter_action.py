@@ -25,6 +25,7 @@ from ..models import (
 from ..models.dungeon import CombatRoom
 from ..utils import prompt_builder
 from .dungeon_archive_action import notify_dungeon_director_entered
+from .dungeon_spoils_actions import clear_party_spoils
 
 
 ###################################################################################################################################################################
@@ -52,9 +53,9 @@ def enter_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, str]:
 
     # 副本尚未通过 setup_dungeon 创建实体
     assert (
-        dungeon.setup_entities
+        dbg_game.is_dungeon_setup_entities
     ), f"{dungeon.name} 副本尚未 setup_entities，请先调用 setup_dungeon"
-    if not dungeon.setup_entities:
+    if not dbg_game.is_dungeon_setup_entities:
         error_msg = (
             f"enter_dungeon 失败: {dungeon.name} 实体尚未创建，请先调用 setup_dungeon"
         )
@@ -156,6 +157,10 @@ def enter_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, str]:
         combat.state = CombatState.INITIALIZATION
         current_room.combat = combat
     else:
+        # 进入非战斗房间时，清理上一局残留的奖励状态（奖励与房间生命周期绑定）
+        cleared = clear_party_spoils(dbg_game)
+        if cleared:
+            logger.info(f"enter_dungeon: 已清理残留奖励状态: {cleared}")
         logger.info(
             f"enter_dungeon: 首间为 {current_room.type!r} 房间，跳过战斗初始化，等待玩家手动推进"
         )

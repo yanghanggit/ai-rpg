@@ -31,9 +31,6 @@ class OpeningRoom(DungeonRoom):
     """开场房间（非战斗叙事场景，用于副本开场铺垫）"""
 
     type: Literal["opening"] = "opening"
-    initialized: bool = (
-        False  # 是否已完成开场初始化（叙事 + 牌库初始化），用于幂等状态守护；奖励生成由外部显式触发
-    )
 
 
 ###############################################################################################################################################
@@ -57,9 +54,6 @@ class Dungeon(BaseModel):
         default_factory=lambda: datetime.now(timezone.utc)
     )  # 创建时间戳（UTC）
     current_room_index: int = -1  # 当前所在房间索引，初始为 -1，表示尚未进入任何房间
-    setup_entities: bool = (
-        False  # 是否已经根据模型创建了实体（敌人和场景），默认 False，创建后置 True
-    )
     assets: Dict[AssetKey, str] = Field(
         default_factory=dict
     )  # 副本封面等资源：AssetKey -> meta 路径（.assets/image/<file>.meta）

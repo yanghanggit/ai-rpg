@@ -35,13 +35,15 @@ from ..models import (
     DungeonExitRequest,
     DungeonExitResponse,
     DungeonListResponse,
-    DungeonOpeningGenerateSpoilsRequest,
-    DungeonOpeningGenerateSpoilsResponse,
     DungeonOpeningInitRequest,
     DungeonOpeningInitResponse,
-    DungeonOpeningPickSpoilsCardRequest,
-    DungeonOpeningPickSpoilsCardResponse,
     DungeonRoomResponse,
+    DungeonSpoilsGenerateRequest,
+    DungeonSpoilsGenerateResponse,
+    DungeonSpoilsPickCardRequest,
+    DungeonSpoilsPickCardResponse,
+    DungeonSpoilsRemoveRequest,
+    DungeonSpoilsRemoveResponse,
     DungeonStateResponse,
     EntitiesDetailsResponse,
     HomeAdvanceRequest,
@@ -385,30 +387,30 @@ async def dungeon_opening_init(
         return DungeonOpeningInitResponse.model_validate(response.json())
 
 
-async def dungeon_opening_generate_spoils(
+async def dungeon_spoils_generate(
     user_name: str, game_name: str
-) -> DungeonOpeningGenerateSpoilsResponse:
-    """触发开场房间奖励生成（外部显式触发 GenerateSpoilsAction），返回任务ID。"""
+) -> DungeonSpoilsGenerateResponse:
+    """触发副本奖励生成（外部显式触发 GenerateSpoilsAction），返回任务ID。"""
     async with build_client(10) as client:
         response = await client.post(
-            "/api/dungeon/opening/generate_spoils/v1/",
-            json=DungeonOpeningGenerateSpoilsRequest(
+            "/api/dungeon/spoils/generate/v1/",
+            json=DungeonSpoilsGenerateRequest(
                 user_name=user_name,
                 game_name=game_name,
             ).model_dump(),
         )
         response.raise_for_status()
-        return DungeonOpeningGenerateSpoilsResponse.model_validate(response.json())
+        return DungeonSpoilsGenerateResponse.model_validate(response.json())
 
 
-async def dungeon_opening_pick_spoils_card(
+async def dungeon_spoils_pick_card(
     user_name: str, game_name: str, actor_name: str, card_name: str
-) -> DungeonOpeningPickSpoilsCardResponse:
-    """触发开场房间领卡（Spoils 子操作 pick_card，外部显式触发 PickSpoilsAction），返回任务ID。"""
+) -> DungeonSpoilsPickCardResponse:
+    """触发副本领卡（Spoils 子操作 pick_card，外部显式触发 PickSpoilsAction），返回任务ID。"""
     async with build_client(10) as client:
         response = await client.post(
-            "/api/dungeon/opening/pick_spoils/pick_card/v1/",
-            json=DungeonOpeningPickSpoilsCardRequest(
+            "/api/dungeon/spoils/pick_card/v1/",
+            json=DungeonSpoilsPickCardRequest(
                 user_name=user_name,
                 game_name=game_name,
                 actor_name=actor_name,
@@ -416,7 +418,23 @@ async def dungeon_opening_pick_spoils_card(
             ).model_dump(),
         )
         response.raise_for_status()
-        return DungeonOpeningPickSpoilsCardResponse.model_validate(response.json())
+        return DungeonSpoilsPickCardResponse.model_validate(response.json())
+
+
+async def dungeon_spoils_remove(
+    user_name: str, game_name: str
+) -> DungeonSpoilsRemoveResponse:
+    """清理当前副本队伍成员的奖励状态（SpoilsComponent）。"""
+    async with build_client(10) as client:
+        response = await client.post(
+            "/api/dungeon/spoils/remove/v1/",
+            json=DungeonSpoilsRemoveRequest(
+                user_name=user_name,
+                game_name=game_name,
+            ).model_dump(),
+        )
+        response.raise_for_status()
+        return DungeonSpoilsRemoveResponse.model_validate(response.json())
 
 
 async def dungeon_combat_collect_loot(

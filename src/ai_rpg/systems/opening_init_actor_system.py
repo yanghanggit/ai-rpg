@@ -1,11 +1,11 @@
-"""副本开场初始化系统（角色侧）：为开场场景内的队伍成员注入场景环境信息。"""
+"""副本开场初始化系统（角色侧）：为开场场景内的队伍成员注入场景环境信息（无 LLM，按消息标记幂等）。"""
 
 from dataclasses import dataclass
 from typing import Final, List, Set, final, override
 
 from loguru import logger
 
-from ..entitas import Entity, ExecuteProcessor, Matcher
+from ..entitas import Entity, ExecuteProcessor
 from ..game.dbg_combat_processor import (
     compute_character_stats,
     get_alive_actors_in_stage,
@@ -17,7 +17,6 @@ from ..models import (
     CharacterStats,
     MonsterComponent,
     PartyMemberComponent,
-    SpoilsComponent,
 )
 from ..models.messages import AIMessage, HumanMessage
 from ..utils import prompt_builder
@@ -78,7 +77,7 @@ def _build_opening_init_prompt(
 ###################################################################################################################################################################
 @final
 class OpeningInitActorSystem(ExecuteProcessor):
-    """副本开场初始化系统（角色侧）：为开场场景内的队伍成员注入场景环境信息（无 LLM），并触发牌库初始化。"""
+    """副本开场初始化系统（角色侧）：为开场场景内的队伍成员注入场景环境信息（无 LLM），注入按消息标记幂等。"""
 
     def __init__(self, game: DBGGame) -> None:
         self._game: Final[DBGGame] = game
@@ -89,11 +88,6 @@ class OpeningInitActorSystem(ExecuteProcessor):
 
         if not self._game.is_current_room_dungeon_opening:
             logger.debug("当前副本房间非开场房间，跳过开场初始化（角色侧）")
-            return
-
-        opening_room = self._game.current_dungeon_opening_room
-        if opening_room.initialized:
-            logger.debug("当前开场房间已完成初始化，跳过开场初始化（角色侧）")
             return
 
         logger.info("开场初始化（角色侧）开始：注入开场场景环境信息...")
@@ -119,12 +113,6 @@ class OpeningInitActorSystem(ExecuteProcessor):
             stage_name=current_stage_entity.name,
             environment=environment,
         )
-
-        # 兜底：进入开场房时清掉上一局残留的奖励状态，保证守卫 `any(has(SpoilsComponent))` 从“无”开始
-        self._reset_spoils_state()
-
-        # 状态守护：标记开场房间已完成初始化（叙事 + 牌库初始化），避免重复触发
-        opening_room.initialized = True
 
     ###################################################################################################################################################################
     def _inject_opening_scene_environment(
@@ -211,19 +199,3 @@ class OpeningInitActorSystem(ExecuteProcessor):
             logger.debug(
                 f"[{actor_entity.name}] 开场场景环境信息注入完成（无 LLM 推理）"
             )
-
-    ###################################################################################################################################################################
-    def _reset_spoils_state(self) -> None:
-        """清掉队伍成员残留的 SpoilsComponent（保证开场房奖励守卫从“无”开始，幂等）。"""
-        party_entities = self._game.get_group(
-            Matcher(all_of=[PartyMemberComponent])
-        ).entities.copy()
-        cleared = 0
-        for entity in party_entities:
-            if entity.has(SpoilsComponent):
-                entity.remove(SpoilsComponent)
-                cleared += 1
-                logger.debug(f"[{entity.name}] 已清理残留 SpoilsComponent")
-        logger.debug(
-            f"[OpeningInitActorSystem] 残留奖励状态清理完成：{cleared} 个队伍成员"
-        )

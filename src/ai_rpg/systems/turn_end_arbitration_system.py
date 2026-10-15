@@ -35,7 +35,14 @@ from ..models import (
     render_labeled_str_list,
 )
 from ..utils import prompt_builder
-from .arbitration_prompt_builders import ArbitrationKind, build_calc_rules_section
+from .arbitration_prompt_builders import (
+    ArbitrationKind,
+    build_calc_rules_section,
+    build_combat_log_section,
+    build_narrative_section,
+    build_on_hit_affix_section,
+    build_tool_flow_section,
+)
 
 
 ###########################################################################################################################################
@@ -108,35 +115,17 @@ def _build_turn_end_arbitration_tool_prompt(
 
 ## 回合结束词缀
 
-{holder_name} 是这些卡牌的持有者；每张卡牌的 `source` 是它的来源（生成/注入者名称）；词缀若提及「非 source 者」，指持有者 {holder_name}（当其不等于该卡牌 source 时）。回合结束词缀可能有多条，均为独立规则，须**逐条全部结算**；逐条读取每条词缀，判定它为你给出的参数（伤害系数 / 格挡系数 / 反伤 / 吸血 / 治疗，或其它条件），据此参与「计算规则」的骨架结算，受影响目标由词缀描述与场上存活角色自行判断；持有者自身也可成为目标。不引入词缀未提及的新机制。
+{holder_name} 是这些卡牌的持有者；每张卡的 `source` 是它的来源（生成 / 注入者），词缀提及「非 source 者」时指持有者 {holder_name}（当其 ≠ 该卡 `source` 时）。回合结束词缀是逐条独立规则：**逐条全部读取**，判断它为哪些参数取值，据此参与骨架结算；受影响目标由词缀描述与场上存活角色自行判断（持有者自身也可成为目标），不得合并、省略或引入词缀外机制。
 
-## 受击词缀
+{build_on_hit_affix_section(GET_ENTITY_STATS_TOOL.function.name, ArbitrationKind.TURN_END, holder_name)}
 
-{GET_ENTITY_STATS_TOOL.function.name} 返回的「受击卡牌」仅列出带受击词缀（on_hit_affixes）的卡牌，用于结算受击效果；它**不是**完整手牌清单，其中展示的 block 为该卡牌自身的单牌格挡值，角色的总格挡以 {GET_ENTITY_STATS_TOOL.function.name} 返回的「总格挡」为准。
-受击词缀可能有多条，均为独立规则，须**逐条全部结算**。「受击词缀」仅在**该实体是本次回合结束结算中受到伤害的目标**时触发；持有者自身的受击词缀不触发（除非持有者也同时是本次结算中受到伤害的目标）。依词缀描述结算（如 [反伤] 对造成本次伤害者结算伤害，即骨架里的「反伤」，使其 HP 减少、不过总格挡），数值取其文案明示的字段（如 damage / block），不引入词缀未提及的新机制。
-受击词缀的结算对象是**造成本次伤害的持有者 {holder_name}**，与目标是否阵亡无关：即使目标在本次结算中被击倒，其受击词缀仍须照常结算，不得因目标已倒而略过。
-
-## 工具使用流程（严格按顺序，逐行推演，不得跳步）
-
-1. **读**：对【持有者 {holder_name}】与【每一个可能受影响的角色】分别调用 {GET_ENTITY_STATS_TOOL.function.name}，拿到各自的 HP / 最大 HP 与总格挡（可在同一次回复中并发调用多个）。
-2. **算**：逐张卡、逐条词缀读取，判定其为你给出的参数（伤害系数 / 格挡系数 / 反伤 / 吸血 / 治疗，或其它条件），按「计算规则」的骨架逐行推演出每个受影响角色的**净扣减 amount**。（这是你自己的推理步骤，务必逐行落笔，不得跳步或心算省略。）
-3. **写**：对每个受影响角色（含持有者与所有目标）调用 {APPLY_DAMAGE_TOOL.function.name}，amount 直接填第 2 步算出的该角色净扣减（= 该角色承受的伤害 − 该角色获得的回复；正数扣血、负数净回复、0 不变）（可在同一次回复中并发调用多个）。
-4. **提交**：调用 {SUBMIT_ARBITRATION_TOOL.function.name} 提交最终结果，结束本次仲裁；combat_log 须按上方格式**写出计算过程**（参数取值 + 逐次命中的代入），其中每个「旧→新」与「伤害 Z」**逐字抄自上一步 {APPLY_DAMAGE_TOOL.function.name} 的返回**（形如「HP 将更新为 13/15（15 → 13，本次扣减 2）」），不得另行心算或改数；若某条词缀无法按上述计算规则结算，把它原文放进 unsettled_affixes。
+{build_tool_flow_section(GET_ENTITY_STATS_TOOL.function.name, APPLY_DAMAGE_TOOL.function.name, SUBMIT_ARBITRATION_TOOL.function.name, ArbitrationKind.TURN_END, holder_name)}
 
 ## {SUBMIT_ARBITRATION_TOOL.function.name} 字段说明
 
-### combat_log（简名 = 全名最后一段；**必须写出计算过程**，供核对与向玩家回报）
+{build_combat_log_section(ArbitrationKind.TURN_END)}
 
-一段 = 一个受影响角色的 HP 变化，必须显式列出参数取值与代入。**只写最终采用的代入式**，不要写试算 / 自我修正 / 元话述：
-`[持有者简名|回合结束·词缀名→目标简名: 参数与代入] HP:目标简名 旧→新`
-参数取非默认值时，须在代入里注明依据（如 `×2[对动物属性]`）。
-示例：`[纸人|回合结束·灼烧→英雄: 灼烧2×1−总格挡1×1=1] HP:英雄 15→14`
-
-### narrative
-
-60-120 字，第三人称外部视角，纯感官描写，无数字 / 术语 / 内心。
-以本次结算所用卡牌的「叙事（description）」为素材，把卡牌意象延展成一段外部可见的动作或现象；不得引入卡牌与其词缀之外的机制。
-若卡牌效果改变了某个人或物的状态，描写须体现这一改变，为后续叙事留下可推断的当前状态。"""
+{build_narrative_section()}"""
 
 
 @prompt_builder

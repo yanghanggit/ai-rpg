@@ -4,8 +4,12 @@ from typing import Final, final, override
 
 from loguru import logger
 
-from ..entitas import ExecuteProcessor, Matcher
-from ..game.dbg_combat_processor import compute_character_stats, mark_dead
+from ..entitas import Entity, ExecuteProcessor, Matcher
+from ..game.dbg_combat_processor import (
+    compute_character_stats,
+    get_current_turn_actor,
+    mark_dead,
+)
 from ..game.dbg_game import DBGGame
 from ..models import (
     CharacterStatsComponent,
@@ -48,3 +52,22 @@ class DeathSystem(ExecuteProcessor):
                     entity, HumanMessage(content=_build_death_notification())
                 )
                 mark_dead(entity)
+                self._advance_turn_if_current(entity)
+
+    ############################################################################################################
+    def _advance_turn_if_current(self, entity: Entity) -> None:
+        """若刚死亡的是本回合当前行动者，则重算回合指针以跳过它，避免回合卡死。
+
+        回合指针只在过牌时推进，而过牌会拒绝死亡角色；因此「当前行动者在自己回合内死亡」
+        （反伤自杀 / 神器后仲裁等）会导致无人能推进。此处补一次重算，让 `get_current_turn_actor`
+        的「跳过死人」逻辑生效。
+        """
+        if not self._game.current_dungeon_combat_room.combat.is_ongoing:
+            return
+        latest_round = self._game.current_dungeon_combat_room.combat.latest_round
+        if latest_round is None or latest_round.current_actor != entity.name:
+            return
+        latest_round.current_actor = get_current_turn_actor(self._game, latest_round)
+        logger.info(
+            f"DeathSystem: 当前行动者 {entity.name} 死亡，回合指针推进为 {latest_round.current_actor}"
+        )

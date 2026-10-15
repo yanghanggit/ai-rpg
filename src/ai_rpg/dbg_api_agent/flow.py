@@ -114,12 +114,14 @@ def suggest_actions(status: Dict[str, Any]) -> List[str]:
                     actions.append("combat retreat")
 
             elif state in ("COMPLETE", "POST_COMBAT"):
-                actions.append("combat collect-loot")
-                has_next = dungeon.get("current_room_index", -1) + 1 < dungeon.get(
-                    "room_count", 1
-                )
-                if has_next:
-                    actions.append("dungeon advance-stage")
+                # 只有胜利才收战利品并推进；战败只能离开副本（推进会被服务端拒）
+                if combat.get("result") == "WIN":
+                    actions.append("combat collect-loot")
+                    has_next = dungeon.get("current_room_index", -1) + 1 < dungeon.get(
+                        "room_count", 1
+                    )
+                    if has_next:
+                        actions.append("dungeon advance-stage")
                 actions.append("dungeon exit")
 
     actions.append("status")

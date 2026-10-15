@@ -48,7 +48,7 @@
 
 - `play-cards-specified` 只打出一张牌，**不交出行动权**；`use-consumable`（把消耗品内置卡牌物化进手牌） / `equip-gear`（把装备物化为手牌）同样不推进——它们只改变手牌，效果要靠之后的出牌结算。
 - `pass-turn --actor X` 把 X 记入本回合 `completed_actors`、清空其剩余能量并推进 `current_actor`；当所有存活角色都已过牌，本回合结束，需再次 `draw-cards` 开启下一回合。
-- 该规则**对我方与怪物同等适用**。轮到怪物时，`play-cards-specified --actor 怪物.X` 触发其 AI 决策（选一张牌或过牌）：
+- 该规则**对我方与怪物同等适用**。轮到怪物时，`play-cards-specified --actor 怪物.X`（**省略 `--card`**）触发其 AI 决策（选一张牌或过牌）；我方角色则必须用 `--card C` 显式指定手牌：
   - AI **决定出牌** → 行动权仍在该怪物，需再执行 `pass-turn --actor 怪物.X` 才交出行动权；
   - AI **决定过牌** → 系统在同一次调用内已完成过牌，此时**不要**再对该怪物 `pass-turn`（它已不是当前行动者，调用会失败）。
 

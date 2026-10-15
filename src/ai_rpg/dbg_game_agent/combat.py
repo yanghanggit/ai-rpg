@@ -4,7 +4,7 @@
 """
 
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from loguru import logger
 
@@ -83,11 +83,14 @@ async def play_cards_specified_game(
     world: WorldState,
     player_session: PlayerSession,
     actor: str,
-    card: str,
+    card: Optional[str],
     targets: List[str],
     save_dir: Path,
 ) -> DBGGame:
-    """让指定角色打出手牌（怪物则由 AI 自动出牌）并归档。需战斗进行中且当前回合未完成。"""
+    """让指定角色打出手牌（怪物则由 AI 自动出牌）并归档。需战斗进行中且当前回合未完成。
+
+    `card` 仅我方（非怪物）角色必填；怪物由 AI 决策出牌或过牌，可省略。
+    """
     terminal_game = await restore_game(world, player_session)
 
     if not terminal_game.is_current_room_dungeon_combat:
@@ -107,6 +110,14 @@ async def play_cards_specified_game(
     if actor_entity is not None and actor_entity.has(MonsterComponent):
         success, message = activate_monster_play_trigger(terminal_game, actor)
     else:
+        # 我方角色必须显式指定手牌；怪物才走 AI 决策，可省略 --card。
+        if not card:
+            message = (
+                f"角色 {actor} 不是怪物，必须用 --card 指定要打出的手牌；"
+                f"仅怪物可省略 --card（由 AI 决策出牌或过牌）"
+            )
+            logger.error(f"play-cards-specified 失败: {message}")
+            return terminal_game
         success, message = await activate_play_cards_specified(
             terminal_game, actor, card, list(targets)
         )

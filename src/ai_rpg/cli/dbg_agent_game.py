@@ -29,7 +29,8 @@
   combat-init     --snapshot PATH                               战斗房间初始化（INITIALIZATION → ONGOING）
   opening-init    --snapshot PATH                               开场房间初始化（叙事 + 牌库）
   draw-cards      --snapshot PATH                               全员抽牌
-  play-cards-specified --snapshot PATH --actor A --card C [--targets T...]  指定角色出一张牌（怪物由 AI 决策出牌或过牌）
+  play-cards-specified --snapshot PATH --actor A [--card C] [--targets T...]
+                       我方角色出一张牌（须给 --card）；怪物由 AI 决策出牌或过牌（可省略 --card）
   pass-turn       --snapshot PATH --actor A                     过牌/交出行动权（我方与怪物均适用）
   use-consumable  --snapshot PATH --item I [--targets T...]  使用消耗品
   equip-gear      --snapshot PATH --item I                      装备 GearItem
@@ -468,8 +469,9 @@ def draw_cards(snapshot: str) -> None:
 )
 @click.option(
     "--card",
-    required=True,
-    help="要打出的卡牌名称（须存在于该角色手牌中）。怪物由 AI 决策，此参数仅占位。",
+    required=False,
+    default=None,
+    help="要打出的卡牌名称（须存在于该角色手牌中）。仅我方角色必填；怪物由 AI 决策，可省略。",
 )
 @click.option(
     "--targets",
@@ -478,12 +480,13 @@ def draw_cards(snapshot: str) -> None:
     help="目标角色名，可重复使用（如 --targets 怪物.野猪）。怪物由 AI 决策，此参数仅占位。",
 )
 def play_cards_specified(
-    snapshot: str, actor: str, card: str, targets: Tuple[str, ...]
+    snapshot: str, actor: str, card: str | None, targets: Tuple[str, ...]
 ) -> None:
     """指定角色出一张牌并归档。需战斗进行中且 draw-cards 之后。
 
     出牌不结束行动窗口——我方出牌后需再 pass-turn 才交出行动权。
-    怪物：本命令触发其 AI 决策（选一张牌或过牌）。若 AI 出牌，行动权仍在该怪物，
+    我方：必须用 --card 指定手牌。
+    怪物：本命令触发其 AI 决策（选一张牌或过牌），省略 --card 即可。若 AI 出牌，行动权仍在该怪物，
     需再对其执行 pass-turn；若 AI 自行过牌，同一次调用内已完成过牌，不要再 pass-turn。
     """
 

@@ -1,8 +1,8 @@
 """卡牌原型骨架。
 
 每个 `*_SKELETON` 是一张与游戏内容完全解耦的骨架 `Card`：机械字段（cost / damage /
-hit_count / block / target_type / flags）是只读骨架，三类词缀是
-「可设计槽位的引导」（非空＝可设计，规范见 `AFFIX_DESIGN_SPEC`），`name` / `description`
+hit_count / block / target_type / flags）是只读骨架，非空词缀槽即「可设计槽」
+（词缀规范随 `submit_card` 工具契约与各原型 `design` 下发），`name` / `description`
 留空、由角色 agent 重写。
 
 骨架与教学元数据在 `demo/card_prototypes.py` 组装成卡牌原型（`CardPrototype`）。
@@ -552,7 +552,7 @@ SUMMON_SKELETON: Final[Card] = Card(
 GEAR_OFFENSE_SKELETON: Final[Card] = Card(
     name="装备.名字",
     description="",
-    on_play_affixes=[],
+    on_play_affixes=["[引导]:打出时取一个内建数值对目标追加伤害"],
     on_hit_affixes=[],
     on_turn_end_affixes=[],
     playable=True,
@@ -572,7 +572,7 @@ GEAR_DEFENSE_SKELETON: Final[Card] = Card(
     name="装备.名字",
     description="",
     on_play_affixes=[],
-    on_hit_affixes=[],
+    on_hit_affixes=["[引导]:被命中时取一个内建数值减弱或反击攻击者"],
     on_turn_end_affixes=[],
     playable=True,
     exhaust=False,
@@ -592,7 +592,7 @@ GEAR_CONTAGION_SKELETON: Final[Card] = Card(
     description="",
     on_play_affixes=[],
     on_hit_affixes=[],
-    on_turn_end_affixes=[],
+    on_turn_end_affixes=["[引导]:回合末对持有者结算一条持续减益"],
     playable=True,
     exhaust=False,
     retain=True,

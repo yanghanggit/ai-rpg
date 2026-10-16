@@ -483,9 +483,10 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             archetype="攻击端",
             archetype_subtype="前端伤害",
             name="进攻装备",
-            summary="结构示例：单体即时伤害装备（damage=3；无词缀，词缀自行设计）。",
-            design="""【结构示例】target_type=SINGLE；cost=1、damage=3、hit_count=1、block=0。只示范「出牌即打伤害」的骨架；示例刻意不带词缀——词缀的时机与内容由你依任务给出的通用规则自行设计（不是本示例的字段）。
-【速度被动示例】speed=+1（轻捷的进攻装备，先手更早）。""",
+            summary="单体即时伤害装备（damage=3，on_play 词缀槽）。",
+            design="""【骨架】target_type=SINGLE；cost=1、damage=3、hit_count=1、block=0；on_play_affixes 为引导槽。
+【字段】on_play_affixes：本卡打出时结算一次。
+【设计】进攻装备：可微调 cost/damage/hit_count/block；取内建数值（本卡 damage/hit_count、目标 HP/总格挡）写成一条 on_play 伤害词缀（可为空）。只做伤害，不要治疗/格挡/状态。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
             keywords=("damage", "single"),
         ),
     ),
@@ -497,9 +498,10 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             archetype="防御端",
             archetype_subtype="成长性防御",
             name="防御装备",
-            summary="结构示例：持有期格挡 + 跨回合保留（block=3、retain=True；无词缀）。",
-            design="""【结构示例】target_type=SINGLE；cost=1、damage=0、hit_count=1、block=3、retain=True。示范「持有即加防、跨回合留下」的骨架；示例刻意不带词缀——词缀由你依通用规则自行设计。
-【速度被动示例】speed=-1（厚重的防御装备，后手更晚）。""",
+            summary="持有期格挡 + 跨回合保留（block=3、retain=True，on_hit 词缀槽）。",
+            design="""【骨架】target_type=SINGLE；cost=1、damage=0、hit_count=1、block=3、retain=True；on_hit_affixes 为引导槽。
+【字段】retain：跨回合留在手牌；block=3 持有期提供格挡。on_hit_affixes：本卡持有者被命中时触发。
+【设计】防御装备：可微调 cost/damage/hit_count/block；取内建数值（本卡 block、自身 HP/总格挡）写成一条 on_hit 反制/减伤词缀（可为空）。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
             keywords=("block", "retain"),
         ),
     ),
@@ -511,9 +513,10 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             archetype="攻击端",
             archetype_subtype="成长性伤害",
             name="投掷/转嫁装备",
-            summary="结构示例：出牌后转移给敌人并跨回合保留（transferable=True、retain=True；无词缀）。",
-            design="""【结构示例】target_type=SINGLE；cost=1、damage=1、hit_count=1、block=0、transferable=True、retain=True。示范「出牌后落到对手手里」的骨架；transferable 只传一跳（副本落地即 transferable=False、不可再转手）。示例刻意不带词缀——词缀由你依通用规则自行设计。
-【速度被动示例】speed=0（中性，速度被动可与打法无关）。""",
+            summary="出牌后转移给敌人并跨回合保留（transferable=True、retain=True，on_turn_end 词缀槽）。",
+            design="""【骨架】target_type=SINGLE；cost=1、damage=1、hit_count=1、block=0、transferable=True、retain=True；on_turn_end_affixes 为引导槽。
+【字段】transferable：出牌后副本落到目标手牌，只传一跳（落地即 transferable=False、不可再转手）；retain：跨回合保留。on_turn_end_affixes：副本持有者每次 pass turn 结算一次，效果目标恒为持有者本人。
+【设计】投掷/转嫁装备：可微调 cost/damage/hit_count/block；取内建数值（本卡 damage、持有者 HP/总格挡）写成一条 on_turn_end 持续减益词缀（可为空），方向须让持有者（敌人）受损。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
             keywords=("transferable", "retain"),
         ),
     ),
@@ -526,8 +529,10 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             archetype="攻击端",
             archetype_subtype="单体伤害",
             name="单体伤害消耗品",
-            summary="结构示例：0 费一次性的单体伤害消耗品（damage=4；无词缀，词缀自行设计）。",
-            design="""【结构示例】target_type=SINGLE；cost=0、damage=4、hit_count=1、block=0、exhaust=True。只示范「0 费即时打单体伤害」的骨架；示例刻意不带词缀——词缀的时机与内容由你依任务给出的通用规则自行设计。""",
+            summary="0 费一次性的单体伤害消耗品（damage=4，on_play 词缀槽）。",
+            design="""【骨架】target_type=SINGLE；cost=0、damage=4、hit_count=1、block=0、exhaust=True、playable=True；cost/block 固定不可改。
+【字段】on_play_affixes：本卡打出时结算一次，是唯一的词缀槽。
+【设计】0 费一次性的单体伤害消耗品。可微调 damage/hit_count；取内建数值（本卡 damage/hit_count、目标 HP/总格挡）写成一条 on_play 伤害词缀（可为空）。只做伤害，不要治疗/格挡/状态。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
             keywords=("damage", "single"),
         ),
     ),
@@ -539,8 +544,10 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             archetype="攻击端",
             archetype_subtype="群体伤害",
             name="群体伤害消耗品",
-            summary="结构示例：0 费一次性的阵营全体伤害消耗品（damage=2、target_type=ALL）。",
-            design="""【结构示例】target_type=ALL；cost=0、damage=2、hit_count=1、block=0、exhaust=True。示范「以单个敌人为锚点、结算全阵营敌人」的骨架；示例刻意不带词缀——词缀由你依通用规则自行设计。""",
+            summary="0 费一次性的阵营全体伤害消耗品（damage=2、target_type=ALL，on_play 词缀槽）。",
+            design="""【骨架】target_type=ALL；cost=0、damage=2、hit_count=1、block=0、exhaust=True、playable=True；cost/block 固定不可改。
+【字段】ALL：以单个敌人为锚点、结算其所在阵营全体。on_play_affixes：本卡打出时结算一次，是唯一的词缀槽。
+【设计】0 费一次性的阵营全体伤害消耗品。可微调 damage/hit_count；取内建数值写成一条 on_play 伤害词缀（可为空）。只做伤害，不要治疗/格挡/状态。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
             keywords=("damage", "all"),
         ),
     ),
@@ -552,8 +559,10 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             archetype="攻击端",
             archetype_subtype="散射伤害",
             name="散射伤害消耗品",
-            summary="结构示例：0 费一次性的散射伤害消耗品（damage=2、hit_count=2、SPREAD）。",
-            design="""【结构示例】target_type=SPREAD；cost=0、damage=2、hit_count=2、block=0、exhaust=True。示范「多段随机分配到敌方阵营」的骨架；示例刻意不带词缀——词缀由你依通用规则自行设计。""",
+            summary="0 费一次性的散射伤害消耗品（damage=2、hit_count=2、SPREAD，on_play 词缀槽）。",
+            design="""【骨架】target_type=SPREAD；cost=0、damage=2、hit_count=2、block=0、exhaust=True、playable=True；cost/block 固定不可改。
+【字段】SPREAD：以目标为锚点散射其所在阵营，多段随机分配。on_play_affixes：本卡打出时结算一次，是唯一的词缀槽。
+【设计】0 费一次性的散射伤害消耗品。可微调 damage/hit_count；取内建数值写成一条 on_play 伤害词缀（可为空）。只做伤害，不要治疗/格挡/状态。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
             keywords=("damage", "spread", "hit_count"),
         ),
     ),

@@ -49,9 +49,9 @@
 
 ## 插图风格由世界实体承载
 
-副本插图的画风、构图与负面词**不再进入 Blueprint**，而是由 `world_entities` 中的「世界.插图提示词」实体（`IllustrationComponent`）承载：其 `role_rules`（system prompt）定义视觉方向与提示词写作要求，Step 5 由该实体作为 agent 为封面与各房间编排文生图提示词。
+副本插图的画风、构图与负面词**不再进入 Blueprint**，而是由 `world_entities` 中的「世界.插图提示词」实体（`IllustrationComponent`）承载：其 `role_rules`（system prompt）定义视觉方向与提示词写作要求，Step 6 由该实体作为 agent 为封面与各房间编排文生图提示词。
 
-引擎（IllustrateDungeonActionSystem）只传递事实（副本 / 场景 / 生物设定）与调用图像模型，不含任何具体画风或构图模板。换故事只改 `demo/world.py` 的该世界实体。
+引擎（`IllustrateDungeonSystem`）只传递事实（副本 / 场景 / 生物设定）与调用图像模型，不含任何具体画风或构图模板。换故事只改 `demo/world.py` 的该世界实体。
 
 ## 抽象设定是惰性知识
 
@@ -67,4 +67,4 @@
 
 - 当前故事的扩展内容来源。→ 参见：[奇幻故事设计草稿（作品名待定）](fantasy-story-draft.md)
 - 副本概念的生成与实体化。→ 参见：[副本生成管道（Dungeon Generation Pipeline）](dungeon-generation.md)
-- 插图风格字段的消费方。→ 参见：[副本插图生成系统（Step 5）](../../src/ai_rpg/systems/illustrate_dungeon_action_system.py)
+- 插图风格字段的消费方。→ 参见：[副本插图生成系统（Step 6）](../../src/ai_rpg/systems/illustrate_dungeon_system.py)

@@ -1,368 +1,98 @@
-"""工坊合成装备系统模块。"""
+"""工坊合成装备系统模块。
 
-import json
-from functools import partial
+以两阶段（选型 + 设计）驱动装备工坊 agent，产出一件装备（装备级 `speed` 被动 +
+一张内置卡牌）：
+
+1. 选型：用 `card_design` 引擎的共用选型能力，从装备原型库挑选恰好 1 个骨架；
+2. 设计：由 `card_design` 引擎把选中原型物化为候选卡，交给工坊 agent 完成
+   name / description / 数值 / 词缀设计，并通过 `submit_card` 的扩展字段给出装备级 speed。
+
+两阶段都以工坊世界实体自身的 SystemMessage 作为**唯一且临时**的上下文
+（`agent_loop` 结束后即丢弃，不写回持久记忆）。卡牌骨架（flags / target_type）由原型给定；
+装备的伤害/格挡走卡牌通道，speed 是唯一的装备级被动。
+"""
+
 from typing import Any, Dict, Final, List, final
 
 from loguru import logger
 from overrides import override
-from pydantic import BaseModel
 
-from ..deepseek import ToolDefinition, ToolFunction, agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..models import (
-    AFFIX_DESIGN_SPEC,
-    AFFIX_FIELDS,
-    BUILD_CARD_FIELD_DESCRIPTION,
-    Card,
-    ChatMessage,
     CraftGearItemAction,
     GearItem,
     MaterialItem,
-    NormalizedStrList,
     StorageComponent,
     SystemMessage,
-    TargetType,
     append_item_with_stacking,
     deduct_materials,
-    validate_affix_slot,
 )
-from ..pgsql import get_card_prototype, list_card_prototype_index
+from ..pgsql import list_card_prototype_index
 from ..utils import prompt_builder
+from .card_design import (
+    CardDesign,
+    materialize_candidate,
+    run_card_design_session,
+    run_card_selection_session,
+)
 
 #######################################################################################################################################
-# 装备速度修正的生成护栏（工坊提交校验与示例教学共用）。速度可正可负，
-# 决定战斗回合行动顺序；装备的 damage/block 走卡牌通道，速度是唯一的装备级被动。
+# 装备速度修正的护栏：速度可正可负，决定战斗回合行动顺序；装备的 damage/block 走卡牌通道，
+# 速度是唯一的装备级被动。
 GEAR_SPEED_MIN: Final[int] = -2
 GEAR_SPEED_MAX: Final[int] = 3
 
-
-#######################################################################################################################################
-@final
-class _CraftGearSpec(BaseModel):
-    """submit_gear 提交的完整装备规格：名称/描述 + 速度被动 + 卡牌字段。"""
-
-    name: str = ""
-    description: str = ""
-    speed: int = 0  # 装备级被动速度修正（可正可负），与 card 字段无关
-    on_play_affixes: NormalizedStrList = []
-    on_hit_affixes: NormalizedStrList = []
-    on_turn_end_affixes: NormalizedStrList = []
-    on_autonomous_affixes: NormalizedStrList = []
-    playable: bool = True
-    exhaust: bool = False
-    retain: bool = False
-    ethereal: bool = False
-    transferable: bool = False
-    cost: int = 1
-    damage: int = 0
-    hit_count: int = 1
-    block: int = 0
-    target_type: str = TargetType.SINGLE
+# submit_card 的领域扩展字段：装备级 speed。
+GEAR_SPEED_PROPERTY: Final[Dict[str, Any]] = {
+    "type": "integer",
+    "description": (
+        f"装备级被动速度修正，可正可负（{GEAR_SPEED_MIN}..{GEAR_SPEED_MAX}）："
+        "决定战斗回合行动顺序，数值越大越先出手。装备的伤害/格挡由卡牌承载，"
+        "speed 是唯一的装备级被动。"
+    ),
+}
 
 
 #######################################################################################################################################
-LIST_GEAR_EXAMPLES_TOOL: Final[ToolDefinition] = ToolDefinition(
-    function=ToolFunction(
-        name="list_gear_examples",
-        description="纵览全部可用装备示例的索引（id / 名称 / 一句话定位 / 机制标签），用于在准备阶段建立全局观并结合材料筛选相关示例。",
-        parameters={"type": "object", "properties": {}},
+def _material_lines(materials: List[MaterialItem]) -> str:
+    """把投入材料渲染成提示词片段。"""
+    return "\n".join(
+        f"- **{m.name}**（数量 {m.count}）：{m.description}" for m in materials
     )
-)
-
-
-#######################################################################################################################################
-GET_GEAR_EXAMPLE_TOOL: Final[ToolDefinition] = ToolDefinition(
-    function=ToolFunction(
-        name="get_gear_example",
-        description="按 id 获取某个示例装备的完整卡牌规格（名称 / 描述 / card 全字段），用于在准备阶段精读最相关的示例。",
-        parameters={
-            "type": "object",
-            "properties": {
-                "example_id": {
-                    "type": "string",
-                    "description": "示例 id，必须来自 list_gear_examples 返回的索引（如 gear.offense / gear.defense / gear.contagion）",
-                },
-            },
-            "required": ["example_id"],
-        },
-    )
-)
-
-
-#######################################################################################################################################
-SUBMIT_GEAR_TOOL: Final[ToolDefinition] = ToolDefinition(
-    function=ToolFunction(
-        name="submit_gear",
-        description="提交本次合成的装备规格（名称、描述与完整卡牌规格）。校验不通过会返回错误，可按提示修正后重提；全部通过后再调用 finish_gear 结束。",
-        parameters={
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "description": "装备全名，采用「装备.XXXX」命名格式，体现材料特性与装备类型",
-                },
-                "description": {
-                    "type": "string",
-                    "description": "物品描述，30-60字，说明外观、手感或穿戴感受",
-                },
-                "speed": {
-                    "type": "integer",
-                    "description": (
-                        "装备级被动速度修正，可正可负：决定战斗回合行动顺序，数值越大越先出手，"
-                        f"同速按创建顺序。允许范围 {GEAR_SPEED_MIN}..{GEAR_SPEED_MAX}，默认 0。"
-                        "注意：装备的伤害/格挡由 card 承载，speed 是唯一的装备级被动。"
-                    ),
-                },
-                "card": {
-                    "type": "object",
-                    "description": "该装备在战斗中被转化为手牌时的完整卡牌规格；card 内不包含 name/description（由系统沿用装备的）",
-                    "properties": {
-                        "on_play_affixes": {
-                            "type": "array",
-                            "items": {"type": "string"},
-                            "maxItems": 3,
-                            "description": "即时词缀（多值列表）；本卡被打出时结算，仅本次出牌生效；每个元素是一条完整独立词缀，格式 `[词缀名]:机械结算描述`，禁止拆分或合并；无则 []",
-                        },
-                        "on_hit_affixes": {
-                            "type": "array",
-                            "items": {"type": "string"},
-                            "maxItems": 3,
-                            "description": "受击词缀（多值列表）；持有者被本次出牌命中时触发；每个元素是一条完整独立词缀，禁止拆分或合并；无则 []",
-                        },
-                        "on_turn_end_affixes": {
-                            "type": "array",
-                            "items": {"type": "string"},
-                            "maxItems": 3,
-                            "description": "回合结束词缀（多值列表）；持有者每次 pass turn 结算一次；每个元素是一条完整独立词缀，禁止拆分或合并；无则 []",
-                        },
-                        "on_autonomous_affixes": {
-                            "type": "array",
-                            "items": {"type": "string"},
-                            "maxItems": 3,
-                            "description": "自主运行词缀（多值列表）；持有者每次 pass turn（回合结束词缀之后）结算，效果目标可为场上任意存活角色（敌人/友方/持有者，由词缀文本决定），不锁定持有者；每个元素是一条完整独立词缀，禁止拆分或合并；无则 []",
-                        },
-                        "playable": {
-                            "type": "boolean",
-                            "description": "是否可出牌；默认 true",
-                        },
-                        "exhaust": {
-                            "type": "boolean",
-                            "description": "出牌后永久消耗；默认 false",
-                        },
-                        "retain": {
-                            "type": "boolean",
-                            "description": "回合末保留在手牌；默认 false",
-                        },
-                        "ethereal": {
-                            "type": "boolean",
-                            "description": "pass turn 时若仍在手牌则自动消耗；默认 false",
-                        },
-                        "transferable": {
-                            "type": "boolean",
-                            "description": "出牌时额外为每个目标手牌 copy 一份（本体照常结算并进入弃牌/消耗流程）；默认 false。可与 target_type=self 同开以自传递复制",
-                        },
-                        "cost": {
-                            "type": "integer",
-                            "description": "出牌费用（消耗 energy）；默认 1",
-                        },
-                        "damage": {
-                            "type": "integer",
-                            "description": "单次伤害；默认 0",
-                        },
-                        "hit_count": {
-                            "type": "integer",
-                            "description": "攻击次数，多段各自独立结算；默认 1",
-                        },
-                        "block": {
-                            "type": "integer",
-                            "description": "手牌持有期间提供的格挡；默认 0",
-                        },
-                        "target_type": {
-                            "type": "string",
-                            "enum": ["single", "all", "spread", "self"],
-                            "description": "目标类型：single 单体、all 阵营锚点、spread 散射、self 锁定自身（无需 targets）",
-                        },
-                    },
-                    "required": [
-                        "on_play_affixes",
-                        "on_hit_affixes",
-                        "on_turn_end_affixes",
-                        "on_autonomous_affixes",
-                        "playable",
-                        "exhaust",
-                        "retain",
-                        "ethereal",
-                        "transferable",
-                        "cost",
-                        "damage",
-                        "hit_count",
-                        "block",
-                        "target_type",
-                    ],
-                },
-            },
-            "required": ["name", "description", "speed", "card"],
-        },
-    )
-)
-
-
-#######################################################################################################################################
-FINISH_GEAR_TOOL: Final[ToolDefinition] = ToolDefinition(
-    function=ToolFunction(
-        name="finish_gear",
-        description="装备规格已通过 submit_gear 成功提交后调用，结束本次合成。",
-        parameters={"type": "object", "properties": {}},
-    )
-)
-
-
-#######################################################################################################################################
-def _handle_list_gear_examples() -> str:
-    """处理 list_gear_examples 工具调用：返回装备卡牌原型的 index 纵览。"""
-    index = [
-        {
-            "id": item["prototype_id"],
-            "name": item["name"],
-            "summary": item["summary"],
-            "keywords": item["keywords"],
-        }
-        for item in list_card_prototype_index(card_type="装备")
-    ]
-    logger.info(
-        f"[CraftGearItemActionSystem] list_gear_examples 执行: 共 {len(index)} 个示例"
-    )
-    return json.dumps(index, ensure_ascii=False)
-
-
-#######################################################################################################################################
-def _handle_get_gear_example(example_id: str) -> str:
-    """处理 get_gear_example 工具调用：按 id 返回完整卡牌原型（含 card 规格）。"""
-    try:
-        proto = get_card_prototype(example_id)
-    except ValueError as e:
-        return f"错误：{e}。可用 id 请通过 list_gear_examples 查询。"
-    if proto.card_type != "装备":
-        return f"错误：{example_id!r} 不是装备卡牌原型，可用 id 请通过 list_gear_examples 查询。"
-    logger.info(f"[CraftGearItemActionSystem] get_gear_example 执行: {example_id}")
-    return json.dumps(
-        {
-            "id": proto.prototype_id,
-            "name": proto.name,
-            "summary": proto.summary,
-            "keywords": json.loads(proto.keywords_json),
-            "design": proto.design,
-            "card": json.loads(proto.card_json),
-        },
-        ensure_ascii=False,
-    )
-
-
-#######################################################################################################################################
-def _handle_submit_gear(
-    results: List[_CraftGearSpec],
-    name: str,
-    description: str,
-    card: Dict[str, Any],
-    speed: int = 0,
-) -> str:
-    """处理 submit_gear 工具调用：校验并暂存装备规格。"""
-    assert name, "name 不能为空"
-    if not (GEAR_SPEED_MIN <= speed <= GEAR_SPEED_MAX):
-        return (
-            f"错误：speed 必须在 {GEAR_SPEED_MIN}..{GEAR_SPEED_MAX} 之间（当前 {speed}）。"
-            "请修正后重新调用 submit_gear。"
-        )
-    spec = _CraftGearSpec(name=name, description=description, speed=speed, **card)
-
-    # 词缀设计校验：agent 自设计的骨架 + 词缀必须满足词缀格式。
-    valid_target_types = {t.value for t in TargetType}
-    if spec.target_type not in valid_target_types:
-        return f"错误：target_type 无效（{spec.target_type!r}）。请修正后重新提交。"
-    probe = Card(
-        name=spec.name,
-        description=spec.description,
-        on_play_affixes=spec.on_play_affixes,
-        on_hit_affixes=spec.on_hit_affixes,
-        on_turn_end_affixes=spec.on_turn_end_affixes,
-        on_autonomous_affixes=spec.on_autonomous_affixes,
-        playable=spec.playable,
-        exhaust=spec.exhaust,
-        retain=spec.retain,
-        ethereal=spec.ethereal,
-        transferable=spec.transferable,
-        cost=spec.cost,
-        damage=spec.damage,
-        hit_count=spec.hit_count,
-        block=spec.block,
-        target_type=TargetType(spec.target_type),
-    )
-    for affix_field in AFFIX_FIELDS:
-        for affix in getattr(probe, affix_field):
-            result = validate_affix_slot(affix_field, affix, probe)
-            if not result.ok:
-                return (
-                    f"错误：{affix_field} 词缀不合法：{result.reason}。"
-                    "请修正后重新调用 submit_gear。"
-                )
-
-    results.append(spec)
-    logger.info(
-        f"[CraftGearItemActionSystem] submit_gear 执行:\n"
-        f"  name: {spec.name}\n"
-        f"  speed: {spec.speed}\n"
-        f"  target_type: {spec.target_type}\n"
-        f"  damage: {spec.damage} / block: {spec.block} / cost: {spec.cost}"
-    )
-    return f"已记录：{spec.name}。确认无误后调用 finish_gear 结束。"
-
-
-#######################################################################################################################################
-def _handle_finish_gear() -> str:
-    """处理 finish_gear 工具调用（无参，仅作为终止信号）。"""
-    return "已结束本次装备合成。"
 
 
 #######################################################################################################################################
 @prompt_builder
-def _build_craft_gear_prompt(materials: List[MaterialItem]) -> str:
-    """构建合成装备的 LLM 提示词。"""
-    material_lines = "\n".join(
-        f"- **{m.name}**（数量 {m.count}）：{m.description}" for m in materials
-    )
-
-    return f"""# 任务：根据材料创意合成一件装备
+def _build_gear_select_prompt(materials: List[MaterialItem]) -> str:
+    """选型阶段提示词：结合投入材料，挑选恰好 1 个装备原型骨架。"""
+    return f"""# 任务：为装备工坊挑选 1 个卡牌原型
 
 ## 投入材料
 
-{material_lines}
+{_material_lines(materials)}
 
-## 装备叙事
+装备是一件在战斗中被转化为手牌的物品；卡牌骨架（是否可出牌、格挡、转移等）由原型给定。请结合材料特质，从装备原型中挑一个最合适的骨架，随后再为它设计名称、描述、数值、词缀与装备级速度。
 
-- **name**：装备全名，采用「装备.XXXX」命名格式，体现材料特性与装备类型，简洁有辨识度
-- **description**：物品描述，30-60字，说明外观、手感或穿戴感受，体现材料的来源与工艺痕迹
-- **speed**：装备级被动速度修正，整数，可正可负，范围 {GEAR_SPEED_MIN}..{GEAR_SPEED_MAX}，默认 0。
-  它决定战斗回合的行动顺序（数值越大越先出手，同速按创建顺序），在装备登记期间累加。
-  装备的伤害 / 格挡**只能**通过下方 `card` 表达，`speed` 是唯一的装备级被动。
-  叙事取向：轻捷灵便 → 正值；沉重笨拙 → 负值。
+工作流程：
+1. `list_card_prototypes` 纵览全部装备原型（archetype / subtype / summary / keywords）；
+2. 对候选调用 `get_card_prototype` 精读（design + card 全字段）；
+3. `select_cards` 提交恰好 1 个 prototype_id。"""
 
-## 卡牌规格（card）
 
-`card` 是这件装备在战斗中被转化为手牌时的完整卡牌规格。`card` 内不输出 `name`/`description`（由系统沿用装备的）；其余字段以下方说明为准，未提及即禁止。
-每个字段只表达自己的职责，不重复、不互相替代；三类词缀由你自行决定使用哪些时机（可为空）。
+#######################################################################################################################################
+def _build_gear_design_context(materials: List[MaterialItem]) -> str:
+    """设计阶段的任务前言：投入材料 + 装备卡的固定约束与 speed 说明。"""
+    return f"""## 投入材料
 
-{BUILD_CARD_FIELD_DESCRIPTION}
+{_material_lines(materials)}
 
-{AFFIX_DESIGN_SPEC}
+## 装备约束
 
-## 工作流程
-
-1. 准备阶段：调用 `list_gear_examples` 纵览可用装备示例的索引，结合本次投入材料筛选最相关的示例；
-2. 精读阶段：如需，调用 `get_gear_example` 获取 1~2 个最相关示例的完整卡牌规格；
-3. 提交阶段：综合材料特性与示例参照，调用 `submit_gear` 提交本次合成的装备规格；若返回错误，按提示修正后重新提交；
-4. 结束后：`submit_gear` 成功后再调用 `finish_gear` 结束对话。提交时无需在 content 中展开长篇推导，把分析过程浓缩在内心即可。"""
+- 为「装备工坊」制作一件奇幻世界的装备；`name` 采用「装备.XXXX」命名格式，`description` 说明外观、手感或穿戴感受（30-60 字），不出现数值与机制词。
+- 卡牌骨架（flags / target_type）由所选原型给定，不要改动；可微调 `cost` / `damage` / `hit_count` / `block`，并在原型已开放的槽位内设计词缀。
+- `speed` 是唯一的装备级被动，范围 {GEAR_SPEED_MIN}..{GEAR_SPEED_MAX}：轻捷灵便取正值、沉重笨拙取负值，不确定可用 0；请在 `submit_card` 时一并给出。
+- 词缀须贴合本次投入材料。"""
 
 
 #######################################################################################################################################
@@ -393,7 +123,7 @@ class CraftGearItemActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     async def _craft(self, entity: Entity) -> None:
-        """执行完整合成流程。
+        """执行完整合成流程：选型 → 设计（含 speed）→ 组装 → 入库。
 
         Args:
             entity: 携带 CraftGearItemAction 的工坊世界实体
@@ -410,94 +140,83 @@ class CraftGearItemActionSystem(ReactiveProcessor):
         # 材料列表由 activate_craft_gear_item 预填充（count = 本次使用量）
         materials = action.material_items
 
-        # 调用工坊 agent（agent_loop 工具调用模式）推理生成装备属性
-        prompt = _build_craft_gear_prompt(materials)
+        # 装备原型库
+        try:
+            index = list_card_prototype_index(card_type="装备")
+        except Exception as e:
+            logger.error(f"[CraftGearItemActionSystem] 拉取装备原型失败: {e}")
+            return
+        if not index:
+            logger.error("[CraftGearItemActionSystem] 装备原型库为空，中止")
+            return
 
         # 上下文隔离：仅取世界实体的首条 SystemMessage 作为「设定」，
-        # 传入全新列表（agent_loop 原地追加），结束后不写回宿主实体持久记忆。
+        # 每个阶段都用一份全新列表（agent_loop 原地追加），结束后不写回持久记忆。
         agent_memory = self._game.get_agent_memory(entity)
-        assert agent_memory.messages, "工坊世界实体缺少首条 SystemMessage"
+        assert agent_memory.messages, "装备工坊世界实体缺少首条 SystemMessage"
         assert isinstance(
             agent_memory.messages[0], SystemMessage
-        ), "工坊世界实体 AI 记忆的第一条消息必须是 SystemMessage"
-        messages: List[ChatMessage] = [agent_memory.messages[0]]
+        ), "装备工坊世界实体 AI 记忆的第一条消息必须是 SystemMessage"
+        system_message = agent_memory.messages[0]
 
-        specs: List[_CraftGearSpec] = []
-
-        try:
-            # 调用 agent_loop 进行装备合成推理：准备阶段读示例 → 精读 → submit_gear 提交
-            success = await agent_loop(
-                name=entity.name,
-                input_message=prompt,
-                messages=messages,
-                tools=[
-                    LIST_GEAR_EXAMPLES_TOOL,
-                    GET_GEAR_EXAMPLE_TOOL,
-                    SUBMIT_GEAR_TOOL,
-                    FINISH_GEAR_TOOL,
-                ],
-                handlers={
-                    LIST_GEAR_EXAMPLES_TOOL.function.name: _handle_list_gear_examples,
-                    GET_GEAR_EXAMPLE_TOOL.function.name: _handle_get_gear_example,
-                    SUBMIT_GEAR_TOOL.function.name: partial(_handle_submit_gear, specs),
-                    FINISH_GEAR_TOOL.function.name: _handle_finish_gear,
-                },
-                max_rounds=8,
-                terminal_tools=[FINISH_GEAR_TOOL],
-            )
-        except Exception as e:
-            logger.error(f"[CraftGearItemActionSystem] agent_loop 异常: {e}")
-            return
-
-        # 检查 agent_loop 是否成功返回
-        if not success:
-            logger.error("[CraftGearItemActionSystem] agent_loop 失败，中止")
-            return
-
-        # 检查 LLM 是否返回了有效的装备规格
-        if not specs:
-            logger.error(
-                "[CraftGearItemActionSystem] LLM 结束但未成功提交装备规格，中止"
-            )
-            return
-
-        result = specs[0]
-
-        # 由 LLM 产出的卡牌规格构造完整 Card；target_type 非法时中止
-        valid_target_types = {t.value for t in TargetType}
-        if result.target_type not in valid_target_types:
-            logger.error(
-                f"[CraftGearItemActionSystem] target_type 无效: {result.target_type!r}"
-            )
-            return
-
-        # 根据 LLM 返回的装备规格构造 Card 对象。
-        # 注意：此处不设 source——成品只是存于储物箱的装备模板，真正的持有者 source
-        # 由 EquipGearItemActionSystem._materialize_cards 在物化为手牌时回填。
-        card = Card(
-            name=result.name,
-            description=result.description,
-            on_play_affixes=result.on_play_affixes,
-            on_hit_affixes=result.on_hit_affixes,
-            on_turn_end_affixes=result.on_turn_end_affixes,
-            on_autonomous_affixes=result.on_autonomous_affixes,
-            playable=result.playable,
-            exhaust=result.exhaust,
-            retain=result.retain,
-            ethereal=result.ethereal,
-            transferable=result.transferable,
-            cost=result.cost,
-            damage=result.damage,
-            hit_count=result.hit_count,
-            block=result.block,
-            target_type=TargetType(result.target_type),
+        # 阶段一：选型（共用能力，恰好选 1 个原型）
+        selection = await run_card_selection_session(
+            entity.name,
+            index,
+            [system_message],
+            size=1,
+            prompt=_build_gear_select_prompt(materials),
+            max_rounds=8,
         )
+        if not selection:
+            logger.error("[CraftGearItemActionSystem] 选型失败，中止")
+            return
+
+        # 物化选中原型为候选卡；装备成品只是储物箱中的模板，source 留空
+        # （真正的持有者 source 由 EquipGearItemActionSystem 物化为手牌时回填）
+        candidate = materialize_candidate(selection.selected[0], "")
+        if candidate is None:
+            logger.error(
+                f"[CraftGearItemActionSystem] 物化原型 "
+                f"{selection.selected[0]!r} 失败，中止"
+            )
+            return
+
+        # 捕获 submit_card 扩展字段里的装备级 speed
+        captured: Dict[str, int] = {}
+
+        def _capture_speed(edit: CardDesign) -> None:
+            value = (edit.model_extra or {}).get("speed")
+            if isinstance(value, int):
+                captured["speed"] = value
+
+        # 阶段二：设计（带投入材料上下文 + speed 扩展字段）
+        outcome = await run_card_design_session(
+            entity.name,
+            [candidate],
+            [system_message],
+            max_rounds=8,
+            context=_build_gear_design_context(materials),
+            extra_properties={"speed": GEAR_SPEED_PROPERTY},
+            on_design=_capture_speed,
+        )
+        if not outcome.ok or outcome.designed != 1:
+            logger.error(
+                f"[CraftGearItemActionSystem] 设计未完成"
+                f"（{outcome.designed}/1），中止"
+            )
+            return
+
+        # speed 兜底收敛到护栏内
+        speed = min(max(captured.get("speed", 0), GEAR_SPEED_MIN), GEAR_SPEED_MAX)
+
+        card = candidate.card
 
         # 更新 StorageComponent：扣减材料 + 追加成品
         new_item = GearItem(
-            name=result.name,
-            description=result.description,
-            speed=result.speed,
+            name=card.name,
+            description=card.description,
+            speed=speed,
             resources=action.material_items,
             cards=[card],
         )
@@ -505,7 +224,7 @@ class CraftGearItemActionSystem(ReactiveProcessor):
 
         logger.info(
             f"[CraftGearItemActionSystem] 合成完成: {new_item.name} "
-            f"cards={new_item.cards}"
+            f"speed={speed} cards={new_item.cards}"
         )
 
     ####################################################################################################################################

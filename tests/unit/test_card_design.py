@@ -1,10 +1,13 @@
-"""card_design 引擎的候选格式化、prompt 组装与提交暂存的单元测试。"""
+"""card_design 引擎的候选格式化、prompt 组装、选型与提交暂存的单元测试。"""
 
 from ai_rpg.models import Card
 from ai_rpg.systems.card_design import (
     Candidate,
     CardDesign,
+    _CardSelection,
+    _handle_select_cards,
     _handle_submit_card,
+    build_select_cards_tool,
     format_candidate,
 )
 
@@ -43,6 +46,46 @@ def test_format_card_uses_index_and_slots_without_duplication() -> None:
     assert "特性（只读）" not in text
     # 原型占位词缀不再单列（变量池与方向已在 design 里）
     assert "[中毒]" not in text
+
+
+def test_build_select_cards_tool_uses_size() -> None:
+    tool = build_select_cards_tool(3)
+
+    assert tool.function.name == "select_cards"
+    props = tool.function.parameters["properties"]["prototype_ids"]
+    assert props["minItems"] == 3
+    assert props["maxItems"] == 3
+
+
+def test_select_cards_stores_ids_and_allows_duplicates() -> None:
+    valid = {"proto.attack", "proto.block", "proto.burst", "proto.heal", "proto.weaken"}
+    selection = _CardSelection()
+    ids = ["proto.attack", "proto.attack", "proto.burst", "proto.heal", "proto.block"]
+
+    result = _handle_select_cards(selection, valid, 5, ids)
+
+    assert "已记录" in result
+    assert selection.prototype_ids == ids
+
+
+def test_select_cards_rejects_wrong_count() -> None:
+    selection = _CardSelection()
+
+    result = _handle_select_cards(selection, {"proto.attack"}, 5, ["proto.attack"])
+
+    assert result.startswith("错误")
+    assert selection.prototype_ids == []
+
+
+def test_select_cards_rejects_unknown_id() -> None:
+    valid = {"proto.attack", "proto.block", "proto.burst", "proto.heal", "proto.weaken"}
+    selection = _CardSelection()
+    ids = ["proto.attack", "proto.attack", "proto.burst", "proto.heal", "proto.不存在"]
+
+    result = _handle_select_cards(selection, valid, 5, ids)
+
+    assert result.startswith("错误")
+    assert selection.prototype_ids == []
 
 
 def _submit_card() -> Card:

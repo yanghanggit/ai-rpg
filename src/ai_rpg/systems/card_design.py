@@ -16,11 +16,22 @@
 import json
 from dataclasses import dataclass
 from functools import partial
-from typing import Awaitable, Callable, Dict, List, Optional, Tuple, Union
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    Final,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+)
 from uuid import uuid4
 
 from loguru import logger
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 from ..deepseek import ToolDefinition, ToolFunction, agent_loop
 from ..models import (
@@ -33,7 +44,7 @@ from ..models import (
     normalize_str_list,
     validate_affix_slot,
 )
-from ..pgsql import get_card_prototype
+from ..pgsql import CardPrototypeIndexEntry, get_card_prototype
 from ..utils import prompt_builder
 
 
@@ -69,7 +80,13 @@ class DesignOutcome:
 
 #######################################################################################################################################
 class CardDesign(BaseModel):
-    """submit_card 提交的单张卡设计（name / description + 可选数值微调 + 词缀）。"""
+    """submit_card 提交的单张卡设计（name / description + 可选数值微调 + 词缀）。
+
+    `extra="allow"` 用于承载调用方通过 `run_card_design_session(extra_properties=...)`
+    追加的领域字段（如装备的 speed）；这些字段在 `model_extra` 中读取。
+    """
+
+    model_config = ConfigDict(extra="allow")
 
     uuid: str
     name: str
@@ -86,75 +103,92 @@ class CardDesign(BaseModel):
 
 
 #######################################################################################################################################
-SUBMIT_CARD_TOOL = ToolDefinition(
-    function=ToolFunction(
-        name="submit_card",
-        description=(
-            "提交一张卡的设计（name / description + 可选数值微调 + 词缀）。每张卡各调用一次，用编号（#N）定位。"
-            "词缀只能作用于 HP（伤害 / 反伤 / 吸血 / 治疗）或经 transferable 牌施加持续状态；"
-            "不得写格挡、抽弃牌、能量、改布尔标志，只能引用内建数值（本卡 damage/block/hit_count、"
-            "目标与自身 HP/最大HP/总格挡）；提交到未开放槽或格式不合法会被丢弃。"
-        ),
-        parameters={
-            "type": "object",
-            "properties": {
-                "card_index": {
-                    "type": "integer",
-                    "description": "候选卡编号（任务清单里的 #N，从 1 开始）",
-                },
-                "name": {
-                    "type": "string",
-                    "description": "设计后的卡牌名",
-                },
-                "description": {
-                    "type": "string",
-                    "description": "设计后的叙事描述（叙事锚点：不含数值，不重述字段已确定的效果）",
-                },
-                "cost": {
-                    "type": "integer",
-                    "description": "可选：在原型基础上微调本卡 cost；不给则沿用原型。",
-                },
-                "damage": {
-                    "type": "integer",
-                    "description": "可选：在原型基础上微调本卡 damage；不给则沿用原型。",
-                },
-                "hit_count": {
-                    "type": "integer",
-                    "description": "可选：在原型基础上微调本卡 hit_count（攻击次数）；不给则沿用原型。",
-                },
-                "block": {
-                    "type": "integer",
-                    "description": "可选：在原型基础上微调本卡 block（持有期格挡）；不给则沿用原型。",
-                },
-                "on_play_affixes": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "maxItems": 1,
-                    "description": "本卡打出时结算的即时词缀（可选，至多一条）：数组长度≤1，元素形如 `[词缀名]:机械结算描述`；无则 []。仅当原型该槽非空（有引导）时可提交；须满足词缀格式，否则整槽置空。",
-                },
-                "on_hit_affixes": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "maxItems": 1,
-                    "description": "本卡持有者被命中时触发的受击词缀（可选，至多一条）：数组长度≤1，元素形如 `[词缀名]:机械结算描述`；无则 []。仅当原型该槽非空时可提交；须满足词缀格式。",
-                },
-                "on_turn_end_affixes": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "maxItems": 1,
-                    "description": "持有者每次 pass turn 结算的回合结束词缀（可选，至多一条）：数组长度≤1，元素形如 `[词缀名]:机械结算描述`；无则 []。仅当原型该槽非空时可提交；须满足词缀格式。",
-                },
-                "on_autonomous_affixes": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "maxItems": 1,
-                    "description": "卡牌自主运行词缀（可选，至多一条）：数组长度≤1，元素形如 `[词缀名]:机械结算描述`；持有者每次 pass turn（回合结束词缀之后）结算，效果目标可为场上任意存活角色（敌人/友方/持有者，由词缀文本决定），不锁定持有者；无则 []。仅当原型该槽非空时可提交；须满足词缀格式。",
-                },
-            },
-            "required": ["card_index", "name", "description"],
-        },
-    )
+_SUBMIT_CARD_DESCRIPTION: Final[str] = (
+    "提交一张卡的设计（name / description + 可选数值微调 + 词缀）。每张卡各调用一次，用编号（#N）定位。"
+    "词缀只能作用于 HP（伤害 / 反伤 / 吸血 / 治疗）或经 transferable 牌施加持续状态；"
+    "不得写格挡、抽弃牌、能量、改布尔标志，只能引用内建数值（本卡 damage/block/hit_count、"
+    "目标与自身 HP/最大HP/总格挡）；提交到未开放槽或格式不合法会被丢弃。"
 )
+
+# submit_card 的基础字段；调用方可经 build_submit_card_tool 追加领域字段（如装备 speed）。
+_SUBMIT_CARD_PROPERTIES: Final[Dict[str, Any]] = {
+    "card_index": {
+        "type": "integer",
+        "description": "候选卡编号（任务清单里的 #N，从 1 开始）",
+    },
+    "name": {
+        "type": "string",
+        "description": "设计后的卡牌名",
+    },
+    "description": {
+        "type": "string",
+        "description": "设计后的叙事描述（叙事锚点：不含数值，不重述字段已确定的效果）",
+    },
+    "cost": {
+        "type": "integer",
+        "description": "可选：在原型基础上微调本卡 cost；不给则沿用原型。",
+    },
+    "damage": {
+        "type": "integer",
+        "description": "可选：在原型基础上微调本卡 damage；不给则沿用原型。",
+    },
+    "hit_count": {
+        "type": "integer",
+        "description": "可选：在原型基础上微调本卡 hit_count（攻击次数）；不给则沿用原型。",
+    },
+    "block": {
+        "type": "integer",
+        "description": "可选：在原型基础上微调本卡 block（持有期格挡）；不给则沿用原型。",
+    },
+    "on_play_affixes": {
+        "type": "array",
+        "items": {"type": "string"},
+        "maxItems": 1,
+        "description": "本卡打出时结算的即时词缀（可选，至多一条）：数组长度≤1，元素形如 `[词缀名]:机械结算描述`；无则 []。仅当原型该槽非空（有引导）时可提交；须满足词缀格式，否则整槽置空。",
+    },
+    "on_hit_affixes": {
+        "type": "array",
+        "items": {"type": "string"},
+        "maxItems": 1,
+        "description": "本卡持有者被命中时触发的受击词缀（可选，至多一条）：数组长度≤1，元素形如 `[词缀名]:机械结算描述`；无则 []。仅当原型该槽非空时可提交；须满足词缀格式。",
+    },
+    "on_turn_end_affixes": {
+        "type": "array",
+        "items": {"type": "string"},
+        "maxItems": 1,
+        "description": "持有者每次 pass turn 结算的回合结束词缀（可选，至多一条）：数组长度≤1，元素形如 `[词缀名]:机械结算描述`；无则 []。仅当原型该槽非空时可提交；须满足词缀格式。",
+    },
+    "on_autonomous_affixes": {
+        "type": "array",
+        "items": {"type": "string"},
+        "maxItems": 1,
+        "description": "卡牌自主运行词缀（可选，至多一条）：数组长度≤1，元素形如 `[词缀名]:机械结算描述`；持有者每次 pass turn（回合结束词缀之后）结算，效果目标可为场上任意存活角色（敌人/友方/持有者，由词缀文本决定），不锁定持有者；无则 []。仅当原型该槽非空时可提交；须满足词缀格式。",
+    },
+}
+
+
+#######################################################################################################################################
+def build_submit_card_tool(
+    extra_properties: Optional[Dict[str, Any]] = None,
+) -> ToolDefinition:
+    """构建 submit_card 工具；`extra_properties` 为可选的领域扩展字段（name → JSON schema）。"""
+    properties: Dict[str, Any] = dict(_SUBMIT_CARD_PROPERTIES)
+    if extra_properties:
+        properties.update(extra_properties)
+    return ToolDefinition(
+        function=ToolFunction(
+            name="submit_card",
+            description=_SUBMIT_CARD_DESCRIPTION,
+            parameters={
+                "type": "object",
+                "properties": properties,
+                "required": ["card_index", "name", "description"],
+            },
+        )
+    )
+
+
+SUBMIT_CARD_TOOL = build_submit_card_tool()
 
 
 #######################################################################################################################################
@@ -165,6 +199,62 @@ FINISH_CARDS_TOOL = ToolDefinition(
         parameters={"type": "object", "properties": {}},
     )
 )
+
+
+#######################################################################################################################################
+LIST_CARD_PROTOTYPES_TOOL = ToolDefinition(
+    function=ToolFunction(
+        name="list_card_prototypes",
+        description="纵览当前可选卡牌原型的索引（id / archetype / archetype_subtype / name / summary / keywords），用于选型前建立全局观。",
+        parameters={"type": "object", "properties": {}},
+    )
+)
+
+
+#######################################################################################################################################
+GET_CARD_PROTOTYPE_TOOL = ToolDefinition(
+    function=ToolFunction(
+        name="get_card_prototype",
+        description="按 id 获取某个卡牌原型的完整规格（name / summary / design / card 全字段），用于精读候选。",
+        parameters={
+            "type": "object",
+            "properties": {
+                "prototype_id": {
+                    "type": "string",
+                    "description": "原型 id，必须来自 list_card_prototypes 返回的索引",
+                },
+            },
+            "required": ["prototype_id"],
+        },
+    )
+)
+
+
+#######################################################################################################################################
+def build_select_cards_tool(size: int) -> ToolDefinition:
+    """构建选型工具：一次性提交恰好 `size` 个原型 id（同一原型可重复）。"""
+    return ToolDefinition(
+        function=ToolFunction(
+            name="select_cards",
+            description=(
+                f"一次性提交恰好 {size} 个原型 id（同一原型可重复），确定选型；"
+                "随后进入逐张设计。"
+            ),
+            parameters={
+                "type": "object",
+                "properties": {
+                    "prototype_ids": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "minItems": size,
+                        "maxItems": size,
+                        "description": f"恰好 {size} 个原型 id，必须来自 list_card_prototypes 返回的索引，可重复",
+                    },
+                },
+                "required": ["prototype_ids"],
+            },
+        )
+    )
 
 
 #######################################################################################################################################
@@ -218,10 +308,11 @@ def format_candidate(candidate: Candidate, index: int) -> str:
 
 #######################################################################################################################################
 @prompt_builder
-def build_card_design_prompt(candidates: List[Candidate]) -> str:
+def build_card_design_prompt(candidates: List[Candidate], context: str = "") -> str:
     """卡牌设计提示词：逐卡给出原型骨架 + 专属 design。
 
     不强调「奖励」——本质上就是「给原型 + 依上下文生成卡牌」。
+    `context` 为可选的任务前言（如工坊的投入材料）；为空时不出现。
     骨架 / design / 可设计槽逐卡给出；数值、只读与槽位等提交约束在 submit_card 的
     schema 里，词缀的通用硬边界（只写 HP / 内建数值 / 作用对象）也随该 schema 下发，
     因此本提示词只保留「生成任务 + 叙事约束」。
@@ -229,9 +320,10 @@ def build_card_design_prompt(candidates: List[Candidate]) -> str:
     card_lines = "\n\n".join(
         format_candidate(c, i) for i, c in enumerate(candidates, 1)
     )
+    context_block = f"{context.strip()}\n\n" if context.strip() else ""
     return f"""# 任务：为下列原型生成卡牌
 
-依据你的角色设定，为每个原型设计 `name`、`description`，并在开放槽位内补充词缀。卡牌可以是任意战斗资源——招式、物件、同伴、环境、状态等，不必是动作。
+{context_block}依据你的角色设定，为每个原型设计 `name`、`description`，并在开放槽位内补充词缀。卡牌可以是任意战斗资源——招式、物件、同伴、环境、状态等，不必是动作。
 
 ## 原型
 
@@ -260,6 +352,7 @@ def _handle_submit_card(
     on_hit_affixes: Optional[NormalizedStrList] = None,
     on_turn_end_affixes: Optional[NormalizedStrList] = None,
     on_autonomous_affixes: Optional[NormalizedStrList] = None,
+    **extra: Any,
 ) -> str:
     """处理 submit_card：按 #N 定位候选卡（uuid 由计算端持有），校验词缀后暂存。"""
     if not (1 <= card_index <= len(cards)):
@@ -318,6 +411,7 @@ def _handle_submit_card(
             on_hit_affixes=on_hit_affixes,
             on_turn_end_affixes=on_turn_end_affixes,
             on_autonomous_affixes=on_autonomous_affixes,
+            **extra,
         )
     )
     logger.info(f"[card_design] submit_card: #{card_index} {card.uuid} → {name}")
@@ -328,6 +422,94 @@ def _handle_submit_card(
 def _handle_finish_cards() -> str:
     """处理 finish_cards 工具调用（无参，仅作为终止信号）。"""
     return "已结束本次设计。"
+
+
+#######################################################################################################################################
+class _CardSelection(BaseModel):
+    """select_cards 的结果容器：选定的原型 id 列表（可重复）。"""
+
+    prototype_ids: List[str] = Field(default_factory=list)
+
+
+#######################################################################################################################################
+def _handle_list_card_prototypes(index: List[CardPrototypeIndexEntry]) -> str:
+    """处理 list_card_prototypes：返回原型索引纵览。"""
+    payload = [
+        {
+            "id": item["prototype_id"],
+            "archetype": item["archetype"],
+            "archetype_subtype": item["archetype_subtype"],
+            "name": item["name"],
+            "summary": item["summary"],
+            "keywords": item["keywords"],
+        }
+        for item in index
+    ]
+    logger.info(f"[card_design] list_card_prototypes: 共 {len(payload)} 个原型")
+    return json.dumps(payload, ensure_ascii=False)
+
+
+#######################################################################################################################################
+def _handle_get_card_prototype(valid_ids: Set[str], prototype_id: str) -> str:
+    """处理 get_card_prototype：按 id 返回完整原型（含 card 全字段）。"""
+    if prototype_id not in valid_ids:
+        return (
+            f"错误：未知原型 id {prototype_id!r}。"
+            "可用 id 请通过 list_card_prototypes 查询。"
+        )
+    try:
+        proto = get_card_prototype(prototype_id)
+    except ValueError as e:
+        return f"错误：{e}。可用 id 请通过 list_card_prototypes 查询。"
+    logger.info(f"[card_design] get_card_prototype: {prototype_id}")
+    return json.dumps(
+        {
+            "id": proto.prototype_id,
+            "name": proto.name,
+            "summary": proto.summary,
+            "keywords": json.loads(proto.keywords_json),
+            "design": proto.design,
+            "card": json.loads(proto.card_json),
+        },
+        ensure_ascii=False,
+    )
+
+
+#######################################################################################################################################
+def _handle_select_cards(
+    selection: _CardSelection,
+    valid_ids: Set[str],
+    size: int,
+    prototype_ids: List[str],
+) -> str:
+    """处理 select_cards：校验数量与 id 合法性，不合法则返回错误让 agent 修正重提。"""
+    if len(prototype_ids) != size:
+        return (
+            f"错误：需恰好 {size} 个 prototype_id，实际 {len(prototype_ids)}。"
+            "请修正后重新调用 select_cards。"
+        )
+    unknown = [pid for pid in prototype_ids if pid not in valid_ids]
+    if unknown:
+        return (
+            f"错误：未知原型 id {unknown}。"
+            "可用 id 请通过 list_card_prototypes 查询。"
+        )
+    selection.prototype_ids = list(prototype_ids)
+    logger.info(f"[card_design] select_cards: {selection.prototype_ids}")
+    return f"已记录 {len(selection.prototype_ids)} 个原型的选型。"
+
+
+#######################################################################################################################################
+@dataclass
+class SelectionOutcome:
+    """一次选型会话的结果；``bool(outcome)`` 为「agent_loop 成功且数量正确」。"""
+
+    ok: bool
+    selected: List[str]
+    total: int
+
+    def __bool__(self) -> bool:
+        return self.ok and len(self.selected) == self.total
 
 
 #######################################################################################################################################
@@ -386,18 +568,24 @@ async def run_card_design_session(
     messages: List[ChatMessage],
     *,
     max_rounds: int = 6,
+    context: str = "",
+    extra_properties: Optional[Dict[str, Any]] = None,
+    on_design: Optional[Callable[[CardDesign], None]] = None,
 ) -> DesignOutcome:
     """跑一次卡牌设计会话：agent 逐卡 `submit_card`，计算端把设计写回候选卡。
 
     `candidates` 原地被设计（name / description / 数值 / 词缀）。返回 `DesignOutcome`；
-    即便会话中途报错，已提交的设计仍会落地。
+    即便会话中途报错，已提交的设计仍会落地。`context` 为可选任务前言（如投入材料）。
+    `extra_properties` 给 submit_card 追加领域字段（如装备 speed，存入 `model_extra`）；
+    `on_design` 在落地后对每条设计回调，供调用方读取扩展字段。
     """
     edits: List[CardDesign] = []
     cards = [c.card for c in candidates]
+    submit_tool = build_submit_card_tool(extra_properties)
 
     # 定义工具处理函数映射，用于 agent_loop 调用
     handlers: Dict[str, Callable[..., Union[str, Awaitable[str]]]] = {
-        SUBMIT_CARD_TOOL.function.name: partial(_handle_submit_card, edits, cards),
+        submit_tool.function.name: partial(_handle_submit_card, edits, cards),
         FINISH_CARDS_TOOL.function.name: _handle_finish_cards,
     }
 
@@ -406,9 +594,9 @@ async def run_card_design_session(
         # 运行 agent_loop 进行卡牌设计会话
         result = await agent_loop(
             name=name,
-            input_message=build_card_design_prompt(candidates),
+            input_message=build_card_design_prompt(candidates, context),
             messages=messages,
-            tools=[SUBMIT_CARD_TOOL, FINISH_CARDS_TOOL],
+            tools=[submit_tool, FINISH_CARDS_TOOL],
             handlers=handlers,
             terminal_tools=[FINISH_CARDS_TOOL],
             max_rounds=max_rounds,
@@ -423,6 +611,11 @@ async def run_card_design_session(
 
     applied, affixes, notes = apply_designs(candidates, edits, name)
 
+    # 领域扩展字段（如装备 speed）回调
+    if on_design is not None:
+        for edit in edits:
+            on_design(edit)
+
     # 输出设计过程中产生的告警信息
     for note in notes:
         logger.warning(f"[card_design] {name}: {note}")
@@ -435,3 +628,61 @@ async def run_card_design_session(
     return DesignOutcome(
         ok=ok, designed=applied, total=len(candidates), affixes=affixes
     )
+
+
+#######################################################################################################################################
+async def run_card_selection_session(
+    name: str,
+    index: List[CardPrototypeIndexEntry],
+    messages: List[ChatMessage],
+    *,
+    size: int,
+    prompt: str,
+    max_rounds: int = 12,
+) -> SelectionOutcome:
+    """跑一次选型会话：agent 浏览原型库并用 `select_cards` 提交恰好 `size` 个 id。
+
+    与具体玩法解耦的共用能力：怪物牌库选 5、消耗品工坊选 1 都用它。`prompt` 由调用方
+    给出（含本次任务与上下文）；`messages` 通常为该 agent 的临时上下文。
+    """
+    if not index or size <= 0:
+        logger.error(f"[card_design] {name} 选型失败：原型索引为空或 size 非法")
+        return SelectionOutcome(ok=False, selected=[], total=size)
+
+    valid_ids: Set[str] = {item["prototype_id"] for item in index}
+    selection = _CardSelection()
+    select_tool = build_select_cards_tool(size)
+    try:
+        result = await agent_loop(
+            name=name,
+            input_message=prompt,
+            messages=messages,
+            tools=[
+                LIST_CARD_PROTOTYPES_TOOL,
+                GET_CARD_PROTOTYPE_TOOL,
+                select_tool,
+            ],
+            handlers={
+                LIST_CARD_PROTOTYPES_TOOL.function.name: partial(
+                    _handle_list_card_prototypes, index
+                ),
+                GET_CARD_PROTOTYPE_TOOL.function.name: partial(
+                    _handle_get_card_prototype, valid_ids
+                ),
+                select_tool.function.name: partial(
+                    _handle_select_cards, selection, valid_ids, size
+                ),
+            },
+            max_rounds=max_rounds,
+            terminal_tools=[select_tool],
+        )
+        ok = bool(result)
+    except Exception as e:
+        logger.error(f"[card_design] {name} 选型 agent_loop 异常: {e}")
+        ok = False
+
+    selected = selection.prototype_ids
+    logger.info(
+        f"[card_design] {name}: 选型 {len(selected)}/{size}（agent_loop 成功={ok}）"
+    )
+    return SelectionOutcome(ok=ok, selected=selected, total=size)

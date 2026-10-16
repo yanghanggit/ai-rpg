@@ -9,7 +9,7 @@
 为避免同一事实出现两处、日后还要裁决谁权威，本文**不复述**以下内容，只给原则与指向：
 
 - 字段语义（每个字段是什么）→ [卡牌数据模型（Card）](card.md)
-- 词缀格式与约束（怎样写才合法）→ `AFFIX_DESIGN_SPEC`（代码内单一来源）
+- 词缀格式与约束（怎样写才合法）→ 见下文「生成契约」（`card_design` 引擎的 `submit_card` 工具 schema）
 - 具体组合范例（原型长什么样）→ `demo/card_skeletons.py`（骨架）与 `demo/card_prototypes.py`（原型类型 + 含教学元数据的注册表）
 - 三端归类 → [三端化思维（Combat Ports）](combat-ports.md)
 
@@ -61,10 +61,31 @@
 
 ## 词缀设计
 
-词缀是唯一的语义自由度，也是「状态」的载体。全部写法边界（结算原语、数值限制、格式、原型引导与非法置空）以 `AFFIX_DESIGN_SPEC` 为唯一来源，本节只讲方法：
+词缀是唯一的语义自由度，也是「状态」的载体。全部写法硬边界（结算原语、数值限制、格式与非法置空）随生成契约的 `submit_card` 工具 schema 下发，每个原型的引导方向见其 `design` 字段（见下文「生成契约」），本节只讲方法：
 
 - **先定时机**：`on_play` 出牌瞬时、`on_hit` 被命中时、`on_turn_end` 每次 pass turn（效果目标恒为当前持有者）、`on_autonomous` 每次 pass turn 的回合结束之后（效果目标为场上任意存活角色，是「卡牌作为自主主体」的时机）——时机只决定「何时兑现」，不决定语义；同一时机要同时考虑对持有者的增益与减益。
 - **再做变量**：在骨架给定、且仲裁会全量给出的内建数值里（本卡字段、目标 / 自身的 `HP`、`总格挡`）选一个或组合当变量，把规则落成一句具体描述——「借哪个数值、怎么组合」就是词缀的自由度所在。
+
+---
+
+## 生成契约（`card_design` 引擎）
+
+所有「让 agent 造一张卡」的路径共用同一套契约（`systems/card_design.py`），不再各自注入全局规范：
+
+- **选型**（`run_card_selection_session`）：agent 用 `list_card_prototypes` / `get_card_prototype` 浏览原型库，再用 `select_cards` 一次性提交恰好 N 个原型 id。
+- **设计**（`run_card_design_session`）：引擎把选中原型物化为候选卡（换新 `uuid`、回填 `source`），agent 用 `submit_card`（按 `#N` 定位）逐卡提交 `name` / `description` / 可选数值微调 / 词缀，再 `finish_cards` 收尾。
+- **词缀硬边界随工具契约下发**：只写 `HP`（伤害 / 反伤 / 吸血 / 治疗）或经 `transferable` 牌施加持续状态，不得写格挡 / 抽弃牌 / 能量 / 布尔标志，只能引用内建数值；每个槽**至多一条**词缀。`validate_affix_slot` 仍只守格式硬不变量，落地时不合法的槽整槽置空。
+- **每个原型往哪个方向设计**由该原型的 `design` 字段（`【骨架】【字段】【设计】`）给出——这是唯一的「设计引导」来源。
+- **计算端持有 `uuid`**：LLM 只看编号 `#N`，`uuid` 由引擎回填，避免内部标识泄漏进提示词。
+
+四条路径分别组装自己的候选与去向：
+
+| 路径 | 选型 | 设计 |
+| --- | --- | --- |
+| 候选奖励（spoils） | 系统随机抽 N 个原型 | `run_card_design_session` |
+| 怪物牌库（deck） | `run_card_selection_session(size=5)` | 同上 |
+| 消耗品工坊 | `run_card_selection_session(size=1)` | 同上（带材料上下文）|
+| 装备工坊 | `run_card_selection_session(size=1)` | 同上（带材料上下文 + `speed` 扩展字段）|
 
 ---
 

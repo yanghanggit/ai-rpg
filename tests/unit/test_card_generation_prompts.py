@@ -1,9 +1,7 @@
-"""三类「创造卡牌」任务的提示词组装矩阵测试。
+"""各「创造卡牌」任务的提示词组装矩阵测试。
 
-字段语义（它是什么）与词缀规范（如何设计）按使用点组装：
-- spoils：不再注入全局规范，改为「原型 design + submit_card 工具契约」；
-- 初始牌库：选型阶段（select_deck_cards）同样不注入；设计阶段复用 card_design；
-- 工坊：目前仍注入两个全局规范。
+字段语义（它是什么）与词缀规范（如何设计）按使用点组装；四条路径均已不再
+注入全局规范，改为「原型 design + submit_card 工具契约」。
 """
 
 from ai_rpg.models import Card, MaterialItem
@@ -15,11 +13,13 @@ from ai_rpg.systems.card_design import (
     Candidate,
     build_card_design_prompt,
 )
-from ai_rpg.systems.craft_gear_item_action_system import _build_craft_gear_prompt
+from ai_rpg.systems.craft_consumable_item_action_system import (
+    _build_consumable_select_prompt,
+)
+from ai_rpg.systems.craft_gear_item_action_system import _build_gear_select_prompt
 
 FIELD_SPEC = "## 卡牌字段语义"
 AFFIX_SPEC = "## 词缀设计规范"
-SLOT_RULE = "只能对"
 SPOILS_SLOT = "可设计槽"
 
 
@@ -52,7 +52,7 @@ def test_deck_select_prompt_has_no_global_specs() -> None:
 
     assert FIELD_SPEC not in text
     assert AFFIX_SPEC not in text
-    assert "select_deck_cards" in text
+    assert "select_cards" in text
     assert str(DECK_SIZE) in text
 
 
@@ -68,13 +68,26 @@ def test_card_design_prompt_is_design_driven_without_global_rules() -> None:
     assert SPOILS_SLOT in text
 
 
-def test_craft_prompt_has_both_specs_without_slot_rule() -> None:
+def test_consumable_select_prompt_has_no_global_specs() -> None:
+    # 消耗品工坊已迁移到 card_design：选型阶段不注入全局规范。
     material = MaterialItem(name="材料.测试", description="一块材料", count=1)
-    text = _build_craft_gear_prompt([material])
+    text = _build_consumable_select_prompt([material])
 
-    assert FIELD_SPEC in text
-    assert AFFIX_SPEC in text
-    assert SLOT_RULE not in text
+    assert FIELD_SPEC not in text
+    assert AFFIX_SPEC not in text
+    assert "select_cards" in text
+    assert "材料.测试" in text
+
+
+def test_gear_select_prompt_has_no_global_specs() -> None:
+    # 装备工坊已迁移到 card_design：选型阶段不注入全局规范。
+    material = MaterialItem(name="材料.测试", description="一块材料", count=1)
+    text = _build_gear_select_prompt([material])
+
+    assert FIELD_SPEC not in text
+    assert AFFIX_SPEC not in text
+    assert "select_cards" in text
+    assert "材料.测试" in text
 
 
 def test_no_prompt_keeps_obsolete_slot_wording() -> None:
@@ -82,7 +95,7 @@ def test_no_prompt_keeps_obsolete_slot_wording() -> None:
     texts = [
         _build_deck_select_prompt("角色.测试"),
         build_card_design_prompt([_candidate()]),
-        _build_craft_gear_prompt([material]),
+        _build_gear_select_prompt([material]),
     ]
     for text in texts:
         assert "只能在原型已存在的槽位内设计" not in text

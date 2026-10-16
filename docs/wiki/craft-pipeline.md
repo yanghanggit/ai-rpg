@@ -16,7 +16,7 @@
 
 **系统消息（system_message）**：在蓝图 JSON 的 `world_entities` 中直接编写，包含战役设定、全局规则与工坊专属的角色规范。该消息作为实体 agent 记忆的第一条消息持久驻留，每次 LLM 调用时随 context 一同发送。
 
-**任务提示（prompt）**：由各合成系统的 `_build_craft_*_prompt` 函数即时构建，仅包含本次合成的材料清单、输出 JSON schema 以及框架层的机制约束。模板中不出现任何世界观相关文本。
+**任务提示（prompt）**：由各合成系统的 `_build_*_select_prompt` 函数即时构建，仅包含本次合成的材料清单与选型指引；随后由 `card_design` 引擎的 `run_card_design_session` 以「投入材料」为上下文、用统一的 `submit_card` 工具契约完成卡牌设计。两处提示都不出现任何世界观相关文本。
 
 二者在 `DeepSeekClient` 内部会合为完整的 API 消息数组：context 中的消息在前，本轮 prompt 作为最新的 user 消息追加。
 
@@ -40,7 +40,7 @@
 - `GearItem`：装备道具，合成时即生成完整卡牌规格（当前一张、列表承载），战斗中物化为手牌、战斗结束归还。
 - `CostumeItem`：纯外观道具，仅包含名称与描述，不参与任何战斗计算。
 
-三者共用同一材料池，但 agent 已按职责拆分为三个世界实体：消耗品由「世界.消耗品工坊」（`ConsumableWorkshopComponent`）负责，装备由「世界.装备工坊」（`GearWorkshopComponent`）负责，时装由「世界.时装工坊」（`CostumeWorkshopComponent`）负责，仅 prompt 模板与产物 schema 因目标类型而异。各工坊的具体审美与内容约束由其 `system_message` 注入，不在此处展开。
+三者共用同一材料池，但 agent 已按职责拆分为三个世界实体：消耗品由「世界.消耗品工坊」（`ConsumableWorkshopComponent`）负责，装备由「世界.装备工坊」（`GearWorkshopComponent`）负责，时装由「世界.时装工坊」（`CostumeWorkshopComponent`）负责。消耗品与装备的卡牌都走同一套两阶段流程（先从对应原型库选 1 个骨架，再由 `card_design` 引擎设计，见[卡牌设计指南（Card Design）](card-design.md) 的「生成契约」），仅选型提示、设计上下文与产物 schema 因目标类型而异；时装不含卡牌，不经过该引擎。各工坊的具体审美与内容约束由其 `system_message` 注入，不在此处展开。
 
 → 参见：[消耗品系统（ConsumableItem）](consumable-item.md)
 → 参见：[装备系统（GearItem）](gear-item.md)

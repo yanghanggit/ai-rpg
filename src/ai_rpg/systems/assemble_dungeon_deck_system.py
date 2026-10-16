@@ -3,16 +3,16 @@
 牌库组建分两阶段，都以怪物自己的 system prompt 作为**唯一且临时**的上下文
 （`agent_loop` 结束后即丢弃，不写回持久记忆）：
 
-1. 选型：怪物浏览手牌原型库，用 `select_deck_cards` 一次性提交恰好 DECK_SIZE 个 id；
+1. 选型：怪物浏览手牌原型库，用 `select_cards` 一次性提交恰好 DECK_SIZE 个 id
+   （选型逻辑由 `card_design` 引擎的共用能力提供）；
 2. 设计：由 `card_design` 引擎把选中原型物化为候选卡，交给同一怪物完成
    name / description / 数值微调与词缀设计。
 
-设计契约（工具、词缀校验、落地）统一由 `card_design` 提供；本系统只负责「选型 + 组装」，
-不再自带设计逻辑，也不再注入全局字段 / 词缀规范。
+设计契约（工具、词缀校验、落地）与选型能力统一由 `card_design` 提供；本系统只负责
+「组装 + 兜底」，不再自带设计逻辑，也不再注入全局字段 / 词缀规范。
 """
 
 import json
-from functools import partial
 from pathlib import Path
 from typing import (
     Any,
@@ -21,17 +21,14 @@ from typing import (
     Final,
     List,
     Optional,
-    Set,
     Tuple,
     final,
-    override,
 )
 from uuid import uuid4
 
 from loguru import logger
-from pydantic import BaseModel, Field
+from overrides import override
 
-from ..deepseek import ToolDefinition, ToolFunction, agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..models import (
@@ -47,12 +44,16 @@ from ..models import (
 from ..paths import DUNGEONS_DIR
 from ..pgsql import (
     CardPrototypeIndexEntry,
-    get_card_prototype,
     get_default_deck_card_jsons,
     list_card_prototype_index,
 )
 from ..utils import batch_run_boolean_tasks, prompt_builder
-from .card_design import Candidate, materialize_candidate, run_card_design_session
+from .card_design import (
+    Candidate,
+    materialize_candidate,
+    run_card_design_session,
+    run_card_selection_session,
+)
 
 
 ####################################################################################################################################
@@ -79,143 +80,6 @@ DECK_SIZE: Final[int] = 5  # 每副牌库固定 5 张
 
 
 ####################################################################################################################################
-LIST_CARD_PROTOTYPES_TOOL: Final[ToolDefinition] = ToolDefinition(
-    function=ToolFunction(
-        name="list_card_prototypes",
-        description="纵览全部可选手牌卡牌原型的索引（id / archetype / archetype_subtype / name / summary / keywords），用于组建牌库前建立全局观。",
-        parameters={"type": "object", "properties": {}},
-    )
-)
-
-
-####################################################################################################################################
-GET_CARD_PROTOTYPE_TOOL: Final[ToolDefinition] = ToolDefinition(
-    function=ToolFunction(
-        name="get_card_prototype",
-        description="按 id 获取某个手牌卡牌原型的完整规格（name / summary / design / card 全字段），用于精读候选。",
-        parameters={
-            "type": "object",
-            "properties": {
-                "prototype_id": {
-                    "type": "string",
-                    "description": "原型 id，必须来自 list_card_prototypes 返回的索引（如 proto.attack / proto.burst）",
-                },
-            },
-            "required": ["prototype_id"],
-        },
-    )
-)
-
-
-####################################################################################################################################
-SELECT_DECK_CARDS_TOOL: Final[ToolDefinition] = ToolDefinition(
-    function=ToolFunction(
-        name="select_deck_cards",
-        description=f"一次性提交恰好 {DECK_SIZE} 个手牌原型 id（可重复），确定初始牌库的原型组成，随后进入逐张设计。",
-        parameters={
-            "type": "object",
-            "properties": {
-                "prototype_ids": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "minItems": DECK_SIZE,
-                    "maxItems": DECK_SIZE,
-                    "description": f"恰好 {DECK_SIZE} 个原型 id，必须来自 list_card_prototypes 返回的索引，可重复",
-                },
-            },
-            "required": ["prototype_ids"],
-        },
-    )
-)
-
-
-####################################################################################################################################
-@final
-class _DeckSelection(BaseModel):
-    """select_deck_cards 的结果容器：怪物选定的原型 id 列表（可重复）。"""
-
-    prototype_ids: List[str] = Field(default_factory=list)
-
-
-####################################################################################################################################
-def _handle_list_card_prototypes(index: List[CardPrototypeIndexEntry]) -> str:
-    """处理 list_card_prototypes 工具调用：返回缓存的手牌原型索引纵览。"""
-    payload = [
-        {
-            "id": item["prototype_id"],
-            "archetype": item["archetype"],
-            "archetype_subtype": item["archetype_subtype"],
-            "name": item["name"],
-            "summary": item["summary"],
-            "keywords": item["keywords"],
-        }
-        for item in index
-    ]
-    logger.info(
-        f"[AssembleDungeonDeckSystem] list_card_prototypes 执行: 共 {len(payload)} 个手牌原型"
-    )
-    return json.dumps(payload, ensure_ascii=False)
-
-
-####################################################################################################################################
-def _handle_get_card_prototype(prototype_id: str) -> str:
-    """处理 get_card_prototype 工具调用：按 id 返回完整卡牌原型（含 card 全字段）。"""
-    try:
-
-        # 尝试获取卡牌原型，如果不存在则抛出 ValueError
-        proto = get_card_prototype(prototype_id)
-    except ValueError as e:
-
-        # 获取卡牌原型失败，返回错误信息
-        return f"错误：{e}。可用 id 请通过 list_card_prototypes 查询。"
-
-    # 校验卡牌类型是否为手牌，非手牌则返回错误信息
-    if proto.card_type != "手牌":
-        return f"错误：{prototype_id!r} 不是手牌卡牌原型，可用 id 请通过 list_card_prototypes 查询。"
-
-    # 返回卡牌原型的完整信息（含 card 全字段）
-    logger.info(f"[AssembleDungeonDeckSystem] get_card_prototype 执行: {prototype_id}")
-    return json.dumps(
-        {
-            "id": proto.prototype_id,
-            "name": proto.name,
-            "summary": proto.summary,
-            "keywords": json.loads(proto.keywords_json),
-            "design": proto.design,
-            "card": json.loads(proto.card_json),
-        },
-        ensure_ascii=False,
-    )
-
-
-####################################################################################################################################
-def _handle_select_deck_cards(
-    selection: _DeckSelection,
-    valid_ids: Set[str],
-    prototype_ids: List[str],
-) -> str:
-    """处理 select_deck_cards：校验数量与 id 合法性，不合法则返回错误让 agent 修正重提。"""
-    if len(prototype_ids) != DECK_SIZE:
-        return (
-            f"错误：需恰好 {DECK_SIZE} 个 prototype_id，实际 {len(prototype_ids)}。"
-            "请修正后重新调用 select_deck_cards。"
-        )
-
-    unknown = [pid for pid in prototype_ids if pid not in valid_ids]
-    if unknown:
-        return (
-            f"错误：未知原型 id {unknown}。"
-            "可用 id 请通过 list_card_prototypes 查询。"
-        )
-
-    selection.prototype_ids = list(prototype_ids)
-    logger.info(
-        f"[AssembleDungeonDeckSystem] select_deck_cards: {selection.prototype_ids}"
-    )
-    return f"已记录 {len(selection.prototype_ids)} 张牌的原型选择。"
-
-
-####################################################################################################################################
 @prompt_builder
 def _build_deck_select_prompt(actor_name: str) -> str:
     """选型阶段提示词：只负责挑原型，具体设计交给 card_design 引擎。"""
@@ -226,7 +90,7 @@ def _build_deck_select_prompt(actor_name: str) -> str:
 工作流程：
 1. `list_card_prototypes` 纵览全部手牌原型（archetype / subtype / summary / keywords）；
 2. 对候选调用 `get_card_prototype` 精读（design + card 全字段）；
-3. `select_deck_cards` 一次性提交恰好 {DECK_SIZE} 个 prototype_id。"""
+3. `select_cards` 一次性提交恰好 {DECK_SIZE} 个 prototype_id。"""
 
 
 ####################################################################################################################################
@@ -360,48 +224,24 @@ class AssembleDungeonDeckSystem(ReactiveProcessor):
             )
             return make_default_deck_cards(actor.name), True
 
-        valid_ids: Set[str] = {item["prototype_id"] for item in index}
-        selection = _DeckSelection()
-
         # 阶段一：选型。怪物自己的 system prompt 作为唯一上下文，结束后丢弃。
-        try:
-            picked = await agent_loop(
-                name=actor.name,
-                input_message=_build_deck_select_prompt(actor.name),
-                messages=[SystemMessage(content=actor.system_message)],
-                tools=[
-                    LIST_CARD_PROTOTYPES_TOOL,
-                    GET_CARD_PROTOTYPE_TOOL,
-                    SELECT_DECK_CARDS_TOOL,
-                ],
-                handlers={
-                    LIST_CARD_PROTOTYPES_TOOL.function.name: partial(
-                        _handle_list_card_prototypes, index
-                    ),
-                    GET_CARD_PROTOTYPE_TOOL.function.name: _handle_get_card_prototype,
-                    SELECT_DECK_CARDS_TOOL.function.name: partial(
-                        _handle_select_deck_cards, selection, valid_ids
-                    ),
-                },
-                max_rounds=12,
-                terminal_tools=[SELECT_DECK_CARDS_TOOL],
-            )
-        except Exception as e:
-            logger.error(
-                f"[AssembleDungeonDeckSystem] {actor.name} 选型 agent_loop 异常: {e}"
-            )
-            return make_default_deck_cards(actor.name), True
-
-        if not picked or len(selection.prototype_ids) != DECK_SIZE:
+        selection = await run_card_selection_session(
+            actor.name,
+            index,
+            [SystemMessage(content=actor.system_message)],
+            size=DECK_SIZE,
+            prompt=_build_deck_select_prompt(actor.name),
+            max_rounds=12,
+        )
+        if not selection:
             logger.warning(
-                f"[AssembleDungeonDeckSystem] {actor.name} 选型失败"
-                f"（{len(selection.prototype_ids)}/{DECK_SIZE}），回退默认"
+                f"[AssembleDungeonDeckSystem] {actor.name} 选型失败，回退默认"
             )
             return make_default_deck_cards(actor.name), True
 
         # 物化选中原型为候选卡（同一原型可重复 → 各自独立 uuid、独立设计）
         candidates: List[Candidate] = []
-        for prototype_id in selection.prototype_ids:
+        for prototype_id in selection.selected:
             candidate = materialize_candidate(prototype_id, actor.name)
             if candidate is None:
                 logger.error(

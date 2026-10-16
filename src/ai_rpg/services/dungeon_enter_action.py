@@ -22,7 +22,7 @@ from ..models import (
     PartyMemberComponent,
     PartyRosterComponent,
 )
-from ..models.dungeon import CombatRoom
+from ..models.dungeon_room import CombatRoom
 from ..utils import prompt_builder
 from .dungeon_archive_action import notify_dungeon_director_entered
 from .dungeon_spoils_actions import clear_party_spoils

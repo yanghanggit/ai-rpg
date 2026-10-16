@@ -23,9 +23,9 @@ from ai_rpg.models import (
     StageComponent,
     StageType,
 )
-from ai_rpg.models.dungeon import (
+from ai_rpg.models.dungeon import Dungeon
+from ai_rpg.models.dungeon_room import (
     AnyDungeonRoom,
-    Dungeon,
     OpeningRoom,
 )
 from ai_rpg.services.dungeon_advance_action import advance_dungeon

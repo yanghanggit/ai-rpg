@@ -5,7 +5,8 @@ from pydantic import BaseModel, Field
 
 from ..entitas import ContextData
 from .blueprint import Blueprint
-from .dungeon import AnyDungeonRoom, Dungeon
+from .dungeon import Dungeon
+from .dungeon_room import AnyDungeonRoom
 from .player_session import PlayerSession
 from .session_message import SessionMessage
 from .task import TaskSnapshot

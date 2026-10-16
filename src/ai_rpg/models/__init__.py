@@ -11,6 +11,7 @@ from .combat import *
 from .components import *
 from .dungeon import *
 from .dungeon_draft import *
+from .dungeon_room import *
 from .entities import *
 from .entity_factory import *
 from .items import *

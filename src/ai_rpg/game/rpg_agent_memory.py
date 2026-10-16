@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Optional, Sequence
+from typing import Any, Callable, Dict, Final, List, Optional, Sequence
 
 from loguru import logger
 
@@ -15,6 +15,26 @@ from ..models.messages import (
 )
 
 MessagePredicate = Callable[[ChatMessage, int, Sequence[ChatMessage]], bool]
+
+# replace_span 压缩时，把被替换掉的整段 dump 到新消息的额外属性所用的约定名。
+REPLACED_MESSAGES_ATTR: Final[str] = "replaced_messages"
+
+
+#################################################################################################################################################
+def _dump_messages(
+    messages: Sequence[ChatMessage], dump_attr: str
+) -> List[Dict[str, Any]]:
+    """把一段消息 dump 成 JSON 原生 dict 列表。
+
+    剔除每条消息上同名的 ``dump_attr``（若有），避免「总结套总结」时复盘 dump 层层嵌套、
+    体量指数膨胀；被剔除的旧 dump 仍可在更早的存档快照中回溯。
+    """
+    dumped: List[Dict[str, Any]] = []
+    for msg in messages:
+        data = msg.model_dump(mode="json")
+        data.pop(dump_attr, None)
+        dumped.append(data)
+    return dumped
 
 
 #################################################################################################################################################
@@ -241,18 +261,30 @@ class RPGAgentMemory:
         start_index: int,
         end_index: int,
         new_messages: Sequence[ChatMessage],
+        *,
+        dump_attr: Optional[str] = None,
     ) -> List[ChatMessage]:
         """用 new_messages 替换记忆中 ``[start_index, end_index)`` 半开区间，返回被替换的消息。
 
         与 ``AgentLoopResult.start_index / end_index`` 同约定（左闭右开），供「把一次
         loop 的整段过程压缩成一条总结」这类针对性压缩使用。传空 new_messages 即为回滚删除。
+
+        ``dump_attr`` 非空时，把被替换掉的整段（``model_dump(mode="json")`` 的结构化
+        列表，见 ``_dump_messages``）作为额外属性外挂到**最后一条新消息**上，供事后复盘。
+        额外属性不进 LLM payload，故不增加上下文开销；``new_messages`` 为空（回滚）时
+        无处挂载，自动跳过。
         """
         agent_memory = self.get_agent_memory(entity)
         replaced = agent_memory.messages[start_index:end_index]
-        agent_memory.messages[start_index:end_index] = list(new_messages)
+        new_list = list(new_messages)
+        agent_memory.messages[start_index:end_index] = new_list
+        attach_dump = dump_attr is not None and len(new_list) > 0
+        if dump_attr is not None and len(new_list) > 0:
+            setattr(new_list[-1], dump_attr, _dump_messages(replaced, dump_attr))
         logger.debug(
-            f"replace_span: {entity.name} 用 {len(new_messages)} 条替换 "
+            f"replace_span: {entity.name} 用 {len(new_list)} 条替换 "
             f"[{start_index}:{end_index}) 的 {len(replaced)} 条消息"
+            + (f"（dump→{dump_attr}）" if attach_dump else "")
         )
         return replaced
 

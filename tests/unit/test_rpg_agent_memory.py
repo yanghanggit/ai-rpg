@@ -14,6 +14,7 @@ from typing import Any, List, cast
 import pytest
 
 from ai_rpg.entitas.entity import Entity
+from ai_rpg.game.rpg_agent_memory import REPLACED_MESSAGES_ATTR
 from ai_rpg.models.messages import AIMessage, HumanMessage, SystemMessage
 
 # ---------------------------------------------------------------------------
@@ -547,3 +548,63 @@ class TestReplaceSpan:
         replaced = game.replace_span(actor, 1, 1, [])
         assert replaced == []
         assert len(game.get_agent_memory(actor).messages) == 3
+
+    def test_dump_attr_records_removed_messages(self, game: Any, actor: Entity) -> None:
+        """传 dump_attr 时，被删整段结构化 dump 到最后一条新消息上。"""
+        game.add_human_message(actor, HumanMessage(content="m0"))
+        game.get_agent_memory(actor).messages.append(
+            AIMessage(
+                content="",
+                additional_kwargs={
+                    "tool_calls": [
+                        {
+                            "id": "c1",
+                            "function": {"name": "get_entity_stats", "arguments": "{}"},
+                        }
+                    ]
+                },
+            )
+        )
+        game.add_human_message(actor, HumanMessage(content="m2"))
+        summary = HumanMessage(content="总结")
+
+        game.replace_span(actor, 1, 3, [summary], dump_attr=REPLACED_MESSAGES_ATTR)
+
+        dumped = getattr(summary, REPLACED_MESSAGES_ATTR)
+        assert [d["type"] for d in dumped] == ["ai", "human"]
+        assert (
+            dumped[0]["additional_kwargs"]["tool_calls"][0]["function"]["name"]
+            == "get_entity_stats"
+        )
+        assert dumped[1]["content"] == "m2"
+
+    def test_no_dump_without_attr(self, game: Any, actor: Entity) -> None:
+        """不传 dump_attr 时不外挂任何属性。"""
+        self._fill(game, actor, 3)
+        summary = HumanMessage(content="总结")
+        game.replace_span(actor, 1, 3, [summary])
+        assert not hasattr(summary, REPLACED_MESSAGES_ATTR)
+
+    def test_dump_skipped_when_replacement_empty(
+        self, game: Any, actor: Entity
+    ) -> None:
+        """回滚删除（new_messages 为空）时无挂载目标，不报错、不留 dump。"""
+        self._fill(game, actor, 3)
+        game.replace_span(actor, 1, 3, [], dump_attr=REPLACED_MESSAGES_ATTR)
+        assert [m.content for m in game.get_agent_memory(actor).messages] == ["msg0"]
+
+    def test_dump_strips_nested_same_attr(self, game: Any, actor: Entity) -> None:
+        """再次压缩一条自带 dump 的消息时，嵌套的同名字段被剔除，避免层层膨胀。"""
+        self._fill(game, actor, 3)  # msg0, msg1, msg2
+        inner = HumanMessage(content="inner")
+        game.replace_span(actor, 0, 2, [inner], dump_attr=REPLACED_MESSAGES_ATTR)
+        assert hasattr(inner, REPLACED_MESSAGES_ATTR)
+
+        # 此时记忆为 [inner(带 dump), msg2]；再把 inner 压缩进 outer
+        outer = HumanMessage(content="outer")
+        game.replace_span(actor, 0, 1, [outer], dump_attr=REPLACED_MESSAGES_ATTR)
+
+        dumped = getattr(outer, REPLACED_MESSAGES_ATTR)
+        assert len(dumped) == 1
+        assert dumped[0]["content"] == "inner"
+        assert REPLACED_MESSAGES_ATTR not in dumped[0]

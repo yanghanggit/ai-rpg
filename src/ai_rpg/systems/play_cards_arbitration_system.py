@@ -22,6 +22,7 @@ from ..game.dbg_combat_processor import (
     set_character_hp,
 )
 from ..game.dbg_game import DBGGame
+from ..game.rpg_agent_memory import REPLACED_MESSAGES_ATTR
 from ..models import (
     Card,
     CharacterStatsComponent,
@@ -633,6 +634,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                     **{LOOP_ID_ATTR: loop_id, LOOP_END_ATTR: loop_id},
                 )
             ],
+            dump_attr=REPLACED_MESSAGES_ATTR,
         )
 
         # 通知覆盖保证：行动者 + 所有目标（去重，行动者可能同时是目标）都必须收到通知。

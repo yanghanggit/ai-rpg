@@ -1,6 +1,5 @@
 """神器·出牌后仲裁系统：出牌/消耗品仲裁后，由所在场景（stage）结算其自身及存活角色携带的神器修正规则。"""
 
-import json
 from functools import partial
 from typing import Dict, Final, List, Optional, Tuple, final
 
@@ -8,7 +7,13 @@ from loguru import logger
 from overrides import override
 from pydantic import BaseModel, Field
 
-from ..deepseek import ToolDefinition, ToolFunction, agent_loop
+from ..deepseek import (
+    LOOP_END_ATTR,
+    LOOP_ID_ATTR,
+    ToolDefinition,
+    ToolFunction,
+    agent_loop,
+)
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_combat_processor import (
     compute_character_hand_block,
@@ -19,8 +24,8 @@ from ..game.dbg_combat_processor import (
     set_character_hp,
 )
 from ..game.dbg_game import DBGGame
+from ..game.rpg_agent_memory import REPLACED_MESSAGES_ATTR
 from ..models import (
-    AIMessage,
     Artifact,
     ArtifactPhase,
     CharacterStatsComponent,
@@ -32,6 +37,7 @@ from ..models import (
     render_labeled_str_list,
 )
 from ..utils import prompt_builder
+from .arbitration_prompt_builders import build_summary_section
 
 
 ###########################################################################################################################################
@@ -106,7 +112,9 @@ def _build_artifact_post_arbitration_prompt(
 ### narrative
 
 60-120 字，第三人称外部视角，纯感官描写，无数字 / 术语 / 内心。
-以神器的意象（description）为底色，写出修正规则本次如何显形（或未触发时的克制观感）；须与 combat_log 的 HP 变化一致，不得虚构规则之外的效果。"""
+以神器的意象（description）为底色，写出修正规则本次如何显形（或未触发时的克制观感）；须与 combat_log 的 HP 变化一致，不得虚构规则之外的效果。
+
+{build_summary_section()}"""
 
 
 @prompt_builder
@@ -130,6 +138,11 @@ def _build_stats_update_notification(final_hp: int, max_hp: int) -> str:
     return f"""# 你的生命值已更新
 
 当前HP: {final_hp}/{max_hp}"""
+
+
+def _build_loop_summary_memory(summary: str, combat_log: str) -> str:
+    """把 LLM 的压缩总结与系统生成的数据日志拼成一条长期记忆。"""
+    return f"{summary}\n\n## 数据日志\n{combat_log}"
 
 
 ###########################################################################################################################################
@@ -192,13 +205,17 @@ SUBMIT_ARBITRATION_TOOL: Final[ToolDefinition] = ToolDefinition(
                     "type": "string",
                     "description": "60-120 字第三人称演出叙事",
                 },
+                "summary": {
+                    "type": "string",
+                    "description": "本次仲裁的压缩性总结（将整段替换本次完整工具轨迹、作为长期记忆留存）：谁对谁、造成/恢复多少、谁被击倒、有无未结算项；自然语言、紧凑自包含，数值须与数据日志一致。",
+                },
                 "unsettled_affixes": {
                     "type": "array",
                     "items": {"type": "string"},
                     "description": "可选：无法按本次结算规则处理的原始条目列表（如要求抽牌/回能/额外行动，或凭空叠加没有牌承载的标记），仅供系统统计，不计入结算。",
                 },
             },
-            "required": ["combat_log", "narrative"],
+            "required": ["combat_log", "narrative", "summary"],
         },
     )
 )
@@ -215,6 +232,7 @@ class _ArbitrationContext(BaseModel):
     hp_initial: Dict[str, int] = Field(default_factory=dict)
     combat_log: Optional[str] = None
     narrative: Optional[str] = None
+    summary: Optional[str] = None
     unsettled_affixes: List[str] = Field(default_factory=list)
 
 
@@ -255,14 +273,26 @@ def _handle_submit_arbitration(
     ctx: _ArbitrationContext,
     combat_log: str,
     narrative: str,
+    summary: str,
     unsettled_affixes: Optional[List[str]] = None,
 ) -> str:
     """记录最终仲裁结果。"""
     ctx.combat_log = combat_log
     ctx.narrative = narrative
+    ctx.summary = summary
     if unsettled_affixes:
         ctx.unsettled_affixes = [str(a) for a in unsettled_affixes if str(a).strip()]
     return "仲裁结果已提交"
+
+
+def _compose_artifact_combat_log(ctx: _ArbitrationContext) -> str:
+    """据实际 change_hp 结果渲染 HP 段（DM 只写效果说明），使日志的 HP 部分不可能与落库不符。"""
+    assert ctx.combat_log is not None, "combat_log 不应为 None"
+    hp_tail = " ".join(
+        f"{name} {ctx.hp_initial[name]}→{ctx.hp_changes[name]}"
+        for name in ctx.hp_initial
+    )
+    return f"{ctx.combat_log}；HP:{hp_tail}" if hp_tail else ctx.combat_log
 
 
 ###########################################################################################################################################
@@ -362,8 +392,12 @@ class ArtifactPostArbitrationSystem(ReactiveProcessor):
         assert stage_memory.messages, "场景实体缺少首条 SystemMessage"
         messages = stage_memory.messages
 
+        # 本次 loop 的身份标记；结束后据 result 的区间把整段新增记忆压缩为一条总结。
+        loop_id = f"artifact:{current_round_number}:{action_entity.name}"
+        loop_start_index = len(messages)
+
         try:
-            ok = await agent_loop(
+            result = await agent_loop(
                 name=stage_entity.name,
                 input_message=prompt,
                 messages=messages,
@@ -386,23 +420,53 @@ class ArtifactPostArbitrationSystem(ReactiveProcessor):
                 max_rounds=6,
                 tool_choice="required",
                 terminal_tools=[SUBMIT_ARBITRATION_TOOL],
+                loop_id=loop_id,
             )
         except Exception as e:
             logger.error(
                 f"[ArtifactPostArbitrationSystem] {stage_entity.name} agent_loop 异常: {e}"
             )
+            # 回滚本次 loop 已追加的记忆，避免失败轨迹污染上下文。
+            self._game.replace_span(
+                stage_entity, loop_start_index, len(stage_memory.messages), []
+            )
             return
 
-        if not ok or ctx.combat_log is None or ctx.narrative is None:
+        if (
+            not result
+            or ctx.combat_log is None
+            or ctx.narrative is None
+            or ctx.summary is None
+        ):
             logger.error(
                 f"[ArtifactPostArbitrationSystem] {stage_entity.name} 未正常完成（未提交结果或达到轮次上限）"
             )
+            # 回滚本次 loop 追加的记忆。
+            self._game.replace_span(
+                stage_entity, result.start_index, result.end_index, []
+            )
             return
+
+        # 成功：把本次 loop 新增的整段记忆压缩为一条「总结 + 数据日志」，并标记 loop_id。
+        combat_log = _compose_artifact_combat_log(ctx)
+        self._game.replace_span(
+            stage_entity,
+            result.start_index,
+            result.end_index,
+            [
+                HumanMessage(
+                    content=_build_loop_summary_memory(ctx.summary, combat_log),
+                    **{LOOP_ID_ATTR: loop_id, LOOP_END_ATTR: loop_id},
+                )
+            ],
+            dump_attr=REPLACED_MESSAGES_ATTR,
+        )
 
         # 应用仲裁结果
         self._apply_artifact_arbitration_result(
             stage_entity=stage_entity,
             ctx=ctx,
+            combat_log=combat_log,
         )
 
     #######################################################################################################################################
@@ -410,19 +474,13 @@ class ArtifactPostArbitrationSystem(ReactiveProcessor):
         self,
         stage_entity: Entity,
         ctx: _ArbitrationContext,
+        combat_log: str,
     ) -> None:
         """落库本次仲裁结果：HP / 广播 / 回合日志。"""
 
-        assert ctx.combat_log is not None, "combat_log 不应为 None"
         assert ctx.narrative is not None, "narrative 不应为 None"
         narrative = ctx.narrative
         hp_changes = ctx.hp_changes
-        # 系统据实际 change_hp 结果渲染 HP 段（DM 只写效果说明），使日志的 HP 部分不可能与落库不符。
-        hp_tail = " ".join(
-            f"{name} {ctx.hp_initial[name]}→{hp_changes[name]}"
-            for name in ctx.hp_initial
-        )
-        combat_log = f"{ctx.combat_log}；HP:{hp_tail}" if hp_tail else ctx.combat_log
 
         # 校验 HP 变更中的实体名称（handler 已校验存在，此处兜底防御）
         for entity_name in hp_changes:
@@ -431,21 +489,6 @@ class ArtifactPostArbitrationSystem(ReactiveProcessor):
                     f"ArtifactPostArbitrationSystem: hp_changes 中的实体不存在于游戏中: {entity_name}"
                 )
                 return
-
-        # 仲裁者是场景（stage）：agent_loop 已原地写 prompt 与工具轨迹，这里仅补记结构化结果。
-        self._game.add_ai_message(
-            entity=stage_entity,
-            ai_message=AIMessage(
-                content=json.dumps(
-                    {
-                        "combat_log": combat_log,
-                        "narrative": narrative,
-                        "unsettled_affixes": ctx.unsettled_affixes,
-                    },
-                    ensure_ascii=False,
-                )
-            ),
-        )
 
         # 广播本次神器仲裁结果给场景内角色
         current_round_number = len(

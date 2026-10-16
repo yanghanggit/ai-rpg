@@ -1,17 +1,22 @@
 """TurnEndArbitrationSystem 单元测试。"""
 
 from types import SimpleNamespace
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from ai_rpg.deepseek import LOOP_END_ATTR, LOOP_ID_ATTR, AgentLoopResult
 from ai_rpg.entitas.context import Context
 from ai_rpg.entitas.entity import Entity
 from ai_rpg.game.dbg_game import DBGGame
+from ai_rpg.game.rpg_agent_memory import REPLACED_MESSAGES_ATTR
 from ai_rpg.models import (
     ActorComponent,
+    AIMessage,
     Card,
     HandComponent,
+    HumanMessage,
     PassTurnAction,
     TargetType,
 )
@@ -130,7 +135,11 @@ class TestTurnEndArbitrationSystem:
 
         with patch(
             "ai_rpg.systems.turn_end_arbitration_system.agent_loop",
-            new=AsyncMock(return_value=True),
+            new=AsyncMock(
+                return_value=AgentLoopResult(
+                    success=False, start_index=0, end_index=0, messages=[]
+                )
+            ),
         ) as mock_agent_loop:
             await system.react([holder])
 
@@ -138,6 +147,8 @@ class TestTurnEndArbitrationSystem:
         assert mock_agent_loop.await_args is not None
         # 仲裁者是所在场景，不是持有者本人
         assert mock_agent_loop.await_args.kwargs["name"] == "场景.测试密室"
+        # 携带唯一的 loop_id 标记
+        assert mock_agent_loop.await_args.kwargs["loop_id"] == "turn_end:1:怪物.纸人"
         # 提示词已写死目标恒为持有者
         assert (
             "目标恒为持有者本人 怪物.纸人"
@@ -146,3 +157,58 @@ class TestTurnEndArbitrationSystem:
         mock_game.get_agent_memory.assert_called_with(
             mock_game.resolve_stage_entity.return_value
         )
+        # 未提交结果（mock 未驱动 handler）：回滚本次 loop 记忆
+        mock_game.replace_span.assert_called_once_with(
+            mock_game.resolve_stage_entity.return_value, 0, 0, []
+        )
+
+
+class TestTurnEndLoopMemoryCompression:
+    def _fake_success(self, **kwargs: Any) -> AgentLoopResult:
+        messages = kwargs["messages"]
+        start = len(messages)
+        messages.append(
+            HumanMessage(content=kwargs["input_message"], loop_id=kwargs["loop_id"])
+        )
+        kwargs["handlers"]["submit_arbitration"](
+            combat_log="", narrative="叙事文本", summary="本次压缩总结"
+        )
+        messages.append(AIMessage(content="工具完成"))
+        return AgentLoopResult(
+            success=True,
+            start_index=start,
+            end_index=len(messages),
+            messages=messages,
+            start_message=messages[start],
+        )
+
+    @pytest.mark.asyncio
+    async def test_success_compresses_loop_span_into_summary(
+        self, context: Context, mock_game: MagicMock
+    ) -> None:
+        system = TurnEndArbitrationSystem(mock_game)
+        holder = _make_actor(context, "怪物.纸人")
+        holder.add(PassTurnAction, "怪物.纸人")
+        holder.get(HandComponent).cards.append(_make_card("灼纹", turn_end=True))
+
+        with patch(
+            "ai_rpg.systems.turn_end_arbitration_system.agent_loop",
+            new=AsyncMock(side_effect=self._fake_success),
+        ):
+            await system.react([holder])
+
+        # 整段 loop 记忆被压缩为一条 HumanMessage
+        assert mock_game.replace_span.call_count == 1
+        _, start_index, end_index, new_messages = mock_game.replace_span.call_args.args
+        assert (start_index, end_index) == (0, 2)
+        assert (
+            mock_game.replace_span.call_args.kwargs["dump_attr"]
+            == REPLACED_MESSAGES_ATTR
+        )
+        assert len(new_messages) == 1
+        summary = new_messages[0]
+        assert isinstance(summary, HumanMessage)
+        assert "本次压缩总结" in summary.content
+        assert "本次回合结束无 HP 变化" in summary.content
+        assert getattr(summary, LOOP_ID_ATTR) == "turn_end:1:怪物.纸人"
+        assert getattr(summary, LOOP_END_ATTR) == "turn_end:1:怪物.纸人"

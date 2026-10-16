@@ -14,6 +14,7 @@ from ai_rpg.deepseek import LOOP_END_ATTR, LOOP_ID_ATTR, AgentLoopResult
 from ai_rpg.entitas.context import Context
 from ai_rpg.entitas.entity import Entity
 from ai_rpg.game.dbg_game import DBGGame
+from ai_rpg.game.rpg_agent_memory import REPLACED_MESSAGES_ATTR
 from ai_rpg.models import (
     ActorComponent,
     Card,
@@ -135,6 +136,10 @@ class TestLoopMemoryCompression:
         assert mock_game.replace_span.call_count == 1
         _, start_index, end_index, new_messages = mock_game.replace_span.call_args.args
         assert (start_index, end_index) == (0, 2)
+        assert (
+            mock_game.replace_span.call_args.kwargs["dump_attr"]
+            == REPLACED_MESSAGES_ATTR
+        )
         assert len(new_messages) == 1
         summary = new_messages[0]
         assert isinstance(summary, HumanMessage)

@@ -4,7 +4,6 @@
 被结算的是发起 pass turn 的行动者（持有者）手牌中带回合结束词缀的卡牌。
 """
 
-import json
 from functools import partial
 from typing import Dict, Final, List, Optional, final
 
@@ -12,7 +11,13 @@ from loguru import logger
 from overrides import override
 from pydantic import BaseModel, Field
 
-from ..deepseek import ToolDefinition, ToolFunction, agent_loop
+from ..deepseek import (
+    LOOP_END_ATTR,
+    LOOP_ID_ATTR,
+    ToolDefinition,
+    ToolFunction,
+    agent_loop,
+)
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_combat_processor import (
     compute_character_hand_block,
@@ -20,8 +25,8 @@ from ..game.dbg_combat_processor import (
     set_character_hp,
 )
 from ..game.dbg_game import DBGGame
+from ..game.rpg_agent_memory import REPLACED_MESSAGES_ATTR
 from ..models import (
-    AIMessage,
     Card,
     CharacterStatsComponent,
     CombatArbitrationEvent,
@@ -37,6 +42,7 @@ from .arbitration_prompt_builders import (
     ArbitrationKind,
     build_calc_rules_section,
     build_narrative_section,
+    build_summary_section,
     build_tool_flow_section,
 )
 
@@ -93,7 +99,9 @@ def _build_turn_end_arbitration_tool_prompt(
 
 ## {SUBMIT_ARBITRATION_TOOL.function.name} 字段说明
 
-{build_narrative_section()}"""
+{build_narrative_section()}
+
+{build_summary_section()}"""
 
 
 @prompt_builder
@@ -117,6 +125,11 @@ def _build_stats_update_notification(final_hp: int, max_hp: int) -> str:
     return f"""# 你的生命值已更新
 
 当前HP: {final_hp}/{max_hp}"""
+
+
+def _build_loop_summary_memory(summary: str, combat_log: str) -> str:
+    """把 LLM 的压缩总结与系统生成的数据日志拼成一条长期记忆。"""
+    return f"{summary}\n\n## 数据日志\n{combat_log}"
 
 
 ###########################################################################################################################################
@@ -232,13 +245,17 @@ SUBMIT_ARBITRATION_TOOL: Final[ToolDefinition] = ToolDefinition(
                     "type": "string",
                     "description": "60-120 字第三人称演出叙事",
                 },
+                "summary": {
+                    "type": "string",
+                    "description": "本次仲裁的压缩性总结（将整段替换本次完整工具轨迹、作为长期记忆留存）：谁对谁、造成/恢复多少、谁被击倒、有无未结算项；自然语言、紧凑自包含，数值须与数据日志一致。",
+                },
                 "unsettled_affixes": {
                     "type": "array",
                     "items": {"type": "string"},
                     "description": "可选：无法按上述计算规则结算的词缀原文列表（如要求抽牌/回能/额外行动，或凭空叠加没有牌承载的标记），仅供系统统计，不计入结算。",
                 },
             },
-            "required": ["combat_log", "narrative"],
+            "required": ["combat_log", "narrative", "summary"],
         },
     )
 )
@@ -254,6 +271,7 @@ class _TurnEndArbitrationContext(BaseModel):
     pending_hp: Dict[str, int] = Field(default_factory=dict)
     segments: List[str] = Field(default_factory=list)
     narrative: Optional[str] = None
+    summary: Optional[str] = None
     unsettled_affixes: List[str] = Field(default_factory=list)
 
 
@@ -373,11 +391,13 @@ def _handle_submit_arbitration(
     ctx: _TurnEndArbitrationContext,
     combat_log: str,
     narrative: str,
+    summary: str,
     unsettled_affixes: Optional[List[str]] = None,
 ) -> str:
     """处理「提交仲裁结果工具」调用。combat_log 由系统根据 resolve 调用生成，入参忽略。"""
     del combat_log
     ctx.narrative = narrative
+    ctx.summary = summary
     if unsettled_affixes:
         ctx.unsettled_affixes = [str(a) for a in unsettled_affixes if str(a).strip()]
     return "仲裁结果已提交"
@@ -447,11 +467,16 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
         )
         ctx = _TurnEndArbitrationContext()
 
+        # 本次 loop 的身份标记；结束后据 result 的区间把整段新增记忆压缩为一条总结。
+        stage_memory = self._game.get_agent_memory(stage_entity)
+        loop_id = f"turn_end:{current_round_number}:{pass_turn_entity.name}"
+        loop_start_index = len(stage_memory.messages)
+
         try:
-            ok = await agent_loop(
+            result = await agent_loop(
                 name=stage_entity.name,
                 input_message=prompt,
-                messages=self._game.get_agent_memory(stage_entity).messages,
+                messages=stage_memory.messages,
                 tools=[
                     GET_ENTITY_STATS_TOOL,
                     RESOLVE_DAMAGE_TOOL,
@@ -481,23 +506,50 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
                 max_rounds=6,
                 tool_choice="required",
                 terminal_tools=[SUBMIT_ARBITRATION_TOOL],
+                loop_id=loop_id,
             )
         except Exception as e:
             logger.error(
                 f"TurnEndArbitrationSystem: [{pass_turn_entity.name}] agent_loop 异常: {e}"
             )
+            # 回滚本次 loop 已追加的记忆，避免失败轨迹污染上下文。
+            self._game.replace_span(
+                stage_entity, loop_start_index, len(stage_memory.messages), []
+            )
             return
 
-        if not ok or ctx.narrative is None:
+        if not result or ctx.narrative is None or ctx.summary is None:
             logger.error(
                 f"TurnEndArbitrationSystem: [{pass_turn_entity.name}] 回合结束仲裁未正常完成，跳过落库"
             )
+            # 回滚本次 loop 追加的记忆。
+            self._game.replace_span(
+                stage_entity, result.start_index, result.end_index, []
+            )
             return
+
+        # 成功：把本次 loop 新增的整段记忆压缩为一条「总结 + 数据日志」，并标记 loop_id。
+        combat_log = (
+            "；".join(ctx.segments) if ctx.segments else "本次回合结束无 HP 变化"
+        )
+        self._game.replace_span(
+            stage_entity,
+            result.start_index,
+            result.end_index,
+            [
+                HumanMessage(
+                    content=_build_loop_summary_memory(ctx.summary, combat_log),
+                    **{LOOP_ID_ATTR: loop_id, LOOP_END_ATTR: loop_id},
+                )
+            ],
+            dump_attr=REPLACED_MESSAGES_ATTR,
+        )
 
         self._apply_turn_end_arbitration_result(
             stage_entity,
             pass_turn_entity,
             ctx,
+            combat_log,
         )
 
     #######################################################################################################################################
@@ -506,13 +558,11 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
         stage_entity: Entity,
         holder: Entity,
         ctx: _TurnEndArbitrationContext,
+        combat_log: str,
     ) -> None:
-        """应用单个持有者的回合结束仲裁结果：写场景记忆、更新受影响角色 HP、全场景广播。"""
+        """应用单个持有者的回合结束仲裁结果：更新受影响角色 HP、全场景广播、写回合记录。"""
 
         assert ctx.narrative is not None, "narrative 不应为 None"
-        combat_log = (
-            "；".join(ctx.segments) if ctx.segments else "本次回合结束无 HP 变化"
-        )
         narrative = ctx.narrative
         hp_changes = ctx.hp_changes
 
@@ -523,22 +573,6 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
                     f"TurnEndArbitrationSystem: hp_changes 中的实体不存在于游戏中: {entity_name}"
                 )
                 return
-
-        # 仲裁者是所在场景（stage），与出牌仲裁一致：结果写入 stage 记忆。
-        # agent_loop 已原地写入完整提示词与工具调用轨迹，这里仅补记干净的结构化结果。
-        self._game.add_ai_message(
-            entity=stage_entity,
-            ai_message=AIMessage(
-                content=json.dumps(
-                    {
-                        "combat_log": combat_log,
-                        "narrative": narrative,
-                        "unsettled_affixes": ctx.unsettled_affixes,
-                    },
-                    ensure_ascii=False,
-                )
-            ),
-        )
 
         # 全场景广播（与出牌仲裁一致）：除受影响角色外，持有者与旁观者也需知道回合结束
         # 发生了什么——持有者自身 HP 未必变化（如只伤害对手的词缀）。

@@ -20,15 +20,20 @@ from pydantic import BaseModel, ConfigDict, Field
 
 ############################################################################################################
 class BaseMessage(BaseModel):
-    """消息基类"""
+    """消息基类。
+
+    字段约定：
+    - content: 文本内容；
+    - additional_kwargs: LLM 响应里的结构化附属数据（reasoning_content / tool_calls 等）；
+    - 业务/调试标记（如 opening_initialization、loop_id、context_usage_ratio）走
+      ``extra="allow"`` 额外属性，不挤占 additional_kwargs。
+    """
 
     model_config = ConfigDict(extra="allow")
 
     type: str
     content: str = ""
-    additional_kwargs: Dict[str, Any] = Field(
-        default_factory=dict
-    )  # 显式声明字段，避免与 extra="allow" 冲突导致无法访问, LLM 响应的结构化附属数据（目前专用于存 reasoning_content）
+    additional_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
     def __init__(self, **data: Any) -> None:
         super().__init__(**data)
@@ -105,7 +110,7 @@ def _format_tool_calls(tool_calls: Any) -> str:
 
 ############################################################################################################
 def get_buffer_string(
-    messages: Sequence[BaseMessage],
+    messages: Sequence[ChatMessage],
     system_prefix: str = "System",
     human_prefix: str = "Human",
     ai_prefix: str = "AI",

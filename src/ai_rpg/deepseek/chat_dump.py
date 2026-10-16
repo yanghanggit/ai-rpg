@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, List
 
 from loguru import logger
 
-from ..models.messages import AIMessage, BaseMessage, HumanMessage, get_buffer_string
+from ..models.messages import AIMessage, ChatMessage, HumanMessage, get_buffer_string
 
 if TYPE_CHECKING:
     from .client import DeepSeekClient
@@ -38,7 +38,7 @@ def dump_chat(client: DeepSeekClient) -> None:
 
         # 拷贝 messages，再把本轮 prompt / response 分别补齐，
         # 使全部消息（含本轮）统一交给 get_buffer_string.
-        messages: List[BaseMessage] = list(client._messages)
+        messages: List[ChatMessage] = list(client._messages)
 
         # 仅在 prompt 非空时追加本轮 prompt：continuation 模式下 prompt 为空，
         # 不应产生一条幽灵空 Human 消息。

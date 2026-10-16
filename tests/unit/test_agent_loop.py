@@ -9,7 +9,7 @@ import pytest
 from ai_rpg.deepseek import ToolDefinition, ToolFunction
 from ai_rpg.deepseek.agent_loop import agent_loop
 from ai_rpg.deepseek.client import ToolCall
-from ai_rpg.models.messages import AIMessage, ChatMessage
+from ai_rpg.models.messages import AIMessage, ChatMessage, SystemMessage
 
 
 #######################################################################################################################################
@@ -399,3 +399,55 @@ async def test_result_rounds_track_each_round_appends() -> None:
     ]
     assert result.start_index == 0
     assert result.end_index == len(messages) == 5
+
+
+#######################################################################################################################################
+@pytest.mark.asyncio
+async def test_default_mutates_messages_in_place() -> None:
+    """默认 mutate_messages=True：原地追加，result.messages 就是入参本身。"""
+    messages: list[ChatMessage] = [SystemMessage(content="sys")]
+    fake_stop = _FakeClient(AIMessage(content="done"), "stop", [])
+    with patch("ai_rpg.deepseek.agent_loop.DeepSeekClient") as mock_client:
+        mock_client.return_value = fake_stop
+        result = await agent_loop(
+            name="test",
+            input_message="go",
+            messages=messages,
+            tools=[],
+            handlers={},
+        )
+
+    assert result.messages is messages
+    assert len(messages) == 3  # sys + human + ai
+    assert result.start_index == 1
+    assert result.end_index == 3
+
+
+#######################################################################################################################################
+@pytest.mark.asyncio
+async def test_mutate_messages_false_isolates_input() -> None:
+    """mutate_messages=False：在副本上工作，入参不被改动，改动范围看 result.messages。"""
+    original: list[ChatMessage] = [SystemMessage(content="sys")]
+    fake_stop = _FakeClient(AIMessage(content="done"), "stop", [])
+    with patch("ai_rpg.deepseek.agent_loop.DeepSeekClient") as mock_client:
+        mock_client.return_value = fake_stop
+        result = await agent_loop(
+            name="test",
+            input_message="go",
+            messages=original,
+            tools=[],
+            handlers={},
+            mutate_messages=False,
+        )
+
+    # 入参保持不变
+    assert len(original) == 1
+    assert original[0].content == "sys"
+    # 工作列表是副本，包含本次 loop 的全部改动
+    assert result.messages is not original
+    assert len(result.messages) == 3
+    assert result.messages[result.start_index : result.end_index] == result.messages[1:]
+    assert [type(m).__name__ for m in result.messages[1:]] == [
+        "HumanMessage",
+        "AIMessage",
+    ]

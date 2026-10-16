@@ -33,7 +33,7 @@ from dotenv import load_dotenv
 from loguru import logger
 from pydantic import BaseModel
 
-from ..models.messages import AIMessage, BaseMessage, ToolMessage
+from ..models.messages import AIMessage, ChatMessage, ToolMessage
 from . import chat_dump
 from .errors import DeepSeekError, ErrorKind
 
@@ -194,7 +194,7 @@ class DeepSeekClient:
         self,
         label: str,
         input_message: str,
-        messages: Sequence[BaseMessage],
+        messages: Sequence[ChatMessage],
         model: str = MODEL_FLASH,
         thinking: bool = False,
         timeout: Optional[int] = None,
@@ -213,7 +213,7 @@ class DeepSeekClient:
 
         self._label: Final[str] = label
         self._input_message: Final[str] = input_message
-        self._messages: Final[Sequence[BaseMessage]] = messages
+        self._messages: Final[Sequence[ChatMessage]] = messages
         self._model: Final[str] = model
         self._thinking: Final[bool] = thinking
         self._timeout: Final[int] = timeout if timeout is not None else 30
@@ -346,11 +346,9 @@ class DeepSeekClient:
                 else:
                     messages.append({"role": "assistant", "content": msg.content})
             else:
+                # 走到这里只可能是 SystemMessage / HumanMessage（AI / Tool 已在上分支处理）
                 role = _ROLE_MAP.get(msg.type, "user")
-                content = (
-                    msg.content if isinstance(msg.content, str) else str(msg.content)
-                )
-                messages.append({"role": role, "content": content})
+                messages.append({"role": role, "content": msg.content})
 
         # input_message 为空字符串时表示 continuation 模式，不追加 user 消息
         if self._input_message != "":

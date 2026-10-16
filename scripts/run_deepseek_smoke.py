@@ -65,7 +65,7 @@ async def test_batch_chat() -> None:
 def test_get_buffer_string() -> None:
     """测试 get_buffer_string 函数"""
     print("\n=== 测试 get_buffer_string() ===")
-    messages = [
+    messages: List[ChatMessage] = [
         SystemMessage(content="你是一个有帮助的助手。"),
         HumanMessage(content="你好，请介绍一下自己。"),
         AIMessage(content="你好！我是 DeepSeek，一个 AI 助手。"),

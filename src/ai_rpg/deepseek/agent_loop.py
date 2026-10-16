@@ -51,15 +51,19 @@ class AgentLoopResult:
     ``if not ok:`` 写法无需改动。
 
     外部据此定位本次 loop 对 memory 的改动：
-    - 改动范围：``messages[start_index:end_index]``
+    - 改动范围：``messages[start_index:end_index]``（``messages`` 即 ``result.messages``）
     - 起点消息：``start_message``（本次 loop 追加的首条 HumanMessage；continuation
       模式未追加人类消息时为 None）
     - 中间过程：``rounds``（每轮的 client 与消息增量）
+
+    ``messages`` 为本次 loop 实际操作的列表：``mutate_messages=True`` 时就是入参本身，
+    ``False`` 时是入参的浅拷贝。
     """
 
     success: bool
     start_index: int
     end_index: int
+    messages: List[ChatMessage]
     rounds: List[AgentLoopRound] = field(default_factory=list)
     start_message: Optional[HumanMessage] = None
 
@@ -125,6 +129,7 @@ class _LoopSpanTracker:
             success=success,
             start_index=self.start_index,
             end_index=len(self._history),
+            messages=self._history,
             rounds=self.rounds,
             start_message=start_message,
         )
@@ -148,6 +153,7 @@ async def agent_loop(
     messages: List[ChatMessage],
     tools: List[ToolDefinition],
     handlers: Dict[str, Callable[..., Union[str, Awaitable[str]]]],
+    mutate_messages: bool = True,
     max_rounds: int = 5,
     max_terminal_nudges: int = 2,
     tool_choice: Literal["auto", "none", "required"] = "auto",
@@ -171,9 +177,16 @@ async def agent_loop(
       本次 loop 追加的最后一条消息会带上 ``LOOP_END_ATTR == loop_id``（异常/取消
       路径也会补打终点标记），使外部可用 ``models.messages.find_marked_span``
       （``start_attr=LOOP_ID_ATTR``，``end_attr=LOOP_END_ATTR``）在存档记忆中反查边界。
+
+    ``mutate_messages``（默认 True）控制是否原地修改入参 ``messages``：为 False 时
+    在入参的浅拷贝上工作，调用方列表与持久记忆不被改动（注意这不等同于上下文隔离，
+    入参带什么历史就仍会发给 LLM）；两种模式下改动范围都是
+    ``result.messages[start_index:end_index]``。
     """
-    # 方案 C：不复制 messages，直接原地追加，由调用方决定是否传入副本以隔离。
-    history: List[ChatMessage] = messages
+    # 默认原地追加（方案 C）；mutate_messages=False 时在浅拷贝上工作。
+    # 浅拷贝（仅复制列表结构、共享消息对象）已足够：循环只做 append，唯一的
+    # setattr(LOOP_END_ATTR) 目标是循环内新建的消息。
+    history: List[ChatMessage] = messages if mutate_messages else list(messages)
     current_prompt = input_message
     terminal_tool_names = {t.function.name for t in terminal_tools}
     nudge_count = 0

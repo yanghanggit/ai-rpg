@@ -9,7 +9,7 @@ from ..entitas import Entity, Matcher
 from ..game.dbg_game import DBGGame
 from ..models import (
     AnyDungeonRoom,
-    BaseMessage,
+    ChatMessage,
     Dungeon,
     DungeonDirectorComponent,
     HumanMessage,
@@ -139,7 +139,7 @@ def _build_room_sequence_block(dungeon: Dungeon) -> str:
 def _build_entity_fact_block(
     label: str,
     entity_name: str,
-    messages: Sequence[BaseMessage],
+    messages: Sequence[ChatMessage],
 ) -> str:
     """将单个实体的记忆（跳过 SystemMessage）整理为一段事实记忆文本。
 

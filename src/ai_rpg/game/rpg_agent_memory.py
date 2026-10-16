@@ -6,17 +6,15 @@ from ..entitas import Entity
 from ..models import AgentMemory, WorldState
 from ..models.messages import (
     AIMessage,
-    BaseMessage,
     ChatMessage,
     HumanMessage,
     MessageSpan,
     SystemMessage,
-    ToolMessage,
     find_marked_span,
     find_message,
 )
 
-MessagePredicate = Callable[[BaseMessage, int, Sequence[ChatMessage]], bool]
+MessagePredicate = Callable[[ChatMessage, int, Sequence[ChatMessage]], bool]
 
 
 #################################################################################################################################################
@@ -103,9 +101,7 @@ class RPGAgentMemory:
     def reset_agent_memory(
         self,
         entity: Entity,
-        new_messages: Sequence[
-            SystemMessage | HumanMessage | AIMessage | ToolMessage
-        ] = (),
+        new_messages: Sequence[ChatMessage] = (),
     ) -> None:
         """把实体记忆重制为「首条 system prompt + new_messages」，其余全部丢弃。
 
@@ -192,7 +188,7 @@ class RPGAgentMemory:
     def remove_messages(
         self,
         entity: Entity,
-        messages: Sequence[BaseMessage],
+        messages: Sequence[ChatMessage],
     ) -> int:
         """从实体记忆中删除指定的消息对象"""
         if len(messages) == 0:
@@ -215,9 +211,9 @@ class RPGAgentMemory:
     def remove_message_range(
         self,
         entity: Entity,
-        begin_message: SystemMessage | HumanMessage | AIMessage | ToolMessage,
-        end_message: SystemMessage | HumanMessage | AIMessage | ToolMessage,
-    ) -> List[SystemMessage | HumanMessage | AIMessage | ToolMessage]:
+        begin_message: ChatMessage,
+        end_message: ChatMessage,
+    ) -> List[ChatMessage]:
         """从实体记忆中删除指定范围的消息（包含两端）"""
         assert (
             begin_message != end_message
@@ -243,7 +239,7 @@ class RPGAgentMemory:
         self,
         entity: Entity,
         index: int,
-        messages: Sequence[SystemMessage | HumanMessage | AIMessage | ToolMessage],
+        messages: Sequence[ChatMessage],
     ) -> None:
         """在实体记忆的指定位置插入一段连续的消息序列"""
         if len(messages) == 0:

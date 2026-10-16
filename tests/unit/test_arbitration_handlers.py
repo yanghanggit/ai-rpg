@@ -49,8 +49,7 @@ def _block_card(block: int) -> Card:
         name="盾",
         description="盾",
         block=block,
-        self_target=True,
-        target_type=TargetType.SINGLE,
+        target_type=TargetType.SELF,
     )
 
 

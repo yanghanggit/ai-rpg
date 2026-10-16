@@ -103,16 +103,17 @@ def test_speed_within_range_accepted_and_persisted() -> None:
     assert results[0].speed == -2
 
 
-def test_transferable_with_self_target_rejected() -> None:
-    # 互斥组合在输入侧即被友好拦截，不进入 results。
+def test_transferable_with_self_type_accepted() -> None:
+    # SELF 锁定自身并解析出 [actor]，与 transferable 同开用于自传递复制。
     results: List[_CraftGearSpec] = []
     reply = _handle_submit_gear(
         results,
         name="装备.镜影",
         description="",
-        card=_card(transferable=True, self_target=True),
+        card=_card(transferable=True, target_type="self"),
     )
 
-    assert reply.startswith("错误")
-    assert "互斥" in reply
-    assert results == []
+    assert not reply.startswith("错误")
+    assert len(results) == 1
+    assert results[0].transferable is True
+    assert results[0].target_type == "self"

@@ -245,7 +245,7 @@ def _format_card_for_prompt(candidate: _Candidate) -> str:
         f"  原型摘要: {candidate.summary}",
         f"  设计指导: {candidate.guide}",
         f"  骨架（数值可微调）: cost={card.cost} damage={card.damage} hit_count={card.hit_count} "
-        f"block={card.block} target_type={card.target_type.value} self_target={card.self_target}",
+        f"block={card.block} target_type={card.target_type.value}",
     ]
 
     flags: List[str] = []
@@ -337,7 +337,7 @@ def _build_spoils_prompt(entity: Entity, candidates: List[_Candidate]) -> str:
 
 ## 原型与设计边界
 
-- **布尔与目标字段只读**：`target_type/self_target/playable/exhaust/retain/ethereal/transferable` 由原型给定，不可改动。
+- **布尔与目标字段只读**：`target_type/playable/exhaust/retain/ethereal/transferable` 由原型给定，不可改动。
 - **数值可微调**：`cost/damage/hit_count/block` 可在原型基础上调整（提交时可选给出，不给则沿用原型）。
 - **词缀槽位**：只能对原型已非空的槽位（有引导）提交设计，不得新增其它时机；不提交 / 设计不合法则该槽**置空**。
 - **原型词缀只是引导**：它提示“这一槽该往哪个方向设计”，不是可照抄的成品；请按上方规范为你的角色写出具体规则。

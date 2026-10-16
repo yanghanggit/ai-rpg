@@ -44,7 +44,6 @@ def _make_card(name: str, *, autonomous: bool = False) -> Card:
         damage=1,
         hit_count=1,
         target_type=TargetType.SINGLE,
-        self_target=False,
     )
 
 

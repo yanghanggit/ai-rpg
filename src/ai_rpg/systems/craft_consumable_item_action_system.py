@@ -41,6 +41,11 @@ CONSUMABLE_DAMAGE_MIN: Final[int] = 1
 CONSUMABLE_DAMAGE_MAX: Final[int] = 8
 CONSUMABLE_HIT_COUNT_MAX: Final[int] = 3
 
+# 消耗品本阶段只做伤害，目标类型白名单显式排除 self（不做自我治疗/自伤）。
+CONSUMABLE_TARGET_TYPES: Final[frozenset[str]] = frozenset(
+    {TargetType.SINGLE.value, TargetType.ALL.value, TargetType.SPREAD.value}
+)
+
 
 #######################################################################################################################################
 @final
@@ -213,11 +218,10 @@ def _handle_submit_consumable(
             f"错误：hit_count 必须在 1..{CONSUMABLE_HIT_COUNT_MAX} 之间"
             f"（当前 {spec.hit_count}）。请修正后重新调用 submit_consumable。"
         )
-    valid_target_types = {t.value for t in TargetType}
-    if spec.target_type not in valid_target_types:
+    if spec.target_type not in CONSUMABLE_TARGET_TYPES:
         return f"错误：target_type 无效（{spec.target_type!r}）。请修正后重新提交。"
 
-    # 构造探针卡：固定 0 费、一次性、纯伤害、非 self_target。
+    # 构造探针卡：固定 0 费、一次性、纯伤害。
     probe = Card(
         name=spec.name,
         description=spec.description,
@@ -233,7 +237,6 @@ def _handle_submit_consumable(
         damage=spec.damage,
         hit_count=spec.hit_count,
         block=0,
-        self_target=False,
         target_type=TargetType(spec.target_type),
     )
     for affix in probe.on_play_affixes:
@@ -281,7 +284,7 @@ def _build_craft_consumable_prompt(materials: List[MaterialItem]) -> str:
 ## 卡牌规格（card）
 
 `card` 是这件消耗品在战斗中被转化为手牌时的卡牌规格；`card` 内不输出 `name`/`description`（由系统沿用消耗品的）。
-消耗品卡**固定 0 费（cost=0）且一次性（exhaust=True）**，本阶段**只做伤害**：只会用到 `card` 中的 `on_play_affixes` / `damage` / `hit_count` / `target_type` 四个字段，其余骨架字段（cost / exhaust / block / self_target 等）由系统固定，无需你输出。
+消耗品卡**固定 0 费（cost=0）且一次性（exhaust=True）**，本阶段**只做伤害**：只会用到 `card` 中的 `on_play_affixes` / `damage` / `hit_count` / `target_type` 四个字段，其余骨架字段（cost / exhaust / block 等）由系统固定，无需你输出。
 
 {BUILD_CARD_FIELD_DESCRIPTION}
 
@@ -414,7 +417,6 @@ class CraftConsumableItemActionSystem(ReactiveProcessor):
             damage=result.damage,
             hit_count=result.hit_count,
             block=0,
-            self_target=False,
             target_type=TargetType(result.target_type),
         )
 

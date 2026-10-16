@@ -83,7 +83,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             name="基础攻击",
             summary="单目标直接伤害，最低成本的输出基线。",
             guide=(
-                "字段：target_type=SINGLE、self_target=False、damage=2、hit_count=1、"
+                "字段：target_type=SINGLE、damage=2、hit_count=1、"
                 "block=0、cost=1。填充牌库时 damage 叠加角色攻击力；block 为 0，不承担防御。"
                 "设计指引：作为输出卡原型，变体在其上叠加词缀（穿甲/多段）或流转标志"
                 "（exhaust/ethereal）以创造差异化。"
@@ -325,11 +325,11 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             name="自我调息",
             summary="锁定自身 + 保留，每回合末续战恢复（数值方向自定）。",
             guide=(
-                "字段：self_target=True、retain=True、block=1、on_turn_end_affixes（引导）。"
+                "字段：target_type=SELF、retain=True、block=1、on_turn_end_affixes（引导）。"
                 "牌跨回合留在手牌，每次 pass turn 触发一条续战规则；请选一个（或组合）内建数值"
                 "写成你自己的具体词缀。持续效果由这张牌本身承载。"
             ),
-            keywords=("self_target", "retain", "on_turn_end_affixes"),
+            keywords=("target_type", "retain", "on_turn_end_affixes"),
         ),
     ),
     CardPrototype(
@@ -360,13 +360,13 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             name="基础防御",
             summary="为自身提供格挡，持有期间提升防御。",
             guide=(
-                "字段：self_target=True（忽略 target_type）、damage=0、block=1、cost=1、retain=False。"
+                "字段：target_type=SELF、damage=0、block=1、cost=1、retain=False。"
                 "填充牌库时 block 叠加角色防御力；持有期间计入持有者总防御，与是否打出无关。"
                 "基础防御强制 retain=False：未打出即进弃牌堆、随洗牌回到牌库循环，抓到手占用一个"
                 "手牌位。retain 与防御是强力搭配，只留给成长性/特殊防御，基础型不得叠加 retain；"
                 "差异化靠词缀（如受击词缀反伤/减伤）表达。"
             ),
-            keywords=("block", "self_target"),
+            keywords=("block", "target_type"),
         ),
     ),
     # 手牌 / 防御端 / 成长性防御
@@ -380,7 +380,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             name="防御蓄力",
             summary="格挡 + 保留，跨回合常驻防御。",
             guide=(
-                "字段：block=3、retain=True、self_target=True。持有即计入总防御，"
+                "字段：block=3、retain=True、target_type=SELF。持有即计入总防御，"
                 "retain 跨回合存续（不占用下回合抓牌名额，是额外留在手牌的常驻格挡）。"
                 "retain 与防御是强力搭配，应作为成长性防御少量出现，不得下放到基础防御。"
             ),
@@ -431,11 +431,11 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             name="即时治疗",
             summary="打出即回复自身（数值方向自定）。",
             guide=(
-                "字段：self_target=True、damage=0、on_play_affixes（引导）。打出时对自身"
+                "字段：target_type=SELF、damage=0、on_play_affixes（引导）。打出时对自身"
                 "结算一条回复规则——请选一个（或组合）内建数值写成你自己的具体词缀（如回复"
                 "本卡 block、按自身已损失 HP 回复等）。只写回复，不要引入伤害或格挡。"
             ),
-            keywords=("on_play_affixes", "self_target"),
+            keywords=("on_play_affixes", "target_type"),
         ),
     ),
     CardPrototype(
@@ -536,7 +536,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             name="进攻装备",
             summary="结构示例：单体即时伤害装备（damage=3；无词缀，词缀自行设计）。",
             guide=(
-                "结构：target_type=SINGLE、self_target=False、damage=3、hit_count=1、"
+                "结构：target_type=SINGLE、damage=3、hit_count=1、"
                 "block=0、cost=1。只示范「出牌即打伤害」的骨架；示例刻意不带词缀——"
                 "词缀的时机与内容由你依材料与词缀规范自行设计（不是本示例的字段）。"
                 "速度被动示例：speed=+1（轻捷的进攻装备，先手更早）。"
@@ -554,7 +554,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             name="防御装备",
             summary="结构示例：持有期格挡 + 跨回合保留（block=3、retain=True；无词缀）。",
             guide=(
-                "结构：self_target=False、damage=0、block=3、cost=1、retain=True。"
+                "结构：target_type=SINGLE、damage=0、block=3、cost=1、retain=True。"
                 "示范「持有即加防、跨回合留下」的骨架；示例刻意不带词缀——"
                 "词缀由你依规范自行设计。"
                 "速度被动示例：speed=-1（厚重的防御装备，后手更晚）。"
@@ -592,7 +592,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             name="单体伤害消耗品",
             summary="结构示例：0 费一次性的单体伤害消耗品（damage=4；无词缀，词缀自行设计）。",
             guide=(
-                "结构：cost=0、exhaust=True、target_type=SINGLE、self_target=False、"
+                "结构：cost=0、exhaust=True、target_type=SINGLE、"
                 "damage=4、hit_count=1、block=0。只示范「0 费即时打单体伤害」的骨架；"
                 "示例刻意不带词缀——词缀的时机与内容由你依材料与词缀规范自行设计。"
             ),
@@ -609,7 +609,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             name="群体伤害消耗品",
             summary="结构示例：0 费一次性的阵营全体伤害消耗品（damage=2、target_type=ALL）。",
             guide=(
-                "结构：cost=0、exhaust=True、target_type=ALL、self_target=False、"
+                "结构：cost=0、exhaust=True、target_type=ALL、"
                 "damage=2、hit_count=1、block=0。示范「以单个敌人为锚点、结算全阵营敌人」"
                 "的骨架；示例刻意不带词缀——词缀由你依规范自行设计。"
             ),
@@ -626,7 +626,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             name="散射伤害消耗品",
             summary="结构示例：0 费一次性的散射伤害消耗品（damage=2、hit_count=2、SPREAD）。",
             guide=(
-                "结构：cost=0、exhaust=True、target_type=SPREAD、self_target=False、"
+                "结构：cost=0、exhaust=True、target_type=SPREAD、"
                 "damage=2、hit_count=2、block=0。示范「多段随机分配到敌方阵营」的骨架；"
                 "示例刻意不带词缀——词缀由你依规范自行设计。"
             ),

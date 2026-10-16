@@ -58,7 +58,6 @@ class _CraftGearSpec(BaseModel):
     damage: int = 0
     hit_count: int = 1
     block: int = 0
-    self_target: bool = False
     target_type: str = TargetType.SINGLE
 
 
@@ -161,7 +160,7 @@ SUBMIT_GEAR_TOOL: Final[ToolDefinition] = ToolDefinition(
                         },
                         "transferable": {
                             "type": "boolean",
-                            "description": "出牌时额外为每个目标手牌 copy 一份（本体照常结算并进入弃牌/消耗流程）；默认 false。与 self_target 互斥",
+                            "description": "出牌时额外为每个目标手牌 copy 一份（本体照常结算并进入弃牌/消耗流程）；默认 false。可与 target_type=self 同开以自传递复制",
                         },
                         "cost": {
                             "type": "integer",
@@ -179,14 +178,10 @@ SUBMIT_GEAR_TOOL: Final[ToolDefinition] = ToolDefinition(
                             "type": "integer",
                             "description": "手牌持有期间提供的格挡；默认 0",
                         },
-                        "self_target": {
-                            "type": "boolean",
-                            "description": "锁定出牌者自身；true 时无需 targets。与 transferable 互斥",
-                        },
                         "target_type": {
                             "type": "string",
-                            "enum": ["single", "all", "spread"],
-                            "description": "目标类型：single 单体、all 阵营锚点、spread 散射",
+                            "enum": ["single", "all", "spread", "self"],
+                            "description": "目标类型：single 单体、all 阵营锚点、spread 散射、self 锁定自身（无需 targets）",
                         },
                     },
                     "required": [
@@ -203,7 +198,6 @@ SUBMIT_GEAR_TOOL: Final[ToolDefinition] = ToolDefinition(
                         "damage",
                         "hit_count",
                         "block",
-                        "self_target",
                         "target_type",
                     ],
                 },
@@ -286,12 +280,6 @@ def _handle_submit_gear(
     valid_target_types = {t.value for t in TargetType}
     if spec.target_type not in valid_target_types:
         return f"错误：target_type 无效（{spec.target_type!r}）。请修正后重新提交。"
-    if spec.transferable and spec.self_target:
-        return (
-            "错误：transferable 与 self_target 互斥，不能同时为 true。"
-            "self_target 会锁定自身并跳过目标解析，transferable 需要解析出的目标来分发副本，二者语义冲突。"
-            "若要「自传递复制」，请把 target_type 设为 single 并选择自身为目标。"
-        )
     probe = Card(
         name=spec.name,
         description=spec.description,
@@ -308,7 +296,6 @@ def _handle_submit_gear(
         damage=spec.damage,
         hit_count=spec.hit_count,
         block=spec.block,
-        self_target=spec.self_target,
         target_type=TargetType(spec.target_type),
     )
     for affix_field in AFFIX_FIELDS:
@@ -502,7 +489,6 @@ class CraftGearItemActionSystem(ReactiveProcessor):
             damage=result.damage,
             hit_count=result.hit_count,
             block=result.block,
-            self_target=result.self_target,
             target_type=TargetType(result.target_type),
         )
 

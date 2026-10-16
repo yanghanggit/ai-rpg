@@ -55,9 +55,9 @@ class _OpponentView(BaseModel):
 @prompt_builder
 def _target_label(card: Card) -> str:
     """返回卡牌目标约束的中文描述（出牌决策提示词的文本片段）。"""
-    if card.self_target:
-        return "自身"
     match card.target_type:
+        case TargetType.SELF:
+            return "自身"
         case TargetType.SINGLE:
             return "单个目标"
         case TargetType.ALL:
@@ -459,14 +459,13 @@ class MonsterPrePlaySystem(ReactiveProcessor):
             entity.replace(PassTurnAction, entity.name)
             return
 
-        # 根据 target_type 解析出牌目标（与玩家出牌走同一套 resolve_targets 逻辑，避免重复实现；self_target 卡牌无需目标名）
+        # 根据 target_type 解析出牌目标（与玩家出牌走同一套 resolve_targets 逻辑，避免重复实现；SELF 卡牌无需目标名）
         valid_targets, resolve_err = resolve_targets(
             selected_card.target_type,
             selected_card.hit_count,
             entity,
             decision.targets,
             self._game,
-            selected_card.self_target,
         )
         if resolve_err:
             logger.warning(

@@ -1,7 +1,7 @@
 """卡牌原型骨架。
 
 每个 `*_SKELETON` 是一张与游戏内容完全解耦的骨架 `Card`：机械字段（cost / damage /
-hit_count / block / target_type / self_target / flags）是只读骨架，三类词缀是
+hit_count / block / target_type / flags）是只读骨架，三类词缀是
 「可设计槽位的引导」（非空＝可设计，规范见 `AFFIX_DESIGN_SPEC`），`name` / `description`
 留空、由角色 agent 重写。
 
@@ -31,7 +31,6 @@ ATTACK_SKELETON: Final[Card] = Card(
     hit_count=1,
     block=0,
     target_type=TargetType.SINGLE,
-    self_target=False,
 )
 
 
@@ -50,8 +49,7 @@ DEFENSE_SKELETON: Final[Card] = Card(
     damage=0,
     hit_count=1,
     block=1,
-    target_type=TargetType.SINGLE,
-    self_target=True,
+    target_type=TargetType.SELF,
 )
 
 
@@ -72,8 +70,7 @@ HEAL_SKELETON: Final[Card] = Card(
     damage=0,
     hit_count=1,
     block=0,
-    target_type=TargetType.SINGLE,
-    self_target=True,
+    target_type=TargetType.SELF,
 )
 
 
@@ -94,8 +91,7 @@ REGEN_SKELETON: Final[Card] = Card(
     damage=0,
     hit_count=1,
     block=1,
-    target_type=TargetType.SINGLE,
-    self_target=True,
+    target_type=TargetType.SELF,
 )
 
 
@@ -117,7 +113,6 @@ BURST_SKELETON: Final[Card] = Card(
     hit_count=1,
     block=0,
     target_type=TargetType.SINGLE,
-    self_target=False,
 )
 
 
@@ -139,7 +134,6 @@ SACRIFICE_SKELETON: Final[Card] = Card(
     hit_count=1,
     block=0,
     target_type=TargetType.SINGLE,
-    self_target=False,
 )
 
 
@@ -159,7 +153,6 @@ FOCUS_SKELETON: Final[Card] = Card(
     hit_count=3,
     block=0,
     target_type=TargetType.SINGLE,
-    self_target=False,
 )
 
 
@@ -179,7 +172,6 @@ SPREAD_SKELETON: Final[Card] = Card(
     hit_count=4,
     block=0,
     target_type=TargetType.SPREAD,
-    self_target=False,
 )
 
 
@@ -201,7 +193,6 @@ MARK_SKELETON: Final[Card] = Card(
     hit_count=1,
     block=0,
     target_type=TargetType.SINGLE,
-    self_target=False,
 )
 
 
@@ -224,7 +215,6 @@ PIERCE_SKELETON: Final[Card] = Card(
     hit_count=1,
     block=0,
     target_type=TargetType.SINGLE,
-    self_target=False,
 )
 
 
@@ -245,8 +235,7 @@ SELF_LOOP_SKELETON: Final[Card] = Card(
     damage=0,
     hit_count=1,
     block=1,
-    target_type=TargetType.SINGLE,
-    self_target=True,
+    target_type=TargetType.SELF,
 )
 
 
@@ -268,7 +257,6 @@ FLEETING_SKELETON: Final[Card] = Card(
     hit_count=1,
     block=0,
     target_type=TargetType.SINGLE,
-    self_target=False,
 )
 
 
@@ -288,7 +276,6 @@ DEADLINE_SKELETON: Final[Card] = Card(
     hit_count=1,
     block=0,
     target_type=TargetType.SINGLE,
-    self_target=False,
 )
 
 
@@ -308,7 +295,6 @@ FINISHER_SKELETON: Final[Card] = Card(
     hit_count=1,
     block=0,
     target_type=TargetType.SINGLE,
-    self_target=False,
 )
 
 
@@ -330,7 +316,6 @@ DOT_SKELETON: Final[Card] = Card(
     hit_count=1,
     block=0,
     target_type=TargetType.SINGLE,
-    self_target=False,
 )
 
 
@@ -352,7 +337,6 @@ THROW_SKELETON: Final[Card] = Card(
     hit_count=1,
     block=0,
     target_type=TargetType.SINGLE,
-    self_target=False,
 )
 
 
@@ -372,7 +356,6 @@ AOE_SKELETON: Final[Card] = Card(
     hit_count=1,
     block=0,
     target_type=TargetType.ALL,
-    self_target=False,
 )
 
 
@@ -394,7 +377,6 @@ AOE_DEBUFF_SKELETON: Final[Card] = Card(
     hit_count=1,
     block=0,
     target_type=TargetType.ALL,
-    self_target=False,
 )
 
 
@@ -415,8 +397,7 @@ BULWARK_SKELETON: Final[Card] = Card(
     damage=0,
     hit_count=1,
     block=3,
-    target_type=TargetType.SINGLE,
-    self_target=True,
+    target_type=TargetType.SELF,
 )
 
 
@@ -437,8 +418,7 @@ THORNS_SKELETON: Final[Card] = Card(
     damage=2,
     hit_count=1,
     block=2,
-    target_type=TargetType.SINGLE,
-    self_target=True,
+    target_type=TargetType.SELF,
 )
 
 
@@ -459,8 +439,7 @@ PASSIVE_SKELETON: Final[Card] = Card(
     damage=1,
     hit_count=1,
     block=0,
-    target_type=TargetType.SINGLE,
-    self_target=True,
+    target_type=TargetType.SELF,
 )
 
 
@@ -479,8 +458,7 @@ PLATE_SKELETON: Final[Card] = Card(
     damage=0,
     hit_count=1,
     block=3,
-    target_type=TargetType.SINGLE,
-    self_target=True,
+    target_type=TargetType.SELF,
 )
 
 
@@ -502,7 +480,6 @@ SUPPORT_SKELETON: Final[Card] = Card(
     hit_count=1,
     block=1,
     target_type=TargetType.SINGLE,
-    self_target=False,
 )
 
 
@@ -522,7 +499,6 @@ SHIELD_TRANSFER_SKELETON: Final[Card] = Card(
     hit_count=1,
     block=3,
     target_type=TargetType.SINGLE,
-    self_target=False,
 )
 
 
@@ -544,7 +520,6 @@ AOE_BUFF_SKELETON: Final[Card] = Card(
     hit_count=1,
     block=1,
     target_type=TargetType.ALL,
-    self_target=False,
 )
 
 
@@ -569,7 +544,6 @@ SUMMON_SKELETON: Final[Card] = Card(
     hit_count=1,
     block=0,
     target_type=TargetType.SINGLE,
-    self_target=False,
 )
 
 
@@ -591,7 +565,6 @@ GEAR_OFFENSE_SKELETON: Final[Card] = Card(
     hit_count=1,
     block=0,
     target_type=TargetType.SINGLE,
-    self_target=False,
 )
 
 
@@ -611,7 +584,6 @@ GEAR_DEFENSE_SKELETON: Final[Card] = Card(
     hit_count=1,
     block=3,
     target_type=TargetType.SINGLE,
-    self_target=False,
 )
 
 
@@ -631,15 +603,14 @@ GEAR_CONTAGION_SKELETON: Final[Card] = Card(
     hit_count=1,
     block=0,
     target_type=TargetType.SINGLE,
-    self_target=False,
 )
 
 
 # ── 消耗品骨架（工坊合成「选择核心 + 润色」用） ──────────────
 #
 # 消耗品卡固定 0 费（cost=0）且一次性（exhaust=True）：战斗中由 UseConsumableItemAction
-# 物化进手牌后正常打出，用完进 ExhaustPile。本阶段只做伤害型（damage>0、block=0、
-# self_target=False），效果直接由 Card.damage 承载。
+# 物化进手牌后正常打出，用完进 ExhaustPile。本阶段只做伤害型（damage>0、block=0），
+# 效果直接由 Card.damage 承载。
 
 CONSUMABLE_SINGLE_SKELETON: Final[Card] = Card(
     name="消耗品.名字",
@@ -657,7 +628,6 @@ CONSUMABLE_SINGLE_SKELETON: Final[Card] = Card(
     hit_count=1,
     block=0,
     target_type=TargetType.SINGLE,
-    self_target=False,
 )
 
 
@@ -677,7 +647,6 @@ CONSUMABLE_AOE_SKELETON: Final[Card] = Card(
     hit_count=1,
     block=0,
     target_type=TargetType.ALL,
-    self_target=False,
 )
 
 
@@ -697,5 +666,4 @@ CONSUMABLE_SPREAD_SKELETON: Final[Card] = Card(
     hit_count=2,
     block=0,
     target_type=TargetType.SPREAD,
-    self_target=False,
 )

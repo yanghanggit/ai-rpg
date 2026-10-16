@@ -25,7 +25,7 @@ def _print_card(card: Card, claimed: bool) -> None:
     print(f"- {card.name}{mark}")
     print(
         f"    字段: damage={card.damage} hit_count={card.hit_count} block={card.block} "
-        f"cost={card.cost} target={card.target_type.value} self_target={card.self_target} "
+        f"cost={card.cost} target={card.target_type.value} "
         f"retain={card.retain} exhaust={card.exhaust} ethereal={card.ethereal} "
         f"transferable={card.transferable}"
     )

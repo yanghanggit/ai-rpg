@@ -45,7 +45,6 @@ def _card_signature(card: Card) -> Tuple[object, ...]:
         card.block,
         card.cost,
         card.target_type.value,
-        card.self_target,
         card.playable,
         card.exhaust,
         card.retain,

@@ -1,31 +1,21 @@
-"""Card 布尔标志硬约束（`_reject_flag_conflicts`）的单元测试。"""
-
-import pytest
+"""Card 目标类型（`TargetType.SELF`）字段组合的单元测试。"""
 
 from ai_rpg.models import Card, TargetType
 
 
-def test_transferable_with_self_target_raises() -> None:
-    """`self_target` 与 `transferable` 互斥：构造即失败。"""
-    with pytest.raises(ValueError, match="互斥"):
-        Card(name="自缚", description="", transferable=True, self_target=True)
+def test_self_type_ignores_target_selection() -> None:
+    """`SELF` 是合法目标类型，锁定出牌者本人。"""
+    card = Card(name="防御", description="", target_type=TargetType.SELF)
+    assert card.target_type == TargetType.SELF
 
 
-def test_transferable_with_single_target_is_allowed() -> None:
-    """自传递复制走显式目标：transferable + SINGLE + 不锁自身，合法。"""
+def test_self_type_with_transferable_is_allowed() -> None:
+    """`SELF` 解析出出牌者本人，可与 `transferable` 同开实现自传递复制。"""
     card = Card(
-        name="投掷",
+        name="回环",
         description="",
         transferable=True,
-        self_target=False,
-        target_type=TargetType.SINGLE,
+        target_type=TargetType.SELF,
     )
     assert card.transferable is True
-    assert card.self_target is False
-
-
-def test_self_target_without_transferable_is_allowed() -> None:
-    """防御类锁定自身的牌不受影响。"""
-    card = Card(name="防御", description="", self_target=True)
-    assert card.self_target is True
-    assert card.transferable is False
+    assert card.target_type == TargetType.SELF

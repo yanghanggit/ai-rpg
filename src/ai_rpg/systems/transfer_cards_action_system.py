@@ -75,8 +75,7 @@ class TransferCardsActionSystem(ReactiveProcessor):
                 assert target.has(HandComponent), f"目标 {target_name} 不存在手牌组件"
                 assert not target.has(DeathComponent), f"目标 {target_name} 已死亡"
 
-                # 自传递：目标即出牌者本人时，同样复制一份留在其手牌。
-                # self_target 与 transferable 已互斥，故该分支只由「显式把自身选为目标」触发。
+                # 自传递：目标即出牌者本人（target_type=SELF，或显式把自身选为目标）时，同样复制一份留在其手牌。
                 if target_name == play_cards_action.name:
                     logger.debug(
                         f"transfer_card: 自传递，复制一份「{card.name}」回 {target_name} 手牌"

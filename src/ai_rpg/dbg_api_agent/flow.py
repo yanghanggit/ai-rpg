@@ -97,7 +97,9 @@ def suggest_actions(status: Dict[str, Any]) -> List[str]:
                             if not card.get("playable", True):
                                 continue
                             target = (
-                                "" if card.get("self_target") else " --target <entity>"
+                                ""
+                                if card.get("target_type") == "self"
+                                else " --target <entity>"
                             )
                             actions.append(
                                 f"combat play-cards --actor {current_actor} "

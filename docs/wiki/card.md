@@ -10,9 +10,9 @@
 
 ## 确定性骨架（计算端消费）
 
-`name` / `description` / `cost` / `damage` / `hit_count` / `block` / `target_type` / `self_target` 构成牌的确定性底座。
+`name` / `description` / `cost` / `damage` / `hit_count` / `block` / `target_type` 构成牌的确定性底座。
 
-`cost` 由出牌执行端扣减 energy；`damage` 与 `block` 在牌进入战斗牌堆时叠加角色攻击/防御，之后分别参与伤害结算与持有期防御；`target_type` 与 `self_target` 决定目标解析策略——单个目标、阵营锚点展开、阵营散射三种语义。
+`cost` 由出牌执行端扣减 energy；`damage` 与 `block` 在牌进入战斗牌堆时叠加角色攻击/防御，之后分别参与伤害结算与持有期防御；`target_type` 决定目标解析策略——单个目标、阵营锚点展开、阵营散射、锁定自身四种语义。
 
 `name` 是标识与 LLM 决策的匹配键；`description` 是叙事锚点，只影响仲裁叙事演出，不改变确定性数值结算。
 
@@ -40,7 +40,7 @@
 - `exhaust`：出牌后永久离场，不进弃牌循环。
 - `retain`：回合末保留，跨回合存续。
 - `ethereal`：pass turn 时若仍在手牌则自动离场。
-- `transferable`：出牌时**额外**为每个解析目标的手牌 copy 一份（副本落地即 `transferable=False`、**只传一跳**，收到副本者不能再次转手；本体照常结算并进入弃牌/消耗流程）。目标经 `target_type` 解析，可显式选择自身实现「自传递复制」（拿回的副本同样不可再传）；`self_target=True`（锁定自身、跳过解析）与它互斥。
+- `transferable`：出牌时**额外**为每个解析目标的手牌 copy 一份（副本落地即 `transferable=False`、**只传一跳**，收到副本者不能再次转手；本体照常结算并进入弃牌/消耗流程）。目标经 `target_type` 解析，可显式选择自身或直接使用 `target_type=SELF`（锁定自身、无需传入目标）实现「自传递复制」（拿回的副本同样不可再传）。
 
 组合这些标志即可表达「一次性爆发」「常驻被动」「转嫁型持续效果」等玩法。但并非任意组合都成立——其互斥与依赖是硬约束。
 

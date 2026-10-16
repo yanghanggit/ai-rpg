@@ -271,7 +271,7 @@ def _handle_submit_deck_card(
 ) -> str:
     """处理 submit_deck_card：校验原型 id 与词缀，不合法则返回错误让 agent 修正重提。
 
-    原型中只读的布尔/目标字段（target_type/self_target/playable/exhaust/retain/
+    原型中只读的布尔/目标字段（target_type/playable/exhaust/retain/
     ethereal/transferable）有时会被模型一并回传，这里统一忽略，避免因多余参数报错。
     """
     if ignored:
@@ -363,7 +363,7 @@ def _build_deck_prompt(actor_name: str) -> str:
 
 ## 原型与设计边界
 
-- **布尔与目标字段只读**：`target_type/self_target/playable/exhaust/retain/ethereal/transferable` 由原型给定，不可改动。
+- **布尔与目标字段只读**：`target_type/playable/exhaust/retain/ethereal/transferable` 由原型给定，不可改动。
 - **数值可微调**：`cost/damage/hit_count/block` 可在原型基础上调整（提交时可选给出，不给则沿用原型）。
 - **只能对** `get_card_prototype` 返回的 `card` 中已非空（有引导）的词缀槽提交设计；其余槽位不得新增，不提交或设计不合法则该槽置空。
 - **你来设计**：`name`、`description`（叙事表达，不重述数值与机械效果；可自由采用动作 / 物件 / 意象 / 氛围 / 典故等形态），以及上述槽位内的词缀全文。

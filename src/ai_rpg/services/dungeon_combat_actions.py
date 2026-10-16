@@ -203,14 +203,13 @@ async def activate_play_cards_specified(
             f"能量不足，无法出牌『{card_name}』（需要{selected_card.cost}点，当前剩余{current_energy}点）",
         )
 
-    # 解析卡牌的目标，根据卡牌的目标类型和命中次数，结合玩家提供的目标列表，解析出实际的目标实体列表（self_target 卡牌无需目标名）。
+    # 解析卡牌的目标，根据卡牌的目标类型和命中次数，结合玩家提供的目标列表，解析出实际的目标实体列表（SELF 卡牌无需目标名）。
     resolved_targets, resolve_err = resolve_targets(
         selected_card.target_type,
         selected_card.hit_count,
         entity,
         targets,
         dbg_game,
-        selected_card.self_target,
     )
     if resolve_err:
         logger.error(f"activate_play_cards_specified: {resolve_err}")

@@ -29,7 +29,6 @@ def _make_card(*, transferable: bool = True) -> Card:
         damage=1,
         hit_count=1,
         target_type=TargetType.SINGLE,
-        self_target=False,
         source="角色.无名",
     )
 
@@ -155,7 +154,7 @@ class TestTransferCardsActionSystem:
         for target in (target_a, target_b):
             assert target.get(HandComponent).cards[0].transferable is False
 
-    async def test_self_target_copies_back_to_source(
+    async def test_explicit_self_target_copies_back_to_source(
         self, context: Context, mock_game: MagicMock, system: TransferCardsActionSystem
     ) -> None:
         """显式把自身选为目标时，自传递复制一份回源手牌。"""

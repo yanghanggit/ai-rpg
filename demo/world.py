@@ -489,22 +489,23 @@ def create_nameless() -> Actor:
                 _make_attack_card(actor.name),
                 _make_attack_card(actor.name),
                 _make_attack_card(actor.name),
-                # 2 张基础防御
+                # 2 张基础防御（target_type=SELF：锁定自身、无需 targets；block 由牌本身承载）
                 _make_defense_card(actor.name),
                 _make_defense_card(actor.name),
-                # 治疗牌暂不加入 deck（数值/强度待调整；启用时取消下方注释）
-                # _make_heal_card(
-                #     actor.name,
-                #     "急救敷药",
-                #     "一小包捣碎的止血草，混着几片发黄的旧布条。敷上伤口时疼得钻心，那股燥热的抽痛才一点点退下去，呼吸也跟着稳了些。",
-                #     heal=3,
-                # ),
-                # _make_regen_card(
-                #     actor.name,
-                #     "静息调匀",
-                #     "靠着墙根坐下来，把呼吸放慢，让胸口的起伏一点点平复。伤不会立刻就好，但每睡过一程，身子都比上一程更听使唤。",
-                #     heal=2,
-                # ),
+                # 2 张自身向的恢复牌（均 target_type=SELF）：即时治疗 / 持续恢复，
+                # 供 e2e 覆盖「SELF 无需 targets」的出牌通路
+                _make_heal_card(
+                    actor.name,
+                    "急救敷药",
+                    "一小包捣碎的止血草，混着几片发黄的旧布条。敷上伤口时疼得钻心，那股燥热的抽痛才一点点退下去，呼吸也跟着稳了些。",
+                    heal=3,
+                ),
+                _make_regen_card(
+                    actor.name,
+                    "静息调匀",
+                    "靠着墙根坐下来，把呼吸放慢，让胸口的起伏一点点平复。伤不会立刻就好，但每睡过一程，身子都比上一程更听使唤。",
+                    heal=2,
+                ),
             ],
         ),
         WornCostumeComponent(

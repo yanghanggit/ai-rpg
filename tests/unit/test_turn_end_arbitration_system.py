@@ -32,8 +32,7 @@ def _make_card(name: str, *, turn_end: bool = False) -> Card:
         retain=turn_end,
         damage=1,
         hit_count=1,
-        target_type=TargetType.SINGLE,
-        self_target=True,
+        target_type=TargetType.SELF,
     )
 
 

@@ -5,7 +5,7 @@
 
 依赖：
 - DEEPSEEK_API_KEY（真实 LLM 调用，较慢）
-- 本地 .blueprints / .dungeons 数据文件（默认用 Game1 + 副本.坍塌庙祠）
+- 本地 .blueprints / .dungeons 数据文件（默认用 Game1 + 副本.荒狼巢）
 
 默认跳过；显式启用：
     RUN_E2E=1 pytest -m integration tests/integration/test_api_e2e_smoke.py
@@ -26,8 +26,8 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 
 GAME = "Game1"
-DUNGEON = "副本.坍塌庙祠"
-MONSTER = "怪物.纸人"
+DUNGEON = "副本.荒狼巢"
+MONSTER = "怪物.头狼"
 INVALID_CARD = "不存在的卡牌XYZ"
 
 pytestmark = [pytest.mark.integration, pytest.mark.slow]
@@ -136,6 +136,17 @@ def _get(
 
 def _poll_task(client: httpx.Client, job_id: int, timeout: float = 300.0) -> str:
     """轮询任务直到终态，返回 'succeeded' / 'failed'，超时则失败。"""
+    status = _poll_task_status(client, job_id, timeout)
+    if status == "failed":
+        code, data = _get(client, "/api/tasks/v1/status", params={"job_ids": job_id})
+        tasks = data.get("tasks", []) if code == 200 else []
+        error = tasks[0].get("error") if tasks else None
+        pytest.fail(f"任务失败: {error}")
+    return status
+
+
+def _poll_task_status(client: httpx.Client, job_id: int, timeout: float = 300.0) -> str:
+    """轮询任务直到终态，返回 'succeeded' / 'failed'；超时则失败。"""
     deadline = time.time() + timeout
     while time.time() < deadline:
         code, data = _get(client, "/api/tasks/v1/status", params={"job_ids": job_id})
@@ -143,10 +154,8 @@ def _poll_task(client: httpx.Client, job_id: int, timeout: float = 300.0) -> str
             tasks = data.get("tasks", [])
             if tasks:
                 status = (tasks[0].get("status") or "").lower()
-                if status == "succeeded":
+                if status in ("succeeded", "failed"):
                     return status
-                if status == "failed":
-                    pytest.fail(f"任务失败: {tasks[0].get('error')}")
         time.sleep(1)
     pytest.fail(f"任务 {job_id} 轮询超时")
 
@@ -160,15 +169,18 @@ def _get_hand_cards(
         params={"entities": [player_actor]},
     )
     assert code == 200, f"查询实体失败: {data}"
-    for entity in data.get("entities", []):
-        for comp in entity.get("components", []):
-            if comp.get("name") == "HandComponent":
-                return cast(List[Dict[str, Any]], comp.get("data", {}).get("cards", []))
-    return []
+    # entities 是 name-keyed 的 ContextData：{实体名: {组件名: 组件数据}}
+    entity = data.get("entities", {}).get(player_actor)
+    if not entity:
+        return []
+    hand = entity.get("HandComponent")
+    if not hand:
+        return []
+    return cast(List[Dict[str, Any]], hand.get("cards", []))
 
 
 def test_api_e2e_smoke(game_server_url: str) -> None:
-    """核心链路冒烟：进副本 → 开场初始化 → 战斗初始化 → 抽牌 → 出牌（含非法出牌同步 400）。"""
+    """核心链路冒烟：进副本 → 战斗初始化 → 抽牌 → 出牌（含非法出牌任务失败）。"""
     client = httpx.Client(base_url=game_server_url, timeout=300.0)
     user = f"e2e-api-{int(time.time())}"
 
@@ -184,7 +196,7 @@ def test_api_e2e_smoke(game_server_url: str) -> None:
     player_actor = data.get("player_session", {}).get("actor")
     assert player_actor, f"new game 未返回 player_session.actor: {data}"
 
-    # 3. 进入副本（仅传送，不初始化房间）
+    # 3. 进入副本（setup + 传送至第一关；荒狼巢首间即战斗房间，enter 时战斗进入 INITIALIZATION）
     code, _ = _post(
         client,
         "/api/home/enter_dungeon/v1/",
@@ -192,23 +204,7 @@ def test_api_e2e_smoke(game_server_url: str) -> None:
     )
     assert code == 200
 
-    # 4. 开场房间初始化
-    code, data = _post(
-        client, "/api/dungeon/opening/init/v1/", {"user_name": user, "game_name": GAME}
-    )
-    assert code == 200
-    assert data.get("job_id")
-    _poll_task(client, data["job_id"])
-
-    # 5. 推进到战斗房间
-    code, _ = _post(
-        client,
-        "/api/dungeon/progress/advance_stage/v1/",
-        {"user_name": user, "game_name": GAME},
-    )
-    assert code == 200
-
-    # 6. 战斗初始化
+    # 4. 战斗初始化
     code, data = _post(
         client, "/api/dungeon/combat/init/v1/", {"user_name": user, "game_name": GAME}
     )
@@ -216,7 +212,7 @@ def test_api_e2e_smoke(game_server_url: str) -> None:
     assert data.get("job_id")
     _poll_task(client, data["job_id"])
 
-    # 7. 全员抽牌
+    # 5. 全员抽牌
     code, data = _post(
         client,
         "/api/dungeon/combat/draw_cards/v1/",
@@ -226,11 +222,11 @@ def test_api_e2e_smoke(game_server_url: str) -> None:
     assert data.get("job_id")
     _poll_task(client, data["job_id"])
 
-    # 8. 查询玩家手牌
+    # 6. 查询玩家手牌
     hand_cards = _get_hand_cards(client, user, player_actor)
     assert hand_cards, "抽牌后玩家应有手牌"
 
-    # 9. 关键断言：非法出牌应在请求阶段同步返回 400（而非任务失败）
+    # 7. 非法出牌：接口同步返回 200（异步任务），任务本身应失败
     code, data = _post(
         client,
         "/api/dungeon/combat/play_cards/v1/",
@@ -242,14 +238,18 @@ def test_api_e2e_smoke(game_server_url: str) -> None:
             "targets": [],
         },
     )
-    assert code == 400, f"非法出牌应同步返回 400，实际 {code}: {data}"
-    assert "找不到卡牌" in str(data.get("detail", "")), f"detail 异常: {data}"
+    assert code == 200, f"非法出牌应返回 200（任务异步失败），实际 {code}: {data}"
+    assert data.get("job_id")
+    assert _poll_task_status(client, data["job_id"]) == "failed", "非法出牌任务应失败"
 
-    # 10. 合法出牌应正常启动任务并完成
+    # 8. 合法出牌应正常启动任务并完成
+    # 优先选一张 SELF 牌：验证「锁定自身、无需 targets」的出牌通路（种子牌库里无名必有 2 张基础防御）。
     playable = [c for c in hand_cards if c.get("playable", True)]
     assert playable, "手牌中应存在可打出的卡牌"
-    card = playable[0]
-    targets: List[str] = [] if card.get("self_target") else [MONSTER]
+    self_cards = [c for c in playable if c.get("target_type") == "self"]
+    assert self_cards, "手牌中应包含 target_type=self 的牌，用于验证自身出牌通路"
+    card = self_cards[0]
+    targets: List[str] = []  # SELF 牌无需目标
     code, data = _post(
         client,
         "/api/dungeon/combat/play_cards/v1/",
@@ -264,3 +264,26 @@ def test_api_e2e_smoke(game_server_url: str) -> None:
     assert code == 200, f"合法出牌应返回 200，实际 {code}: {data}"
     assert data.get("job_id")
     _poll_task(client, data["job_id"])
+
+    # 9. 再打一张需要锚点的牌（若手牌里还有），验证非 SELF 通路
+    hand_cards = _get_hand_cards(client, user, player_actor)
+    anchored = [
+        c
+        for c in hand_cards
+        if c.get("playable", True) and c.get("target_type") != "self"
+    ]
+    if anchored:
+        code, data = _post(
+            client,
+            "/api/dungeon/combat/play_cards/v1/",
+            {
+                "user_name": user,
+                "game_name": GAME,
+                "actor_name": player_actor,
+                "card_name": anchored[0].get("name"),
+                "targets": [MONSTER],
+            },
+        )
+        assert code == 200, f"锚点出牌应返回 200，实际 {code}: {data}"
+        assert data.get("job_id")
+        _poll_task(client, data["job_id"])

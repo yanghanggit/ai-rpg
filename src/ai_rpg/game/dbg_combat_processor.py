@@ -200,15 +200,14 @@ def resolve_targets(
     actor_entity: Entity,
     passed_targets: Sequence[str],
     dbg_game: DBGGame,
-    self_target: bool = False,
 ) -> Tuple[List[str], str]:
-    """根据 target_type 解析并验证目标。self_target=True 时锁定出牌者自身；否则要求 passed_targets 恰好 1 个元素作为锚点。"""
+    """根据 target_type 解析并验证目标。SELF 时锁定出牌者自身；其余类型要求 passed_targets 恰好 1 个元素作为锚点。"""
 
-    if self_target:
-        # self_target 为 True 时，目标锁定为出牌者自身
+    # SELF：目标锁定为出牌者本人，无需目标名，传入的目标列表被忽略。
+    if target_type == TargetType.SELF:
         return [actor_entity.name], ""
 
-    # self_target 为 False 时，要求 passed_targets 恰好 1 个元素作为锚点
+    # 其余类型要求 passed_targets 恰好 1 个元素作为锚点
     if len(passed_targets) != 1:
         return (
             [],

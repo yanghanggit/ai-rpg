@@ -1,12 +1,8 @@
-"""卡牌与状态效果模型定义。
-
-本模块同时定义卡牌字段语义（`BUILD_CARD_FIELD_DESCRIPTION`）、词缀设计规范
-（`AFFIX_DESIGN_SPEC`）与词缀设计校验（`validate_affix_slot` / `apply_affix_design`）。
-"""
+"""卡牌与状态效果模型定义。"""
 
 import re
 from dataclasses import dataclass
-from typing import Dict, Final, List, Mapping, Optional, Tuple, final
+from typing import Final, List, Mapping, Optional, Tuple, final
 from uuid import uuid4
 
 from loguru import logger
@@ -39,7 +35,7 @@ class Card(BaseModel):
     )
     ethereal: bool = False  # pass turn 时若仍留在手牌，自动移入 ExhaustPileComponent
     transferable: bool = (
-        False  # 出牌时从源手牌移除本体，copy 一份到每个解析目标手牌（副本 uuid 重新生成）
+        False  # 出牌时额外为每个解析目标手牌 copy 一份（副本 uuid 重新生成；本体照常结算并进入弃牌/消耗流程）
     )
     cost: int = 1  # 出牌费用；消耗当前 energy；不足时禁止出牌
     damage: int = 0  # 单次伤害
@@ -123,11 +119,10 @@ AFFIX_DESIGN_SPEC: Final[
 - `on_hit_affixes`：本卡持有者被本次出牌命中时触发。
 - `on_turn_end_affixes`：持有者每次 pass turn 结算一次（只结算其本人手牌中带该词缀的牌）。
 
-### 三、书写约定与数值限制
+### 三、书写约定
 
 - **格式（硬要求）**：`[词缀名]:机械结算描述`。`[` `]` 是必须原样写出的字面字符（不是占位符），与分隔符同样缺一不可（客户端按 `[名称]:说明` 解析），词缀名可自由创造；写成 `名:描述` 判不合法，**整槽置空**。
 - **可引用的内建数值**（仲裁阶段会全量给出，只能引用、不能写回；优先用它们，别写死具体数字）：本卡 `damage` / `block` / `hit_count`；目标 `HP` / 最大 `HP` / 总格挡；自身 `HP` / 总格挡。取数要写明：伤害用 `damage`（如 `本卡 damage×2`）或目标内建值；治疗写「回复 HP」；格挡写 `block`；段数写 `hit_count`——**别只写「结算」**（仲裁要知道是伤害还是回复）。
-- **`×N` 上限**：`on_play` `damage×1..3` / `block×1..3` / `hit_count×1..2`；`on_hit` `damage×1..3` / `block×1..3`；`on_turn_end` `damage×1..2` / `block×1..3`。
 - **作用对象**只用这些称谓：`自身` / `出牌者` / `目标` / `本卡持有者` / `非 source 者`（＝持有者，且持有者 ≠ 本卡 `source`）；`on_turn_end_affixes` 无「出牌者 / 目标」，只能用 `自身` / `本卡持有者` / `非 source 者` / 场上存活角色。
 - 本卡 `damage=0` 时不得凭空造成伤害。
 """
@@ -147,7 +142,7 @@ BUILD_CARD_FIELD_DESCRIPTION: Final[
 | `exhaust` | 出牌后永久消耗，不进弃牌循环；默认 false |
 | `retain` | 回合末保留在手牌，不进弃牌堆；默认 false |
 | `ethereal` | pass turn 时若仍在手牌则自动消耗；默认 false |
-| `transferable` | 出牌时从源手牌移除本体，并 copy 一份到每个目标手牌；默认 false |
+| `transferable` | 出牌时额外为每个目标手牌 copy 一份（本体照常结算并进入弃牌/消耗流程）；默认 false |
 | `cost` | 出牌费用（消耗 energy）；默认 1 |
 | `damage` | 单次伤害；默认 0 |
 | `hit_count` | 攻击次数，多段各自独立结算；默认 1 |
@@ -179,17 +174,6 @@ AFFIX_FIELDS: Final[Tuple[str, ...]] = (
     "on_play_affixes",
     "on_hit_affixes",
     "on_turn_end_affixes",
-)
-
-# 各时机下，字段倍率的上限（`damage×N` 的 N）。
-_MAX_MULTIPLIERS: Final[Dict[str, Dict[str, int]]] = {
-    "on_play_affixes": {"damage": 3, "block": 3, "hit_count": 2},
-    "on_hit_affixes": {"damage": 3, "block": 3},
-    "on_turn_end_affixes": {"damage": 2, "block": 3},
-}
-
-_MULTIPLIER_RE: Final[re.Pattern[str]] = re.compile(
-    r"(damage|block|hit_count)\s*[×xX*]\s*(\d+)"
 )
 
 # 词缀硬格式：`[词缀名]:机械结算描述`（方括号 + 半/全角冒号缺一不可）。
@@ -224,14 +208,8 @@ def validate_affix_slot(
     affix: str,
     card: Card,
 ) -> AffixValidationResult:
-    """校验一条 agent 设计的词缀是否满足**硬不变量**。
-
-    只守计算端必须保证的东西：时机 schema、多值格式、非空、占位符、
-    倍率护栏（`字段×N` 的 N 上限）、时机与骨架 flag 的一致性。
-    语义是否「可被仲裁结算」不在这里用正则猜——它由「结算原语」契约与
-    agent 提交前自检负责（见 `AFFIX_DESIGN_SPEC`）。
-    """
-    if affix_field not in _MAX_MULTIPLIERS:
+    """校验一条 agent 设计的词缀是否满足**硬不变量**。"""
+    if affix_field not in AFFIX_FIELDS:
         return AffixValidationResult(False, f"未知词缀时机 {affix_field!r}")
 
     if affix_field == "on_play_affixes" and not card.playable:
@@ -252,21 +230,6 @@ def validate_affix_slot(
     if "词缀名" in name or "何种" in desc or "待设计" in desc:
         return AffixValidationResult(False, "仍是占位符，请替换为具体设计")
 
-    # 倍率护栏：`字段×N` 的 N 需在本时机的上限内（独立数字不再拦截）。
-    limits = _MAX_MULTIPLIERS[affix_field]
-    for match in _MULTIPLIER_RE.finditer(desc):
-        field_name, raw_n = match.group(1), match.group(2)
-        limit = limits.get(field_name)
-        if limit is None:
-            return AffixValidationResult(
-                False, f"{affix_field} 不允许引用 `{field_name}` 倍率"
-            )
-        n = int(raw_n)
-        if n < 1 or n > limit:
-            return AffixValidationResult(
-                False, f"`{field_name}×{n}` 超出本时机护栏上限 {limit}"
-            )
-
     return AffixValidationResult(True)
 
 
@@ -276,15 +239,7 @@ def apply_affix_design(
     card: Card,
     submitted: Mapping[str, Optional[List[str]]],
 ) -> Tuple[int, List[str]]:
-    """把 agent 设计的词缀应用到 `card` 上，返回 (成功应用的条数, 说明列表)。
-
-    槽位语义（方法论：定量骨架 + 变量词缀）：
-    - 原型中**非空**的词缀槽是「**引导**」，只用来标记该槽可设计，**不是**回退答案；
-    - 该槽最终值只取 agent 的**合法**提交；未提交 / 设计为空 / 不合法，一律**置空**；
-    - 原型为空的槽不是可设计槽，任何提交都被忽略。
-
-    `submitted` 为「字段名 → 设计后的词缀列表」。
-    """
+    """把 agent 设计的词缀应用到 `card` 上，返回 (成功应用的条数, 说明列表)。"""
     applied = 0
     notes: List[str] = []
 
@@ -327,11 +282,7 @@ def apply_numeric_design(
     hit_count: Optional[int] = None,
     block: Optional[int] = None,
 ) -> None:
-    """把 agent 提交的骨架数值微调覆盖到 `card` 上（`None` 表示沿用原型）。
-
-    骨架数值（`cost` / `damage` / `hit_count` / `block`）不加护栏：agent 自己把握，
-    计算端只保证类型可解析。布尔与目标字段不在可调范围。
-    """
+    """把 agent 提交的骨架数值微调覆盖到 `card` 上（`None` 表示沿用原型）。"""
     if cost is not None:
         card.cost = cost
     if damage is not None:

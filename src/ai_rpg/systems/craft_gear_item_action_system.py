@@ -154,7 +154,7 @@ SUBMIT_GEAR_TOOL: Final[ToolDefinition] = ToolDefinition(
                         },
                         "transferable": {
                             "type": "boolean",
-                            "description": "出牌时从源手牌移除本体并复制到目标手牌；默认 false。与 self_target 互斥",
+                            "description": "出牌时额外为每个目标手牌 copy 一份（本体照常结算并进入弃牌/消耗流程）；默认 false。与 self_target 互斥",
                         },
                         "cost": {
                             "type": "integer",
@@ -274,7 +274,7 @@ def _handle_submit_gear(
         )
     spec = _CraftGearSpec(name=name, description=description, speed=speed, **card)
 
-    # 词缀设计校验：agent 自设计的骨架 + 词缀必须满足词缀格式与倍率护栏。
+    # 词缀设计校验：agent 自设计的骨架 + 词缀必须满足词缀格式。
     valid_target_types = {t.value for t in TargetType}
     if spec.target_type not in valid_target_types:
         return f"错误：target_type 无效（{spec.target_type!r}）。请修正后重新提交。"

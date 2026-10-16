@@ -112,7 +112,7 @@ def test_one_invalid_affix_empties_whole_slot() -> None:
     applied, notes = apply_affix_design(
         "角色.无名",
         card,
-        {"on_play_affixes": [AFFIX_A, "[断裂]:打出时对目标造成本卡 damage×9 的伤害"]},
+        {"on_play_affixes": [AFFIX_A, "断裂:打出时对目标造成本卡 damage 的伤害"]},
     )
     assert applied == 0
     assert len(notes) == 1

@@ -93,38 +93,6 @@ def test_multiplier_forms_are_accepted() -> None:
         assert validate_affix_slot("on_play_affixes", text, card).ok, text
 
 
-def test_hit_count_multiplier_bound_by_timing() -> None:
-    card = _card()
-    ok = validate_affix_slot(
-        "on_play_affixes", "[乱影]:打出时额外结算本卡 hit_count×2 次", card
-    )
-    over = validate_affix_slot(
-        "on_play_affixes", "[乱影]:打出时额外结算本卡 hit_count×3 次", card
-    )
-    assert ok.ok
-    assert not over.ok
-
-
-def test_damage_multiplier_bound_by_timing() -> None:
-    card = _card(
-        on_turn_end_affixes=[
-            "[中毒]:回合结束时对非 source 者结算本卡 damage×1 的持续伤害"
-        ]
-    )
-    ok = validate_affix_slot(
-        "on_turn_end_affixes",
-        "[中毒]:回合结束时对非 source 者结算本卡 damage×2 的持续伤害",
-        card,
-    )
-    over = validate_affix_slot(
-        "on_turn_end_affixes",
-        "[中毒]:回合结束时对非 source 者结算本卡 damage×3 的持续伤害",
-        card,
-    )
-    assert ok.ok
-    assert not over.ok
-
-
 def test_placeholder_fails() -> None:
     result = validate_affix_slot(
         "on_play_affixes", "[词缀名]:本次出牌产生何种效果", _card()
@@ -164,7 +132,8 @@ def test_valid_design_is_applied() -> None:
 
 def test_invalid_design_empties_slot() -> None:
     card = _card()
-    submitted = {"on_play_affixes": ["[断筋]:打出时对目标造成本卡 damage×9 的伤害"]}
+    # 格式非法（缺方括号）：整槽置空。
+    submitted = {"on_play_affixes": ["断筋:打出时对目标造成本卡 damage×2 的伤害"]}
 
     applied, notes = apply_affix_design("角色.无名", card, submitted)
 

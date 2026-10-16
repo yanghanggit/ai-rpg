@@ -127,19 +127,19 @@ SUBMIT_SPOILS_CARD_TOOL: Final[ToolDefinition] = ToolDefinition(
                     "type": "array",
                     "items": {"type": "string"},
                     "maxItems": 3,
-                    "description": "本卡打出时结算的即时词缀（可选，多值列表）：每个元素是一条完整独立词缀，格式 `[词缀名]:机械结算描述`；禁止把一条词缀拆成多个元素或把多条合并进一个元素；无则 []。仅当原型该槽非空（有引导）时可提交；须满足词缀格式与倍率护栏，否则整槽置空。",
+                    "description": "本卡打出时结算的即时词缀（可选，多值列表）：每个元素是一条完整独立词缀，格式 `[词缀名]:机械结算描述`；禁止把一条词缀拆成多个元素或把多条合并进一个元素；无则 []。仅当原型该槽非空（有引导）时可提交；须满足词缀格式，否则整槽置空。",
                 },
                 "on_hit_affixes": {
                     "type": "array",
                     "items": {"type": "string"},
                     "maxItems": 3,
-                    "description": "本卡持有者被命中时触发的受击词缀（可选，多值列表）：每个元素是一条完整独立词缀，格式同上；禁止拆分或合并；无则 []。仅当原型该槽非空时可提交；须满足词缀格式与倍率护栏。",
+                    "description": "本卡持有者被命中时触发的受击词缀（可选，多值列表）：每个元素是一条完整独立词缀，格式同上；禁止拆分或合并；无则 []。仅当原型该槽非空时可提交；须满足词缀格式。",
                 },
                 "on_turn_end_affixes": {
                     "type": "array",
                     "items": {"type": "string"},
                     "maxItems": 3,
-                    "description": "持有者每次 pass turn 结算的回合结束词缀（可选，多值列表）：每个元素是一条完整独立词缀，格式同上；禁止拆分或合并；无则 []。仅当原型该槽非空时可提交；须满足词缀格式与倍率护栏。",
+                    "description": "持有者每次 pass turn 结算的回合结束词缀（可选，多值列表）：每个元素是一条完整独立词缀，格式同上；禁止拆分或合并；无则 []。仅当原型该槽非空时可提交；须满足词缀格式。",
                 },
             },
             "required": ["uuid", "name", "description"],
@@ -173,7 +173,7 @@ def _handle_submit_spoils_card(
     on_hit_affixes: Optional[NormalizedStrList] = None,
     on_turn_end_affixes: Optional[NormalizedStrList] = None,
 ) -> str:
-    """处理 submit_spoils_card：先校验词缀（硬格式 + 倍率护栏），不合法则返回错误让 agent 修正重提。"""
+    """处理 submit_spoils_card：先校验词缀（硬格式），不合法则返回错误让 agent 修正重提。"""
     card = by_uuid.get(uuid)
     if card is None:
         return f"错误：未知 uuid {uuid!r}。请使用任务清单中给出的 uuid。"
@@ -429,7 +429,7 @@ class GenerateSpoilsActionSystem(ReactiveProcessor):
         # 并发执行
         outcomes = await batch_run_boolean_tasks(tasks)
 
-        # 应用结果：按 uuid 回填 name/description（硬约束），词缀经「硬格式 + 倍率护栏」校验（失败整槽置空）
+        # 应用结果：按 uuid 回填 name/description（硬约束），词缀经硬格式校验（失败整槽置空）
         for (entity, candidates, edits), ok in zip(pending, outcomes):
             by_uuid = {c.card.uuid: c.card for c in candidates}
             applied = 0

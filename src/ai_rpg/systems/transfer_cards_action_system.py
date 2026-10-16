@@ -58,16 +58,12 @@ class TransferCardsActionSystem(ReactiveProcessor):
 
             # 目标去重后，为每个存活且拥有手牌的目标 copy 一份（新 uuid）。
             for target_name in dict.fromkeys(play_cards_action.targets):
+
+                # 获取目标实体并进行基本校验
                 target = self._game.get_actor_entity(target_name)
                 assert target is not None, f"目标 {target_name} 不存在"
                 assert target.has(HandComponent), f"目标 {target_name} 不存在手牌组件"
                 assert not target.has(DeathComponent), f"目标 {target_name} 已死亡"
-                # if (
-                #     target is None
-                #     or target.has(DeathComponent)
-                #     or not target.has(HandComponent)
-                # ):
-                #     continue
 
                 # 自传递：目标即出牌者本人时，同样复制一份留在其手牌。
                 # self_target 与 transferable 已互斥，故该分支只由「显式把自身选为目标」触发。

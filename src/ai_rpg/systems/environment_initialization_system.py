@@ -104,14 +104,14 @@ class EnvironmentInitializationSystem(ExecuteProcessor):
             if error is not None:
                 logger.warning(
                     f"EnvironmentInitializationSystem: 环境叙事请求失败 "
-                    f"name={chat_client.name} kind={error.kind} "
+                    f"name={chat_client.label} kind={error.kind} "
                     f"status={error.status_code} retryable={error.retryable}"
                 )
-                failed_names.append(chat_client.name)
+                failed_names.append(chat_client.label)
                 continue
 
             if not self._process_environment_response(chat_client):
-                failed_names.append(chat_client.name)
+                failed_names.append(chat_client.label)
 
         # 一次汇总，交代哪些场景未生成及其后续处置
         if failed_names:
@@ -150,8 +150,8 @@ class EnvironmentInitializationSystem(ExecuteProcessor):
         )
 
         return DeepSeekClient(
-            name=stage_entity.name,
-            prompt=_build_environment_prompt(actor_appearances),
+            label=stage_entity.name,
+            input_message=_build_environment_prompt(actor_appearances),
             messages=self._game.get_agent_memory(stage_entity).messages,
         )
 
@@ -165,26 +165,26 @@ class EnvironmentInitializationSystem(ExecuteProcessor):
         # 如果 AI 响应为空，则记录警告并返回 False。
         if chat_client.response_ai_message is None:
             logger.warning(
-                f"EnvironmentInitializationSystem: AI 响应为空，name={chat_client.name}"
+                f"EnvironmentInitializationSystem: AI 响应为空，name={chat_client.label}"
             )
             return False
 
-        stage_entity = self._game.get_entity_by_name(chat_client.name)
+        stage_entity = self._game.get_entity_by_name(chat_client.label)
         assert (
             stage_entity is not None
-        ), f"stage_entity is None, name={chat_client.name}"
+        ), f"stage_entity is None, name={chat_client.label}"
 
         # 直接取 LLM 返回的纯文本作为环境描述（去除首尾空白）。
         description = chat_client.response_content.strip()
         if not description:
             logger.warning(
-                f"EnvironmentInitializationSystem: AI 返回空文本，name={chat_client.name}"
+                f"EnvironmentInitializationSystem: AI 返回空文本，name={chat_client.label}"
             )
             return False
 
         # 添加消息（写入与请求一致的完整 prompt，保证记忆与实际请求不错位）。
         self._game.add_human_message(
-            stage_entity, HumanMessage(content=chat_client.prompt)
+            stage_entity, HumanMessage(content=chat_client.input_message)
         )
 
         # 添加消息。

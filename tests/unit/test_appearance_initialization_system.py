@@ -46,7 +46,7 @@ def _make_actor_entity(
 def _make_mock_chat_client(name: str, response_content: str) -> MagicMock:
     """构建一个模拟 LLM 已响应的 DeepSeekClient。"""
     client = MagicMock()
-    client.name = name
+    client.label = name
     client.response_content = response_content
     client.response_ai_message = AIMessage(content=response_content)
     return client
@@ -85,15 +85,15 @@ class TestBuildClient:
     def test_prompt_contains_base_body_and_costume_info(
         self, context: Context, system: AppearanceInitializationSystem
     ) -> None:
-        """生成的 prompt 应包含基础体型与时装名称、描述；client.name 应与实体名一致。"""
+        """生成的 prompt 应包含基础体型与时装名称、描述；client.label 应与实体名一致。"""
         entity = _make_actor_entity(context, "英雄", _BASE_BODY)
 
         client = system._build_client(entity)
 
-        assert client.name == "英雄"
-        assert _BASE_BODY in client.prompt
-        assert _COSTUME.name in client.prompt
-        assert _COSTUME.description in client.prompt
+        assert client.label == "英雄"
+        assert _BASE_BODY in client.input_message
+        assert _COSTUME.name in client.input_message
+        assert _COSTUME.description in client.input_message
 
 
 # ---------------------------------------------------------------------------
@@ -148,7 +148,7 @@ class TestApplyResult:
         entity = _make_actor_entity(context, "英雄", _BASE_BODY)
         mock_game.get_entity_by_name.return_value = entity
         client = MagicMock()
-        client.name = "英雄"
+        client.label = "英雄"
         client.response_ai_message = None
 
         system._apply_result(client)
@@ -182,7 +182,7 @@ class TestExecute:
         ) as mock_batch:
             await system.execute()
 
-        sent_names = {client.name for client in mock_batch.call_args[0][0]}
+        sent_names = {client.label for client in mock_batch.call_args[0][0]}
         assert sent_names == {"英雄"}
 
     @pytest.mark.asyncio

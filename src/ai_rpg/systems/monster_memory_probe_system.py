@@ -78,8 +78,8 @@ class MonsterMemoryProbeSystem(ReactiveProcessor):
             prompt = _build_memory_probe_prompt(monster_name=entity.name)
             chat_clients.append(
                 DeepSeekClient(
-                    name=entity.name,
-                    prompt=prompt,
+                    label=entity.name,
+                    input_message=prompt,
                     messages=self._game.get_agent_memory(entity).messages,
                 )
             )
@@ -91,22 +91,22 @@ class MonsterMemoryProbeSystem(ReactiveProcessor):
         # 打印每个怪物的问答与参考答案，供人工比对。
         for client in chat_clients:
             assert (
-                self._game.get_entity_by_name(client.name) is not None
-            ), f"MonsterMemoryProbeSystem: 无法找到实体 {client.name}"
+                self._game.get_entity_by_name(client.label) is not None
+            ), f"MonsterMemoryProbeSystem: 无法找到实体 {client.label}"
 
             # 获取实体对象，确保存在。
             if client.response_ai_message is None:
                 logger.warning(
-                    f"MonsterMemoryProbeSystem: [{client.name}] LLM 返回空响应，无法比对"
+                    f"MonsterMemoryProbeSystem: [{client.label}] LLM 返回空响应，无法比对"
                 )
                 continue
 
             logger.info("=" * 80)
             logger.info(
-                f"MonsterMemoryProbeSystem: [{client.name}] 调试探针问题：\n{client.prompt}"
+                f"MonsterMemoryProbeSystem: [{client.label}] 调试探针问题：\n{client.input_message}"
             )
             logger.info(
-                f"MonsterMemoryProbeSystem: [{client.name}] 怪物回答：\n{client.response_content}"
+                f"MonsterMemoryProbeSystem: [{client.label}] 怪物回答：\n{client.response_content}"
             )
             logger.info("=" * 80)
 

@@ -42,8 +42,8 @@ def dump_chat(client: DeepSeekClient) -> None:
 
         # 仅在 prompt 非空时追加本轮 prompt：continuation 模式下 prompt 为空，
         # 不应产生一条幽灵空 Human 消息。
-        if client._prompt:
-            messages.append(HumanMessage(content=client._prompt))
+        if client._input_message:
+            messages.append(HumanMessage(content=client._input_message))
 
         # 追加本轮 response：优先用原始 AIMessage（保留 tool_calls 等 additional_kwargs）；
         # 仅当响应缺失（如 200 但空 choices）时才退化为纯文本。
@@ -70,9 +70,9 @@ def dump_chat(client: DeepSeekClient) -> None:
         # 内容结束。
         content += "\n"
 
-        # 写入文件，文件名格式为：YYYYMMDD_HHMMSS_microseconds_name.txt
+        # 写入文件，文件名格式为：YYYYMMDD_HHMMSS_microseconds_label.txt
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-        dump_file = CHAT_DUMP_DIR / f"{timestamp}_{client._name}.txt"
+        dump_file = CHAT_DUMP_DIR / f"{timestamp}_{client._label}.txt"
         CHAT_DUMP_DIR.mkdir(parents=True, exist_ok=True)
         dump_file.write_text(content, encoding="utf-8")
         logger.debug(f"chat dump saved: {dump_file}")
@@ -80,5 +80,5 @@ def dump_chat(client: DeepSeekClient) -> None:
     except Exception as e:
 
         logger.warning(
-            f"dump_chat failed for '{client._name}': {type(e).__name__}: {e}"
+            f"dump_chat failed for '{client._label}': {type(e).__name__}: {e}"
         )

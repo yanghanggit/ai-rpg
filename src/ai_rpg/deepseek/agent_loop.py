@@ -51,8 +51,8 @@ async def agent_loop(
         # 初始化 DeepSeekClient，用于与 LLM 进行交互，传入当前轮次的 prompt、消息历史、工具定义和工具选择策略。
         # 纠偏重试轮强制 tool_choice="required"，逼迫 LLM 通过工具调用而非普通文本作答。
         client = DeepSeekClient(
-            name=name,
-            prompt=current_prompt,
+            label=name,
+            input_message=current_prompt,
             messages=history,
             tools=tools,
             tool_choice="required" if nudge_count > 0 else tool_choice,

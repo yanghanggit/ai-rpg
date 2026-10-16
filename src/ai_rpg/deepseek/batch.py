@@ -61,7 +61,7 @@ async def batch_chat(
     for i, result in enumerate(results):
         # 处理每个请求的异常情况。
         if isinstance(result, Exception):
-            name = clients[i].name if i < len(clients) else "unknown"
+            name = clients[i].label if i < len(clients) else "unknown"
             logger.error(
                 f"Request failed for '{name}': {type(result).__name__}: {result}"
             )
@@ -87,7 +87,7 @@ async def batch_chat(
             # 如果 gather 捕获了其他类型的 BaseException，则将其封装为 DeepSeekError。
             errors.append(
                 DeepSeekError(
-                    client.name, f"{type(result).__name__}: {result}", kind="api"
+                    client.label, f"{type(result).__name__}: {result}", kind="api"
                 )
             )
         else:

@@ -62,7 +62,7 @@ def _success_payload(content: str = "hi") -> Dict[str, Any]:
 
 
 def _make_client(name: str = "测试") -> DeepSeekClient:
-    return DeepSeekClient(name=name, prompt="ping", messages=[])
+    return DeepSeekClient(label=name, input_message="ping", messages=[])
 
 
 #######################################################################################################################################
@@ -174,8 +174,8 @@ class TestChatErrorRecording:
 class _FakeChatClient:
     """仅满足 batch_chat 使用面的假 client。"""
 
-    def __init__(self, name: str, error: Optional[DeepSeekError] = None):
-        self.name = name
+    def __init__(self, label: str, error: Optional[DeepSeekError] = None):
+        self.label = label
         self.error = error
 
     async def chat(self, client: Any = None) -> None:
@@ -204,7 +204,7 @@ class TestBatchChatReturn:
         """chat() 之外抛出的 BaseException 也应转成 DeepSeekError 返回，不丢失。"""
 
         class _BoomClient:
-            name = "角色.C"
+            label = "角色.C"
             error = None
 
             async def chat(self, client: Any = None) -> None:
@@ -222,8 +222,8 @@ class TestBatchChatReturn:
 class _ConcurrencyProbeClient:
     """记录同时执行 chat() 的峰值数量。"""
 
-    def __init__(self, name: str, tracker: Dict[str, int]):
-        self.name = name
+    def __init__(self, label: str, tracker: Dict[str, int]):
+        self.label = label
         self.error: Optional[DeepSeekError] = None
         self._tracker = tracker
 

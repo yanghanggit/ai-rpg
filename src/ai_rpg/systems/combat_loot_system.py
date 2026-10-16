@@ -173,8 +173,8 @@ class CombatLootSystem(ExecuteProcessor):
             else monster.name
         )
         return DeepSeekClient(
-            name=monster.name,
-            prompt=_build_loot_prompt(
+            label=monster.name,
+            input_message=_build_loot_prompt(
                 monster.name, appearance, stage_name, total_rounds
             ),
             messages=self._game.get_agent_memory(monster).messages,
@@ -186,7 +186,7 @@ class CombatLootSystem(ExecuteProcessor):
         items: List[AnyItem] = []
 
         if not client.response_content:
-            logger.error(f"[CombatLootSystem] {client.name} LLM 响应为空，跳过掉落")
+            logger.error(f"[CombatLootSystem] {client.label} LLM 响应为空，跳过掉落")
             return items
 
         try:
@@ -194,7 +194,7 @@ class CombatLootSystem(ExecuteProcessor):
             response = _MonsterLootResponse.model_validate_json(json_str)
         except Exception as e:
             logger.error(
-                f"[CombatLootSystem] 解析 {client.name} 掉落响应失败: {e}\n"
+                f"[CombatLootSystem] 解析 {client.label} 掉落响应失败: {e}\n"
                 f"原始内容:\n{client.response_content}"
             )
             return items
@@ -211,14 +211,14 @@ class CombatLootSystem(ExecuteProcessor):
                 )
             )
             logger.info(
-                f"[CombatLootSystem] {client.name} 基础掉落: {entry.name} x{entry.count}"
+                f"[CombatLootSystem] {client.label} 基础掉落: {entry.name} x{entry.count}"
             )
 
         # 部位破坏额外掉落
         for part in response.part_breaks:
             if not part.broken:
                 logger.debug(
-                    f"[CombatLootSystem] {client.name} 部位 [{part.part_name}] 未破坏，无额外掉落"
+                    f"[CombatLootSystem] {client.label} 部位 [{part.part_name}] 未破坏，无额外掉落"
                 )
                 continue
             for entry in part.materials:
@@ -232,7 +232,7 @@ class CombatLootSystem(ExecuteProcessor):
                     )
                 )
                 logger.info(
-                    f"[CombatLootSystem] {client.name} 部位破坏 [{part.part_name}] 额外掉落: {entry.name} x{entry.count}"
+                    f"[CombatLootSystem] {client.label} 部位破坏 [{part.part_name}] 额外掉落: {entry.name} x{entry.count}"
                 )
 
         return items

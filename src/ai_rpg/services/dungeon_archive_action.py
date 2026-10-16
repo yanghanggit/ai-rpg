@@ -303,8 +303,8 @@ async def debug_probe_dungeon_director_reasoning(
     prompt = "调试探针：到目前为止都发生了什么？你后续希望发生什么？"
 
     client = DeepSeekClient(
-        name=dungeon.name,
-        prompt=prompt,
+        label=dungeon.name,
+        input_message=prompt,
         messages=agent_memory.messages,
         model=DeepSeekClient.MODEL_FLASH,
     )
@@ -336,8 +336,8 @@ async def archive_dungeon(
         prompt = _build_archive_summary_prompt(dungeon)
 
         client = DeepSeekClient(
-            name=f"dungeon:{dungeon.name}",
-            prompt=prompt,
+            label=f"dungeon:{dungeon.name}",
+            input_message=prompt,
             messages=agent_memory.messages,
             model=DeepSeekClient.MODEL_FLASH,
         )

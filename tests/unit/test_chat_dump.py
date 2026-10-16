@@ -66,8 +66,8 @@ def test_dump_skips_empty_prompt_and_keeps_tool_calls(
 
     # continuation 模式：prompt 为空（靠 tools 满足构造断言），历史里只有 system
     client = DeepSeekClient(
-        name="场景.测试",
-        prompt="",
+        label="场景.测试",
+        input_message="",
         messages=[SystemMessage(content="SYS")],
         tools=[_dummy_tool()],
     )
@@ -92,8 +92,8 @@ def test_dump_includes_non_empty_prompt(
     monkeypatch.setattr("ai_rpg.deepseek.chat_dump.CHAT_DUMP_DIR", tmp_path)
 
     client = DeepSeekClient(
-        name="场景.测试",
-        prompt="请描述环境",
+        label="场景.测试",
+        input_message="请描述环境",
         messages=[SystemMessage(content="SYS")],
     )
     client._response_ai_message = AIMessage(content="洞顶低矮")
@@ -112,8 +112,8 @@ def test_dump_falls_back_when_response_missing(
     monkeypatch.setattr("ai_rpg.deepseek.chat_dump.CHAT_DUMP_DIR", tmp_path)
 
     client = DeepSeekClient(
-        name="场景.测试",
-        prompt="p",
+        label="场景.测试",
+        input_message="p",
         messages=[SystemMessage(content="SYS")],
     )
     client._response_ai_message = None

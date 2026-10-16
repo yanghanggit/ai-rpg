@@ -363,8 +363,8 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         )
 
         return DeepSeekClient(
-            name=entity.name,
-            prompt=prompt,
+            label=entity.name,
+            input_message=prompt,
             messages=self._game.get_agent_memory(entity).messages,
         )
 
@@ -372,8 +372,8 @@ class MonsterPrePlaySystem(ReactiveProcessor):
     def _process_monster_decision(self, client: DeepSeekClient) -> None:
         """解析 LLM 决策响应，替换怪物的 PlayCardsAction。"""
 
-        entity = self._game.get_entity_by_name(client.name)
-        assert entity is not None, f"MonsterPrePlaySystem: 无法找到实体 {client.name}"
+        entity = self._game.get_entity_by_name(client.label)
+        assert entity is not None, f"MonsterPrePlaySystem: 无法找到实体 {client.label}"
 
         # 检查 LLM 是否返回了有效的 AI 消息，如果没有则记录错误并执行过牌
         if client.response_ai_message is None:
@@ -402,7 +402,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         self._game.add_human_message(
             entity=entity,
             human_message=HumanMessage(
-                content=client.prompt,
+                content=client.input_message,
                 draw_cards_round_number=current_round_number,
             ),
         )

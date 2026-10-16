@@ -145,8 +145,8 @@ class CraftCostumeItemActionSystem(ReactiveProcessor):
         # 构建 LLM 提示并初始化 DeepSeekClient，用于与 LLM 进行交互
         prompt = _build_craft_costume_prompt(materials)
         chat_client = DeepSeekClient(
-            name=entity.name,
-            prompt=prompt,
+            label=entity.name,
+            input_message=prompt,
             messages=self._game.get_agent_memory(entity).messages,
         )
 

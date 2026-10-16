@@ -72,8 +72,8 @@ class AppearanceInitializationSystem(ExecuteProcessor):
         )
 
         return DeepSeekClient(
-            name=entity.name,
-            prompt=prompt,
+            label=entity.name,
+            input_message=prompt,
             messages=self._game.get_agent_memory(entity).messages,
         )
 
@@ -85,10 +85,10 @@ class AppearanceInitializationSystem(ExecuteProcessor):
             logger.warning(f"AppearanceInitializationSystem: LLM 未返回消息")
             return
 
-        entity = self._game.get_entity_by_name(client.name)
+        entity = self._game.get_entity_by_name(client.label)
         assert (
             entity is not None
-        ), f"ActorAppearanceInitSystem: 找不到实体 {client.name}"
+        ), f"ActorAppearanceInitSystem: 找不到实体 {client.label}"
 
         appearance_comp = entity.get(AppearanceComponent)
         costume: CostumeItem = entity.get(WornCostumeComponent).item

@@ -192,8 +192,8 @@ class DeepSeekClient:
     ################################################################################################################################################################################
     def __init__(
         self,
-        name: str,
-        prompt: str,
+        label: str,
+        input_message: str,
         messages: Sequence[BaseMessage],
         model: str = MODEL_FLASH,
         thinking: bool = False,
@@ -205,14 +205,14 @@ class DeepSeekClient:
         reasoning_effort: Optional[Literal["low", "high", "max"]] = None,
     ) -> None:
         """初始化 DeepSeek 直连客户端"""
-        assert name != "", "name should not be empty"
+        assert label != "", "label should not be empty"
         _tools: List[ToolDefinition] = list(tools) if tools else []
         assert (
-            prompt != "" or len(_tools) > 0
-        ), "prompt should not be empty when no tools are provided"
+            input_message != "" or len(_tools) > 0
+        ), "input_message should not be empty when no tools are provided"
 
-        self._name: Final[str] = name
-        self._prompt: Final[str] = prompt
+        self._label: Final[str] = label
+        self._input_message: Final[str] = input_message
         self._messages: Final[Sequence[BaseMessage]] = messages
         self._model: Final[str] = model
         self._thinking: Final[bool] = thinking
@@ -227,7 +227,7 @@ class DeepSeekClient:
         assert self._timeout > 0, "timeout should be positive"
 
         if not self._messages:
-            logger.warning(f"{self._name}: messages is empty")
+            logger.warning(f"{self._label}: messages is empty")
 
         self._temperature: Final[float] = (
             temperature if temperature is not None else 1.0
@@ -246,13 +246,14 @@ class DeepSeekClient:
 
     ################################################################################################################################################################################
     @property
-    def name(self) -> str:
-        return self._name
+    def label(self) -> str:
+        return self._label
 
     ################################################################################################################################################################################
     @property
-    def prompt(self) -> str:
-        return self._prompt
+    def input_message(self) -> str:
+        """本轮新增的用户消息文本；空字符串表示 continuation 模式（不追加 user 消息）。"""
+        return self._input_message
 
     ################################################################################################################################################################################
     @property
@@ -351,9 +352,9 @@ class DeepSeekClient:
                 )
                 messages.append({"role": role, "content": content})
 
-        # prompt 为空字符串时表示 continuation 模式，不追加 user 消息
-        if self._prompt != "":
-            messages.append({"role": "user", "content": self._prompt})
+        # input_message 为空字符串时表示 continuation 模式，不追加 user 消息
+        if self._input_message != "":
+            messages.append({"role": "user", "content": self._input_message})
 
         payload: Dict[str, Any] = {
             "messages": messages,
@@ -376,7 +377,7 @@ class DeepSeekClient:
         """解析 DeepSeek API 响应并填充 _response_ai_message"""
         choices = data.get("choices", [])
         if not choices:
-            logger.warning(f"{self._name}: empty choices in response")
+            logger.warning(f"{self._label}: empty choices in response")
             return
 
         choice = choices[0]
@@ -444,28 +445,32 @@ class DeepSeekClient:
         match status_code:
             case 400:
                 logger.error(
-                    f"{self._name}: 请求格式错误 (400) — 请检查请求体: {response_text}"
+                    f"{self._label}: 请求格式错误 (400) — 请检查请求体: {response_text}"
                 )
             case 401:
                 logger.error(
-                    f"{self._name}: 认证失败 (401) — API key 错误，请检查 DEEPSEEK_API_KEY"
+                    f"{self._label}: 认证失败 (401) — API key 错误，请检查 DEEPSEEK_API_KEY"
                 )
             case 402:
-                logger.error(f"{self._name}: 余额不足 (402) — 请前往 DeepSeek 平台充值")
+                logger.error(
+                    f"{self._label}: 余额不足 (402) — 请前往 DeepSeek 平台充值"
+                )
             case 422:
                 logger.error(
-                    f"{self._name}: 参数错误 (422) — 请检查请求参数: {response_text}"
+                    f"{self._label}: 参数错误 (422) — 请检查请求参数: {response_text}"
                 )
             case 429:
-                logger.warning(f"{self._name}: 请求速率达到上限 (429) — 请稍后重试")
+                logger.warning(f"{self._label}: 请求速率达到上限 (429) — 请稍后重试")
             case 500:
                 logger.error(
-                    f"{self._name}: 服务器内部故障 (500) — 请稍后重试，如持续出现请联系 DeepSeek"
+                    f"{self._label}: 服务器内部故障 (500) — 请稍后重试，如持续出现请联系 DeepSeek"
                 )
             case 503:
-                logger.warning(f"{self._name}: 服务器繁忙 (503) — 请稍后重试")
+                logger.warning(f"{self._label}: 服务器繁忙 (503) — 请稍后重试")
             case _:
-                logger.error(f"{self._name}: 请求失败 ({status_code}): {response_text}")
+                logger.error(
+                    f"{self._label}: 请求失败 ({status_code}): {response_text}"
+                )
 
     ################################################################################################################################################################################
     async def chat(self, client: Optional[httpx.AsyncClient] = None) -> None:
@@ -485,7 +490,7 @@ class DeepSeekClient:
         self._usage = None
         self._error = None
 
-        logger.debug(f"{self._name} a_request prompt:\n{self._prompt}")
+        logger.debug(f"{self._label} a_request input_message:\n{self._input_message}")
         start_time = time.time()
 
         def _fail(
@@ -493,7 +498,7 @@ class DeepSeekClient:
         ) -> NoReturn:
             """记录并抛出统一错误：先落到 self._error，再抛出 DeepSeekError。"""
             self._error = DeepSeekError(
-                self._name, message, kind=kind, status_code=status_code
+                self._label, message, kind=kind, status_code=status_code
             )
             raise self._error
 
@@ -528,22 +533,22 @@ class DeepSeekClient:
         except httpx.TimeoutException as e:
 
             # 处理请求超时异常。
-            logger.error(f"{self._name}: async timeout: {type(e).__name__}: {e}")
+            logger.error(f"{self._label}: async timeout: {type(e).__name__}: {e}")
             _fail("timeout", f"async timeout: {type(e).__name__}: {e}")
 
         except httpx.ConnectError as e:
             # 处理请求连接错误异常。
             logger.error(
-                f"{self._name}: async connection error: {type(e).__name__}: {e}"
+                f"{self._label}: async connection error: {type(e).__name__}: {e}"
             )
             _fail("connection", f"async connection error: {type(e).__name__}: {e}")
         except httpx.RequestError as e:
             # 处理请求错误异常。
-            logger.error(f"{self._name}: async request error: {type(e).__name__}: {e}")
+            logger.error(f"{self._label}: async request error: {type(e).__name__}: {e}")
             _fail("connection", f"async request error: {type(e).__name__}: {e}")
 
         elapsed = time.time() - start_time
-        logger.debug(f"{self._name} a_request time: {elapsed:.2f}s")
+        logger.debug(f"{self._label} a_request time: {elapsed:.2f}s")
 
         if response.status_code == 200:
 
@@ -551,15 +556,15 @@ class DeepSeekClient:
             self._parse_response(response.json())
 
             # 直接打印完整的 response
-            logger.debug(f"{self._name} full response:\n{response.json()}")
+            logger.debug(f"{self._label} full response:\n{response.json()}")
 
             # 仅打印 response_content 和 reasoning_content，方便用户查看
-            logger.info(f"{self._name} response_content:\n{self.response_content}")
+            logger.info(f"{self._label} response_content:\n{self.response_content}")
 
             # deepseek-reasoner 模型的思考过程内容通常较长，我们单独记录在 info 级别日志中，方便用户查看但不干扰主要输出
             if self.response_reasoning_content:
                 logger.info(
-                    f"\n💭 {self._name} 思考过程:\n{self.response_reasoning_content}\n"
+                    f"\n💭 {self._label} 思考过程:\n{self.response_reasoning_content}\n"
                 )
                 logger.info("=" * 60)
 

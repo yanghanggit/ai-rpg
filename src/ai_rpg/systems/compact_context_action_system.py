@@ -50,8 +50,8 @@ class CompactContextActionSystem(ReactiveProcessor):
 
             chat_clients.append(
                 DeepSeekClient(
-                    name=memory.name,
-                    prompt=build_compaction_prompt(memory.name),
+                    label=memory.name,
+                    input_message=build_compaction_prompt(memory.name),
                     messages=memory.messages,
                 )
             )
@@ -67,12 +67,12 @@ class CompactContextActionSystem(ReactiveProcessor):
             summary = chat_client.response_content.strip()
             if not summary:
                 logger.warning(
-                    f"CompactContextActionSystem: 压缩摘要为空，name={chat_client.name}"
+                    f"CompactContextActionSystem: 压缩摘要为空，name={chat_client.label}"
                 )
                 continue
 
-            target_entity = self._game.get_entity_by_name(chat_client.name)
-            assert target_entity is not None, f"无法找到实体：{chat_client.name}"
+            target_entity = self._game.get_entity_by_name(chat_client.label)
+            assert target_entity is not None, f"无法找到实体：{chat_client.label}"
 
             # 提取被压缩的原始历史为整字符串，附在摘要消息上留痕
             agent_memory = self._game.get_agent_memory(target_entity)
@@ -86,7 +86,7 @@ class CompactContextActionSystem(ReactiveProcessor):
                 ),
             )
             logger.debug(
-                f"CompactContextActionSystem: 已压缩 {chat_client.name} 的记忆"
+                f"CompactContextActionSystem: 已压缩 {chat_client.label} 的记忆"
             )
 
     #######################################################################################################################################

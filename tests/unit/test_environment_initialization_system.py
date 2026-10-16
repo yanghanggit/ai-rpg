@@ -48,7 +48,7 @@ def _fake_actor(*, is_player: bool = False) -> MagicMock:
 
 def _fake_client(name: str) -> MagicMock:
     client = MagicMock()
-    client.name = name
+    client.label = name
     return client
 
 
@@ -111,7 +111,7 @@ class TestObservedStagesOnly:
         ):
             await system.execute()
 
-        sent_names = [c.name for c in mock_batch.call_args.kwargs["clients"]]
+        sent_names = [c.label for c in mock_batch.call_args.kwargs["clients"]]
         assert sent_names == ["场景.酒馆"]
 
     @pytest.mark.asyncio
@@ -171,7 +171,7 @@ class TestObservedStagesOnly:
         ):
             await system.execute()
 
-        sent_names = [c.name for c in mock_batch.call_args.kwargs["clients"]]
+        sent_names = [c.label for c in mock_batch.call_args.kwargs["clients"]]
         assert sent_names == ["副本.荒狼巢"]
 
     @pytest.mark.asyncio
@@ -221,8 +221,8 @@ class TestFailureAccounting:
 
         def _build(stage: Entity) -> MagicMock:
             client = MagicMock()
-            client.name = stage.name
-            client.prompt = f"prompt:{stage.name}"
+            client.label = stage.name
+            client.input_message = f"prompt:{stage.name}"
             if stage is ok:
                 client.response_ai_message = AIMessage(content="松林窄径，泥泞湿冷")
                 client.response_content = "松林窄径，泥泞湿冷"

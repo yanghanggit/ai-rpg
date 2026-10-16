@@ -69,8 +69,8 @@ class GenerateDungeonDirectiveSystem(ReactiveProcessor):
         # 2. 让世界导演推理一次
         prompt = _build_directive_prompt()
         client = DeepSeekClient(
-            name=director_entity.name,
-            prompt=prompt,
+            label=director_entity.name,
+            input_message=prompt,
             messages=self._game.get_agent_memory(director_entity).messages,
             model=DeepSeekClient.MODEL_FLASH,
             # thinking=False,

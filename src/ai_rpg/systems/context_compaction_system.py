@@ -40,8 +40,8 @@ class ContextCompactionSystem(ExecuteProcessor):
         # 为每个超阈值 agent 创建压缩客户端（messages 传入当前完整记忆）
         chat_clients: List[DeepSeekClient] = [
             DeepSeekClient(
-                name=memory.name,
-                prompt=build_compaction_prompt(memory.name),
+                label=memory.name,
+                input_message=build_compaction_prompt(memory.name),
                 messages=memory.messages,
             )
             for memory in over_threshold
@@ -55,12 +55,12 @@ class ContextCompactionSystem(ExecuteProcessor):
             summary = chat_client.response_content.strip()
             if not summary:
                 logger.warning(
-                    f"ContextCompactionSystem: 压缩摘要为空，name={chat_client.name}"
+                    f"ContextCompactionSystem: 压缩摘要为空，name={chat_client.label}"
                 )
                 continue
 
-            entity = self._game.get_entity_by_name(chat_client.name)
-            assert entity is not None, f"无法找到实体：{chat_client.name}"
+            entity = self._game.get_entity_by_name(chat_client.label)
+            assert entity is not None, f"无法找到实体：{chat_client.label}"
 
             # 提取被压缩的原始历史为整字符串，附在摘要消息上留痕
             agent_memory = self._game.get_agent_memory(entity)
@@ -73,4 +73,4 @@ class ContextCompactionSystem(ExecuteProcessor):
                     removed_messages_content=removed_buffer,
                 ),
             )
-            logger.debug(f"ContextCompactionSystem: 已压缩 {chat_client.name} 的记忆")
+            logger.debug(f"ContextCompactionSystem: 已压缩 {chat_client.label} 的记忆")

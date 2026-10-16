@@ -90,7 +90,7 @@ class TestDeepSeekErrorRetryable:
     ) -> None:
         err = DeepSeekError("角色.无名", "boom", kind=kind, status_code=status_code)  # type: ignore[arg-type]
         assert err.retryable is expected
-        assert err.name == "角色.无名"
+        assert err.label == "角色.无名"
         assert err.status_code == status_code
         assert "[角色.无名]" in str(err)
 

@@ -23,7 +23,7 @@ _RETRYABLE_STATUS_CODES: Final[Set[int]] = {408, 429}
 class DeepSeekError(Exception):
     """单次 DeepSeek 通讯失败的统一异常。
 
-    - name: 本次请求所属 client 名（批量场景下用于定位失败项）。
+    - label: 本次请求所属 client 的 label（批量场景下用于定位失败项）。
     - kind: 失败类别，`timeout` / `connection` / `api`。
     - status_code: HTTP 状态码；网络层错误（timeout / connection）为 None。
     - retryable: 该错误是否属于「重试可能成功」的瞬时故障。通讯层不据此重试，
@@ -32,14 +32,14 @@ class DeepSeekError(Exception):
 
     def __init__(
         self,
-        name: str,
+        label: str,
         message: str,
         *,
         kind: ErrorKind,
         status_code: Optional[int] = None,
     ) -> None:
-        super().__init__(f"[{name}] {message}")
-        self.name: Final[str] = name
+        super().__init__(f"[{label}] {message}")
+        self.label: Final[str] = label
         self.kind: Final[ErrorKind] = kind
         self.status_code: Final[Optional[int]] = status_code
         self.retryable: Final[bool] = self._is_retryable(kind, status_code)

@@ -261,7 +261,7 @@ def _make_summon_card(
 
 
 def _make_alpha_wolf_deck() -> List[Card]:
-    """头狼牌库：模拟 AssembleDeckSystem 产物——原型骨架 + 手写 name/description/词缀，
+    """头狼牌库：模拟 AssembleDungeonDeckSystem 产物——原型骨架 + 手写 name/description/词缀，
     并已设 `source`（战斗初始化因此幂等跳过，不会覆盖叙事，形状与正规流程一致）。"""
 
     def build(

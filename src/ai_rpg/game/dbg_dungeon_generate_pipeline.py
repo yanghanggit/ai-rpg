@@ -13,7 +13,7 @@ def create_dungeon_generate_pipeline(
 
     ### 不这样就循环引用
     from ..systems.action_cleanup_system import ActionCleanupSystem
-    from ..systems.assemble_deck_system import AssembleDeckSystem
+    from ..systems.assemble_dungeon_deck_system import AssembleDungeonDeckSystem
     from ..systems.assemble_dungeon_system import AssembleDungeonSystem
     from ..systems.context_compaction_system import ContextCompactionSystem
     from ..systems.destroy_entity_system import DestroyEntitySystem
@@ -41,7 +41,7 @@ def create_dungeon_generate_pipeline(
     processors.add(GenerateDungeonRoomsSystem(dbg_game))
     processors.add(GenerateDungeonActorsSystem(dbg_game))
     processors.add(AssembleDungeonSystem(dbg_game))
-    processors.add(AssembleDeckSystem(dbg_game))
+    processors.add(AssembleDungeonDeckSystem(dbg_game))
     processors.add(IllustrateDungeonSystem(dbg_game))
 
     processors.add(DungeonGenerationCleanupSystem(dbg_game))

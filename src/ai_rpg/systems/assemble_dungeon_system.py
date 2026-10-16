@@ -139,7 +139,7 @@ class AssembleDungeonSystem(ReactiveProcessor):
                         campaign_setting=self._game._world.blueprint.campaign_setting,
                         system_rules=self._game._world.blueprint.system_rules,
                     )
-                    # 牌库由 AssembleDeckSystem 后续从卡牌原型库组建并润色
+                    # 牌库由 AssembleDungeonDeckSystem 后续从卡牌原型库组建并润色
                     actors.append(actor)
 
                 # 将 actors 分配给 stage，并创建 CombatRoom 实体

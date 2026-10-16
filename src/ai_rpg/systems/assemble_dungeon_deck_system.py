@@ -1,4 +1,4 @@
-"""副本牌库组建系统。"""
+"""副本怪物牌库组建系统（地下城生成管线：为每个战斗房间的怪物从卡牌原型库组建并润色牌库）。"""
 
 import json
 from functools import partial
@@ -107,7 +107,7 @@ LIST_CARD_PROTOTYPES_TOOL: Final[ToolDefinition] = ToolDefinition(
 GET_CARD_PROTOTYPE_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="get_card_prototype",
-        description="按 id 获取某个手牌卡牌原型的完整规格（name / summary / guide / card 全字段），用于精读候选。",
+        description="按 id 获取某个手牌卡牌原型的完整规格（name / summary / design / card 全字段），用于精读候选。",
         parameters={
             "type": "object",
             "properties": {
@@ -215,7 +215,7 @@ def _handle_list_card_prototypes(index: List[CardPrototypeIndexEntry]) -> str:
         for item in index
     ]
     logger.info(
-        f"[AssembleDeckSystem] list_card_prototypes 执行: 共 {len(payload)} 个手牌原型"
+        f"[AssembleDungeonDeckSystem] list_card_prototypes 执行: 共 {len(payload)} 个手牌原型"
     )
     return json.dumps(payload, ensure_ascii=False)
 
@@ -237,14 +237,14 @@ def _handle_get_card_prototype(prototype_id: str) -> str:
         return f"错误：{prototype_id!r} 不是手牌卡牌原型，可用 id 请通过 list_card_prototypes 查询。"
 
     # 返回卡牌原型的完整信息（含 card 全字段）
-    logger.info(f"[AssembleDeckSystem] get_card_prototype 执行: {prototype_id}")
+    logger.info(f"[AssembleDungeonDeckSystem] get_card_prototype 执行: {prototype_id}")
     return json.dumps(
         {
             "id": proto.prototype_id,
             "name": proto.name,
             "summary": proto.summary,
             "keywords": json.loads(proto.keywords_json),
-            "guide": proto.guide,
+            "design": proto.design,
             "card": json.loads(proto.card_json),
         },
         ensure_ascii=False,
@@ -276,7 +276,7 @@ def _handle_submit_deck_card(
     """
     if ignored:
         logger.info(
-            f"[AssembleDeckSystem] submit_deck_card 忽略只读字段: {sorted(ignored)}"
+            f"[AssembleDungeonDeckSystem] submit_deck_card 忽略只读字段: {sorted(ignored)}"
         )
     assert name.strip(), "name 不能为空"
     assert description.strip(), "description 不能为空"
@@ -337,7 +337,7 @@ def _handle_submit_deck_card(
         )
     )
     logger.info(
-        f"[AssembleDeckSystem] submit_deck_card: {prototype_id} → {name} "
+        f"[AssembleDungeonDeckSystem] submit_deck_card: {prototype_id} → {name} "
         f"（已选 {len(picks)}/{DECK_SIZE}）"
     )
     return f"已记录第 {len(picks)} 张卡牌。"
@@ -372,14 +372,14 @@ def _build_deck_prompt(actor_name: str) -> str:
 ## 工作流程
 
 1. `list_card_prototypes` 纵览全部手牌原型（archetype / subtype / summary / keywords），结合角色设定筛选方向；
-2. 对候选调用 `get_card_prototype` 精读（guide + card 全字段）；
+2. 对候选调用 `get_card_prototype` 精读（design + card 全字段）；
 3. 对选定的 {DECK_SIZE} 张各调用一次 `submit_deck_card`：给出 `prototype_id` / `name` / `description`，按需微调数值，并对原型已存在的槽位提交你重设计的词缀（格式与约束见上「词缀设计规范」）；
 4. 全部提交后调用 `finish_deck` 结束。"""
 
 
 ####################################################################################################################################
 @final
-class AssembleDeckSystem(ReactiveProcessor):
+class AssembleDungeonDeckSystem(ReactiveProcessor):
     """为每个角色并发组建牌库。"""
 
     def __init__(self, game: DBGGame) -> None:
@@ -406,13 +406,15 @@ class AssembleDeckSystem(ReactiveProcessor):
     async def _run(self) -> None:
         draft: Optional[DungeonDraft] = self._game._dungeon_draft
         if draft is None or not draft.dungeon_name:
-            logger.error("[AssembleDeckSystem] 中间过程数据缺失，跳过")
+            logger.error("[AssembleDungeonDeckSystem] 中间过程数据缺失，跳过")
             return
 
         dungeon_name = draft.dungeon_name
         dungeon_path: Path = DUNGEONS_DIR / f"{dungeon_name}.json"
         if not dungeon_path.exists():
-            logger.error(f"[AssembleDeckSystem] Dungeon 文件不存在: {dungeon_path}")
+            logger.error(
+                f"[AssembleDungeonDeckSystem] Dungeon 文件不存在: {dungeon_path}"
+            )
             return
 
         try:
@@ -421,7 +423,7 @@ class AssembleDeckSystem(ReactiveProcessor):
             )
         except Exception as e:
             logger.error(
-                f"[AssembleDeckSystem] 解析 Dungeon 失败: {e}\n路径: {dungeon_path}"
+                f"[AssembleDungeonDeckSystem] 解析 Dungeon 失败: {e}\n路径: {dungeon_path}"
             )
             return
 
@@ -433,7 +435,7 @@ class AssembleDeckSystem(ReactiveProcessor):
         ]
 
         logger.info(
-            f"[AssembleDeckSystem] 开始: dungeon={dungeon_name}, "
+            f"[AssembleDungeonDeckSystem] 开始: dungeon={dungeon_name}, "
             f"actors={len(combat_actors)}"
         )
 
@@ -443,7 +445,7 @@ class AssembleDeckSystem(ReactiveProcessor):
             index = list_card_prototype_index(card_type="手牌")
         except Exception as e:
             logger.error(
-                f"[AssembleDeckSystem] 拉取卡牌原型索引失败，全部回退默认牌库: {e}"
+                f"[AssembleDungeonDeckSystem] 拉取卡牌原型索引失败，全部回退默认牌库: {e}"
             )
 
         # 如果存在战斗角色，则为每个角色组建牌库
@@ -455,14 +457,14 @@ class AssembleDeckSystem(ReactiveProcessor):
             outcomes = await batch_run_boolean_tasks(tasks)
             succeeded = sum(1 for ok in outcomes if ok)
             logger.info(
-                f"[AssembleDeckSystem] 牌库组建完成: "
+                f"[AssembleDungeonDeckSystem] 牌库组建完成: "
                 f"{succeeded}/{len(combat_actors)} 个角色使用原型牌库"
             )
 
         # 写盘最终 Dungeon JSON（含已填充的牌库）
         dungeon_path.write_text(dungeon.model_dump_json(indent=4), encoding="utf-8")
         logger.info(
-            f"[AssembleDeckSystem] Dungeon 已保存: {dungeon_path}\n"
+            f"[AssembleDungeonDeckSystem] Dungeon 已保存: {dungeon_path}\n"
             f"  rooms ({len(dungeon.rooms)}): "
             + ", ".join(
                 f"{room.stage.name}({room.stage.actors[0].name if room.stage.actors else 'no actor'})"
@@ -482,7 +484,7 @@ class AssembleDeckSystem(ReactiveProcessor):
         except Exception as e:
             # 捕获组建牌库过程中出现的异常，记录错误并回退默认牌库
             logger.error(
-                f"[AssembleDeckSystem] {actor.name} 牌库组建异常，回退默认: {e}"
+                f"[AssembleDungeonDeckSystem] {actor.name} 牌库组建异常，回退默认: {e}"
             )
             cards = make_default_deck_cards(actor.name)
             is_fallback = True
@@ -498,7 +500,9 @@ class AssembleDeckSystem(ReactiveProcessor):
     ) -> Tuple[List[Card], bool]:
         """让 actor 通过工具自选 5 张原型并润色；返回 (牌列表, 是否回退)。"""
         if not index:
-            logger.warning(f"[AssembleDeckSystem] {actor.name} 原型索引为空，回退默认")
+            logger.warning(
+                f"[AssembleDungeonDeckSystem] {actor.name} 原型索引为空，回退默认"
+            )
             return make_default_deck_cards(actor.name), True
 
         picks: List[_DeckCardPick] = []
@@ -510,7 +514,7 @@ class AssembleDeckSystem(ReactiveProcessor):
                     json.loads(get_card_prototype(pid).card_json)
                 )
             except Exception as e:
-                logger.error(f"[AssembleDeckSystem] 预取原型 {pid} 失败: {e}")
+                logger.error(f"[AssembleDungeonDeckSystem] 预取原型 {pid} 失败: {e}")
 
         # 上下文隔离：以 actor 自己的 system_message 为唯一上下文，
         # 传入全新列表（agent_loop 原地追加），结束后丢弃 → 选完自动「失忆」。
@@ -541,18 +545,20 @@ class AssembleDeckSystem(ReactiveProcessor):
                 terminal_tools=[FINISH_DECK_TOOL],
             )
         except Exception as e:
-            logger.error(f"[AssembleDeckSystem] {actor.name} agent_loop 异常: {e}")
+            logger.error(
+                f"[AssembleDungeonDeckSystem] {actor.name} agent_loop 异常: {e}"
+            )
             return make_default_deck_cards(actor.name), True
 
         if not ok:
             logger.warning(
-                f"[AssembleDeckSystem] {actor.name} agent_loop 失败，回退默认"
+                f"[AssembleDungeonDeckSystem] {actor.name} agent_loop 失败，回退默认"
             )
             return make_default_deck_cards(actor.name), True
 
         if len(picks) != DECK_SIZE:
             logger.warning(
-                f"[AssembleDeckSystem] {actor.name} 提交 {len(picks)} 张卡牌"
+                f"[AssembleDungeonDeckSystem] {actor.name} 提交 {len(picks)} 张卡牌"
                 f"（需 {DECK_SIZE}），回退默认"
             )
             return make_default_deck_cards(actor.name), True
@@ -598,7 +604,7 @@ class AssembleDeckSystem(ReactiveProcessor):
 
                 # 记录词缀设计过程中的警告信息
                 for note in notes:
-                    logger.warning(f"[AssembleDeckSystem] {note}")
+                    logger.warning(f"[AssembleDungeonDeckSystem] {note}")
 
                 # 将处理完的卡牌加入最终牌库
                 cards.append(card)
@@ -606,11 +612,11 @@ class AssembleDeckSystem(ReactiveProcessor):
         except Exception as e:
 
             # 物化卡牌失败，回退默认牌库
-            logger.error(f"[AssembleDeckSystem] {actor.name} 物化卡牌失败: {e}")
+            logger.error(f"[AssembleDungeonDeckSystem] {actor.name} 物化卡牌失败: {e}")
             return make_default_deck_cards(actor.name), True
 
         logger.info(
-            f"[AssembleDeckSystem] {actor.name} 组建原型牌库: "
+            f"[AssembleDungeonDeckSystem] {actor.name} 组建原型牌库: "
             + ", ".join(c.name for c in cards)
         )
         return cards, False

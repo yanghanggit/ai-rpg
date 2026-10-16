@@ -72,7 +72,7 @@ def _save(proto: CardPrototype) -> None:
         archetype_subtype=meta.archetype_subtype,
         name=meta.name,
         summary=meta.summary,
-        guide=meta.guide,
+        design=meta.design,
         card_json=proto.skeleton.model_dump_json(),
         keywords=list(meta.keywords),
     )
@@ -114,7 +114,7 @@ def _flush_one(proto: CardPrototype, dry_run: bool) -> Tuple[str, List[str]]:
         ("archetype_subtype", meta.archetype_subtype),
         ("name", meta.name),
         ("summary", meta.summary),
-        ("guide", meta.guide),
+        ("design", meta.design),
         ("keywords", list(meta.keywords)),
     ):
         old_value = (

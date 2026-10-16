@@ -189,7 +189,7 @@ def _handle_get_consumable_example(example_id: str) -> str:
             "name": proto.name,
             "summary": proto.summary,
             "keywords": json.loads(proto.keywords_json),
-            "guide": proto.guide,
+            "design": proto.design,
             "card": json.loads(proto.card_json),
         },
         ensure_ascii=False,

@@ -320,7 +320,7 @@ def _setup_card_prototypes() -> None:
             archetype_subtype=proto.meta.archetype_subtype,
             name=proto.meta.name,
             summary=proto.meta.summary,
-            guide=proto.meta.guide,
+            design=proto.meta.design,
             card_json=proto.skeleton.model_dump_json(),
             keywords=list(proto.meta.keywords),
         )

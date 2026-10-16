@@ -1,15 +1,15 @@
-"""GenerateSpoilsActionSystem 的候选物化、prompt 组装与提交暂存的单元测试。"""
+"""card_design 引擎的候选格式化、prompt 组装与提交暂存的单元测试。"""
 
 from ai_rpg.models import Card
-from ai_rpg.systems.generate_spoils_action_system import (
-    _Candidate,
-    _format_card_for_prompt,
-    _handle_submit_spoils_card,
-    _SpoilsCardEdit,
+from ai_rpg.systems.card_design import (
+    Candidate,
+    CardDesign,
+    _handle_submit_card,
+    format_candidate,
 )
 
 
-def _candidate() -> _Candidate:
+def _candidate() -> Candidate:
     card = Card(
         name="骨架卡",
         description="",
@@ -20,25 +20,29 @@ def _candidate() -> _Candidate:
             "[中毒]:回合结束时对非 source 者结算本卡 damage×1 的持续伤害"
         ],
     )
-    return _Candidate(
+    return Candidate(
         card=card,
         archetype="攻击端",
         archetype_subtype="成长性伤害",
         summary="摘要",
-        guide="指导",
+        design="指导",
     )
 
 
-def test_format_card_includes_guide_and_skeleton() -> None:
-    text = _format_card_for_prompt(_candidate())
+def test_format_card_uses_index_and_slots_without_duplication() -> None:
+    text = format_candidate(_candidate(), 1)
 
+    assert "- #1" in text
+    assert "uuid" not in text
     assert "攻击端 / 成长性伤害" in text
     assert "摘要" in text
-    assert "指导" in text
-    assert "damage=2" in text
-    assert "retain=True" in text
-    # 原型词缀作为「引导」展示（非回退答案）
-    assert "on_turn_end_affixes（原型引导，需实例化为具体规则）" in text
+    assert "设计: 指导" in text
+    assert "可设计槽: on_turn_end_affixes" in text
+    # 骨架数值 / 只读特性已并入 design，不在 formatter 里重复打印
+    assert "骨架（数值可微调）" not in text
+    assert "特性（只读）" not in text
+    # 原型占位词缀不再单列（变量池与方向已在 design 里）
+    assert "[中毒]" not in text
 
 
 def _submit_card() -> Card:
@@ -56,11 +60,11 @@ def _submit_card() -> Card:
 
 def test_handle_submit_stores_all_design_fields() -> None:
     card = _submit_card()
-    edits: list[_SpoilsCardEdit] = []
-    msg = _handle_submit_spoils_card(
+    edits: list[CardDesign] = []
+    msg = _handle_submit_card(
         edits,
-        {card.uuid: card},
-        uuid=card.uuid,
+        [card],
+        card_index=1,
         name="朱批",
         description="落款",
         cost=2,
@@ -85,15 +89,26 @@ def test_handle_submit_stores_all_design_fields() -> None:
 def test_handle_submit_rejects_invalid_affix() -> None:
     # 缺方括号：handler 应返回错误且不记录，让 agent 修正重提。
     card = _submit_card()
-    edits: list[_SpoilsCardEdit] = []
-    msg = _handle_submit_spoils_card(
+    edits: list[CardDesign] = []
+    msg = _handle_submit_card(
         edits,
-        {card.uuid: card},
-        uuid=card.uuid,
+        [card],
+        card_index=1,
         name="朱批",
         description="落款",
         on_play_affixes=["朱批:打出时对目标造成本卡 damage×1 的伤害"],
     )
 
     assert "错误" in msg
+    assert edits == []
+
+
+def test_handle_submit_rejects_bad_card_index() -> None:
+    card = _submit_card()
+    edits: list[CardDesign] = []
+    msg = _handle_submit_card(
+        edits, [card], card_index=3, name="朱批", description="落款"
+    )
+
+    assert "超出范围" in msg
     assert edits == []

@@ -2,7 +2,7 @@
 
 面向后续 Agent 工具的两级披露：
   - `list_card_prototype_index`：一级披露（id / card_type / archetype / archetype_subtype / name / summary / keywords），用于「选择核心」前纵览；
-  - `get_card_prototype`：二级披露（含 guide 与 card_json），用于精读被选中的原型。
+  - `get_card_prototype`：二级披露（含 design 与 card_json），用于精读被选中的原型。
 """
 
 import json
@@ -35,7 +35,7 @@ def save_card_prototype(
     archetype_subtype: str,
     name: str,
     summary: str,
-    guide: str,
+    design: str,
     card_json: str,
     keywords: Optional[List[str]] = None,
 ) -> CardPrototypeDB:
@@ -54,7 +54,7 @@ def save_card_prototype(
             existing.archetype_subtype = archetype_subtype
             existing.name = name
             existing.summary = summary
-            existing.guide = guide
+            existing.design = design
             existing.card_json = card_json
             existing.keywords_json = keywords_json
             db.commit()
@@ -68,7 +68,7 @@ def save_card_prototype(
             archetype_subtype=archetype_subtype,
             name=name,
             summary=summary,
-            guide=guide,
+            design=design,
             card_json=card_json,
             keywords_json=keywords_json,
         )
@@ -122,7 +122,7 @@ def list_card_prototype_index(
     card_type: Optional[str] = None,
     archetype: Optional[str] = None,
 ) -> List[CardPrototypeIndexEntry]:
-    """列出一级披露索引（不含 guide / card_json），可按 card_type / archetype 过滤。"""
+    """列出一级披露索引（不含 design / card_json），可按 card_type / archetype 过滤。"""
 
     db = SessionLocal()
     try:
@@ -150,7 +150,7 @@ def list_card_prototype_index(
 
 ############################################################################################################
 def get_card_prototype(prototype_id: str) -> CardPrototypeDB:
-    """按 prototype_id 获取单个卡牌原型（含 guide 与 card_json）。"""
+    """按 prototype_id 获取单个卡牌原型（含 design 与 card_json）。"""
 
     db = SessionLocal()
     try:
@@ -167,7 +167,7 @@ def get_card_prototype_by_name(
     name: str,
     card_type: Optional[str] = None,
 ) -> CardPrototypeDB:
-    """按 name 获取单个卡牌原型（含 guide 与 card_json）。"""
+    """按 name 获取单个卡牌原型（含 design 与 card_json）。"""
 
     db = SessionLocal()
     try:

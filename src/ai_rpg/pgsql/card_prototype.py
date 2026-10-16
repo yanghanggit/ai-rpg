@@ -36,7 +36,7 @@ class CardPrototypeDB(UUIDBase):
     summary: Mapped[str] = mapped_column(Text, nullable=False)
 
     # 二级披露：完整字段语义与设计指导
-    guide: Mapped[str] = mapped_column(Text, nullable=False)
+    design: Mapped[str] = mapped_column(Text, nullable=False)
 
     # 检索标签（JSON 数组字符串，如 ["装备", "on_play_affixes", "damage"]）
     keywords_json: Mapped[str] = mapped_column(Text, nullable=False, default="[]")

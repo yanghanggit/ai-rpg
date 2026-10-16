@@ -3,7 +3,7 @@
 单例语义：整表仅维护一行默认牌库配置。
   - `save_deck_build`：写入 / 更新这套默认牌单（幂等）；
   - `get_default_deck_card_jsons`：按牌单顺序一次性取出各张卡的 card_json（含重复），
-    供 assemble_deck_system.make_default_deck_cards 直接物化。
+    供 assemble_dungeon_deck_system.make_default_deck_cards 直接物化。
 """
 
 import json

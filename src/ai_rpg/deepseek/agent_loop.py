@@ -61,8 +61,12 @@ async def agent_loop(
 
         # 发起 LLM 请求，捕获异常以防止整个循环崩溃
         try:
+
+            # 发起 LLM 请求，等待响应
             await client.chat()
+
         except Exception as e:
+
             logger.error(
                 f"[agent_loop:{name}] LLM 请求失败，第 {round_num} 轮，中止: {e}"
             )
@@ -84,6 +88,7 @@ async def agent_loop(
 
         # 检查 LLM 的 finish_reason，决定下一步动作
         if client.finish_reason == "stop":
+
             # 未声明终止工具：stop 即正常结束（保持原有语义）
             if not terminal_tool_names:
                 logger.debug(f"[agent_loop:{name}] LLM stop，第 {round_num} 轮")
@@ -117,6 +122,8 @@ async def agent_loop(
         # 遍历 LLM 的工具调用列表，依次处理每个工具调用，根据工具名称找到对应的处理函数并执行，捕获异常以防止整个循环崩溃
         terminal_seen = False
         terminal_name: Optional[str] = None
+
+        # 遍历本轮 LLM 的工具调用，依次处理每个工具调用
         for tc in client.tool_calls:
 
             # 根据工具调用的名称找到对应的处理函数，如果找不到则记录警告并返回错误信息，否则执行处理函数并捕获异常
@@ -139,8 +146,12 @@ async def agent_loop(
                         result = await raw_result
                     else:
                         result = raw_result
+
+                    # 工具调用成功，标记为 succeeded，result 已包含返回值
                     succeeded = True
+
                 except Exception as e:
+
                     logger.error(
                         f"[agent_loop:{name}] 工具 {tc.function.name!r} 执行失败: {e}\n"
                         f"  raw arguments: {tc.function.arguments!r}"

@@ -57,9 +57,9 @@ class TransferCardsActionSystem(ReactiveProcessor):
 
             # 防御性断言：filter 已保证只有 transferable 的牌进入；此处兜底防止旁路调用
             # 把非传递牌误当传递牌处理（那会错误地把它移出源手牌）。
-            assert card.transferable, (
-                f"TransferCardsActionSystem: 非传递牌「{card.name}」不应进入转移流程"
-            )
+            assert (
+                card.transferable
+            ), f"TransferCardsActionSystem: 非传递牌「{card.name}」不应进入转移流程"
 
             source_hand = entity.get(HandComponent)
 

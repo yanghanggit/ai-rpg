@@ -144,7 +144,9 @@ class TestTransferCardsActionSystem:
         card = _make_card()
         card.hit_count = 3
         source.get(HandComponent).cards.append(card)
-        source.add(PlayCardsAction, "角色.无名", card, ["怪物.甲", "怪物.甲", "怪物.乙"])
+        source.add(
+            PlayCardsAction, "角色.无名", card, ["怪物.甲", "怪物.甲", "怪物.乙"]
+        )
 
         await system.react([source])
 

@@ -18,10 +18,12 @@ from ai_rpg.models import (
     HandComponent,
     TargetType,
 )
+from ai_rpg.systems.arbitration_common import (
+    ArbitrationContext,
+)
 from ai_rpg.systems.turn_end_arbitration_system import (
     _handle_resolve_damage,
     _handle_resolve_effect,
-    _TurnEndArbitrationContext,
 )
 
 
@@ -56,7 +58,7 @@ class TestResolveDamageHandler:
     def test_damage_subtracts_total_block(self) -> None:
         context = Context()
         hero = _make_actor(context, "英雄", hp=10, max_hp=10, hand=[_block_card(4)])
-        ctx = _TurnEndArbitrationContext()
+        ctx = ArbitrationContext()
 
         segment = _handle_resolve_damage(
             _make_game({"英雄": hero}), ctx, "英雄", "英雄", base_damage=5, hits=1
@@ -72,7 +74,7 @@ class TestResolveEffectHandler:
         """回合结束的受效结算目标恒为持有者本人。"""
         context = Context()
         ally = _make_actor(context, "队友", hp=4, max_hp=10, hand=[])
-        ctx = _TurnEndArbitrationContext()
+        ctx = ArbitrationContext()
 
         segment = _handle_resolve_effect(
             _make_game({"队友": ally}),
@@ -93,7 +95,7 @@ class TestResolveEffectHandler:
     def test_lifesteal_clamps_to_max_hp(self) -> None:
         context = Context()
         hero = _make_actor(context, "英雄", hp=9, max_hp=10, hand=[])
-        ctx = _TurnEndArbitrationContext()
+        ctx = ArbitrationContext()
 
         _handle_resolve_effect(
             _make_game({"英雄": hero}),
@@ -110,7 +112,7 @@ class TestResolveEffectHandler:
     def test_reflect_lowers_hp_per_hit(self) -> None:
         context = Context()
         hero = _make_actor(context, "英雄", hp=10, max_hp=10, hand=[])
-        ctx = _TurnEndArbitrationContext()
+        ctx = ArbitrationContext()
 
         segment = _handle_resolve_effect(
             _make_game({"英雄": hero}),
@@ -127,7 +129,7 @@ class TestResolveEffectHandler:
 
     def test_missing_entity_returns_error_without_change(self) -> None:
         context = Context()
-        ctx = _TurnEndArbitrationContext()
+        ctx = ArbitrationContext()
 
         segment = _handle_resolve_effect(
             _make_game({}), ctx, "幽灵", "幽灵", base=5, hits=1, heal_mult=1
@@ -141,7 +143,7 @@ class TestResolveEffectHandler:
         context = Context()
         hero = _make_actor(context, "英雄", hp=10, max_hp=10, hand=[])
         other = _make_actor(context, "怪物", hp=10, max_hp=10, hand=[])
-        ctx = _TurnEndArbitrationContext()
+        ctx = ArbitrationContext()
 
         segment = _handle_resolve_damage(
             _make_game({"英雄": hero, "怪物": other}),
@@ -159,7 +161,7 @@ class TestResolveEffectHandler:
         context = Context()
         hero = _make_actor(context, "英雄", hp=10, max_hp=10, hand=[])
         other = _make_actor(context, "怪物", hp=10, max_hp=10, hand=[])
-        ctx = _TurnEndArbitrationContext()
+        ctx = ArbitrationContext()
 
         segment = _handle_resolve_effect(
             _make_game({"英雄": hero, "怪物": other}),

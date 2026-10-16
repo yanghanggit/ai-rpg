@@ -41,14 +41,14 @@ from .arbitration_common import (
     build_summary_section,
     build_tool_flow_section,
     collect_hand_cards_with,
-    get_entity_stats_result,
-    handle_submit_arbitration,
+    get_entity_stats,
     make_get_entity_stats_tool,
     make_resolve_damage_tool,
     make_resolve_effect_tool,
     make_submit_arbitration_tool,
-    resolve_damage_core,
-    resolve_effect_core,
+    resolve_damage,
+    resolve_effect,
+    submit_arbitration,
 )
 
 
@@ -74,7 +74,7 @@ def _build_turn_end_card_lines(card: Card) -> str:
 
 
 @prompt_builder
-def _build_turn_end_arbitration_tool_prompt(
+def _build_turn_end_arbitration_prompt(
     holder_name: str,
     cards: List[Card],
     current_round_number: int,
@@ -135,13 +135,9 @@ SUBMIT_ARBITRATION_TOOL: Final[ToolDefinition] = make_submit_arbitration_tool(
 ###########################################################################################################################################
 # 仲裁工具 handler（核心在 arbitration_common，此处仅绑定回合结束专属标签 / 目标约束）
 ###########################################################################################################################################
-# 兼容别名：回合结束仲裁历史上使用独立的 context 类名
-_TurnEndArbitrationContext = ArbitrationContext
-
-
 def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
     """处理「获取状态工具」调用：返回 HP/总格挡。"""
-    return get_entity_stats_result(game, entity_name)
+    return get_entity_stats(game, entity_name)
 
 
 def _handle_resolve_damage(
@@ -156,7 +152,7 @@ def _handle_resolve_damage(
     rationale: str = "",
 ) -> str:
     """处理「承伤结算」：目标恒为持有者，交由仲裁公共核心结算。"""
-    return resolve_damage_core(
+    return resolve_damage(
         game,
         ctx,
         actor_label=holder_name,
@@ -183,7 +179,7 @@ def _handle_resolve_effect(
     rationale: str = "",
 ) -> str:
     """处理「受效结算」：目标恒为持有者，交由仲裁公共核心结算。"""
-    return resolve_effect_core(
+    return resolve_effect(
         game,
         ctx,
         entity_name=entity_name,
@@ -232,8 +228,14 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
         if not entities:
             return
 
-        # 以 pass turn 实体定位场景；只处理本次发起 pass turn 的行动者（entities）
-        pass_turn_entity = entities[0]
+        # 只处理本次发起 pass turn 的行动者（PassTurnActionSystem 一次只处理一个）
+        await self._run_arbitration(entities[0])
+
+    #######################################################################################################################################
+    async def _run_arbitration(self, pass_turn_entity: Entity) -> None:
+        """驱动单个持有者的完整回合结束仲裁流程。"""
+
+        # 以 pass turn 实体定位场景
         stage_entity = self._game.resolve_stage_entity(pass_turn_entity)
         assert (
             stage_entity is not None
@@ -243,7 +245,6 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
             self._game.current_dungeon_combat_room.combat.rounds or []
         )
 
-        # 仅处理本次发起 pass turn 的行动者（PassTurnActionSystem 一次只处理一个）
         turn_end_cards = self._collect_hand_turn_end_cards(pass_turn_entity)
         if not turn_end_cards:
             logger.debug(
@@ -251,7 +252,7 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
             )
             return
 
-        prompt = _build_turn_end_arbitration_tool_prompt(
+        prompt = _build_turn_end_arbitration_prompt(
             pass_turn_entity.name,
             turn_end_cards,
             current_round_number,
@@ -291,7 +292,7 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
                         pass_turn_entity.name,
                     ),
                     SUBMIT_ARBITRATION_TOOL.function.name: partial(
-                        handle_submit_arbitration, ctx
+                        submit_arbitration, ctx
                     ),
                 },
                 max_rounds=6,
@@ -336,7 +337,7 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
             dump_attr=REPLACED_MESSAGES_ATTR,
         )
 
-        self._apply_turn_end_arbitration_result(
+        self._apply_arbitration_result(
             stage_entity,
             pass_turn_entity,
             ctx,
@@ -344,7 +345,7 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
         )
 
     #######################################################################################################################################
-    def _apply_turn_end_arbitration_result(
+    def _apply_arbitration_result(
         self,
         stage_entity: Entity,
         holder: Entity,

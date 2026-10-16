@@ -21,7 +21,7 @@ from ai_rpg.models import (
 from ai_rpg.models.utils import append_item_with_stacking
 from ai_rpg.systems.monster_pre_play_system import _format_card
 from ai_rpg.systems.play_cards_arbitration_system import (
-    _build_combat_arbitration_tool_prompt,
+    _build_play_cards_arbitration_prompt,
 )
 from ai_rpg.systems.turn_end_arbitration_system import _build_turn_end_card_lines
 
@@ -125,7 +125,7 @@ def test_one_invalid_affix_empties_whole_slot() -> None:
 
 
 def test_play_arbitration_prompt_renders_all_affixes_separately() -> None:
-    text = _build_combat_arbitration_tool_prompt(
+    text = _build_play_cards_arbitration_prompt(
         "角色.无名", _card(on_play_affixes=[AFFIX_A, AFFIX_B]), ["怪物.甲"], 1
     )
     assert AFFIX_A in text and AFFIX_B in text

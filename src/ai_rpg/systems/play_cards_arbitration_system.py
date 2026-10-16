@@ -1,6 +1,5 @@
 """战斗仲裁动作系统模块。"""
 
-from dataclasses import dataclass
 from functools import partial
 from typing import Dict, Final, List, final
 
@@ -40,46 +39,35 @@ from .arbitration_common import (
     build_stats_update_notification,
     build_summary_section,
     build_tool_flow_section,
-    get_entity_stats_result,
-    handle_submit_arbitration,
+    get_entity_stats,
     make_get_entity_stats_tool,
     make_resolve_damage_tool,
     make_resolve_effect_tool,
     make_submit_arbitration_tool,
-    resolve_damage_core,
-    resolve_effect_core,
+    resolve_damage,
+    resolve_effect,
+    submit_arbitration,
 )
 
 
 ###########################################################################################################################################
 # 仲裁提示词构建器（play_cards 专属）
 ###########################################################################################################################################
-@dataclass
-class _SpreadSections:
-    """SPREAD 专属 prompt 片段"""
+def _build_spread_sections(card: Card, targets: List[str]) -> str:
+    """为 SPREAD 卡牌构建仲裁 prompt 中的专属片段（非 SPREAD 卡返回空串）。
 
-    hit_assignment: str
-
-
-def _build_spread_sections(
-    card: Card,
-    targets: List[str],
-) -> _SpreadSections:
-    """为 SPREAD 卡牌构建仲裁 prompt 中的专属片段。
-
-    当 target_type 不是 SPREAD 时，字段为空字符串。命中分配由系统预先随机确定，
-    每个 `resolve_damage` 调用的 `hits` 应填该目标在此分配中的出现次数。
+    命中分配由系统预先随机确定，每个 `resolve_damage` 调用的 `hits` 应填该目标
+    在此分配中的出现次数。
     """
     if card.target_type != TargetType.SPREAD:
-        return _SpreadSections("")
+        return ""
 
     hit_lines = "\n".join(f"  第{i + 1}击 → {t}" for i, t in enumerate(targets))
-    hit_assignment = (
+    return (
         f"\n## 命中分配（系统预先随机确定，共 {card.hit_count} 击）\n\n"
         f"{hit_lines}\n\n"
         f"对每个被命中的不重复目标调用一次 {RESOLVE_DAMAGE_TOOL.function.name}，`hits` 填该目标在上表中的出现次数。"
     )
-    return _SpreadSections(hit_assignment=hit_assignment)
 
 
 @prompt_builder
@@ -115,7 +103,7 @@ def _build_card_data_lines(card: Card) -> str:
 
 
 @prompt_builder
-def _build_combat_arbitration_tool_prompt(
+def _build_play_cards_arbitration_prompt(
     actor_name: str,
     card: Card,
     targets: List[str],
@@ -137,7 +125,7 @@ def _build_combat_arbitration_tool_prompt(
     )
 
     # 构建 SPREAD 卡牌的专属仲裁片段。
-    spread = _build_spread_sections(card, targets)
+    spread_hit_assignment = _build_spread_sections(card, targets)
 
     return f"""# 第 {current_round_number} 回合：战斗结算（工具调用模式）
 
@@ -148,7 +136,7 @@ def _build_combat_arbitration_tool_prompt(
 ## 本卡数据（本卡 = 本次实际打出的牌）
 
 {_build_card_data_lines(card)}
-{spread.hit_assignment}
+{spread_hit_assignment}
 
 ## 即时词缀（共 {len(card.on_play_affixes)} 条，逐条结算，一条都不能漏）
 
@@ -209,7 +197,7 @@ SUBMIT_ARBITRATION_TOOL: Final[ToolDefinition] = make_submit_arbitration_tool(
 ###########################################################################################################################################
 def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
     """处理「获取状态工具」调用：返回 HP/总格挡 + 参与受击仲裁的手牌卡牌数据。"""
-    return get_entity_stats_result(game, entity_name, on_hit_cards=True)
+    return get_entity_stats(game, entity_name, on_hit_cards=True)
 
 
 def _handle_resolve_damage(
@@ -225,7 +213,7 @@ def _handle_resolve_damage(
     rationale: str = "",
 ) -> str:
     """处理「承伤结算」：绑定出牌者/卡牌标签后交由仲裁公共核心结算。"""
-    return resolve_damage_core(
+    return resolve_damage(
         game,
         ctx,
         actor_label=f"{actor_name}|{card.name}",
@@ -250,7 +238,7 @@ def _handle_resolve_effect(
     rationale: str = "",
 ) -> str:
     """处理「受效结算」：交由仲裁公共核心结算。"""
-    return resolve_effect_core(
+    return resolve_effect(
         game,
         ctx,
         entity_name=entity_name,
@@ -294,11 +282,11 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
             f"PlayCardsArbitrationSystem: 触发仲裁，找到 {len(entities)} 个符合条件的出牌实体"
         )
 
-        await self._request_combat_arbitration(entities[0])
+        await self._run_arbitration(entities[0])
 
     #######################################################################################################################################
-    async def _request_combat_arbitration(self, actor_entity: Entity) -> None:
-        """驱动单次出牌的完整工具化仲裁流程。"""
+    async def _run_arbitration(self, actor_entity: Entity) -> None:
+        """驱动单次出牌的完整仲裁流程。"""
 
         stage_entity = self._game.resolve_stage_entity(actor_entity)
         assert stage_entity is not None, f"无法获取 {actor_entity.name} 所在场景实体！"
@@ -325,7 +313,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
         round_current_actor = latest_round.current_actor
 
         # 生成工具化仲裁提示消息（完整版，供 LLM 首轮使用）
-        message = _build_combat_arbitration_tool_prompt(
+        message = _build_play_cards_arbitration_prompt(
             actor_entity.name,
             play_cards_action.card,
             play_cards_action.targets,
@@ -372,7 +360,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                         _handle_resolve_effect, self._game, ctx
                     ),
                     SUBMIT_ARBITRATION_TOOL.function.name: partial(
-                        handle_submit_arbitration, ctx
+                        submit_arbitration, ctx
                     ),
                 },
                 max_rounds=6,
@@ -431,7 +419,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
                 return
             ctx.hp_changes[notify_name] = compute_character_stats(entity).hp
 
-        self._apply_tool_arbitration_result(
+        self._apply_arbitration_result(
             stage_entity,
             actor_entity,
             ctx,
@@ -439,7 +427,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
         )
 
     #######################################################################################################################################
-    def _apply_tool_arbitration_result(
+    def _apply_arbitration_result(
         self,
         stage_entity: Entity,
         actor_entity: Entity,

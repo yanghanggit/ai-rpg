@@ -9,8 +9,9 @@
   ``build_narrative_section`` / ``build_summary_section``；
 - ``ArbitrationContext``：统一结果容器（各系统按需取用字段）；
 - ``make_*_tool``：工具 schema 工厂（字段结构 + 字段描述统一，工具级 description 由各系统传入）；
-- ``resolve_damage_core`` / ``resolve_effect_core`` / ``get_entity_stats_result``：handler 核心；
-- ``pending_hp`` / ``record_segment`` / ``handle_submit_arbitration``：通用 handler 辅助；
+- ``get_entity_stats`` / ``resolve_damage`` / ``resolve_effect`` / ``submit_arbitration``：
+  与同名工具一一对应的 handler 核心（各仲裁的 ``_handle_*`` 薄包装复用它们）；
+- ``pending_hp`` / ``record_segment``：通用 handler 辅助；
 - ``build_stats_update_notification`` / ``build_loop_summary_memory`` /
   ``build_arbitration_broadcast``：跨仲裁共用的输出 builder。
 
@@ -214,7 +215,7 @@ def record_segment(
     return segment
 
 
-def get_entity_stats_result(
+def get_entity_stats(
     game: DBGGame, entity_name: str, *, on_hit_cards: bool = False
 ) -> str:
     """「获取状态工具」核心：返回 HP / 总格挡；``on_hit_cards=True`` 时附上受击卡牌。"""
@@ -255,7 +256,7 @@ def _target_guard_error(entity_name: str, require_entity: str) -> str:
     )
 
 
-def resolve_damage_core(
+def resolve_damage(
     game: DBGGame,
     ctx: ArbitrationContext,
     *,
@@ -296,7 +297,7 @@ def resolve_damage_core(
     return record_segment(ctx, entity_name, result.new_hp, segment)
 
 
-def resolve_effect_core(
+def resolve_effect(
     game: DBGGame,
     ctx: ArbitrationContext,
     *,
@@ -334,7 +335,7 @@ def resolve_effect_core(
     return record_segment(ctx, entity_name, result.new_hp, segment)
 
 
-def handle_submit_arbitration(
+def submit_arbitration(
     ctx: ArbitrationContext,
     combat_log: str,
     narrative: str,

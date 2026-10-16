@@ -41,10 +41,10 @@ from .arbitration_common import (
     build_loop_summary_memory,
     build_stats_update_notification,
     build_summary_section,
-    get_entity_stats_result,
-    handle_submit_arbitration,
+    get_entity_stats,
     make_get_entity_stats_tool,
     make_submit_arbitration_tool,
+    submit_arbitration,
 )
 
 
@@ -55,6 +55,8 @@ def _build_artifact_blocks(entries: List[Tuple[str, Artifact]]) -> str:
     """把本场待结算的神器逐条渲染为提示词块；source 未显式指定时以携带者为归属。"""
     blocks: List[str] = []
     for holder_name, artifact in entries:
+
+        # 渲染每个神器的修正规则块
         modifiers = (
             render_labeled_str_list(
                 "- 修正规则（modifiers，逐条全部结算）",
@@ -64,6 +66,8 @@ def _build_artifact_blocks(entries: List[Tuple[str, Artifact]]) -> str:
             if artifact.modifiers
             else "- 修正规则（modifiers）：（未提供）"
         )
+
+        # 渲染每个神器的基本信息块（名称、来源、描述）
         blocks.append(
             f"### {artifact.name}\n\n"
             f"- source（来源/归属）：{artifact.source or holder_name}\n\n"
@@ -74,7 +78,7 @@ def _build_artifact_blocks(entries: List[Tuple[str, Artifact]]) -> str:
 
 
 @prompt_builder
-def _build_artifact_post_arbitration_prompt(
+def _build_artifact_arbitration_prompt(
     entries: List[Tuple[str, Artifact]],
     current_round_number: int,
     party_names: str,
@@ -166,13 +170,9 @@ SUBMIT_ARBITRATION_TOOL: Final[ToolDefinition] = make_submit_arbitration_tool(
 ###########################################################################################################################################
 # 仲裁工具 handler（get/submit 核心在 arbitration_common；change_hp 为神器专属 delta 结算）
 ###########################################################################################################################################
-# 兼容别名：神器仲裁历史上使用独立 context 类名
-_ArbitrationContext = ArbitrationContext
-
-
 def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
     """读取角色当前 HP 与总格挡。"""
-    return get_entity_stats_result(game, entity_name)
+    return get_entity_stats(game, entity_name)
 
 
 def _handle_change_hp(
@@ -182,15 +182,26 @@ def _handle_change_hp(
     entity = game.get_actor_entity(entity_name)
     if entity is None:
         return f"错误：找不到战斗角色 {entity_name}"
+
+    # 读取角色当前属性，准备计算 HP 变化
     stats = compute_character_stats(entity)
     old_hp = ctx.pending_hp.get(entity_name, stats.hp)
     new_hp = max(0, min(old_hp + int(delta), stats.max_hp))
+
+    # 记录初始 HP，如果尚未记录
     if entity_name not in ctx.hp_initial:
         ctx.hp_initial[entity_name] = old_hp
+
+    # 更新待仲裁的 HP 状态和本次变化量
     ctx.pending_hp[entity_name] = new_hp
     ctx.hp_changes[entity_name] = new_hp
+
+    # 计算本次 HP 变化的方向和描述动词
     changed = old_hp - new_hp  # 正=扣减
+
+    # 根据 HP 变化量确定描述动词
     verb = "扣减" if changed > 0 else ("回复" if changed < 0 else "无变化")
+
     return (
         f"{entity_name} HP 将更新为 {new_hp}/{stats.max_hp}"
         f"（{old_hp} → {new_hp}，本次{verb} {abs(changed)}）"
@@ -204,6 +215,8 @@ def _compose_artifact_combat_log(ctx: ArbitrationContext) -> str:
         f"{name} {ctx.hp_initial[name]}→{ctx.hp_changes[name]}"
         for name in ctx.hp_initial
     )
+
+    # 拼接 HP 变化段，确保日志与实际落库一致
     return f"{ctx.combat_log}；HP:{hp_tail}" if hp_tail else ctx.combat_log
 
 
@@ -237,10 +250,10 @@ class ArtifactPostArbitrationSystem(ReactiveProcessor):
 
         # 同一帧可能有多个动作实体命中本运行点；逐个 await，串行结算，避免并发争夺
         for action_entity in entities:
-            await self._run_artifact_arbitration(action_entity)
+            await self._run_arbitration(action_entity)
 
     #######################################################################################################################################
-    async def _run_artifact_arbitration(self, action_entity: Entity) -> None:
+    async def _run_arbitration(self, action_entity: Entity) -> None:
         """对一次动作触发的场景神器执行一次仲裁。"""
 
         # 场景实体（当前战斗舞台），同时即本次仲裁者
@@ -289,7 +302,7 @@ class ArtifactPostArbitrationSystem(ReactiveProcessor):
         )
         monster_names = "、".join(e.name for e in monsters) if monsters else "无"
 
-        prompt = _build_artifact_post_arbitration_prompt(
+        prompt = _build_artifact_arbitration_prompt(
             entries=entries,
             current_round_number=current_round_number,
             party_names=party_names,
@@ -297,7 +310,7 @@ class ArtifactPostArbitrationSystem(ReactiveProcessor):
         )
 
         # 仲裁结果容器：handler 通过 partial 绑定写入，避免闭包。
-        ctx = _ArbitrationContext()
+        ctx = ArbitrationContext()
 
         # 以 stage 实体为仲裁者：直接使用其持久记忆，使 prompt / 工具轨迹 / 结果都写入其记忆。
         stage_memory = self._game.get_agent_memory(stage_entity)
@@ -326,7 +339,7 @@ class ArtifactPostArbitrationSystem(ReactiveProcessor):
                         _handle_change_hp, self._game, ctx
                     ),
                     SUBMIT_ARBITRATION_TOOL.function.name: partial(
-                        handle_submit_arbitration, ctx
+                        submit_arbitration, ctx
                     ),
                 },
                 max_rounds=6,
@@ -375,17 +388,17 @@ class ArtifactPostArbitrationSystem(ReactiveProcessor):
         )
 
         # 应用仲裁结果
-        self._apply_artifact_arbitration_result(
+        self._apply_arbitration_result(
             stage_entity=stage_entity,
             ctx=ctx,
             combat_log=combat_log,
         )
 
     #######################################################################################################################################
-    def _apply_artifact_arbitration_result(
+    def _apply_arbitration_result(
         self,
         stage_entity: Entity,
-        ctx: _ArbitrationContext,
+        ctx: ArbitrationContext,
         combat_log: str,
     ) -> None:
         """落库本次仲裁结果：HP / 广播 / 回合日志。"""

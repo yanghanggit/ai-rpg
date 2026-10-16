@@ -124,7 +124,7 @@ class TestLoopMemoryCompression:
             "ai_rpg.systems.play_cards_arbitration_system.agent_loop",
             new=AsyncMock(side_effect=_fake_loop_success),
         ) as mock_agent_loop:
-            await system._request_combat_arbitration(actor)
+            await system._run_arbitration(actor)
 
         # 以 stage 为仲裁者，并携带 loop_id
         assert mock_agent_loop.await_args is not None
@@ -163,7 +163,7 @@ class TestLoopMemoryCompression:
             "ai_rpg.systems.play_cards_arbitration_system.agent_loop",
             new=AsyncMock(side_effect=_fake_loop_failure),
         ):
-            await system._request_combat_arbitration(actor)
+            await system._run_arbitration(actor)
 
         # 失败：回滚删除 [start, end)，不写总结
         assert mock_game.replace_span.call_count == 1
@@ -176,10 +176,10 @@ class TestSubmitHandlerStoresSummary:
     def test_play_cards_submit_stores_summary(self) -> None:
         from ai_rpg.systems.arbitration_common import (
             ArbitrationContext,
-            handle_submit_arbitration,
+            submit_arbitration,
         )
 
         ctx = ArbitrationContext()
-        handle_submit_arbitration(ctx, combat_log="", narrative="叙事", summary="总结")
+        submit_arbitration(ctx, combat_log="", narrative="叙事", summary="总结")
         assert ctx.narrative == "叙事"
         assert ctx.summary == "总结"

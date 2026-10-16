@@ -43,7 +43,10 @@ class TransferCardsActionSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     async def react(self, entities: List[Entity]) -> None:
-        """将可传递卡牌从源手牌移除，并 copy 到每个目标手牌。"""
+        """将可传递卡牌从源手牌移除，并 copy 到每个目标手牌。
+
+        副本落地即把 `transferable` 置为 False——传递只有一跳：收到副本的目标不能再次转手。
+        """
         if not self._game.current_dungeon_combat_room.combat.is_ongoing:
             logger.debug("TransferCardsActionSystem: 战斗未进行中，跳过卡牌转移")
             return
@@ -51,6 +54,13 @@ class TransferCardsActionSystem(ReactiveProcessor):
         for entity in entities:
             play_cards_action = entity.get(PlayCardsAction)
             card = play_cards_action.card
+
+            # 防御性断言：filter 已保证只有 transferable 的牌进入；此处兜底防止旁路调用
+            # 把非传递牌误当传递牌处理（那会错误地把它移出源手牌）。
+            assert card.transferable, (
+                f"TransferCardsActionSystem: 非传递牌「{card.name}」不应进入转移流程"
+            )
+
             source_hand = entity.get(HandComponent)
 
             # 从源手牌移除本体（原卡后续由 DiscardCardsActionSystem 归入弃牌堆）。
@@ -72,11 +82,13 @@ class TransferCardsActionSystem(ReactiveProcessor):
                         f"transfer_card: 自传递，复制一份「{card.name}」回 {target_name} 手牌"
                     )
 
-                # 将卡牌 copy 到目标手牌
+                # 将卡牌 copy 到目标手牌；副本落地即失去传递性，不允许再次传递。
                 copied = card.model_copy(deep=True)
                 copied.uuid = str(uuid4())
+                copied.transferable = False
                 target.get(HandComponent).cards.append(copied)
                 logger.debug(
                     f"transfer_card: 「{card.name}」已 copy 到 {target_name} 的手牌"
-                    f"（source={copied.source!r}，新 uuid={copied.uuid}）"
+                    f"（source={copied.source!r}，新 uuid={copied.uuid}，"
+                    f"transferable={copied.transferable}）"
                 )

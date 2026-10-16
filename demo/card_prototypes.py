@@ -244,12 +244,13 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             card_type="手牌",
             archetype="攻击端",
             archetype_subtype="成长性伤害",
-            name="持续减益传染",
+            name="持续减益转嫁",
             summary="转嫁 + 回合末持续减益（数值方向自定）。",
             guide=(
                 "字段：transferable=True、retain=True、on_turn_end_affixes（引导）。"
-                "副本落在目标手牌，每回合末对非 source 者触发一条持续减益规则——请选一个（或组合）"
-                "内建数值写成你自己的具体词缀（如借本卡 damage 持续灼烧、借目标气血加重等）。"
+                "副本落在目标手牌（只传一跳：落地即 transferable=False、不可再转手），每回合末对非 source 者"
+                "触发一条持续减益规则——请选一个（或组合）内建数值写成你自己的具体词缀"
+                "（如借本卡 damage 持续灼烧、借目标气血加重等）。"
             ),
             keywords=("transferable", "retain", "on_turn_end_affixes"),
         ),
@@ -265,8 +266,9 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             summary="出牌即消耗本体，副本进目标手牌持续受损（数值方向自定）。",
             guide=(
                 "字段：transferable=True、exhaust=True、on_turn_end_affixes（引导）。"
-                "本体打出后进 ExhaustPile；副本进目标手牌且继承 exhaust=True（目标日后打出"
-                "副本同样消耗），实现一次性传染。回合末词缀为「取数」引导，请实例化为你自己的一条具体规则。"
+                "本体打出后进 ExhaustPile；副本进目标手牌且继承 exhaust=True（目标日后打出副本同样消耗），"
+                "但落地即 transferable=False——只投递一次、不可再转手。回合末词缀为「取数」引导，"
+                "请实例化为你自己的一条具体规则。"
             ),
             keywords=("transferable", "exhaust", "on_turn_end_affixes"),
         ),
@@ -284,7 +286,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             guide=(
                 "字段：transferable=True、on_hit_affixes（引导）、damage=1。出牌后副本进入目标手牌并"
                 "保留 source；目标被命中时触发一条由这张牌承载的易伤规则——请选一个（或组合）内建"
-                "数值写成你自己的具体词缀。无需独立状态存储——「破绽」就是这张留在对方手上的牌。"
+                "数值写成你自己的具体词缀（副本落地即 transferable=False、不可再转手）。无需独立状态存储——「破绽」就是这张留在对方手上的牌。"
             ),
             keywords=("transferable", "on_hit_affixes"),
         ),
@@ -460,8 +462,9 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             summary="转嫁持续增益给友方（数值方向自定）。",
             guide=(
                 "字段：transferable=True、block=1、on_turn_end_affixes（引导）。"
-                "出牌后副本进入友方手牌，其持有者每次 pass turn 触发一条持续增益规则——请选一个"
-                "（或组合）内建数值写成你自己的具体词缀（如按 block 回复、借自身气血等）。"
+                "出牌后副本进入友方手牌（落地即 transferable=False、不可再转手），其持有者每次 pass turn"
+                "触发一条持续增益规则——请选一个（或组合）内建数值写成你自己的具体词缀"
+                "（如按 block 回复、借自身气血等）。"
             ),
             keywords=("transferable", "on_turn_end_affixes"),
         ),
@@ -476,8 +479,8 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             name="格挡支援",
             summary="出牌把确定性格挡副本分发给队友。",
             guide=(
-                "字段：transferable=True、block=3。副本携带确定性格挡进目标手牌，"
-                "持有期计入目标总防御；与「支援分发」的区别在于用确定性 block 而非词缀承载支援。"
+                "字段：transferable=True、block=3。副本携带确定性格挡进目标手牌（落地即 transferable=False、"
+                "不可再转手），持有期计入目标总防御；与「支援分发」的区别在于用确定性 block 而非词缀承载支援。"
             ),
             keywords=("transferable", "block"),
         ),
@@ -542,11 +545,12 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             card_type="装备",
             archetype="攻击端",
             archetype_subtype="成长性伤害",
-            name="投掷/传染装备",
+            name="投掷/转嫁装备",
             summary="结构示例：出牌后转移给敌人并跨回合保留（transferable=True、retain=True；无词缀）。",
             guide=(
                 "结构：transferable=True、retain=True、damage=1、hit_count=1、"
-                "block=0、target_type=SINGLE。示范「出牌后落到对手手里」的骨架；"
+                "block=0、target_type=SINGLE。示范「出牌后落到对手手里」的骨架"
+                "（副本只传一跳：落地即 transferable=False、不可再转手）；"
                 "示例刻意不带词缀——词缀由你依规范自行设计。"
                 "速度被动示例：speed=0（中性，速度被动可与打法无关）。"
             ),

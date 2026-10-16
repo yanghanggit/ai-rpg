@@ -31,6 +31,7 @@
 - `retain` 与 `ethereal` 互斥：二者同属「回合边界手中牌去向」这一语义轴的两极，同开会令 ethereal 先生效、retain 沦为死开关。
 - `transferable` 与 `exhaust` 设 true 的前提是 `playable=true`：牌不可出时二者永不触发，属无效组合。
 - `self_target` 与 `transferable` 互斥（**模型层硬拦截**）：`self_target` 锁定自身并跳过目标解析，`transferable` 依赖解析出的目标列表分发副本，二者语义冲突。若要「自传递复制」，请把 `target_type` 设为 `SINGLE` 并显式选择自身为目标——这是允许的玩法，与互斥字段无关。
+- `transferable` **只传一跳**：副本落地到目标手牌时系统把其 `transferable` 置为 false，收到副本者不能再次转手；自传递复制拿回的副本同样不可再传。副本保留原 `source` 与词缀，持续结算不受影响。
 
 ---
 
@@ -52,7 +53,7 @@
 **行动与指向**
 
 - `exhaust`：整场一次，还是可循环复用。
-- `transferable`：把牌变成可传递载体——传敌投递负面、传友分发增益，方向由词缀决定；目标经 `target_type` 解析，可显式选择自身实现「自传递复制」，但与 `self_target=True` 互斥。
+- `transferable`：把牌变成可传递载体——传敌投递负面、传友分发增益，方向由词缀决定；目标经 `target_type` 解析，可显式选择自身实现「自传递复制」，但与 `self_target=True` 互斥。副本**只传一跳**（落地即 `transferable=False`），收到副本者不能再次转手。
 - `self_target` / `target_type`：作用对象是锁定自身，还是按目标类型（单体 / 阵营全体 / 阵营散射）。
 
 ---

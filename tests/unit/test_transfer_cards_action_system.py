@@ -91,7 +91,9 @@ class TestTransferCardsActionSystem:
             assert copied.uuid != original_uuid
             assert copied.name == card.name
             assert copied.source == card.source
-            assert copied.transferable is True
+            # 副本落地即失去传递性（不可再次传递），本体标志不变。
+            assert copied.transferable is False
+            assert card.transferable is True
 
     # async def test_skips_dead_and_missing_target_but_still_removes_source(
     #     self, context: Context, mock_game: MagicMock, system: TransferCardsActionSystem
@@ -130,6 +132,27 @@ class TestTransferCardsActionSystem:
         assert card not in source.get(HandComponent).cards
         assert len(target.get(HandComponent).cards) == 1
 
+    async def test_multi_hit_does_not_multiply_copies(
+        self, context: Context, mock_game: MagicMock, system: TransferCardsActionSystem
+    ) -> None:
+        """hit_count>1 只影响伤害段数，不增加转移副本：每个目标仍只拿一份（重复目标去重）。"""
+        source = _make_actor(context, "角色.无名")
+        target_a = _make_actor(context, "怪物.甲")
+        target_b = _make_actor(context, "怪物.乙")
+        _stub_actor_lookup(mock_game, {"怪物.甲": target_a, "怪物.乙": target_b})
+
+        card = _make_card()
+        card.hit_count = 3
+        source.get(HandComponent).cards.append(card)
+        source.add(PlayCardsAction, "角色.无名", card, ["怪物.甲", "怪物.甲", "怪物.乙"])
+
+        await system.react([source])
+
+        assert len(target_a.get(HandComponent).cards) == 1
+        assert len(target_b.get(HandComponent).cards) == 1
+        for target in (target_a, target_b):
+            assert target.get(HandComponent).cards[0].transferable is False
+
     async def test_self_target_copies_back_to_source(
         self, context: Context, mock_game: MagicMock, system: TransferCardsActionSystem
     ) -> None:
@@ -150,6 +173,29 @@ class TestTransferCardsActionSystem:
         assert copied is not card
         assert copied.uuid != original_uuid
         assert copied.source == card.source
+        # 自传递拿回的副本同样失去传递性，避免「本体已进弃牌堆、副本仍可无限转手」的回收漏洞。
+        assert copied.transferable is False
+
+    async def test_received_copy_cannot_be_transferred_again(
+        self, context: Context, mock_game: MagicMock, system: TransferCardsActionSystem
+    ) -> None:
+        """链式传递被阻断：收到副本者再持牌时，filter 因 transferable=False 直接拒绝。"""
+        source = _make_actor(context, "角色.无名")
+        receiver = _make_actor(context, "怪物.甲")
+        third = _make_actor(context, "怪物.乙")
+        _stub_actor_lookup(mock_game, {"怪物.甲": receiver, "怪物.乙": third})
+
+        card = _make_card()
+        source.get(HandComponent).cards.append(card)
+        source.add(PlayCardsAction, "角色.无名", card, ["怪物.甲"])
+        await system.react([source])
+
+        received = receiver.get(HandComponent).cards[0]
+        assert received.transferable is False
+
+        # 接收者将副本当作出牌动作的卡再投给第三方：此卡不再具备传递资格，系统拒绝分发。
+        receiver.add(PlayCardsAction, "怪物.甲", received, ["怪物.乙"])
+        assert system.filter(receiver) is False
 
     async def test_skips_when_not_ongoing(
         self, context: Context, mock_game: MagicMock, system: TransferCardsActionSystem
@@ -177,3 +223,15 @@ class TestTransferCardsActionSystem:
         source.add(PlayCardsAction, "角色.无名", card, ["怪物.甲"])
 
         assert system.filter(source) is False
+
+    async def test_react_rejects_non_transferable_card(
+        self, context: Context, mock_game: MagicMock, system: TransferCardsActionSystem
+    ) -> None:
+        """旁路直接调 react 时，防御性断言拦住非传递牌（正常路径由 filter 兜住）。"""
+        source = _make_actor(context, "角色.无名")
+        card = _make_card(transferable=False)
+        source.get(HandComponent).cards.append(card)
+        source.add(PlayCardsAction, "角色.无名", card, ["怪物.甲"])
+
+        with pytest.raises(AssertionError):
+            await system.react([source])

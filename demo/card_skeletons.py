@@ -320,7 +320,7 @@ FINISHER_SKELETON: Final[Card] = Card(
 
 
 DOT_SKELETON: Final[Card] = Card(
-    name="持续减益传染",
+    name="持续减益转嫁",
     description="",
     on_play_affixes=[],
     on_hit_affixes=[],

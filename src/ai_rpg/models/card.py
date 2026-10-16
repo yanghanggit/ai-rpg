@@ -35,7 +35,7 @@ class Card(BaseModel):
     )
     ethereal: bool = False  # pass turn 时若仍留在手牌，自动移入 ExhaustPileComponent
     transferable: bool = (
-        False  # 出牌时额外为每个解析目标手牌 copy 一份（副本 uuid 重新生成；本体照常结算并进入弃牌/消耗流程）
+        False  # 出牌时额外为每个解析目标手牌 copy 一份（副本 uuid 重新生成、transferable 置 False，不可再次传递；本体照常结算并进入弃牌/消耗流程）
     )
     cost: int = 1  # 出牌费用；消耗当前 energy；不足时禁止出牌
     damage: int = 0  # 单次伤害
@@ -121,7 +121,7 @@ AFFIX_DESIGN_SPEC: Final[
 - **格式（硬要求）**：`[词缀名]:机械结算描述`（`[` `]` 与分隔符缺一不可；客户端按 `[名称]:说明` 解析）。写成 `名:描述` 判不合法，**整槽置空**。
 - **取数**（仲裁会全量给出，只能引用、不能写回；优先用内建值）：本卡 `damage` / `block` / `hit_count`；目标 / 自身的 `HP` / 最大 `HP` / 总格挡。写明伤害（`damage`）还是回复（`HP`）、段数（`hit_count`）还是格挡（`block`），**别只写「结算」**。
 - **作用对象**：`自身` / `出牌者` / `目标` / `本卡持有者` / `source 者`（持有者 == `source`）/ `非 source 者`（持有者 ≠ `source`）。`on_turn_end` 目标恒为持有者，只允许 `自身` / `本卡持有者` / `source 者` / `非 source 者`——前两者无条件，后两者按持有者与 `source` 的关系决定是否结算；不得指向其他角色。
-- **source 门控**：`source`＝本卡来源（生成 / 注入者），`transferable` 副本保留原 `source`。`非 source 者` 只伤外人（投毒牌不反噬原主），`source 者` 只利原主。例：`[反噬]:回合结束时对非 source 者造成本卡 damage 的伤害`。
+- **source 门控**：`source`＝本卡来源（生成 / 注入者），`transferable` 副本保留原 `source` 但落地即 `transferable=False`（只传一跳，不可再传递）。`非 source 者` 只伤外人（投毒牌不反噬原主），`source 者` 只利原主。例：`[反噬]:回合结束时对非 source 者造成本卡 damage 的伤害`。
 - 本卡 `damage=0` 时不得凭空造成伤害。
 """
 
@@ -140,7 +140,7 @@ BUILD_CARD_FIELD_DESCRIPTION: Final[
 | `exhaust` | 出牌后永久消耗，不进弃牌循环；默认 false |
 | `retain` | 回合末保留在手牌，不进弃牌堆；默认 false |
 | `ethereal` | pass turn 时若仍在手牌则自动消耗；默认 false |
-| `transferable` | 出牌时额外为每个目标手牌 copy 一份（本体照常结算并进入弃牌/消耗流程）；默认 false |
+| `transferable` | 出牌时额外为每个目标手牌 copy 一份（副本 `transferable` 置 false、不可再传递；本体照常结算并进入弃牌/消耗流程）；默认 false |
 | `cost` | 出牌费用（消耗 energy）；默认 1 |
 | `damage` | 单次伤害；默认 0 |
 | `hit_count` | 攻击次数，多段各自独立结算；默认 1 |
@@ -153,6 +153,7 @@ BUILD_CARD_FIELD_DESCRIPTION: Final[
 - `retain` 与 `ethereal` 互斥，禁止同时为 true：二者同属「回合边界手中牌去向」的两极，同时开启时 ethereal（pass turn 即消耗）先于 retain（回合末保留）生效，retain 失效。
 - `transferable` 与 `exhaust` 均为「被打出时」结算，故为 true 时要求 `playable=true`；`playable=false` 时牌不可出，二者永不触发，属无效组合。
 - `self_target` 与 `transferable` 互斥，禁止同时为 true：`self_target` 锁定自身并跳过目标解析，`transferable` 依赖解析出的目标列表把副本分发到各目标手牌，二者语义冲突。若要自传递复制，请用 `target_type=SINGLE` 把自身作为显式目标。
+- `transferable` 只传递一跳：副本落地到目标手牌时系统把其 `transferable` 置为 false，收到副本者不能再次转手（链式传递与自传递回收均被关闭）；副本仍保留原 `source` 与词缀，持续结算不受影响。
 
 ### 目标类型（target_type）
 

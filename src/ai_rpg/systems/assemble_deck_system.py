@@ -90,6 +90,7 @@ class _DeckCardPick(BaseModel):
     on_play_affixes: Optional[NormalizedStrList] = None
     on_hit_affixes: Optional[NormalizedStrList] = None
     on_turn_end_affixes: Optional[NormalizedStrList] = None
+    on_autonomous_affixes: Optional[NormalizedStrList] = None
 
 
 ####################################################################################################################################
@@ -175,6 +176,12 @@ SUBMIT_DECK_CARD_TOOL: Final[ToolDefinition] = ToolDefinition(
                     "maxItems": 3,
                     "description": "持有者每次 pass turn 结算的回合结束词缀（可选，多值列表）：每个元素是一条完整独立词缀，格式同上；禁止拆分或合并；无则 []。仅当原型该槽非空时可提交。",
                 },
+                "on_autonomous_affixes": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "maxItems": 3,
+                    "description": "卡牌自主运行词缀（可选，多值列表）：持有者每次 pass turn（回合结束词缀之后）结算，效果目标可为场上任意存活角色（敌人/友方/持有者，由词缀文本决定），不锁定持有者；格式同上；无则 []。仅当原型该槽非空时可提交。",
+                },
             },
             "required": ["prototype_id", "name", "description"],
             "additionalProperties": False,
@@ -259,6 +266,7 @@ def _handle_submit_deck_card(
     on_play_affixes: Optional[NormalizedStrList] = None,
     on_hit_affixes: Optional[NormalizedStrList] = None,
     on_turn_end_affixes: Optional[NormalizedStrList] = None,
+    on_autonomous_affixes: Optional[NormalizedStrList] = None,
     **ignored: Any,
 ) -> str:
     """处理 submit_deck_card：校验原型 id 与词缀，不合法则返回错误让 agent 修正重提。
@@ -287,6 +295,7 @@ def _handle_submit_deck_card(
             ("on_play_affixes", on_play_affixes),
             ("on_hit_affixes", on_hit_affixes),
             ("on_turn_end_affixes", on_turn_end_affixes),
+            ("on_autonomous_affixes", on_autonomous_affixes),
         ):
             items = normalize_str_list(submitted or [])
 
@@ -324,6 +333,7 @@ def _handle_submit_deck_card(
             on_play_affixes=on_play_affixes,
             on_hit_affixes=on_hit_affixes,
             on_turn_end_affixes=on_turn_end_affixes,
+            on_autonomous_affixes=on_autonomous_affixes,
         )
     )
     logger.info(
@@ -582,6 +592,7 @@ class AssembleDeckSystem(ReactiveProcessor):
                         "on_play_affixes": pick.on_play_affixes,
                         "on_hit_affixes": pick.on_hit_affixes,
                         "on_turn_end_affixes": pick.on_turn_end_affixes,
+                        "on_autonomous_affixes": pick.on_autonomous_affixes,
                     },
                 )
 

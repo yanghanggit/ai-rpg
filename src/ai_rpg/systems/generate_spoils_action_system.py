@@ -85,13 +85,14 @@ class _SpoilsCardEdit(BaseModel):
     on_play_affixes: Optional[NormalizedStrList] = None
     on_hit_affixes: Optional[NormalizedStrList] = None
     on_turn_end_affixes: Optional[NormalizedStrList] = None
+    on_autonomous_affixes: Optional[NormalizedStrList] = None
 
 
 #######################################################################################################################################
 SUBMIT_SPOILS_CARD_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="submit_spoils_card",
-        description="提交一张候选卡的设计（name / description，以及可选的 on_play_affixes / on_hit_affixes / on_turn_end_affixes）。每张卡各调用一次，用 uuid 精确定位目标卡。",
+        description="提交一张候选卡的设计（name / description，以及可选的 on_play_affixes / on_hit_affixes / on_turn_end_affixes / on_autonomous_affixes）。每张卡各调用一次，用 uuid 精确定位目标卡。",
         parameters={
             "type": "object",
             "properties": {
@@ -141,6 +142,12 @@ SUBMIT_SPOILS_CARD_TOOL: Final[ToolDefinition] = ToolDefinition(
                     "maxItems": 3,
                     "description": "持有者每次 pass turn 结算的回合结束词缀（可选，多值列表）：每个元素是一条完整独立词缀，格式同上；禁止拆分或合并；无则 []。仅当原型该槽非空时可提交；须满足词缀格式。",
                 },
+                "on_autonomous_affixes": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "maxItems": 3,
+                    "description": "卡牌自主运行词缀（可选，多值列表）：持有者每次 pass turn（回合结束词缀之后）结算，效果目标可为场上任意存活角色（敌人/友方/持有者，由词缀文本决定），不锁定持有者；格式同上；无则 []。仅当原型该槽非空时可提交；须满足词缀格式。",
+                },
             },
             "required": ["uuid", "name", "description"],
         },
@@ -172,6 +179,7 @@ def _handle_submit_spoils_card(
     on_play_affixes: Optional[NormalizedStrList] = None,
     on_hit_affixes: Optional[NormalizedStrList] = None,
     on_turn_end_affixes: Optional[NormalizedStrList] = None,
+    on_autonomous_affixes: Optional[NormalizedStrList] = None,
 ) -> str:
     """处理 submit_spoils_card：先校验词缀（硬格式），不合法则返回错误让 agent 修正重提。"""
     card = by_uuid.get(uuid)
@@ -183,6 +191,7 @@ def _handle_submit_spoils_card(
         ("on_play_affixes", on_play_affixes),
         ("on_hit_affixes", on_hit_affixes),
         ("on_turn_end_affixes", on_turn_end_affixes),
+        ("on_autonomous_affixes", on_autonomous_affixes),
     ):
         items = normalize_str_list(submitted or [])
         if not getattr(card, field):
@@ -213,6 +222,7 @@ def _handle_submit_spoils_card(
             on_play_affixes=on_play_affixes,
             on_hit_affixes=on_hit_affixes,
             on_turn_end_affixes=on_turn_end_affixes,
+            on_autonomous_affixes=on_autonomous_affixes,
         )
     )
     logger.info(f"[GenerateSpoilsActionSystem] submit_spoils_card: {uuid} → {name}")
@@ -255,7 +265,12 @@ def _format_card_for_prompt(candidate: _Candidate) -> str:
     # 明确可提交的词缀槽位，避免 agent 对空槽提交后被静默忽略。
     designable_slots = [
         field
-        for field in ("on_play_affixes", "on_hit_affixes", "on_turn_end_affixes")
+        for field in (
+            "on_play_affixes",
+            "on_hit_affixes",
+            "on_turn_end_affixes",
+            "on_autonomous_affixes",
+        )
         if getattr(card, field)
     ]
     if designable_slots:
@@ -288,6 +303,14 @@ def _format_card_for_prompt(candidate: _Candidate) -> str:
             render_labeled_str_list(
                 "  on_turn_end_affixes（原型引导，需实例化为具体规则）",
                 card.on_turn_end_affixes,
+                indent="    ",
+            )
+        )
+    if card.on_autonomous_affixes:
+        lines.append(
+            render_labeled_str_list(
+                "  on_autonomous_affixes（原型引导，需实例化为具体规则；效果目标可为场上任意存活角色）",
+                card.on_autonomous_affixes,
                 indent="    ",
             )
         )
@@ -328,7 +351,7 @@ def _build_spoils_prompt(entity: Entity, candidates: List[_Candidate]) -> str:
 ## 工作流程
 
 1. 逐一审视每张卡（以 `uuid` 精确定位，避免同名混淆）：读骨架字段与设计指导，判断该卡能为你的角色带来什么收益/代价；
-2. 为每张卡各调用一次 `submit_spoils_card`：提交 `uuid` / `name` / `description`；对原型已存在的词缀槽位，提交你设计好的 `on_play_affixes` / `on_hit_affixes` / `on_turn_end_affixes`（合法则采用；未提交或不合法则该槽置空）；
+2. 为每张卡各调用一次 `submit_spoils_card`：提交 `uuid` / `name` / `description`；对原型已存在的词缀槽位，提交你设计好的 `on_play_affixes` / `on_hit_affixes` / `on_turn_end_affixes` / `on_autonomous_affixes`（合法则采用；未提交或不合法则该槽置空）；
 3. 全部提交完毕后调用 `finish_spoils` 结束。"""
 
 
@@ -459,6 +482,7 @@ class GenerateSpoilsActionSystem(ReactiveProcessor):
                         "on_play_affixes": edit.on_play_affixes,
                         "on_hit_affixes": edit.on_hit_affixes,
                         "on_turn_end_affixes": edit.on_turn_end_affixes,
+                        "on_autonomous_affixes": edit.on_autonomous_affixes,
                     },
                 )
                 affixes_applied += count

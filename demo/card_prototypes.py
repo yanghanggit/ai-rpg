@@ -41,6 +41,7 @@ from demo.card_skeletons import (
     SELF_LOOP_SKELETON,
     SHIELD_TRANSFER_SKELETON,
     SPREAD_SKELETON,
+    SUMMON_SKELETON,
     SUPPORT_SKELETON,
     THORNS_SKELETON,
     THROW_SKELETON,
@@ -271,6 +272,29 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
                 "请实例化为你自己的一条具体规则。"
             ),
             keywords=("transferable", "exhaust", "on_turn_end_affixes"),
+        ),
+    ),
+    # 手牌 / 攻击端 / 自主运行（独留一个 summon 示例；retain 可置 True）
+    CardPrototype(
+        skeleton=SUMMON_SKELETON,
+        meta=CardPrototypeMeta(
+            prototype_id="proto.summon",
+            card_type="手牌",
+            archetype="攻击端",
+            archetype_subtype="自主运行",
+            name="召唤兽",
+            summary="抓到即召唤、retain 常驻；每回合自主运行一次，可攻击敌人或辅助我方。",
+            guide=(
+                "字段：retain=True、playable=False、damage=2、on_autonomous_affixes（引导）。"
+                "该牌进入手牌即视为召唤成功，retain 使其跨回合常驻；持有者每次 pass turn 时"
+                "（回合末结算之后）由所在场景结算其自主运行词缀一次。与回合结束词缀的关键区别："
+                "自主运行词缀的效果目标是**场上任意存活角色**（敌人 / 友方 / 持有者），由词缀文本"
+                "决定目标（如一名随机敌人、血量最低者、全体敌人、友方等）；这是「卡牌作为自主主体、"
+                "可影响全场」的机制（召唤兽 / 图腾 / 光环 / 持续诅咒等）。请选一个（或组合）内建数值"
+                "写成你自己的具体词缀。注意：词缀造成的伤害算命中，会触发被命中者的受击词缀；"
+                "该机制能力较强（近似「小神器」），使用时宜克制。"
+            ),
+            keywords=("on_autonomous_affixes", "retain", "autonomous"),
         ),
     ),
     # 手牌 / 攻击端 / 铺垫性攻击支持

@@ -54,6 +54,7 @@ def _card_signature(card: Card) -> Tuple[object, ...]:
         tuple(normalize_str_list(card.on_play_affixes)),
         tuple(normalize_str_list(card.on_hit_affixes)),
         tuple(normalize_str_list(card.on_turn_end_affixes)),
+        tuple(normalize_str_list(card.on_autonomous_affixes)),
     )
 
 

@@ -38,6 +38,7 @@ class RoundEntryKind(StrEnum):
     CONSUMABLE = "consumable"  # 使用消耗品
     GEAR = "gear"  # 装备转化
     ARTIFACT = "artifact"  # 场景神器仲裁
+    AUTONOMOUS = "autonomous"  # 卡牌自主运行仲裁（pass turn，在回合结束之后）
 
 
 ###############################################################################################################################################

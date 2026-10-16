@@ -116,6 +116,51 @@ def test_on_play_rejected_for_unplayable_card() -> None:
     assert not result.ok
 
 
+def test_autonomous_affix_valid() -> None:
+    result = validate_affix_slot(
+        "on_autonomous_affixes",
+        "[自主]:持有者每次 pass turn 时对一名随机敌人造成本卡 damage 的伤害",
+        _card(),
+    )
+    assert result.ok
+
+
+def test_autonomous_affix_allowed_on_unplayable_card() -> None:
+    # 自主运行牌通常是纯状态（playable=False），不应被即时词缀的 playable 约束误伤。
+    result = validate_affix_slot(
+        "on_autonomous_affixes",
+        "[自主]:持有者每次 pass turn 时对一名敌人造成本卡 damage 的伤害",
+        _card(playable=False, retain=True),
+    )
+    assert result.ok
+
+
+def test_autonomous_affix_rejected_for_ethereal_card() -> None:
+    # 虚无牌会在自主运行阶段之前被消耗，自主词缀永不触发：硬拦截。
+    result = validate_affix_slot(
+        "on_autonomous_affixes",
+        "[自主]:持有者每次 pass turn 时对一名敌人造成本卡 damage 的伤害",
+        _card(ethereal=True),
+    )
+    assert not result.ok
+    assert "虚无" in result.reason
+
+
+def test_apply_autonomous_affix() -> None:
+    card = _card(
+        on_play_affixes=[],
+        on_autonomous_affixes=["[词缀名]:占位"],
+        retain=True,
+    )
+    submitted = {"on_autonomous_affixes": ["[自主]:对一名敌人造成本卡 damage 的伤害"]}
+
+    applied, notes = apply_affix_design("角色.无名", card, submitted)
+
+    assert applied == 1
+    assert notes == []
+    assert card.on_autonomous_affixes == ["[自主]:对一名敌人造成本卡 damage 的伤害"]
+
+
 # ── apply_affix_design ─────────────────────────────────────────────────
 
 

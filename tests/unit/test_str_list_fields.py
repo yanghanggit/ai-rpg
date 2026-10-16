@@ -144,6 +144,13 @@ def test_monster_decision_lines_render_all_affixes_separately() -> None:
     assert f"{AFFIX_A}、{AFFIX_B}" not in text
 
 
+def test_monster_decision_lines_render_autonomous_affix() -> None:
+    text = _format_card(_card(on_autonomous_affixes=[AFFIX_A, AFFIX_B]))
+    assert AFFIX_A in text and AFFIX_B in text
+    assert "自主运行词缀" in text
+    assert f"{AFFIX_A}、{AFFIX_B}" not in text
+
+
 # ---------------------------------------------------------------------------
 # 消耗品堆叠身份纳入内置卡牌规格
 # ---------------------------------------------------------------------------

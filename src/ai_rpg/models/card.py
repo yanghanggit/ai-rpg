@@ -28,6 +28,9 @@ class Card(BaseModel):
     on_turn_end_affixes: NormalizedStrList = (
         []
     )  # 回合结束词缀（多值）：持有者每次 pass turn 结算一次，只结算持有者本人手牌中带该词缀的牌；无则 []
+    on_autonomous_affixes: NormalizedStrList = (
+        []
+    )  # 自主运行词缀（多值）：持有者每次 pass turn（在 on_turn_end 结算之后）由所在场景结算一次；效果目标为场上任意存活角色，由词缀文本决定；无则 []
     playable: bool = True  # 是否可出牌；False 时系统阻止出牌操作
     exhaust: bool = False  # 出牌后永久归入 ExhaustPile，不进入 DiscardPile 循环
     retain: bool = (
@@ -74,6 +77,11 @@ class Card(BaseModel):
                 f"Card「{self.name}」同时开启 retain 与 ethereal：二者互斥，"
                 f"pass turn 时 ethereal 会先于回合末 retain 生效，retain 永不触发。"
             )
+        if self.ethereal and self.on_autonomous_affixes:
+            logger.warning(
+                f"Card「{self.name}」同时开启 ethereal 与 on_autonomous_affixes："
+                f"ethereal 会在自主运行阶段之前把牌移入 ExhaustPile，自主词缀永不触发。"
+            )
         if not self.playable and self.transferable:
             logger.warning(
                 f"Card「{self.name}」playable=false 但 transferable=true："
@@ -110,17 +118,18 @@ AFFIX_DESIGN_SPEC: Final[
 
 以下写进词缀也不生效：抽牌 / 弃牌 / 移牌 / 能量 / 额外行动、改 `playable` / `exhaust` / `retain` / `ethereal` / `transferable`、无牌承载的标记；范围外一律不结算（记入 `unsettled_affixes`），请改写或删除。
 
-### 二、三个时机
+### 二、四个时机
 
 - `on_play_affixes`：本卡打出时结算，仅本次出牌生效。
 - `on_hit_affixes`：本卡持有者被本次出牌命中时触发。
 - `on_turn_end_affixes`：持有者每次 pass turn 对**当前持有者本人**结算一次（只结算其本人手牌中带该词缀的牌）；目标恒为持有者，`hit_count` 即对其结算段数。
+- `on_autonomous_affixes`：持有者每次 pass turn（在 `on_turn_end_affixes` **之后**）结算，只结算持有者本人手牌中带该词缀的牌。与前三者的根本区别：**效果目标为场上任意存活角色**，不限于持有者，目标由词缀文本指定；其造成的伤害**算命中**，会触发被命中者的受击词缀。
 
 ### 三、书写约定
 
 - **格式（硬要求）**：`[词缀名]:机械结算描述`（`[` `]` 与分隔符缺一不可；客户端按 `[名称]:说明` 解析）。写成 `名:描述` 判不合法，**整槽置空**。
 - **取数**（仲裁会全量给出，只能引用、不能写回；优先用内建值）：本卡 `damage` / `block` / `hit_count`；目标 / 自身的 `HP` / 最大 `HP` / 总格挡。写明伤害（`damage`）还是回复（`HP`）、段数（`hit_count`）还是格挡（`block`），**别只写「结算」**。
-- **作用对象**：`自身` / `出牌者` / `目标` / `本卡持有者` / `source 者`（持有者 == `source`）/ `非 source 者`（持有者 ≠ `source`）。`on_turn_end` 目标恒为持有者，只允许 `自身` / `本卡持有者` / `source 者` / `非 source 者`——前两者无条件，后两者按持有者与 `source` 的关系决定是否结算；不得指向其他角色。
+- **作用对象**：`自身` / `出牌者` / `目标` / `本卡持有者` / `source 者`（持有者 == `source`）/ `非 source 者`（持有者 ≠ `source`）。`on_turn_end` 目标恒为持有者，只允许 `自身` / `本卡持有者` / `source 者` / `非 source 者`——前两者无条件，后两者按持有者与 `source` 的关系决定是否结算；不得指向其他角色。`on_autonomous_affixes` 可指向场上**任意存活角色**，必须在描述中写明目标如何选取。
 - **source 门控**：`source`＝本卡来源（生成 / 注入者），`transferable` 副本保留原 `source` 但落地即 `transferable=False`（只传一跳，不可再传递）。`非 source 者` 只伤外人（投毒牌不反噬原主），`source 者` 只利原主。例：`[反噬]:回合结束时对非 source 者造成本卡 damage 的伤害`。
 - 本卡 `damage=0` 时不得凭空造成伤害。
 """
@@ -154,6 +163,7 @@ BUILD_CARD_FIELD_DESCRIPTION: Final[
 - `transferable` 与 `exhaust` 均为「被打出时」结算，故为 true 时要求 `playable=true`；`playable=false` 时牌不可出，二者永不触发，属无效组合。
 - `self_target` 与 `transferable` 互斥，禁止同时为 true：`self_target` 锁定自身并跳过目标解析，`transferable` 依赖解析出的目标列表把副本分发到各目标手牌，二者语义冲突。若要自传递复制，请用 `target_type=SINGLE` 把自身作为显式目标。
 - `transferable` 只传递一跳：副本落地到目标手牌时系统把其 `transferable` 置为 false，收到副本者不能再次转手（链式传递与自传递回收均被关闭）；副本仍保留原 `source` 与词缀，持续结算不受影响。
+- `ethereal` 与 `on_autonomous_affixes` 互斥，禁止同时出现：`ethereal` 会在 pass turn 时先于自主运行阶段把牌移入 ExhaustPile，自主词缀永不触发，属无效组合（校验会拒绝该组合）。
 
 ### 目标类型（target_type）
 
@@ -173,6 +183,7 @@ AFFIX_FIELDS: Final[Tuple[str, ...]] = (
     "on_play_affixes",
     "on_hit_affixes",
     "on_turn_end_affixes",
+    "on_autonomous_affixes",
 )
 
 # 词缀硬格式：`[词缀名]:机械结算描述`（方括号 + 半/全角冒号缺一不可）。
@@ -214,6 +225,13 @@ def validate_affix_slot(
     if affix_field == "on_play_affixes" and not card.playable:
         return AffixValidationResult(
             False, "不可出牌（playable=false）的牌不应有即时词缀"
+        )
+
+    if affix_field == "on_autonomous_affixes" and card.ethereal:
+        return AffixValidationResult(
+            False,
+            "虚无牌（ethereal=true）会在自主运行阶段之前被移入 ExhaustPile，"
+            "自主词缀永不触发，属无效组合",
         )
 
     split = _split_affix(affix)

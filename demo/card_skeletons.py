@@ -59,8 +59,7 @@ HEAL_SKELETON: Final[Card] = Card(
     name="即时治疗",
     description="",
     on_play_affixes=[
-        "[词缀名]:打出时取一个内建数值为自身回复 HP"
-        "（治疗方向；候选取数——本卡 block、自身 HP/最大 HP）"
+        "[词缀名]:打出时取一个内建数值为自身回复 HP（治疗方向；候选取数——本卡 block、自身 HP/最大 HP）"
     ],
     on_hit_affixes=[],
     on_turn_end_affixes=[],
@@ -84,8 +83,7 @@ REGEN_SKELETON: Final[Card] = Card(
     on_play_affixes=[],
     on_hit_affixes=[],
     on_turn_end_affixes=[
-        "[词缀名]:回合结束时取一个内建数值为本卡持有者回复 HP"
-        "（持续恢复方向；候选取数——本卡 block、持有者 HP/最大 HP）"
+        "[词缀名]:回合结束时取一个内建数值为本卡持有者回复 HP（持续恢复方向；候选取数——本卡 block、持有者 HP/最大 HP）"
     ],
     playable=False,
     exhaust=False,
@@ -127,8 +125,7 @@ SACRIFICE_SKELETON: Final[Card] = Card(
     name="代价爆发",
     description="",
     on_play_affixes=[
-        "[词缀名]:打出时取一个内建数值对自身结算代价"
-        "（自损方向；候选取数——本卡 damage/block/hit_count、自身 HP/总格挡）"
+        "[词缀名]:打出时取一个内建数值对自身结算代价（自损方向；候选取数——本卡 damage/block/hit_count、自身 HP/总格挡）"
     ],
     on_hit_affixes=[],
     on_turn_end_affixes=[],
@@ -191,8 +188,7 @@ MARK_SKELETON: Final[Card] = Card(
     description="",
     on_play_affixes=[],
     on_hit_affixes=[
-        "[词缀名]:本卡持有者被命中时取一个内建数值对自身结算"
-        "（易伤方向；候选取数——本卡 damage、自身总格挡/HP、出牌者 damage/hit_count）"
+        "[词缀名]:本卡持有者被命中时取一个内建数值对自身结算（易伤方向；候选取数——本卡 damage、自身总格挡/HP、出牌者 damage/hit_count）"
     ],
     on_turn_end_affixes=[],
     playable=True,
@@ -214,8 +210,7 @@ PIERCE_SKELETON: Final[Card] = Card(
     description="",
     # 引导而非成品：以 `[词缀名]` 显形（模型化正确格式），但占位名会被校验拒（照抄必败）。
     on_play_affixes=[
-        "[词缀名]:打出时取一个内建数值为变量对目标结算伤害（候选数值——本卡 damage/hit_count、"
-        "目标的总格挡/当前 HP/最大 HP、自身的 HP/总格挡）。请把这条引导写成属于你的一条具体词缀。"
+        "[词缀名]:打出时取一个内建数值为变量对目标结算伤害（候选数值——本卡 damage/hit_count、目标的总格挡/当前 HP/最大 HP、自身的 HP/总格挡）。请把这条引导写成属于你的一条具体词缀。"
     ],
     on_hit_affixes=[],
     on_turn_end_affixes=[],
@@ -239,8 +234,7 @@ SELF_LOOP_SKELETON: Final[Card] = Card(
     on_play_affixes=[],
     on_hit_affixes=[],
     on_turn_end_affixes=[
-        "[词缀名]:回合结束时取一个内建数值为自身结算"
-        "（续战恢复方向；候选取数——本卡 block、自身 HP/最大 HP）"
+        "[词缀名]:回合结束时取一个内建数值为自身结算（续战恢复方向；候选取数——本卡 block、自身 HP/最大 HP）"
     ],
     playable=True,
     exhaust=False,
@@ -260,8 +254,7 @@ FLEETING_SKELETON: Final[Card] = Card(
     name="限时机会",
     description="",
     on_play_affixes=[
-        "[词缀名]:打出时取一个内建数值对目标额外结算"
-        "（爆发方向；候选取数——本卡 damage/hit_count/block、目标总格挡/HP、自身 HP/总格挡）"
+        "[词缀名]:打出时取一个内建数值对目标额外结算（爆发方向；候选取数——本卡 damage/hit_count/block、目标总格挡/HP、自身 HP/总格挡）"
     ],
     on_hit_affixes=[],
     on_turn_end_affixes=[],
@@ -325,8 +318,7 @@ DOT_SKELETON: Final[Card] = Card(
     on_play_affixes=[],
     on_hit_affixes=[],
     on_turn_end_affixes=[
-        "[词缀名]:回合结束时取一个内建数值对非 source 者结算"
-        "（持续减益方向；候选取数——本卡 damage、目标 HP/总格挡、自身 HP/总格挡）"
+        "[词缀名]:回合结束时取一个内建数值对非 source 者结算（持续减益方向；候选取数——本卡 damage、目标 HP/总格挡、自身 HP/总格挡）"
     ],
     playable=True,
     exhaust=False,
@@ -348,8 +340,7 @@ THROW_SKELETON: Final[Card] = Card(
     on_play_affixes=[],
     on_hit_affixes=[],
     on_turn_end_affixes=[
-        "[词缀名]:回合结束时取一个内建数值对非 source 者结算"
-        "（持续减益方向；候选取数——本卡 damage、目标 HP/总格挡、自身 HP/总格挡）"
+        "[词缀名]:回合结束时取一个内建数值对非 source 者结算（持续减益方向；候选取数——本卡 damage、目标 HP/总格挡、自身 HP/总格挡）"
     ],
     playable=True,
     exhaust=True,
@@ -389,8 +380,7 @@ AOE_DEBUFF_SKELETON: Final[Card] = Card(
     name="群体穿甲",
     description="",
     on_play_affixes=[
-        "[词缀名]:打出时取一个内建数值对目标阵营结算并绕过格挡"
-        "（破防方向；候选取数——本卡 damage/hit_count、目标总格挡/HP）"
+        "[词缀名]:打出时取一个内建数值对目标阵营结算并绕过格挡（破防方向；候选取数——本卡 damage/hit_count、目标总格挡/HP）"
     ],
     on_hit_affixes=[],
     on_turn_end_affixes=[],
@@ -435,8 +425,7 @@ THORNS_SKELETON: Final[Card] = Card(
     description="",
     on_play_affixes=[],
     on_hit_affixes=[
-        "[词缀名]:被命中时取一个内建数值反制出牌者"
-        "（候选取数——出牌者 damage/HP/总格挡、本卡 damage/block、自身 HP/总格挡）"
+        "[词缀名]:被命中时取一个内建数值反制出牌者（候选取数——出牌者 damage/HP/总格挡、本卡 damage/block、自身 HP/总格挡）"
     ],
     on_turn_end_affixes=[],
     playable=True,
@@ -459,8 +448,7 @@ PASSIVE_SKELETON: Final[Card] = Card(
     on_play_affixes=[],
     on_hit_affixes=[],
     on_turn_end_affixes=[
-        "[词缀名]:回合结束时取一个内建数值为本卡持有者回复 HP"
-        "（蛰伏回气方向；候选取数——本卡 damage/block、持有者 HP/最大 HP）"
+        "[词缀名]:回合结束时取一个内建数值为本卡持有者回复 HP（蛰伏回气方向；候选取数——本卡 damage/block、持有者 HP/最大 HP）"
     ],
     playable=False,
     exhaust=False,
@@ -502,8 +490,7 @@ SUPPORT_SKELETON: Final[Card] = Card(
     on_play_affixes=[],
     on_hit_affixes=[],
     on_turn_end_affixes=[
-        "[词缀名]:回合结束时取一个内建数值为本卡持有者结算"
-        "（持续增益方向；候选取数——本卡 block、自身 HP/最大 HP）"
+        "[词缀名]:回合结束时取一个内建数值为本卡持有者结算（持续增益方向；候选取数——本卡 block、自身 HP/最大 HP）"
     ],
     playable=True,
     exhaust=False,
@@ -543,8 +530,7 @@ AOE_BUFF_SKELETON: Final[Card] = Card(
     name="群体鼓舞",
     description="",
     on_play_affixes=[
-        "[词缀名]:打出时取一个内建数值为目标阵营全体结算"
-        "（群体增益方向；候选取数——本卡 block、目标/自身 HP/总格挡）"
+        "[词缀名]:打出时取一个内建数值为目标阵营全体结算（群体增益方向；候选取数——本卡 block、目标/自身 HP/总格挡）"
     ],
     on_hit_affixes=[],
     on_turn_end_affixes=[],
@@ -558,6 +544,31 @@ AOE_BUFF_SKELETON: Final[Card] = Card(
     hit_count=1,
     block=1,
     target_type=TargetType.ALL,
+    self_target=False,
+)
+
+
+# ── 自主运行骨架（召唤 / 图腾 / 光环等泛用；独留一个 summon 示例） ──────────
+
+SUMMON_SKELETON: Final[Card] = Card(
+    name="召唤.名字",
+    description="",
+    on_play_affixes=[],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[],
+    on_autonomous_affixes=[
+        "[词缀名]:持有者每次 pass turn 的自主运行阶段，取一个内建数值对目标（敌人 / 友方，目标由你写明）自主结算一次（自主行动方向；候选取数——本卡 damage/hit_count/block、目标 HP/总格挡）"
+    ],
+    playable=False,
+    exhaust=False,
+    retain=True,
+    ethereal=False,
+    transferable=False,
+    cost=1,
+    damage=2,
+    hit_count=1,
+    block=0,
+    target_type=TargetType.SINGLE,
     self_target=False,
 )
 

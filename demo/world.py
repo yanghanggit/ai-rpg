@@ -51,6 +51,7 @@ from .card_skeletons import (
     GEAR_OFFENSE_SKELETON,
     HEAL_SKELETON,
     REGEN_SKELETON,
+    SUMMON_SKELETON,
 )
 
 # ---------------------------------------------------------------------------
@@ -237,6 +238,24 @@ def _make_regen_card(owner: str, name: str, description: str, *, heal: int) -> C
     card.name = name
     card.description = description
     card.on_turn_end_affixes = [f"[调息]:回合结束时回复本卡持有者 {heal} 点 HP"]
+    card.source = owner
+    return card
+
+
+def _make_summon_card(
+    owner: str,
+    name: str,
+    description: str,
+    *,
+    damage: int,
+    on_autonomous_affixes: Optional[List[str]] = None,
+) -> Card:
+    """召唤 / 自主运行牌：进入手牌即成召唤，retain 常驻，持有者每次 pass turn 自主行动一次。"""
+    card = _copy_skeleton(SUMMON_SKELETON)
+    card.name = name
+    card.description = description
+    card.damage = damage
+    card.on_autonomous_affixes = on_autonomous_affixes or []
     card.source = owner
     return card
 
@@ -572,6 +591,16 @@ def create_badluck() -> Actor:
                 # 2 张基础防御
                 _make_defense_card(actor.name),
                 _make_defense_card(actor.name),
+                # 1 张召唤（好运气先生）：抓到即成召唤、retain 常驻，每回合自主扑咬一名敌人
+                _make_summon_card(
+                    actor.name,
+                    "好运气先生",
+                    "一条不知从哪儿跟上来的瘦狗，毛色脏乱，一条后腿有点跛。坏运气嘴上嫌弃，却给它起了个反着来的名——「好运气先生」。它不叫也不摇尾巴，只在你歇脚时卧在几步外盯着干粮；可真遇上野兽，它抢先蹿出去，咬住对方的腿不松口。",
+                    damage=2,
+                    on_autonomous_affixes=[
+                        "[扑咬]:持有者每次 pass turn 的自主运行阶段，对一名敌人结算本卡 damage 的伤害"
+                    ],
+                ),
             ],
         ),
         WornCostumeComponent(

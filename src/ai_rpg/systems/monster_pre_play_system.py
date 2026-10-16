@@ -80,6 +80,9 @@ def _format_card(card: Card) -> str:
         render_labeled_str_list(
             "  回合结束词缀", card.on_turn_end_affixes, indent="    "
         ),
+        render_labeled_str_list(
+            "  自主运行词缀", card.on_autonomous_affixes, indent="    "
+        ),
     ]
 
     flags = []

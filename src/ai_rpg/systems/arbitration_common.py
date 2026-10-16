@@ -399,17 +399,21 @@ class ArbitrationKind(StrEnum):
 
     PLAY_CARDS = "play_cards"
     TURN_END = "turn_end"
+    AUTONOMOUS = "autonomous"
 
 
 @prompt_builder
 def build_calc_rules_section(get_entity_stats_tool: str, kind: ArbitrationKind) -> str:
     """结算规则段落：说明「数值由系统算、LLM 只选 base 与系数」及系数清单。"""
-    if kind is ArbitrationKind.PLAY_CARDS:
-        target = "目标"
-        affixes = "`on_play_affixes` / `on_hit_affixes` / 神器 `modifiers`"
-    else:
+    if kind is ArbitrationKind.TURN_END:
         target = "持有者"
         affixes = "`on_turn_end_affixes`"
+    elif kind is ArbitrationKind.AUTONOMOUS:
+        target = "目标"
+        affixes = "`on_autonomous_affixes` / `on_hit_affixes`"
+    else:
+        target = "目标"
+        affixes = "`on_play_affixes` / `on_hit_affixes` / 神器 `modifiers`"
     return f"""## 结算规则（数值由系统计算）
 
 系统按固定骨架代你完成**全部算术**：
@@ -460,6 +464,20 @@ def build_tool_flow_section(
             "拿到 HP / 最大 HP 与总格挡（可并发多个）。"
         )
         judge_step = "逐条读词缀，为每个受影响角色定出 base 与系数（伤害 / 格挡 / 反伤 / 吸血 / 治疗）及依据。"
+        calc_step = (
+            f"调用 {resolve_damage_tool}（承伤，每个承伤目标一次）与 {resolve_effect_tool}"
+            "（反伤 / 吸血 / 治疗，每个受效角色一次）；**数值由系统计算**，你只填 base、系数与依据，"
+            "无需自行心算。工具返回规范化的「旧→新」，可直接引用。"
+        )
+    elif kind is ArbitrationKind.AUTONOMOUS:
+        read_step = (
+            f"对【持有者】与【每一个可能受影响的目标】各调用一次 {get_entity_stats_tool}，"
+            "拿到 HP / 最大 HP、总格挡与受击卡牌（可并发多个）。"
+        )
+        judge_step = (
+            "逐条读自主词缀，按词缀文本确定每条的目标（场上任意存活角色：敌对 / 友方 / 持有者，"
+            "可要求随机 / 血量最低等），并为每个受影响角色定出 base 与系数及依据。"
+        )
         calc_step = (
             f"调用 {resolve_damage_tool}（承伤，每个承伤目标一次）与 {resolve_effect_tool}"
             "（反伤 / 吸血 / 治疗，每个受效角色一次）；**数值由系统计算**，你只填 base、系数与依据，"

@@ -48,6 +48,7 @@ class _CraftGearSpec(BaseModel):
     on_play_affixes: NormalizedStrList = []
     on_hit_affixes: NormalizedStrList = []
     on_turn_end_affixes: NormalizedStrList = []
+    on_autonomous_affixes: NormalizedStrList = []
     playable: bool = True
     exhaust: bool = False
     retain: bool = False
@@ -136,6 +137,12 @@ SUBMIT_GEAR_TOOL: Final[ToolDefinition] = ToolDefinition(
                             "maxItems": 3,
                             "description": "回合结束词缀（多值列表）；持有者每次 pass turn 结算一次；每个元素是一条完整独立词缀，禁止拆分或合并；无则 []",
                         },
+                        "on_autonomous_affixes": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "maxItems": 3,
+                            "description": "自主运行词缀（多值列表）；持有者每次 pass turn（回合结束词缀之后）结算，效果目标可为场上任意存活角色（敌人/友方/持有者，由词缀文本决定），不锁定持有者；每个元素是一条完整独立词缀，禁止拆分或合并；无则 []",
+                        },
                         "playable": {
                             "type": "boolean",
                             "description": "是否可出牌；默认 true",
@@ -186,6 +193,7 @@ SUBMIT_GEAR_TOOL: Final[ToolDefinition] = ToolDefinition(
                         "on_play_affixes",
                         "on_hit_affixes",
                         "on_turn_end_affixes",
+                        "on_autonomous_affixes",
                         "playable",
                         "exhaust",
                         "retain",
@@ -290,6 +298,7 @@ def _handle_submit_gear(
         on_play_affixes=spec.on_play_affixes,
         on_hit_affixes=spec.on_hit_affixes,
         on_turn_end_affixes=spec.on_turn_end_affixes,
+        on_autonomous_affixes=spec.on_autonomous_affixes,
         playable=spec.playable,
         exhaust=spec.exhaust,
         retain=spec.retain,
@@ -483,6 +492,7 @@ class CraftGearItemActionSystem(ReactiveProcessor):
             on_play_affixes=result.on_play_affixes,
             on_hit_affixes=result.on_hit_affixes,
             on_turn_end_affixes=result.on_turn_end_affixes,
+            on_autonomous_affixes=result.on_autonomous_affixes,
             playable=result.playable,
             exhaust=result.exhaust,
             retain=result.retain,

@@ -17,6 +17,9 @@ def create_dungeon_combat_room_pipeline(
         AppearanceInitializationSystem,
     )
     from ..systems.artifact_post_arbitration_system import ArtifactPostArbitrationSystem
+    from ..systems.autonomous_arbitration_system import (
+        AutonomousArbitrationSystem,
+    )
     from ..systems.combat_init_actor_system import CombatInitActorSystem
     from ..systems.combat_init_stage_system import CombatInitStageSystem
     from ..systems.combat_loot_system import CombatLootSystem
@@ -127,6 +130,9 @@ def create_dungeon_combat_room_pipeline(
 
     # 回合结束仲裁系统（监视 PassTurnAction，结算该行动者手牌中的回合结束词缀，目标恒为持有者本人）
     processors.add(TurnEndArbitrationSystem(dbg_game))
+
+    # 自主运行仲裁系统（紧跟回合结束之后：结算该行动者手牌中的自主运行词缀，目标可为场上任意存活角色）
+    processors.add(AutonomousArbitrationSystem(dbg_game))
 
     # 仲裁之后可能触发的系统（如死亡判定）
     processors.add(DeathSystem(dbg_game))

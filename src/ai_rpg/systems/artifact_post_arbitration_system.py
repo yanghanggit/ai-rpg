@@ -1,11 +1,10 @@
 """神器·出牌后仲裁系统：出牌/消耗品仲裁后，由所在场景（stage）结算其自身及存活角色携带的神器修正规则。"""
 
 from functools import partial
-from typing import Dict, Final, List, Optional, Tuple, final
+from typing import Dict, Final, List, Tuple, final
 
 from loguru import logger
 from overrides import override
-from pydantic import BaseModel, Field
 
 from ..deepseek import (
     LOOP_END_ATTR,
@@ -16,7 +15,6 @@ from ..deepseek import (
 )
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_combat_processor import (
-    compute_character_hand_block,
     compute_character_stats,
     get_alive_actors_in_stage,
     get_alive_monsters_in_stage,
@@ -37,7 +35,17 @@ from ..models import (
     render_labeled_str_list,
 )
 from ..utils import prompt_builder
-from .arbitration_prompt_builders import build_summary_section
+from .arbitration_common import (
+    ArbitrationContext,
+    build_arbitration_broadcast,
+    build_loop_summary_memory,
+    build_stats_update_notification,
+    build_summary_section,
+    get_entity_stats_result,
+    handle_submit_arbitration,
+    make_get_entity_stats_tool,
+    make_submit_arbitration_tool,
+)
 
 
 ###########################################################################################################################################
@@ -117,52 +125,11 @@ def _build_artifact_post_arbitration_prompt(
 {build_summary_section()}"""
 
 
-@prompt_builder
-def _build_artifact_arbitration_broadcast(
-    combat_log: str, narrative: str, current_round_number: int, stage_name: str
-) -> str:
-    """神器仲裁的广播消息生成器（第 N 回合 · <场景名> 神器仲裁）。"""
-    return f"""# 第 {current_round_number} 回合 · {stage_name} 神器仲裁
-
-## 演出
-
-{narrative}
-
-## 数据日志
-
-{combat_log}"""
-
-
-@prompt_builder
-def _build_stats_update_notification(final_hp: int, max_hp: int) -> str:
-    return f"""# 你的生命值已更新
-
-当前HP: {final_hp}/{max_hp}"""
-
-
-def _build_loop_summary_memory(summary: str, combat_log: str) -> str:
-    """把 LLM 的压缩总结与系统生成的数据日志拼成一条长期记忆。"""
-    return f"{summary}\n\n## 数据日志\n{combat_log}"
-
-
 ###########################################################################################################################################
-# 仲裁工具定义
+# 仲裁工具定义（get/submit 的 schema 结构由 arbitration_common 统一，change_hp 为神器专属）
 ###########################################################################################################################################
-GET_ENTITY_STATS_TOOL: Final[ToolDefinition] = ToolDefinition(
-    function=ToolFunction(
-        name="get_entity_stats",
-        description="读取指定战斗角色的当前生命值（HP/最大HP）与总格挡（其手牌 block 之和）。用于获取可能受影响角色当前状态。",
-        parameters={
-            "type": "object",
-            "properties": {
-                "entity_name": {
-                    "type": "string",
-                    "description": "角色全名，如 角色.无名 或 怪物.纸人",
-                },
-            },
-            "required": ["entity_name"],
-        },
-    )
+GET_ENTITY_STATS_TOOL: Final[ToolDefinition] = make_get_entity_stats_tool(
+    "读取指定战斗角色的当前生命值（HP/最大HP）与总格挡（其手牌 block 之和）。用于获取可能受影响角色当前状态。"
 )
 
 
@@ -188,67 +155,28 @@ CHANGE_HP_TOOL: Final[ToolDefinition] = ToolDefinition(
 )
 
 
-SUBMIT_ARBITRATION_TOOL: Final[ToolDefinition] = ToolDefinition(
-    function=ToolFunction(
-        name="submit_arbitration",
-        description="提交本次神器仲裁的最终结果（战斗日志、演出叙事、无法结算的规则）。"
-        f"combat_log 写效果说明，HP 变化由系统据实际 {CHANGE_HP_TOOL.function.name} 调用自动补记。"
-        "调用后本次仲裁结束。",
-        parameters={
-            "type": "object",
-            "properties": {
-                "combat_log": {
-                    "type": "string",
-                    "description": "战斗数据日志",
-                },
-                "narrative": {
-                    "type": "string",
-                    "description": "60-120 字第三人称演出叙事",
-                },
-                "summary": {
-                    "type": "string",
-                    "description": "本次仲裁的压缩性总结（将整段替换本次完整工具轨迹、作为长期记忆留存）：谁对谁、造成/恢复多少、谁被击倒、有无未结算项；自然语言、紧凑自包含，数值须与数据日志一致。",
-                },
-                "unsettled_affixes": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "可选：无法按本次结算规则处理的原始条目列表（如要求抽牌/回能/额外行动，或凭空叠加没有牌承载的标记），仅供系统统计，不计入结算。",
-                },
-            },
-            "required": ["combat_log", "narrative", "summary"],
-        },
-    )
+SUBMIT_ARBITRATION_TOOL: Final[ToolDefinition] = make_submit_arbitration_tool(
+    "提交本次神器仲裁的最终结果（战斗日志、演出叙事、无法结算的规则）。"
+    f"combat_log 写效果说明，HP 变化由系统据实际 {CHANGE_HP_TOOL.function.name} 调用自动补记。"
+    "调用后本次仲裁结束。",
+    combat_log_desc="战斗数据日志",
 )
 
 
 ###########################################################################################################################################
-# 仲裁工具 handler
+# 仲裁工具 handler（get/submit 核心在 arbitration_common；change_hp 为神器专属 delta 结算）
 ###########################################################################################################################################
-class _ArbitrationContext(BaseModel):
-    """仲裁工具 handler 的共享结果容器。"""
-
-    hp_changes: Dict[str, int] = Field(default_factory=dict)
-    pending_hp: Dict[str, int] = Field(default_factory=dict)
-    hp_initial: Dict[str, int] = Field(default_factory=dict)
-    combat_log: Optional[str] = None
-    narrative: Optional[str] = None
-    summary: Optional[str] = None
-    unsettled_affixes: List[str] = Field(default_factory=list)
+# 兼容别名：神器仲裁历史上使用独立 context 类名
+_ArbitrationContext = ArbitrationContext
 
 
 def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
     """读取角色当前 HP 与总格挡。"""
-    entity = game.get_actor_entity(entity_name)
-    if entity is None:
-        return f"错误：找不到战斗角色 {entity_name}"
-
-    stats = compute_character_stats(entity)
-    hand_block = compute_character_hand_block(entity)
-    return f"{entity_name}: HP {stats.hp}/{stats.max_hp} | 总格挡 {hand_block}"
+    return get_entity_stats_result(game, entity_name)
 
 
 def _handle_change_hp(
-    game: DBGGame, ctx: _ArbitrationContext, entity_name: str, delta: int
+    game: DBGGame, ctx: ArbitrationContext, entity_name: str, delta: int
 ) -> str:
     """按有符号 delta 变更 HP（自动 clamp），并累积规范化「旧→新」；待仲裁结束后统一落库。"""
     entity = game.get_actor_entity(entity_name)
@@ -269,23 +197,7 @@ def _handle_change_hp(
     )
 
 
-def _handle_submit_arbitration(
-    ctx: _ArbitrationContext,
-    combat_log: str,
-    narrative: str,
-    summary: str,
-    unsettled_affixes: Optional[List[str]] = None,
-) -> str:
-    """记录最终仲裁结果。"""
-    ctx.combat_log = combat_log
-    ctx.narrative = narrative
-    ctx.summary = summary
-    if unsettled_affixes:
-        ctx.unsettled_affixes = [str(a) for a in unsettled_affixes if str(a).strip()]
-    return "仲裁结果已提交"
-
-
-def _compose_artifact_combat_log(ctx: _ArbitrationContext) -> str:
+def _compose_artifact_combat_log(ctx: ArbitrationContext) -> str:
     """据实际 change_hp 结果渲染 HP 段（DM 只写效果说明），使日志的 HP 部分不可能与落库不符。"""
     assert ctx.combat_log is not None, "combat_log 不应为 None"
     hp_tail = " ".join(
@@ -414,7 +326,7 @@ class ArtifactPostArbitrationSystem(ReactiveProcessor):
                         _handle_change_hp, self._game, ctx
                     ),
                     SUBMIT_ARBITRATION_TOOL.function.name: partial(
-                        _handle_submit_arbitration, ctx
+                        handle_submit_arbitration, ctx
                     ),
                 },
                 max_rounds=6,
@@ -455,7 +367,7 @@ class ArtifactPostArbitrationSystem(ReactiveProcessor):
             result.end_index,
             [
                 HumanMessage(
-                    content=_build_loop_summary_memory(ctx.summary, combat_log),
+                    content=build_loop_summary_memory(ctx.summary, combat_log),
                     **{LOOP_ID_ATTR: loop_id, LOOP_END_ATTR: loop_id},
                 )
             ],
@@ -499,11 +411,11 @@ class ArtifactPostArbitrationSystem(ReactiveProcessor):
         self._game.broadcast_to_stage(
             entity=stage_entity,
             agent_event=CombatArbitrationEvent(
-                message=_build_artifact_arbitration_broadcast(
-                    combat_log,
-                    narrative,
+                message=build_arbitration_broadcast(
                     current_round_number,
-                    stage_entity.name,
+                    f"{stage_entity.name} 神器仲裁",
+                    narrative,
+                    combat_log,
                 ),
                 stage=stage_entity.name,
                 combat_log=combat_log,
@@ -539,7 +451,7 @@ class ArtifactPostArbitrationSystem(ReactiveProcessor):
             self._game.add_human_message(
                 entity=entity,
                 human_message=HumanMessage(
-                    content=_build_stats_update_notification(
+                    content=build_stats_update_notification(
                         after_stats.hp, after_stats.max_hp
                     )
                 ),

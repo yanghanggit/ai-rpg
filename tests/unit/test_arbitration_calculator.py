@@ -1,9 +1,9 @@
-"""`arbitration_calculator` 纯计算单元测试。
+"""仲裁纯计算单元测试（`arbitration_common` 内的 `compute_damage` / `compute_effects`）。
 
 覆盖骨架公式的代入、取整、逐击求和、clamp，以及展示片段与数值同源。
 """
 
-from ai_rpg.systems.arbitration_calculator import compute_damage, compute_effects
+from ai_rpg.systems.arbitration_common import compute_damage, compute_effects
 
 
 class TestComputeDamage:

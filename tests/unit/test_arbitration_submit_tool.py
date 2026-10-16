@@ -2,8 +2,8 @@
 
 出牌 / 回合结束 / 神器三种仲裁共用同一个 stage 记忆、又是同名工具；参数 schema（字段集合、
 required、类型）一旦漂移，LLM 会沿用上一场仲裁看到的字段而产生调用错误（如多传
-unsettled_affixes）。三份定义各自写在所属仲裁文件内（不抽共享工厂），此测试锁死它们的
-参数结构必须一致；描述文案允许按仲裁类型不同。
+unsettled_affixes）。三份定义由 `arbitration_common.make_submit_arbitration_tool` 统一构造，
+参数结构由构造保证一致；此测试仍锁死这一点（描述文案允许按仲裁类型不同）。
 
 三者都携带 `summary`：loop 结束后据它把本次完整工具轨迹整段替换为一条压缩记忆。
 """

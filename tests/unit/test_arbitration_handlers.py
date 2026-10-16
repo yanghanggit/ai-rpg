@@ -1,7 +1,7 @@
 """仲裁 `resolve_*` handler 的定点验证：数值经纯函数落到 HP，并产出同源日志段。
 
 重点覆盖 E2E 里没有的路径：治疗回血、吸血封顶、反伤；并验证目标恒为持有者。
-handler 与 `play_cards` / `turn_end` 两份实现结构一致，此处以 `turn_end` 的为代表。
+handler 核心已收敛到 `arbitration_common`；此处经 `turn_end` 的薄包装验证（含持有者目标约束）。
 """
 
 from typing import Dict, List

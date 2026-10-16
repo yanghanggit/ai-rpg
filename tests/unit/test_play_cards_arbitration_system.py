@@ -174,12 +174,12 @@ class TestLoopMemoryCompression:
 
 class TestSubmitHandlerStoresSummary:
     def test_play_cards_submit_stores_summary(self) -> None:
-        from ai_rpg.systems.play_cards_arbitration_system import (
-            _ArbitrationContext,
-            _handle_submit_arbitration,
+        from ai_rpg.systems.arbitration_common import (
+            ArbitrationContext,
+            handle_submit_arbitration,
         )
 
-        ctx = _ArbitrationContext()
-        _handle_submit_arbitration(ctx, combat_log="", narrative="叙事", summary="总结")
+        ctx = ArbitrationContext()
+        handle_submit_arbitration(ctx, combat_log="", narrative="叙事", summary="总结")
         assert ctx.narrative == "叙事"
         assert ctx.summary == "总结"

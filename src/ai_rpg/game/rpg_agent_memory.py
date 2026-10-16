@@ -235,6 +235,28 @@ class RPGAgentMemory:
         return deleted_messages
 
     #######################################################################################################################################
+    def replace_span(
+        self,
+        entity: Entity,
+        start_index: int,
+        end_index: int,
+        new_messages: Sequence[ChatMessage],
+    ) -> List[ChatMessage]:
+        """用 new_messages 替换记忆中 ``[start_index, end_index)`` 半开区间，返回被替换的消息。
+
+        与 ``AgentLoopResult.start_index / end_index`` 同约定（左闭右开），供「把一次
+        loop 的整段过程压缩成一条总结」这类针对性压缩使用。传空 new_messages 即为回滚删除。
+        """
+        agent_memory = self.get_agent_memory(entity)
+        replaced = agent_memory.messages[start_index:end_index]
+        agent_memory.messages[start_index:end_index] = list(new_messages)
+        logger.debug(
+            f"replace_span: {entity.name} 用 {len(new_messages)} 条替换 "
+            f"[{start_index}:{end_index}) 的 {len(replaced)} 条消息"
+        )
+        return replaced
+
+    #######################################################################################################################################
     def insert_messages(
         self,
         entity: Entity,

@@ -6,6 +6,7 @@ Tests for RPGGame memory message management methods:
   - filter_messages
   - remove_messages
   - remove_message_range
+  - replace_span
 """
 
 from typing import Any, List, cast
@@ -505,3 +506,44 @@ class TestFindMarkedSpan:
             game.find_marked_span(actor, "loop_id", "L1", end_attr="loop_id_end")
             is None
         )
+
+
+# ---------------------------------------------------------------------------
+# replace_span
+# ---------------------------------------------------------------------------
+
+
+class TestReplaceSpan:
+    def _fill(self, game: Any, actor: Entity, n: int = 5) -> List[Any]:
+        for i in range(n):
+            game.add_human_message(actor, HumanMessage(content=f"msg{i}"))
+        return list(game.get_agent_memory(actor).messages)
+
+    def test_replaces_half_open_interval(self, game: Any, actor: Entity) -> None:
+        """[start, end) 被 new_messages 替换，区间外的消息原样保留。"""
+        msgs = self._fill(game, actor, 5)
+        summary = HumanMessage(content="总结", loop_id="L1")
+
+        replaced = game.replace_span(actor, 1, 3, [summary])
+
+        assert replaced == [msgs[1], msgs[2]]
+        remaining = game.get_agent_memory(actor).messages
+        assert [m.content for m in remaining] == ["msg0", "总结", "msg3", "msg4"]
+        assert remaining[1] is summary
+
+    def test_empty_replacement_deletes_interval(self, game: Any, actor: Entity) -> None:
+        """new_messages 为空即回滚删除 [start, end)。"""
+        msgs = self._fill(game, actor, 5)
+
+        replaced = game.replace_span(actor, 1, 4, [])
+
+        assert replaced == [msgs[1], msgs[2], msgs[3]]
+        remaining = game.get_agent_memory(actor).messages
+        assert [m.content for m in remaining] == ["msg0", "msg4"]
+
+    def test_empty_interval_is_noop(self, game: Any, actor: Entity) -> None:
+        """空区间（start == end）不删除任何东西。"""
+        self._fill(game, actor, 3)
+        replaced = game.replace_span(actor, 1, 1, [])
+        assert replaced == []
+        assert len(game.get_agent_memory(actor).messages) == 3

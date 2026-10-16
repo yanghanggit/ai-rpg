@@ -10,7 +10,7 @@ from ..deepseek import ToolDefinition, ToolFunction, agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..models import GenerateDungeonAction
-from ..models.dungeon_draft import DungeonRoomDraft
+from ..models.dungeon_draft import MONSTERS_PER_COMBAT_ROOM, DungeonRoomDraft
 from ..utils import prompt_builder
 
 
@@ -59,17 +59,11 @@ def _build_record_dungeon_rooms_tool(dungeon_room_count: int) -> ToolDefinition:
                                     "type": "string",
                                     "description": "该房间的感官环境描写，50-100字，只描述「这里有什么」，避免直接点出具体角色身份/阵营名称与威胁评价性词汇",
                                 },
-                                "actor_count": {
-                                    "type": "integer",
-                                    "enum": [0, 1, 2],
-                                    "description": "角色种类数量。opening 房间填 0；combat 房间为 1，深处可为 2",
-                                },
                             },
                             "required": [
                                 "room_type",
                                 "room_name",
                                 "profile",
-                                "actor_count",
                             ],
                         },
                     },
@@ -97,12 +91,12 @@ def _build_dungeon_rooms_prompt(
 
 共计 {dungeon_room_count} 个房间，房间类型与顺序必须严格遵守：
 
-- **第 1 个房间**：开场房间（room_type = "opening"），无战斗，actor_count = 0。
+- **第 1 个房间**：开场房间（room_type = "opening"），无战斗。
   描写副本门口的外部氛围——玩家站在副本门口的第一印象。
   不涉及任何怪物，纯粹的场景氛围铺垫。
 
 - **第 2 ~ {dungeon_room_count} 个房间**：战斗房间（room_type = "combat"），共 {combat_room_count} 个，
-  从入口区域逐步深入到副本最深处，actor_count = 1 或 2。
+  从入口区域逐步深入到副本最深处。
 
 工作流程：调用 record_dungeon_rooms 写入全部房间数据，确认无误后结束本次对话。"""
 
@@ -120,7 +114,14 @@ def _handle_record_dungeon_rooms(
     result: _RoomsResult, dungeon_name: str, rooms: List[Any]
 ) -> str:
     """处理 record_dungeon_rooms 工具调用。"""
-    room_items = [DungeonRoomDraft(**r) for r in rooms]
+    room_items: List[DungeonRoomDraft] = []
+    for r in rooms:
+        room = DungeonRoomDraft(**r)
+        # 怪物数量为结构常量，不由 LLM 决定：opening 房间为 0，combat 房间固定
+        room.actor_count = (
+            0 if room.room_type == "opening" else MONSTERS_PER_COMBAT_ROOM
+        )
+        room_items.append(room)
     result.dungeon_name = dungeon_name
     result.rooms = room_items
     for i, room in enumerate(room_items, start=1):

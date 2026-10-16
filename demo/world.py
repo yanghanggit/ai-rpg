@@ -8,6 +8,9 @@ from uuid import uuid4
 
 from ai_rpg.entitas import dump_components
 from ai_rpg.models import (
+    COMBAT_ROOM_COUNT,
+    DUNGEON_ROOM_COUNT,
+    MONSTERS_PER_COMBAT_ROOM,
     Actor,
     ActorType,
     Blueprint,
@@ -663,7 +666,7 @@ def create_dungeon_generation() -> World:
         name="世界.副本生成系统",
         campaign_setting=CAMPAIGN_SETTING,
         system_rules=SYSTEM_RULES_FINAL,
-        role_rules="""## 区域本质
+        role_rules=f"""## 区域本质
 
 副本发生在荒野边地的古代遗迹、兽巢、秘境或乡野——一处由剑与魔法、诸国旧史与自然凶险共同塑造的地方。它可能是废弃的要塞、崩塌的神殿、被兽群占据的洞窟、埋没的古墓或荒废的村落，各自遵循自身的岁月与生态逻辑，而非现代常理。每次生成的副本是该区域的一个独立切面，呈现为一条从外围通往最深的完整路线。
 
@@ -696,12 +699,18 @@ def create_dungeon_generation() -> World:
 - 禁止解释"为什么"——不说明起因，不引用任何全局宏观概念
 - 禁止出现「世界导演」等全局宏观概念词——场景自身不具备该视角
 
+## 副本结构规范
+
+副本结构固定，不得增减：
+
+- 共 {DUNGEON_ROOM_COUNT} 个房间：第 1 个为开场房间（opening，无战斗，仅门口氛围铺垫），其余 {COMBAT_ROOM_COUNT} 个为战斗房间（combat）。
+- 每个战斗房间固定 {MONSTERS_PER_COMBAT_ROOM} 个怪物。
+
 ## 场景层次规范
 
-多个战斗场景须从入口到最深处呈递进式展开：
-- 入口场景：环境尚完整，仍保留可辨的旧日秩序
-- 深处场景：荒废与凶险达到顶点，空间与生态高度异化
-- 中间场景：程度介于入口与深处之间，逐步递进
+房间自入口向最深处呈递进式展开：
+- 开场房间：副本门口的外部氛围，环境尚完整，仍保留可辨的旧日秩序
+- 战斗房间：随深入，荒废与凶险逐步达到顶点，空间与生态高度异化
 
 ## 怪物字段规范
 

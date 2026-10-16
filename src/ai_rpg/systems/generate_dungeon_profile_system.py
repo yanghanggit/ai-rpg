@@ -10,12 +10,13 @@ from ..deepseek import ToolDefinition, ToolFunction, agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..models import GenerateDungeonAction
+from ..models.dungeon_draft import DUNGEON_ROOM_COUNT
 from ..utils import prompt_builder
 
 RECORD_DUNGEON_PROFILE_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="record_dungeon_profile",
-        description="记录副本的名称、整体设定写照与房间总数。",
+        description="记录副本的名称与整体设定写照。",
         parameters={
             "type": "object",
             "properties": {
@@ -27,13 +28,8 @@ RECORD_DUNGEON_PROFILE_TOOL: Final[ToolDefinition] = ToolDefinition(
                     "type": "string",
                     "description": "该副本的整体设定写照，100-200字，聚焦感官与情境层面的直观细节，避免直接点出具体角色身份/阵营名称与威胁评价性词汇",
                 },
-                "dungeon_room_count": {
-                    "type": "integer",
-                    "enum": [3, 4],
-                    "description": "副本房间总数（含 1 个开场房间），依规模与层次丰富程度选择",
-                },
             },
-            "required": ["name", "profile", "dungeon_room_count"],
+            "required": ["name", "profile"],
         },
     )
 )
@@ -50,16 +46,16 @@ class _ProfileResult(BaseModel):
 
 ####################################################################################################################################
 def _handle_record_dungeon_profile(
-    result: _ProfileResult, name: str, profile: str, dungeon_room_count: int
+    result: _ProfileResult, name: str, profile: str
 ) -> str:
     """处理 record_dungeon_profile 工具调用。"""
     result.dungeon_name = name
     result.dungeon_profile = profile
-    result.dungeon_room_count = dungeon_room_count
+    result.dungeon_room_count = DUNGEON_ROOM_COUNT
     logger.info(
         f"[GenerateDungeonProfileSystem] record_dungeon_profile 执行:\n"
         f"  dungeon_name: {name}\n"
-        f"  dungeon_room_count: {dungeon_room_count}"
+        f"  dungeon_room_count: {DUNGEON_ROOM_COUNT}（结构常量）"
     )
     return result.model_dump_json(ensure_ascii=False)
 

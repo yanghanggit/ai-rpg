@@ -431,7 +431,7 @@ class CraftGearItemActionSystem(ReactiveProcessor):
             # 调用 agent_loop 进行装备合成推理：准备阶段读示例 → 精读 → submit_gear 提交
             success = await agent_loop(
                 name=entity.name,
-                prompt=prompt,
+                input_message=prompt,
                 messages=messages,
                 tools=[
                     LIST_GEAR_EXAMPLES_TOOL,

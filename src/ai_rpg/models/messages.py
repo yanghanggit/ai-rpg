@@ -1,6 +1,19 @@
 """自定义消息类型"""
 
-from typing import Annotated, Any, Dict, List, Literal, Sequence, Union
+from dataclasses import dataclass
+from typing import (
+    Annotated,
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    TypeVar,
+    Union,
+)
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -131,3 +144,128 @@ def get_buffer_string(
 
     # 返回拼接后的字符串
     return "\n".join(lines)
+
+
+############################################################################################################
+# 消息序列查询工具：与 get_buffer_string 同级的纯函数，供任意持有 Sequence[BaseMessage] 的模块复用。
+MsgT = TypeVar("MsgT", bound=BaseMessage)
+
+
+############################################################################################################
+@dataclass
+class MessageSpan(Generic[MsgT]):
+    """一段连续消息在序列中的边界（起终点，闭区间）及其内容。"""
+
+    start_index: int
+    end_index: int
+    messages: List[MsgT]
+
+    @property
+    def start_message(self) -> MsgT:
+        return self.messages[0]
+
+    @property
+    def end_message(self) -> MsgT:
+        return self.messages[-1]
+
+    def __len__(self) -> int:
+        return len(self.messages)
+
+
+############################################################################################################
+def find_message(
+    messages: Sequence[MsgT],
+    predicate: Callable[[MsgT], bool],
+    *,
+    reverse: bool = False,
+) -> Optional[MsgT]:
+    """返回首个（``reverse=True`` 时最后一个）满足谓词的消息；无匹配返回 None。"""
+    indices = range(len(messages) - 1, -1, -1) if reverse else range(len(messages))
+    for i in indices:
+        if predicate(messages[i]):
+            return messages[i]
+    return None
+
+
+############################################################################################################
+def _resolve_span_end(
+    messages: Sequence[BaseMessage],
+    start_index: int,
+    start_attr: str,
+    value: Any,
+    end_attr: str,
+) -> int:
+    """从 start_index 起解析区间终点。
+
+    优先匹配 ``getattr(msg, end_attr) == value``；找不到时退化为「下一个带 start_attr
+    的消息前一条」，再退化到序列末尾。同属性标记时跳过起点自身，避免自我匹配。
+    """
+    begin = start_index + 1 if end_attr == start_attr else start_index
+    for j in range(begin, len(messages)):
+        if getattr(messages[j], end_attr, None) == value:
+            return j
+    for j in range(start_index + 1, len(messages)):
+        if getattr(messages[j], start_attr, None) is not None:
+            return j - 1
+    return len(messages) - 1
+
+
+############################################################################################################
+def find_marked_span(
+    messages: Sequence[MsgT],
+    start_attr: str,
+    value: Any,
+    *,
+    end_attr: Optional[str] = None,
+) -> Optional[MessageSpan[MsgT]]:
+    """按标记属性在消息序列中定位一段区间（起终点，闭区间）。
+
+    - 起点：首个 ``getattr(msg, start_attr, None) == value`` 的消息；
+    - 终点：起点之后首个 ``getattr(msg, end_attr, None) == value`` 的消息
+      （``end_attr`` 缺省等于 ``start_attr``，即首尾用同一属性标记）；
+    - 找不到终点标记时退化为「下一个带 start_attr 的消息前一条」，再退化到序列末尾。
+
+    ``value`` 不得为 None（None 表示「无标记」）；无匹配起点时返回 None。
+    """
+    if value is None:
+        return None
+    resolved_end_attr = end_attr if end_attr is not None else start_attr
+    for i, msg in enumerate(messages):
+        if getattr(msg, start_attr, None) == value:
+            end_index = _resolve_span_end(
+                messages, i, start_attr, value, resolved_end_attr
+            )
+            return MessageSpan(
+                start_index=i,
+                end_index=end_index,
+                messages=list(messages[i : end_index + 1]),
+            )
+    return None
+
+
+############################################################################################################
+def find_marked_spans(
+    messages: Sequence[MsgT],
+    start_attr: str,
+    *,
+    end_attr: Optional[str] = None,
+) -> List[MessageSpan[MsgT]]:
+    """按出现顺序返回序列中所有被 ``start_attr`` 标记的区间。"""
+    resolved_end_attr = end_attr if end_attr is not None else start_attr
+    spans: List[MessageSpan[MsgT]] = []
+    i = 0
+    while i < len(messages):
+        value = getattr(messages[i], start_attr, None)
+        if value is None:
+            i += 1
+            continue
+        end_index = _resolve_span_end(messages, i, start_attr, value, resolved_end_attr)
+        spans.append(
+            MessageSpan(
+                start_index=i,
+                end_index=end_index,
+                messages=list(messages[i : end_index + 1]),
+            )
+        )
+        i = end_index + 1
+    return spans

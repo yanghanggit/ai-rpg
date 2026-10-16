@@ -1,4 +1,4 @@
-from typing import Callable, Dict, List, Sequence
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from loguru import logger
 
@@ -9,8 +9,11 @@ from ..models.messages import (
     BaseMessage,
     ChatMessage,
     HumanMessage,
+    MessageSpan,
     SystemMessage,
     ToolMessage,
+    find_marked_span,
+    find_message,
 )
 
 MessagePredicate = Callable[[BaseMessage, int, Sequence[ChatMessage]], bool]
@@ -90,10 +93,11 @@ class RPGAgentMemory:
         供绕过 add_ai_message 直接追加 AI 消息的路径使用（如 agent_loop 工具调用循环）。
         """
         agent_memory = self.get_agent_memory(entity)
-        for message in reversed(agent_memory.messages):
-            if isinstance(message, AIMessage):
-                self._sync_context_usage_ratio(agent_memory, message)
-                return
+        ai_message = find_message(
+            agent_memory.messages, lambda m: isinstance(m, AIMessage), reverse=True
+        )
+        if isinstance(ai_message, AIMessage):
+            self._sync_context_usage_ratio(agent_memory, ai_message)
 
     ###############################################################################################################################################
     def reset_agent_memory(
@@ -136,6 +140,27 @@ class RPGAgentMemory:
         本质是 reset_agent_memory 的一种用法：以单条摘要重制记忆。
         """
         self.reset_agent_memory(entity, [human_message])
+
+    ###############################################################################################################################################
+    def find_marked_span(
+        self,
+        entity: Entity,
+        start_attr: str,
+        value: Any,
+        *,
+        end_attr: Optional[str] = None,
+    ) -> Optional[MessageSpan[ChatMessage]]:
+        """按标记属性在实体记忆中定位一段连续消息（起终点，闭区间）。
+
+        对 ``models.messages.find_marked_span`` 的实体级封装，供上层按自定义标记反查
+        消息区间（例如 agent_loop 的 ``loop_id`` / ``loop_id_end``）。
+        """
+        return find_marked_span(
+            self.get_agent_memory(entity).messages,
+            start_attr,
+            value,
+            end_attr=end_attr,
+        )
 
     ###############################################################################################################################################
     def filter_messages(

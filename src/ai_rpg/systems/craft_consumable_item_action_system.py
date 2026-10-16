@@ -363,7 +363,7 @@ class CraftConsumableItemActionSystem(ReactiveProcessor):
         try:
             success = await agent_loop(
                 name=entity.name,
-                prompt=prompt,
+                input_message=prompt,
                 messages=messages,
                 tools=[
                     LIST_CONSUMABLE_EXAMPLES_TOOL,

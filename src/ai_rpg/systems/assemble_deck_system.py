@@ -509,7 +509,7 @@ class AssembleDeckSystem(ReactiveProcessor):
         try:
             ok = await agent_loop(
                 name=actor.name,
-                prompt=_build_deck_prompt(actor.name),
+                input_message=_build_deck_prompt(actor.name),
                 messages=messages,
                 tools=[
                     LIST_CARD_PROTOTYPES_TOOL,

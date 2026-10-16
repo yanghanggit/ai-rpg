@@ -201,7 +201,7 @@ class HomeNpcPlanSystem(ReactiveProcessor):
 
         ok = await agent_loop(
             name=entity.name,
-            prompt=prompt,
+            input_message=prompt,
             # 原地写：真实工具调用轨迹即持久记忆（"是什么就是什么"）
             messages=self._game.get_agent_memory(entity).messages,
             tools=[QUERY_KNOWLEDGE_BASE_TOOL, submit_tool],
@@ -218,7 +218,7 @@ class HomeNpcPlanSystem(ReactiveProcessor):
         # agent_loop 直接原地追加 AI 消息（绕过 add_ai_message），需手动同步最新上下文占比
         self._game.sync_latest_context_usage_ratio(entity)
 
-        return ok and result.submitted
+        return bool(ok) and result.submitted
 
     #######################################################################################################################################
     def _apply_submitted_action(self, entity: Entity, result: _PlanResult) -> None:

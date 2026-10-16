@@ -390,7 +390,7 @@ class GenerateSpoilsActionSystem(ReactiveProcessor):
 
         # 第二步：组装并并发执行 agent_loop（LLM 设计失败不阻断发奖，只影响设计）
         pending: List[Tuple[Entity, List[_Candidate], List[_SpoilsCardEdit]]] = []
-        tasks: List[Tuple[str, Coroutine[Any, Any, bool]]] = []
+        tasks: List[Tuple[str, Coroutine[Any, Any, Any]]] = []
 
         for entity, candidates in materialized:
 
@@ -407,7 +407,7 @@ class GenerateSpoilsActionSystem(ReactiveProcessor):
             # 组装 agent_loop 协程；messages 直接传真实记忆（原地写回）
             coro = agent_loop(
                 name=entity.name,
-                prompt=_build_spoils_prompt(entity, candidates),
+                input_message=_build_spoils_prompt(entity, candidates),
                 messages=self._game.get_agent_memory(entity).messages,
                 tools=[SUBMIT_SPOILS_CARD_TOOL, FINISH_SPOILS_TOOL],
                 handlers=handlers,

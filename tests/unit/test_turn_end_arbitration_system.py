@@ -141,7 +141,7 @@ class TestTurnEndArbitrationSystem:
         # 提示词已写死目标恒为持有者
         assert (
             "目标恒为持有者本人 怪物.纸人"
-            in mock_agent_loop.await_args.kwargs["prompt"]
+            in mock_agent_loop.await_args.kwargs["input_message"]
         )
         mock_game.get_agent_memory.assert_called_with(
             mock_game.resolve_stage_entity.return_value

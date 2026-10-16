@@ -327,7 +327,7 @@ class IllustrateDungeonSystem(ReactiveProcessor):
 
         ok = await agent_loop(
             name=prompt_entity.name,
-            prompt=_build_image_prompts_prompt(
+            input_message=_build_image_prompts_prompt(
                 dungeon_name=dungeon.name,
                 dungeon_profile=dungeon.profile,
                 rooms=dungeon.rooms,

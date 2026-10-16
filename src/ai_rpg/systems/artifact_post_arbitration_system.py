@@ -365,7 +365,7 @@ class ArtifactPostArbitrationSystem(ReactiveProcessor):
         try:
             ok = await agent_loop(
                 name=stage_entity.name,
-                prompt=prompt,
+                input_message=prompt,
                 messages=messages,
                 tools=[
                     GET_ENTITY_STATS_TOOL,

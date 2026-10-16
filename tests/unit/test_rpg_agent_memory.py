@@ -480,3 +480,28 @@ class TestRemoveMessageRange:
         deleted = game.remove_message_range(actor, msgs[0], msgs[2])
         assert len(deleted) == 3
         assert len(game.get_agent_memory(actor).messages) == 2
+
+
+# ---------------------------------------------------------------------------
+# find_marked_span
+# ---------------------------------------------------------------------------
+
+
+class TestFindMarkedSpan:
+    def test_returns_span_for_marked_region(self, game: Any, actor: Entity) -> None:
+        game.add_human_message(actor, HumanMessage(content="start", loop_id="L1"))
+        game.add_ai_message(actor, AIMessage(content="mid"))
+        game.add_human_message(actor, HumanMessage(content="end", loop_id_end="L1"))
+
+        span = game.find_marked_span(actor, "loop_id", "L1", end_attr="loop_id_end")
+
+        assert span is not None
+        assert (span.start_index, span.end_index) == (0, 2)
+        assert span.messages == game.get_agent_memory(actor).messages
+
+    def test_missing_value_returns_none(self, game: Any, actor: Entity) -> None:
+        game.add_human_message(actor, HumanMessage(content="x"))
+        assert (
+            game.find_marked_span(actor, "loop_id", "L1", end_attr="loop_id_end")
+            is None
+        )

@@ -544,7 +544,7 @@ class PlayCardsArbitrationSystem(ReactiveProcessor):
         try:
             ok = await agent_loop(
                 name=stage_entity.name,
-                prompt=message,
+                input_message=message,
                 messages=self._game.get_agent_memory(stage_entity).messages,
                 tools=[
                     GET_ENTITY_STATS_TOOL,

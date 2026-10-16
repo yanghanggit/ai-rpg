@@ -322,7 +322,7 @@ async def test_tool_call_with_thinking() -> None:
 
     ok = await agent_loop(
         name="tool_think",
-        prompt="广州今天天气怎么样？适合出门吗？",
+        input_message="广州今天天气怎么样？适合出门吗？",
         messages=messages,
         tools=[_WEATHER_TOOL],
         handlers={"get_current_weather": _mock_get_weather},
@@ -348,7 +348,7 @@ async def test_batch_run_boolean_tasks() -> None:
             "batch_aloop_beijing",
             agent_loop(
                 name="batch_aloop_beijing",
-                prompt="北京今天天气怎么样？",
+                input_message="北京今天天气怎么样？",
                 messages=[_SYSTEM],
                 tools=[_WEATHER_TOOL],
                 handlers={"get_current_weather": _mock_get_weather},
@@ -358,7 +358,7 @@ async def test_batch_run_boolean_tasks() -> None:
             "batch_aloop_shanghai",
             agent_loop(
                 name="batch_aloop_shanghai",
-                prompt="上海今天天气怎么样？",
+                input_message="上海今天天气怎么样？",
                 messages=[_SYSTEM],
                 tools=[_WEATHER_TOOL],
                 handlers={"get_current_weather": _mock_get_weather},

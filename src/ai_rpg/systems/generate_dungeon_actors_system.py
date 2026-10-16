@@ -178,7 +178,7 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
 
         success = await agent_loop(
             name=entity.name,
-            prompt=_build_dungeon_actors_prompt(
+            input_message=_build_dungeon_actors_prompt(
                 dungeon_name=dungeon_name,
                 profile=dungeon_profile,
                 combat_rooms=combat_rooms,

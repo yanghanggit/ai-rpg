@@ -187,7 +187,7 @@ class GenerateDungeonRoomsSystem(ReactiveProcessor):
 
         success = await agent_loop(
             name=entity.name,
-            prompt=_build_dungeon_rooms_prompt(
+            input_message=_build_dungeon_rooms_prompt(
                 dungeon_name=dungeon_name,
                 profile=dungeon_profile,
                 dungeon_room_count=dungeon_room_count,

@@ -36,7 +36,7 @@
 
 **过牌（pass turn）≠ 回合结束**：过牌只结束单个角色的行动窗口；当且仅当所有存活角色都已过牌，回合才完成，随后清理旧手牌、创建下一回合。能量耗尽只限制能打出的牌数，不自动过牌。
 
-`on_turn_end_affixes`（回合结束词缀）结算于**持卡人每次 pass turn**，而非整回合结束——「回合结束」在此指「该持有者自己的行动窗口结束」，与「所有存活角色都过牌」是两个粒度。
+`on_turn_end_affixes`（回合结束词缀）结算于**持卡人每次 pass turn**，且**效果目标恒为当前持卡人本人**（原始持有者或被传递后的持有者），而非整回合结束——「回合结束」在此指「该持有者自己的行动窗口结束」，与「所有存活角色都过牌」是两个粒度。
 
 → 参见：[卡牌数据模型（Card）](card.md)、[手牌（HandComponent）](hand.md)
 
@@ -98,12 +98,12 @@ grep -rho 'unsettled_affixes\\": \[[^]]*\]' .worlds --include='*.jsonl' | grep -
 
 LLM 只做三件事：为每条效果选定 **base**、判定**系数取值**、并**写出依据**。它通过两个工具提交判断：
 
-- `resolve_damage(entity, base_damage, hits, damage_mult, block_mult, rationale)` —— 每个承伤目标一次；
-- `resolve_effect(entity, base, hits, reflect_mult, lifesteal_mult, heal_mult, rationale)` —— 每个受效角色一次。
+- `resolve_damage(entity, base_damage, hits, damage_mult, block_mult, rationale)` —— 出牌仲裁为每个承伤目标一次；回合结束仲裁目标恒为持有者，故对持有者一次；
+- `resolve_effect(entity, base, hits, reflect_mult, lifesteal_mult, heal_mult, rationale)` —— 出牌仲裁为每个受效角色一次；回合结束仲裁目标恒为持有者。
 
 系数的默认值分别为 伤害 1 / 格挡 1 / 反伤 0 / 吸血 0 / 治疗 0，全部由 `on_play_affixes` / `on_hit_affixes` / `on_turn_end_affixes` / 神器 `modifiers` 的自由文本指导取值。`base` / `base_damage` 是 affix 引用的那个数值（通常取本卡 `damage` / `block` 字段，或文案明示的数字）——系统不解释字段语义，由 LLM 依文案判断它代表什么（如 `旧疤结痂` 用 `block` 当伤害基础）。伤害系数可用于语义条件上调（如「对动物属性 +50%」→ 1.5、「目标带某标记时×2」→ 2），此时 LLM 结合对手外观 / 人设等已知信息自行取值。反伤 / 吸血 / 治疗一律**按每击**（代码负责 ×hit_count），暂不支持「一次性」单发标记。
 
-`resolve_effect` 不限阵营与身份（名称为「受效角色」）：「治疗友方」「对任意角色施加反伤 / 吸血」都是显式路径，具体由卡牌选择决定；若一条效果引用两个不同来源（如反伤取目标 `block`、治疗取本卡 `damage`），拆成两次 `resolve_effect` 调用即可，会自然累积。
+`resolve_effect` 在**出牌仲裁**中不限阵营与身份（名称为「受效角色」）：「治疗友方」「对任意角色施加反伤 / 吸血」都是显式路径，具体由卡牌选择决定；若一条效果引用两个不同来源（如反伤取目标 `block`、治疗取本卡 `damage`），拆成两次 `resolve_effect` 调用即可，会自然累积。**回合结束仲裁例外**：其目标恒为当前持有者本人，不得指向其他角色。
 
 > 设计取舍：工具里只允许出现**通用数值系数**，即编码的是「算术」而非「词缀语义」——不为具体牌名 / 词缀名在代码里分支（例如不引入 per-affix 的 `bypass_block` 标志），也不允许骨架表达不了的机制硬塞，这类词缀原文进 `unsettled_affixes`（仅供 telemetry，不结算）。语义裁决权完全留在 LLM，算术确定性交给代码，符合「LLM 扮演 DM、系统当规则书」的定位。
 

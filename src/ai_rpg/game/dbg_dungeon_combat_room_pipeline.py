@@ -125,7 +125,7 @@ def create_dungeon_combat_room_pipeline(
     # 场景神器仲裁系统：在出牌/消耗品仲裁之后，由当前场景（stage）结算其携带的神器修正规则
     processors.add(ArtifactPostArbitrationSystem(dbg_game))
 
-    # 回合结束仲裁系统（监视 PassTurnAction，扫全场持有回合结束词缀卡牌的角色并并发仲裁）
+    # 回合结束仲裁系统（监视 PassTurnAction，结算该行动者手牌中的回合结束词缀，目标恒为持有者本人）
     processors.add(TurnEndArbitrationSystem(dbg_game))
 
     # 仲裁之后可能触发的系统（如死亡判定）

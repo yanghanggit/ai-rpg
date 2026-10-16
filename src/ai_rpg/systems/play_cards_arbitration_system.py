@@ -156,11 +156,11 @@ def _build_combat_arbitration_tool_prompt(
 
 {build_calc_rules_section(GET_ENTITY_STATS_TOOL.function.name, ArbitrationKind.PLAY_CARDS)}
 
-{build_on_hit_affix_section(GET_ENTITY_STATS_TOOL.function.name, ArbitrationKind.PLAY_CARDS)}
+{build_on_hit_affix_section(GET_ENTITY_STATS_TOOL.function.name)}
 
 ## source 字段
 
-`source` = 卡牌来源（生成 / 注入者），空串表示未知；词缀提及「非 source 者」时，指当前持有者（当其 ≠ 本卡 `source` 时）。
+`source` = 卡牌来源（生成 / 注入者），空串表示未知；副本保留原 `source`。词缀可据持有者与 `source` 的关系设生效条件：`本卡持有者` 无条件；`source 者` 仅当持有者 == 本卡 `source` 时结算；`非 source 者` 仅当持有者 != 本卡 `source` 时结算；条件不成立则整条跳过（不计入 `unsettled_affixes`）。
 
 {build_tool_flow_section(GET_ENTITY_STATS_TOOL.function.name, RESOLVE_DAMAGE_TOOL.function.name, RESOLVE_EFFECT_TOOL.function.name, SUBMIT_ARBITRATION_TOOL.function.name, ArbitrationKind.PLAY_CARDS)}
 
@@ -223,7 +223,7 @@ RESOLVE_DAMAGE_TOOL: Final[ToolDefinition] = ToolDefinition(
                 "entity_name": {"type": "string", "description": "承伤目标全名"},
                 "base_damage": {
                     "type": "integer",
-                    "description": "伤害的基础数值（照拄卡牌 damage 字段，或文案明示的数字）",
+                    "description": "伤害的基础数值（照抄卡牌 damage 字段，或文案明示的数字）",
                 },
                 "hits": {
                     "type": "integer",

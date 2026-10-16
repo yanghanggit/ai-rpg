@@ -1,6 +1,6 @@
 """仲裁 `resolve_*` handler 的定点验证：数值经纯函数落到 HP，并产出同源日志段。
 
-重点覆盖 E2E 里没有的路径：治疗回血（含对**非行动者**的队友）、吸血封顶、反伤。
+重点覆盖 E2E 里没有的路径：治疗回血、吸血封顶、反伤；并验证目标恒为持有者。
 handler 与 `play_cards` / `turn_end` 两份实现结构一致，此处以 `turn_end` 的为代表。
 """
 
@@ -59,7 +59,7 @@ class TestResolveDamageHandler:
         ctx = _TurnEndArbitrationContext()
 
         segment = _handle_resolve_damage(
-            _make_game({"英雄": hero}), ctx, "怪物", "英雄", base_damage=5, hits=1
+            _make_game({"英雄": hero}), ctx, "英雄", "英雄", base_damage=5, hits=1
         )
 
         assert ctx.hp_changes["英雄"] == 9
@@ -68,8 +68,8 @@ class TestResolveDamageHandler:
 
 
 class TestResolveEffectHandler:
-    def test_heal_ally_raises_hp(self) -> None:
-        """治疗可以作用于**非行动者**的任意受效角色。"""
+    def test_heal_holder_raises_hp(self) -> None:
+        """回合结束的受效结算目标恒为持有者本人。"""
         context = Context()
         ally = _make_actor(context, "队友", hp=4, max_hp=10, hand=[])
         ctx = _TurnEndArbitrationContext()
@@ -77,6 +77,7 @@ class TestResolveEffectHandler:
         segment = _handle_resolve_effect(
             _make_game({"队友": ally}),
             ctx,
+            "队友",
             "队友",
             base=5,
             hits=1,
@@ -95,7 +96,13 @@ class TestResolveEffectHandler:
         ctx = _TurnEndArbitrationContext()
 
         _handle_resolve_effect(
-            _make_game({"英雄": hero}), ctx, "英雄", base=5, hits=1, lifesteal_mult=1
+            _make_game({"英雄": hero}),
+            ctx,
+            "英雄",
+            "英雄",
+            base=5,
+            hits=1,
+            lifesteal_mult=1,
         )
 
         assert ctx.hp_changes["英雄"] == 10  # 封顶
@@ -106,7 +113,13 @@ class TestResolveEffectHandler:
         ctx = _TurnEndArbitrationContext()
 
         segment = _handle_resolve_effect(
-            _make_game({"英雄": hero}), ctx, "英雄", base=3, hits=2, reflect_mult=1
+            _make_game({"英雄": hero}),
+            ctx,
+            "英雄",
+            "英雄",
+            base=3,
+            hits=2,
+            reflect_mult=1,
         )
 
         assert ctx.hp_changes["英雄"] == 4  # 3×2=6
@@ -117,7 +130,45 @@ class TestResolveEffectHandler:
         ctx = _TurnEndArbitrationContext()
 
         segment = _handle_resolve_effect(
-            _make_game({}), ctx, "幽灵", base=5, hits=1, heal_mult=1
+            _make_game({}), ctx, "幽灵", "幽灵", base=5, hits=1, heal_mult=1
+        )
+
+        assert "错误" in segment
+        assert ctx.hp_changes == {}
+
+    def test_damage_non_holder_target_is_rejected(self) -> None:
+        """回合结束词缀不能指向非持有者。"""
+        context = Context()
+        hero = _make_actor(context, "英雄", hp=10, max_hp=10, hand=[])
+        other = _make_actor(context, "怪物", hp=10, max_hp=10, hand=[])
+        ctx = _TurnEndArbitrationContext()
+
+        segment = _handle_resolve_damage(
+            _make_game({"英雄": hero, "怪物": other}),
+            ctx,
+            "英雄",
+            "怪物",
+            base_damage=5,
+            hits=1,
+        )
+
+        assert "错误" in segment
+        assert ctx.hp_changes == {}
+
+    def test_effect_non_holder_target_is_rejected(self) -> None:
+        context = Context()
+        hero = _make_actor(context, "英雄", hp=10, max_hp=10, hand=[])
+        other = _make_actor(context, "怪物", hp=10, max_hp=10, hand=[])
+        ctx = _TurnEndArbitrationContext()
+
+        segment = _handle_resolve_effect(
+            _make_game({"英雄": hero, "怪物": other}),
+            ctx,
+            "英雄",
+            "怪物",
+            base=5,
+            hits=1,
+            heal_mult=1,
         )
 
         assert "错误" in segment

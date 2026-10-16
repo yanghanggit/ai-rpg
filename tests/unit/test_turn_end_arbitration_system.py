@@ -128,22 +128,21 @@ class TestTurnEndArbitrationSystem:
         holder.add(PassTurnAction, "怪物.纸人")
         holder.get(HandComponent).cards.append(_make_card("灼纹", turn_end=True))
 
-        with (
-            patch(
-                "ai_rpg.systems.turn_end_arbitration_system.get_alive_actors_in_stage",
-                return_value={holder},
-            ),
-            patch(
-                "ai_rpg.systems.turn_end_arbitration_system.agent_loop",
-                new=AsyncMock(return_value=True),
-            ) as mock_agent_loop,
-        ):
+        with patch(
+            "ai_rpg.systems.turn_end_arbitration_system.agent_loop",
+            new=AsyncMock(return_value=True),
+        ) as mock_agent_loop:
             await system.react([holder])
 
         assert mock_agent_loop.await_count == 1
         assert mock_agent_loop.await_args is not None
         # 仲裁者是所在场景，不是持有者本人
         assert mock_agent_loop.await_args.kwargs["name"] == "场景.测试密室"
+        # 提示词已写死目标恒为持有者
+        assert (
+            "目标恒为持有者本人 怪物.纸人"
+            in mock_agent_loop.await_args.kwargs["prompt"]
+        )
         mock_game.get_agent_memory.assert_called_with(
             mock_game.resolve_stage_entity.return_value
         )

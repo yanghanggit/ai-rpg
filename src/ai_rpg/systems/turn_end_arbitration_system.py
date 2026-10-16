@@ -17,7 +17,6 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_combat_processor import (
     compute_character_hand_block,
     compute_character_stats,
-    get_alive_actors_in_stage,
     set_character_hp,
 )
 from ..game.dbg_game import DBGGame
@@ -28,8 +27,6 @@ from ..models import (
     CombatArbitrationEvent,
     HandComponent,
     HumanMessage,
-    MonsterComponent,
-    PartyMemberComponent,
     PassTurnAction,
     RoundEntryKind,
     render_labeled_str_list,
@@ -40,7 +37,6 @@ from .arbitration_prompt_builders import (
     ArbitrationKind,
     build_calc_rules_section,
     build_narrative_section,
-    build_on_hit_affix_section,
     build_tool_flow_section,
 )
 
@@ -66,34 +62,14 @@ def _build_turn_end_card_lines(card: Card) -> str:
     return "\n".join(lines)
 
 
-def _build_alive_actor_lines(alive_actor_names: List[str]) -> str:
-    """构建场上存活角色列表。"""
-    return (
-        "\n".join(f"- {name}" for name in alive_actor_names)
-        if alive_actor_names
-        else "- 无存活角色"
-    )
-
-
-def _camp_label(actor: Entity) -> str:
-    """返回角色的阵营标签，帮助 LLM 判断「敌人/友方」目标。"""
-    if actor.has(PartyMemberComponent):
-        return "队伍"
-    if actor.has(MonsterComponent):
-        return "怪物"
-    return "未知阵营"
-
-
 @prompt_builder
 def _build_turn_end_arbitration_tool_prompt(
     holder_name: str,
     cards: List[Card],
-    alive_actor_names: List[str],
     current_round_number: int,
 ) -> str:
     """生成回合结束仲裁提示词（完整版，供 LLM 首轮使用）。"""
     cards_lines = "\n\n".join(_build_turn_end_card_lines(c) for c in cards)
-    alive_lines = _build_alive_actor_lines(alive_actor_names)
 
     return f"""# 第 {current_round_number} 回合：回合结束结算（工具调用模式）
 
@@ -101,23 +77,17 @@ def _build_turn_end_arbitration_tool_prompt(
 
 {holder_name}
 
-其回合结束（pass turn）时，由你结算以下带回合结束词缀的卡牌的效果。
+其回合结束（pass turn）时，由你结算以下带回合结束词缀的卡牌的效果；**这些效果的目标恒为持有者本人 {holder_name}**。
 
 ## 回合结束词缀卡牌
 
 {cards_lines}
 
-## 场上存活角色
-
-{alive_lines}
-
 {build_calc_rules_section(GET_ENTITY_STATS_TOOL.function.name, ArbitrationKind.TURN_END)}
 
 ## 回合结束词缀
 
-{holder_name} 是这些卡牌的持有者；每张卡的 `source` 是它的来源（生成 / 注入者），词缀提及「非 source 者」时指持有者 {holder_name}（当其 ≠ 该卡 `source` 时）。回合结束词缀是逐条独立规则：**逐条全部读取**，判断它为哪些系数取值，用于后续判定；受影响目标由词缀描述与场上存活角色自行判断（持有者自身也可成为目标），不得合并、省略或引入词缀外机制。
-
-{build_on_hit_affix_section(GET_ENTITY_STATS_TOOL.function.name, ArbitrationKind.TURN_END, holder_name)}
+{holder_name} 是这些卡牌的持有者；每张卡的 `source` 是它的来源（生成 / 注入者），副本保留原 `source`。词缀的生效条件按持有者与 `source` 的关系判定：`本卡持有者` 无条件（效果落在 {holder_name}）；`source 者` 仅当 {holder_name} == 该卡 `source` 时结算；`非 source 者` 仅当 {holder_name} != 该卡 `source` 时结算；条件不成立则整条跳过。回合结束词缀是逐条独立规则：**逐条全部读取**，判断它为哪些系数取值，用于后续判定；**所有效果只作用于持有者 {holder_name} 本人**，不得指向其他角色，不得合并、省略或引入词缀外机制。
 
 {build_tool_flow_section(GET_ENTITY_STATS_TOOL.function.name, RESOLVE_DAMAGE_TOOL.function.name, RESOLVE_EFFECT_TOOL.function.name, SUBMIT_ARBITRATION_TOOL.function.name, ArbitrationKind.TURN_END, holder_name)}
 
@@ -155,7 +125,7 @@ def _build_stats_update_notification(final_hp: int, max_hp: int) -> str:
 GET_ENTITY_STATS_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="get_entity_stats",
-        description="读取指定战斗角色的当前生命值（HP/最大HP）与总格挡（其手牌 block 之和）及其手牌中带受击词缀的卡牌（含这些卡牌的 source/damage/hit_count/block 等数据）。用于获取持有者与目标当前状态。",
+        description="读取指定战斗角色的当前生命值（HP/最大HP）与总格挡（其手牌 block 之和）。用于获取持有者当前状态。",
         parameters={
             "type": "object",
             "properties": {
@@ -173,18 +143,21 @@ GET_ENTITY_STATS_TOOL: Final[ToolDefinition] = ToolDefinition(
 RESOLVE_DAMAGE_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="resolve_damage",
-        description="结算某目标承受的伤害：系统按 max(0, base_damage×damage_mult − 该目标总格挡×block_mult) 逐击计算（共 hits 次）并落库。你只需选定 base 与系数。对每个承伤目标调用一次。",
+        description="结算持有者承受的伤害：系统按 max(0, base_damage×damage_mult − 持有者总格挡×block_mult) 逐击计算（共 hits 次）并落库。你只需选定 base 与系数。对持有者调用一次。",
         parameters={
             "type": "object",
             "properties": {
-                "entity_name": {"type": "string", "description": "承伤目标全名"},
+                "entity_name": {
+                    "type": "string",
+                    "description": "承伤目标全名（本时机恒为持有者本人）",
+                },
                 "base_damage": {
                     "type": "integer",
-                    "description": "伤害的基础数值（照拄卡牌 damage / block 字段，或文案明示的数字）",
+                    "description": "伤害的基础数值（照抄卡牌 damage / block 字段，或文案明示的数字）",
                 },
                 "hits": {
                     "type": "integer",
-                    "description": "该目标本次承受的命中次数（照拄卡牌 hit_count）",
+                    "description": "该目标本次承受的命中次数（照抄卡牌 hit_count）",
                 },
                 "damage_mult": {"type": "number", "description": "伤害系数（默认 1）"},
                 "block_mult": {
@@ -205,13 +178,13 @@ RESOLVE_DAMAGE_TOOL: Final[ToolDefinition] = ToolDefinition(
 RESOLVE_EFFECT_TOOL: Final[ToolDefinition] = ToolDefinition(
     function=ToolFunction(
         name="resolve_effect",
-        description="结算某受效角色的反伤 / 吸血 / 治疗（均按每击 ×hits，不过格挡）：系统按「各分量 = 四舍五入(base × 对应系数)」计算净扣减并落库。对每个受效角色调用一次。",
+        description="结算持有者的反伤 / 吸血 / 治疗（均按每击 ×hits，不过格挡）：系统按「各分量 = 四舍五入(base × 对应系数)」计算净扣减并落库。对持有者调用一次。",
         parameters={
             "type": "object",
             "properties": {
                 "entity_name": {
                     "type": "string",
-                    "description": "受效角色全名（不限阵营；通常为持有者，也可为其他受影响角色）",
+                    "description": "受效角色全名（本时机恒为持有者本人）",
                 },
                 "base": {
                     "type": "integer",
@@ -284,16 +257,8 @@ class _TurnEndArbitrationContext(BaseModel):
     unsettled_affixes: List[str] = Field(default_factory=list)
 
 
-def _collect_hand_on_hit_cards(entity: Entity) -> List[Card]:
-    """收集角色手牌中所有带受击词缀的卡牌（持有期间参与受击仲裁）。"""
-    hand = entity.get(HandComponent) if entity.has(HandComponent) else None
-    if hand is None:
-        return []
-    return [card for card in hand.cards if card.on_hit_affixes]
-
-
 def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
-    """处理「获取状态工具」调用：返回 HP/总格挡 + 参与受击仲裁的手牌卡牌数据。"""
+    """处理「获取状态工具」调用：返回 HP/总格挡。"""
     entity = game.get_actor_entity(entity_name)
     if entity is None:
         return f"错误：找不到战斗角色 {entity_name}"
@@ -301,23 +266,10 @@ def _handle_get_entity_stats(game: DBGGame, entity_name: str) -> str:
     stats = compute_character_stats(entity)
     hand_block = compute_character_hand_block(entity)
 
-    # 收集角色手牌中所有带受击词缀的卡牌（持有期间参与受击仲裁）
-    hit_cards = _collect_hand_on_hit_cards(entity)
-    if hit_cards:
-        cards_str = "\n".join(
-            f"    - {c.name}（source={c.source or '未知'}, description={c.description}, cost={c.cost}, "
-            f"damage={c.damage}, hit_count={c.hit_count}, 单牌 block={c.block}, 受击词缀={c.on_hit_affixes}）"
-            for c in hit_cards
-        )
-    else:
-        cards_str = "    - 无"
-
     return (
         f"【{entity_name}】\n"
         f"- HP：{stats.hp}/{stats.max_hp}\n"
-        f"- 总格挡（角色级＝该角色手牌 block 之和；结算伤害时只减这个数）：{hand_block}\n"
-        f"- 受击卡牌（仅列出带受击词缀的卡牌，不是完整手牌；下面每张卡的 `单牌 block` 只是它自己那张牌的格挡值，**不是**上面的总格挡）：\n"
-        f"{cards_str}"
+        f"- 总格挡（角色级＝该角色手牌 block 之和；结算伤害时只减这个数）：{hand_block}"
     )
 
 
@@ -349,7 +301,12 @@ def _handle_resolve_damage(
     block_mult: float = 1.0,
     rationale: str = "",
 ) -> str:
-    """处理「承伤结算」：读取目标总格挡，交由纯计算模块算出伤害并登记。"""
+    """处理「承伤结算」：读取持有者总格挡，交由纯计算模块算出伤害并登记。目标恒为持有者。"""
+    if entity_name != holder_name:
+        return (
+            f"错误：回合结束词缀的目标恒为持有者 {holder_name}，"
+            f"不能结算 {entity_name}。请对 {holder_name} 重新调用。"
+        )
     entity = game.get_actor_entity(entity_name)
     if entity is None:
         return f"错误：找不到战斗角色 {entity_name}"
@@ -375,6 +332,7 @@ def _handle_resolve_damage(
 def _handle_resolve_effect(
     game: DBGGame,
     ctx: _TurnEndArbitrationContext,
+    holder_name: str,
     entity_name: str,
     base: int,
     hits: int,
@@ -383,7 +341,12 @@ def _handle_resolve_effect(
     heal_mult: float = 0.0,
     rationale: str = "",
 ) -> str:
-    """处理「受效结算」：反伤 / 吸血 / 治疗按 base×系数、每击，由纯计算模块算净扣减。"""
+    """处理「受效结算」：反伤 / 吸血 / 治疗按 base×系数、每击。目标恒为持有者。"""
+    if entity_name != holder_name:
+        return (
+            f"错误：回合结束词缀的目标恒为持有者 {holder_name}，"
+            f"不能结算 {entity_name}。请对 {holder_name} 重新调用。"
+        )
     entity = game.get_actor_entity(entity_name)
     if entity is None:
         return f"错误：找不到战斗角色 {entity_name}"
@@ -477,16 +440,9 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
             )
             return
 
-        # 场上存活角色（含阵营标签，供 LLM 判断目标）
-        alive_actors = get_alive_actors_in_stage(self._game, pass_turn_entity)
-        alive_actor_names = sorted(
-            f"{actor.name}（{_camp_label(actor)}）" for actor in alive_actors
-        )
-
         prompt = _build_turn_end_arbitration_tool_prompt(
             pass_turn_entity.name,
             turn_end_cards,
-            alive_actor_names,
             current_round_number,
         )
         ctx = _TurnEndArbitrationContext()
@@ -513,7 +469,10 @@ class TurnEndArbitrationSystem(ReactiveProcessor):
                         pass_turn_entity.name,
                     ),
                     RESOLVE_EFFECT_TOOL.function.name: partial(
-                        _handle_resolve_effect, self._game, ctx
+                        _handle_resolve_effect,
+                        self._game,
+                        ctx,
+                        pass_turn_entity.name,
                     ),
                     SUBMIT_ARBITRATION_TOOL.function.name: partial(
                         _handle_submit_arbitration, ctx

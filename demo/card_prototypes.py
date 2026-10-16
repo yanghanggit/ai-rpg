@@ -31,10 +31,12 @@ from demo.card_skeletons import (
     GEAR_CONTAGION_SKELETON,
     GEAR_DEFENSE_SKELETON,
     GEAR_OFFENSE_SKELETON,
+    HEAL_SKELETON,
     MARK_SKELETON,
     PASSIVE_SKELETON,
     PIERCE_SKELETON,
     PLATE_SKELETON,
+    REGEN_SKELETON,
     SACRIFICE_SKELETON,
     SELF_LOOP_SKELETON,
     SHIELD_TRANSFER_SKELETON,
@@ -367,10 +369,10 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             archetype="防御端",
             archetype_subtype="成长性防御",
             name="蛰伏",
-            summary="不可出 + 保留，每回合末袭扰敌人（数值方向自定）。",
+            summary="不可出 + 保留，每回合末回复自身（数值方向自定）。",
             guide=(
                 "字段：playable=False、retain=True、damage=1、on_turn_end_affixes（引导）。"
-                "不可出但持有，每次 pass turn 触发一条袭扰规则——请选一个（或组合）内建数值写成"
+                "不可出但持有，每次 pass turn 触发一条回气规则——请选一个（或组合）内建数值写成"
                 "你自己的具体词缀；持续效果由这张牌本身承载。"
             ),
             keywords=("playable", "retain", "on_turn_end_affixes"),
@@ -390,6 +392,42 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
                 "retain 跨回合存续；playable=False 与 retain/block 组合即纯被动护甲。"
             ),
             keywords=("playable", "block", "retain"),
+        ),
+    ),
+    # 手牌 / 防御端 / 恢复
+    CardPrototype(
+        skeleton=HEAL_SKELETON,
+        meta=CardPrototypeMeta(
+            prototype_id="proto.heal",
+            card_type="手牌",
+            archetype="防御端",
+            archetype_subtype="恢复",
+            name="即时治疗",
+            summary="打出即回复自身（数值方向自定）。",
+            guide=(
+                "字段：self_target=True、damage=0、on_play_affixes（引导）。打出时对自身"
+                "结算一条回复规则——请选一个（或组合）内建数值写成你自己的具体词缀（如回复"
+                "本卡 block、按自身已损失 HP 回复等）。只写回复，不要引入伤害或格挡。"
+            ),
+            keywords=("on_play_affixes", "self_target"),
+        ),
+    ),
+    CardPrototype(
+        skeleton=REGEN_SKELETON,
+        meta=CardPrototypeMeta(
+            prototype_id="proto.regen",
+            card_type="手牌",
+            archetype="防御端",
+            archetype_subtype="恢复",
+            name="持续调息",
+            summary="不可出 + 保留，每回合末回复自身（数值方向自定）。",
+            guide=(
+                "字段：playable=False、retain=True、block=1、on_turn_end_affixes（引导）。"
+                "不可出但跨回合持有，持有者每次 pass turn 触发一条回复规则——请选一个（或组合）"
+                "内建数值写成你自己的具体词缀（如回复本卡 block、借自身气血等）；效果目标恒为"
+                "持有者本人。"
+            ),
+            keywords=("playable", "retain", "on_turn_end_affixes"),
         ),
     ),
     # 手牌 / 防御端 / 特殊防御机制

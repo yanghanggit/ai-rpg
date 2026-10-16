@@ -55,6 +55,52 @@ DEFENSE_SKELETON: Final[Card] = Card(
 )
 
 
+HEAL_SKELETON: Final[Card] = Card(
+    name="即时治疗",
+    description="",
+    on_play_affixes=[
+        "[词缀名]:打出时取一个内建数值为自身回复 HP"
+        "（治疗方向；候选取数——本卡 block、自身 HP/最大 HP）"
+    ],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[],
+    playable=True,
+    exhaust=False,
+    retain=False,
+    ethereal=False,
+    transferable=False,
+    cost=1,
+    damage=0,
+    hit_count=1,
+    block=0,
+    target_type=TargetType.SINGLE,
+    self_target=True,
+)
+
+
+REGEN_SKELETON: Final[Card] = Card(
+    name="持续调息",
+    description="",
+    on_play_affixes=[],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[
+        "[词缀名]:回合结束时取一个内建数值为本卡持有者回复 HP"
+        "（持续恢复方向；候选取数——本卡 block、持有者 HP/最大 HP）"
+    ],
+    playable=False,
+    exhaust=False,
+    retain=True,
+    ethereal=False,
+    transferable=False,
+    cost=1,
+    damage=0,
+    hit_count=1,
+    block=1,
+    target_type=TargetType.SINGLE,
+    self_target=True,
+)
+
+
 # ── 攻击端骨架 ──────────────────────────────────────────────
 
 BURST_SKELETON: Final[Card] = Card(
@@ -413,8 +459,8 @@ PASSIVE_SKELETON: Final[Card] = Card(
     on_play_affixes=[],
     on_hit_affixes=[],
     on_turn_end_affixes=[
-        "[词缀名]:回合结束时取一个内建数值对敌方角色结算"
-        "（袭扰方向；候选取数——本卡 damage、目标 HP/总格挡）"
+        "[词缀名]:回合结束时取一个内建数值为本卡持有者回复 HP"
+        "（蛰伏回气方向；候选取数——本卡 damage/block、持有者 HP/最大 HP）"
     ],
     playable=False,
     exhaust=False,

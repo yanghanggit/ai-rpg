@@ -49,6 +49,8 @@ from .card_skeletons import (
     DEFENSE_SKELETON,
     GEAR_DEFENSE_SKELETON,
     GEAR_OFFENSE_SKELETON,
+    HEAL_SKELETON,
+    REGEN_SKELETON,
 )
 
 # ---------------------------------------------------------------------------
@@ -219,6 +221,26 @@ def _make_defense_card(owner: str) -> Card:
     return card
 
 
+def _make_heal_card(owner: str, name: str, description: str, *, heal: int) -> Card:
+    """即时治疗牌：打出时回复自身 HP（种子数据，非 agent 生成）。"""
+    card = _copy_skeleton(HEAL_SKELETON)
+    card.name = name
+    card.description = description
+    card.on_play_affixes = [f"[愈伤]:打出时回复自身 {heal} 点 HP"]
+    card.source = owner
+    return card
+
+
+def _make_regen_card(owner: str, name: str, description: str, *, heal: int) -> Card:
+    """持续恢复牌：回合结束时回复持有者 HP，跨回合保留（种子数据）。"""
+    card = _copy_skeleton(REGEN_SKELETON)
+    card.name = name
+    card.description = description
+    card.on_turn_end_affixes = [f"[调息]:回合结束时回复本卡持有者 {heal} 点 HP"]
+    card.source = owner
+    return card
+
+
 def _make_alpha_wolf_deck() -> List[Card]:
     """头狼牌库：模拟 AssembleDeckSystem 产物——原型骨架 + 手写 name/description/词缀，
     并已设 `source`（战斗初始化因此幂等跳过，不会覆盖叙事，形状与正规流程一致）。"""
@@ -269,9 +291,7 @@ def _make_alpha_wolf_deck() -> List[Card]:
             DEFENSE_SKELETON,
             "旧疤结痂",
             "旧伤在他身上结成了另一层皮。你以为割开了他，其实只是又给他添了一道比原先更硬的地方。",
-            on_turn_end=[
-                "[结痂]:回合结束时，对场上的一名存活敌方角色结算本卡 block 的伤害"
-            ],
+            on_turn_end=["[结痂]:回合结束时，回复本卡持有者本卡 block 的 HP"],
         ),
     ]
 
@@ -453,6 +473,19 @@ def create_nameless() -> Actor:
                 # 2 张基础防御
                 _make_defense_card(actor.name),
                 _make_defense_card(actor.name),
+                # 治疗牌暂不加入 deck（数值/强度待调整；启用时取消下方注释）
+                # _make_heal_card(
+                #     actor.name,
+                #     "急救敷药",
+                #     "一小包捣碎的止血草，混着几片发黄的旧布条。敷上伤口时疼得钻心，那股燥热的抽痛才一点点退下去，呼吸也跟着稳了些。",
+                #     heal=3,
+                # ),
+                # _make_regen_card(
+                #     actor.name,
+                #     "静息调匀",
+                #     "靠着墙根坐下来，把呼吸放慢，让胸口的起伏一点点平复。伤不会立刻就好，但每睡过一程，身子都比上一程更听使唤。",
+                #     heal=2,
+                # ),
             ],
         ),
         WornCostumeComponent(

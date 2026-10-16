@@ -12,14 +12,12 @@ from typing import List
 
 import pytest
 
-from ai_rpg.models import Card
-from ai_rpg.models.items import (
+from ai_rpg.models import (
     AnyItem,
+    Card,
     ConsumableItem,
     GearItem,
     MaterialItem,
-)
-from ai_rpg.models.utils import (
     append_item_with_stacking,
     consume_item_by_uuid,
     deduct_materials,

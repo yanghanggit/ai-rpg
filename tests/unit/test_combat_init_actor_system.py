@@ -10,6 +10,7 @@ from ai_rpg.game.dbg_game import DBGGame
 from ai_rpg.models import (
     ActorComponent,
     AppearanceComponent,
+    CharacterStats,
     CharacterStatsComponent,
     DiscardPileComponent,
     DrawPileComponent,
@@ -17,7 +18,6 @@ from ai_rpg.models import (
     MonsterComponent,
     PartyMemberComponent,
 )
-from ai_rpg.models.character_stats import CharacterStats
 from ai_rpg.systems.combat_init_actor_system import (
     CombatInitActorSystem,
     OtherActorInfo,

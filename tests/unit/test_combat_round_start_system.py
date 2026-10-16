@@ -7,13 +7,13 @@ from ai_rpg.entitas.entity import Entity
 from ai_rpg.game.dbg_game import DBGGame
 from ai_rpg.models import (
     ActorComponent,
+    CharacterStats,
     CharacterStatsComponent,
     EquippedGearComponent,
     GearItem,
     IdentityComponent,
     RoundStatsComponent,
 )
-from ai_rpg.models.character_stats import CharacterStats
 from ai_rpg.systems.combat_round_start_system import (
     ActionOrderStrategy,
     CombatRoundStartSystem,

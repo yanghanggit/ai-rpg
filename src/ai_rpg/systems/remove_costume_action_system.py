@@ -9,11 +9,11 @@ from ..game.dbg_game import DBGGame
 from ..models import (
     AppearanceComponent,
     AppearanceUpdateEvent,
+    CostumeItem,
     RemoveCostumeAction,
     StorageComponent,
     WornCostumeComponent,
 )
-from ..models.items import CostumeItem
 from ..utils import prompt_builder
 
 

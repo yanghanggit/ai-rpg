@@ -15,13 +15,13 @@ from ai_rpg.entitas.context import Context
 from ai_rpg.entitas.entity import Entity
 from ai_rpg.game.dbg_game import DBGGame
 from ai_rpg.models import (
+    AIMessage,
     DungeonComponent,
     EnvironmentComponent,
     HomeComponent,
     PlayerComponent,
     StageComponent,
 )
-from ai_rpg.models.messages import AIMessage
 from ai_rpg.systems.environment_initialization_system import (
     EnvironmentInitializationSystem,
 )

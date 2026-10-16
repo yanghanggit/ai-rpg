@@ -11,15 +11,17 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game import DBGGame
 from ..models import (
     ActorComponent,
+    AIMessage,
     AnnounceAction,
+    HumanMessage,
     NPCComponent,
     PlanAction,
     PlayerComponent,
     SpeakAction,
+    ToolMessage,
     TransStageAction,
     WhisperAction,
 )
-from ..models.messages import AIMessage, HumanMessage, ToolMessage
 from .home_planning_prompt_builders import (
     build_action_planning_tool_prompt,
     build_planning_context,

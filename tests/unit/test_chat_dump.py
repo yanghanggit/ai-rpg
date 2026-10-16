@@ -11,7 +11,7 @@ import pytest
 
 from ai_rpg.deepseek.chat_dump import dump_chat
 from ai_rpg.deepseek.client import DeepSeekClient, ToolDefinition, ToolFunction
-from ai_rpg.models.messages import AIMessage, SystemMessage, get_buffer_string
+from ai_rpg.models import AIMessage, SystemMessage, get_buffer_string
 
 
 def _ai_with_tool_call() -> AIMessage:

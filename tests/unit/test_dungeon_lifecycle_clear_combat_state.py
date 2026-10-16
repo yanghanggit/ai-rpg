@@ -6,8 +6,7 @@ from unittest.mock import MagicMock
 from ai_rpg.entitas.context import Context
 from ai_rpg.entitas.entity import Entity
 from ai_rpg.game.dbg_game import DBGGame
-from ai_rpg.models import EquippedGearComponent, InventoryComponent
-from ai_rpg.models.items import GearItem
+from ai_rpg.models import EquippedGearComponent, GearItem, InventoryComponent
 from ai_rpg.systems.combat_pile_teardown_system import CombatPileTeardownSystem
 
 

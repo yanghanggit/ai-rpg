@@ -13,13 +13,13 @@ from ai_rpg.models import (
     Card,
     EquipGearItemAction,
     EquippedGearComponent,
+    GearItem,
     HandComponent,
     InventoryComponent,
     PartyMemberComponent,
     Round,
     RoundEntryKind,
 )
-from ai_rpg.models.items import GearItem
 from ai_rpg.systems.equip_gear_item_action_system import EquipGearItemActionSystem
 
 # ---------------------------------------------------------------------------

@@ -9,11 +9,11 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..models import (
     AIMessage,
+    DungeonDraft,
     GenerateDungeonAction,
     HumanMessage,
     WorldDirectorComponent,
 )
-from ..models.dungeon_draft import DungeonDraft
 from ..utils import prompt_builder
 
 

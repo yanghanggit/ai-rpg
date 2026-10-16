@@ -12,7 +12,7 @@ import pytest
 
 from ai_rpg.deepseek import LOOP_END_ATTR, LOOP_ID_ATTR, agent_loop
 from ai_rpg.deepseek.client import ToolCall
-from ai_rpg.models.messages import (
+from ai_rpg.models import (
     AIMessage,
     ChatMessage,
     SystemMessage,

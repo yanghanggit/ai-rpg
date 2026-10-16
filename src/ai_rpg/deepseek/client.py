@@ -33,7 +33,7 @@ from dotenv import load_dotenv
 from loguru import logger
 from pydantic import BaseModel
 
-from ..models.messages import AIMessage, ChatMessage, ToolMessage
+from ..models import AIMessage, ChatMessage, ToolMessage
 from . import chat_dump
 from .errors import DeepSeekError, ErrorKind
 

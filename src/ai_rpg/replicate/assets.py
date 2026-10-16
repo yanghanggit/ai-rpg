@@ -15,7 +15,7 @@ from contextlib import ExitStack
 from dataclasses import dataclass
 from typing import Final, List, Optional, Tuple, final
 
-from ..models.assets_meta import AssetSource, ImageMeta, new_asset_filename
+from ..models import AssetSource, ImageMeta, new_asset_filename
 from .batch import batch_generate_images
 from .config import DEFAULT_IMAGE_MODEL, IMAGE_MODELS
 from .pipeline import download_image, generate_image, image_format_from_url

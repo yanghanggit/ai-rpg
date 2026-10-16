@@ -15,8 +15,7 @@
 #     GenerateDeckAction,
 #     PartyMemberComponent,
 # )
-# from ai_rpg.models.messages import AIMessage
-# from ai_rpg.models.target_type import TargetType
+# from ai_rpg.models import AIMessage, TargetType
 # # from ai_rpg.systems.generate_deck_action_system import (
 # #     GenerateDeckActionSystem,
 # # )

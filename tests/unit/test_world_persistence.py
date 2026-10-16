@@ -12,13 +12,14 @@ import pytest
 from ai_rpg.game import world_persistence
 from ai_rpg.models import (
     AgentMemory,
+    AIMessage,
     Blueprint,
     Dungeon,
+    HumanMessage,
     PlayerSession,
     SpeakEvent,
     WorldState,
 )
-from ai_rpg.models.messages import AIMessage, HumanMessage
 
 # ---------------------------------------------------------------------------
 # 构造辅助

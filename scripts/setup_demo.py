@@ -16,8 +16,9 @@ from ai_rpg.embedding_model.sentence_transformer import embedding_model
 from ai_rpg.models import (
     Blueprint,
     Dungeon,
+    Stage,
+    World,
 )
-from ai_rpg.models.entities import Stage, World
 from ai_rpg.paths import BLUEPRINTS_DIR, DUNGEONS_DIR
 from ai_rpg.pgsql import (
     pgsql_create_database,

@@ -1,7 +1,11 @@
 """`CharacterStats` 与 `compute_effective_stats` 的单元测试。"""
 
-from ai_rpg.models import CharacterStats, EquippedGearComponent, GearItem
-from ai_rpg.models.utils import compute_effective_stats
+from ai_rpg.models import (
+    CharacterStats,
+    EquippedGearComponent,
+    GearItem,
+    compute_effective_stats,
+)
 
 
 def _gear(speed: int) -> GearItem:

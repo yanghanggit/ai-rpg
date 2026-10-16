@@ -50,6 +50,24 @@ class Candidate:
 
 
 #######################################################################################################################################
+@dataclass
+class DesignOutcome:
+    """一次卡牌设计会话的结果；``bool(outcome)`` 等于 agent_loop 是否成功。
+
+    ``designed`` 为实际落地张数（可能少于 ``total``，例如 agent 未提交全部卡就结束），
+    调用方可据此判断是否需要回退。
+    """
+
+    ok: bool
+    designed: int
+    total: int
+    affixes: int
+
+    def __bool__(self) -> bool:
+        return self.ok
+
+
+#######################################################################################################################################
 class CardDesign(BaseModel):
     """submit_card 提交的单张卡设计（name / description + 可选数值微调 + 词缀）。"""
 
@@ -111,26 +129,26 @@ SUBMIT_CARD_TOOL = ToolDefinition(
                 "on_play_affixes": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "maxItems": 3,
-                    "description": "本卡打出时结算的即时词缀（可选，多值列表）：每个元素是一条完整独立词缀，格式 `[词缀名]:机械结算描述`；禁止把一条词缀拆成多个元素或把多条合并进一个元素；无则 []。仅当原型该槽非空（有引导）时可提交；须满足词缀格式，否则整槽置空。",
+                    "maxItems": 1,
+                    "description": "本卡打出时结算的即时词缀（可选，至多一条）：数组长度≤1，元素形如 `[词缀名]:机械结算描述`；无则 []。仅当原型该槽非空（有引导）时可提交；须满足词缀格式，否则整槽置空。",
                 },
                 "on_hit_affixes": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "maxItems": 3,
-                    "description": "本卡持有者被命中时触发的受击词缀（可选，多值列表）：每个元素是一条完整独立词缀，格式同上；禁止拆分或合并；无则 []。仅当原型该槽非空时可提交；须满足词缀格式。",
+                    "maxItems": 1,
+                    "description": "本卡持有者被命中时触发的受击词缀（可选，至多一条）：数组长度≤1，元素形如 `[词缀名]:机械结算描述`；无则 []。仅当原型该槽非空时可提交；须满足词缀格式。",
                 },
                 "on_turn_end_affixes": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "maxItems": 3,
-                    "description": "持有者每次 pass turn 结算的回合结束词缀（可选，多值列表）：每个元素是一条完整独立词缀，格式同上；禁止拆分或合并；无则 []。仅当原型该槽非空时可提交；须满足词缀格式。",
+                    "maxItems": 1,
+                    "description": "持有者每次 pass turn 结算的回合结束词缀（可选，至多一条）：数组长度≤1，元素形如 `[词缀名]:机械结算描述`；无则 []。仅当原型该槽非空时可提交；须满足词缀格式。",
                 },
                 "on_autonomous_affixes": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "maxItems": 3,
-                    "description": "卡牌自主运行词缀（可选，多值列表）：持有者每次 pass turn（回合结束词缀之后）结算，效果目标可为场上任意存活角色（敌人/友方/持有者，由词缀文本决定），不锁定持有者；格式同上；无则 []。仅当原型该槽非空时可提交；须满足词缀格式。",
+                    "maxItems": 1,
+                    "description": "卡牌自主运行词缀（可选，至多一条）：数组长度≤1，元素形如 `[词缀名]:机械结算描述`；持有者每次 pass turn（回合结束词缀之后）结算，效果目标可为场上任意存活角色（敌人/友方/持有者，由词缀文本决定），不锁定持有者；无则 []。仅当原型该槽非空时可提交；须满足词缀格式。",
                 },
             },
             "required": ["card_index", "name", "description"],
@@ -269,6 +287,13 @@ def _handle_submit_card(
                 problems.append(f"{field} 不可设计（原型该槽无引导），请勿提交")
             continue
 
+        #   每个槽至多一条词缀（schema maxItems=1 外的兜底）
+        if len(items) > 1:
+            problems.append(
+                f"{field} 每个槽至多一条词缀，收到 {len(items)} 条，请只保留一条"
+            )
+            continue
+
         #   遍历每个提交的词缀，进行合法性校验
         for affix in items:
             result = validate_affix_slot(field, affix, card)
@@ -361,10 +386,10 @@ async def run_card_design_session(
     messages: List[ChatMessage],
     *,
     max_rounds: int = 6,
-) -> bool:
+) -> DesignOutcome:
     """跑一次卡牌设计会话：agent 逐卡 `submit_card`，计算端把设计写回候选卡。
 
-    `candidates` 原地被设计（name / description / 数值 / 词缀）。返回 agent_loop 是否成功；
+    `candidates` 原地被设计（name / description / 数值 / 词缀）。返回 `DesignOutcome`；
     即便会话中途报错，已提交的设计仍会落地。
     """
     edits: List[CardDesign] = []
@@ -407,4 +432,6 @@ async def run_card_design_session(
         f"[card_design] {name}: 设计 {applied}/{len(candidates)} 张，"
         f"词缀 {affixes} 条（agent_loop 成功={ok}）"
     )
-    return ok
+    return DesignOutcome(
+        ok=ok, designed=applied, total=len(candidates), affixes=affixes
+    )

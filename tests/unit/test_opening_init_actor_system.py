@@ -10,12 +10,12 @@ from ai_rpg.game.dbg_game import DBGGame
 from ai_rpg.models import (
     ActorComponent,
     AppearanceComponent,
+    CharacterStats,
     CharacterStatsComponent,
     DeckComponent,
     MonsterComponent,
     PartyMemberComponent,
 )
-from ai_rpg.models.character_stats import CharacterStats
 from ai_rpg.systems.opening_init_actor_system import (
     OpeningInitActorSystem,
     OtherActorInfo,

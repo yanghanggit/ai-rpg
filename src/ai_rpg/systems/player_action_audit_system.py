@@ -11,10 +11,10 @@ from ..models import (
     PlayerAuditComponent,
     PlayerComponent,
     SpeakAction,
+    SystemMessage,
     WhisperAction,
     WorldComponent,
 )
-from ..models.messages import SystemMessage
 from ..utils import extract_json, prompt_builder
 
 

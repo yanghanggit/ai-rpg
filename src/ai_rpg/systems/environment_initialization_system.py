@@ -11,10 +11,10 @@ from ..game.rpg_actor_appearances import get_actor_appearances_in_stage
 from ..models import (
     EnvironmentComponent,
     HomeComponent,
+    HumanMessage,
     PlayerComponent,
     StageComponent,
 )
-from ..models.messages import HumanMessage
 from ..utils import (
     prompt_builder,
 )

@@ -118,7 +118,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             summary="高伤 + 自伤代价，一次性爆发（代价自定）。",
             design="""【骨架】SINGLE；cost=2、damage=5、hit_count=1、exhaust=True；on_play_affixes 为引导槽。
 【字段】exhaust：出牌后永久离场。on_play_affixes：本卡打出时结算，仅本次出牌生效。
-【设计】用即时减益（代价）换超模输出，高风险高回报。请取一个（或组合）内建数值（本卡 damage/hit_count/block、自身 HP/总格挡）写成一条具体代价词缀，如对本卡 damage 自伤、削减自身气血搏命等。""",
+【设计】用即时减益（代价）换超模输出，高风险高回报。请取一个（或组合）内建数值（本卡 damage/hit_count/block、自身 HP/总格挡）写成一条代价词缀，方向是对出牌者自身不利（如自伤 HP）；禁止写成对目标的额外收益或对自身的回复。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
             keywords=("exhaust", "damage", "on_play_affixes"),
         ),
     ),
@@ -163,7 +163,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             summary="攻击端·取数：借一个内建数值把这一击做重（无视格挡 / 借目标格挡 / 借目标气血）。",
             design="""【骨架】SINGLE；cost=1、damage=1、hit_count=1、block=0；on_play_affixes 为引导槽。
 【字段】on_play_affixes：本卡打出时结算一次。
-【设计】「借势」取数，不是成品：请在骨架上选一个（或组合）内建数值写成一条具体 on_play 词缀。可选变量：本卡 damage/hit_count；目标的总格挡/当前 HP/最大 HP；自身的 HP/总格挡。可选方向：无视目标格挡直伤、借目标格挡或当前 HP 加重本次伤害、借自身气血搏命等。""",
+【设计】「借势」取数，不是成品：请在骨架上选一个（或组合）内建数值写成一条具体 on_play 词缀。可选变量：本卡 damage/hit_count；目标的总格挡/当前 HP/最大 HP；自身的 HP/总格挡。可选方向：无视目标格挡直伤、借目标格挡或当前 HP 加重本次伤害、借自身气血搏命等。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
             keywords=("on_play_affixes", "damage", "single"),
         ),
     ),
@@ -178,7 +178,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             summary="虚无 + 高收益，不用即消失（爆发数值自定）。",
             design="""【骨架】SINGLE；cost=1、damage=2、hit_count=1、block=0、ethereal=True；on_play_affixes 为引导槽。
 【字段】ethereal：pass turn 时若仍留在手牌则自动消耗（不用即消失）；on_play_affixes：本卡打出时结算一次。
-【设计】限时兑现压力，逼玩家当回合决定用或弃。取一个（或组合）内建数值（本卡 damage/hit_count/block、目标 HP/总格挡、自身 HP/总格挡）写成一条额外伤害词缀。""",
+【设计】限时兑现压力，逼玩家当回合决定用或弃。取一个（或组合）内建数值（本卡 damage/hit_count/block、目标 HP/总格挡、自身 HP/总格挡）写成一条额外伤害词缀。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
             keywords=("ethereal", "on_play_affixes"),
         ),
     ),
@@ -239,7 +239,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             summary="转嫁 + 回合末持续减益（数值方向自定）。",
             design="""【骨架】SINGLE；cost=1、damage=1、hit_count=1、block=0、transferable=True、retain=True；on_turn_end_affixes 为引导槽。
 【字段】transferable：出牌时额外为每个解析目标手牌 copy 一份，副本落地即 transferable=False（只传一跳、不可再转手），本体照常结算；retain：回合末保留在手牌。on_turn_end_affixes：持有者每次 pass turn 结算一次，效果目标恒为持有者本人。
-【设计】把持续减益投给敌人：副本落在目标手牌后，每回合末触发一条减益。请取一个（或组合）内建数值（本卡 damage、目标 HP/总格挡等）写成具体词缀。因带 transferable，可用「非 source 者」只伤外人、不反噬原主。""",
+【设计】把持续减益投给敌人：副本落在目标手牌后，每回合末触发一条减益。请取一个（或组合）内建数值（本卡 damage、持有者 HP/总格挡等）写成一条词缀。方向必须让持有者（敌人）每回合受损；禁止回复或增益持有者。因带 transferable，可用「非 source 者」只伤外人、不反噬原主。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
             keywords=("transferable", "retain", "on_turn_end_affixes"),
         ),
     ),
@@ -254,7 +254,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             summary="出牌即消耗本体，副本进目标手牌持续受损（数值方向自定）。",
             design="""【骨架】SINGLE；cost=1、damage=1、hit_count=1、block=0、transferable=True、exhaust=True；on_turn_end_affixes 为引导槽。
 【字段】transferable：出牌后副本进目标手牌、落地即 transferable=False（只投一次、不可再转手）；exhaust：本体打出后进 ExhaustPile，副本继承 exhaust=True（目标日后打出副本同样消耗）。on_turn_end_affixes：副本持有者每次 pass turn 结算一次，效果目标恒为持有者本人。
-【设计】一次性投掷：本体消费、副本持续损人。取内建数值写成具体回合末词缀；可用「非 source 者」定向。""",
+【设计】一次性投掷：本体消费、副本持续损人。取内建数值写成具体回合末词缀；可用「非 source 者」定向。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
             keywords=("transferable", "exhaust", "on_turn_end_affixes"),
         ),
     ),
@@ -270,7 +270,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             summary="抓到即召唤、retain 常驻；每回合自主运行一次，可攻击敌人或辅助我方。",
             design="""【骨架】SINGLE；cost=1、damage=2、hit_count=1、block=0、playable=False、retain=True；on_autonomous_affixes 为引导槽。
 【字段】playable=False：不可出牌，进入手牌即视为召唤成功、作为持有状态；retain 使其跨回合常驻。on_autonomous_affixes：持有者每次 pass turn（在回合结束词缀之后）由所在场景结算一次；与回合结束词缀的根本区别是效果目标为场上任意存活角色（敌人/友方/持有者），由词缀文本写明目标如何选取；其造成的伤害算命中，会触发被命中者的受击词缀。
-【设计】召唤兽 / 图腾 / 光环 / 持续诅咒：卡牌作为自主主体影响全场。取一个（或组合）内建数值写成具体自主词缀（如对一名随机敌人造成本卡 damage 的伤害）。该机制能力较强（近似「小神器」），宜克制。""",
+【设计】召唤兽 / 图腾 / 光环 / 持续诅咒：卡牌作为自主主体影响全场。取一个（或组合）内建数值写成具体自主词缀（如对一名随机敌人造成本卡 damage 的伤害）。该机制能力较强（近似「小神器」），宜克制。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
             keywords=("on_autonomous_affixes", "retain", "autonomous"),
         ),
     ),
@@ -286,7 +286,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             summary="把受击易伤投递给敌人，状态由这张牌本身承载（数值方向自定）。",
             design="""【骨架】SINGLE；cost=1、damage=1、hit_count=1、block=0、transferable=True；on_hit_affixes 为引导槽。
 【字段】transferable：出牌后副本进入目标手牌并保留原 source，落地即 transferable=False（只传一跳、不可再转手）。on_hit_affixes：本卡持有者被命中时触发。
-【设计】把「破绽」投给敌人：易伤规则由这张留在对方手上的牌承载，无需独立状态存储。取一个（或组合）内建数值（本卡 damage、自身总格挡/HP、出牌者 damage/hit_count）写成具体受击词缀。""",
+【设计】把「破绽」投给敌人：易伤规则由这张留在对方手上的牌承载，无需独立状态存储。取一个（或组合）内建数值（本卡 damage、出牌者 damage/hit_count、持有者 HP/总格挡）写成一条受击词缀。方向必须让持有者（敌人）更吃亏——多受伤害、失去 HP、削减其格挡等；禁止写成反伤、回复、增幅等对持有者有利的效果（那是反伤原型的方向）。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
             keywords=("transferable", "on_hit_affixes"),
         ),
     ),
@@ -301,7 +301,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             summary="锁定自身 + 保留，每回合末续战恢复（数值方向自定）。",
             design="""【骨架】target_type=SELF（锁定出牌者自身，无需 targets）；cost=1、damage=0、hit_count=1、block=1、retain=True；on_turn_end_affixes 为引导槽。
 【字段】retain：跨回合留在手牌；block=1 持有期提供格挡。on_turn_end_affixes：每次 pass turn 结算一次，效果目标恒为持有者本人。
-【设计】自我调息：牌留在手里、每回合末触发一条续战恢复。取一个（或组合）内建数值（本卡 block、自身 HP/最大 HP）写成具体词缀；持续效果由这张牌本身承载。""",
+【设计】自我调息：牌留在手里、每回合末触发一条续战恢复。取一个（或组合）内建数值（本卡 block、自身 HP/最大 HP）写成一条词缀，只写回复（HP）；禁止写格挡。持续效果由这张牌本身承载。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
             keywords=("target_type", "retain", "on_turn_end_affixes"),
         ),
     ),
@@ -316,7 +316,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             summary="ALL + 敌阵营，群体破防打击（破防方式自定）。",
             design="""【骨架】target_type=ALL + 敌阵营锚点；cost=1、damage=1、hit_count=1、block=0；on_play_affixes 为引导槽。
 【字段】ALL：对锚点所在阵营全体结算。on_play_affixes：本卡打出时结算一次。
-【设计】群体破防：一轮对整队结算可穿透格挡的伤害（格挡只读、不能写入）。请取内建数值写成具体破防词缀，如本次伤害无视目标 block、借目标 block 反向加伤等。""",
+【设计】群体破防：一轮对整队结算可穿透格挡的伤害（格挡只读、不能写入）。请取内建数值写成具体破防词缀，如本次伤害无视目标 block、借目标 block 反向加伤等。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
             keywords=("all", "on_play_affixes"),
         ),
     ),
@@ -363,7 +363,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             summary="不可出 + 保留，每回合末回复自身（数值方向自定）。",
             design="""【骨架】target_type=SELF；cost=1、damage=1、hit_count=1、block=0、playable=False、retain=True；on_turn_end_affixes 为引导槽。
 【字段】playable=False：不可出牌、纯持有状态；retain：跨回合常驻。on_turn_end_affixes：每次 pass turn 结算一次，效果目标恒为持有者本人。
-【设计】蛰伏回气：以持有状态每回合末回复。取一个（或组合）内建数值（本卡 damage/block、持有者 HP/最大 HP）写成具体词缀；持续效果由这张牌本身承载。""",
+【设计】蛰伏回气：以持有状态每回合末回复。取一个（或组合）内建数值（本卡 damage/block、持有者 HP/最大 HP）写成一条词缀，只写回复（HP）；禁止写格挡。持续效果由这张牌本身承载。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
             keywords=("playable", "retain", "on_turn_end_affixes"),
         ),
     ),
@@ -394,7 +394,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             summary="打出即回复自身（数值方向自定）。",
             design="""【骨架】target_type=SELF；cost=1、damage=0、hit_count=1、block=0；on_play_affixes 为引导槽。
 【字段】on_play_affixes：本卡打出时结算一次。
-【设计】即时治疗：只写回复（HP），不要引入伤害或格挡。请取一个（或组合）内建数值写成具体词缀，如回复本卡 block、按自身已损失 HP 回复等。""",
+【设计】即时治疗：只写回复（HP），不要引入伤害或格挡。请取一个（或组合）内建数值写成具体词缀，如回复本卡 block、按自身已损失 HP 回复等。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
             keywords=("on_play_affixes", "target_type"),
         ),
     ),
@@ -409,7 +409,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             summary="不可出 + 保留，每回合末回复自身（数值方向自定）。",
             design="""【骨架】target_type=SELF；cost=1、damage=0、hit_count=1、block=1、playable=False、retain=True；on_turn_end_affixes 为引导槽。
 【字段】playable=False + retain：不可出但跨回合持有；block=1 持有期提供格挡。on_turn_end_affixes：每次 pass turn 结算一次，效果目标恒为持有者本人。
-【设计】持续调息：持有者每回合末回复。取一个（或组合）内建数值（本卡 block、自身 HP/最大 HP）写成具体词缀，只写回复。""",
+【设计】持续调息：持有者每回合末回复。取一个（或组合）内建数值（本卡 block、自身 HP/最大 HP）写成具体词缀，只写回复。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
             keywords=("playable", "retain", "on_turn_end_affixes"),
         ),
     ),
@@ -425,7 +425,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             summary="格挡 + 反制：被打时借一个数值还击（方向自定）。",
             design="""【骨架】target_type=SELF；cost=1、damage=2、hit_count=1、block=2、retain=True；on_hit_affixes 为引导槽。
 【字段】block=2：持有期防御；retain：跨回合持有。on_hit_affixes：本卡持有者被命中时触发。
-【设计】反伤壁垒：被命中时触发一条针对出牌者的反制。这是一条「取数」引导而非成品——请取一个（或组合）内建数值（出牌者 damage/HP/总格挡、本卡 damage/block、自身 HP/总格挡）写成具体反制词缀。""",
+【设计】反伤壁垒：被命中时触发一条针对出牌者的反制。这是一条「取数」引导而非成品——请取一个（或组合）内建数值（出牌者 damage/HP/总格挡、本卡 damage/block、自身 HP/总格挡）写成一条反制词缀，只反制攻击者；禁止治疗或增益持有者自身。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
             keywords=("block", "retain", "on_hit_affixes"),
         ),
     ),
@@ -440,7 +440,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             summary="转嫁持续增益给友方（数值方向自定）。",
             design="""【骨架】SINGLE；cost=1、damage=0、hit_count=1、block=1、transferable=True；on_turn_end_affixes 为引导槽。
 【字段】transferable：出牌后副本进入友方手牌、落地即 transferable=False（只传一跳、不可再转手）；block=1 持有期提供格挡。on_turn_end_affixes：副本持有者每次 pass turn 结算一次，效果目标恒为持有者本人。
-【设计】支援分发：把持续增益投给友方。取一个（或组合）内建数值（本卡 block、自身 HP/最大 HP）写成具体增益词缀。""",
+【设计】支援分发：把持续增益投给友方。取一个（或组合）内建数值（本卡 block、持有者 HP/最大 HP）写成一条词缀，方向须对持有者（友方）有利（回复 HP 等）；禁止伤害持有者。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
             keywords=("transferable", "on_turn_end_affixes"),
         ),
     ),
@@ -470,7 +470,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             summary="ALL + 己方锚点，群体即时增益（数值方向自定）。",
             design="""【骨架】target_type=ALL + 己方锚点；cost=1、damage=0、hit_count=1、block=1；on_play_affixes 为引导槽。
 【字段】ALL：以友方为锚点展开己方阵营、对全体结算。on_play_affixes：本卡打出时结算一次。
-【设计】群体鼓舞：打出时对全体触发一条增益。取一个（或组合）内建数值（本卡 block、目标/自身 HP/总格挡）写成具体词缀；注意格挡只读、不能写入。""",
+【设计】群体鼓舞：打出时对全体触发一条增益。取一个（或组合）内建数值（本卡 block、目标/自身 HP/总格挡）写成具体词缀；注意格挡只读、不能写入。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
             keywords=("all", "on_play_affixes"),
         ),
     ),

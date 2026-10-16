@@ -1,6 +1,6 @@
 """Round 记录队列单元测试：验证跨种类操作的全局先后顺序。"""
 
-from ai_rpg.models.combat import Round, RoundEntry, RoundEntryKind
+from ai_rpg.models import Round, RoundEntry, RoundEntryKind
 
 
 def test_record_preserves_global_order_across_kinds() -> None:

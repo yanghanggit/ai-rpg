@@ -3,13 +3,14 @@ from typing import Any, Callable, Dict, Final, List, Optional, Sequence
 from loguru import logger
 
 from ..entitas import Entity
-from ..models import AgentMemory, WorldState
-from ..models.messages import (
+from ..models import (
+    AgentMemory,
     AIMessage,
     ChatMessage,
     HumanMessage,
     MessageSpan,
     SystemMessage,
+    WorldState,
     find_marked_span,
     find_message,
 )

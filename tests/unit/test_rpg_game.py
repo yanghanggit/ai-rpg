@@ -19,11 +19,12 @@ import pytest
 from ai_rpg.entitas.entity import Entity
 from ai_rpg.models import (
     ActorComponent,
+    HumanMessage,
     IdentityComponent,
+    NoneEvent,
     StageComponent,
+    SystemMessage,
 )
-from ai_rpg.models.agent_event import NoneEvent
-from ai_rpg.models.messages import HumanMessage, SystemMessage
 
 # ---------------------------------------------------------------------------
 # Helpers

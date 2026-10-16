@@ -10,12 +10,13 @@ from ..deepseek import DeepSeekClient, batch_chat
 from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.dbg_game import DBGGame
 from ..models import (
+    AnyItem,
     AppearanceComponent,
     LootComponent,
+    MaterialItem,
     MonsterComponent,
     PartyMemberComponent,
 )
-from ..models.items import AnyItem, MaterialItem
 from ..utils import extract_json, prompt_builder
 
 

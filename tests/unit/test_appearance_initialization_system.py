@@ -11,11 +11,11 @@ from ai_rpg.entitas.entity import Entity
 from ai_rpg.game.dbg_game import DBGGame
 from ai_rpg.models import (
     ActorComponent,
+    AIMessage,
     AppearanceComponent,
+    CostumeItem,
     WornCostumeComponent,
 )
-from ai_rpg.models.items import CostumeItem
-from ai_rpg.models.messages import AIMessage
 from ai_rpg.systems.appearance_initialization_system import (
     AppearanceInitializationSystem,
 )

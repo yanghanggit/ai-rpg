@@ -11,7 +11,7 @@ from ..game.dbg_combat_processor import (
 )
 from ..game.dbg_game import DBGGame
 from ..game.rpg_stage_environment import get_stage_environment
-from ..models.messages import AIMessage, HumanMessage
+from ..models import AIMessage, HumanMessage
 from ..utils import prompt_builder
 
 

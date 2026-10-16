@@ -6,10 +6,10 @@ from overrides import override
 from ..entitas import Entity
 from ..models import (
     AnyAgentEvent,
+    HumanMessage,
     PlayerSession,
     WorldState,
 )
-from ..models.messages import HumanMessage
 from .base_game import BaseGame
 from .rpg_agent_memory import RPGAgentMemory
 from .rpg_entity_manager import RPGEntityManager

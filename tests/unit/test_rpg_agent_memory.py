@@ -15,7 +15,7 @@ import pytest
 
 from ai_rpg.entitas.entity import Entity
 from ai_rpg.game.rpg_agent_memory import REPLACED_MESSAGES_ATTR
-from ai_rpg.models.messages import AIMessage, HumanMessage, SystemMessage
+from ai_rpg.models import AIMessage, HumanMessage, SystemMessage
 
 # ---------------------------------------------------------------------------
 # Fixtures

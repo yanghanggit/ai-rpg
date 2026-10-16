@@ -1,6 +1,6 @@
 """models.messages 消息序列查询工具测试：find_message / find_marked_span / find_marked_spans。"""
 
-from ai_rpg.models.messages import (
+from ai_rpg.models import (
     AIMessage,
     ChatMessage,
     HumanMessage,

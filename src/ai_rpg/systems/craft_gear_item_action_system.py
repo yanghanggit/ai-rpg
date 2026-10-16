@@ -18,6 +18,8 @@ from ..models import (
     Card,
     ChatMessage,
     CraftGearItemAction,
+    GearItem,
+    MaterialItem,
     NormalizedStrList,
     StorageComponent,
     SystemMessage,
@@ -26,7 +28,6 @@ from ..models import (
     deduct_materials,
     validate_affix_slot,
 )
-from ..models.items import GearItem, MaterialItem
 from ..pgsql import get_card_prototype, list_card_prototype_index
 from ..utils import prompt_builder
 

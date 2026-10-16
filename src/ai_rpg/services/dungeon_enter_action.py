@@ -14,6 +14,7 @@ from ..game.dbg_game import DBGGame
 from ..game.rpg_stage_transition import stage_transition
 from ..models import (
     Combat,
+    CombatRoom,
     CombatState,
     DeathComponent,
     Dungeon,
@@ -22,7 +23,6 @@ from ..models import (
     PartyMemberComponent,
     PartyRosterComponent,
 )
-from ..models.dungeon_room import CombatRoom
 from ..utils import prompt_builder
 from .dungeon_archive_action import notify_dungeon_director_entered
 from .dungeon_spoils_actions import clear_party_spoils

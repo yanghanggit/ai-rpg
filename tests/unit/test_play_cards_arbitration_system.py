@@ -17,12 +17,13 @@ from ai_rpg.game.dbg_game import DBGGame
 from ai_rpg.game.rpg_agent_memory import REPLACED_MESSAGES_ATTR
 from ai_rpg.models import (
     ActorComponent,
+    AIMessage,
     Card,
+    HumanMessage,
     PlayCardsAction,
     RoundStatsComponent,
     TargetType,
 )
-from ai_rpg.models.messages import AIMessage, HumanMessage
 from ai_rpg.systems.play_cards_arbitration_system import PlayCardsArbitrationSystem
 
 

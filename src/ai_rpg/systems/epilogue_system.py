@@ -7,7 +7,7 @@ from loguru import logger
 
 from ..entitas import Entity, ExecuteProcessor
 from ..game.rpg_game import RPGGame
-from ..models.components import (
+from ..models import (
     DeathComponent,
 )
 

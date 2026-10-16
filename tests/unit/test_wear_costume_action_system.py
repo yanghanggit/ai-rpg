@@ -10,11 +10,11 @@ from ai_rpg.game.dbg_game import DBGGame
 from ai_rpg.game.rpg_entity_manager import RPGEntityManager
 from ai_rpg.models import (
     AppearanceComponent,
+    CostumeItem,
     StorageComponent,
     WearCostumeAction,
     WornCostumeComponent,
 )
-from ai_rpg.models.items import CostumeItem
 from ai_rpg.systems.wear_costume_action_system import (
     WearCostumeActionSystem,
 )

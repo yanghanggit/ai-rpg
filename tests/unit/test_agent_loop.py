@@ -9,7 +9,7 @@ import pytest
 from ai_rpg.deepseek import ToolDefinition, ToolFunction
 from ai_rpg.deepseek.agent_loop import agent_loop
 from ai_rpg.deepseek.client import ToolCall
-from ai_rpg.models.messages import AIMessage, ChatMessage, SystemMessage
+from ai_rpg.models import AIMessage, ChatMessage, SystemMessage
 
 
 #######################################################################################################################################

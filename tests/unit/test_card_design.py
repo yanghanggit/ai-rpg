@@ -112,3 +112,23 @@ def test_handle_submit_rejects_bad_card_index() -> None:
 
     assert "超出范围" in msg
     assert edits == []
+
+
+def test_handle_submit_rejects_multiple_affixes_in_one_slot() -> None:
+    # 每个词缀槽至多一条（schema maxItems=1 之外的兜底）。
+    card = _submit_card()
+    edits: list[CardDesign] = []
+    msg = _handle_submit_card(
+        edits,
+        [card],
+        card_index=1,
+        name="朱批",
+        description="落款",
+        on_turn_end_affixes=[
+            "[余墨]:回合结束时对非 source 者结算本卡 damage×1 的持续伤害",
+            "[叠墨]:回合结束时对非 source 者结算本卡 damage×1 的持续伤害",
+        ],
+    )
+
+    assert "至多一条" in msg
+    assert edits == []

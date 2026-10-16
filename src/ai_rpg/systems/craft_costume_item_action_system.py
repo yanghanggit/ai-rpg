@@ -10,12 +10,13 @@ from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..models import (
+    CostumeItem,
     CraftCostumeItemAction,
+    MaterialItem,
     StorageComponent,
     append_item_with_stacking,
     deduct_materials,
 )
-from ..models.items import CostumeItem, MaterialItem
 from ..utils import extract_json, prompt_builder
 
 

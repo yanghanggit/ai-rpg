@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, List
 
 from loguru import logger
 
-from ..models.messages import AIMessage, ChatMessage, HumanMessage, get_buffer_string
+from ..models import AIMessage, ChatMessage, HumanMessage, get_buffer_string
 
 if TYPE_CHECKING:
     from .client import DeepSeekClient

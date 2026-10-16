@@ -12,7 +12,7 @@ import pytest
 from pydantic import ValidationError
 
 import ai_rpg.models.assets_meta as assets_module
-from ai_rpg.models.assets_meta import (
+from ai_rpg.models import (
     ASSET_META_SUFFIX,
     ASSETS_URL_PREFIX,
     AssetKey,

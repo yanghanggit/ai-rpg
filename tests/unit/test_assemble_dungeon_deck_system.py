@@ -1,76 +1,41 @@
-"""AssembleDungeonDeckSystem 提交入口（词缀随牌设计）的单元测试。"""
+"""AssembleDungeonDeckSystem 选型入口的单元测试。
 
-from ai_rpg.models import Card
+设计契约（submit_card / 词缀校验 / 落地）已统一由 card_design 引擎承担，
+覆盖在 tests/unit/test_card_design.py；本文件只测牌库特有的「选型」步骤。
+"""
+
 from ai_rpg.systems.assemble_dungeon_deck_system import (
-    _DeckCardPick,
-    _handle_submit_deck_card,
+    _DeckSelection,
+    _handle_select_deck_cards,
 )
 
-
-def _prototype_cards() -> dict[str, Card]:
-    """带一个可设计槽（非空=有引导）的骨架卡，供提交校验用。"""
-    card = Card(
-        name="基础攻击",
-        description="",
-        damage=2,
-        on_play_affixes=["[引导]:打出时取一个内建数值对目标造成伤害"],
-    )
-    return {"proto.attack": card}
+VALID = {"proto.attack", "proto.block", "proto.burst", "proto.heal", "proto.weaken"}
 
 
-def test_submit_deck_card_stores_affix_design() -> None:
-    picks: list[_DeckCardPick] = []
-    result = _handle_submit_deck_card(
-        {"proto.attack"},
-        _prototype_cards(),
-        picks,
-        prototype_id="proto.attack",
-        name="断筋",
-        description="一记短促的沉肩",
-        cost=0,
-        damage=4,
-        on_play_affixes=["[断筋]:打出时对目标造成本卡 damage×2 的伤害"],
-        on_hit_affixes=None,
-        on_turn_end_affixes=None,
-    )
+def test_select_deck_cards_stores_ids_and_allows_duplicates() -> None:
+    selection = _DeckSelection()
+    ids = ["proto.attack", "proto.attack", "proto.burst", "proto.heal", "proto.block"]
+
+    result = _handle_select_deck_cards(selection, VALID, ids)
 
     assert "已记录" in result
-    assert len(picks) == 1
-    pick = picks[0]
-    assert pick.prototype_id == "proto.attack"
-    assert pick.name == "断筋"
-    assert (pick.cost, pick.damage) == (0, 4)
-    assert pick.on_play_affixes == ["[断筋]:打出时对目标造成本卡 damage×2 的伤害"]
-    assert pick.on_hit_affixes is None
+    assert selection.prototype_ids == ids
 
 
-def test_submit_deck_card_rejects_unknown_prototype() -> None:
-    picks: list[_DeckCardPick] = []
-    result = _handle_submit_deck_card(
-        {"proto.attack"},
-        _prototype_cards(),
-        picks,
-        prototype_id="proto.不存在",
-        name="断筋",
-        description="描述",
-    )
+def test_select_deck_cards_rejects_wrong_count() -> None:
+    selection = _DeckSelection()
+
+    result = _handle_select_deck_cards(selection, VALID, ["proto.attack"])
 
     assert result.startswith("错误")
-    assert picks == []
+    assert selection.prototype_ids == []
 
 
-def test_submit_deck_card_rejects_invalid_affix() -> None:
-    # 缺方括号：handler 应返回错误且不记录，让 agent 修正重提。
-    picks: list[_DeckCardPick] = []
-    result = _handle_submit_deck_card(
-        {"proto.attack"},
-        _prototype_cards(),
-        picks,
-        prototype_id="proto.attack",
-        name="断筋",
-        description="描述",
-        on_play_affixes=["断筋:打出时对目标造成本卡 damage×2 的伤害"],
-    )
+def test_select_deck_cards_rejects_unknown_id() -> None:
+    selection = _DeckSelection()
+    ids = ["proto.attack", "proto.attack", "proto.burst", "proto.heal", "proto.不存在"]
 
-    assert "错误" in result
-    assert picks == []
+    result = _handle_select_deck_cards(selection, VALID, ids)
+
+    assert result.startswith("错误")
+    assert selection.prototype_ids == []

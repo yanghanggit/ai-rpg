@@ -9,8 +9,7 @@ from pydantic import BaseModel
 from ..deepseek import ToolDefinition, ToolFunction, agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
-from ..models import GenerateDungeonAction
-from ..models.dungeon_draft import MONSTERS_PER_COMBAT_ROOM, DungeonRoomDraft
+from ..models import MONSTERS_PER_COMBAT_ROOM, DungeonRoomDraft, GenerateDungeonAction
 from ..utils import prompt_builder
 
 

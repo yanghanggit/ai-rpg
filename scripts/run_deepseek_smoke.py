@@ -12,7 +12,7 @@ from ai_rpg.deepseek import (
     agent_loop,
     batch_chat,
 )
-from ai_rpg.models.messages import (
+from ai_rpg.models import (
     AIMessage,
     ChatMessage,
     HumanMessage,

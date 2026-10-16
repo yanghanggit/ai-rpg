@@ -10,11 +10,11 @@ from ..game.dbg_game import DBGGame
 from ..models import (
     AppearanceComponent,
     AppearanceUpdateEvent,
+    CostumeItem,
     StorageComponent,
     WearCostumeAction,
     WornCostumeComponent,
 )
-from ..models.items import CostumeItem
 from .appearance_prompt_builders import (
     build_appearance_synthesis_prompt,
     build_wear_costume_message,

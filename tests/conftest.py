@@ -4,6 +4,7 @@ import pytest
 
 from ai_rpg.game.dbg_game import DBGGame
 from ai_rpg.models import (
+    Actor,
     ActorType,
     Blueprint,
     CharacterStats,
@@ -11,7 +12,6 @@ from ai_rpg.models import (
     PlayerSession,
     WorldState,
 )
-from ai_rpg.models.entities import Actor
 
 
 @pytest.fixture

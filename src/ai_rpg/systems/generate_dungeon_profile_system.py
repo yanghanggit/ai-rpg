@@ -9,8 +9,7 @@ from pydantic import BaseModel
 from ..deepseek import ToolDefinition, ToolFunction, agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
-from ..models import GenerateDungeonAction
-from ..models.dungeon_draft import DUNGEON_ROOM_COUNT
+from ..models import DUNGEON_ROOM_COUNT, GenerateDungeonAction
 from ..utils import prompt_builder
 
 RECORD_DUNGEON_PROFILE_TOOL: Final[ToolDefinition] = ToolDefinition(

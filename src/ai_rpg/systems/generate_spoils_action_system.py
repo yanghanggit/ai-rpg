@@ -80,7 +80,7 @@ class GenerateSpoilsActionSystem(ReactiveProcessor):
             materialized.append((entity, candidates))
 
         # 第二步：并发跑卡牌设计会话（LLM 设计失败不阻断发奖，只影响设计）
-        tasks: List[Tuple[str, Coroutine[Any, Any, bool]]] = [
+        tasks: List[Tuple[str, Coroutine[Any, Any, Any]]] = [
             (
                 entity.name,
                 run_card_design_session(

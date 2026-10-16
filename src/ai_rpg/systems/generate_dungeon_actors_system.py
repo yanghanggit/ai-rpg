@@ -9,10 +9,10 @@ from pydantic import BaseModel, Field
 from ..deepseek import ToolDefinition, ToolFunction, agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
-from ..models import GenerateDungeonAction
-from ..models.dungeon_draft import (
+from ..models import (
     DungeonActorDraft,
     DungeonRoomDraft,
+    GenerateDungeonAction,
 )
 from ..utils import prompt_builder
 

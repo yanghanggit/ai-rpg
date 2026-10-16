@@ -3,10 +3,10 @@ from typing import List
 from unittest.mock import MagicMock, patch
 
 from ai_rpg.models import (
+    GearItem,
     HandComponent,
     PartyMemberComponent,
 )
-from ai_rpg.models.items import GearItem
 from ai_rpg.services.dungeon_combat_actions import activate_equip_gear
 
 

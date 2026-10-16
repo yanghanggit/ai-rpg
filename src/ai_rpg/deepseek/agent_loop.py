@@ -17,7 +17,7 @@ from typing import (
 
 from loguru import logger
 
-from ..models.messages import ChatMessage, HumanMessage, ToolMessage
+from ..models import ChatMessage, HumanMessage, ToolMessage
 from .client import DeepSeekClient, ToolDefinition
 
 #######################################################################################################################################

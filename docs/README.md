@@ -47,6 +47,7 @@
 | [卡牌数据模型（Card）](wiki/card.md) | Card 字段的三层结构（确定性骨架 / 语义词缀 / 生命周期流转）、来源引用（source）与「确定性骨架 + LLM 语义」的设计取舍 |
 | [卡牌设计指南（Card Design）](wiki/card-design.md) | 面向内容作者的设计方法论：设计总原则、布尔字段硬约束、字段设计含义、词缀设计方法（字段/词缀/范例均指向各自单一来源） |
 | [三端化思维（攻击端 / 防御端 / 运转端）](wiki/combat-ports.md) | 端口化思维方法论：攻击端（前端/成长性/铺垫）、防御端（前端/成长性/特殊）、运转端（过牌/加费/启动）及其与 Card 字段的映射 |
+| [工具即上下文（Tools as Context）](wiki/tools-as-context.md) | 方法论：工具的 name/description/parameters 本身即上下文；据此把约束下沉到 schema / description / 对象说明，减少提示词重复与冗余 |
 | [手牌（HandComponent）](wiki/hand.md) | 手牌的双重身份：作为出牌者的行动选择集、作为被命中者的当前状态，及其与牌堆/仲裁/装备的关联 |
 | [DBG 核心概念定义与逻辑关系总结](<wiki/DBG 核心概念定义与逻辑关系总结.md>) | Modifiers（对局级规则）与 Affixes（一次性效果词缀）二者的定义、归属与逻辑关系：宏观-微观模型 |
 | [公共知识检索系统（RAG）](wiki/rag-knowledge-base.md) | 公共记忆与私人记忆的二元分离、Blueprint.knowledge_base 的编排约束、pgvector 两阶段生命周期、query 工具即时回流 |

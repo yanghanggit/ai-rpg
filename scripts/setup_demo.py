@@ -35,6 +35,7 @@ from demo import (
     CARD_PROTOTYPES,
     DEFAULT_DECK_BUILD,
     create_beast_lair_dungeon,
+    create_broken_bridge_dungeon,
     create_demo_blueprint,
 )
 
@@ -78,6 +79,7 @@ def _setup_dungeons() -> List[Dungeon]:
 
     dungeons = [
         create_beast_lair_dungeon(),  # 荒狼巢副本
+        create_broken_bridge_dungeon(),  # 断桥渡口副本（开场房 + 战斗房）
     ]
 
     for dungeon in dungeons:

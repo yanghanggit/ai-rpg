@@ -170,11 +170,19 @@ _SUBMIT_CARD_PROPERTIES: Final[Dict[str, Any]] = {
 #######################################################################################################################################
 def build_submit_card_tool(
     extra_properties: Optional[Dict[str, Any]] = None,
+    extra_required: Optional[List[str]] = None,
 ) -> ToolDefinition:
-    """构建 submit_card 工具；`extra_properties` 为可选的领域扩展字段（name → JSON schema）。"""
+    """构建 submit_card 工具。
+
+    `extra_properties` 为可选的领域扩展字段（name → JSON schema）；`extra_required`
+    为必须一并提交的扩展字段名。领域字段直接进 schema，调用方的提示词不必再复述其范围。
+    """
     properties: Dict[str, Any] = dict(_SUBMIT_CARD_PROPERTIES)
     if extra_properties:
         properties.update(extra_properties)
+    required = ["card_index", "name", "description"]
+    if extra_required:
+        required.extend(extra_required)
     return ToolDefinition(
         function=ToolFunction(
             name="submit_card",
@@ -182,7 +190,7 @@ def build_submit_card_tool(
             parameters={
                 "type": "object",
                 "properties": properties,
-                "required": ["card_index", "name", "description"],
+                "required": required,
             },
         )
     )
@@ -323,7 +331,7 @@ def build_card_design_prompt(candidates: List[Candidate], context: str = "") -> 
     context_block = f"{context.strip()}\n\n" if context.strip() else ""
     return f"""# 任务：为下列原型生成卡牌
 
-{context_block}依据你的角色设定，为每个原型设计 `name`、`description`，并在开放槽位内补充词缀。卡牌可以是任意战斗资源——招式、物件、同伴、环境、状态等，不必是动作。
+{context_block}依据你的角色设定，为每个原型设计 `name`、`description`，并在开放槽位内补充词缀。卡牌是任意一种能被解释成战斗资源的存在，不必是动作。
 
 ## 原型
 
@@ -332,7 +340,7 @@ def build_card_design_prompt(candidates: List[Candidate], context: str = "") -> 
 ## 叙事
 
 - `description` 不含数值、不重述效果；`name` 简洁有辨识度。
-- **场景中立**：只取材于角色的系统设定（历史/性格/禁忌/最爱/体型/技艺/典故）；禁止写入当前场景、地点、在场者与刚发生的事，换到任何场景都成立。
+- **场景中立（生命周期）**：卡牌会长期留在牌库与角色身上，而当前场景终将销毁；因此 `name` / `description` / 词缀文本都不得依赖当前场景、地点、在场者、场景中的具体物件或刚发生的事，否则卡牌日后会指向一个已不存在的东西。只取材于角色的系统设定（历史/性格/禁忌/最爱/体型/技艺/典故），换到任何场景都成立。
 
 对每张卡调用一次 `submit_card` 提交其设计；全部提交后调用 `finish_cards` 结束。"""
 
@@ -570,18 +578,20 @@ async def run_card_design_session(
     max_rounds: int = 6,
     context: str = "",
     extra_properties: Optional[Dict[str, Any]] = None,
+    extra_required: Optional[List[str]] = None,
     on_design: Optional[Callable[[CardDesign], None]] = None,
 ) -> DesignOutcome:
     """跑一次卡牌设计会话：agent 逐卡 `submit_card`，计算端把设计写回候选卡。
 
     `candidates` 原地被设计（name / description / 数值 / 词缀）。返回 `DesignOutcome`；
     即便会话中途报错，已提交的设计仍会落地。`context` 为可选任务前言（如投入材料）。
-    `extra_properties` 给 submit_card 追加领域字段（如装备 speed，存入 `model_extra`）；
-    `on_design` 在落地后对每条设计回调，供调用方读取扩展字段。
+    `extra_properties` / `extra_required` 给 submit_card 追加领域字段并声明其必填
+    （如装备 speed，存入 `model_extra`）；`on_design` 在落地后对每条设计回调，
+    供调用方读取扩展字段。
     """
     edits: List[CardDesign] = []
     cards = [c.card for c in candidates]
-    submit_tool = build_submit_card_tool(extra_properties)
+    submit_tool = build_submit_card_tool(extra_properties, extra_required)
 
     # 定义工具处理函数映射，用于 agent_loop 调用
     handlers: Dict[str, Callable[..., Union[str, Awaitable[str]]]] = {

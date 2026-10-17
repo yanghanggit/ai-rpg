@@ -13,10 +13,12 @@ from ai_rpg.systems.card_design import (
     Candidate,
     build_card_design_prompt,
 )
+from ai_rpg.systems.context_compaction_prompt_builders import build_compaction_prompt
 from ai_rpg.systems.craft_consumable_item_action_system import (
     _build_consumable_select_prompt,
 )
 from ai_rpg.systems.craft_gear_item_action_system import _build_gear_select_prompt
+from ai_rpg.systems.monster_memory_probe_system import _build_memory_probe_prompt
 
 FIELD_SPEC = "## 卡牌字段语义"
 AFFIX_SPEC = "## 词缀设计规范"
@@ -48,7 +50,7 @@ def _candidate() -> Candidate:
 def test_deck_select_prompt_has_no_global_specs() -> None:
     # 选型阶段只负责挑原型；字段语义与词缀规范改由每张原型的 design
     # + submit_card 的工具 schema 下发，提示词不再注入两个全局规范。
-    text = _build_deck_select_prompt("角色.测试")
+    text = _build_deck_select_prompt()
 
     assert FIELD_SPEC not in text
     assert AFFIX_SPEC not in text
@@ -93,9 +95,21 @@ def test_gear_select_prompt_has_no_global_specs() -> None:
 def test_no_prompt_keeps_obsolete_slot_wording() -> None:
     material = MaterialItem(name="材料.测试", description="一块材料", count=1)
     texts = [
-        _build_deck_select_prompt("角色.测试"),
+        _build_deck_select_prompt(),
         build_card_design_prompt([_candidate()]),
         _build_gear_select_prompt([material]),
     ]
     for text in texts:
         assert "只能在原型已存在的槽位内设计" not in text
+
+
+def test_task_prompts_do_not_restate_entity_identity() -> None:
+    # 身份由 entity_factory 编译的 SystemMessage 承载（「# 名称」+「你扮演角色/场景/世界」），
+    # 任务提示词不再重复声明「你是 X」；这些提示词的 messages 都带着该 SystemMessage。
+    for text in (
+        _build_deck_select_prompt(),
+        build_compaction_prompt(),
+        _build_memory_probe_prompt(),
+    ):
+        assert "你是" not in text
+        assert "你扮演" not in text

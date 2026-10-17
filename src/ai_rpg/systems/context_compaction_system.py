@@ -41,7 +41,7 @@ class ContextCompactionSystem(ExecuteProcessor):
         chat_clients: List[DeepSeekClient] = [
             DeepSeekClient(
                 label=memory.name,
-                input_message=build_compaction_prompt(memory.name),
+                input_message=build_compaction_prompt(),
                 messages=memory.messages,
             )
             for memory in over_threshold

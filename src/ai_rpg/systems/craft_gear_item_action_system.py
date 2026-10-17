@@ -43,12 +43,14 @@ from .card_design import (
 GEAR_SPEED_MIN: Final[int] = -2
 GEAR_SPEED_MAX: Final[int] = 3
 
-# submit_card 的领域扩展字段：装备级 speed。
+# submit_card 的领域扩展字段：装备级 speed。范围交给 schema（minimum/maximum）。
 GEAR_SPEED_PROPERTY: Final[Dict[str, Any]] = {
     "type": "integer",
+    "minimum": GEAR_SPEED_MIN,
+    "maximum": GEAR_SPEED_MAX,
     "description": (
-        f"装备级被动速度修正，可正可负（{GEAR_SPEED_MIN}..{GEAR_SPEED_MAX}）："
-        "决定战斗回合行动顺序，数值越大越先出手。装备的伤害/格挡由卡牌承载，"
+        "装备级被动速度修正，可正可负：决定战斗回合行动顺序，数值越大越先出手。"
+        "轻捷灵便取正值、沉重笨拙取负值，把握不准取 0。装备的伤害/格挡由卡牌承载，"
         "speed 是唯一的装备级被动。"
     ),
 }
@@ -72,12 +74,7 @@ def _build_gear_select_prompt(materials: List[MaterialItem]) -> str:
 
 {_material_lines(materials)}
 
-装备是一件在战斗中被转化为手牌的物品；卡牌骨架（是否可出牌、格挡、转移等）由原型给定。请结合材料特质，从装备原型中挑一个最合适的骨架，随后再为它设计名称、描述、数值、词缀与装备级速度。
-
-工作流程：
-1. `list_card_prototypes` 纵览全部装备原型（archetype / subtype / summary / keywords）；
-2. 对候选调用 `get_card_prototype` 精读（design + card 全字段）；
-3. `select_cards` 提交恰好 1 个 prototype_id。"""
+装备是一件在战斗中被转化为手牌的物品；卡牌骨架（是否可出牌、格挡、转移等）由原型给定。请结合材料特质，从装备原型中挑一个最合适的骨架。先 `list_card_prototypes` 纵览，再对候选 `get_card_prototype` 精读，最后 `select_cards` 提交恰好 1 个 prototype_id。"""
 
 
 #######################################################################################################################################
@@ -90,8 +87,7 @@ def _build_gear_design_context(materials: List[MaterialItem]) -> str:
 ## 装备约束
 
 - 为「装备工坊」制作一件奇幻世界的装备；`name` 采用「装备.XXXX」命名格式，`description` 说明外观、手感或穿戴感受（30-60 字），不出现数值与机制词。
-- 卡牌骨架（flags / target_type）由所选原型给定，不要改动；可微调 `cost` / `damage` / `hit_count` / `block`，并在原型已开放的槽位内设计词缀。
-- `speed` 是唯一的装备级被动，范围 {GEAR_SPEED_MIN}..{GEAR_SPEED_MAX}：轻捷灵便取正值、沉重笨拙取负值，不确定可用 0；请在 `submit_card` 时一并给出。
+- 卡牌骨架（flags / target_type）由所选原型给定，不要改动；数值与词缀在原型开放的槽位内设计。
 - 词缀须贴合本次投入材料。"""
 
 
@@ -198,6 +194,7 @@ class CraftGearItemActionSystem(ReactiveProcessor):
             max_rounds=8,
             context=_build_gear_design_context(materials),
             extra_properties={"speed": GEAR_SPEED_PROPERTY},
+            extra_required=["speed"],
             on_design=_capture_speed,
         )
         if not outcome.ok or outcome.designed != 1:

@@ -81,16 +81,14 @@ DECK_SIZE: Final[int] = 5  # 每副牌库固定 5 张
 
 ####################################################################################################################################
 @prompt_builder
-def _build_deck_select_prompt(actor_name: str) -> str:
-    """选型阶段提示词：只负责挑原型，具体设计交给 card_design 引擎。"""
+def _build_deck_select_prompt() -> str:
+    """选型阶段提示词：只负责挑原型，具体设计交给 card_design 引擎。
+
+    不重述身份：调用方传入的 SystemMessage 已由 entity_factory 编译出「# 名称 + 你扮演角色」。
+    """
     return f"""# 任务：为你自己组建初始牌库（恰好 {DECK_SIZE} 张）
 
-你是「{actor_name}」。依据角色设定（见系统提示），从手牌原型库挑选恰好 {DECK_SIZE} 张组成初始牌库，使它们成为「你自己」的招式、习惯或随身手段。可重复选同一原型。
-
-工作流程：
-1. `list_card_prototypes` 纵览全部手牌原型（archetype / subtype / summary / keywords）；
-2. 对候选调用 `get_card_prototype` 精读（design + card 全字段）；
-3. `select_cards` 一次性提交恰好 {DECK_SIZE} 个 prototype_id。"""
+依据你的角色设定（见系统提示），从手牌原型库挑选恰好 {DECK_SIZE} 张组成初始牌库，使它们成为属于「你自己」的战斗资源，可重复选同一原型。先 `list_card_prototypes` 纵览，再对候选 `get_card_prototype` 精读，最后 `select_cards` 一次性提交恰好 {DECK_SIZE} 个 prototype_id。"""
 
 
 ####################################################################################################################################
@@ -230,7 +228,7 @@ class AssembleDungeonDeckSystem(ReactiveProcessor):
             index,
             [SystemMessage(content=actor.system_message)],
             size=DECK_SIZE,
-            prompt=_build_deck_select_prompt(actor.name),
+            prompt=_build_deck_select_prompt(),
             max_rounds=12,
         )
         if not selection:

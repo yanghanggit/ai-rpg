@@ -11,7 +11,7 @@
 （`agent_loop` 结束后即丢弃，不写回持久记忆）。消耗品卡固定 0 费、一次性、纯伤害。
 """
 
-from typing import Dict, Final, List, final
+from typing import Any, Dict, Final, List, final
 
 from loguru import logger
 from overrides import override
@@ -41,6 +41,35 @@ CONSUMABLE_DAMAGE_MIN: Final[int] = 1
 CONSUMABLE_DAMAGE_MAX: Final[int] = 8
 CONSUMABLE_HIT_COUNT_MAX: Final[int] = 3
 
+# 把「0 费 / 无格挡 / 数值区间」交给 submit_card 的 schema，设计提示词不再复述。
+CONSUMABLE_CARD_PROPERTIES: Final[Dict[str, Any]] = {
+    "cost": {
+        "type": "integer",
+        "const": 0,
+        "description": "消耗品固定 0 费，恒为 0。",
+    },
+    "block": {
+        "type": "integer",
+        "const": 0,
+        "description": "消耗品不提供格挡，恒为 0。",
+    },
+    "damage": {
+        "type": "integer",
+        "minimum": CONSUMABLE_DAMAGE_MIN,
+        "maximum": CONSUMABLE_DAMAGE_MAX,
+        "description": (
+            f"单段伤害（{CONSUMABLE_DAMAGE_MIN}..{CONSUMABLE_DAMAGE_MAX}）；"
+            "总伤害由 damage × hit_count 决定。"
+        ),
+    },
+    "hit_count": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": CONSUMABLE_HIT_COUNT_MAX,
+        "description": f"攻击段数（1..{CONSUMABLE_HIT_COUNT_MAX}）。",
+    },
+}
+
 
 #######################################################################################################################################
 def _material_lines(materials: List[MaterialItem]) -> str:
@@ -60,12 +89,7 @@ def _build_consumable_select_prompt(materials: List[MaterialItem]) -> str:
 
 {_material_lines(materials)}
 
-消耗品卡固定 0 费、一次性、只做伤害。请结合材料特质，从消耗品原型中挑一个最合适的骨架（单体 / 全体 / 散射），随后再为它设计名称、描述、伤害与词缀。
-
-工作流程：
-1. `list_card_prototypes` 纵览全部消耗品原型（archetype / subtype / summary / keywords）；
-2. 对候选调用 `get_card_prototype` 精读（design + card 全字段）；
-3. `select_cards` 提交恰好 1 个 prototype_id。"""
+消耗品卡固定 0 费、一次性、只做伤害。请结合材料特质，从消耗品原型中挑一个最合适的骨架（单体 / 全体 / 散射）。先 `list_card_prototypes` 纵览，再对候选 `get_card_prototype` 精读，最后 `select_cards` 提交恰好 1 个 prototype_id。"""
 
 
 #######################################################################################################################################
@@ -78,8 +102,7 @@ def _build_consumable_design_context(materials: List[MaterialItem]) -> str:
 ## 消耗品约束
 
 - 为「消耗品工坊」制作一件奇幻世界的消耗品（草药 / 矿物 / 兽材 / 符文等）；`name` 采用「消耗品.XXXX」命名格式，`description` 说明外观、气味或使用感受（30-60 字），不出现数值与机制词。
-- 卡牌固定 0 费、一次性、只做伤害：`cost` / `block` 保持 0，不要改动。
-- `damage` 在 {CONSUMABLE_DAMAGE_MIN}..{CONSUMABLE_DAMAGE_MAX}、`hit_count` 在 1..{CONSUMABLE_HIT_COUNT_MAX}。
+- 这是一次性、只做伤害的消耗品。
 - 词缀只能追加伤害类效果，且须贴合本次投入材料。"""
 
 
@@ -169,13 +192,14 @@ class CraftConsumableItemActionSystem(ReactiveProcessor):
             )
             return
 
-        # 阶段二：设计（带投入材料上下文）
+        # 阶段二：设计（带投入材料上下文；0 费 / 数值区间由 submit_card schema 约束）
         outcome = await run_card_design_session(
             entity.name,
             [candidate],
             [system_message],
             max_rounds=8,
             context=_build_consumable_design_context(materials),
+            extra_properties=CONSUMABLE_CARD_PROPERTIES,
         )
         if not outcome.ok or outcome.designed != 1:
             logger.error(

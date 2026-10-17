@@ -17,11 +17,11 @@ from ..utils import prompt_builder
 
 #######################################################################################################################################
 @prompt_builder
-def _build_memory_probe_prompt(monster_name: str) -> str:
+def _build_memory_probe_prompt() -> str:
     """生成调试探针问题（固定文案，不携带任何答案，避免让怪物直接照抄）。"""
-    return f"""# 战场环境回忆测试
+    return """# 战场环境回忆测试
 
-你是 {monster_name}。请仅依据你已掌握的记忆回答以下问题，不要编造记忆之外的内容：
+请仅依据你已掌握的记忆回答以下问题，不要编造记忆之外的内容：
 
 1. 你现在所在的场景叫什么？场景环境是怎样的？
 2. 当前战场上，除了你自己之外，还有哪些角色？请逐个列出：
@@ -75,7 +75,7 @@ class MonsterMemoryProbeSystem(ReactiveProcessor):
         # 为每个怪物构建探测请求（memory 只读复用，不会修改现有历史）。
         chat_clients: List[DeepSeekClient] = []
         for entity in entities:
-            prompt = _build_memory_probe_prompt(monster_name=entity.name)
+            prompt = _build_memory_probe_prompt()
             chat_clients.append(
                 DeepSeekClient(
                     label=entity.name,

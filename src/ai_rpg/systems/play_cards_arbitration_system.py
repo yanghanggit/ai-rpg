@@ -34,10 +34,9 @@ from .arbitration_common import (
     build_arbitration_broadcast,
     build_calc_rules_section,
     build_loop_summary_memory,
-    build_narrative_section,
     build_on_hit_affix_section,
+    build_source_section,
     build_stats_update_notification,
-    build_summary_section,
     build_tool_flow_section,
     get_entity_stats,
     make_get_entity_stats_tool,
@@ -94,7 +93,6 @@ def _build_card_data_lines(card: Card) -> str:
         f"- 卡牌：{card.name}",
         f"- source（来源/注入者）：{card.source or '未知'}",
         f"- 叙事（description）：{card.description}",
-        f"- cost：{card.cost}",
         f"- damage（本卡单次伤害）：{card.damage}",
         f"- hit_count（本卡攻击次数）：{card.hit_count}",
         f"- block（本卡单牌格挡值）：{card.block}",
@@ -142,7 +140,7 @@ def _build_play_cards_arbitration_prompt(
 
 {render_labeled_str_list("- 即时词缀", card.on_play_affixes, indent="    ")}
 
-即时词缀是逐条独立规则：**逐条全部读取**，判断它为你给出的哪些系数取值（伤害系数 / 格挡系数 / 反伤 / 吸血 / 治疗等），用于后续判定；不得合并、省略，也不引入词缀未提及的新机制。
+即时词缀是逐条独立规则：**逐条全部读取**，判断它如何影响 base 与系数；不得合并、省略，也不引入词缀未提及的新机制。
 
 ## 目标
 
@@ -154,19 +152,11 @@ def _build_play_cards_arbitration_prompt(
 
 {build_calc_rules_section(GET_ENTITY_STATS_TOOL.function.name, ArbitrationKind.PLAY_CARDS)}
 
-{build_on_hit_affix_section(GET_ENTITY_STATS_TOOL.function.name)}
+{build_on_hit_affix_section()}
 
-## source 字段
+{build_source_section()}
 
-`source` = 卡牌来源（生成 / 注入者），空串表示未知；副本保留原 `source`。词缀可据持有者与 `source` 的关系设生效条件：`本卡持有者` 无条件；`source 者` 仅当持有者 == 本卡 `source` 时结算；`非 source 者` 仅当持有者 != 本卡 `source` 时结算；条件不成立则整条跳过（不计入 `unsettled_affixes`）。
-
-{build_tool_flow_section(GET_ENTITY_STATS_TOOL.function.name, RESOLVE_DAMAGE_TOOL.function.name, RESOLVE_EFFECT_TOOL.function.name, SUBMIT_ARBITRATION_TOOL.function.name, ArbitrationKind.PLAY_CARDS)}
-
-## {SUBMIT_ARBITRATION_TOOL.function.name} 字段说明
-
-{build_narrative_section()}
-
-{build_summary_section()}"""
+{build_tool_flow_section(GET_ENTITY_STATS_TOOL.function.name, RESOLVE_DAMAGE_TOOL.function.name, RESOLVE_EFFECT_TOOL.function.name, SUBMIT_ARBITRATION_TOOL.function.name, ArbitrationKind.PLAY_CARDS)}"""
 
 
 ###########################################################################################################################################

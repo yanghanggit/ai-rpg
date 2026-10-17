@@ -40,7 +40,6 @@ from .arbitration_common import (
     build_arbitration_broadcast,
     build_loop_summary_memory,
     build_stats_update_notification,
-    build_summary_section,
     get_entity_stats,
     make_get_entity_stats_tool,
     make_submit_arbitration_tool,
@@ -113,20 +112,11 @@ def _build_artifact_arbitration_prompt(
 
 1. {GET_ENTITY_STATS_TOOL.function.name} 读取可能受影响角色（可并发）。
 2. 判定触发；触发则 {CHANGE_HP_TOOL.function.name}（delta），未触发则跳过。
-3. {SUBMIT_ARBITRATION_TOOL.function.name} 提交；combat_log 写「神器简名 + 回合数 + 效果说明」，**不要写 HP 数字**（系统会据第 2 步自动补记 `HP:角色 旧→新`）；narrative 与之一致。
-
-## combat_log 格式（简名 = 全名最后一段）
-
-- 你只需写：`[<神器简名>|<当前回合数>] <效果说明>`（不写 HP 数字）。
-- 系统会自动追加：`；HP:<角色A> a→b <角色B> c→d`（仅在有 HP 变化时）。
-- 未触发：`[<神器简名>|<当前回合数>] 触发条件未满足／已触发过，无 HP 变更`。
+3. {SUBMIT_ARBITRATION_TOOL.function.name} 提交；combat_log 按工具说明的格式写，**不要写 HP 数字**（系统会据第 2 步自动补记 `HP:角色 旧→新`）；narrative 与之一致。
 
 ### narrative
 
-60-120 字，第三人称外部视角，纯感官描写，无数字 / 术语 / 内心。
-以神器的意象（description）为底色，写出修正规则本次如何显形（或未触发时的克制观感）；须与 combat_log 的 HP 变化一致，不得虚构规则之外的效果。
-
-{build_summary_section()}"""
+以神器的意象（description）为底色，写出修正规则本次如何显形（或未触发时的克制观感）；须与 combat_log 的 HP 变化一致，不得虚构规则之外的效果。"""
 
 
 ###########################################################################################################################################
@@ -163,7 +153,11 @@ SUBMIT_ARBITRATION_TOOL: Final[ToolDefinition] = make_submit_arbitration_tool(
     "提交本次神器仲裁的最终结果（战斗日志、演出叙事、无法结算的规则）。"
     f"combat_log 写效果说明，HP 变化由系统据实际 {CHANGE_HP_TOOL.function.name} 调用自动补记。"
     "调用后本次仲裁结束。",
-    combat_log_desc="战斗数据日志",
+    combat_log_desc=(
+        "战斗数据日志（简名 = 全名最后一段）。只写 `[<神器简名>|<当前回合数>] <效果说明>`，"
+        "不要写 HP 数字；系统会自动追加 `；HP:<角色A> a→b <角色B> c→d`（仅在有 HP 变化时）。"
+        "未触发写 `[<神器简名>|<当前回合数>] 触发条件未满足／已触发过，无 HP 变更`。"
+    ),
 )
 
 

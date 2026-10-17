@@ -36,9 +36,8 @@ from .arbitration_common import (
     build_arbitration_broadcast,
     build_calc_rules_section,
     build_loop_summary_memory,
-    build_narrative_section,
+    build_source_section,
     build_stats_update_notification,
-    build_summary_section,
     build_tool_flow_section,
     collect_hand_cards_with,
     get_entity_stats,
@@ -96,17 +95,11 @@ def _build_turn_end_arbitration_prompt(
 
 {build_calc_rules_section(GET_ENTITY_STATS_TOOL.function.name, ArbitrationKind.TURN_END)}
 
-## 回合结束词缀
+回合结束词缀是逐条独立规则：逐条全部读取，不得合并、省略或引入词缀外机制。
 
-{holder_name} 是这些卡牌的持有者；每张卡的 `source` 是它的来源（生成 / 注入者），副本保留原 `source`。词缀的生效条件按持有者与 `source` 的关系判定：`本卡持有者` 无条件（效果落在 {holder_name}）；`source 者` 仅当 {holder_name} == 该卡 `source` 时结算；`非 source 者` 仅当 {holder_name} != 该卡 `source` 时结算；条件不成立则整条跳过。回合结束词缀是逐条独立规则：**逐条全部读取**，判断它为哪些系数取值，用于后续判定；**所有效果只作用于持有者 {holder_name} 本人**，不得指向其他角色，不得合并、省略或引入词缀外机制。
+{build_source_section()}
 
-{build_tool_flow_section(GET_ENTITY_STATS_TOOL.function.name, RESOLVE_DAMAGE_TOOL.function.name, RESOLVE_EFFECT_TOOL.function.name, SUBMIT_ARBITRATION_TOOL.function.name, ArbitrationKind.TURN_END, holder_name)}
-
-## {SUBMIT_ARBITRATION_TOOL.function.name} 字段说明
-
-{build_narrative_section()}
-
-{build_summary_section()}"""
+{build_tool_flow_section(GET_ENTITY_STATS_TOOL.function.name, RESOLVE_DAMAGE_TOOL.function.name, RESOLVE_EFFECT_TOOL.function.name, SUBMIT_ARBITRATION_TOOL.function.name, ArbitrationKind.TURN_END, holder_name)}"""
 
 
 ###########################################################################################################################################

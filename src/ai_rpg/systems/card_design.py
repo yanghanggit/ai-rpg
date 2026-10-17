@@ -203,7 +203,10 @@ SUBMIT_CARD_TOOL = build_submit_card_tool()
 FINISH_CARDS_TOOL = ToolDefinition(
     function=ToolFunction(
         name="finish_cards",
-        description="全部卡均已通过 submit_card 提交后调用，结束本次设计。",
+        description=(
+            "全部卡均已通过 submit_card 成功提交后调用，结束本次设计；"
+            "若仍有未提交或被拒的卡，调用会返回错误并提示缺哪几张。"
+        ),
         parameters={"type": "object", "properties": {}},
     )
 )
@@ -435,8 +438,17 @@ def _handle_submit_card(
 
 
 #######################################################################################################################################
-def _handle_finish_cards() -> str:
-    """处理 finish_cards 工具调用（无参，仅作为终止信号）。"""
+def _handle_finish_cards(edits: List[CardDesign], cards: List[Card]) -> str:
+    """处理 finish_cards：仅当全部候选卡都已有成功提交的设计时，才允许结束。"""
+    designed = {edit.uuid for edit in edits}
+    missing = [
+        f"#{index + 1}" for index, card in enumerate(cards) if card.uuid not in designed
+    ]
+    if missing:
+        raise ValueError(
+            f"还有 {len(missing)} 张卡未成功提交（{'、'.join(missing)}）；"
+            "请修正后重新调用 submit_card，全部完成后再 finish_cards。"
+        )
     return "已结束本次设计。"
 
 
@@ -604,7 +616,7 @@ async def run_card_design_session(
     # 定义工具处理函数映射，用于 agent_loop 调用
     handlers: Dict[str, Callable[..., Union[str, Awaitable[str]]]] = {
         submit_tool.function.name: partial(_handle_submit_card, edits, cards),
-        FINISH_CARDS_TOOL.function.name: _handle_finish_cards,
+        FINISH_CARDS_TOOL.function.name: partial(_handle_finish_cards, edits, cards),
     }
 
     try:

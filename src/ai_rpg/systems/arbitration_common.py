@@ -5,8 +5,8 @@
 
 - 纯计算：``compute_damage`` / ``compute_effects``（不依赖游戏对象）；
 - ``ArbitrationKind`` 与共享提示词段落：``build_calc_rules_section`` /
-  ``build_on_hit_affix_section`` / ``build_tool_flow_section`` /
-  ``build_narrative_section`` / ``build_summary_section``；
+  ``build_on_hit_affix_section`` / ``build_source_section`` /
+  ``build_tool_flow_section``；
 - ``ArbitrationContext``：统一结果容器（各系统按需取用字段）；
 - ``make_*_tool``：工具 schema 工厂（字段结构 + 字段描述统一，工具级 description 由各系统传入）；
 - ``get_entity_stats`` / ``resolve_damage`` / ``resolve_effect`` / ``submit_arbitration``：
@@ -405,47 +405,33 @@ class ArbitrationKind(StrEnum):
 @prompt_builder
 def build_calc_rules_section(get_entity_stats_tool: str, kind: ArbitrationKind) -> str:
     """结算规则段落：说明「数值由系统算、LLM 只选 base 与系数」及系数清单。"""
-    if kind is ArbitrationKind.TURN_END:
-        target = "持有者"
-        affixes = "`on_turn_end_affixes`"
-    elif kind is ArbitrationKind.AUTONOMOUS:
-        target = "目标"
-        affixes = "`on_autonomous_affixes` / `on_hit_affixes`"
-    else:
-        target = "目标"
-        affixes = "`on_play_affixes` / `on_hit_affixes` / 神器 `modifiers`"
+    target = "持有者" if kind is ArbitrationKind.TURN_END else "目标"
     return f"""## 结算规则（数值由系统计算）
 
-系统按固定骨架代你完成**全部算术**：
+你只负责为每条效果选定 **base** 与**系数**，并写明依据：
 
-- **承伤**（过格挡）：`每击伤害 = max(0, base_damage × 伤害系数 − {target}总格挡 × 格挡系数)`，逐击求和；
-- **受效**（反伤 / 吸血 / 治疗，不过格挡）：`各分量 = 四舍五入(base × 对应系数)`，`净扣减 = (反伤 − 吸血 − 治疗) × hit_count`。
+- **base**：词缀引用的那个数值——通常取本卡 `damage` / `block`，或文案明示的数字；系统不解释字段语义，由你依文案判断。
+- **系数**：由本次词缀的文案决定目标与力度（伤害 / 格挡 / 反伤 / 吸血 / 治疗）；未提及即用工具参数默认值。可结合{target}状态 / 设定上调（如「对动物 +50%」→ 伤害系数 1.5）。
 
-你要做三件事：为每条效果选定 **base**、判定**各系数取值**、并**说明依据**。
-
-### base 与系数
-
-- **base / base_damage**：affix 引用的那个数值（通常取本卡 `damage` / `block` 字段，或文案明示的数字）。系统**不解释字段语义**，由你依文案判断它代表什么。
-- 系数（由 {affixes} 等文案指导；未提及即取默认）：
-  - **伤害系数**（默认 1）调整 `base_damage`；**格挡系数**（默认 1）调整{target}总格挡的抵扣（取 `0` 表示无视格挡）；
-  - **反伤系数 / 吸血系数 / 治疗系数**（默认 0）作用在 `base` 上得到每击数值。
-  词缀可要求结合{target}状态 / 设定上调（如「对动物 +50%」→ 伤害系数 1.5），依已知外观 / 人设判定。
-
-### 硬约束
-
-- 只判定 **base 与系数**；骨架表达不了的机制（固定值以外的特殊算法、按比例、抽牌 / 回能 / 额外行动等）**不要硬塞**，把词缀原文放进 `unsettled_affixes`。
-- 一切数值只取本次 `{get_entity_stats_tool}` 返回与卡牌字段，禁止引用历史 / 前几回合广播 / 记忆。
-- 「总格挡」是角色级数值（其手牌 `block` 之和），不是单牌 `block`。
-- 任一结算对象的 HP 为 0 时跳过结算。"""
+一切数值只取本次 `{get_entity_stats_tool}` 返回与卡牌字段，禁止引用记忆 / 前几回合广播。词缀表达不了的机制（抽牌 / 回能 / 额外行动等）**不要硬塞**，把原文放进 `unsettled_affixes`。"""
 
 
 @prompt_builder
-def build_on_hit_affix_section(get_entity_stats_tool: str) -> str:
-    """受击词缀段落（仅出牌仲裁使用；回合结束仲裁不处理 on_hit）。"""
-    return f"""## 受击词缀
+def build_on_hit_affix_section() -> str:
+    """受击词缀段落（仅出牌仲裁 / 自主运行使用；回合结束仲裁不处理 on_hit）。"""
+    return """## 受击词缀
 
-{get_entity_stats_tool} 返回的「受击卡牌」仅列出带受击词缀的卡牌，不是完整手牌；其 `block` 只是单牌格挡值，角色总格挡以返回的「总格挡」为准。
-受击词缀仅在**该实体是本次出牌的目标**时触发；出牌者自身的受击词缀不触发（除非出牌者也同时是目标）。多条须**逐条全部结算**，结算对象是**本次出牌者**，与目标是否阵亡无关（目标被击倒也要照常结算）。依文案结算（如 [反伤] 即骨架里的「反伤」，使出牌者 HP 减少、不过总格挡），数值取其文案明示字段，不引入词缀未提及的新机制。"""
+目标手牌中带受击词缀的卡，只在它是本次出牌目标时触发（出牌者自身不触发，除非同时是目标）；多条须逐条全部结算，结算对象是本次出牌者，与目标是否阵亡无关。数值取词缀明文，不引入未提及的机制。"""
+
+
+@prompt_builder
+def build_source_section() -> str:
+    """source 与持有者的关系（出牌 / 回合结束 / 自主运行共用）。"""
+    return """## source 与持有者
+
+- **source**：这张牌的创建者 / 注入者；空串表示未知，副本保留原 `source`。
+- **持有者**：当前持有这张牌的实体。
+- 两者可以不是同一个实体；词缀文案里的「本卡持有者 / source 者 / 非 source 者」即指这两个身份。"""
 
 
 @prompt_builder
@@ -459,67 +445,17 @@ def build_tool_flow_section(
 ) -> str:
     """工具使用流程段落。"""
     if kind is ArbitrationKind.PLAY_CARDS:
-        read_step = (
-            f"对【出牌者】与【每一个目标】各调用一次 {get_entity_stats_tool}，"
-            "拿到 HP / 最大 HP 与总格挡（可并发多个）。"
-        )
-        judge_step = "逐条读词缀，为每个受影响角色定出 base 与系数（伤害 / 格挡 / 反伤 / 吸血 / 治疗）及依据。"
-        calc_step = (
-            f"调用 {resolve_damage_tool}（承伤，每个承伤目标一次）与 {resolve_effect_tool}"
-            "（反伤 / 吸血 / 治疗，每个受效角色一次）；**数值由系统计算**，你只填 base、系数与依据，"
-            "无需自行心算。工具返回规范化的「旧→新」，可直接引用。"
-        )
+        read_step = f"对出牌者与每个目标调用一次 {get_entity_stats_tool}（可并发）。"
     elif kind is ArbitrationKind.AUTONOMOUS:
-        read_step = (
-            f"对【持有者】与【每一个可能受影响的目标】各调用一次 {get_entity_stats_tool}，"
-            "拿到 HP / 最大 HP、总格挡与受击卡牌（可并发多个）。"
-        )
-        judge_step = (
-            "逐条读自主词缀，按词缀文本确定每条的目标（场上任意存活角色：敌对 / 友方 / 持有者，"
-            "可要求随机 / 血量最低等），并为每个受影响角色定出 base 与系数及依据。"
-        )
-        calc_step = (
-            f"调用 {resolve_damage_tool}（承伤，每个承伤目标一次）与 {resolve_effect_tool}"
-            "（反伤 / 吸血 / 治疗，每个受效角色一次）；**数值由系统计算**，你只填 base、系数与依据，"
-            "无需自行心算。工具返回规范化的「旧→新」，可直接引用。"
-        )
+        read_step = f"对持有者与每个可能受影响的目标调用一次 {get_entity_stats_tool}（可并发）。"
     else:
-        read_step = f"调用 {get_entity_stats_tool} 读取【持有者 {holder_name}】的 HP / 最大 HP 与总格挡。"
-        judge_step = "逐条读词缀，为持有者定出 base 与系数（伤害 / 格挡 / 反伤 / 吸血 / 治疗）及依据。"
-        calc_step = (
-            f"调用 {resolve_damage_tool}（承伤）与 {resolve_effect_tool}（反伤 / 吸血 / 治疗）；"
-            "目标恒为持有者本人，**数值由系统计算**，你只填 base、系数与依据，无需自行心算。"
-            "工具返回规范化的「旧→新」，可直接引用。"
-        )
-    return f"""## 工具使用流程（严格按顺序）
+        read_step = f"调用 {get_entity_stats_tool} 读取持有者 {holder_name}。"
+    return f"""## 工具使用流程
 
 1. **读**：{read_step}
-2. **判**：{judge_step}
-3. **算**：{calc_step}
-4. **提交**：调用 {submit_tool} 提交 `narrative` 与 `unsettled_affixes`；combat_log 由系统据第 3 步自动生成，此字段传空字符串 `""` 即可。"""
-
-
-@prompt_builder
-def build_narrative_section() -> str:
-    """narrative 字段说明段落。"""
-    return """### narrative
-
-60-120 字，第三人称外部视角，纯感官描写，无数字 / 术语 / 内心。
-以本次结算所用卡牌的「叙事（description）」为素材，把卡牌意象延展成一段外部可见的动作或现象；不得引入卡牌与其词缀之外的机制。
-若卡牌效果改变了某个人或物的状态，描写须体现这一改变，为后续叙事留下可推断的当前状态。"""
-
-
-@prompt_builder
-def build_summary_section() -> str:
-    """summary 字段说明段落：把本次过程压缩成可长期留存的记忆。"""
-    return """### summary
-
-本次仲裁的**压缩性总结**：它将**整段替换**本次完整的工具调用轨迹，作为你后续的长期记忆留存。请写清：
-- 谁对谁做了什么（含 source / 出牌者 / 目标）；
-- 造成或恢复了多少（沿用系统回显的「旧→新」数值，不得改写）；
-- 是否有角色被击倒；
-- 是否有未结算项。
-自然语言、紧凑、自包含，便于未来据此判断「累计伤害到 X」一类条件；数值必须与数据日志一致，不得漂移。"""
+2. **判**：逐条读词缀，为每个受影响角色定出 base、系数与依据。
+3. **算**：对每个承伤目标调用 {resolve_damage_tool}、每个受效角色调用 {resolve_effect_tool}（各一次）。
+4. **提交**：调用 {submit_tool}。"""
 
 
 ###########################################################################################################################################
@@ -660,11 +596,19 @@ def make_submit_arbitration_tool(
                     },
                     "narrative": {
                         "type": "string",
-                        "description": "60-120 字第三人称演出叙事",
+                        "description": (
+                            "60-120 字第三人称外部视角的纯感官演出：以本次结算对象的意象（卡牌/神器 description）"
+                            "为素材延展，不写数字 / 术语 / 内心，不引入其与词缀之外的机制；"
+                            "若效果改变了某人或物的状态，须体现这一改变。"
+                        ),
                     },
                     "summary": {
                         "type": "string",
-                        "description": "本次仲裁的压缩性总结（将整段替换本次完整工具轨迹、作为长期记忆留存）：谁对谁、造成/恢复多少、谁被击倒、有无未结算项；自然语言、紧凑自包含，数值须与数据日志一致。",
+                        "description": (
+                            "本次仲裁的压缩总结（将整段替换本次完整工具轨迹、作为长期记忆）：谁对谁、"
+                            "造成或恢复多少（沿用系统回显的「旧→新」，不得改写）、谁被击倒、有无未结算项；"
+                            "自然语言、紧凑自包含，数值须与数据日志一致，便于未来判断「累计伤害到 X」一类条件。"
+                        ),
                     },
                     "unsettled_affixes": {
                         "type": "array",

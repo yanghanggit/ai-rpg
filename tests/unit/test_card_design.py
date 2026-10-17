@@ -1,10 +1,13 @@
 """card_design 引擎的候选格式化、prompt 组装、选型与提交暂存的单元测试。"""
 
+import pytest
+
 from ai_rpg.models import Card
 from ai_rpg.systems.card_design import (
     Candidate,
     CardDesign,
     _CardSelection,
+    _handle_finish_cards,
     _handle_select_cards,
     _handle_submit_card,
     build_select_cards_tool,
@@ -175,3 +178,16 @@ def test_handle_submit_rejects_multiple_affixes_in_one_slot() -> None:
 
     assert "至多一条" in msg
     assert edits == []
+
+
+def test_finish_cards_requires_every_candidate_designed() -> None:
+    """未全部提交（或被拒）时，finish_cards 不能静默结束，必须报错让模型补交。"""
+    first = _candidate().card
+    second = _candidate().card
+    designed = [CardDesign(uuid=first.uuid, name="甲", description="一")]
+
+    with pytest.raises(ValueError, match="#2"):
+        _handle_finish_cards(designed, [first, second])
+
+    designed.append(CardDesign(uuid=second.uuid, name="乙", description="二"))
+    assert _handle_finish_cards(designed, [first, second]) == "已结束本次设计。"

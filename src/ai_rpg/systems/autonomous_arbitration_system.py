@@ -37,10 +37,9 @@ from .arbitration_common import (
     build_arbitration_broadcast,
     build_calc_rules_section,
     build_loop_summary_memory,
-    build_narrative_section,
     build_on_hit_affix_section,
+    build_source_section,
     build_stats_update_notification,
-    build_summary_section,
     build_tool_flow_section,
     collect_hand_cards_with,
     get_entity_stats,
@@ -112,21 +111,13 @@ def _build_autonomous_arbitration_tool_prompt(
 你必须依词缀文本判定目标——写明「一名随机敌人」「血量最低的敌人」「全体敌人」「一名友方」「持有者」等的词缀，
 就按该规则从上方「场上存活」名单中选定 `entity_name`。词缀未写明目标时，按最贴合其文案的解释选取。
 
-{build_on_hit_affix_section(GET_ENTITY_STATS_TOOL.function.name)}
+{build_on_hit_affix_section()}
 
 > 补充：本时机的自主伤害同样算「命中」，会触发被命中者的受击词缀；受击词缀的结算对象是本次发起自主行动的持有者 {holder_name}。
 
-## source 字段
+{build_source_section()}
 
-`source` = 卡牌来源（生成 / 注入者），空串表示未知；副本保留原 `source`。词缀可据持有者与 `source` 的关系设生效条件：`本卡持有者` 无条件；`source 者` 仅当持有者 == 本卡 `source` 时结算；`非 source 者` 仅当持有者 != 本卡 `source` 时结算；条件不成立则整条跳过。
-
-{build_tool_flow_section(GET_ENTITY_STATS_TOOL.function.name, RESOLVE_DAMAGE_TOOL.function.name, RESOLVE_EFFECT_TOOL.function.name, SUBMIT_ARBITRATION_TOOL.function.name, ArbitrationKind.AUTONOMOUS, holder_name)}
-
-## {SUBMIT_ARBITRATION_TOOL.function.name} 字段说明
-
-{build_narrative_section()}
-
-{build_summary_section()}"""
+{build_tool_flow_section(GET_ENTITY_STATS_TOOL.function.name, RESOLVE_DAMAGE_TOOL.function.name, RESOLVE_EFFECT_TOOL.function.name, SUBMIT_ARBITRATION_TOOL.function.name, ArbitrationKind.AUTONOMOUS, holder_name)}"""
 
 
 ###########################################################################################################################################

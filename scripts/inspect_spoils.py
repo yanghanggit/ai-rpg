@@ -81,7 +81,7 @@ def main(snapshot: str, actor: str, show_db: bool) -> None:
 
     if show_db:
         print("\n=== 当前库中卡牌原型 ===")
-        for row in list_card_prototype_index():
+        for row in list_card_prototype_index(include_basic=True):
             print(
                 f"  {row['prototype_id']:<18} "
                 f"[{row['card_type']}/{row['archetype']}] {row['name']}"

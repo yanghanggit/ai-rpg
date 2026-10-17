@@ -20,29 +20,24 @@ from demo.card_skeletons import (
     AOE_BUFF_SKELETON,
     AOE_DEBUFF_SKELETON,
     AOE_SKELETON,
-    ATTACK_SKELETON,
-    BULWARK_SKELETON,
+    BASIC_ATTACK_SKELETON,
+    BASIC_DEFENSE_SKELETON,
     BURST_SKELETON,
     CONSUMABLE_AOE_SKELETON,
     CONSUMABLE_SINGLE_SKELETON,
     CONSUMABLE_SPREAD_SKELETON,
     DEADLINE_SKELETON,
-    DEFENSE_SKELETON,
     DOT_SKELETON,
     FINISHER_SKELETON,
     FLEETING_SKELETON,
-    FOCUS_SKELETON,
     GEAR_CONTAGION_SKELETON,
     GEAR_DEFENSE_SKELETON,
     GEAR_OFFENSE_SKELETON,
     HEAL_SKELETON,
     MARK_SKELETON,
-    PASSIVE_SKELETON,
     PIERCE_SKELETON,
     PLATE_SKELETON,
     REGEN_SKELETON,
-    SACRIFICE_SKELETON,
-    SELF_LOOP_SKELETON,
     SHIELD_TRANSFER_SKELETON,
     SPREAD_SKELETON,
     SUMMON_SKELETON,
@@ -64,6 +59,7 @@ class CardPrototypeMeta:
     summary: str  # 一级披露：一句话摘要，供列表与检索
     design: str  # 二级披露：原型专属设计说明（用到什么就解释什么），供展开
     keywords: Tuple[str, ...] = ()  # 检索标签（关键字段名）
+    tier: str = "normal"  # 层级：basic（开局必备、保底发放）/ normal（选型候选）
 
 
 @dataclass(frozen=True)
@@ -75,21 +71,31 @@ class CardPrototype:
 
 
 #######################################################################################################################################
+# 开局必备基础牌：类似杀戮尖塔，每副初始牌组固定含这些「最基本」的牌；
+# 它们是保底发放，不属于「选型」的成长/特殊牌；角色专属特殊牌另计（见 demo/world.py）。
+BASIC_ATTACK_PROTOTYPE_ID: Final[str] = "proto.basic_attack"
+BASIC_DEFENSE_PROTOTYPE_ID: Final[str] = "proto.basic_defense"
+BASIC_ATTACK_COUNT: Final[int] = 3
+BASIC_DEFENSE_COUNT: Final[int] = 2
+
+
+#######################################################################################################################################
 CARD_PROTOTYPES: Final[List[CardPrototype]] = [
     # 手牌 / 攻击端 / 前端伤害
     CardPrototype(
-        skeleton=ATTACK_SKELETON,
+        skeleton=BASIC_ATTACK_SKELETON,
         meta=CardPrototypeMeta(
-            prototype_id="proto.attack",
+            prototype_id=BASIC_ATTACK_PROTOTYPE_ID,
             card_type="手牌",
             archetype="攻击端",
             archetype_subtype="前端伤害",
             name="基础攻击",
-            summary="单目标直接伤害，最低成本的输出基线。",
+            summary="单目标直接伤害；数值与段数可调（单段基线 / 多段集火）。",
             design="""【骨架】target_type=SINGLE（单体，需指定 1 个目标）；cost=1、damage=2、hit_count=1、block=0。
 【字段】damage 是单次伤害、hit_count 是攻击段数（>1 时每段独立结算）、block 是持有期格挡（计入持有者总防御）、cost 是出牌费用。
-【设计】输出基线，不承担防御。可微调 cost/damage/hit_count/block；本原型无词缀槽，只需设计 name/description。想要穿甲、多段、流转差异，请改选带对应词缀槽或标志的原型。""",
+【设计】单体伤害基线。可微调 cost/damage/hit_count/block：低费单段＝输出基线，高费多段（hit_count>1）＝集火连击。本原型无词缀槽，只需设计 name/description。想要穿甲、词缀、流转差异，请改选带对应槽或标志的原型。""",
             keywords=("damage", "single"),
+            tier="basic",
         ),
     ),
     CardPrototype(
@@ -100,41 +106,11 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             archetype="攻击端",
             archetype_subtype="前端伤害",
             name="一次性爆发",
-            summary="高费高伤 + 消耗，整场只此一次。",
-            design="""【骨架】SINGLE；cost=3、damage=6、hit_count=1、block=0、exhaust=True。
-【字段】exhaust：出牌后永久归入 ExhaustPile、不进弃牌循环，整场只此一次。
-【设计】高费高伤的时机抉择，允许效果明显超模。可微调 cost/damage/hit_count/block；无词缀槽，只需设计 name/description。""",
-            keywords=("exhaust", "damage", "cost"),
-        ),
-    ),
-    CardPrototype(
-        skeleton=SACRIFICE_SKELETON,
-        meta=CardPrototypeMeta(
-            prototype_id="proto.sacrifice",
-            card_type="手牌",
-            archetype="攻击端",
-            archetype_subtype="前端伤害",
-            name="代价爆发",
-            summary="高伤 + 自伤代价，一次性爆发（代价自定）。",
-            design="""【骨架】SINGLE；cost=2、damage=5、hit_count=1、exhaust=True；on_play_affixes 为引导槽。
-【字段】exhaust：出牌后永久离场。on_play_affixes：本卡打出时结算，仅本次出牌生效。
-【设计】用即时减益（代价）换超模输出，高风险高回报。请取一个（或组合）内建数值（本卡 damage/hit_count/block、自身 HP/总格挡）写成一条代价词缀，方向是对出牌者自身不利（如自伤 HP）；禁止写成对目标的额外收益或对自身的回复。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
-            keywords=("exhaust", "damage", "on_play_affixes"),
-        ),
-    ),
-    CardPrototype(
-        skeleton=FOCUS_SKELETON,
-        meta=CardPrototypeMeta(
-            prototype_id="proto.focus",
-            card_type="手牌",
-            archetype="攻击端",
-            archetype_subtype="前端伤害",
-            name="集火连击",
-            summary="单体多段爆发。",
-            design="""【骨架】SINGLE；cost=2、damage=2、hit_count=3、block=0。
-【字段】hit_count=3：三段各自独立结算，集火同一目标；damage 为每段伤害。
-【设计】单体多段爆发。可微调 cost/damage/hit_count/block；无词缀槽，只需设计 name/description。""",
-            keywords=("hit_count", "damage", "single"),
+            summary="高费高伤 + 消耗，整场只此一次；可选一条自伤代价。",
+            design="""【骨架】SINGLE；cost=3、damage=6、hit_count=1、block=0、exhaust=True；on_play_affixes 为可选引导槽。
+【字段】exhaust：出牌后永久归入 ExhaustPile、不进弃牌循环，整场只此一次。on_play_affixes：本卡打出时结算，仅本次出牌生效；可留空。
+【设计】高费高伤的时机抉择，允许效果明显超模。可微调 cost/damage/hit_count/block。若要做「代价爆发」，取一个（或组合）内建数值（本卡 damage/hit_count/block、自身 HP/总格挡）写一条代价词缀，方向必须对出牌者自身不利（如自伤 HP）；禁止写成对目标的额外收益或对自身的回复；也可以留空，只做纯爆发。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
+            keywords=("exhaust", "damage", "cost", "on_play_affixes"),
         ),
     ),
     CardPrototype(
@@ -291,21 +267,6 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
         ),
     ),
     CardPrototype(
-        skeleton=SELF_LOOP_SKELETON,
-        meta=CardPrototypeMeta(
-            prototype_id="proto.selfloop",
-            card_type="手牌",
-            archetype="攻击端",
-            archetype_subtype="铺垫性攻击支持",
-            name="自我调息",
-            summary="锁定自身 + 保留，每回合末续战恢复（数值方向自定）。",
-            design="""【骨架】target_type=SELF（锁定出牌者自身，无需 targets）；cost=1、damage=0、hit_count=1、block=1、retain=True；on_turn_end_affixes 为引导槽。
-【字段】retain：跨回合留在手牌；block=1 持有期提供格挡。on_turn_end_affixes：每次 pass turn 结算一次，效果目标恒为持有者本人。
-【设计】自我调息：牌留在手里、每回合末触发一条续战恢复。取一个（或组合）内建数值（本卡 block、自身 HP/最大 HP）写成一条词缀，只写回复（HP）；禁止写格挡。持续效果由这张牌本身承载。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
-            keywords=("target_type", "retain", "on_turn_end_affixes"),
-        ),
-    ),
-    CardPrototype(
         skeleton=AOE_DEBUFF_SKELETON,
         meta=CardPrototypeMeta(
             prototype_id="proto.aoe_debuff",
@@ -322,51 +283,22 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
     ),
     # 手牌 / 防御端 / 前端防御
     CardPrototype(
-        skeleton=DEFENSE_SKELETON,
+        skeleton=BASIC_DEFENSE_SKELETON,
         meta=CardPrototypeMeta(
-            prototype_id="proto.defense",
+            prototype_id=BASIC_DEFENSE_PROTOTYPE_ID,
             card_type="手牌",
             archetype="防御端",
             archetype_subtype="前端防御",
             name="基础防御",
             summary="为自身提供格挡，持有期间提升防御。",
-            design="""【骨架】target_type=SELF；cost=1、damage=0、hit_count=1、block=1、retain=False。
-【字段】block：持有期计入持有者总防御，与是否打出无关；retain=False：未打出即进弃牌堆、随洗牌回到牌库循环，抓到手占用一个手牌位。
+            design="""【骨架】target_type=SELF；cost=1、damage=0、hit_count=1、block=1、retain=False、playable=False。
+【字段】block：持有期计入持有者总防御；playable=False：纯持有价值、不可出牌（打出只会失去格挡）。retain=False：回合末离开手牌、随洗牌回到牌库循环，抓到手占用一个手牌位。
 【设计】基础防御基线，强制不叠加 retain——retain 与防御是强力搭配，只留给成长性/特殊防御，基础型不得使用。可微调 cost/block；无词缀槽，只需设计 name/description。差异化靠词缀（如受击反伤/减伤），请改选带词缀槽的原型。""",
             keywords=("block", "target_type"),
+            tier="basic",
         ),
     ),
     # 手牌 / 防御端 / 成长性防御
-    CardPrototype(
-        skeleton=BULWARK_SKELETON,
-        meta=CardPrototypeMeta(
-            prototype_id="proto.bulwark",
-            card_type="手牌",
-            archetype="防御端",
-            archetype_subtype="成长性防御",
-            name="防御蓄力",
-            summary="格挡 + 保留，跨回合常驻防御。",
-            design="""【骨架】target_type=SELF；cost=1、damage=0、hit_count=1、block=3、retain=True。
-【字段】block=3：持有期计入持有者总防御；retain：跨回合保留、不占下回合抓牌名额，是额外留在手牌的常驻格挡。
-【设计】成长性防御（retain 与防御的强力搭配应少量出现，不得下放到基础防御）。可微调 cost/block；无词缀槽，只需设计 name/description。""",
-            keywords=("block", "retain"),
-        ),
-    ),
-    CardPrototype(
-        skeleton=PASSIVE_SKELETON,
-        meta=CardPrototypeMeta(
-            prototype_id="proto.passive",
-            card_type="手牌",
-            archetype="防御端",
-            archetype_subtype="成长性防御",
-            name="蛰伏",
-            summary="不可出 + 保留，每回合末回复自身（数值方向自定）。",
-            design="""【骨架】target_type=SELF；cost=1、damage=1、hit_count=1、block=0、playable=False、retain=True；on_turn_end_affixes 为引导槽。
-【字段】playable=False：不可出牌、纯持有状态；retain：跨回合常驻。on_turn_end_affixes：每次 pass turn 结算一次，效果目标恒为持有者本人。
-【设计】蛰伏回气：以持有状态每回合末回复。取一个（或组合）内建数值（本卡 damage/block、持有者 HP/最大 HP）写成一条词缀，只写回复（HP）；禁止写格挡。持续效果由这张牌本身承载。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
-            keywords=("playable", "retain", "on_turn_end_affixes"),
-        ),
-    ),
     CardPrototype(
         skeleton=PLATE_SKELETON,
         meta=CardPrototypeMeta(
@@ -375,10 +307,10 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             archetype="防御端",
             archetype_subtype="成长性防御",
             name="常驻护甲",
-            summary="不可出 + 格挡 + 保留，纯被动防御。",
+            summary="不可出 + 格挡 + 保留，跨回合常驻防御。",
             design="""【骨架】target_type=SELF；cost=1、damage=0、hit_count=1、block=3、playable=False、retain=True。
-【字段】playable=False + retain + block：不可出、跨回合持有、持有期即计入总防御，构成纯被动护甲。
-【设计】纯被动防御。可微调 cost/block；无词缀槽，只需设计 name/description。""",
+【字段】playable=False + retain + block：不可出、跨回合持有、持有期即计入总防御，构成纯被动护甲；block 可调，控制常驻强度。
+【设计】常驻格挡：不可出、跨回合持有、持有期计入总防御。可微调 cost/block；无词缀槽，只需设计 name/description。""",
             keywords=("playable", "block", "retain"),
         ),
     ),
@@ -408,8 +340,8 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             name="持续调息",
             summary="不可出 + 保留，每回合末回复自身（数值方向自定）。",
             design="""【骨架】target_type=SELF；cost=1、damage=0、hit_count=1、block=1、playable=False、retain=True；on_turn_end_affixes 为引导槽。
-【字段】playable=False + retain：不可出但跨回合持有；block=1 持有期提供格挡。on_turn_end_affixes：每次 pass turn 结算一次，效果目标恒为持有者本人。
-【设计】持续调息：持有者每回合末回复。取一个（或组合）内建数值（本卡 block、自身 HP/最大 HP）写成具体词缀，只写回复。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
+【字段】playable=False + retain：不可出但跨回合持有；block 持有期提供格挡（可调为 0，做纯回气）。on_turn_end_affixes：每次 pass turn 结算一次，效果目标恒为持有者本人。
+【设计】持续回气：持有者每回合末回复。取一个（或组合）内建数值（本卡 damage/block、自身 HP/最大 HP）写成具体词缀，只写回复（HP）；禁止写格挡。持续效果由这张牌本身承载。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
             keywords=("playable", "retain", "on_turn_end_affixes"),
         ),
     ),
@@ -423,8 +355,8 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             archetype_subtype="特殊防御机制",
             name="反伤壁垒",
             summary="格挡 + 反制：被打时借一个数值还击（方向自定）。",
-            design="""【骨架】target_type=SELF；cost=1、damage=2、hit_count=1、block=2、retain=True；on_hit_affixes 为引导槽。
-【字段】block=2：持有期防御；retain：跨回合持有。on_hit_affixes：本卡持有者被命中时触发。
+            design="""【骨架】target_type=SELF；cost=1、damage=2、hit_count=1、block=2、retain=True、playable=False；on_hit_affixes 为引导槽。
+【字段】block=2：持有期防御；retain：跨回合持有；playable=False：纯持有反伤，不可出牌。on_hit_affixes：本卡持有者被命中时触发。
 【设计】反伤壁垒：被命中时触发一条针对出牌者的反制。这是一条「取数」引导而非成品——请取一个（或组合）内建数值（出牌者 damage/HP/总格挡、本卡 damage/block、自身 HP/总格挡）写成一条反制词缀，只反制攻击者；禁止治疗或增益持有者自身。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
             keywords=("block", "retain", "on_hit_affixes"),
         ),
@@ -499,8 +431,8 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             archetype_subtype="成长性防御",
             name="防御装备",
             summary="持有期格挡 + 跨回合保留（block=3、retain=True，on_hit 词缀槽）。",
-            design="""【骨架】target_type=SINGLE；cost=1、damage=0、hit_count=1、block=3、retain=True；on_hit_affixes 为引导槽。
-【字段】retain：跨回合留在手牌；block=3 持有期提供格挡。on_hit_affixes：本卡持有者被命中时触发。
+            design="""【骨架】target_type=SINGLE；cost=1、damage=0、hit_count=1、block=3、retain=True、playable=False；on_hit_affixes 为引导槽。
+【字段】retain：跨回合留在手牌；block=3 持有期提供格挡；playable=False：纯持有防御，不可出牌。on_hit_affixes：本卡持有者被命中时触发。
 【设计】防御装备：可微调 cost/damage/hit_count/block；取内建数值（本卡 block、自身 HP/总格挡）写成一条 on_hit 反制/减伤词缀（可为空）。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
             keywords=("block", "retain"),
         ),
@@ -583,12 +515,11 @@ class DeckBuild:
     card_prototype_ids: Tuple[str, ...]
 
 
+# 兜底/保底牌单：全部由 basic 层原型构成（基础攻击 × N + 基础防御 × M）。
+# 角色的实际开局牌组＝这份基础牌单的量 + 1 张角色专属特殊牌（见 demo/world.py）。
 DEFAULT_DECK_BUILD: Final[DeckBuild] = DeckBuild(
     card_prototype_ids=(
-        "proto.attack",
-        "proto.attack",
-        "proto.attack",
-        "proto.defense",
-        "proto.defense",
+        (BASIC_ATTACK_PROTOTYPE_ID,) * BASIC_ATTACK_COUNT
+        + (BASIC_DEFENSE_PROTOTYPE_ID,) * BASIC_DEFENSE_COUNT
     )
 )

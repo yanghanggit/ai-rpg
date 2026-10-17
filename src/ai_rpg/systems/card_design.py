@@ -349,9 +349,9 @@ def build_card_design_prompt(candidates: List[Candidate], context: str = "") -> 
 def _handle_submit_card(
     edits: List[CardDesign],
     cards: List[Card],
-    card_index: int,
-    name: str,
-    description: str,
+    card_index: int = 0,
+    name: str = "",
+    description: str = "",
     cost: Optional[int] = None,
     damage: Optional[int] = None,
     hit_count: Optional[int] = None,
@@ -362,7 +362,15 @@ def _handle_submit_card(
     on_autonomous_affixes: Optional[NormalizedStrList] = None,
     **extra: Any,
 ) -> str:
-    """处理 submit_card：按 #N 定位候选卡（uuid 由计算端持有），校验词缀后暂存。"""
+    """处理 submit_card：按 #N 定位候选卡（uuid 由计算端持有），校验词缀后暂存。
+
+    `card_index` / `name` / `description` 在 schema 里是必填，但模型偶尔会漏传；
+    这里给出可读的错误，而不是让 TypeError 冒到 agent_loop。
+    """
+    if not name.strip():
+        return "错误：缺少 name。"
+    if not description.strip():
+        return "错误：缺少 description。"
     if not (1 <= card_index <= len(cards)):
         return f"错误：card_index 超出范围（应为 1..{len(cards)}）。"
     card = cards[card_index - 1]

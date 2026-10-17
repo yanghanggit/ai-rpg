@@ -13,10 +13,10 @@ from typing import Final
 from ai_rpg.models import Card, TargetType
 
 #######################################################################################################################################
-# ── 基础骨架 ──────────────────────────────────────────────
+# ── 基础骨架（开局保底牌：统一命名、无词缀、不参与选型） ──────────
 
-ATTACK_SKELETON: Final[Card] = Card(
-    name="基础攻击",
+BASIC_ATTACK_SKELETON: Final[Card] = Card(
+    name="攻击",
     description="",
     on_play_affixes=[],
     on_hit_affixes=[],
@@ -34,13 +34,13 @@ ATTACK_SKELETON: Final[Card] = Card(
 )
 
 
-DEFENSE_SKELETON: Final[Card] = Card(
-    name="基础防御",
+BASIC_DEFENSE_SKELETON: Final[Card] = Card(
+    name="防守",
     description="",
     on_play_affixes=[],
     on_hit_affixes=[],
     on_turn_end_affixes=[],
-    playable=True,
+    playable=False,
     exhaust=False,
     retain=False,
     ethereal=False,
@@ -100,7 +100,9 @@ REGEN_SKELETON: Final[Card] = Card(
 BURST_SKELETON: Final[Card] = Card(
     name="一次性爆发",
     description="",
-    on_play_affixes=[],
+    on_play_affixes=[
+        "[词缀名]:可选——打出时取一个内建数值对自身结算代价（自损方向；候选取数——本卡 damage/block/hit_count、自身 HP/总格挡）"
+    ],
     on_hit_affixes=[],
     on_turn_end_affixes=[],
     playable=True,
@@ -111,46 +113,6 @@ BURST_SKELETON: Final[Card] = Card(
     cost=3,
     damage=6,
     hit_count=1,
-    block=0,
-    target_type=TargetType.SINGLE,
-)
-
-
-SACRIFICE_SKELETON: Final[Card] = Card(
-    name="代价爆发",
-    description="",
-    on_play_affixes=[
-        "[词缀名]:打出时取一个内建数值对自身结算代价（自损方向；候选取数——本卡 damage/block/hit_count、自身 HP/总格挡）"
-    ],
-    on_hit_affixes=[],
-    on_turn_end_affixes=[],
-    playable=True,
-    exhaust=True,
-    retain=False,
-    ethereal=False,
-    transferable=False,
-    cost=2,
-    damage=5,
-    hit_count=1,
-    block=0,
-    target_type=TargetType.SINGLE,
-)
-
-
-FOCUS_SKELETON: Final[Card] = Card(
-    name="集火连击",
-    description="",
-    on_play_affixes=[],
-    on_hit_affixes=[],
-    on_turn_end_affixes=[],
-    playable=True,
-    exhaust=False,
-    retain=False,
-    ethereal=False,
-    transferable=False,
-    cost=2,
-    damage=2,
-    hit_count=3,
     block=0,
     target_type=TargetType.SINGLE,
 )
@@ -215,27 +177,6 @@ PIERCE_SKELETON: Final[Card] = Card(
     hit_count=1,
     block=0,
     target_type=TargetType.SINGLE,
-)
-
-
-SELF_LOOP_SKELETON: Final[Card] = Card(
-    name="自我调息",
-    description="",
-    on_play_affixes=[],
-    on_hit_affixes=[],
-    on_turn_end_affixes=[
-        "[词缀名]:回合结束时取一个内建数值为自身结算（续战恢复方向；候选取数——本卡 block、自身 HP/最大 HP）"
-    ],
-    playable=True,
-    exhaust=False,
-    retain=True,
-    ethereal=False,
-    transferable=False,
-    cost=1,
-    damage=0,
-    hit_count=1,
-    block=1,
-    target_type=TargetType.SELF,
 )
 
 
@@ -382,25 +323,6 @@ AOE_DEBUFF_SKELETON: Final[Card] = Card(
 
 # ── 防御端骨架 ──────────────────────────────────────────────
 
-BULWARK_SKELETON: Final[Card] = Card(
-    name="防御蓄力",
-    description="",
-    on_play_affixes=[],
-    on_hit_affixes=[],
-    on_turn_end_affixes=[],
-    playable=True,
-    exhaust=False,
-    retain=True,
-    ethereal=False,
-    transferable=False,
-    cost=1,
-    damage=0,
-    hit_count=1,
-    block=3,
-    target_type=TargetType.SELF,
-)
-
-
 THORNS_SKELETON: Final[Card] = Card(
     name="反伤壁垒",
     description="",
@@ -409,7 +331,7 @@ THORNS_SKELETON: Final[Card] = Card(
         "[词缀名]:被命中时取一个内建数值反制出牌者（候选取数——出牌者 damage/HP/总格挡、本卡 damage/block、自身 HP/总格挡）"
     ],
     on_turn_end_affixes=[],
-    playable=True,
+    playable=False,
     exhaust=False,
     retain=True,
     ethereal=False,
@@ -418,27 +340,6 @@ THORNS_SKELETON: Final[Card] = Card(
     damage=2,
     hit_count=1,
     block=2,
-    target_type=TargetType.SELF,
-)
-
-
-PASSIVE_SKELETON: Final[Card] = Card(
-    name="蛰伏",
-    description="",
-    on_play_affixes=[],
-    on_hit_affixes=[],
-    on_turn_end_affixes=[
-        "[词缀名]:回合结束时取一个内建数值为本卡持有者回复 HP（蛰伏回气方向；候选取数——本卡 damage/block、持有者 HP/最大 HP）"
-    ],
-    playable=False,
-    exhaust=False,
-    retain=True,
-    ethereal=False,
-    transferable=False,
-    cost=1,
-    damage=1,
-    hit_count=1,
-    block=0,
     target_type=TargetType.SELF,
 )
 
@@ -574,7 +475,7 @@ GEAR_DEFENSE_SKELETON: Final[Card] = Card(
     on_play_affixes=[],
     on_hit_affixes=["[引导]:被命中时取一个内建数值减弱或反击攻击者"],
     on_turn_end_affixes=[],
-    playable=True,
+    playable=False,
     exhaust=False,
     retain=True,
     ethereal=False,

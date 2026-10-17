@@ -20,6 +20,7 @@ class CardPrototypeIndexEntry(TypedDict):
 
     prototype_id: str
     card_type: str
+    tier: str
     archetype: str
     archetype_subtype: str
     name: str
@@ -38,6 +39,7 @@ def save_card_prototype(
     design: str,
     card_json: str,
     keywords: Optional[List[str]] = None,
+    tier: str = "normal",
 ) -> CardPrototypeDB:
     """保存或更新一个卡牌原型（按 prototype_id 幂等）。"""
 
@@ -50,6 +52,7 @@ def save_card_prototype(
         )
         if existing is not None:
             existing.card_type = card_type
+            existing.tier = tier
             existing.archetype = archetype
             existing.archetype_subtype = archetype_subtype
             existing.name = name
@@ -64,6 +67,7 @@ def save_card_prototype(
         proto = CardPrototypeDB(
             prototype_id=prototype_id,
             card_type=card_type,
+            tier=tier,
             archetype=archetype,
             archetype_subtype=archetype_subtype,
             name=name,
@@ -121,8 +125,13 @@ def delete_card_prototypes(prototype_ids: List[str]) -> int:
 def list_card_prototype_index(
     card_type: Optional[str] = None,
     archetype: Optional[str] = None,
+    include_basic: bool = False,
 ) -> List[CardPrototypeIndexEntry]:
-    """列出一级披露索引（不含 design / card_json），可按 card_type / archetype 过滤。"""
+    """列出一级披露索引（不含 design / card_json），可按 card_type / archetype 过滤。
+
+    默认隐藏 `tier="basic"` 的基础牌：它们是开局保底发放、不参与「选型」的牌；
+    需要完整清单（运维 / 诊断）时传 `include_basic=True`。
+    """
 
     db = SessionLocal()
     try:
@@ -131,11 +140,14 @@ def list_card_prototype_index(
             query = query.filter(CardPrototypeDB.card_type == card_type)
         if archetype:
             query = query.filter(CardPrototypeDB.archetype == archetype)
+        if not include_basic:
+            query = query.filter(CardPrototypeDB.tier != "basic")
         rows = query.order_by(CardPrototypeDB.created_at).all()
         return [
             {
                 "prototype_id": row.prototype_id,
                 "card_type": row.card_type,
+                "tier": row.tier,
                 "archetype": row.archetype,
                 "archetype_subtype": row.archetype_subtype,
                 "name": row.name,

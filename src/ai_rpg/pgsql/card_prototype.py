@@ -21,6 +21,11 @@ class CardPrototypeDB(UUIDBase):
     # 应用场景（手牌 / 装备），供按域检索（工坊合成按「装备」过滤）
     card_type: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
 
+    # 层级：basic（开局必备基础牌，保底发放、不进入选型池）/ normal（选型候选）
+    tier: Mapped[str] = mapped_column(
+        String(20), index=True, nullable=False, default="normal"
+    )
+
     # 三端大类（攻击端 / 防御端 / 运转端）
     archetype: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
 

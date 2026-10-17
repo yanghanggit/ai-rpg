@@ -46,16 +46,19 @@ from ai_rpg.models import (
 )
 
 from .card_skeletons import (
-    ATTACK_SKELETON,
+    BASIC_ATTACK_SKELETON,
+    BASIC_DEFENSE_SKELETON,
     CONSUMABLE_AOE_SKELETON,
     CONSUMABLE_SINGLE_SKELETON,
     CONSUMABLE_SPREAD_SKELETON,
-    DEFENSE_SKELETON,
     GEAR_DEFENSE_SKELETON,
     GEAR_OFFENSE_SKELETON,
     HEAL_SKELETON,
+    PIERCE_SKELETON,
     REGEN_SKELETON,
+    SPREAD_SKELETON,
     SUMMON_SKELETON,
+    THORNS_SKELETON,
 )
 
 # ---------------------------------------------------------------------------
@@ -214,14 +217,14 @@ def _make_attack_card(owner: str) -> Card:
 
     基础攻防卡统一同名、不做叙事润色，故显式带 source（牌库入口不变量）。
     """
-    card = _copy_skeleton(ATTACK_SKELETON)
+    card = _copy_skeleton(BASIC_ATTACK_SKELETON)
     card.source = owner
     return card
 
 
 def _make_defense_card(owner: str) -> Card:
     """基础防御原型副本（机械字段与 demo/card_prototypes.py 的「基础防御」一致）。"""
-    card = _copy_skeleton(DEFENSE_SKELETON)
+    card = _copy_skeleton(BASIC_DEFENSE_SKELETON)
     card.source = owner
     return card
 
@@ -265,8 +268,11 @@ def _make_summon_card(
 
 
 def _make_alpha_wolf_deck() -> List[Card]:
-    """头狼牌库：模拟 AssembleDungeonDeckSystem 产物——原型骨架 + 手写 name/description/词缀，
-    并已设 `source`（战斗初始化因此幂等跳过，不会覆盖叙事，形状与正规流程一致）。"""
+    """头狼牌库：模拟 AssembleDungeonDeckSystem 产物——非基础原型骨架 + 手写 name/description/词缀，
+    并已设 `source`（战斗初始化因此幂等跳过，不会覆盖叙事，形状与正规流程一致）。
+
+    刻意不使用 BASIC_* 骨架：基础牌是开局保底牌（统一命名、无词缀、不参与设计），
+    任何有名字/词缀的卡都应该落在一个有对应槽位的非基础原型上。"""
 
     def build(
         skeleton: Card,
@@ -287,7 +293,7 @@ def _make_alpha_wolf_deck() -> List[Card]:
 
     return [
         build(
-            ATTACK_SKELETON,
+            PIERCE_SKELETON,
             "暗处绕袭",
             "他不从正面来。肩背压得极低，先绕到你视线的另一侧，等你把注意力交给别处，才把头一份重量交给牙齿。",
             on_play=[
@@ -295,23 +301,24 @@ def _make_alpha_wolf_deck() -> List[Card]:
             ],
         ),
         build(
-            ATTACK_SKELETON,
+            SPREAD_SKELETON,
             "骨堆叼撕",
             "骨头堆里翻出来的那些残骸，他不挑。咬住就不松口，甩头，撕开——那是这片林子里最旧的吃法。",
         ),
         build(
-            ATTACK_SKELETON,
+            PIERCE_SKELETON,
             "残眼扑咬",
             "那只眼睛早就没了，剩下那只却比谁都能看清你重心在哪。他扑的从来不是你举起的那一侧。",
+            on_play=["[残眼]:打出时，本次伤害无视目标的总格挡"],
         ),
         build(
-            DEFENSE_SKELETON,
+            THORNS_SKELETON,
             "缩身护喉",
             "挨过太多下了。他把身子缩成一团，把咽喉、腹下这些软处收进自己的影子里，只留一层皮毛和肌肉朝外。",
             on_hit=["[护喉]:本卡持有者被命中时，对出牌者结算本卡 block 的伤害"],
         ),
         build(
-            DEFENSE_SKELETON,
+            REGEN_SKELETON,
             "旧疤结痂",
             "旧伤在他身上结成了另一层皮。你以为割开了他，其实只是又给他添了一道比原先更硬的地方。",
             on_turn_end=["[结痂]:回合结束时，回复本卡持有者本卡 block 的 HP"],

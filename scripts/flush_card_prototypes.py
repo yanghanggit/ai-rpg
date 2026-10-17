@@ -53,7 +53,7 @@ from demo import CARD_PROTOTYPES, DEFAULT_DECK_BUILD, CardPrototype
 
 #######################################################################################################
 def _print_db_index() -> None:
-    index = list_card_prototype_index()
+    index = list_card_prototype_index(include_basic=True)
     print(f"库中卡牌原型：{len(index)} 个")
     for row in index:
         print(
@@ -75,6 +75,7 @@ def _save(proto: CardPrototype) -> None:
         design=meta.design,
         card_json=proto.skeleton.model_dump_json(),
         keywords=list(meta.keywords),
+        tier=meta.tier,
     )
 
 
@@ -191,7 +192,9 @@ def main(
     pruned = 0
     planned_prune = 0
     if prune:
-        current = {row["prototype_id"] for row in list_card_prototype_index()}
+        current = {
+            row["prototype_id"] for row in list_card_prototype_index(include_basic=True)
+        }
         to_delete = sorted(current - target_ids)
         planned_prune = len(to_delete)
         if to_delete:

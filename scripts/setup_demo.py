@@ -326,6 +326,7 @@ def _setup_card_prototypes() -> None:
             design=proto.meta.design,
             card_json=proto.skeleton.model_dump_json(),
             keywords=list(proto.meta.keywords),
+            tier=proto.meta.tier,
         )
         logger.info(
             f"📥 卡牌原型已入库: {proto.meta.prototype_id}"

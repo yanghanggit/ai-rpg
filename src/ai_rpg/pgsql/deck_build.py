@@ -20,7 +20,7 @@ class DeckBuildDB(UUIDBase):
 
     __tablename__ = "deck_builds"
 
-    # 有序原型 id 列表（JSON 数组字符串，如 ["proto.attack","proto.attack","proto.defense"]）
+    # 有序原型 id 列表（JSON 数组字符串，如 ["proto.basic_attack","proto.basic_attack","proto.basic_defense"]）
     card_prototype_ids_json: Mapped[str] = mapped_column(
         Text, nullable=False, default="[]"
     )

@@ -146,13 +146,13 @@ LLM 只做三件事：为每条效果选定 **base**、判定**系数取值**、
 
 - `MonsterPrePlaySystem`（出牌决策）与 `CombatLootSystem`（战利品推断）：**全部留痕**——human 写请求原文（带 `draw_cards_round_number` / `combat_loot` 标记），ai 写回包原文；失败无回包时只留请求侧，不伪造 AI 回复。于是「怪物在战斗中为主体的推理」在记忆里完整可对账。
 - `ContextCompactionSystem`（上下文压缩）：超阈值的 agent（含 actor）记忆被换成一条摘要，这是唯一会改写 actor 记忆本身的系统级 LLM。
+- 胜负通知（`combat_outcome`）发给**全部参战者**（含怪物），文本按各自阵营视角生成：队伍看 `CombatResult`，怪物看其反面。故怪物记忆里也有「这场战斗我输了」这一条终局陈述（此前只有「HP 归零」）。
+- 玩家侧的数据变化同样留一条**自我状态说明**（只写给本人，不广播）：`CombatLootSystem` 写「# 你的战利品」（`combat_loot`），`PickSpoilsActionSystem` 写「# 你收下了战利品」（`spoils_pick`），使 `LootComponent` 写入与 `SpoilsComponent → DeckComponent` 的追加都能在记忆里对账。
 - 外观合成**不在此列**：它由世界实体「世界.外观合成」以「system prompt + 任务提示词」一次性完成，不读任何 agent 记忆、也不留推理原文；结果只落 `AppearanceComponent`，并给本人补一条自我状态说明（`# 你的外观 …`，不广播）——外观变化事件的广播属于穿装动作（见[战役设定与系统提示词的分层](campaign-setting-rules-bridge.md)）。
 
 仲裁类（出牌 / 回合结束 / 自主运行 / 神器）的主体是场景实体而非 actor，结果只写场景记忆；场景实体在退出副本时统一销毁，记忆随之消失。
 
 → 对账工具：[`scripts/inspect_memory.py`](run-agent-game.md)（`--diff` 直接给出记忆增量与各牌堆差分）
-
-## 跨系统关系
 
 ## 跨系统关系
 

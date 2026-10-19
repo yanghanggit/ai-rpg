@@ -65,7 +65,7 @@ class CombatOutcomeSystem(ExecuteProcessor):
         clear_round_state(self._game)
 
         # 广播战斗结果给队伍成员
-        self._broadcast_result_to_party_members(combat_result)
+        self._notify_combat_result(combat_result)
 
     ########################################################################################################################################################################
     def _determine_combat_result(self) -> CombatResult:
@@ -151,8 +151,11 @@ class CombatOutcomeSystem(ExecuteProcessor):
         )
 
     ########################################################################################################################################################################
-    def _broadcast_result_to_party_members(self, result: CombatResult) -> None:
-        """向当前场景内所有 PartyMemberComponent 实体写入胜/败通知，并附带 combat_outcome 参数。"""
+    def _notify_combat_result(self, result: CombatResult) -> None:
+        """向当前场景内所有参战者（含怪物）写入胜/败通知，附带 combat_outcome 参数。
+
+        文本按各自阵营视角生成：队伍看 `CombatResult`，怪物看其反面。
+        """
 
         player_entity = self._game.get_player_entity()
         assert player_entity is not None, "Player entity should not be None."
@@ -166,32 +169,20 @@ class CombatOutcomeSystem(ExecuteProcessor):
         assert len(actors_in_stage) > 0, f"entities with actions: {actors_in_stage}"
 
         for entity in actors_in_stage:
-
-            # 仅向队伍成员广播结果消息，非队伍成员（如敌人）不发送
-            if not entity.has(PartyMemberComponent):
-                continue
-
-            # 根据战斗结果发送不同的消息内容，附带当前战斗场景名称作为 combat_outcome 参数
-            if result == CombatResult.WIN:
-                self._game.add_human_message(
-                    entity,
-                    HumanMessage(
-                        content=_build_combat_result_notification(
-                            combat_stage_entity.name, True
-                        ),
-                        combat_outcome=combat_stage_entity.name,
+            is_victory = (
+                result == CombatResult.WIN
+                if entity.has(PartyMemberComponent)
+                else result == CombatResult.LOSE
+            )
+            self._game.add_human_message(
+                entity,
+                HumanMessage(
+                    content=_build_combat_result_notification(
+                        combat_stage_entity.name, is_victory
                     ),
-                )
-            elif result == CombatResult.LOSE:
-                self._game.add_human_message(
-                    entity,
-                    HumanMessage(
-                        content=_build_combat_result_notification(
-                            combat_stage_entity.name, False
-                        ),
-                        combat_outcome=combat_stage_entity.name,
-                    ),
-                )
+                    combat_outcome=combat_stage_entity.name,
+                ),
+            )
 
     ########################################################################################################################################################################
     def _count_available_cards(self, entity: Entity) -> int:

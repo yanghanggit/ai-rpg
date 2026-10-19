@@ -455,3 +455,59 @@ class TestExecute:
     #     await system.execute()
 
     #     assert call_order.index("clear") < call_order.index("broadcast")
+
+
+# ---------------------------------------------------------------------------
+# TestCombatOutcomeNotice — 胜负通知的阵营视角
+# ---------------------------------------------------------------------------
+
+
+class TestCombatOutcomeNotice:
+    """胜负通知发给全部参战者，文本按各自视角生成。"""
+
+    def _setup(self, mock_game: MagicMock, actors: set[Entity]) -> None:
+        mock_game.get_player_entity.return_value = MagicMock()
+        mock_game.resolve_stage_entity.return_value = MagicMock(name="测试场景")
+        mock_game.resolve_stage_entity.return_value.name = "测试场景"
+        mock_game.get_actors_in_stage.return_value = actors
+
+    async def _collect(
+        self,
+        context: Context,
+        mock_game: MagicMock,
+        system: CombatOutcomeSystem,
+        actors: set[Entity],
+    ) -> dict[str, str]:
+        self._setup(mock_game, actors)
+        await system.execute()
+        return {
+            call.args[0].name: call.args[1].content
+            for call in mock_game.add_human_message.call_args_list
+        }
+
+    @pytest.mark.asyncio
+    async def test_win_gives_party_victory_and_monster_defeat(
+        self, context: Context, mock_game: MagicMock, system: CombatOutcomeSystem
+    ) -> None:
+        """队伍全胜：友方读「胜利」，怪物读「失败」，两侧都带 combat_outcome。"""
+        ally = _make_actor(context, "英雄", is_ally=True)
+        dead_monster = _make_actor(context, "哥布林", is_monster=True, is_dead=True)
+        contents = await self._collect(context, mock_game, system, {ally, dead_monster})
+
+        assert "战斗胜利" in contents["英雄"]
+        assert "战斗失败" in contents["哥布林"]
+
+        for call in mock_game.add_human_message.call_args_list:
+            assert call.args[1].combat_outcome == "测试场景"
+
+    @pytest.mark.asyncio
+    async def test_lose_gives_party_defeat_and_monster_victory(
+        self, context: Context, mock_game: MagicMock, system: CombatOutcomeSystem
+    ) -> None:
+        """队伍全灭：友方读「失败」，怪物读「胜利」。"""
+        dead_ally = _make_actor(context, "英雄", is_ally=True, is_dead=True)
+        monster = _make_actor(context, "哥布林", is_monster=True)
+        contents = await self._collect(context, mock_game, system, {dead_ally, monster})
+
+        assert "战斗失败" in contents["英雄"]
+        assert "战斗胜利" in contents["哥布林"]

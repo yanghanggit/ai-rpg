@@ -97,6 +97,16 @@ async def test_pick_moves_card_from_cards_to_claimed(
     assert spoils.claimed_cards == [cards[1]]
     assert deck.cards == [cards[1]]
 
+    # 牌库变化要写给本人（不广播）：一条带 spoils_pick 标记的自我状态说明
+    mock_game.add_human_message.assert_called_once()
+    kwargs = mock_game.add_human_message.call_args.kwargs
+    assert kwargs["entity"] is actor
+    message = kwargs["human_message"]
+    assert message.content.startswith("# 你收下了战利品")
+    assert "格挡" in message.content
+    assert "当前共 1 张" in message.content
+    assert message.spoils_pick == "格挡"
+
 
 async def test_pick_rejected_when_already_claimed(
     context: Context, mock_game: MagicMock, system: PickSpoilsActionSystem

@@ -8,12 +8,26 @@ from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..models import (
     ActorComponent,
+    Card,
     DeathComponent,
     DeckComponent,
+    HumanMessage,
     PickSpoilsAction,
     SpoilRewardKind,
     SpoilsComponent,
 )
+from ..utils import prompt_builder
+
+
+#######################################################################################################################################
+@prompt_builder
+def _build_pick_spoils_message(card: Card, deck_size: int) -> str:
+    """生成「领取了什么」的自我状态说明（只写给本人，不广播）。"""
+    return (
+        f"# 你收下了战利品\n"
+        f"你从战利品中取走了「{card.name}」：{card.description}\n"
+        f"它已加入你的牌库（当前共 {deck_size} 张）。"
+    )
 
 
 #######################################################################################################################################
@@ -78,6 +92,17 @@ class PickSpoilsActionSystem(ReactiveProcessor):
 
             # 落盘：cards 少一张、claimed 多一张
             entity.replace(SpoilsComponent, entity.name, remaining_cards, claimed_cards)
+
+            # 让本人知道牌库变了：只写给自己（领取是私人动作，不对外广播）
+            self._game.add_human_message(
+                entity=entity,
+                human_message=HumanMessage(
+                    content=_build_pick_spoils_message(
+                        action.card, len(deck_comp.cards)
+                    ),
+                    spoils_pick=action.card.name,
+                ),
+            )
 
             logger.info(
                 f"[PickSpoilsActionSystem] {entity.name} 已从 Spoils 领取"

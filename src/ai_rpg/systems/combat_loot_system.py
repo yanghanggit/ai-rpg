@@ -111,6 +111,17 @@ def _build_loot_prompt(
 
 
 #######################################################################################################################################
+@prompt_builder
+def _build_loot_message(loot_items: List[AnyItem]) -> str:
+    """生成「你获得了什么」的自我状态说明（只写给本人，不广播）。"""
+    lines = ["# 你的战利品", "战斗结束后，你收集到了："]
+    lines.extend(
+        f"- {item.name} ×{item.count}：{item.description}" for item in loot_items
+    )
+    return "\n".join(lines)
+
+
+#######################################################################################################################################
 @final
 class CombatLootSystem(ExecuteProcessor):
     """战斗掉落系统（仿怪物猎人机制）。"""
@@ -159,6 +170,20 @@ class CombatLootSystem(ExecuteProcessor):
             f"[CombatLootSystem] 掉落完成，共 {len(loot_items)} 件战利品写入 LootComponent"
         )
 
+        # 让玩家知道自己拿到什么：只写给本人（战利品尚未领取，不对外广播）
+        if loot_items:
+            stage_entity = self._game.resolve_stage_entity(player_entity)
+            assert (
+                stage_entity is not None
+            ), "CombatLootSystem: 无法找到玩家所在场景实体"
+            self._game.add_human_message(
+                entity=player_entity,
+                human_message=HumanMessage(
+                    content=_build_loot_message(loot_items),
+                    combat_loot=stage_entity.name,
+                ),
+            )
+
     #######################################################################################################################################
     def _record_loot_memory(self, monster: Entity, client: DeepSeekClient) -> None:
         """把掉落推理写回怪物记忆（human = 请求原文，ai = 回包原文）。
@@ -187,17 +212,17 @@ class CombatLootSystem(ExecuteProcessor):
         assert player_entity is not None
 
         stage_entity = self._game.resolve_stage_entity(player_entity)
-        stage_name = stage_entity.name if stage_entity is not None else "未知场景"
+        assert stage_entity is not None, "CombatLootSystem: 无法找到玩家所在场景实体"
+        stage_name = stage_entity.name
 
-        appearance = (
-            monster.get(AppearanceComponent).appearance
-            if monster.has(AppearanceComponent)
-            else monster.name
-        )
+        appearance_comp = monster.get(AppearanceComponent)
+        assert (
+            appearance_comp is not None
+        ), f"CombatLootSystem: 怪物 {monster.name} 缺少 AppearanceComponent"
         return DeepSeekClient(
             label=monster.name,
             input_message=_build_loot_prompt(
-                monster.name, appearance, stage_name, total_rounds
+                monster.name, appearance_comp.appearance, stage_name, total_rounds
             ),
             messages=self._game.get_agent_memory(monster).messages,
         )

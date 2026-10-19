@@ -61,7 +61,9 @@ def _make_game(context: Context, monsters: List[Entity], player: Entity) -> Magi
     game.get_player_entity.return_value = player
     game.get_actors_in_stage.return_value = monsters
     game.get_agent_memory.return_value = MagicMock(messages=[])
-    game.resolve_stage_entity.return_value = None
+    stage = MagicMock()
+    stage.name = "场景.河湾芦苇丛"
+    game.resolve_stage_entity.return_value = stage
     return game
 
 
@@ -82,10 +84,14 @@ class TestLootMemory:
         with patch(f"{_MODULE}.batch_chat", side_effect=fake_batch_chat):
             await system.execute()
 
-        # human：请求原文 + 结构化标记
-        game.add_human_message.assert_called_once()
-        kwargs = game.add_human_message.call_args.kwargs
-        assert kwargs["entity"] is monster
+        # human：怪物侧记请求原文 + 结构化标记
+        monster_calls = [
+            c
+            for c in game.add_human_message.call_args_list
+            if c.kwargs["entity"] is monster
+        ]
+        assert len(monster_calls) == 1
+        kwargs = monster_calls[0].kwargs
         assert kwargs["human_message"].combat_loot == monster.name
         assert "掉落" in kwargs["human_message"].content
 
@@ -101,6 +107,19 @@ class TestLootMemory:
             "材料.利爪",
         ]
 
+        # 玩家侧也留一条自我状态说明（只写给本人）
+        player_calls = [
+            c
+            for c in game.add_human_message.call_args_list
+            if c.kwargs["entity"] is player
+        ]
+        assert len(player_calls) == 1
+        loot_message = player_calls[0].kwargs["human_message"]
+        assert loot_message.content.startswith("# 你的战利品")
+        assert "材料.兽骨 ×2" in loot_message.content
+        assert "材料.利爪 ×1" in loot_message.content
+        assert loot_message.combat_loot == "场景.河湾芦苇丛"
+
     async def test_records_prompt_only_when_no_response(self, context: Context) -> None:
         """LLM 无回包时只记请求侧，不伪造 AI 回复（add_ai_message 会断言非空）。"""
         player = _make_player(context)
@@ -115,7 +134,7 @@ class TestLootMemory:
         with patch(f"{_MODULE}.batch_chat", side_effect=fake_batch_chat):
             await system.execute()
 
-        game.add_human_message.assert_called_once()
+        assert len(game.add_human_message.call_args_list) == 1  # 只有怪物侧请求
         game.add_ai_message.assert_not_called()
         assert player.get(LootComponent).items == []
 
@@ -131,3 +150,14 @@ class TestLootMemory:
 
         game.add_human_message.assert_not_called()
         game.add_ai_message.assert_not_called()
+
+    async def test_asserts_when_player_has_no_stage(self, context: Context) -> None:
+        """actor 与 stage 不允许脱离：缺失场景是断言失败，而不是降级空串。"""
+        player = _make_player(context)
+        monster = _make_monster(context, "怪物.渡口野狗")
+        game = _make_game(context, [monster], player)
+        game.resolve_stage_entity.return_value = None
+        system = CombatLootSystem(game)
+
+        with pytest.raises(AssertionError):
+            await system.execute()

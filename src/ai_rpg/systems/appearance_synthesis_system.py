@@ -9,9 +9,10 @@ from typing import Final, List, final, override
 
 from loguru import logger
 
+from ..deepseek import batch_complete
 from ..entitas import ExecuteProcessor, Matcher
 from ..game.dbg_game import DBGGame
-from ..llm import ChatClientProtocol, batch_chat
+from ..llm import ChatCompletionRequest, ChatCompletionResult
 from ..models import (
     ActorComponent,
     AppearanceComponent,
@@ -20,7 +21,7 @@ from ..models import (
 )
 from .appearance_prompt_builders import build_self_appearance_message
 from .appearance_synthesis_common import (
-    build_appearance_synthesis_client,
+    build_appearance_synthesis_request,
     parse_appearance_label,
     resolve_appearance_synthesis_entity,
 )
@@ -55,33 +56,28 @@ class AppearanceSynthesisSystem(ExecuteProcessor):
 
         world_entity = resolve_appearance_synthesis_entity(self._game)
 
-        chat_clients: List[ChatClientProtocol] = [
-            build_appearance_synthesis_client(self._game, world_entity, entity)
+        requests: List[ChatCompletionRequest] = [
+            build_appearance_synthesis_request(self._game, world_entity, entity)
             for entity in targets
         ]
 
-        await batch_chat(chat_clients)
-
-        for client in chat_clients:
-            self._apply_result(client)
+        for result in await batch_complete(requests):
+            self._apply_result(result)
 
     #######################################################################################################################################
-    def _apply_result(self, client: ChatClientProtocol) -> None:
-        """写回外观，并给本人补一条自我状态说明（不广播）。
-
-        入参按协议标注：只需 label / response_ai_message / response_content。
-        """
-        if client.response_ai_message is None:
-            logger.warning(f"AppearanceSynthesisSystem: {client.label} 未返回消息")
+    def _apply_result(self, result: ChatCompletionResult) -> None:
+        """写回外观，并给本人补一条自我状态说明（不广播）。"""
+        if result.ai_message is None:
+            logger.warning(f"AppearanceSynthesisSystem: {result.label} 未返回消息")
             return
 
-        new_appearance = client.response_content.strip()
+        new_appearance = result.content.strip()
         if new_appearance == "":
-            logger.warning(f"AppearanceSynthesisSystem: {client.label} 返回空外观")
+            logger.warning(f"AppearanceSynthesisSystem: {result.label} 返回空外观")
             return
 
         # label 是「世界.外观合成|角色.名」：回写落在服务对象（actor）身上。
-        _, actor_name = parse_appearance_label(client.label)
+        _, actor_name = parse_appearance_label(result.label)
         entity = self._game.get_entity_by_name(actor_name)
         assert entity is not None, f"AppearanceSynthesisSystem: 找不到实体 {actor_name}"
 

@@ -9,10 +9,10 @@ from typing import Dict, Final, List, final
 from loguru import logger
 from overrides import override
 
-from ..deepseek import DeepSeekClient
+from ..deepseek import batch_complete
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
-from ..llm import ChatClientProtocol, batch_chat
+from ..llm import ChatCompletionRequest, ChatCompletionResult
 from ..models import CompactContextAction, HumanMessage, get_buffer_string
 from .context_compaction_prompt_builders import build_compaction_prompt
 
@@ -40,7 +40,7 @@ class CompactContextActionSystem(ReactiveProcessor):
     @override
     async def react(self, entities: List[Entity]) -> None:
         # 仅保留存在可压缩内容（除首条 system 外还有消息）的实体
-        chat_clients: List[ChatClientProtocol] = []
+        requests: List[ChatCompletionRequest] = []
         for entity in entities:
             memory = self._game.get_agent_memory(entity)
             if len(memory.messages) <= 1:
@@ -49,31 +49,31 @@ class CompactContextActionSystem(ReactiveProcessor):
                 )
                 continue
 
-            chat_clients.append(
-                DeepSeekClient(
+            requests.append(
+                ChatCompletionRequest(
                     label=memory.name,
                     input_message=build_compaction_prompt(),
                     messages=memory.messages,
                 )
             )
 
-        if not chat_clients:
+        if not requests:
             return
 
         # 并发压缩
-        await batch_chat(clients=chat_clients)
+        results: List[ChatCompletionResult] = await batch_complete(requests)
 
         # 逐 agent 写回摘要并重置上下文占比
-        for chat_client in chat_clients:
-            summary = chat_client.response_content.strip()
+        for result in results:
+            summary = result.content.strip()
             if not summary:
                 logger.warning(
-                    f"CompactContextActionSystem: 压缩摘要为空，name={chat_client.label}"
+                    f"CompactContextActionSystem: 压缩摘要为空，name={result.label}"
                 )
                 continue
 
-            target_entity = self._game.get_entity_by_name(chat_client.label)
-            assert target_entity is not None, f"无法找到实体：{chat_client.label}"
+            target_entity = self._game.get_entity_by_name(result.label)
+            assert target_entity is not None, f"无法找到实体：{result.label}"
 
             # 提取被压缩的原始历史为整字符串，附在摘要消息上留痕
             agent_memory = self._game.get_agent_memory(target_entity)
@@ -87,8 +87,6 @@ class CompactContextActionSystem(ReactiveProcessor):
                     context_compaction=target_entity.name,
                 ),
             )
-            logger.debug(
-                f"CompactContextActionSystem: 已压缩 {chat_client.label} 的记忆"
-            )
+            logger.debug(f"CompactContextActionSystem: 已压缩 {result.label} 的记忆")
 
     #######################################################################################################################################

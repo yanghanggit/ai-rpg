@@ -21,7 +21,7 @@ from ai_rpg.models import (
     WornCostumeComponent,
 )
 from ai_rpg.systems.appearance_synthesis_common import (
-    build_appearance_synthesis_client,
+    build_appearance_synthesis_request,
     make_appearance_label,
     parse_appearance_label,
     resolve_appearance_synthesis_entity,
@@ -126,11 +126,11 @@ class TestLabel:
 
 
 # ---------------------------------------------------------------------------
-# Tests — build_appearance_synthesis_client
+# Tests — build_appearance_synthesis_request
 # ---------------------------------------------------------------------------
 
 
-class TestBuildClient:
+class TestBuildRequest:
     def test_prompt_contains_base_body_and_costume_info(
         self, context: Context, mock_game: MagicMock
     ) -> None:
@@ -138,12 +138,12 @@ class TestBuildClient:
         world = _make_world_entity(context)
         entity = _make_actor_entity(context, "英雄", _BASE_BODY)
 
-        client = build_appearance_synthesis_client(mock_game, world, entity)
+        request = build_appearance_synthesis_request(mock_game, world, entity)
 
-        assert client.label == "世界.外观合成|英雄"
-        assert _BASE_BODY in client.input_message
-        assert _COSTUME.name in client.input_message
-        assert _COSTUME.description in client.input_message
+        assert request.label == "世界.外观合成|英雄"
+        assert _BASE_BODY in request.input_message
+        assert _COSTUME.name in request.input_message
+        assert _COSTUME.description in request.input_message
 
     def test_context_is_only_world_system_prompt(
         self, context: Context, mock_game: MagicMock
@@ -152,11 +152,11 @@ class TestBuildClient:
         world = _make_world_entity(context)
         entity = _make_actor_entity(context, "英雄", _BASE_BODY)
 
-        client = build_appearance_synthesis_client(mock_game, world, entity)
+        request = build_appearance_synthesis_request(mock_game, world, entity)
 
-        assert len(client.messages) == 1
-        assert isinstance(client.messages[0], SystemMessage)
-        assert client.messages[0].content == _WORLD_SYSTEM_PROMPT
+        assert len(request.messages) == 1
+        assert isinstance(request.messages[0], SystemMessage)
+        assert request.messages[0].content == _WORLD_SYSTEM_PROMPT
         # 角色记忆参与了构造过程吗？只允许读世界实体的记忆。
         mock_game.get_agent_memory.assert_called_once_with(world)
 
@@ -168,7 +168,7 @@ class TestBuildClient:
         mock_game.get_agent_memory.return_value = MagicMock(messages=[])
 
         with pytest.raises(AssertionError):
-            build_appearance_synthesis_client(mock_game, world, entity)
+            build_appearance_synthesis_request(mock_game, world, entity)
 
 
 # ---------------------------------------------------------------------------

@@ -4,9 +4,10 @@ from typing import Dict, Final, List, final, override
 
 from loguru import logger
 
-from ..deepseek import DeepSeekClient
+from ..deepseek import DEEPSEEK_SERVICE, DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
+from ..llm import ChatCompletionRequest
 from ..models import (
     AIMessage,
     DungeonDraft,
@@ -68,25 +69,25 @@ class GenerateDungeonDirectiveSystem(ReactiveProcessor):
 
         # 2. 让世界导演推理一次
         prompt = _build_directive_prompt()
-        client = DeepSeekClient(
+        request = ChatCompletionRequest(
             label=director_entity.name,
             input_message=prompt,
             messages=self._game.get_agent_memory(director_entity).messages,
             model=DeepSeekClient.MODEL_FLASH,
             # thinking=False,
         )
-        await client.chat()
+        result = await DEEPSEEK_SERVICE.complete(request)
 
         # 默认指令为空，防止世界导演未返回时流程中断
         directive = ""
 
         # 3. 检查世界导演是否返回指令
-        if client.response_ai_message is None:
+        if result.ai_message is None:
             logger.warning(
                 "[GenerateDungeonDirectiveSystem] 世界导演未返回指令，跳过注入"
             )
         else:
-            directive = client.response_ai_message.content
+            directive = result.ai_message.content
             logger.info(
                 f"[GenerateDungeonDirectiveSystem] 世界导演创作指令:\n{directive}"
             )

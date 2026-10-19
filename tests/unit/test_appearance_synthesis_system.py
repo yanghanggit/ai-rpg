@@ -10,10 +10,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from ai_rpg.deepseek import DeepSeekClient
 from ai_rpg.entitas.context import Context
 from ai_rpg.entitas.entity import Entity
 from ai_rpg.game.dbg_game import DBGGame
+from ai_rpg.llm import ChatCompletionRequest, ChatCompletionResult
 from ai_rpg.models import (
     ActorComponent,
     AIMessage,
@@ -58,13 +58,20 @@ def _make_world_entity(context: Context) -> Entity:
     return entity
 
 
-def _make_mock_chat_client(name: str, response_content: str) -> MagicMock:
-    """构建一个模拟 LLM 已响应的 DeepSeekClient（label 用真实复合格式）。"""
-    client = MagicMock()
-    client.label = make_appearance_label("世界.外观合成", name)
-    client.response_content = response_content
-    client.response_ai_message = AIMessage(content=response_content)
-    return client
+def _make_request(name: str) -> ChatCompletionRequest:
+    """外观合成的请求 label 用真实复合格式（世界实体|角色）。"""
+    return ChatCompletionRequest(
+        label=make_appearance_label("世界.外观合成", name),
+        input_message="p",
+        messages=[],
+    )
+
+
+def _make_mock_result(name: str, response_content: str) -> ChatCompletionResult:
+    """构建一个模拟 LLM 已响应的结果（label 用真实复合格式）。"""
+    return ChatCompletionResult(
+        request=_make_request(name), ai_message=AIMessage(content=response_content)
+    )
 
 
 def _group_mock(entities: List[Entity]) -> MagicMock:
@@ -109,7 +116,7 @@ class TestApplyResult:
         entity = _make_actor_entity(context, "英雄", _BASE_BODY)
         mock_game.get_entity_by_name.return_value = entity
 
-        system._apply_result(_make_mock_chat_client("英雄", "  穿着铁甲的战士  "))
+        system._apply_result(_make_mock_result("英雄", "  穿着铁甲的战士  "))
 
         assert entity.get(AppearanceComponent).appearance == "穿着铁甲的战士"
 
@@ -120,7 +127,7 @@ class TestApplyResult:
         entity = _make_actor_entity(context, "英雄", _BASE_BODY)
         mock_game.get_entity_by_name.return_value = entity
 
-        system._apply_result(_make_mock_chat_client("英雄", "穿着铁甲的战士"))
+        system._apply_result(_make_mock_result("英雄", "穿着铁甲的战士"))
 
         mock_game.add_ai_message.assert_not_called()
         mock_game.add_human_message.assert_called_once()
@@ -138,11 +145,9 @@ class TestApplyResult:
         """LLM 未返回消息时，外观保持原状。"""
         entity = _make_actor_entity(context, "英雄", _BASE_BODY)
         mock_game.get_entity_by_name.return_value = entity
-        client = MagicMock()
-        client.label = "英雄"
-        client.response_ai_message = None
+        result = ChatCompletionResult(request=_make_request("英雄"), ai_message=None)
 
-        system._apply_result(client)
+        system._apply_result(result)
 
         assert entity.get(AppearanceComponent).appearance == _BASE_BODY
 
@@ -153,7 +158,7 @@ class TestApplyResult:
         entity = _make_actor_entity(context, "英雄", _BASE_BODY)
         mock_game.get_entity_by_name.return_value = entity
 
-        system._apply_result(_make_mock_chat_client("英雄", "   "))
+        system._apply_result(_make_mock_result("英雄", "   "))
 
         assert entity.get(AppearanceComponent).appearance == _BASE_BODY
 
@@ -164,10 +169,10 @@ class TestApplyResult:
 
 
 class TestExecute:
-    async def test_only_uninitialized_actors_sent_to_batch_chat(
+    async def test_only_uninitialized_actors_sent_to_batch_complete(
         self, context: Context, mock_game: MagicMock, system: AppearanceSynthesisSystem
     ) -> None:
-        """appearance == base_body 的角色应被送入 batch_chat；已合成的排除。"""
+        """appearance == base_body 的角色应被送入 batch_complete；已合成的排除。"""
         world = _make_world_entity(context)
         target = _make_actor_entity(context, "英雄", _BASE_BODY)
         initialized = _make_actor_entity(context, "法师", "已合成的法师外观")
@@ -178,12 +183,12 @@ class TestExecute:
         ]
 
         with patch(
-            "ai_rpg.systems.appearance_synthesis_system.batch_chat",
+            "ai_rpg.systems.appearance_synthesis_system.batch_complete",
         ) as mock_batch:
             await system.execute()
 
         # label 是「主体|服务对象」：批量请求按角色去重，主体恒为世界实体
-        sent_labels = {client.label for client in mock_batch.call_args[0][0]}
+        sent_labels = {request.label for request in mock_batch.call_args[0][0]}
         assert sent_labels == {"世界.外观合成|英雄"}
 
     async def test_execute_updates_appearance_end_to_end(
@@ -202,13 +207,19 @@ class TestExecute:
             "法师": initialized,
         }.get(name)
 
-        async def fake_batch_chat(clients: List[DeepSeekClient]) -> None:
-            for client in clients:
-                client._response_ai_message = AIMessage(content="穿着铁甲的战士")
+        async def fake_batch_complete(
+            requests: List[ChatCompletionRequest],
+        ) -> List[ChatCompletionResult]:
+            return [
+                ChatCompletionResult(
+                    request=request, ai_message=AIMessage(content="穿着铁甲的战士")
+                )
+                for request in requests
+            ]
 
         with patch(
-            "ai_rpg.systems.appearance_synthesis_system.batch_chat",
-            side_effect=fake_batch_chat,
+            "ai_rpg.systems.appearance_synthesis_system.batch_complete",
+            side_effect=fake_batch_complete,
         ):
             await system.execute()
 
@@ -231,7 +242,7 @@ class TestExecute:
         ]
 
         with patch(
-            "ai_rpg.systems.appearance_synthesis_system.batch_chat",
+            "ai_rpg.systems.appearance_synthesis_system.batch_complete",
         ) as mock_batch:
             with pytest.raises(AssertionError, match="外观合成世界实体数量异常"):
                 await system.execute()

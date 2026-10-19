@@ -5,9 +5,10 @@ from typing import Dict, Final, List, final, override
 from loguru import logger
 from pydantic import BaseModel, field_validator
 
-from ..deepseek import DeepSeekClient
+from ..deepseek import DEEPSEEK_SERVICE
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
+from ..llm import ChatCompletionRequest
 from ..models import (
     AnnounceAction,
     PlayerAuditComponent,
@@ -169,7 +170,7 @@ class PlayerActionAuditSystem(ReactiveProcessor):
         ), "审计世界实体AI记忆的第一条消息必须是SystemMessage类型"
 
         # 创建AI审核请求（使用审计世界实体的system prompt）
-        chat_client = DeepSeekClient(
+        request = ChatCompletionRequest(
             label=world_entity.name,
             input_message=prompt,
             messages=[agent_memory.messages[0]],
@@ -177,15 +178,21 @@ class PlayerActionAuditSystem(ReactiveProcessor):
 
         # 发送审核请求；出错时默认拒绝，保证安全性
         try:
-            await chat_client.chat()
+            result = await DEEPSEEK_SERVICE.complete(request)
         except Exception as e:
             logger.error(f"AI审核过程出错: {e}")
             logger.warning("玩家输入未通过AI审核: 审核系统异常,请稍后重试")
             self._remove_all_actions(entity)
             return
 
+        if result.error is not None:
+            logger.error(f"AI审核过程出错: {result.error}")
+            logger.warning("玩家输入未通过AI审核: 审核系统异常,请稍后重试")
+            self._remove_all_actions(entity)
+            return
+
         # 解析AI响应；解析失败时默认拒绝，保证安全性
-        response_content = chat_client.response_content
+        response_content = result.content
         logger.debug(f"AI审核响应: {response_content}")
 
         try:

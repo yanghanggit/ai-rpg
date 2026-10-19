@@ -1,14 +1,13 @@
 """通用 agentic 循环工具函数（provider 无关）。
 
-本模块**不得** import `ai_rpg.deepseek`：它只依赖 `ChatClientProtocol` /
-`ChatClientFactory`，因此换任何 provider 都不用改这里。
+本模块**不得** import `ai_rpg.deepseek`：它只依赖值对象（`ChatCompletionRequest` /
+`ChatCompletionResult`）与 `ChatCompletionService`，因此换任何 provider 都不用改这里。
 
-为什么需要 `create_client` 注入
-------------------------------
-循环每一轮都要新建一个「一次性」client（请求态与响应态都挂在 client 上），
-但抽象层不知道 provider 的构造方式。因此把「造 client」这件事作为
-`ChatClientFactory` 参数注入：业务侧传具体实现（如 `DeepSeekClient`），
-`ai_rpg.deepseek.agent_loop` 则提供「已绑定 DeepSeek」的同名入口（组合点只有一处）。
+为什么需要 `service` 注入
+------------------------
+抽象层不知道 provider 是谁。循环只依赖 `ChatCompletionService`（无状态的
+「执行一次请求」能力），具体实现由调用方注入；`ai_rpg.deepseek.agent_loop`
+提供「已绑定 DeepSeek」的同名入口，作为全项目唯一的组合点。
 """
 
 import inspect
@@ -28,8 +27,13 @@ from typing import (
 from loguru import logger
 
 from ..models import ChatMessage, HumanMessage, ToolMessage
-from .protocol import ChatClientFactory, ChatClientProtocol
-from .types import ToolChoice, ToolDefinition
+from .protocol import ChatCompletionService
+from .types import (
+    ChatCompletionRequest,
+    ChatCompletionResult,
+    ToolChoice,
+    ToolDefinition,
+)
 
 #######################################################################################################################################
 # loop 边界标记约定：起点 HumanMessage 携带 loop_id，本次 loop 追加的最后一条消息携带 loop_id_end。
@@ -43,13 +47,12 @@ LOOP_END_ATTR: Final[str] = "loop_id_end"
 class AgentLoopRound:
     """agent_loop 单轮的产物快照。
 
-    - client: 本轮用于通讯的 client（按 ``ChatClientProtocol`` 标注），可读取
-      finish_reason / tool_calls / usage / error 等「响应侧」信息。注意其
-      messages 是共享 history 的引用，并非本轮快照；历史增量请看 ``appended``。
+    - completion: 本轮拿到的 `ChatCompletionResult`（finish_reason / tool_calls /
+      usage / error），其 ``request`` 里带着本轮实际发出的 prompt 与历史引用。
     - appended: 本轮向 history 追加的消息引用列表（按追加顺序）。
     """
 
-    client: ChatClientProtocol
+    completion: ChatCompletionResult
     appended: List[ChatMessage]
 
 
@@ -65,7 +68,7 @@ class AgentLoopResult:
     - 改动范围：``messages[start_index:end_index]``（``messages`` 即 ``result.messages``）
     - 起点消息：``start_message``（本次 loop 追加的首条 HumanMessage；continuation
       模式未追加人类消息时为 None）
-    - 中间过程：``rounds``（每轮的 client 与消息增量）
+    - 中间过程：``rounds``（每轮的 completion 与消息增量）
 
     ``messages`` 为本次 loop 实际操作的列表：``mutate_messages=True`` 时就是入参本身，
     ``False`` 时是入参的浅拷贝。
@@ -107,10 +110,12 @@ class _LoopSpanTracker:
         self._history.append(HumanMessage(content=content, **extras))
 
     ###################################################################################################################################
-    def record_round(self, client: ChatClientProtocol, round_start: int) -> None:
-        """记录本轮：client 快照 + 本轮追加进 history 的消息引用。"""
+    def record_round(self, completion: ChatCompletionResult, round_start: int) -> None:
+        """记录本轮：completion 快照 + 本轮追加进 history 的消息引用。"""
         self.rounds.append(
-            AgentLoopRound(client=client, appended=list(self._history[round_start:]))
+            AgentLoopRound(
+                completion=completion, appended=list(self._history[round_start:])
+            )
         )
 
     ###################################################################################################################################
@@ -169,7 +174,7 @@ async def agent_loop(
     input_metadata: Optional[Dict[str, Any]] = None,
     loop_id: Optional[str] = None,
     *,
-    create_client: ChatClientFactory,
+    service: ChatCompletionService,
 ) -> AgentLoopResult:
     """通用 agentic 循环：驱动 LLM 与工具交互，直到 LLM 主动 stop、调用 terminal_tools 中任一或达到最大轮次。
 
@@ -187,9 +192,9 @@ async def agent_loop(
       路径也会补打终点标记），使外部可用 ``models.messages.find_marked_span``
       （``start_attr=LOOP_ID_ATTR``，``end_attr=LOOP_END_ATTR``）在存档记忆中反查边界。
 
-    ``create_client`` 是必填的关键字参数：每轮循环都用它新建一个 client，传入的
-    形参（label / input_message / messages / tools / tool_choice / thinking）与
-    `ChatClientFactory` 一致。抽象层不持有任何 provider 知识，绑定由调用方完成。
+    ``service`` 是必填的关键字参数：循环只依赖「执行一次请求」这一能力，
+    provider 由调用方决定。每轮构造一个 `ChatCompletionRequest`（label / input_message /
+    messages / tools / tool_choice / thinking），不产生任何有状态对象。
 
     ``mutate_messages``（默认 True）控制是否原地修改入参 ``messages``：为 False 时
     在入参的浅拷贝上工作，调用方列表与持久记忆不被改动（注意这不等同于上下文隔离，
@@ -214,10 +219,9 @@ async def agent_loop(
 
             round_start = len(history)
 
-            # 新建本轮 client（provider 由调用方注入），传入当前轮次的输入消息、
-            # 消息历史、工具定义和工具选择策略。
-            # 纠偏重试轮强制 tool_choice="required"，逼迫 LLM 通过工具调用而非普通文本作答。
-            client = create_client(
+            # 本轮请求（值对象，不可变）：纠偏重试轮强制 tool_choice="required"，
+            # 逼迫 LLM 通过工具调用而非普通文本作答。
+            request = ChatCompletionRequest(
                 label=name,
                 input_message=current_prompt,
                 messages=history,
@@ -226,18 +230,15 @@ async def agent_loop(
                 thinking=thinking,
             )
 
-            # 发起 LLM 请求，捕获异常以防止整个循环崩溃
-            try:
+            # 发起 LLM 请求。预期内的通讯失败不会抛异常，而是落在 completion.error 上；
+            # 真正意外（bug / 取消）仍会抛出，由外层 BaseException 分支补打标记。
+            completion = await service.complete(request)
 
-                # 发起 LLM 请求，等待响应
-                await client.chat()
-
-            except Exception as e:
-
+            if completion.error is not None:
                 logger.error(
-                    f"[agent_loop:{name}] LLM 请求失败，第 {round_num} 轮，中止: {e}"
+                    f"[agent_loop:{name}] LLM 请求失败，第 {round_num} 轮，中止: {completion.error}"
                 )
-                tracker.record_round(client, round_start)
+                tracker.record_round(completion, round_start)
                 continue  # 继续下一轮，而不是中止整个循环
 
             # 首轮将输入消息追加进历史（后续轮次 current_prompt 已置空，走 continuation 模式）。
@@ -247,22 +248,22 @@ async def agent_loop(
                 current_prompt = ""
 
             # 无论 stop 还是 tool_calls，都先把本轮 AI 回复追加进历史，保证返回时历史完整
-            ai_message = client.response_ai_message
+            ai_message = completion.ai_message
             if ai_message is None:
                 logger.error(f"[agent_loop:{name}] LLM 回复消息为空，中止")
-                tracker.record_round(client, round_start)
+                tracker.record_round(completion, round_start)
                 return tracker.build_result(False)
 
             # 记录本轮 AI 回复的内容，便于调试
             history.append(ai_message)
 
             # 检查 LLM 的 finish_reason，决定下一步动作
-            if client.finish_reason == "stop":
+            if completion.finish_reason == "stop":
 
                 # 未声明终止工具：stop 即正常结束（保持原有语义）
                 if not terminal_tool_names:
                     logger.debug(f"[agent_loop:{name}] LLM stop，第 {round_num} 轮")
-                    tracker.record_round(client, round_start)
+                    tracker.record_round(completion, round_start)
                     return tracker.build_result(True)
 
                 # 声明了终止工具却直接 stop：视为未完成，注入纠偏提示并重试
@@ -271,7 +272,7 @@ async def agent_loop(
                     logger.error(
                         f"[agent_loop:{name}] LLM 连续 {max_terminal_nudges} 次未调用终止工具即停止，中止"
                     )
-                    tracker.record_round(client, round_start)
+                    tracker.record_round(completion, round_start)
                     return tracker.build_result(False)
 
                 # 注入纠偏提示，提示 LLM 必须调用终止工具
@@ -283,15 +284,15 @@ async def agent_loop(
                 history.append(
                     HumanMessage(content=_build_terminal_nudge(terminal_tools))
                 )
-                tracker.record_round(client, round_start)
+                tracker.record_round(completion, round_start)
                 continue
 
             # 如果 finish_reason 不是 "stop" 且不是 "tool_calls"，说明出现了意外情况，记录错误并中止
-            if client.finish_reason != "tool_calls" or not client.tool_calls:
+            if completion.finish_reason != "tool_calls" or not completion.tool_calls:
                 logger.error(
-                    f"[agent_loop:{name}] 意外的 finish_reason={client.finish_reason!r}，中止"
+                    f"[agent_loop:{name}] 意外的 finish_reason={completion.finish_reason!r}，中止"
                 )
-                tracker.record_round(client, round_start)
+                tracker.record_round(completion, round_start)
                 return tracker.build_result(False)
 
             # 遍历 LLM 的工具调用列表，依次处理每个工具调用，根据工具名称找到对应的处理函数并执行，捕获异常以防止整个循环崩溃
@@ -299,7 +300,7 @@ async def agent_loop(
             terminal_name: Optional[str] = None
 
             # 遍历本轮 LLM 的工具调用，依次处理每个工具调用
-            for tc in client.tool_calls:
+            for tc in completion.tool_calls:
 
                 # 根据工具调用的名称找到对应的处理函数，如果找不到则记录警告并返回错误信息，否则执行处理函数并捕获异常
                 handler = handlers.get(tc.function.name)
@@ -311,7 +312,7 @@ async def agent_loop(
                     logger.warning(
                         f"[agent_loop:{name}] 未知工具: {tc.function.name!r}"
                     )
-                    result = f"错误：未知工具 {tc.function.name!r}"
+                    tool_output = f"错误：未知工具 {tc.function.name!r}"
 
                 else:
 
@@ -320,11 +321,11 @@ async def agent_loop(
                         raw_result = handler(**json.loads(tc.function.arguments))
                         # 兼容 async handler：同步 handler 原样使用，异步 handler 在此 await
                         if inspect.isawaitable(raw_result):
-                            result = await raw_result
+                            tool_output = await raw_result
                         else:
-                            result = raw_result
+                            tool_output = raw_result
 
-                        # 工具调用成功，标记为 succeeded，result 已包含返回值
+                        # 工具调用成功，标记为 succeeded，tool_output 已包含返回值
                         succeeded = True
 
                     except Exception as e:
@@ -332,10 +333,10 @@ async def agent_loop(
                         logger.error(
                             f"[agent_loop:{name}] 工具 {tc.function.name!r} 执行失败: {e}\n  raw arguments: {tc.function.arguments!r}"
                         )
-                        result = f"错误：工具执行失败 {e}"
+                        tool_output = f"错误：工具执行失败 {e}"
 
                 # 将工具调用的结果添加到历史记录中，以便在下一轮继续使用
-                history.append(ToolMessage(content=result, tool_call_id=tc.id))
+                history.append(ToolMessage(content=tool_output, tool_call_id=tc.id))
 
                 # 只有真正执行成功的终止工具才结束循环；失败时错误已回写历史，进入下一轮让 LLM 重试。
                 # 本轮所有工具调用处理完毕后统一退出，避免同一回复中终止工具排在其它工具之前时遗漏后续工具。
@@ -343,7 +344,7 @@ async def agent_loop(
                     terminal_seen = True
                     terminal_name = tc.function.name
 
-            tracker.record_round(client, round_start)
+            tracker.record_round(completion, round_start)
 
             # 终止工具已执行：本轮其余工具调用也已处理完毕，提前结束循环
             if terminal_seen:

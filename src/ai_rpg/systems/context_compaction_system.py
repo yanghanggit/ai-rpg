@@ -5,10 +5,10 @@ from typing import Final, List, final
 from loguru import logger
 from overrides import override
 
-from ..deepseek import DeepSeekClient
+from ..deepseek import batch_complete
 from ..entitas import ExecuteProcessor
 from ..game.dbg_game import DBGGame
-from ..llm import ChatClientProtocol, batch_chat
+from ..llm import ChatCompletionRequest, ChatCompletionResult
 from ..models import HumanMessage, get_buffer_string
 from .context_compaction_prompt_builders import build_compaction_prompt
 
@@ -38,9 +38,9 @@ class ContextCompactionSystem(ExecuteProcessor):
         if not over_threshold:
             return
 
-        # 为每个超阈值 agent 创建压缩客户端（messages 传入当前完整记忆）
-        chat_clients: List[ChatClientProtocol] = [
-            DeepSeekClient(
+        # 为每个超阈值 agent 创建压缩请求（messages 传入当前完整记忆）
+        requests: List[ChatCompletionRequest] = [
+            ChatCompletionRequest(
                 label=memory.name,
                 input_message=build_compaction_prompt(),
                 messages=memory.messages,
@@ -49,19 +49,19 @@ class ContextCompactionSystem(ExecuteProcessor):
         ]
 
         # 并发压缩
-        await batch_chat(clients=chat_clients)
+        results: List[ChatCompletionResult] = await batch_complete(requests)
 
         # 逐 agent 写回摘要并重置上下文占比
-        for chat_client in chat_clients:
-            summary = chat_client.response_content.strip()
+        for result in results:
+            summary = result.content.strip()
             if not summary:
                 logger.warning(
-                    f"ContextCompactionSystem: 压缩摘要为空，name={chat_client.label}"
+                    f"ContextCompactionSystem: 压缩摘要为空，name={result.label}"
                 )
                 continue
 
-            entity = self._game.get_entity_by_name(chat_client.label)
-            assert entity is not None, f"无法找到实体：{chat_client.label}"
+            entity = self._game.get_entity_by_name(result.label)
+            assert entity is not None, f"无法找到实体：{result.label}"
 
             # 提取被压缩的原始历史为整字符串，附在摘要消息上留痕
             agent_memory = self._game.get_agent_memory(entity)
@@ -75,4 +75,4 @@ class ContextCompactionSystem(ExecuteProcessor):
                     context_compaction=entity.name,
                 ),
             )
-            logger.debug(f"ContextCompactionSystem: 已压缩 {chat_client.label} 的记忆")
+            logger.debug(f"ContextCompactionSystem: 已压缩 {result.label} 的记忆")

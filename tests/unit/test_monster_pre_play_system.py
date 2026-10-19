@@ -11,6 +11,7 @@ from typing import Any, List, cast
 import pytest
 
 from ai_rpg.entitas.entity import Entity
+from ai_rpg.llm import ChatCompletionRequest, ChatCompletionResult
 from ai_rpg.models import (
     ActorComponent,
     AIMessage,
@@ -115,11 +116,16 @@ async def _run(
     """打桩后跑一次决策，返回 (game, monster)。"""
     game, monster, opponent = scene
 
-    async def fake_batch(clients: List[Any]) -> None:
-        for client in clients:
-            client._response_ai_message = (
-                None if response == "" else AIMessage(content=response)
+    async def fake_batch(
+        requests: List[ChatCompletionRequest],
+    ) -> List[ChatCompletionResult]:
+        return [
+            ChatCompletionResult(
+                request=request,
+                ai_message=None if response == "" else AIMessage(content=response),
             )
+            for request in requests
+        ]
 
     mp.setattr(f"{_MODULE}.get_energy", lambda entity: energy)
     mp.setattr(
@@ -133,7 +139,7 @@ async def _run(
             resolve_error,
         ),
     )
-    mp.setattr(f"{_MODULE}.batch_chat", fake_batch)
+    mp.setattr(f"{_MODULE}.batch_complete", fake_batch)
     await MonsterPrePlaySystem(game).react([monster])
     return game, monster
 

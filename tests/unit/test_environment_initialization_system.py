@@ -14,6 +14,7 @@ from ai_rpg.deepseek import DeepSeekError
 from ai_rpg.entitas.context import Context
 from ai_rpg.entitas.entity import Entity
 from ai_rpg.game.dbg_game import DBGGame
+from ai_rpg.llm import ChatCompletionRequest, ChatCompletionResult
 from ai_rpg.models import (
     AIMessage,
     DungeonComponent,
@@ -46,10 +47,10 @@ def _fake_actor(*, is_player: bool = False) -> MagicMock:
     return actor
 
 
-def _fake_client(name: str) -> MagicMock:
-    client = MagicMock()
-    client.label = name
-    return client
+def _fake_request(name: str) -> MagicMock:
+    request = MagicMock(spec=ChatCompletionRequest)
+    request.label = name
+    return request
 
 
 # ---------------------------------------------------------------------------
@@ -100,18 +101,18 @@ class TestObservedStagesOnly:
             ),
             patch.object(
                 system,
-                "_build_client",
-                side_effect=lambda stage: _fake_client(stage.name),
+                "_build_request",
+                side_effect=lambda stage: _fake_request(stage.name),
             ),
             patch.object(system, "_process_environment_response"),
             patch(
-                "ai_rpg.systems.environment_initialization_system.batch_chat",
+                "ai_rpg.systems.environment_initialization_system.batch_complete",
                 new=AsyncMock(),
             ) as mock_batch,
         ):
             await system.execute()
 
-        sent_names = [c.label for c in mock_batch.call_args.kwargs["clients"]]
+        sent_names = [r.label for r in mock_batch.call_args.args[0]]
         assert sent_names == ["场景.酒馆"]
 
     @pytest.mark.asyncio
@@ -131,7 +132,7 @@ class TestObservedStagesOnly:
                 side_effect=lambda _game, _stage: {_fake_actor(), _fake_actor()},
             ),
             patch(
-                "ai_rpg.systems.environment_initialization_system.batch_chat",
+                "ai_rpg.systems.environment_initialization_system.batch_complete",
                 new=AsyncMock(),
             ) as mock_batch,
         ):
@@ -160,18 +161,18 @@ class TestObservedStagesOnly:
             ),
             patch.object(
                 system,
-                "_build_client",
-                side_effect=lambda stage: _fake_client(stage.name),
+                "_build_request",
+                side_effect=lambda stage: _fake_request(stage.name),
             ),
             patch.object(system, "_process_environment_response"),
             patch(
-                "ai_rpg.systems.environment_initialization_system.batch_chat",
+                "ai_rpg.systems.environment_initialization_system.batch_complete",
                 new=AsyncMock(),
             ) as mock_batch,
         ):
             await system.execute()
 
-        sent_names = [c.label for c in mock_batch.call_args.kwargs["clients"]]
+        sent_names = [r.label for r in mock_batch.call_args.args[0]]
         assert sent_names == ["副本.荒狼巢"]
 
     @pytest.mark.asyncio
@@ -192,7 +193,7 @@ class TestObservedStagesOnly:
                 return_value=set(),
             ),
             patch(
-                "ai_rpg.systems.environment_initialization_system.batch_chat",
+                "ai_rpg.systems.environment_initialization_system.batch_complete",
                 new=AsyncMock(),
             ) as mock_batch,
         ):
@@ -212,36 +213,37 @@ class TestFailureAccounting:
         """消费 batch 失败列表：成功场景写入组件，失败场景不写入且不再走 response 解析。"""
         ok = _make_stage(context, "场景.兽径入口")
         bad = _make_stage(context, "场景.佣兵公会")
-        # 用 list（而非 set）固定顺序，使 batch 返回的失败列表与 clients 对齐可预测
+        # 用 list（而非 set）固定顺序，使 batch 返回的结果与 requests 对齐可预测
         mock_game.get_group.return_value.entities = [ok, bad]
         mock_game.get_entity_by_name.side_effect = lambda n: {
             "场景.兽径入口": ok,
             "场景.佣兵公会": bad,
         }[n]
 
-        def _build(stage: Entity) -> MagicMock:
-            client = MagicMock()
-            client.label = stage.name
-            client.input_message = f"prompt:{stage.name}"
-            if stage is ok:
-                client.response_ai_message = AIMessage(content="松林窄径，泥泞湿冷")
-                client.response_content = "松林窄径，泥泞湿冷"
-            else:
-                client.response_ai_message = None
-                client.response_content = ""
-            return client
+        def _build(stage: Entity) -> ChatCompletionRequest:
+            return ChatCompletionRequest(
+                label=stage.name,
+                input_message=f"prompt:{stage.name}",
+                messages=[],
+            )
 
-        timeout = DeepSeekError("场景.佣兵公会", "timeout", kind="timeout")
+        ok_result = ChatCompletionResult(
+            request=_build(ok), ai_message=AIMessage(content="松林窄径，泥泞湿冷")
+        )
+        bad_result = ChatCompletionResult(
+            request=_build(bad),
+            error=DeepSeekError("场景.佣兵公会", "timeout", kind="timeout"),
+        )
 
         with (
             patch(
                 "ai_rpg.systems.environment_initialization_system.get_alive_actors_in_stage",
                 return_value={_fake_actor()},
             ),
-            patch.object(system, "_build_client", side_effect=_build),
+            patch.object(system, "_build_request", side_effect=_build),
             patch(
-                "ai_rpg.systems.environment_initialization_system.batch_chat",
-                new=AsyncMock(return_value=[None, timeout]),
+                "ai_rpg.systems.environment_initialization_system.batch_complete",
+                new=AsyncMock(return_value=[ok_result, bad_result]),
             ),
         ):
             await system.execute()

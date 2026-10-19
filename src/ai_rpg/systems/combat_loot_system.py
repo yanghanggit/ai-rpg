@@ -6,10 +6,10 @@ from loguru import logger
 from overrides import override
 from pydantic import BaseModel
 
-from ..deepseek import DeepSeekClient
+from ..deepseek import batch_complete
 from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.dbg_game import DBGGame
-from ..llm import ChatClientProtocol, batch_chat
+from ..llm import ChatCompletionRequest, ChatCompletionResult
 from ..models import (
     AnyItem,
     AppearanceComponent,
@@ -153,17 +153,19 @@ class CombatLootSystem(ExecuteProcessor):
             )
         )
 
-        # 为每头怪物创建 LLM 客户端并推理掉落，解析结果后写入玩家 LootComponent
-        clients = [self._create_loot_client(m) for m in monsters]
+        # 为每头怪物创建请求并推理掉落，解析结果后写入玩家 LootComponent
+        requests: List[ChatCompletionRequest] = [
+            self._create_loot_request(m) for m in monsters
+        ]
 
-        # 并行调用 LLM 推理所有怪物掉落
-        await batch_chat(clients=clients)
+        # 并行调用 LLM 推理所有怪物掉落（结果与 requests 同序）
+        results: List[ChatCompletionResult] = await batch_complete(requests)
 
         # 逐头记账：先留痕（与 MonsterPrePlaySystem 一致，写入 prompt 与 AI 原文），再解析掉落
         loot_items: List[AnyItem] = []
-        for monster, client in zip(monsters, clients):
-            self._record_loot_memory(monster, client)
-            loot_items.extend(self._parse_loot_item(client))
+        for monster, result in zip(monsters, results):
+            self._record_loot_memory(monster, result)
+            loot_items.extend(self._parse_loot_item(result))
 
         # 将掉落物写入玩家 LootComponent
         player_entity.replace(LootComponent, player_entity.name, loot_items)
@@ -186,7 +188,9 @@ class CombatLootSystem(ExecuteProcessor):
             )
 
     #######################################################################################################################################
-    def _record_loot_memory(self, monster: Entity, client: ChatClientProtocol) -> None:
+    def _record_loot_memory(
+        self, monster: Entity, result: ChatCompletionResult
+    ) -> None:
         """把掉落推理写回怪物记忆（human = 请求原文，ai = 回包原文）。
 
         怪物在战斗中所有以自己为主体的 LLM 推理（出牌决策 / 掉落）均留痕，
@@ -195,18 +199,18 @@ class CombatLootSystem(ExecuteProcessor):
         self._game.add_human_message(
             entity=monster,
             human_message=HumanMessage(
-                content=client.input_message,
+                content=result.request.input_message,
                 combat_loot_reasoning=monster.name,
             ),
         )
-        if client.response_ai_message is None:
+        if result.ai_message is None:
             logger.warning(f"[CombatLootSystem] {monster.name} 无 AI 回包，仅记录请求")
             return
-        self._game.add_ai_message(monster, client.response_ai_message)
+        self._game.add_ai_message(monster, result.ai_message)
 
     #######################################################################################################################################
-    def _create_loot_client(self, monster: Entity) -> DeepSeekClient:
-        """为单头怪物创建配置好的 DeepSeekClient，传入其消息历史。"""
+    def _create_loot_request(self, monster: Entity) -> ChatCompletionRequest:
+        """为单头怪物创建掉落推理请求，传入其消息历史。"""
         total_rounds = len(self._game.current_dungeon_combat_room.combat.rounds or [])
 
         player_entity = self._game.get_player_entity()
@@ -220,7 +224,7 @@ class CombatLootSystem(ExecuteProcessor):
         assert (
             appearance_comp is not None
         ), f"CombatLootSystem: 怪物 {monster.name} 缺少 AppearanceComponent"
-        return DeepSeekClient(
+        return ChatCompletionRequest(
             label=monster.name,
             input_message=_build_loot_prompt(
                 monster.name, appearance_comp.appearance, stage_name, total_rounds
@@ -229,23 +233,20 @@ class CombatLootSystem(ExecuteProcessor):
         )
 
     #######################################################################################################################################
-    def _parse_loot_item(self, client: ChatClientProtocol) -> List[AnyItem]:
-        """解析单头怪物的 LLM 响应，返回基础掉落与部位破坏额外掉落。
-
-        入参按协议标注：只需 label / response_content。
-        """
+    def _parse_loot_item(self, result: ChatCompletionResult) -> List[AnyItem]:
+        """解析单头怪物的 LLM 响应，返回基础掉落与部位破坏额外掉落。"""
         items: List[AnyItem] = []
 
-        if not client.response_content:
-            logger.error(f"[CombatLootSystem] {client.label} LLM 响应为空，跳过掉落")
+        if not result.content:
+            logger.error(f"[CombatLootSystem] {result.label} LLM 响应为空，跳过掉落")
             return items
 
         try:
-            json_str = extract_json(client.response_content)
+            json_str = extract_json(result.content)
             response = _MonsterLootResponse.model_validate_json(json_str)
         except Exception as e:
             logger.error(
-                f"[CombatLootSystem] 解析 {client.label} 掉落响应失败: {e}\n原始内容:\n{client.response_content}"
+                f"[CombatLootSystem] 解析 {result.label} 掉落响应失败: {e}\n原始内容:\n{result.content}"
             )
             return items
 
@@ -261,14 +262,14 @@ class CombatLootSystem(ExecuteProcessor):
                 )
             )
             logger.info(
-                f"[CombatLootSystem] {client.label} 基础掉落: {entry.name} x{entry.count}"
+                f"[CombatLootSystem] {result.label} 基础掉落: {entry.name} x{entry.count}"
             )
 
         # 部位破坏额外掉落
         for part in response.part_breaks:
             if not part.broken:
                 logger.debug(
-                    f"[CombatLootSystem] {client.label} 部位 [{part.part_name}] 未破坏，无额外掉落"
+                    f"[CombatLootSystem] {result.label} 部位 [{part.part_name}] 未破坏，无额外掉落"
                 )
                 continue
             for entry in part.materials:
@@ -282,7 +283,7 @@ class CombatLootSystem(ExecuteProcessor):
                     )
                 )
                 logger.info(
-                    f"[CombatLootSystem] {client.label} 部位破坏 [{part.part_name}] 额外掉落: {entry.name} x{entry.count}"
+                    f"[CombatLootSystem] {result.label} 部位破坏 [{part.part_name}] 额外掉落: {entry.name} x{entry.count}"
                 )
 
         return items

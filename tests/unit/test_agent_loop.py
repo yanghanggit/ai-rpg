@@ -9,6 +9,7 @@ import pytest
 from ai_rpg.deepseek import ToolDefinition, ToolFunction
 from ai_rpg.deepseek.agent_loop import agent_loop
 from ai_rpg.deepseek.client import ToolCall
+from ai_rpg.llm import ChatCompletionRequest, ChatCompletionResult
 from ai_rpg.models import AIMessage, ChatMessage, SystemMessage
 
 
@@ -41,8 +42,8 @@ def _build_ai_message(name: str, arguments: dict[str, Any]) -> AIMessage:
     )
 
 
-class _FakeClient:
-    """替身 DeepSeekClient：chat() 后暴露预设的响应。"""
+class _FakeService:
+    """替身 service：chat() 把预设响应包成 `ChatCompletionResult` 返回。"""
 
     def __init__(
         self,
@@ -51,12 +52,28 @@ class _FakeClient:
         tool_calls: list[ToolCall],
         **kwargs: Any,
     ) -> None:
-        self.response_ai_message = ai_message
+        self.ai_message = ai_message
         self.finish_reason = finish_reason
         self.tool_calls = tool_calls
 
-    async def chat(self, client: Any = None) -> None:
-        return None
+    async def complete(self, request: ChatCompletionRequest) -> ChatCompletionResult:
+        return ChatCompletionResult(
+            request=request,
+            ai_message=self.ai_message,
+            finish_reason=self.finish_reason,
+            tool_calls=tuple(self.tool_calls),
+        )
+
+
+class _FakeSequenceService:
+    """按顺序委托给预设替身（对应旧 mock 的 side_effect 列表）。"""
+
+    def __init__(self, responses: list[Any]) -> None:
+        self._responses = list(responses)
+
+    async def complete(self, request: ChatCompletionRequest) -> ChatCompletionResult:
+        response: ChatCompletionResult = await self._responses.pop(0).complete(request)
+        return response
 
 
 #######################################################################################################################################
@@ -77,8 +94,10 @@ async def test_async_handler_is_awaited_and_appended() -> None:
     ai_message = _build_ai_message("my_tool", {"value": "42"})
 
     messages: list[ChatMessage] = []
-    with patch("ai_rpg.deepseek.agent_loop.DeepSeekClient") as mock_client:
-        mock_client.return_value = _FakeClient(ai_message, "tool_calls", [tool_call])
+    with patch(
+        "ai_rpg.deepseek.agent_loop.DEEPSEEK_SERVICE",
+        _FakeService(ai_message, "tool_calls", [tool_call]),
+    ):
         ok = await agent_loop(
             name="test",
             input_message="go",
@@ -114,8 +133,10 @@ async def test_sync_handler_result_appended() -> None:
     ai_message = _build_ai_message("my_tool", {"value": "7"})
 
     messages: list[ChatMessage] = []
-    with patch("ai_rpg.deepseek.agent_loop.DeepSeekClient") as mock_client:
-        mock_client.return_value = _FakeClient(ai_message, "tool_calls", [tool_call])
+    with patch(
+        "ai_rpg.deepseek.agent_loop.DEEPSEEK_SERVICE",
+        _FakeService(ai_message, "tool_calls", [tool_call]),
+    ):
         ok = await agent_loop(
             name="test",
             input_message="go",
@@ -142,7 +163,7 @@ async def test_failed_terminal_tool_retries_next_round() -> None:
         id="call_bad",
         function=ToolCall.Function(name="submit", arguments='{"narrative": 未加引号}'),
     )
-    fake_bad = _FakeClient(
+    fake_bad = _FakeService(
         _build_ai_message("submit", {}), "tool_calls", [bad_tool_call]
     )
 
@@ -151,7 +172,7 @@ async def test_failed_terminal_tool_retries_next_round() -> None:
         id="call_good",
         function=ToolCall.Function(name="submit", arguments=json.dumps({})),
     )
-    fake_good = _FakeClient(
+    fake_good = _FakeService(
         _build_ai_message("submit", {}), "tool_calls", [good_tool_call]
     )
 
@@ -162,8 +183,10 @@ async def test_failed_terminal_tool_retries_next_round() -> None:
         return "ok"
 
     messages: list[ChatMessage] = []
-    with patch("ai_rpg.deepseek.agent_loop.DeepSeekClient") as mock_client:
-        mock_client.side_effect = [fake_bad, fake_good]
+    with patch(
+        "ai_rpg.deepseek.agent_loop.DEEPSEEK_SERVICE",
+        _FakeSequenceService([fake_bad, fake_good]),
+    ):
         ok = await agent_loop(
             name="test",
             input_message="go",
@@ -189,14 +212,14 @@ async def test_stop_without_terminal_tool_is_retried_then_succeeds() -> None:
     submit_tool = _build_terminal_tool("submit")
 
     # 第一轮：LLM 以普通文本作答并 stop，未调用终止工具
-    fake_stop = _FakeClient(AIMessage(content="这就是最终结果"), "stop", [])
+    fake_stop = _FakeService(AIMessage(content="这就是最终结果"), "stop", [])
 
     # 第二轮：纠偏后正常调用终止工具
     good_tool_call = ToolCall(
         id="call_submit",
         function=ToolCall.Function(name="submit", arguments=json.dumps({})),
     )
-    fake_good = _FakeClient(
+    fake_good = _FakeService(
         _build_ai_message("submit", {}), "tool_calls", [good_tool_call]
     )
 
@@ -207,8 +230,10 @@ async def test_stop_without_terminal_tool_is_retried_then_succeeds() -> None:
         return "ok"
 
     messages: list[ChatMessage] = []
-    with patch("ai_rpg.deepseek.agent_loop.DeepSeekClient") as mock_client:
-        mock_client.side_effect = [fake_stop, fake_good]
+    with patch(
+        "ai_rpg.deepseek.agent_loop.DEEPSEEK_SERVICE",
+        _FakeSequenceService([fake_stop, fake_good]),
+    ):
         ok = await agent_loop(
             name="test",
             input_message="go",
@@ -233,7 +258,7 @@ async def test_stop_without_terminal_tool_is_retried_then_succeeds() -> None:
 async def test_stop_without_terminal_tool_exhausts_retries_returns_false() -> None:
     """LLM 连续多次 stop 且始终不调用终止工具时，应返回 False 而非误报成功。"""
     submit_tool = _build_terminal_tool("submit")
-    fake_stop = _FakeClient(AIMessage(content="答案"), "stop", [])
+    fake_stop = _FakeService(AIMessage(content="答案"), "stop", [])
 
     calls = []
 
@@ -242,17 +267,17 @@ async def test_stop_without_terminal_tool_exhausts_retries_returns_false() -> No
         return "ok"
 
     messages: list[ChatMessage] = []
-    with patch("ai_rpg.deepseek.agent_loop.DeepSeekClient") as mock_client:
-        # 连续 3 次 stop：第 1、2 次触发纠偏，第 3 次超过上限
-        mock_client.side_effect = [fake_stop, fake_stop, fake_stop]
-        ok = await agent_loop(
-            name="test",
-            input_message="go",
-            messages=messages,
-            tools=[submit_tool],
-            handlers={"submit": submit_handler},
-            terminal_tools=[submit_tool],
-        )
+    # 连续 3 次 stop：第 1、2 次触发纠偏，第 3 次超过上限
+    service = _FakeSequenceService([fake_stop, fake_stop, fake_stop])
+    ok = await agent_loop(
+        name="test",
+        input_message="go",
+        messages=messages,
+        tools=[submit_tool],
+        handlers={"submit": submit_handler},
+        terminal_tools=[submit_tool],
+        service=service,
+    )
 
     assert not ok
     assert calls == []  # 终止工具从未被调用
@@ -263,11 +288,13 @@ async def test_stop_without_terminal_tool_exhausts_retries_returns_false() -> No
 async def test_max_terminal_nudges_param_is_honored() -> None:
     """max_terminal_nudges 控制纠偏次数：设为 1 时，第 2 次 stop 即失败（默认 2 则尚可重试）。"""
     submit_tool = _build_terminal_tool("submit")
-    fake_stop = _FakeClient(AIMessage(content="答案"), "stop", [])
+    fake_stop = _FakeService(AIMessage(content="答案"), "stop", [])
 
     messages: list[ChatMessage] = []
-    with patch("ai_rpg.deepseek.agent_loop.DeepSeekClient") as mock_client:
-        mock_client.side_effect = [fake_stop, fake_stop]
+    with patch(
+        "ai_rpg.deepseek.agent_loop.DEEPSEEK_SERVICE",
+        _FakeSequenceService([fake_stop, fake_stop]),
+    ):
         ok = await agent_loop(
             name="test",
             input_message="go",
@@ -286,9 +313,8 @@ async def test_max_terminal_nudges_param_is_honored() -> None:
 async def test_stop_without_terminal_tools_returns_true() -> None:
     """未声明终止工具时，stop 仍应视为正常结束（保持原有语义）。"""
     messages: list[ChatMessage] = []
-    fake_stop = _FakeClient(AIMessage(content="done"), "stop", [])
-    with patch("ai_rpg.deepseek.agent_loop.DeepSeekClient") as mock_client:
-        mock_client.return_value = fake_stop
+    fake_stop = _FakeService(AIMessage(content="done"), "stop", [])
+    with patch("ai_rpg.deepseek.agent_loop.DEEPSEEK_SERVICE", fake_stop):
         ok = await agent_loop(
             name="test",
             input_message="go",
@@ -306,9 +332,8 @@ async def test_stop_without_terminal_tools_returns_true() -> None:
 async def test_result_reports_span_rounds_and_start_message() -> None:
     """返回值应能定位本次 loop 对 memory 的改动范围、起点消息与每轮过程。"""
     messages: list[ChatMessage] = []
-    fake_stop = _FakeClient(AIMessage(content="done"), "stop", [])
-    with patch("ai_rpg.deepseek.agent_loop.DeepSeekClient") as mock_client:
-        mock_client.return_value = fake_stop
+    fake_stop = _FakeService(AIMessage(content="done"), "stop", [])
+    with patch("ai_rpg.deepseek.agent_loop.DEEPSEEK_SERVICE", fake_stop):
         result = await agent_loop(
             name="test",
             input_message="go",
@@ -325,7 +350,7 @@ async def test_result_reports_span_rounds_and_start_message() -> None:
     assert result.start_message.content == "go"
     # 单轮：human(prompt) + ai(stop)
     assert len(result.rounds) == 1
-    assert result.rounds[0].client is fake_stop  # type: ignore[comparison-overlap]
+    assert result.rounds[0].completion.ai_message is fake_stop.ai_message
     assert result.rounds[0].appended == messages[0:2]
     # bool 兼容：AgentLoopResult 成功即真
     assert bool(result) is True
@@ -336,9 +361,8 @@ async def test_result_reports_span_rounds_and_start_message() -> None:
 async def test_input_metadata_and_loop_id_are_attached_to_start_message() -> None:
     """input_metadata 作为纯附加属性、loop_id 作为边界标记，分别外挂在起点 HumanMessage 上。"""
     messages: list[ChatMessage] = []
-    fake_stop = _FakeClient(AIMessage(content="done"), "stop", [])
-    with patch("ai_rpg.deepseek.agent_loop.DeepSeekClient") as mock_client:
-        mock_client.return_value = fake_stop
+    fake_stop = _FakeService(AIMessage(content="done"), "stop", [])
+    with patch("ai_rpg.deepseek.agent_loop.DEEPSEEK_SERVICE", fake_stop):
         result = await agent_loop(
             name="test",
             input_message="go",
@@ -361,18 +385,20 @@ async def test_input_metadata_and_loop_id_are_attached_to_start_message() -> Non
 async def test_result_rounds_track_each_round_appends() -> None:
     """多轮场景下 rounds 应逐轮记录该轮追加的消息（含纠偏提示）与 client。"""
     submit_tool = _build_terminal_tool("submit")
-    fake_stop = _FakeClient(AIMessage(content="answer"), "stop", [])
+    fake_stop = _FakeService(AIMessage(content="answer"), "stop", [])
     good_tool_call = ToolCall(
         id="call_good",
         function=ToolCall.Function(name="submit", arguments=json.dumps({})),
     )
-    fake_good = _FakeClient(
+    fake_good = _FakeService(
         _build_ai_message("submit", {}), "tool_calls", [good_tool_call]
     )
 
     messages: list[ChatMessage] = []
-    with patch("ai_rpg.deepseek.agent_loop.DeepSeekClient") as mock_client:
-        mock_client.side_effect = [fake_stop, fake_good]
+    with patch(
+        "ai_rpg.deepseek.agent_loop.DEEPSEEK_SERVICE",
+        _FakeSequenceService([fake_stop, fake_good]),
+    ):
         result = await agent_loop(
             name="test",
             input_message="go",
@@ -384,8 +410,8 @@ async def test_result_rounds_track_each_round_appends() -> None:
 
     assert result.success is True
     assert len(result.rounds) == 2
-    assert result.rounds[0].client is fake_stop  # type: ignore[comparison-overlap]
-    assert result.rounds[1].client is fake_good  # type: ignore[comparison-overlap]
+    assert result.rounds[0].completion.ai_message is fake_stop.ai_message
+    assert result.rounds[1].completion.ai_message is fake_good.ai_message
     # 第 1 轮：human(prompt) + ai(stop) + human(nudge)
     assert [type(m).__name__ for m in result.rounds[0].appended] == [
         "HumanMessage",
@@ -406,9 +432,8 @@ async def test_result_rounds_track_each_round_appends() -> None:
 async def test_default_mutates_messages_in_place() -> None:
     """默认 mutate_messages=True：原地追加，result.messages 就是入参本身。"""
     messages: list[ChatMessage] = [SystemMessage(content="sys")]
-    fake_stop = _FakeClient(AIMessage(content="done"), "stop", [])
-    with patch("ai_rpg.deepseek.agent_loop.DeepSeekClient") as mock_client:
-        mock_client.return_value = fake_stop
+    fake_stop = _FakeService(AIMessage(content="done"), "stop", [])
+    with patch("ai_rpg.deepseek.agent_loop.DEEPSEEK_SERVICE", fake_stop):
         result = await agent_loop(
             name="test",
             input_message="go",
@@ -428,9 +453,8 @@ async def test_default_mutates_messages_in_place() -> None:
 async def test_mutate_messages_false_isolates_input() -> None:
     """mutate_messages=False：在副本上工作，入参不被改动，改动范围看 result.messages。"""
     original: list[ChatMessage] = [SystemMessage(content="sys")]
-    fake_stop = _FakeClient(AIMessage(content="done"), "stop", [])
-    with patch("ai_rpg.deepseek.agent_loop.DeepSeekClient") as mock_client:
-        mock_client.return_value = fake_stop
+    fake_stop = _FakeService(AIMessage(content="done"), "stop", [])
+    with patch("ai_rpg.deepseek.agent_loop.DEEPSEEK_SERVICE", fake_stop):
         result = await agent_loop(
             name="test",
             input_message="go",

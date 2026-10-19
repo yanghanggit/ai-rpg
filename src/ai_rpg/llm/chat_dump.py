@@ -1,18 +1,22 @@
-"""chat dump：把一次对话 client 每轮的完整对话落盘到 `.chat_dumps/` 下的文本文件。
+"""chat dump：把一次 chat completion 的请求/结果落盘到 `.chat_dumps/` 下的文本文件。
 
 调试用途的旁路能力，从通讯层主流程里抽出来单独存放，避免调试代码污染请求路径。
-依赖类型是 `ChatClientProtocol` 而非具体实现，只读公共成员，因此本模块
+入参是值对象（`ChatCompletionRequest` / `ChatCompletionResult`），不依赖任何实现细节，因此本模块
 **不得** import `ai_rpg.deepseek`。
+
+命名说明：这里保留「chat dump」是因为它记录的是**对话内容**（历史 + 本轮提问 +
+模型补全出的回复），落在 `.chat_dumps/`；而 service 层用的是 completion 语义
+（一次请求只补全一条 assistant 消息）。两者指的是不同东西，不是不一致。
 
 落盘要同时满足两级开关（AND 关系，后者是前者的上限）：
 
-1. **实例级**：client 的构造参数 `dump`（默认 True）——「我想不想留痕」。
+1. **请求级**：`ChatCompletionRequest.dump`（默认 True）——「我想不想留痕」。
    单测 / 压测 / 批量任务可以只关自己这一批，不影响别人。
 2. **进程级**：环境变量 ``AI_RPG_CHAT_DUMP_ENABLED``（默认 True）——「这台进程
    允不允许落盘」。生产部署在 `.env` 里置 false 即可整体关掉，不用改代码，
    也压得住任何忘记传 `dump=False` 的调用方。
 
-`client.dump=True` 但进程级被关闭时，本模块会**只警告一次**再跳过：静默失效
+`request.dump=True` 但进程级被关闭时，本模块会**只警告一次**再跳过：静默失效
 比落盘更糟。两级判断都收敛在 `dump_chat` 里，provider 的 `chat()` 无需重复判断。
 
 进程级开关必须**调用时**读取，不能做模块级快照：`load_dotenv()` 在
@@ -33,7 +37,7 @@ from typing import Final, List
 from loguru import logger
 
 from ..models import AIMessage, ChatMessage, HumanMessage, get_buffer_string
-from .protocol import ChatClientProtocol
+from .types import ChatCompletionRequest, ChatCompletionResult
 
 ############################################################################################################
 # chat dump 存储目录（项目根目录下）；首次 dump 时创建
@@ -76,24 +80,23 @@ def _warn_env_suppressed() -> None:
         return
     _warned_env_suppressed = True
     reason = f"chat dump 已被环境变量 {ENV_DUMP_SWITCH} 关闭"
-    logger.warning(f"{reason}；client.dump=True 被忽略（本进程不再落盘，仅提示一次）")
+    logger.warning(f"{reason}；request.dump=True 被忽略（本进程不再落盘，仅提示一次）")
 
 
 ############################################################################################################
-def dump_chat(client: ChatClientProtocol) -> None:
-    """将 client 本轮的完整对话写入 .chat_dumps/ 下的文本文件。
+def dump_chat(request: ChatCompletionRequest, completion: ChatCompletionResult) -> None:
+    """把「这次问了什么、答了什么」写入 .chat_dumps/ 下的文本文件。
 
-    只使用协议暴露的公共成员（label / input_message / messages /
-    response_ai_message / response_reasoning_content / dump），不触碰实现私有字段，
-    因此对任何 `ChatClientProtocol` 实现都适用。
+    只读值对象（`ChatCompletionRequest` / `ChatCompletionResult`），不触碰任何实现内部状态，
+    因此对任何 provider 都适用。
 
-    两级开关（AND）：`client.dump`（实例级）与 ``AI_RPG_CHAT_DUMP_ENABLED``
-    （进程级上限）都为真才落盘；进程级关闭而实例想开时警告一次。
+    两级开关（AND）：`request.dump`（请求级）与 ``AI_RPG_CHAT_DUMP_ENABLED``
+    （进程级上限）都为真才落盘；进程级关闭而请求想开时警告一次。
     落盘失败只记 warning（调试旁路不能影响主流程）。
     """
 
     # 调用方（provider 的 chat()）无需重复判断是否该落盘，策略只在这里。
-    if not client.dump:
+    if not request.dump:
         return
     if not env_allows_dump():
         _warn_env_suppressed()
@@ -103,19 +106,19 @@ def dump_chat(client: ChatClientProtocol) -> None:
 
         # 拷贝 messages，再把本轮 prompt / response 分别补齐，
         # 使全部消息（含本轮）统一交给 get_buffer_string.
-        messages: List[ChatMessage] = list(client.messages)
+        messages: List[ChatMessage] = list(request.messages)
 
         # 仅在 prompt 非空时追加本轮 prompt：continuation 模式下 prompt 为空，
         # 不应产生一条幽灵空 Human 消息。
-        if client.input_message:
-            messages.append(HumanMessage(content=client.input_message))
+        if request.input_message:
+            messages.append(HumanMessage(content=request.input_message))
 
         # 追加本轮 response：优先用原始 AIMessage（保留 tool_calls 等 additional_kwargs）；
         # 仅当响应缺失（如 200 但空 choices）时才退化为纯文本。
-        if client.response_ai_message is not None:
-            messages.append(client.response_ai_message)
+        if completion.ai_message is not None:
+            messages.append(completion.ai_message)
         else:
-            messages.append(AIMessage(content=client.response_content))
+            messages.append(AIMessage(content=completion.content))
 
         # 提取对话内容为字符串，带有分隔符和角色标记；
         # chat dump 用于调试，需渲染 tool_calls（否则工具调用显示为空 AI:）。
@@ -129,8 +132,8 @@ def dump_chat(client: ChatClientProtocol) -> None:
         )
 
         # Reasoning（可选）
-        if client.response_reasoning_content:
-            content += "\n" + _SEP + "\n" + client.response_reasoning_content
+        if completion.reasoning_content:
+            content += "\n" + _SEP + "\n" + completion.reasoning_content
 
         # 内容结束。
         content += "\n"
@@ -139,7 +142,7 @@ def dump_chat(client: ChatClientProtocol) -> None:
         # label 可能带「主体|服务对象」这类分隔标记（如外观合成），且含路径分隔符/冒号等
         # 会破坏文件名的字符；统一把非 [中文 字母 数字 _ - .] 的字符换成 "_"。
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-        safe_label = _SAFE_FILENAME_PATTERN.sub("_", client.label)
+        safe_label = _SAFE_FILENAME_PATTERN.sub("_", request.label)
         dump_file = CHAT_DUMP_DIR / f"{timestamp}_{safe_label}.txt"
         CHAT_DUMP_DIR.mkdir(parents=True, exist_ok=True)
         dump_file.write_text(content, encoding="utf-8")
@@ -148,7 +151,7 @@ def dump_chat(client: ChatClientProtocol) -> None:
     except Exception as e:
 
         logger.warning(
-            f"dump_chat failed for '{client.label}': {type(e).__name__}: {e}"
+            f"dump_chat failed for '{request.label}': {type(e).__name__}: {e}"
         )
 
 

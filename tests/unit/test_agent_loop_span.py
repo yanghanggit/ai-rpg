@@ -10,8 +10,15 @@ from unittest.mock import patch
 
 import pytest
 
-from ai_rpg.deepseek import LOOP_END_ATTR, LOOP_ID_ATTR, agent_loop
+from ai_rpg.deepseek import (
+    LOOP_END_ATTR,
+    LOOP_ID_ATTR,
+    ToolDefinition,
+    ToolFunction,
+    agent_loop,
+)
 from ai_rpg.deepseek.client import ToolCall
+from ai_rpg.llm import ChatCompletionRequest, ChatCompletionResult
 from ai_rpg.models import (
     AIMessage,
     ChatMessage,
@@ -22,15 +29,20 @@ from ai_rpg.models import (
 
 #######################################################################################################################################
 class _FakeStopClient:
-    """替身 DeepSeekClient：chat() 后立即以 stop 收尾。"""
+    """替身 service：chat() 立即以 stop 收尾。"""
 
     def __init__(self, **kwargs: Any) -> None:
-        self.response_ai_message = AIMessage(content="done")
+        self.ai_message = AIMessage(content="done")
         self.finish_reason = "stop"
         self.tool_calls: list[Any] = []
 
-    async def chat(self, client: Any = None) -> None:
-        return None
+    async def complete(self, request: ChatCompletionRequest) -> ChatCompletionResult:
+        return ChatCompletionResult(
+            request=request,
+            ai_message=self.ai_message,
+            finish_reason=self.finish_reason,
+            tool_calls=tuple(self.tool_calls),
+        )
 
 
 #######################################################################################################################################
@@ -38,8 +50,7 @@ class _FakeStopClient:
 async def test_agent_loop_stamps_both_boundaries_queryable_by_loop_id() -> None:
     """agent_loop 应在起点打 loop_id、末条消息打 loop_id_end，供 find_marked_span 反查。"""
     messages: list[ChatMessage] = [SystemMessage(content="sys")]
-    with patch("ai_rpg.deepseek.agent_loop.DeepSeekClient") as mock_client:
-        mock_client.return_value = _FakeStopClient()
+    with patch("ai_rpg.deepseek.agent_loop.DEEPSEEK_SERVICE", _FakeStopClient()):
         result = await agent_loop(
             name="t",
             input_message="hello",
@@ -65,8 +76,7 @@ async def test_agent_loop_stamps_both_boundaries_queryable_by_loop_id() -> None:
 async def test_agent_loop_without_loop_id_does_not_stamp() -> None:
     """未传 loop_id 时不打边界标记，按标记反查返回 None。"""
     messages: list[ChatMessage] = [SystemMessage(content="sys")]
-    with patch("ai_rpg.deepseek.agent_loop.DeepSeekClient") as mock_client:
-        mock_client.return_value = _FakeStopClient()
+    with patch("ai_rpg.deepseek.agent_loop.DEEPSEEK_SERVICE", _FakeStopClient()):
         await agent_loop(
             name="t",
             input_message="hello",
@@ -83,26 +93,41 @@ async def test_agent_loop_without_loop_id_does_not_stamp() -> None:
 
 #######################################################################################################################################
 class _FakeToolCallClient:
-    """替身：chat() 后返回一次 tool_calls 响应。"""
+    """替身：chat() 返回一次 tool_calls 响应。"""
 
     def __init__(self, ai_message: AIMessage, tool_calls: list[ToolCall]) -> None:
-        self.response_ai_message = ai_message
+        self.ai_message = ai_message
         self.finish_reason = "tool_calls"
         self.tool_calls = tool_calls
-        self.error: Any = None
 
-    async def chat(self, client: Any = None) -> None:
-        return None
+    async def complete(self, request: ChatCompletionRequest) -> ChatCompletionResult:
+        return ChatCompletionResult(
+            request=request,
+            ai_message=self.ai_message,
+            finish_reason=self.finish_reason,
+            tool_calls=tuple(self.tool_calls),
+        )
 
 
 class _FakeCancelClient:
     """替身：chat() 直接抛出 asyncio.CancelledError（BaseException，外层 except Exception 捕获不到）。"""
 
     def __init__(self, **kwargs: Any) -> None:
-        self.error: Any = None
+        pass
 
-    async def chat(self, client: Any = None) -> None:
+    async def complete(self, request: ChatCompletionRequest) -> ChatCompletionResult:
         raise asyncio.CancelledError()
+
+
+class _FakeSequenceService:
+    """按顺序委托给预设替身（对应旧 mock 的 side_effect 列表）。"""
+
+    def __init__(self, responses: list[Any]) -> None:
+        self._responses = list(responses)
+
+    async def complete(self, request: ChatCompletionRequest) -> ChatCompletionResult:
+        response: ChatCompletionResult = await self._responses.pop(0).complete(request)
+        return response
 
 
 #######################################################################################################################################
@@ -127,20 +152,27 @@ async def test_end_marker_stamped_on_cancellation() -> None:
     )
 
     messages: list[ChatMessage] = [SystemMessage(content="sys")]
-    with patch("ai_rpg.deepseek.agent_loop.DeepSeekClient") as mock_client:
-        mock_client.side_effect = [
-            _FakeToolCallClient(ai_message, [tool_call]),
-            _FakeCancelClient(),
-        ]
-        with pytest.raises(asyncio.CancelledError):
-            await agent_loop(
-                name="t",
-                input_message="hello",
-                messages=messages,
-                tools=[],
-                handlers={"my_tool": lambda: "ok"},
-                loop_id="L1",
-            )
+    service = _FakeSequenceService(
+        [_FakeToolCallClient(ai_message, [tool_call]), _FakeCancelClient()]
+    )
+    # 第 2 轮是 continuation（prompt 为空），必须带 tools 才构造得出合法请求
+    tool = ToolDefinition(
+        function=ToolFunction(
+            name="my_tool",
+            description="测试工具",
+            parameters={"type": "object", "properties": {}},
+        )
+    )
+    with pytest.raises(asyncio.CancelledError):
+        await agent_loop(
+            name="t",
+            input_message="hello",
+            messages=messages,
+            tools=[tool],
+            handlers={"my_tool": lambda: "ok"},
+            loop_id="L1",
+            service=service,
+        )
 
     # 起点已打标，取消后末条（tool）补上终点标记
     assert getattr(messages[1], LOOP_ID_ATTR) == "L1"

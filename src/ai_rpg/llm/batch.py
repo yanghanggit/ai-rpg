@@ -1,102 +1,73 @@
-"""批量（batch）行为工具函数（provider 无关）。
+"""批量（batch）并发 chat completion（provider 无关）。
 
-提供批量并发 chat 的封装。本模块**不得** import `ai_rpg.deepseek`：
-它只依赖 `ChatClientProtocol` 与 `ChatError`。
+入参是「一个无状态 service + 一批 completion 请求」，出参是与请求**按顺序对齐**
+的结果列表。
+结果自带 ``error``，因此调用方不需要再拿 client 对象去对账（旧实现返回
+``List[Optional[ChatError]]``，调用方必须 ``zip(clients, errors)`` 才知道哪条失败）。
+
+本模块**不得** import `ai_rpg.deepseek`：只依赖 `ChatCompletionService` /
+`ChatCompletionRequest` / `ChatCompletionResult` / `ChatError`。
 """
 
 import asyncio
 import time
-from typing import List, Optional, Sequence
+from typing import List, Sequence
 
-import httpx
 from loguru import logger
 
 from .errors import ChatError
-from .protocol import ChatClientProtocol
+from .protocol import ChatCompletionService
+from .types import ChatCompletionRequest, ChatCompletionResult
 
 
 ############################################################################################################
-async def batch_chat(
-    clients: Sequence[ChatClientProtocol],
+async def batch_complete(
+    service: ChatCompletionService,
+    requests: Sequence[ChatCompletionRequest],
     *,
     max_concurrency: int = 2,
-) -> List[Optional[ChatError]]:
-    """批量并发发送聊天请求。
-
-    创建一个共享 httpx.AsyncClient，所有 chat() 复用同一连接池，
-    batch 结束后自动关闭。
+) -> List[ChatCompletionResult]:
+    """并发发送一批 chat completion 请求，返回与 ``requests`` 等长且同序的结果。
 
     ``max_concurrency`` 用信号量限制同时在飞的请求数（默认 2）：避免一次性
-    把全部请求打给 DeepSeek 而触发服务端限流。它只限「并发数」不限「速率」。
+    把全部请求打给服务端而触发限流。它只限「并发数」不限「速率」。
 
-    返回与 ``clients`` 按 index 对齐的失败列表：成功项为 None，失败项为
-    对应的 ``ChatError``（与各 client 的 ``.error`` 为同一对象）。通讯层
-    不做重试，是否重试由业务层据 ``ChatError.retryable`` 决定。
-
-    入参类型是 ``ChatClientProtocol`` 而非具体实现，且声明为 ``Sequence``：批量通讯只
-    依赖协议的 ``label`` / ``error`` / ``chat()``，换成任何 provider 都不用改这里；
-    ``Sequence`` 是协变的，因此 ``list[DeepSeekClient]`` 可直接传入。
+    ``ChatCompletionService.chat`` 对预期内失败不抛异常，因此结果天然带 ``error``；
+    意外异常（bug）也会被收敛成 ``error``，保证返回长度与入参一致（取消 /
+    ``BaseException`` 除外，照常向上传播）。
     """
-    if not clients:
+    if not requests:
         return []
     assert max_concurrency >= 1, "max_concurrency 必须 >= 1"
 
-    # 记录批量请求开始时间。
     start_time = time.time()
+    semaphore = asyncio.Semaphore(max_concurrency)
 
-    # 使用共享的 httpx.AsyncClient，并以信号量限制同时在飞的请求数。
-    async with httpx.AsyncClient() as shared_client:
-        semaphore = asyncio.Semaphore(max_concurrency)
-
-        async def _guarded(client: ChatClientProtocol) -> None:
-            """拿不到许可证就在这里排队，保证任意时刻至多 max_concurrency 个请求在飞。"""
-            async with semaphore:
-                await client.chat(client=shared_client)
-
-        results = await asyncio.gather(
-            *[_guarded(c) for c in clients],
-            return_exceptions=True,
-        )
-
-    # 记录批量请求耗时。
-    elapsed = time.time() - start_time
-    logger.debug(f"batch_chat: {len(clients)} clients, {elapsed:.2f}s")
-
-    # 遍历每个请求的结果，处理异常情况。
-    for i, result in enumerate(results):
-        # 处理每个请求的异常情况。
-        if isinstance(result, Exception):
-            name = clients[i].label if i < len(clients) else "unknown"
-            logger.error(
-                f"Request failed for '{name}': {type(result).__name__}: {result}"
-            )
-
-    # 统计批量请求失败的数量。
-    failed = sum(1 for r in results if isinstance(r, BaseException))
-    if failed:
-        logger.warning(f"batch_chat: {failed}/{len(clients)} failed")
-    else:
-        logger.debug(f"batch_chat: all {len(clients)} requests succeeded")
-
-    # 返回与入参对齐的失败列表（成功为 None）。优先取 client 自身记录的 error，
-    # 兜底用 gather 的原始异常，覆盖 chat() 之外抛出的 BaseException。
-    errors: List[Optional[ChatError]] = []
-    for client, result in zip(clients, results):
-        if client.error is not None:
-            # 如果 client 自身记录了 error，则直接使用该 error。
-            errors.append(client.error)
-        elif isinstance(result, ChatError):
-            # 如果 gather 捕获了 ChatError，则使用该 error。
-            errors.append(result)
-        elif isinstance(result, BaseException):
-            # 如果 gather 捕获了其他类型的 BaseException，则将其封装为 ChatError。
-            errors.append(
-                ChatError(
-                    client.label, f"{type(result).__name__}: {result}", kind="api"
+    async def _guarded(request: ChatCompletionRequest) -> ChatCompletionResult:
+        """拿不到许可证就在这里排队，保证任意时刻至多 max_concurrency 个请求在飞。"""
+        async with semaphore:
+            try:
+                return await service.complete(request)
+            except Exception as e:
+                # 意外异常也收敛成结果，保持「单一失败通道 + 等长返回」
+                return ChatCompletionResult(
+                    request=request,
+                    error=ChatError(
+                        request.label, f"{type(e).__name__}: {e}", kind="api"
+                    ),
                 )
-            )
-        else:
-            # 如果以上条件都不满足，则认为该请求成功，记录为 None。
-            errors.append(None)
 
-    return errors
+    results = await asyncio.gather(*[_guarded(request) for request in requests])
+
+    elapsed = time.time() - start_time
+    logger.debug(f"batch_complete: {len(requests)} requests, {elapsed:.2f}s")
+
+    failed = [result.label for result in results if result.error is not None]
+    if failed:
+        logger.warning(
+            f"batch_complete: {len(failed)}/{len(requests)} failed: {failed}"
+        )
+    else:
+        logger.debug(f"batch_complete: all {len(requests)} requests succeeded")
+
+    return results

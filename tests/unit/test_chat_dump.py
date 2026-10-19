@@ -3,6 +3,8 @@
 覆盖两处开发期可观测缺口：
 - get_buffer_string 默认不渲染 tool_calls，显式开启后渲染；
 - dump_chat 不再为空 prompt 追加幽灵 Human 消息，且保留本轮响应的 tool_calls。
+
+落盘入参是值对象（`ChatCompletionRequest` / `ChatCompletionResult`），与 provider 无关。
 """
 
 import importlib
@@ -10,8 +12,13 @@ from pathlib import Path
 
 import pytest
 
-from ai_rpg.deepseek.client import DeepSeekClient, ToolDefinition, ToolFunction
 from ai_rpg.llm.chat_dump import ENV_DUMP_SWITCH, dump_chat, env_allows_dump
+from ai_rpg.llm.types import (
+    ChatCompletionRequest,
+    ChatCompletionResult,
+    ToolDefinition,
+    ToolFunction,
+)
 from ai_rpg.models import AIMessage, SystemMessage, get_buffer_string
 
 
@@ -51,9 +58,22 @@ def _dummy_tool() -> ToolDefinition:
     )
 
 
-#######################################################################################################################################
+def _request(
+    label: str = "场景.测试",
+    input_message: str = "p",
+    **kwargs: object,
+) -> ChatCompletionRequest:
+    return ChatCompletionRequest(
+        label=label,
+        input_message=input_message,
+        messages=[SystemMessage(content="SYS")],
+        **kwargs,  # type: ignore[arg-type]
+    )
+
+
+###############################################################################################################
 # get_buffer_string
-#######################################################################################################################################
+###############################################################################################################
 def test_buffer_omits_tool_calls_by_default() -> None:
     text = get_buffer_string([_ai_with_tool_call()])
     assert "[tool_calls]" not in text
@@ -67,24 +87,19 @@ def test_buffer_renders_tool_calls_when_enabled() -> None:
     assert '{"entity_name": "角色.无名"}' in text
 
 
-#######################################################################################################################################
+###############################################################################################################
 # dump_chat
-#######################################################################################################################################
+###############################################################################################################
 def test_dump_skips_empty_prompt_and_keeps_tool_calls(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr("ai_rpg.llm.chat_dump.CHAT_DUMP_DIR", tmp_path)
 
-    # continuation 模式：prompt 为空（靠 tools 满足构造断言），历史里只有 system
-    client = DeepSeekClient(
-        label="场景.测试",
-        input_message="",
-        messages=[SystemMessage(content="SYS")],
-        tools=[_dummy_tool()],
-    )
-    client._response_ai_message = _ai_with_tool_call()
+    # continuation 模式：prompt 为空（靠 tools 满足构造校验）
+    request = _request(input_message="", tools=[_dummy_tool()])
+    result = ChatCompletionResult(request=request, ai_message=_ai_with_tool_call())
 
-    dump_chat(client)
+    dump_chat(request, result)
 
     files = list(tmp_path.glob("*.txt"))
     assert len(files) == 1
@@ -102,14 +117,12 @@ def test_dump_includes_non_empty_prompt(
 ) -> None:
     monkeypatch.setattr("ai_rpg.llm.chat_dump.CHAT_DUMP_DIR", tmp_path)
 
-    client = DeepSeekClient(
-        label="场景.测试",
-        input_message="请描述环境",
-        messages=[SystemMessage(content="SYS")],
+    request = _request(input_message="请描述环境")
+    result = ChatCompletionResult(
+        request=request, ai_message=AIMessage(content="洞顶低矮")
     )
-    client._response_ai_message = AIMessage(content="洞顶低矮")
 
-    dump_chat(client)
+    dump_chat(request, result)
 
     text = list(tmp_path.glob("*.txt"))[0].read_text(encoding="utf-8")
     assert "Human: 请描述环境" in text
@@ -122,14 +135,10 @@ def test_dump_falls_back_when_response_missing(
     """响应缺失（200 但空 choices）时退化为纯文本，不抛异常。"""
     monkeypatch.setattr("ai_rpg.llm.chat_dump.CHAT_DUMP_DIR", tmp_path)
 
-    client = DeepSeekClient(
-        label="场景.测试",
-        input_message="p",
-        messages=[SystemMessage(content="SYS")],
-    )
-    client._response_ai_message = None
+    request = _request()
+    result = ChatCompletionResult(request=request, ai_message=None)
 
-    dump_chat(client)
+    dump_chat(request, result)
 
     text = list(tmp_path.glob("*.txt"))[0].read_text(encoding="utf-8")
     assert "AI:" in text
@@ -141,14 +150,10 @@ def test_dump_filename_is_sanitized(
     """label 里的分隔符与路径字符不能带进文件名（外观合成用 `世界|角色` 形式）。"""
     monkeypatch.setattr("ai_rpg.llm.chat_dump.CHAT_DUMP_DIR", tmp_path)
 
-    client = DeepSeekClient(
-        label="世界.外观合成|角色.无名:测试/路径",
-        input_message="p",
-        messages=[SystemMessage(content="SYS")],
-    )
-    client._response_ai_message = AIMessage(content="外观")
+    request = _request(label="世界.外观合成|角色.无名:测试/路径")
+    result = ChatCompletionResult(request=request, ai_message=AIMessage(content="外观"))
 
-    dump_chat(client)
+    dump_chat(request, result)
 
     names = [p.name for p in tmp_path.glob("*.txt")]
     assert len(names) == 1
@@ -162,46 +167,39 @@ def test_dump_filename_is_sanitized(
 def test_dump_enabled_by_default(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """不传 dump 时默认落盘（开关由 client 配置承担，没有全局开关）。"""
+    """不传 dump 时默认落盘（开关是请求级配置，没有全局变量）。"""
     monkeypatch.setattr("ai_rpg.llm.chat_dump.CHAT_DUMP_DIR", tmp_path)
 
-    client = DeepSeekClient(
-        label="场景.测试",
-        input_message="p",
-        messages=[SystemMessage(content="SYS")],
-    )
-    assert client.dump is True
+    request = _request()
+    assert request.dump is True
 
-    client._response_ai_message = AIMessage(content="x")
-    dump_chat(client)
+    dump_chat(
+        request,
+        ChatCompletionResult(request=request, ai_message=AIMessage(content="x")),
+    )
 
     assert len(list(tmp_path.glob("*.txt"))) == 1
 
 
-def test_dump_disabled_client_writes_nothing(
+def test_dump_disabled_request_writes_nothing(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """dump=False 的 client 直接跳过（含目录也不应被创建）。"""
+    """dump=False 的请求直接跳过（含目录也不应被创建）。"""
     dump_dir = tmp_path / "never-created"
     monkeypatch.setattr("ai_rpg.llm.chat_dump.CHAT_DUMP_DIR", dump_dir)
 
-    client = DeepSeekClient(
-        label="场景.测试",
-        input_message="p",
-        messages=[SystemMessage(content="SYS")],
-        dump=False,
+    request = _request(dump=False)
+    dump_chat(
+        request,
+        ChatCompletionResult(request=request, ai_message=AIMessage(content="x")),
     )
-    assert client.dump is False
-
-    client._response_ai_message = AIMessage(content="x")
-    dump_chat(client)
 
     assert not dump_dir.exists()
 
 
-############################################################################################################
-# 进程级总开关（.env / 环境变量）：作为实例级 dump 的上限
-############################################################################################################
+###############################################################################################################
+# 进程级总开关（.env / 环境变量）：作为请求级 dump 的上限
+###############################################################################################################
 @pytest.mark.parametrize(
     "raw,expected",
     [
@@ -227,24 +225,20 @@ def test_env_switch_parsing(
     assert env_allows_dump() is expected
 
 
-def test_env_switch_off_beats_client_dump_true(
+def test_env_switch_off_beats_request_dump_true(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """总开关关闭时，client 传 dump=True 也不落盘，并只警告一次。"""
+    """总开关关闭时，request.dump=True 也不落盘，并只警告一次。"""
     dump_dir = tmp_path / "never-created"
     monkeypatch.setattr("ai_rpg.llm.chat_dump.CHAT_DUMP_DIR", dump_dir)
     monkeypatch.setenv(ENV_DUMP_SWITCH, "false")
 
-    client = DeepSeekClient(
-        label="场景.测试",
-        input_message="p",
-        messages=[SystemMessage(content="SYS")],
-    )
-    assert client.dump is True
+    request = _request()
+    assert request.dump is True
+    result = ChatCompletionResult(request=request, ai_message=AIMessage(content="x"))
 
-    client._response_ai_message = AIMessage(content="x")
-    dump_chat(client)
-    dump_chat(client)
+    dump_chat(request, result)
+    dump_chat(request, result)
 
     assert not dump_dir.exists()
     # 只警告一次（避免每次 LLM 调用刷屏）
@@ -257,19 +251,16 @@ def test_env_switch_explicit_on_keeps_dump(
     monkeypatch.setattr("ai_rpg.llm.chat_dump.CHAT_DUMP_DIR", tmp_path)
     monkeypatch.setenv(ENV_DUMP_SWITCH, "true")
 
-    client = DeepSeekClient(
-        label="场景.测试",
-        input_message="p",
-        messages=[SystemMessage(content="SYS")],
+    request = _request()
+    dump_chat(
+        request,
+        ChatCompletionResult(request=request, ai_message=AIMessage(content="x")),
     )
-    client._response_ai_message = AIMessage(content="x")
-
-    dump_chat(client)
 
     assert len(list(tmp_path.glob("*.txt"))) == 1
 
 
-def test_env_switch_off_and_client_dump_false_stay_silent(
+def test_env_switch_off_and_request_dump_false_stay_silent(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """两级都为假时不落盘，也不该产生「被总开关忽略」的告警（本来就没想开）。"""
@@ -277,15 +268,11 @@ def test_env_switch_off_and_client_dump_false_stay_silent(
     monkeypatch.setattr("ai_rpg.llm.chat_dump.CHAT_DUMP_DIR", dump_dir)
     monkeypatch.setenv(ENV_DUMP_SWITCH, "0")
 
-    client = DeepSeekClient(
-        label="场景.测试",
-        input_message="p",
-        messages=[SystemMessage(content="SYS")],
-        dump=False,
+    request = _request(dump=False)
+    dump_chat(
+        request,
+        ChatCompletionResult(request=request, ai_message=AIMessage(content="x")),
     )
-    client._response_ai_message = AIMessage(content="x")
-
-    dump_chat(client)
 
     assert not dump_dir.exists()
     assert (

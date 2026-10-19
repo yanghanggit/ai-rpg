@@ -8,9 +8,9 @@
 
 from typing import Final, Tuple
 
-from ..deepseek import DeepSeekClient
 from ..entitas import Entity, Matcher
 from ..game.dbg_game import DBGGame
+from ..llm import ChatCompletionRequest
 from ..models import (
     AppearanceComponent,
     AppearanceSynthesisComponent,
@@ -56,12 +56,12 @@ def resolve_appearance_synthesis_entity(game: DBGGame) -> Entity:
 
 
 #######################################################################################################################################
-def build_appearance_synthesis_client(
+def build_appearance_synthesis_request(
     game: DBGGame,
     world_entity: Entity,
     entity: Entity,
-) -> DeepSeekClient:
-    """为单个角色构建外观合成客户端（messages 只有世界实体的 system prompt）。"""
+) -> ChatCompletionRequest:
+    """为单个角色构建外观合成请求（messages 只有世界实体的 system prompt）。"""
     appearance_comp: AppearanceComponent = entity.get(AppearanceComponent)
     costume = entity.get(WornCostumeComponent).item
 
@@ -70,7 +70,7 @@ def build_appearance_synthesis_client(
         memory[0], SystemMessage
     ), f"{world_entity.name} 缺少 system message"
 
-    return DeepSeekClient(
+    return ChatCompletionRequest(
         label=make_appearance_label(world_entity.name, entity.name),
         input_message=build_appearance_synthesis_prompt(
             base_body=appearance_comp.base_body,

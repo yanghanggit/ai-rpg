@@ -1,33 +1,31 @@
-"""DeepSeek 通讯层错误模型与单次通讯结果记录的单元测试。
+"""DeepSeek 通讯层：错误模型、单次结果、批量与 dump 接线的单元测试。
 
-覆盖：
-- DeepSeekError 的 retryable 判定；
-- DeepSeekClient.chat() 失败时记录 self.error 并抛出 DeepSeekError；
-- chat() 每次调用开头重置响应态（供业务层重试时使用）；
-- batch_chat() 返回与入参对齐的失败列表。
+新的契约是「预期内失败不抛异常，落在 `ChatCompletionResult.error` 上」，因此这里断言的是
+结果对象，而不是某个有状态 client 上的残留字段。
 """
 
 import asyncio
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 import httpx
 import pytest
 
-from ai_rpg.deepseek import DeepSeekError
-from ai_rpg.deepseek.client import DeepSeekClient
-from ai_rpg.llm.batch import batch_chat
+from ai_rpg.deepseek import DEEPSEEK_SERVICE, DeepSeekClient, DeepSeekError
+from ai_rpg.llm import ChatCompletionRequest, ChatCompletionResult, ChatError
+from ai_rpg.llm.batch import batch_complete
+from ai_rpg.models import SystemMessage
 
 
-#######################################################################################################################################
+############################################################################################################
 # 测试替身
-#######################################################################################################################################
+############################################################################################################
 class _FakeResponse:
     """模拟 httpx.Response 的最小面。"""
 
     def __init__(
         self, status_code: int, text: str = "", payload: Optional[Dict[str, Any]] = None
-    ):
+    ) -> None:
         self.status_code = status_code
         self.text = text
         self._payload = payload
@@ -37,16 +35,58 @@ class _FakeResponse:
         return self._payload
 
 
-class _FakeHTTPClient:
-    """模拟 httpx.AsyncClient：post() 按预设行为抛出或返回。"""
+class _FakeHttpClient:
+    """模拟 httpx.AsyncClient：post() 按预设行为抛出或返回，支持 async with。"""
 
-    def __init__(self, outcome: Union[BaseException, _FakeResponse]):
+    def __init__(self, outcome: Union[BaseException, _FakeResponse]) -> None:
         self._outcome = outcome
 
-    async def post(self, **kwargs: Any) -> _FakeResponse:
+    async def __aenter__(self) -> "_FakeHttpClient":
+        return self
+
+    async def __aexit__(self, *exc_info: Any) -> None:
+        return None
+
+    async def post(self, url: str, **kwargs: Any) -> _FakeResponse:
         if isinstance(self._outcome, BaseException):
             raise self._outcome
         return self._outcome
+
+
+class _FakeService:
+    """按请求 label 决定成功/失败的 service 替身。"""
+
+    def __init__(self, fail_labels: Optional[set[str]] = None) -> None:
+        self._fail_labels = fail_labels or set()
+
+    async def complete(self, request: ChatCompletionRequest) -> ChatCompletionResult:
+        if request.label in self._fail_labels:
+            return ChatCompletionResult(
+                request=request,
+                error=ChatError(request.label, "boom", kind="api", status_code=500),
+            )
+        return ChatCompletionResult(request=request)
+
+
+class _ConcurrencyProbeService:
+    """记录同时在飞的最大请求数。"""
+
+    def __init__(self, tracker: Dict[str, int]) -> None:
+        self._tracker = tracker
+
+    async def complete(self, request: ChatCompletionRequest) -> ChatCompletionResult:
+        self._tracker["current"] += 1
+        self._tracker["max"] = max(self._tracker["max"], self._tracker["current"])
+        await asyncio.sleep(0.01)
+        self._tracker["current"] -= 1
+        return ChatCompletionResult(request=request)
+
+
+class _ExplodingService:
+    """chat() 直接抛异常，验证 batch 把意外异常收敛成结果。"""
+
+    async def complete(self, request: ChatCompletionRequest) -> ChatCompletionResult:
+        raise RuntimeError("boom")
 
 
 def _success_payload(content: str = "hi") -> Dict[str, Any]:
@@ -62,15 +102,25 @@ def _success_payload(content: str = "hi") -> Dict[str, Any]:
     }
 
 
-def _make_client(name: str = "测试") -> DeepSeekClient:
-    # dump=False：本文件多数用例只验证错误模型与响应态，不应在 .chat_dumps/ 留文件
-    return DeepSeekClient(label=name, input_message="ping", messages=[], dump=False)
+def _service(outcome: Union[BaseException, _FakeResponse]) -> DeepSeekClient:
+    return DeepSeekClient(http_client_factory=lambda: _FakeHttpClient(outcome))
 
 
-#######################################################################################################################################
-# DeepSeekError.retryable 判定
-#######################################################################################################################################
-class TestDeepSeekErrorRetryable:
+def _request(label: str = "测试", **kwargs: Any) -> ChatCompletionRequest:
+    # dump=False：本文件多数用例只验证通讯结果，不应在 .chat_dumps/ 留文件
+    kwargs.setdefault("dump", False)
+    return ChatCompletionRequest(
+        label=label,
+        input_message="ping",
+        messages=[SystemMessage(content="sys")],
+        **kwargs,
+    )
+
+
+############################################################################################################
+# ChatError.retryable 判定
+############################################################################################################
+class TestChatErrorRetryable:
     @pytest.mark.parametrize(
         "kind,status_code,expected",
         [
@@ -97,174 +147,155 @@ class TestDeepSeekErrorRetryable:
         assert "[角色.无名]" in str(err)
 
 
-#######################################################################################################################################
-# 单次通讯：记录 + 抛出
-#######################################################################################################################################
-class TestChatErrorRecording:
+############################################################################################################
+# 单次通讯：失败落在 result.error，不抛异常
+############################################################################################################
+class TestChatFailureRecordedAsResult:
     @pytest.mark.asyncio
-    async def test_timeout_records_and_raises(self) -> None:
-        client = _make_client()
-        http = _FakeHTTPClient(httpx.TimeoutException("read timeout"))
-
-        with pytest.raises(DeepSeekError) as excinfo:
-            await client.chat(client=http)  # type: ignore[arg-type]
-
-        assert excinfo.value.kind == "timeout"
-        assert excinfo.value.retryable is True
-        assert client.error is excinfo.value
-
-    @pytest.mark.asyncio
-    async def test_http_503_records_api_error(self) -> None:
-        client = _make_client()
-        http = _FakeHTTPClient(_FakeResponse(503, text="server busy"))
-
-        with pytest.raises(DeepSeekError) as excinfo:
-            await client.chat(client=http)  # type: ignore[arg-type]
-
-        assert excinfo.value.kind == "api"
-        assert excinfo.value.status_code == 503
-        assert excinfo.value.retryable is True
-        assert client.error is excinfo.value
-        assert client.response_ai_message is None
-
-    @pytest.mark.asyncio
-    async def test_http_401_is_not_retryable(self) -> None:
-        client = _make_client()
-        http = _FakeHTTPClient(_FakeResponse(401, text="unauthorized"))
-
-        with pytest.raises(DeepSeekError) as excinfo:
-            await client.chat(client=http)  # type: ignore[arg-type]
-
-        assert excinfo.value.status_code == 401
-        assert excinfo.value.retryable is False
-
-    @pytest.mark.asyncio
-    async def test_success_clears_error(self) -> None:
-        client = _make_client()
-        http = _FakeHTTPClient(_FakeResponse(200, payload=_success_payload("你好")))
-
-        await client.chat(client=http)  # type: ignore[arg-type]
-
-        assert client.error is None
-        assert client.response_content == "你好"
-
-    @pytest.mark.asyncio
-    async def test_failure_resets_previous_response(self) -> None:
-        """第一次成功后第二次失败：上一次的响应不得残留。"""
-        client = _make_client()
-
-        await client.chat(
-            client=_FakeHTTPClient(_FakeResponse(200, payload=_success_payload("第一次")))  # type: ignore[arg-type]
+    async def test_timeout(self) -> None:
+        result = await _service(httpx.TimeoutException("read timeout")).complete(
+            _request()
         )
-        assert client.response_content == "第一次"
-        assert client.error is None
 
-        with pytest.raises(DeepSeekError):
-            await client.chat(
-                client=_FakeHTTPClient(httpx.ConnectError("conn reset"))  # type: ignore[arg-type]
-            )
+        assert result.error is not None
+        assert result.error.kind == "timeout"
+        assert result.error.retryable is True
+        assert result.ai_message is None
+        assert result.ok is False
 
-        assert client.response_ai_message is None
-        assert client.response_content == ""
-        assert client.error is not None
-        assert client.error.kind == "connection"
-
-
-#######################################################################################################################################
-# 批量通讯：返回对齐的失败列表
-#######################################################################################################################################
-class _FakeChatClient:
-    """仅满足 batch_chat 使用面的假 client。"""
-
-    def __init__(self, label: str, error: Optional[DeepSeekError] = None):
-        self.label = label
-        self.error = error
-
-    async def chat(self, client: Any = None) -> None:
-        if self.error is not None:
-            raise self.error
-
-
-class TestBatchChatReturn:
+    @pytest.mark.parametrize(
+        "outcome",
+        [
+            httpx.ConnectError("refused"),
+            httpx.ReadError("broken"),
+        ],
+    )
     @pytest.mark.asyncio
-    async def test_returns_aligned_failures(self) -> None:
-        ok = _FakeChatClient("角色.A")
-        timeout = DeepSeekError("角色.B", "timeout", kind="timeout")
-        bad = _FakeChatClient("角色.B", error=timeout)
+    async def test_connection_errors(self, outcome: Exception) -> None:
+        result = await _service(outcome).complete(_request())
 
-        errors = await batch_chat([ok, bad])  # type: ignore[list-item]
+        assert result.error is not None
+        assert result.error.kind == "connection"
+        assert result.error.retryable is True
 
-        assert errors == [None, timeout]
-        assert errors[1] is bad.error
+    @pytest.mark.parametrize(
+        "status_code,retryable",
+        [
+            (400, False),
+            (401, False),
+            (402, False),
+            (422, False),
+            (429, True),
+            (500, True),
+        ],
+    )
+    @pytest.mark.asyncio
+    async def test_http_error_status(self, status_code: int, retryable: bool) -> None:
+        result = await _service(_FakeResponse(status_code, text="boom")).complete(
+            _request()
+        )
+
+        assert result.error is not None
+        assert result.error.kind == "api"
+        assert result.error.status_code == status_code
+        assert result.error.retryable is retryable
 
     @pytest.mark.asyncio
-    async def test_empty_clients_returns_empty(self) -> None:
-        assert await batch_chat([]) == []
+    async def test_success(self) -> None:
+        result = await _service(
+            _FakeResponse(200, payload=_success_payload("hi"))
+        ).complete(_request())
+
+        assert result.error is None
+        assert result.ok is True
+        assert result.content == "hi"
+        assert result.finish_reason == "stop"
+        assert result.tool_calls == ()
+        assert result.usage is not None
+        assert result.usage.total_tokens == 2
+        assert result.ai_message is not None
+
+
+############################################################################################################
+# 无状态：同一个 service 复用不会串味
+############################################################################################################
+class TestServiceIsStateless:
+    @pytest.mark.asyncio
+    async def test_second_call_does_not_see_first_result(self) -> None:
+        first = await _service(
+            _FakeResponse(200, payload=_success_payload("A"))
+        ).complete(_request("one"))
+        assert first.content == "A"
+
+        # 同一个 service 实例（默认工厂）连续调用，结果互不影响
+        service = _service(_FakeResponse(200, payload=_success_payload("B")))
+        await service.complete(_request("a"))
+        second = await service.complete(_request("b"))
+
+        assert second.content == "B"
+        assert second.request.label == "b"
+        assert second.error is None
 
     @pytest.mark.asyncio
-    async def test_non_deepseek_exception_is_wrapped(self) -> None:
-        """chat() 之外抛出的 BaseException 也应转成 DeepSeekError 返回，不丢失。"""
+    async def test_failure_then_success(self) -> None:
+        service = DeepSeekClient(
+            http_client_factory=lambda: _FakeHttpClient(httpx.TimeoutException("t"))
+        )
+        failed = await service.complete(_request())
+        assert failed.error is not None
 
-        class _BoomClient:
-            label = "角色.C"
-            error = None
-
-            async def chat(self, client: Any = None) -> None:
-                raise RuntimeError("unexpected")
-
-        errors = await batch_chat([_BoomClient()])  # type: ignore[list-item]
-        assert len(errors) == 1
-        assert isinstance(errors[0], DeepSeekError)
-        assert "RuntimeError" in str(errors[0])
+        # 换上能成功的工厂：service 本身不残留上一次的错误
+        service = _service(_FakeResponse(200, payload=_success_payload("ok")))
+        succeeded = await service.complete(_request())
+        assert succeeded.error is None
+        assert succeeded.content == "ok"
 
 
-#######################################################################################################################################
-# 批量通讯：信号量限并发
-#######################################################################################################################################
-class _ConcurrencyProbeClient:
-    """记录同时执行 chat() 的峰值数量。"""
-
-    def __init__(self, label: str, tracker: Dict[str, int]):
-        self.label = label
-        self.error: Optional[DeepSeekError] = None
-        self._tracker = tracker
-
-    async def chat(self, client: Any = None) -> None:
-        self._tracker["current"] += 1
-        self._tracker["max"] = max(self._tracker["max"], self._tracker["current"])
-        await asyncio.sleep(0.02)
-        self._tracker["current"] -= 1
-
-
-class TestBatchChatConcurrency:
+############################################################################################################
+# batch：结果与请求同序、失败走 error、并发受限
+############################################################################################################
+class TestBatchChat:
     @pytest.mark.asyncio
-    async def test_inflight_requests_are_bounded(self) -> None:
+    async def test_results_align_with_requests(self) -> None:
+        requests = [_request(f"c{i}") for i in range(3)]
+        results = await batch_complete(
+            _FakeService(fail_labels={"c1"}), requests, max_concurrency=3
+        )
+
+        assert [r.label for r in results] == ["c0", "c1", "c2"]
+        assert [r.ok for r in results] == [True, False, True]
+        assert results[1].error is not None
+        assert results[1].error.status_code == 500
+
+    @pytest.mark.asyncio
+    async def test_empty_requests(self) -> None:
+        assert await batch_complete(_FakeService(), []) == []
+
+    @pytest.mark.asyncio
+    async def test_unexpected_exception_becomes_result_error(self) -> None:
+        results = await batch_complete(_ExplodingService(), [_request("x")])
+
+        assert len(results) == 1
+        assert results[0].error is not None
+        assert "RuntimeError" in str(results[0].error)
+
+    @pytest.mark.asyncio
+    async def test_concurrency_is_bounded(self) -> None:
         tracker = {"current": 0, "max": 0}
-        clients: List[Any] = [
-            _ConcurrencyProbeClient(f"c{i}", tracker) for i in range(5)
-        ]
+        requests = [_request(f"c{i}") for i in range(5)]
 
-        errors = await batch_chat(clients, max_concurrency=2)
+        results = await batch_complete(
+            _ConcurrencyProbeService(tracker), requests, max_concurrency=2
+        )
 
-        assert errors == [None, None, None, None, None]
+        assert all(r.ok for r in results)
         assert tracker["max"] <= 2
         assert tracker["current"] == 0
 
-    @pytest.mark.asyncio
-    async def test_max_concurrency_one_serializes(self) -> None:
-        tracker = {"current": 0, "max": 0}
-        clients: List[Any] = [
-            _ConcurrencyProbeClient(f"c{i}", tracker) for i in range(3)
-        ]
 
-        await batch_chat(clients, max_concurrency=1)
-
-        assert tracker["max"] == 1
-
-
-#######################################################################################################################################
-# chat dump 接线：是否落盘由 client 的 dump 参数决定（没有全局开关）
-#######################################################################################################################################
+############################################################################################################
+# chat dump 接线：是否落盘由 request.dump + 进程级开关共同决定
+############################################################################################################
 class TestChatDumpWiring:
     @pytest.mark.asyncio
     async def test_successful_chat_dumps_by_default(
@@ -272,40 +303,56 @@ class TestChatDumpWiring:
     ) -> None:
         monkeypatch.setattr("ai_rpg.llm.chat_dump.CHAT_DUMP_DIR", tmp_path)
         monkeypatch.delenv("AI_RPG_CHAT_DUMP_ENABLED", raising=False)
-        client = DeepSeekClient(label="测试.落盘", input_message="ping", messages=[])
 
-        http = _FakeHTTPClient(_FakeResponse(200, payload=_success_payload()))
-        await client.chat(client=http)  # type: ignore[arg-type]
+        request = ChatCompletionRequest(
+            label="测试.落盘",
+            input_message="ping",
+            messages=[SystemMessage(content="sys")],
+        )
+        assert request.dump is True
+
+        await _service(_FakeResponse(200, payload=_success_payload())).complete(request)
 
         files = list(tmp_path.glob("*.txt"))
         assert len(files) == 1
         assert "ping" in files[0].read_text(encoding="utf-8")
 
     @pytest.mark.asyncio
-    async def test_successful_chat_skips_dump_when_disabled(
+    async def test_dump_false_writes_nothing(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.setattr("ai_rpg.llm.chat_dump.CHAT_DUMP_DIR", tmp_path)
-        client = DeepSeekClient(
-            label="测试.静默", input_message="ping", messages=[], dump=False
-        )
+        monkeypatch.delenv("AI_RPG_CHAT_DUMP_ENABLED", raising=False)
 
-        http = _FakeHTTPClient(_FakeResponse(200, payload=_success_payload()))
-        await client.chat(client=http)  # type: ignore[arg-type]
+        request = _request()  # dump=False
+        result = await _service(
+            _FakeResponse(200, payload=_success_payload())
+        ).complete(request)
 
-        assert client.response_content == "hi"
+        assert result.content == "hi"
         assert list(tmp_path.glob("*.txt")) == []
 
     @pytest.mark.asyncio
     async def test_failed_chat_dumps_nothing(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """失败请求没有可供留痕的完整对话（与旧行为一致：只在成功后落盘）。"""
+        """失败请求没有可供留痕的完整对话（只在成功后落盘）。"""
         monkeypatch.setattr("ai_rpg.llm.chat_dump.CHAT_DUMP_DIR", tmp_path)
-        client = DeepSeekClient(label="测试.失败", input_message="ping", messages=[])
+        monkeypatch.delenv("AI_RPG_CHAT_DUMP_ENABLED", raising=False)
 
-        http = _FakeHTTPClient(_FakeResponse(500, text="boom"))
-        with pytest.raises(DeepSeekError):
-            await client.chat(client=http)  # type: ignore[arg-type]
+        request = ChatCompletionRequest(
+            label="测试.失败",
+            input_message="ping",
+            messages=[SystemMessage(content="sys")],
+        )
+        await _service(_FakeResponse(500, text="boom")).complete(request)
 
         assert list(tmp_path.glob("*.txt")) == []
+
+
+############################################################################################################
+# 共用的默认实例
+############################################################################################################
+def test_default_service_is_a_deepseek_client() -> None:
+    """默认实例是 provider 决策点，业务侧复用它而不是自己 new。"""
+    assert isinstance(DEEPSEEK_SERVICE, DeepSeekClient)

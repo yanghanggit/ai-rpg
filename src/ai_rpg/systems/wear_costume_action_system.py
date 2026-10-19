@@ -4,6 +4,7 @@ from typing import Dict, Final, List, final, override
 
 from loguru import logger
 
+from ..deepseek import DEEPSEEK_SERVICE
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..models import (
@@ -16,7 +17,7 @@ from ..models import (
 )
 from .appearance_prompt_builders import build_wear_costume_message
 from .appearance_synthesis_common import (
-    build_appearance_synthesis_client,
+    build_appearance_synthesis_request,
     resolve_appearance_synthesis_entity,
 )
 
@@ -113,19 +114,25 @@ class WearCostumeActionSystem(ReactiveProcessor):
         # 外观合成：与 AppearanceSynthesisSystem 走同一入口（世界实体的 system prompt + 任务提示词），
         # 不借角色记忆、也不回写。世界实体缺失时降级为「外观保持基础体型」。
         world_entity = resolve_appearance_synthesis_entity(self._game)
-        client = build_appearance_synthesis_client(self._game, world_entity, entity)
+        request = build_appearance_synthesis_request(self._game, world_entity, entity)
 
         try:
             # 发送请求并等待响应
-            await client.chat()
+            result = await DEEPSEEK_SERVICE.complete(request)
 
         except Exception as e:
 
             logger.error(f"LLM 外观合成请求失败，角色 {entity.name}，错误: {e}")
             return
 
+        if result.error is not None:
+            logger.error(
+                f"LLM 外观合成请求失败，角色 {entity.name}，错误: {result.error}"
+            )
+            return
+
         # 将 LLM 响应应用回对应角色的外观组件
-        new_appearance = client.response_content.strip()
+        new_appearance = result.content.strip()
         logger.debug(f"LLM 外观合成返回: {new_appearance}")
 
         # 空回包不写回：宁可保留旧外观，也不把外观刷成空串（与 AppearanceSynthesisSystem 一致）

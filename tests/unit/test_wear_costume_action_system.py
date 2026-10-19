@@ -1,14 +1,16 @@
 """WearCostumeActionSystem 单元测试。"""
 
 from typing import List, Optional
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from ai_rpg.entitas import Entity
 from ai_rpg.game.dbg_game import DBGGame
 from ai_rpg.game.rpg_entity_manager import RPGEntityManager
+from ai_rpg.llm import ChatCompletionRequest, ChatCompletionResult
 from ai_rpg.models import (
+    AIMessage,
     AppearanceComponent,
     AppearanceSynthesisComponent,
     CostumeItem,
@@ -31,6 +33,20 @@ _NEW_COSTUME = CostumeItem(name="法袍", description="绣有星纹的深蓝色�
 _MODULE = "ai_rpg.systems.wear_costume_action_system"
 # 外观合成的 LLM 客户端由 appearance_synthesis_common 构造，patch 要打在那里
 _SYNTH_MODULE = "ai_rpg.systems.appearance_synthesis_common"
+
+
+class _FakeSynthesisService:
+    """外观合成 service 替身：返回固定文本（去空白由被测系统负责）。"""
+
+    def __init__(self, content: str) -> None:
+        self._content = content
+
+    async def complete(self, request: ChatCompletionRequest) -> ChatCompletionResult:
+        return ChatCompletionResult(
+            request=request, ai_message=AIMessage(content=self._content)
+        )
+
+
 _WORLD_SYSTEM_PROMPT = "你是外观合成器，只输出外观描述。"
 
 
@@ -116,10 +132,10 @@ class TestProcessWearCostume:
         storage = _make_storage_entity(entity_manager, [_COSTUME])
         mock_game.get_storage_entity.return_value = storage
 
-        with patch(f"{_SYNTH_MODULE}.DeepSeekClient") as MockClient:
-            mock_client = AsyncMock()
-            mock_client.response_content = "合成外观"
-            MockClient.return_value = mock_client
+        with patch(
+            "ai_rpg.systems.wear_costume_action_system.DEEPSEEK_SERVICE",
+            _FakeSynthesisService("合成外观"),
+        ):
             await system._process_wear_costume(entity)
 
         assert all(
@@ -140,10 +156,10 @@ class TestProcessWearCostume:
             entity_manager, [_COSTUME]
         )
 
-        with patch(f"{_SYNTH_MODULE}.DeepSeekClient") as MockClient:
-            mock_client = AsyncMock()
-            mock_client.response_content = "合成外观"
-            MockClient.return_value = mock_client
+        with patch(
+            "ai_rpg.systems.wear_costume_action_system.DEEPSEEK_SERVICE",
+            _FakeSynthesisService("合成外观"),
+        ):
             await system._process_wear_costume(entity)
 
         assert entity.has(WornCostumeComponent)
@@ -163,10 +179,10 @@ class TestProcessWearCostume:
             entity_manager, [_COSTUME]
         )
 
-        with patch(f"{_SYNTH_MODULE}.DeepSeekClient") as MockClient:
-            mock_client = AsyncMock()
-            mock_client.response_content = "  穿着铁甲的英勇战士  "
-            MockClient.return_value = mock_client
+        with patch(
+            "ai_rpg.systems.wear_costume_action_system.DEEPSEEK_SERVICE",
+            _FakeSynthesisService("  穿着铁甲的英勇战士  "),
+        ):
             await system._process_wear_costume(entity)
 
         assert entity.get(AppearanceComponent).appearance == "穿着铁甲的英勇战士"
@@ -185,10 +201,10 @@ class TestProcessWearCostume:
             entity_manager, [_COSTUME]
         )
 
-        with patch(f"{_SYNTH_MODULE}.DeepSeekClient") as MockClient:
-            mock_client = AsyncMock()
-            mock_client.response_content = ""
-            MockClient.return_value = mock_client
+        with patch(
+            "ai_rpg.systems.wear_costume_action_system.DEEPSEEK_SERVICE",
+            _FakeSynthesisService(""),
+        ):
             await system._process_wear_costume(entity)
 
         assert entity.get(AppearanceComponent).appearance == _BASE_BODY
@@ -208,10 +224,10 @@ class TestProcessWearCostume:
             entity_manager, [_COSTUME]
         )
 
-        with patch(f"{_SYNTH_MODULE}.DeepSeekClient") as MockClient:
-            mock_client = AsyncMock()
-            mock_client.response_content = "合成外观"
-            MockClient.return_value = mock_client
+        with patch(
+            "ai_rpg.systems.wear_costume_action_system.DEEPSEEK_SERVICE",
+            _FakeSynthesisService("合成外观"),
+        ):
             await system._process_wear_costume(entity)
 
         mock_game.broadcast_to_stage.assert_called_once()
@@ -230,10 +246,10 @@ class TestProcessWearCostume:
         storage = _make_storage_entity(entity_manager, [_NEW_COSTUME])
         mock_game.get_storage_entity.return_value = storage
 
-        with patch(f"{_SYNTH_MODULE}.DeepSeekClient") as MockClient:
-            mock_client = AsyncMock()
-            mock_client.response_content = "合成外观"
-            MockClient.return_value = mock_client
+        with patch(
+            "ai_rpg.systems.wear_costume_action_system.DEEPSEEK_SERVICE",
+            _FakeSynthesisService("合成外观"),
+        ):
             await system._process_wear_costume(entity)
 
         assert entity.get(WornCostumeComponent).item.name == _NEW_COSTUME.name
@@ -271,10 +287,10 @@ class TestReact:
             entity_manager, [_COSTUME]
         )
 
-        with patch(f"{_SYNTH_MODULE}.DeepSeekClient") as MockClient:
-            mock_client = AsyncMock()
-            mock_client.response_content = "LLM合成外观"
-            MockClient.return_value = mock_client
+        with patch(
+            "ai_rpg.systems.wear_costume_action_system.DEEPSEEK_SERVICE",
+            _FakeSynthesisService("LLM合成外观"),
+        ):
             await system.react([entity])
 
         assert entity.has(WornCostumeComponent)

@@ -5,7 +5,7 @@ from typing import Dict, Final, List, Optional, final, override
 from loguru import logger
 from pydantic import BaseModel
 
-from ..deepseek import DeepSeekClient
+from ..deepseek import batch_complete
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_combat_processor import (
     compute_character_stats,
@@ -15,7 +15,7 @@ from ..game.dbg_combat_processor import (
 )
 from ..game.dbg_game import DBGGame
 from ..game.rpg_agent_memory import REPLACED_MESSAGES_ATTR
-from ..llm import ChatClientProtocol, batch_chat
+from ..llm import ChatCompletionRequest, ChatCompletionResult
 from ..models import (
     Card,
     CharacterStats,
@@ -349,26 +349,26 @@ class MonsterPrePlaySystem(ReactiveProcessor):
 
         logger.debug(f"MonsterPrePlaySystem: 为 {len(entities)} 个怪物进行出牌决策推理")
 
-        # 为每个怪物创建推理 client（构造仍绑定 DeepSeek，使用侧只看协议）
-        chat_clients: List[ChatClientProtocol] = [
-            self._create_monster_decision_client(entity) for entity in entities
+        # 为每个怪物创建推理请求（值对象，不持有状态）
+        requests: List[ChatCompletionRequest] = [
+            self._create_monster_decision_request(entity) for entity in entities
         ]
 
-        if not chat_clients:
+        if not requests:
             logger.warning("MonsterPrePlaySystem: 没有可推理的怪物实体，跳过")
             return
 
-        # 并行 LLM 推理
-        await batch_chat(clients=chat_clients)
+        # 并行 LLM 推理（结果与 requests 同序）
+        results: List[ChatCompletionResult] = await batch_complete(requests)
 
         # 解析并替换 PlayCardsAction
-        for client in chat_clients:
+        for result in results:
             # 解析 LLM 响应，替换 PlayCardsAction
-            self._process_monster_decision(client)
+            self._process_monster_decision(result)
 
     ####################################################################################################################################
-    def _create_monster_decision_client(self, entity: Entity) -> DeepSeekClient:
-        """为单个怪物实体创建出牌决策的 DeepSeekClient。"""
+    def _create_monster_decision_request(self, entity: Entity) -> ChatCompletionRequest:
+        """为单个怪物实体创建出牌决策请求。"""
         assert entity.has(
             HandComponent
         ), f"MonsterPrePlaySystem: 怪物 {entity.name} 缺少 HandComponent"
@@ -410,22 +410,22 @@ class MonsterPrePlaySystem(ReactiveProcessor):
             current_round_number=current_round_number,
         )
 
-        return DeepSeekClient(
+        return ChatCompletionRequest(
             label=entity.name,
             input_message=prompt,
             messages=self._game.get_agent_memory(entity).messages,
         )
 
     ####################################################################################################################################
-    def _process_monster_decision(self, client: ChatClientProtocol) -> None:
+    def _process_monster_decision(self, result: ChatCompletionResult) -> None:
         """解析决策回包，落一条决策记录，再替换成 PlayCardsAction / PassTurnAction。
 
         记忆形状：先按「环境+任务提示词 → 模型回包」写入（审计可查），随后整段替换成
         一条人类可读的决策记录（做了什么 + 原因）；原文通过 `replaced_messages` 留在存档。
         """
 
-        entity = self._game.get_entity_by_name(client.label)
-        assert entity is not None, f"MonsterPrePlaySystem: 无法找到实体 {client.label}"
+        entity = self._game.get_entity_by_name(result.label)
+        assert entity is not None, f"MonsterPrePlaySystem: 无法找到实体 {result.label}"
 
         current_round_number = len(
             self._game.current_dungeon_combat_room.combat.rounds or []
@@ -436,14 +436,14 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         self._game.add_human_message(
             entity=entity,
             human_message=HumanMessage(
-                content=client.input_message,
+                content=result.request.input_message,
                 draw_cards_round_number=current_round_number,
             ),
         )
-        if client.response_ai_message is not None:
-            self._game.add_ai_message(entity, client.response_ai_message)
+        if result.ai_message is not None:
+            self._game.add_ai_message(entity, result.ai_message)
 
-        outcome = self._decide(entity, client)
+        outcome = self._decide(entity, result)
         self._write_decision_record(
             entity,
             start_index=start_index,
@@ -465,12 +465,14 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         )
 
     ####################################################################################################################################
-    def _decide(self, entity: Entity, client: ChatClientProtocol) -> "_DecisionOutcome":
+    def _decide(
+        self, entity: Entity, result: ChatCompletionResult
+    ) -> "_DecisionOutcome":
         """把回包翻译成「打哪张、打谁」；任何异常都收敛成带原因的过牌。"""
 
         reason = ""
 
-        if client.response_ai_message is None:
+        if result.ai_message is None:
             logger.error(
                 f"MonsterPrePlaySystem: [{entity.name}] LLM 返回空响应，执行过牌"
             )
@@ -478,10 +480,10 @@ class MonsterPrePlaySystem(ReactiveProcessor):
 
         try:
             decision = _MonsterDecisionResponse.model_validate_json(
-                extract_json(client.response_content)
+                extract_json(result.content)
             )
         except Exception as e:
-            logger.error(f"{client.response_content}")
+            logger.error(f"{result.content}")
             logger.error(
                 f"MonsterPrePlaySystem: [{entity.name}] 解析 LLM 响应失败，执行过牌。Exception: {e}"
             )

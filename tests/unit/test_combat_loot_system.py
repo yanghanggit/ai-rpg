@@ -5,10 +5,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from ai_rpg.deepseek import DeepSeekClient
 from ai_rpg.entitas import Entity
 from ai_rpg.entitas.context import Context
 from ai_rpg.game.dbg_game import DBGGame
+from ai_rpg.llm import ChatCompletionRequest, ChatCompletionResult
 from ai_rpg.models import (
     ActorComponent,
     AIMessage,
@@ -77,11 +77,17 @@ class TestLootMemory:
         game = _make_game(context, [monster], player)
         system = CombatLootSystem(game)
 
-        async def fake_batch_chat(clients: List[DeepSeekClient]) -> None:
-            for client in clients:
-                client._response_ai_message = AIMessage(content=_LOOT_JSON)
+        async def fake_batch_complete(
+            requests: List[ChatCompletionRequest],
+        ) -> List[ChatCompletionResult]:
+            return [
+                ChatCompletionResult(
+                    request=request, ai_message=AIMessage(content=_LOOT_JSON)
+                )
+                for request in requests
+            ]
 
-        with patch(f"{_MODULE}.batch_chat", side_effect=fake_batch_chat):
+        with patch(f"{_MODULE}.batch_complete", side_effect=fake_batch_complete):
             await system.execute()
 
         # human：怪物侧记请求原文 + 结构化标记
@@ -127,11 +133,15 @@ class TestLootMemory:
         game = _make_game(context, [monster], player)
         system = CombatLootSystem(game)
 
-        async def fake_batch_chat(clients: List[DeepSeekClient]) -> None:
-            for client in clients:
-                client._response_ai_message = None
+        async def fake_batch_complete(
+            requests: List[ChatCompletionRequest],
+        ) -> List[ChatCompletionResult]:
+            return [
+                ChatCompletionResult(request=request, ai_message=None)
+                for request in requests
+            ]
 
-        with patch(f"{_MODULE}.batch_chat", side_effect=fake_batch_chat):
+        with patch(f"{_MODULE}.batch_complete", side_effect=fake_batch_complete):
             await system.execute()
 
         assert len(game.add_human_message.call_args_list) == 1  # 只有怪物侧请求

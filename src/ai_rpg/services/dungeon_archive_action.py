@@ -4,9 +4,10 @@ from typing import Final, List, Optional, Sequence, Set, Tuple
 
 from loguru import logger
 
-from ..deepseek import DeepSeekClient
+from ..deepseek import DEEPSEEK_SERVICE, DeepSeekClient
 from ..entitas import Entity, Matcher
 from ..game.dbg_game import DBGGame
+from ..llm import ChatCompletionRequest
 from ..models import (
     AnyDungeonRoom,
     ChatMessage,
@@ -268,7 +269,7 @@ async def debug_probe_dungeon_director_reasoning(
 ) -> None:
     """调试探针：让副本导演基于当前已积累的记忆做一次通用推理问答。
 
-    仅用于人工核对记忆管理是否符合预期（结果打印在 DeepSeekClient 的日志中），
+    仅用于人工核对记忆管理是否符合预期（结果打印在 DeepSeek 通讯层日志中），
     只读取记忆不追加消息，不影响副本导演的正式记忆。
     """
 
@@ -281,13 +282,13 @@ async def debug_probe_dungeon_director_reasoning(
 
     prompt = "调试探针：到目前为止都发生了什么？你后续希望发生什么？"
 
-    client = DeepSeekClient(
+    request = ChatCompletionRequest(
         label=dungeon.name,
         input_message=prompt,
         messages=agent_memory.messages,
         model=DeepSeekClient.MODEL_FLASH,
     )
-    await client.chat()
+    await DEEPSEEK_SERVICE.complete(request)
 
 
 ###################################################################################################################################################################
@@ -314,15 +315,15 @@ async def archive_dungeon(
         # 基于副本导演已积累的记忆（开局记录 + 各房间结束记录），驱动其输出总结
         prompt = _build_archive_summary_prompt(dungeon)
 
-        client = DeepSeekClient(
+        request = ChatCompletionRequest(
             label=f"dungeon:{dungeon.name}",
             input_message=prompt,
             messages=agent_memory.messages,
             model=DeepSeekClient.MODEL_FLASH,
         )
-        await client.chat()
+        result = await DEEPSEEK_SERVICE.complete(request)
 
-        summary = client.response_content
+        summary = result.content
         if not summary:
             logger.warning(f"[archive_dungeon] 副本 {dungeon.name!r} 归档结果为空")
             return None

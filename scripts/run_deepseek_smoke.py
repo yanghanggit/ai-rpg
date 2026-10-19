@@ -1,17 +1,21 @@
 """
-直接调用 DeepSeek API 测试脚本（使用 DeepSeekClient）
+直接调用 DeepSeek API 测试脚本。
+
+请求/响应都是值对象（`ChatCompletionRequest` / `ChatCompletionResult`），service 无状态可复用。
 """
 
 import asyncio
 from typing import List
 
 from ai_rpg.deepseek import (
+    DEEPSEEK_SERVICE,
     DeepSeekClient,
     ToolDefinition,
     ToolFunction,
     agent_loop,
+    batch_complete,
 )
-from ai_rpg.llm import batch_chat
+from ai_rpg.llm import ChatCompletionRequest, ChatCompletionResult
 from ai_rpg.models import (
     AIMessage,
     ChatMessage,
@@ -28,26 +32,26 @@ _SYSTEM = SystemMessage(content="你是一个有帮助的助手，请用中文�
 async def test_chat() -> None:
     """测试异步单次请求"""
     print("\n=== 测试 chat() ===")
-    client = DeepSeekClient(
+    request = ChatCompletionRequest(
         label="test_chat",
         input_message="请简单介绍一下你自己。",
         messages=[_SYSTEM],
     )
-    await client.chat()
+    result = await DEEPSEEK_SERVICE.complete(request)
     print("📝 回复:")
-    print(client.response_content)
+    print(result.content)
 
 
-async def test_batch_chat() -> None:
+async def test_batch_complete() -> None:
     """测试并发批量请求"""
-    print("\n=== 测试 batch_chat() ===")
+    print("\n=== 测试 batch_complete() ===")
     questions = [
         "1+1等于几？",
         "天空为什么是蓝色的？",
         "请用一句话描述Python语言。",
     ]
-    clients = [
-        DeepSeekClient(
+    requests = [
+        ChatCompletionRequest(
             label=f"batch_{i}",
             input_message=q,
             messages=[_SYSTEM],
@@ -55,11 +59,9 @@ async def test_batch_chat() -> None:
         for i, q in enumerate(questions)
     ]
 
-    await batch_chat(clients)
-
-    for client in clients:
-        print(f"\n❓ {client.input_message}")
-        print(f"💬 {client.response_content}")
+    for result in await batch_complete(requests):
+        print(f"\n❓ {result.request.input_message}")
+        print(f"💬 {result.content}")
 
 
 def test_get_buffer_string() -> None:
@@ -110,21 +112,22 @@ def test_get_balance() -> None:
 async def test_cache_tokens() -> None:
     """测试缓存命中 token 统计与上下文占比计算"""
     print("\n=== 测试 usage / context_usage_ratio ===")
-    client = DeepSeekClient(
+    request = ChatCompletionRequest(
         label="test_cache",
         input_message="请用一句话解释什么是缓存。",
         messages=[_SYSTEM],
     )
-    await client.chat()
-    assert client.usage is not None, "预期 chat() 后 usage 不为 None"
-    print(f"回复: {client.response_content}")
-    print(f"prompt_tokens      : {client.usage.prompt_tokens}")
-    print(f"completion_tokens  : {client.usage.completion_tokens}")
-    print(f"total_tokens       : {client.usage.total_tokens}")
-    print(f"缓存命中 tokens     : {client.usage.prompt_cache_hit_tokens}")
-    print(f"缓存未命中 tokens   : {client.usage.prompt_cache_miss_tokens}")
-    print(f"上下文长度上限      : {client.context_window}")
-    print(f"上下文占比          : {client.context_usage_ratio:.6%}")
+    result = await DEEPSEEK_SERVICE.complete(request)
+    assert result.usage is not None, "预期 chat() 后 usage 不为 None"
+    context_window = DeepSeekClient.context_window(request.model)
+    print(f"回复: {result.content}")
+    print(f"prompt_tokens      : {result.usage.prompt_tokens}")
+    print(f"completion_tokens  : {result.usage.completion_tokens}")
+    print(f"total_tokens       : {result.usage.total_tokens}")
+    print(f"缓存命中 tokens     : {result.usage.prompt_cache_hit_tokens}")
+    print(f"缓存未命中 tokens   : {result.usage.prompt_cache_miss_tokens}")
+    print(f"上下文长度上限      : {context_window}")
+    print(f"上下文占比          : {result.usage.total_tokens / context_window:.6%}")
 
 
 async def test_model_matrix() -> None:
@@ -137,8 +140,8 @@ async def test_model_matrix() -> None:
         (DeepSeekClient.MODEL_PRO, False),
         (DeepSeekClient.MODEL_PRO, True),
     ]
-    clients = [
-        DeepSeekClient(
+    requests = [
+        ChatCompletionRequest(
             label=f"{model}__thinking={thinking}",
             input_message=_PROMPT,
             messages=[_SYSTEM],
@@ -148,14 +151,11 @@ async def test_model_matrix() -> None:
         for model, thinking in cases
     ]
 
-    await batch_chat(clients)
-
-    for client in clients:
-        label = client.label
-        print(f"\n[{label}]")
-        print(f"  回复: {client.response_content}")
-        if client.response_reasoning_content:
-            preview = client.response_reasoning_content[:120].replace("\n", " ")
+    for result in await batch_complete(requests):
+        print(f"\n[{result.label}]")
+        print(f"  回复: {result.content}")
+        if result.reasoning_content:
+            preview = result.reasoning_content[:120].replace("\n", " ")
             print(f"  思考: {preview}...")
 
 
@@ -199,17 +199,17 @@ def _mock_get_weather(city: str, unit: str = "celsius") -> str:
 async def test_tool_call_single() -> None:
     """测试工具调用第一轮：LLM 返回 tool_calls，尚未执行工具"""
     print("\n=== 测试 tool calling 第一转（LLM 返回 tool_calls）===")
-    client = DeepSeekClient(
+    request = ChatCompletionRequest(
         label="test_tool_single",
         input_message="北京现在天气怎么样？",
         messages=[_SYSTEM],
         tools=[_WEATHER_TOOL],
     )
-    await client.chat()
+    result = await DEEPSEEK_SERVICE.complete(request)
 
-    print(f"finish_reason : {client.finish_reason}")
-    print(f"tool_calls 数量: {len(client.tool_calls)}")
-    for tc in client.tool_calls:
+    print(f"finish_reason : {result.finish_reason}")
+    print(f"tool_calls 数量: {len(result.tool_calls)}")
+    for tc in result.tool_calls:
         import json
 
         args = json.loads(tc.function.arguments)
@@ -218,9 +218,9 @@ async def test_tool_call_single() -> None:
         print(f"  调用 ID   : {tc.id}")
 
     assert (
-        client.finish_reason == "tool_calls"
-    ), f"预期 finish_reason='tool_calls'，实际得到='{client.finish_reason}'"
-    assert len(client.tool_calls) > 0, "预期至少一个 tool call"
+        result.finish_reason == "tool_calls"
+    ), f"预期 finish_reason='tool_calls'，实际得到='{result.finish_reason}'"
+    assert len(result.tool_calls) > 0, "预期至少一个 tool call"
     print("✅ 第一转工具调用验证通过")
 
 
@@ -232,13 +232,13 @@ async def test_tool_call_full_round() -> None:
     user_question = "北京和上海分别是什么天气？"
 
     # 转 1：LLM 返回 tool_calls
-    first = DeepSeekClient(
+    first_request = ChatCompletionRequest(
         label="tool_round1",
         input_message=user_question,
         messages=[_SYSTEM],
         tools=[_WEATHER_TOOL],
     )
-    await first.chat()
+    first: ChatCompletionResult = await DEEPSEEK_SERVICE.complete(first_request)
     print(
         f"[转 1] finish_reason={first.finish_reason}, tool_calls={len(first.tool_calls)}"
     )
@@ -247,10 +247,10 @@ async def test_tool_call_full_round() -> None:
     ), "转 1 预期 tool_calls"
 
     # 执行工具，构建回传消息
-    assert first.response_ai_message is not None
-    history = list(first._messages) + [
+    assert first.ai_message is not None
+    history = list(first.request.messages) + [
         HumanMessage(content=user_question),
-        first.response_ai_message,
+        first.ai_message,
     ]
     for tc in first.tool_calls:
         args = json.loads(tc.function.arguments)
@@ -259,20 +259,20 @@ async def test_tool_call_full_round() -> None:
         history.append(ToolMessage(content=result, tool_call_id=tc.id))
 
     # 转 2：LLM 利用工具结果给出自然语言回复
-    second = DeepSeekClient(
+    second_request = ChatCompletionRequest(
         label="tool_round2",
         input_message="",  # continuation 模式
         messages=history,
         tools=[_WEATHER_TOOL],
         tool_choice="none",  # 强制回答，不再调用工具
     )
-    await second.chat()
+    second: ChatCompletionResult = await DEEPSEEK_SERVICE.complete(second_request)
     print(f"[转 2] finish_reason={second.finish_reason}")
-    print(f"最终回复: {second.response_content}")
+    print(f"最终回复: {second.content}")
     assert (
         second.finish_reason == "stop"
     ), f"转 2 预期 finish_reason='stop'，得到='{second.finish_reason}'"
-    assert second.response_content, "转 2 回复不应为空"
+    assert second.content, "转 2 回复不应为空"
     print("✅ 完整两转工具调用验证通过")
 
 
@@ -281,30 +281,30 @@ async def test_tool_call_multi() -> None:
     print("\n=== 测试单次 response 内一次调用多个工具（multi tool_calls）===")
     import json
 
-    client = DeepSeekClient(
+    request = ChatCompletionRequest(
         label="test_tool_multi",
         input_message="北京和上海分别是什么天气？",
         messages=[_SYSTEM],
         tools=[_WEATHER_TOOL],
     )
-    await client.chat()
+    result = await DEEPSEEK_SERVICE.complete(request)
 
-    print(f"finish_reason : {client.finish_reason}")
-    print(f"tool_calls 数量: {len(client.tool_calls)}")
-    for tc in client.tool_calls:
+    print(f"finish_reason : {result.finish_reason}")
+    print(f"tool_calls 数量: {len(result.tool_calls)}")
+    for tc in result.tool_calls:
         args = json.loads(tc.function.arguments)
         print(f"  工具名称 : {tc.function.name}")
         print(f"  调用参数 : {args}")
         print(f"  调用 ID   : {tc.id}")
 
     assert (
-        client.finish_reason == "tool_calls"
-    ), f"预期 finish_reason='tool_calls'，实际得到='{client.finish_reason}'"
+        result.finish_reason == "tool_calls"
+    ), f"预期 finish_reason='tool_calls'，实际得到='{result.finish_reason}'"
     assert (
-        len(client.tool_calls) >= 2
-    ), f"预期单次 response 内调用多个工具（>=2），实际 {len(client.tool_calls)} 个"
+        len(result.tool_calls) >= 2
+    ), f"预期单次 response 内调用多个工具（>=2），实际 {len(result.tool_calls)} 个"
 
-    cities = {json.loads(tc.function.arguments).get("city") for tc in client.tool_calls}
+    cities = {json.loads(tc.function.arguments).get("city") for tc in result.tool_calls}
     assert {"北京", "上海"}.issubset(
         cities
     ), f"预期工具调用覆盖北京和上海，实际城市集合: {cities}"
@@ -379,7 +379,7 @@ async def _run_async_tests() -> None:
     # 所有异步测试共用同一个 event loop，避免跨 loop 复用 httpx.AsyncClient 报错
     await test_chat()
     await test_cache_tokens()
-    await test_batch_chat()
+    await test_batch_complete()
     await test_model_matrix()
     await test_tool_call_single()
     await test_tool_call_full_round()

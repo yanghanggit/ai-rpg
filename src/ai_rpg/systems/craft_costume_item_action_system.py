@@ -6,9 +6,10 @@ from loguru import logger
 from overrides import override
 from pydantic import BaseModel
 
-from ..deepseek import DeepSeekClient
+from ..deepseek import DEEPSEEK_SERVICE
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
+from ..llm import ChatCompletionRequest
 from ..models import (
     CostumeItem,
     CraftCostumeItemAction,
@@ -142,9 +143,9 @@ class CraftCostumeItemActionSystem(ReactiveProcessor):
     ) -> Optional[_CraftCostumeItemResponse]:
         """调用工坊 agent 推理生成时装属性。"""
 
-        # 构建 LLM 提示并初始化 DeepSeekClient，用于与 LLM 进行交互
+        # 构建 LLM 提示并发送请求
         prompt = _build_craft_costume_prompt(materials)
-        chat_client = DeepSeekClient(
+        request = ChatCompletionRequest(
             label=entity.name,
             input_message=prompt,
             messages=self._game.get_agent_memory(entity).messages,
@@ -152,24 +153,28 @@ class CraftCostumeItemActionSystem(ReactiveProcessor):
 
         # 发起 LLM 请求，捕获异常以防止整个流程崩溃
         try:
-            await chat_client.chat()
+            result = await DEEPSEEK_SERVICE.complete(request)
         except Exception as e:
             logger.error(f"[CraftCostumeItemActionSystem] LLM 请求失败: {e}")
             return None
 
+        if result.error is not None:
+            logger.error(f"[CraftCostumeItemActionSystem] LLM 请求失败: {result.error}")
+            return None
+
         # 检查 LLM 是否返回了有效的消息对象，如果为空则记录错误并返回 None
-        if chat_client.response_ai_message is None:
+        if result.ai_message is None:
             logger.error("[CraftCostumeItemActionSystem] LLM 回复消息为空")
             return None
 
         # 尝试从 LLM 的回复中提取 JSON 并解析为 _CraftCostumeItemResponse 对象
         try:
-            json_str = extract_json(chat_client.response_content)
+            json_str = extract_json(result.content)
             response = _CraftCostumeItemResponse.model_validate_json(json_str)
             assert response.name, "LLM 返回的 name 不能为空"
         except Exception as e:
             logger.error(
-                f"[CraftCostumeItemActionSystem] 解析 LLM 响应失败: {e}\n原始内容:\n{chat_client.response_content}"
+                f"[CraftCostumeItemActionSystem] 解析 LLM 响应失败: {e}\n原始内容:\n{result.content}"
             )
             return None
 

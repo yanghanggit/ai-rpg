@@ -1,6 +1,7 @@
 """针对 `resolve_targets`（ALL/SPREAD 阵营锚点展开逻辑）的单元测试。"""
 
-from typing import Any, cast
+from typing import Any, Dict, cast
+from unittest.mock import MagicMock
 
 from ai_rpg.entitas.entity import Entity
 from ai_rpg.game.dbg_combat_processor import resolve_targets
@@ -8,16 +9,20 @@ from ai_rpg.game.dbg_game import DBGGame
 from ai_rpg.models import (
     ActorComponent,
     Blueprint,
+    Card,
     DeathComponent,
     Dungeon,
     DungeonComponent,
+    HandComponent,
     MonsterComponent,
     PartyMemberComponent,
+    PlayCardsAction,
     PlayerSession,
     StageComponent,
     TargetType,
     WorldState,
 )
+from ai_rpg.systems.transfer_cards_action_system import TransferCardsActionSystem
 
 
 def _make_game(player_name: str = "player", actor_name: str = "hero") -> DBGGame:
@@ -199,3 +204,81 @@ class TestResolveTargetsSelf:
         targets, err = resolve_targets(TargetType.SELF, 1, hero, [], game)
         assert err == ""
         assert targets == ["hero"]
+
+
+class TestSpreadHitListFeedsTransfer:
+    """SPREAD 的命中列表是「按击数展开、可含重复」的，投递端按出现次数发副本。
+
+    这两条用例把两侧接起来：用真实 `resolve_targets` 产出目标列表，直接喂给
+    `TransferCardsActionSystem`，确认副本数随命中分配走。
+    """
+
+    async def test_spread_hits_deliver_copies_per_hit(self) -> None:
+        game = _make_game()
+        _make_stage(game, "stage1")
+        hero = _make_ally(game, "hero", "stage1")
+        monster_a = _make_monster(game, "怪物A", "stage1")
+        monster_b = _make_monster(game, "怪物B", "stage1")
+
+        targets, err = resolve_targets(TargetType.SPREAD, 5, hero, ["怪物A"], game)
+        assert err == ""
+        assert len(targets) == 5  # 击数即列表长度
+        assert set(targets) == {"怪物A", "怪物B"}  # 超出人数时每人至少一次
+
+        actors = {"hero": hero, "怪物A": monster_a, "怪物B": monster_b}
+        mock_game = _make_transfer_game(actors)
+        card = _make_transfer_card(TargetType.SPREAD, hit_count=5)
+        hero.get(HandComponent).cards.append(card)
+        hero.add(PlayCardsAction, "hero", card, targets)
+
+        await TransferCardsActionSystem(mock_game).react([hero])
+
+        # 副本总数 = 击数；每名角色收到的份数 = 它在命中分配里出现的次数。
+        copied_a = len(monster_a.get(HandComponent).cards)
+        copied_b = len(monster_b.get(HandComponent).cards)
+        assert copied_a + copied_b == 5
+        assert copied_a >= 1 and copied_b >= 1
+        assert hero.get(HandComponent).cards == []  # 本体已离开源手牌
+
+    async def test_spread_with_single_target_stacks_all_copies(self) -> None:
+        """散射只剩一个可选目标时命中「全摊」：5 击全落在它身上 → 5 份副本。"""
+        game = _make_game()
+        _make_stage(game, "stage1")
+        hero = _make_ally(game, "hero", "stage1")
+        monster = _make_monster(game, "怪物A", "stage1")
+
+        targets, err = resolve_targets(TargetType.SPREAD, 5, hero, ["怪物A"], game)
+        assert err == ""
+        assert targets == ["怪物A"] * 5
+
+        mock_game = _make_transfer_game({"hero": hero, "怪物A": monster})
+        card = _make_transfer_card(TargetType.SPREAD, hit_count=5)
+        hero.get(HandComponent).cards.append(card)
+        hero.add(PlayCardsAction, "hero", card, targets)
+
+        await TransferCardsActionSystem(mock_game).react([hero])
+
+        assert len(monster.get(HandComponent).cards) == 5
+
+
+def _make_transfer_game(actors: Dict[str, Entity]) -> MagicMock:
+    """只提供转移系统所需接口的 game stub。"""
+    mock_game = MagicMock(spec=DBGGame)
+    mock_game.current_dungeon_combat_room.combat.is_ongoing = True
+    mock_game.get_actor_entity.side_effect = lambda name: actors.get(name)
+    for entity in actors.values():
+        if not entity.has(HandComponent):
+            entity.add(HandComponent, entity.name, [])
+    return mock_game
+
+
+def _make_transfer_card(target_type: TargetType, hit_count: int) -> Card:
+    return Card(
+        name="散射投递",
+        description="测试用散射传递牌",
+        transferable=True,
+        target_type=target_type,
+        damage=1,
+        hit_count=hit_count,
+        source="hero",
+    )

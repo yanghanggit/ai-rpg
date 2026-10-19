@@ -38,7 +38,7 @@ class Card(BaseModel):
     )
     ethereal: bool = False  # pass turn 时若仍留在手牌，自动移入 ExhaustPileComponent
     transferable: bool = (
-        False  # 出牌时额外为每个解析目标手牌 copy 一份（副本 uuid 重新生成、transferable 置 False，不可再次传递；本体照常结算并进入弃牌/消耗流程）
+        False  # 出牌时按命中分配额外投递副本（副本 uuid 重新生成、transferable 置 False，不可再次传递；本体照常结算并进入弃牌/消耗流程）；副本数 = 该角色在解析目标列表中的出现次数：SPREAD 一击一份（只剩一个目标时全摊在它身上），SINGLE/ALL/SELF 各一份
     )
     cost: int = 1  # 出牌费用；消耗当前 energy；不足时禁止出牌
     damage: int = 0  # 单次伤害

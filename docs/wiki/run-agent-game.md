@@ -75,3 +75,25 @@ AI 代理无需感知内部游戏对象，只需根据当前存档的模式选�
 ## 日志追溯
 
 每次调用生成独立日志文件，路径为 `logs/run_agent_game_{timestamp}.log`，时间戳与新存档一致，便于将一条存档与其对应的完整执行日志一一对应。
+
+### 记忆与牌堆对账（`scripts/inspect_memory.py`）
+
+牌堆之间的**静默流转**（抽牌、出牌归堆、回合末清手牌、retain 归还、虚无牌消耗、战斗结束拆除子堆）不写 LLM 记忆，`.chat_dumps` 因此看不到它们；要回答「这次动作为谁写了记忆」「哪条堆变了多少」，必须两侧一起对账：`memories/{agent}.jsonl`（记忆）与 `entities/{agent}.json`（`Deck` / `DrawPile`（含 `retained_cards`）/ `Hand` / `Discard` / `Exhaust` / `Spoils`）。`scripts/inspect_memory.py` 就是这两个目录的只读视图，不依赖游戏运行时（纯 stdlib，不需要 `.env`）。
+
+```bash
+# 单个 agent：完整记忆 + 当前各堆内容
+uv run python -m scripts.inspect_memory --snapshot .worlds/e2e/Game1/2026-... --agent 角色.无名
+
+# 全量扫描：只打有变化的 agent（缺省遍历快照内所有 agent）
+uv run python -m scripts.inspect_memory --snapshot <新> --diff <旧>
+
+# 对账：只列新增记忆 + 各堆数量/内容变化
+uv run python -m scripts.inspect_memory --snapshot <新> --diff <旧> --agent 角色.无名
+
+# 只看某类消息（如「获得卡牌」/「传递卡牌」）
+uv run python -m scripts.inspect_memory --snapshot <快照> --keyword 获得卡牌
+```
+
+`--diff` 里记忆的增量基线取「上一个快照的条数」，条数变少时自动退回全量打印并提示可能发生了压缩/重制（见 [上下文窗口管理](context-window-management.md)）。对账结论应写成「记忆 delta + 牌堆 delta」两句：前者回答 agent 知不知道，后者回答世界变了多少。
+
+→ 相关：[卡牌与牌堆](card.md)、[战斗管道](combat-pipeline.md)

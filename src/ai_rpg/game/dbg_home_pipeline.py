@@ -12,8 +12,8 @@ def create_home_pipeline(game: BaseGame) -> RPGGameProcessPipeline:
     ### 不这样就循环引用
     from ..systems.action_cleanup_system import ActionCleanupSystem
     from ..systems.announce_action_system import AnnounceActionSystem
-    from ..systems.appearance_initialization_system import (
-        AppearanceInitializationSystem,
+    from ..systems.appearance_synthesis_system import (
+        AppearanceSynthesisSystem,
     )
     from ..systems.context_compaction_system import ContextCompactionSystem
     from ..systems.destroy_entity_system import DestroyEntitySystem
@@ -42,7 +42,7 @@ def create_home_pipeline(game: BaseGame) -> RPGGameProcessPipeline:
     processors.add(PrologueSystem(dbg_game))
 
     # 角色外观生成系统
-    processors.add(AppearanceInitializationSystem(dbg_game))
+    processors.add(AppearanceSynthesisSystem(dbg_game))
 
     # 规划系统-环境初始化系统-角色系统
     processors.add(EnvironmentInitializationSystem(dbg_game))

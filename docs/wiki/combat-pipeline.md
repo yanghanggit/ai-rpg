@@ -140,6 +140,20 @@ LLM 只做三件事：为每条效果选定 **base**、判定**系数取值**、
 
 怪物决策的对手视图遵循「模糊总量 + 相关点亮」：每个对手只暴露 `HP`、`总格挡`（手牌 `block` 之和，持有即生效）与 `手牌总数`（一个整数），并在此总数中点亮两类牌——带受击词缀（`on_hit_affixes`）的牌，或来源为本怪物（`source` 等于怪物名）的牌。前者让怪物权衡「命中该对手会触发什么反制」，后者让怪物看到自己投递进对手手牌的牌（配合 `transferable` 副本保留原 `source`、且落地即失去传递性反噬）。其余手牌保持隐藏。
 
+### 角色侧 LLM 的留痕策略
+
+战斗中主体为 actor 自身的 LLM 推理只有三处，策略统一为「留痕」或「零接触」：
+
+- `MonsterPrePlaySystem`（出牌决策）与 `CombatLootSystem`（战利品推断）：**全部留痕**——human 写请求原文（带 `draw_cards_round_number` / `combat_loot` 标记），ai 写回包原文；失败无回包时只留请求侧，不伪造 AI 回复。于是「怪物在战斗中为主体的推理」在记忆里完整可对账。
+- `ContextCompactionSystem`（上下文压缩）：超阈值的 agent（含 actor）记忆被换成一条摘要，这是唯一会改写 actor 记忆本身的系统级 LLM。
+- 外观合成**不在此列**：它由世界实体「世界.外观合成」以「system prompt + 任务提示词」一次性完成，不读任何 agent 记忆、也不留推理原文；结果只落 `AppearanceComponent`，并给本人补一条自我状态说明（`# 你的外观 …`，不广播）——外观变化事件的广播属于穿装动作（见[战役设定与系统提示词的分层](campaign-setting-rules-bridge.md)）。
+
+仲裁类（出牌 / 回合结束 / 自主运行 / 神器）的主体是场景实体而非 actor，结果只写场景记忆；场景实体在退出副本时统一销毁，记忆随之消失。
+
+→ 对账工具：[`scripts/inspect_memory.py`](run-agent-game.md)（`--diff` 直接给出记忆增量与各牌堆差分）
+
+## 跨系统关系
+
 ## 跨系统关系
 
 - 副本生成管道产出 `CombatRoom`（stage + actors + 预置卡牌），战斗管道消费它 → 参见：[副本生成管道](dungeon-generation.md)

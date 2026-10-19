@@ -12,6 +12,7 @@ from ..game.dbg_game import DBGGame
 from ..models import (
     AnyItem,
     AppearanceComponent,
+    HumanMessage,
     LootComponent,
     MaterialItem,
     MonsterComponent,
@@ -146,16 +147,36 @@ class CombatLootSystem(ExecuteProcessor):
         # 并行调用 LLM 推理所有怪物掉落
         await batch_chat(clients=clients)
 
-        # 解析所有怪物的掉落结果，合并基础掉落与部位破坏额外掉落
-        loot_items = [
-            item for client in clients for item in self._parse_loot_item(client)
-        ]
+        # 逐头记账：先留痕（与 MonsterPrePlaySystem 一致，写入 prompt 与 AI 原文），再解析掉落
+        loot_items: List[AnyItem] = []
+        for monster, client in zip(monsters, clients):
+            self._record_loot_memory(monster, client)
+            loot_items.extend(self._parse_loot_item(client))
 
         # 将掉落物写入玩家 LootComponent
         player_entity.replace(LootComponent, player_entity.name, loot_items)
         logger.info(
             f"[CombatLootSystem] 掉落完成，共 {len(loot_items)} 件战利品写入 LootComponent"
         )
+
+    #######################################################################################################################################
+    def _record_loot_memory(self, monster: Entity, client: DeepSeekClient) -> None:
+        """把掉落推理写回怪物记忆（human = 请求原文，ai = 回包原文）。
+
+        怪物在战斗中所有以自己为主体的 LLM 推理（出牌决策 / 掉落）均留痕，
+        记忆管理策略因此统一；失败（无回包）时只留请求侧，不伪造 AI 回复。
+        """
+        self._game.add_human_message(
+            entity=monster,
+            human_message=HumanMessage(
+                content=client.input_message,
+                combat_loot=monster.name,
+            ),
+        )
+        if client.response_ai_message is None:
+            logger.warning(f"[CombatLootSystem] {monster.name} 无 AI 回包，仅记录请求")
+            return
+        self._game.add_ai_message(monster, client.response_ai_message)
 
     #######################################################################################################################################
     def _create_loot_client(self, monster: Entity) -> DeepSeekClient:

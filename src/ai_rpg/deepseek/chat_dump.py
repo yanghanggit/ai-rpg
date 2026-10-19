@@ -71,8 +71,10 @@ def dump_chat(client: DeepSeekClient) -> None:
         content += "\n"
 
         # 写入文件，文件名格式为：YYYYMMDD_HHMMSS_microseconds_label.txt
+        # label 可能带“主体|服务对象”这类分隔标记（如外观合成），文件名里换成无歧义分隔。
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-        dump_file = CHAT_DUMP_DIR / f"{timestamp}_{client._label}.txt"
+        safe_label = client._label.replace("|", "_").replace("/", "_")
+        dump_file = CHAT_DUMP_DIR / f"{timestamp}_{safe_label}.txt"
         CHAT_DUMP_DIR.mkdir(parents=True, exist_ok=True)
         dump_file.write_text(content, encoding="utf-8")
         logger.debug(f"chat dump saved: {dump_file}")

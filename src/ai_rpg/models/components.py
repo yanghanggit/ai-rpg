@@ -93,6 +93,19 @@ class AppearanceComponent(Component):
 ############################################################################################################
 @final
 @register_component_type
+class AppearanceSynthesisComponent(Component):
+    """标记世界实体具有「外观合成」职责：把基础体型与时装描述合成为可观察外观。
+
+    属纯文本改写任务，每次推理只用该实体的 system prompt + 任务提示词，
+    结果只写回 `AppearanceComponent`，不进入任何 agent 记忆。
+    """
+
+    name: str
+
+
+############################################################################################################
+@final
+@register_component_type
 class HomeComponent(Component):
     """标记场景为家园类型。"""
 

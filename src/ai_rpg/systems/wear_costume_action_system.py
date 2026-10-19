@@ -4,7 +4,6 @@ from typing import Dict, Final, List, final, override
 
 from loguru import logger
 
-from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..models import (
@@ -15,9 +14,10 @@ from ..models import (
     WearCostumeAction,
     WornCostumeComponent,
 )
-from .appearance_prompt_builders import (
-    build_appearance_synthesis_prompt,
-    build_wear_costume_message,
+from .appearance_prompt_builders import build_wear_costume_message
+from .appearance_synthesis_system import (
+    build_appearance_synthesis_client,
+    resolve_appearance_synthesis_entity,
 )
 
 
@@ -110,20 +110,13 @@ class WearCostumeActionSystem(ReactiveProcessor):
         # 挂载 WornCostumeComponent
         entity.replace(WornCostumeComponent, entity.name, costume)
 
-        # 使用 LLM 合成外观描述
-        appearance_comp = entity.get(AppearanceComponent)
-        prompt = build_appearance_synthesis_prompt(
-            base_body=appearance_comp.base_body,
-            costume_name=costume.name,
-            costume_description=costume.description,
-        )
+        # 外观合成：与 AppearanceSynthesisSystem 走同一入口（世界实体的 system prompt + 任务提示词），
+        # 不借角色记忆、也不回写。世界实体缺失时降级为「外观保持基础体型」。
+        world_entity = resolve_appearance_synthesis_entity(self._game)
+        if world_entity is None:
+            return
 
-        # 创建 DeepSeekClient 并发送请求
-        client = DeepSeekClient(
-            label=entity.name,
-            input_message=prompt,
-            messages=self._game.get_agent_memory(entity).messages,
-        )
+        client = build_appearance_synthesis_client(self._game, world_entity, entity)
 
         try:
             # 发送请求并等待响应
@@ -138,7 +131,15 @@ class WearCostumeActionSystem(ReactiveProcessor):
         new_appearance = client.response_content.strip()
         logger.debug(f"LLM 外观合成返回: {new_appearance}")
 
+        # 空回包不写回：宁可保留旧外观，也不把外观刷成空串（与 AppearanceSynthesisSystem 一致）
+        if new_appearance == "":
+            logger.warning(
+                f"角色 {entity.name} 外观合成返回空文本，保留原外观并跳过广播"
+            )
+            return
+
         # 更新外观组件
+        appearance_comp: AppearanceComponent = entity.get(AppearanceComponent)
         entity.replace(
             AppearanceComponent,
             appearance_comp.name,

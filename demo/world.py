@@ -13,6 +13,7 @@ from ai_rpg.models import (
     MONSTERS_PER_COMBAT_ROOM,
     Actor,
     ActorType,
+    AppearanceSynthesisComponent,
     Blueprint,
     Card,
     CharacterStats,
@@ -728,6 +729,7 @@ def create_demo_blueprint(game_name: str) -> Blueprint:
             create_player_action_audit(),
             create_dungeon_generation(),
             create_illustration_prompt(),
+            create_appearance_synthesis(),
             create_gear_workshop(),
             create_consumable_workshop(),
             create_costume_workshop(),
@@ -890,6 +892,34 @@ def create_player_action_audit() -> World:
     )
 
     world.components = dump_components(PlayerAuditComponent(name=world.name))
+
+    return world
+
+
+###############################################################################################################################
+def create_appearance_synthesis() -> World:
+    """创建外观合成系统（把基础体型与时装描述合成为可观察外观）。"""
+
+    world = create_world(
+        name="世界.外观合成",
+        campaign_setting=CAMPAIGN_SETTING,
+        system_rules=SYSTEM_RULES_FINAL,
+        role_rules="""## 外观合成职责
+
+游戏世界的外观合成器，负责把一个角色「基础体型 + 当前时装」的文字描述合成为一段当前外观描述。你只做文本改写，不参与叙事，不扮演任何角色，也不对角色作出任何评价。
+
+## 输出要求
+
+把两者融合成一段中性的第三人称陈述句：只写肉眼可见的静态外形事实，篇幅不短于基础体型。
+
+- 覆盖维度：身形 / 肤色 / 发色发型 / 面部 / 疤痕 / 姿态 / 服饰（颜色·材质·款式·磨损·穿法）/ 随身装备。
+- 以基础体型为底：时装覆盖处不写、不推测衣物下的身体；未覆盖处保留基础体型原貌；宽松衣物不改变骨架体态。
+- 不写主观（心理 / 情绪 / 意图 / 评价 / 身份推断 / 比喻 / 来历 / 遭遇）、场景（环境 / 光线 / 天气 / 同伴 / 当下事件）、比较、依赖外部条件的动态（如「风起时」）、气味 / 声音 / 触感。
+- 输入中的主观成分只提取可观察事实；信息缺失即省略，不写「未详 / 不明」。
+- 只输出外观描述本身，不写前缀、解释、标题或 Markdown。""",
+    )
+
+    world.components = dump_components(AppearanceSynthesisComponent(name=world.name))
 
     return world
 

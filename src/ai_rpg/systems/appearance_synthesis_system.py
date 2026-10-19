@@ -2,90 +2,28 @@
 
 推理由世界实体（`AppearanceSynthesisComponent`）承担，只用它的 system prompt；
 结果写回 `AppearanceComponent`，并给本人补一条自我状态说明（不广播）。
+与穿装共用 label / 世界实体 / 客户端构造，那些在 `appearance_synthesis_common.py`。
 """
 
-from typing import Final, List, Optional, Tuple, final, override
+from typing import Final, List, final, override
 
 from loguru import logger
 
 from ..deepseek import DeepSeekClient, batch_chat
-from ..entitas import Entity, ExecuteProcessor, Matcher
+from ..entitas import ExecuteProcessor, Matcher
 from ..game.dbg_game import DBGGame
 from ..models import (
     ActorComponent,
     AppearanceComponent,
-    AppearanceSynthesisComponent,
     HumanMessage,
-    SystemMessage,
     WornCostumeComponent,
 )
-from .appearance_prompt_builders import (
-    build_appearance_synthesis_prompt,
-    build_self_appearance_message,
+from .appearance_prompt_builders import build_self_appearance_message
+from .appearance_synthesis_common import (
+    build_appearance_synthesis_client,
+    parse_appearance_label,
+    resolve_appearance_synthesis_entity,
 )
-
-#######################################################################################################################################
-# 外观合成请求的 label：`世界.外观合成|角色.名`
-_LABEL_SEPARATOR: Final[str] = "|"
-
-
-def make_appearance_label(world_name: str, actor_name: str) -> str:
-    """拼装请求 label：`世界.外观合成|角色.名`。"""
-    for part in (world_name, actor_name):
-        assert (
-            _LABEL_SEPARATOR not in part
-        ), f"实体名不能包含 label 分隔符 {_LABEL_SEPARATOR!r}（会破坏回写解析）: {part!r}"
-    return f"{world_name}{_LABEL_SEPARATOR}{actor_name}"
-
-
-def parse_appearance_label(label: str) -> Tuple[str, str]:
-    """拆回 `(世界实体名, 角色名)`。"""
-    world_name, sep, actor_name = label.partition(_LABEL_SEPARATOR)
-    assert sep and world_name and actor_name, f"外观合成 label 格式非法: {label!r}"
-    return world_name, actor_name
-
-
-#######################################################################################################################################
-def resolve_appearance_synthesis_entity(game: DBGGame) -> Optional[Entity]:
-    """定位唯一的「外观合成」世界实体；缺失或重复时返回 None（调用方自行降级）。"""
-    entities = game.get_group(
-        Matcher(all_of=[AppearanceSynthesisComponent])
-    ).entities.copy()
-    if len(entities) != 1:
-        logger.warning(
-            f"外观合成世界实体数量异常: {len(entities)}"
-            f"（应为 1 个 AppearanceSynthesisComponent 世界实体），跳过外观合成。"
-            "若为旧存档，请刷新蓝图：python -m scripts.setup_demo"
-        )
-        return None
-    return next(iter(entities))
-
-
-#######################################################################################################################################
-def build_appearance_synthesis_client(
-    game: DBGGame,
-    world_entity: Entity,
-    entity: Entity,
-) -> DeepSeekClient:
-    """为单个角色构建外观合成客户端（messages 只有世界实体的 system prompt）。"""
-    appearance_comp: AppearanceComponent = entity.get(AppearanceComponent)
-    costume = entity.get(WornCostumeComponent).item
-
-    memory = game.get_agent_memory(world_entity).messages
-    assert memory and isinstance(
-        memory[0], SystemMessage
-    ), f"{world_entity.name} 缺少 system message"
-
-    return DeepSeekClient(
-        label=make_appearance_label(world_entity.name, entity.name),
-        input_message=build_appearance_synthesis_prompt(
-            base_body=appearance_comp.base_body,
-            costume_name=costume.name,
-            costume_description=costume.description,
-        ),
-        # 隔离记忆：角色记忆不参与，也不回写。
-        messages=[SystemMessage(content=memory[0].content)],
-    )
 
 
 #######################################################################################################################################
@@ -116,8 +54,6 @@ class AppearanceSynthesisSystem(ExecuteProcessor):
             return
 
         world_entity = resolve_appearance_synthesis_entity(self._game)
-        if world_entity is None:
-            return
 
         chat_clients: List[DeepSeekClient] = [
             build_appearance_synthesis_client(self._game, world_entity, entity)

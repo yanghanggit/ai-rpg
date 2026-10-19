@@ -18,7 +18,6 @@ from ai_rpg.systems.craft_consumable_item_action_system import (
     _build_consumable_select_prompt,
 )
 from ai_rpg.systems.craft_gear_item_action_system import _build_gear_select_prompt
-from ai_rpg.systems.monster_memory_probe_system import _build_memory_probe_prompt
 
 FIELD_SPEC = "## 卡牌字段语义"
 AFFIX_SPEC = "## 词缀设计规范"
@@ -109,7 +108,6 @@ def test_task_prompts_do_not_restate_entity_identity() -> None:
     for text in (
         _build_deck_select_prompt(),
         build_compaction_prompt(),
-        _build_memory_probe_prompt(),
     ):
         assert "你是" not in text
         assert "你扮演" not in text

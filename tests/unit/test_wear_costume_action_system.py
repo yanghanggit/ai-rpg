@@ -29,8 +29,8 @@ _BASE_BODY = "人类基础外形"
 _COSTUME = CostumeItem(name="铁甲", description="坚固的铁制盔甲")
 _NEW_COSTUME = CostumeItem(name="法袍", description="绣有星纹的深蓝色法袍")
 _MODULE = "ai_rpg.systems.wear_costume_action_system"
-# 外观合成的 LLM 客户端由 appearance_synthesis_system 构造，patch 要打在那里
-_SYNTH_MODULE = "ai_rpg.systems.appearance_synthesis_system"
+# 外观合成的 LLM 客户端由 appearance_synthesis_common 构造，patch 要打在那里
+_SYNTH_MODULE = "ai_rpg.systems.appearance_synthesis_common"
 _WORLD_SYSTEM_PROMPT = "你是外观合成器，只输出外观描述。"
 
 

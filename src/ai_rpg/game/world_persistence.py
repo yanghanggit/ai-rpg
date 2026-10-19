@@ -17,6 +17,7 @@ from pydantic import TypeAdapter
 
 from ..entitas import EntityData
 from ..models import (
+    MEMORY_TAGS,
     AgentMemory,
     Blueprint,
     ChatMessage,
@@ -152,6 +153,17 @@ def restore_world(save_dir: Path) -> Tuple[WorldState, PlayerSession]:
 
 
 ###############################################################################################################################################
+def _assert_memory_tags_registered(agent_name: str, agent_memory: AgentMemory) -> None:
+    """校验该 agent 全部记忆消息上的结构化标记都已登记（存档前的兜底闸门）。"""
+    for index, message in enumerate(agent_memory.messages):
+        unknown = set(message.model_extra or {}) - MEMORY_TAGS
+        assert not unknown, (
+            f"存档中止：{agent_name} 第 {index} 条 {type(message).__name__} "
+            f"使用了未登记的记忆标记 {sorted(unknown)}；请在 models/memory_tags.py 登记"
+        )
+
+
+###############################################################################################################################################
 def save_world(
     world: WorldState,
     player_session: PlayerSession,
@@ -205,6 +217,10 @@ def save_world(
     # 保存代理记忆数据
     sep: str = "-" * 100
     for agent_name, agent_memory in world.agent_memories.items():
+
+        # 落盘前的第二道闸门：标记必须已登记。运行时校验只能覆盖走 add_* 的写入，
+        # agent_loop 等直写路径到不了那里，因此在这里一次性校验全部消息。
+        _assert_memory_tags_registered(agent_name, agent_memory)
 
         # 正式存档数据
         message_lines = [msg.model_dump_json() for msg in agent_memory.messages]

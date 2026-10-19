@@ -1,4 +1,9 @@
-"""出牌前系统模块（队员）。"""
+"""出牌前系统模块（队员）。
+
+预留 hook：与 `MonsterPrePlaySystem` 结构对齐，供将来「出牌前注入」类机制挂载。
+队员在战斗中的决策来自第四面墙外的玩家（前端指令），不产生 LLM 推理由此不由本系统承担，
+所以当前实现只有结构（触发条件 + 战斗态校验），没有推理与记忆写入。
+"""
 
 from typing import Dict, Final, List, final
 
@@ -18,7 +23,12 @@ from ..models import (
 #######################################################################################################################################
 @final
 class PartyPrePlaySystem(ReactiveProcessor):
-    """出牌前系统（队员）。预留 hook，供后续出牌前注入机制扩展，与 MonsterPrePlaySystem 结构对齐。"""
+    """出牌前系统（队员）：预留 hook，当前不写入记忆。
+
+    队员的出牌决策由玩家侧给出（命令即决策），不存在"决策 LLM"，因此这里没有
+    `MonsterPrePlaySystem` 那样的「请求原文 + 回包原文」留痕；出牌记录由
+    `PlayCardsActionSystem` 的 `play_card_record` 统一承担。
+    """
 
     def __init__(self, game: DBGGame) -> None:
         super().__init__(game)

@@ -52,8 +52,6 @@ def create_dungeon_combat_room_pipeline(
     from ..systems.exhaust_ethereal_cards_system import ExhaustEtherealCardsSystem
     from ..systems.fill_draw_pile_system import FillDrawPileSystem
     from ..systems.monster_pre_play_system import MonsterPrePlaySystem
-
-    # from ..systems.monster_memory_probe_system import MonsterMemoryProbeSystem
     from ..systems.party_pre_play_system import PartyPrePlaySystem
     from ..systems.pass_turn_action_system import PassTurnActionSystem
     from ..systems.play_cards_action_system import (
@@ -98,9 +96,6 @@ def create_dungeon_combat_room_pipeline(
     # 前者监听 DrawCardsAction 开启新回合，后者抓牌，顺序即因果链（先开回合，后抓牌）。
     processors.add(CombatRoundStartSystem(dbg_game, strategy=ActionOrderStrategy.SPEED))
     processors.add(DrawCardsActionSystem(dbg_game))
-    # processors.add(
-    #     MonsterMemoryProbeSystem(dbg_game)
-    # )  # 纯调试系统：在怪物出牌决策前探测其记忆同步是否正确，问题/回答不写入 LLM 记忆。
     processors.add(MonsterPrePlaySystem(dbg_game))
     processors.add(PartyPrePlaySystem(dbg_game))
 

@@ -1,7 +1,8 @@
-"""AppearanceSynthesisSystem 单元测试。
+"""`AppearanceSynthesisSystem` 单元测试（管道起点的外观补齐）。
 
-核心不变量：外观合成是「世界实体 system prompt + 任务提示词」的一次性推理，
-既不用角色记忆，也不回写任何记忆。
+核心不变量：推理只送「世界实体 system prompt + 任务提示词」，不读角色记忆；
+结果写回 `AppearanceComponent` 并给本人一条自我状态说明，不做全场景广播。
+共用部分（label / 世界实体 / 客户端构造）的测试见 `test_appearance_synthesis_common.py`。
 """
 
 from typing import List
@@ -22,13 +23,8 @@ from ai_rpg.models import (
     SystemMessage,
     WornCostumeComponent,
 )
-from ai_rpg.systems.appearance_synthesis_system import (
-    AppearanceSynthesisSystem,
-    build_appearance_synthesis_client,
-    make_appearance_label,
-    parse_appearance_label,
-    resolve_appearance_synthesis_entity,
-)
+from ai_rpg.systems.appearance_synthesis_common import make_appearance_label
+from ai_rpg.systems.appearance_synthesis_system import AppearanceSynthesisSystem
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -102,96 +98,6 @@ def system(mock_game: MagicMock) -> AppearanceSynthesisSystem:
 
 # ---------------------------------------------------------------------------
 # Tests — resolve_appearance_synthesis_entity
-# ---------------------------------------------------------------------------
-
-
-class TestResolveWorldEntity:
-    def test_returns_unique_world_entity(self, context: Context) -> None:
-        world = _make_world_entity(context)
-        game = MagicMock(spec=DBGGame)
-        game.get_group.return_value = _group_mock([world])
-
-        assert resolve_appearance_synthesis_entity(game) is world
-
-    def test_returns_none_when_missing(self, context: Context) -> None:
-        game = MagicMock(spec=DBGGame)
-        game.get_group.return_value = _group_mock([])
-
-        assert resolve_appearance_synthesis_entity(game) is None
-
-    def test_returns_none_when_duplicated(self, context: Context) -> None:
-        first = _make_world_entity(context)
-        second = _make_world_entity(context)
-        game = MagicMock(spec=DBGGame)
-        game.get_group.return_value = _group_mock([first, second])
-
-        assert resolve_appearance_synthesis_entity(game) is None
-
-
-# ---------------------------------------------------------------------------
-# Tests — label 组合与解析
-# ---------------------------------------------------------------------------
-
-
-class TestLabel:
-    def test_round_trip(self) -> None:
-        label = make_appearance_label("世界.外观合成", "角色.无名")
-        assert label == "世界.外观合成|角色.无名"
-        assert parse_appearance_label(label) == ("世界.外观合成", "角色.无名")
-
-    def test_rejects_illegal_label(self) -> None:
-        with pytest.raises(AssertionError):
-            parse_appearance_label("角色.无名")
-
-
-# ---------------------------------------------------------------------------
-# Tests — build_appearance_synthesis_client
-# ---------------------------------------------------------------------------
-
-
-class TestBuildClient:
-    def test_prompt_contains_base_body_and_costume_info(
-        self, context: Context, mock_game: MagicMock
-    ) -> None:
-        """任务提示词只带数据：基础体型 + 时装名与描述；label 与实体名一致。"""
-        world = _make_world_entity(context)
-        entity = _make_actor_entity(context, "英雄", _BASE_BODY)
-
-        client = build_appearance_synthesis_client(mock_game, world, entity)
-
-        assert client.label == "世界.外观合成|英雄"
-        assert _BASE_BODY in client.input_message
-        assert _COSTUME.name in client.input_message
-        assert _COSTUME.description in client.input_message
-
-    def test_context_is_only_world_system_prompt(
-        self, context: Context, mock_game: MagicMock
-    ) -> None:
-        """隔离记忆：随行消息只有世界实体的 system prompt 一条，不含角色记忆。"""
-        world = _make_world_entity(context)
-        entity = _make_actor_entity(context, "英雄", _BASE_BODY)
-
-        client = build_appearance_synthesis_client(mock_game, world, entity)
-
-        assert len(client.messages) == 1
-        assert isinstance(client.messages[0], SystemMessage)
-        assert client.messages[0].content == _WORLD_SYSTEM_PROMPT
-        # 角色记忆参与了构造过程吗？只允许读世界实体的记忆。
-        mock_game.get_agent_memory.assert_called_once_with(world)
-
-    def test_requires_world_system_message(
-        self, context: Context, mock_game: MagicMock
-    ) -> None:
-        world = _make_world_entity(context)
-        entity = _make_actor_entity(context, "英雄", _BASE_BODY)
-        mock_game.get_agent_memory.return_value = MagicMock(messages=[])
-
-        with pytest.raises(AssertionError):
-            build_appearance_synthesis_client(mock_game, world, entity)
-
-
-# ---------------------------------------------------------------------------
-# Tests — _apply_result
 # ---------------------------------------------------------------------------
 
 
@@ -314,10 +220,10 @@ class TestExecute:
         mock_game.add_human_message.assert_called_once()
         assert mock_game.add_human_message.call_args.kwargs["entity"] is target
 
-    async def test_skips_without_world_entity(
+    async def test_asserts_without_world_entity(
         self, context: Context, mock_game: MagicMock, system: AppearanceSynthesisSystem
     ) -> None:
-        """世界实体缺失（旧存档）时：不推理、不改外观，优雅降级。"""
+        """世界实体缺失时直接断言（数据错误），不进入推理、不改外观。"""
         target = _make_actor_entity(context, "英雄", _BASE_BODY)
         mock_game.get_group.side_effect = [
             _group_mock([target]),
@@ -327,14 +233,8 @@ class TestExecute:
         with patch(
             "ai_rpg.systems.appearance_synthesis_system.batch_chat",
         ) as mock_batch:
-            await system.execute()
+            with pytest.raises(AssertionError, match="外观合成世界实体数量异常"):
+                await system.execute()
 
         mock_batch.assert_not_called()
         assert target.get(AppearanceComponent).appearance == _BASE_BODY
-
-
-class TestLabelBoundary:
-    def test_rejects_separator_in_name(self) -> None:
-        """实体名含分隔符会让回写解析崩掉，故拼装时直接断言。"""
-        with pytest.raises(AssertionError):
-            make_appearance_label("世界.外观合成", "角色|无名")

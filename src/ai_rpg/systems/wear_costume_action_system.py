@@ -15,7 +15,7 @@ from ..models import (
     WornCostumeComponent,
 )
 from .appearance_prompt_builders import build_wear_costume_message
-from .appearance_synthesis_system import (
+from .appearance_synthesis_common import (
     build_appearance_synthesis_client,
     resolve_appearance_synthesis_entity,
 )
@@ -113,9 +113,6 @@ class WearCostumeActionSystem(ReactiveProcessor):
         # 外观合成：与 AppearanceSynthesisSystem 走同一入口（世界实体的 system prompt + 任务提示词），
         # 不借角色记忆、也不回写。世界实体缺失时降级为「外观保持基础体型」。
         world_entity = resolve_appearance_synthesis_entity(self._game)
-        if world_entity is None:
-            return
-
         client = build_appearance_synthesis_client(self._game, world_entity, entity)
 
         try:

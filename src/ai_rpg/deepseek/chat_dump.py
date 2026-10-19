@@ -7,9 +7,10 @@
 
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, Final, List
 
 from loguru import logger
 
@@ -28,6 +29,11 @@ assert CHAT_DUMP_DIR.exists(), f"找不到目录: {CHAT_DUMP_DIR}"
 chat_dump_enabled: bool = False
 
 _SEP = "-" * 86
+
+# 文件名安全字符集：中文、字母、数字与 _ - .；其余（含 | : / \ 空格 等）替换为下划线
+_SAFE_FILENAME_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r"[^0-9A-Za-z_\-.\u4e00-\u9fff]"
+)
 
 
 ############################################################################################################
@@ -71,9 +77,10 @@ def dump_chat(client: DeepSeekClient) -> None:
         content += "\n"
 
         # 写入文件，文件名格式为：YYYYMMDD_HHMMSS_microseconds_label.txt
-        # label 可能带“主体|服务对象”这类分隔标记（如外观合成），文件名里换成无歧义分隔。
+        # label 可能带「主体|服务对象」这类分隔标记（如外观合成），且含路径分隔符/冒号等
+        # 会破坏文件名的字符；统一把非 [中文 字母 数字 _ - .] 的字符换成 "_"。
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-        safe_label = client._label.replace("|", "_").replace("/", "_")
+        safe_label = _SAFE_FILENAME_PATTERN.sub("_", client._label)
         dump_file = CHAT_DUMP_DIR / f"{timestamp}_{safe_label}.txt"
         CHAT_DUMP_DIR.mkdir(parents=True, exist_ok=True)
         dump_file.write_text(content, encoding="utf-8")

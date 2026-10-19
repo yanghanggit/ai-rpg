@@ -300,3 +300,43 @@ class TestAtomicSave:
         restored_world, restored_session = world_persistence.restore_world(snapshots[0])
         assert restored_world.entity_counter == 1
         assert restored_session.name == "user"
+
+
+# ---------------------------------------------------------------------------
+# 存档前的标记闸门（覆盖 agent_loop 等绕过 add_* 的直写路径）
+# ---------------------------------------------------------------------------
+
+
+class TestMemoryTagGate:
+    def test_unregistered_tag_aborts_save(self, tmp_path: Path) -> None:
+        """记忆里有未登记标记时存档中止：直写路径不经过 add_* 校验，这里兜底。"""
+        world = _make_world()
+        world.agent_memories["alice"] = AgentMemory(
+            name="alice",
+            messages=[HumanMessage(content="hi", typo_tag="x")],
+        )
+
+        with pytest.raises(AssertionError, match="未登记的记忆标记"):
+            world_persistence.save_world(
+                world, _make_player_session(), tmp_path, tmp_path / "snap"
+            )
+
+    def test_registered_tag_saves_and_round_trips(self, tmp_path: Path) -> None:
+        """已登记标记照常保存，且往返后标记不丢。"""
+        world = _make_world()
+        world.agent_memories["alice"] = AgentMemory(
+            name="alice",
+            messages=[
+                HumanMessage(content="hi", broadcast_stage="场景.酒馆"),
+                AIMessage(content="", context_usage_ratio=0.5),
+            ],
+        )
+        save_dir = tmp_path / "snap"
+        assert world_persistence.save_world(
+            world, _make_player_session(), tmp_path, save_dir
+        )
+
+        restored_world, _ = world_persistence.restore_world(save_dir)
+        messages = restored_world.agent_memories["alice"].messages
+        assert isinstance(messages[0], HumanMessage)
+        assert getattr(messages[0], "broadcast_stage") == "场景.酒馆"

@@ -95,3 +95,51 @@ def test_message_kwargs_are_registered_tags() -> None:
                     unregistered.setdefault(key, set()).add(path.name)
 
     assert not unregistered, f"这些关键字未在 memory_tags.py 登记：{unregistered}"
+
+
+def test_every_registered_tag_is_accepted_by_runtime_gate() -> None:
+    """反向：词表里的标记不会触发运行时校验（拼错/漏登记之外的另一半）。"""
+    from ai_rpg.models import HumanMessage, assert_known_memory_tags
+
+    for tag in MEMORY_TAGS:
+        message = HumanMessage(content="", **{tag: "value"})
+        assert_known_memory_tags(message)
+
+
+def test_structured_tag_values_have_expected_shape() -> None:
+    """结构化标记的值有约定形态：调用方与消费者都依赖它，不能被随手改坏。"""
+    import json
+
+    from ai_rpg.models import Card, PlayCardsAction, TargetType
+    from ai_rpg.systems.play_cards_action_system import _build_play_card_record_tag
+    from ai_rpg.systems.transfer_cards_action_system import _build_received_card_tag
+
+    card = Card(
+        name="攻击",
+        description="描述不该进标记",
+        cost=1,
+        damage=5,
+        hit_count=1,
+        block=2,
+        target_type=TargetType.SINGLE,
+        source="角色.无名",
+    )
+    action = PlayCardsAction(name="角色.无名", card=card, targets=["怪物.渡口野狗"])
+
+    play_record = json.loads(_build_play_card_record_tag(action))
+    assert set(play_record) == {"name", "uuid", "cost", "target_type", "targets"}
+    assert play_record["targets"] == ["怪物.渡口野狗"]
+
+    received = json.loads(_build_received_card_tag(card))
+    assert set(received) == {
+        "name",
+        "uuid",
+        "source",
+        "cost",
+        "damage",
+        "hit_count",
+        "block",
+        "target_type",
+    }
+    # 精简后的标记不带描述/词缀，避免每条记忆被整张卡撑爆
+    assert "描述不该进标记" not in json.dumps(received, ensure_ascii=False)

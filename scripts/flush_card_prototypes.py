@@ -57,8 +57,7 @@ def _print_db_index() -> None:
     print(f"库中卡牌原型：{len(index)} 个")
     for row in index:
         print(
-            f"  {row['prototype_id']:<18} "
-            f"[{row['card_type']}/{row['archetype']}] {row['name']}"
+            f"  {row['prototype_id']:<18} [{row['card_type']}/{row['archetype']}] {row['name']}"
         )
 
 
@@ -172,8 +171,7 @@ def main(
         unknown = [pid for pid in only_ids if pid not in all_protos]
         if unknown:
             raise click.BadParameter(
-                f"未知 prototype_id: {unknown}"
-                "（可用 --list 或查看 demo/card_prototypes.py）",
+                f"未知 prototype_id: {unknown}（可用 --list 或查看 demo/card_prototypes.py）",
                 param_hint="--only",
             )
         targets = [all_protos[pid] for pid in only_ids]
@@ -227,8 +225,7 @@ def main(
     prune_note = planned_prune if dry_run else pruned
     prune_label = "将删除" if dry_run else "删除"
     print(
-        f"\n完成：新增 {counts['新增']} / 更新 {counts['更新']} / "
-        f"未变 {counts['未变']} / {prune_label} {prune_note}"
+        f"\n完成：新增 {counts['新增']} / 更新 {counts['更新']} / 未变 {counts['未变']} / {prune_label} {prune_note}"
     )
     _print_db_index()
 

@@ -63,10 +63,7 @@ def _build_artifact_blocks(entries: List[Tuple[str, Artifact]]) -> str:
 
         # 渲染每个神器的基本信息块（名称、来源、描述）
         blocks.append(
-            f"### {artifact.name}\n\n"
-            f"- source（来源/归属）：{artifact.source or holder_name}\n\n"
-            f"{artifact.description}\n\n"
-            f"{modifiers}"
+            f"### {artifact.name}\n\n- source（来源/归属）：{artifact.source or holder_name}\n\n{artifact.description}\n\n{modifiers}"
         )
     return "\n\n".join(blocks)
 
@@ -145,13 +142,9 @@ CHANGE_HP_TOOL: Final[ToolDefinition] = ToolDefinition(
 
 
 SUBMIT_ARBITRATION_TOOL: Final[ToolDefinition] = make_submit_arbitration_tool(
-    "提交本次神器仲裁的最终结果（战斗日志、演出叙事、无法结算的规则）。"
-    f"combat_log 写效果说明，HP 变化由系统据实际 {CHANGE_HP_TOOL.function.name} 调用自动补记。"
-    "调用后本次仲裁结束。",
+    f"提交本次神器仲裁的最终结果（战斗日志、演出叙事、无法结算的规则）。combat_log 写效果说明，HP 变化由系统据实际 {CHANGE_HP_TOOL.function.name} 调用自动补记。调用后本次仲裁结束。",
     combat_log_desc=(
-        "战斗数据日志（简名 = 全名最后一段）。只写 `[<神器简名>|<当前回合数>] <效果说明>`，"
-        "不要写 HP 数字；系统会自动追加 `；HP:<角色A> a→b <角色B> c→d`（仅在有 HP 变化时）。"
-        "未触发写 `[<神器简名>|<当前回合数>] 触发条件未满足／已触发过，无 HP 变更`。"
+        "战斗数据日志（简名 = 全名最后一段）。只写 `[<神器简名>|<当前回合数>] <效果说明>`，不要写 HP 数字；系统会自动追加 `；HP:<角色A> a→b <角色B> c→d`（仅在有 HP 变化时）。未触发写 `[<神器简名>|<当前回合数>] 触发条件未满足／已触发过，无 HP 变更`。"
     ),
 )
 
@@ -191,10 +184,7 @@ def _handle_change_hp(
     # 根据 HP 变化量确定描述动词
     verb = "扣减" if changed > 0 else ("回复" if changed < 0 else "无变化")
 
-    return (
-        f"{entity_name} HP 将更新为 {new_hp}/{stats.max_hp}"
-        f"（{old_hp} → {new_hp}，本次{verb} {abs(changed)}）"
-    )
+    return f"{entity_name} HP 将更新为 {new_hp}/{stats.max_hp}（{old_hp} → {new_hp}，本次{verb} {abs(changed)}）"
 
 
 def _compose_artifact_combat_log(ctx: ArbitrationContext) -> str:

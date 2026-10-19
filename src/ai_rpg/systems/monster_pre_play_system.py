@@ -84,8 +84,7 @@ def _format_card(card: Card) -> str:
     """将一张手牌格式化为紧凑、信息密度高的文本（出牌决策提示词的文本片段）。"""
     lines = [
         f"- 【{card.name}】{card.description}",
-        f"  费用{card.cost} 伤害{card.damage}×{card.hit_count}段 格挡{card.block} "
-        f"目标:{_target_label(card)} {'可出' if card.playable else '不可出'}",
+        f"  费用{card.cost} 伤害{card.damage}×{card.hit_count}段 格挡{card.block} 目标:{_target_label(card)} {'可出' if card.playable else '不可出'}",
         render_labeled_str_list("  即时词缀", card.on_play_affixes, indent="    "),
         render_labeled_str_list("  受击词缀", card.on_hit_affixes, indent="    "),
         render_labeled_str_list(
@@ -178,11 +177,7 @@ def _build_context_block(
     completed_actors: List[str],
 ) -> str:
     """构建出牌决策提示词共享的上下文块（状态/序列/手牌/对手）。"""
-    self_info = (
-        f"HP {stats.hp}/{stats.max_hp} | "
-        f"速度 {stats.speed} | "
-        f"剩余能量 {energy}（每打出一张牌需支付其「费用 cost」点能量）"
-    )
+    self_info = f"HP {stats.hp}/{stats.max_hp} | 速度 {stats.speed} | 剩余能量 {energy}（每打出一张牌需支付其「费用 cost」点能量）"
     cards_lines = "\n".join(_format_card(c) for c in hand_cards)
     opponents_lines = (
         "\n".join(_format_opponent(o, monster_name) for o in opponents)
@@ -460,15 +455,13 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         if outcome.card is None:
             entity.replace(PassTurnAction, entity.name)
             logger.debug(
-                f"MonsterPrePlaySystem: [{entity.name}] 决策过牌"
-                f"（{outcome.forced_cause or '主动跳过本次出牌机会'}）"
+                f"MonsterPrePlaySystem: [{entity.name}] 决策过牌（{outcome.forced_cause or '主动跳过本次出牌机会'}）"
             )
             return
 
         entity.replace(PlayCardsAction, entity.name, outcome.card, outcome.targets)
         logger.debug(
-            f"MonsterPrePlaySystem: [{entity.name}] 决策出牌 "
-            f"'{outcome.card.name}'，目标：{outcome.targets}"
+            f"MonsterPrePlaySystem: [{entity.name}] 决策出牌 '{outcome.card.name}'，目标：{outcome.targets}"
         )
 
     ####################################################################################################################################
@@ -507,8 +500,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         )
         if selected_card is None:
             logger.error(
-                f"MonsterPrePlaySystem: [{entity.name}] LLM 返回的卡牌名 '{decision.card_name}' "
-                f"不在手牌中：{[c.name for c in hand_comp.cards]}，执行过牌"
+                f"MonsterPrePlaySystem: [{entity.name}] LLM 返回的卡牌名 '{decision.card_name}' 不在手牌中：{[c.name for c in hand_comp.cards]}，执行过牌"
             )
             return _DecisionOutcome(
                 forced_cause=f"「{decision.card_name}」不在你的手牌中",
@@ -518,8 +510,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         # 兜底校验：不可出 / 能量不足都按过牌处理，绝不让错误决策进入结算
         if not selected_card.playable:
             logger.error(
-                f"MonsterPrePlaySystem: [{entity.name}] 决策选出不可出牌的 "
-                f"'{selected_card.name}'，强制过牌"
+                f"MonsterPrePlaySystem: [{entity.name}] 决策选出不可出牌的 '{selected_card.name}'，强制过牌"
             )
             return _DecisionOutcome(
                 intended_card=selected_card,
@@ -530,8 +521,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         energy = get_energy(entity)
         if energy < selected_card.cost:
             logger.warning(
-                f"MonsterPrePlaySystem: [{entity.name}] 决策出牌 '{selected_card.name}' "
-                f"能量不足（费用 {selected_card.cost} > 剩余 {energy}），强制过牌"
+                f"MonsterPrePlaySystem: [{entity.name}] 决策出牌 '{selected_card.name}' 能量不足（费用 {selected_card.cost} > 剩余 {energy}），强制过牌"
             )
             return _DecisionOutcome(
                 intended_card=selected_card,

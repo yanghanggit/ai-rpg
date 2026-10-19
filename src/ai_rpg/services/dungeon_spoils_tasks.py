@@ -82,8 +82,7 @@ async def execute_pick_spoils_card_task(
     try:
 
         logger.info(
-            f"🚀 领卡任务开始: job_id={job_id}, user={user_name}, "
-            f"actor={actor_name}, card={card_name}"
+            f"🚀 领卡任务开始: job_id={job_id}, user={user_name}, actor={actor_name}, card={card_name}"
         )
 
         game_server = get_runtime_game_server()

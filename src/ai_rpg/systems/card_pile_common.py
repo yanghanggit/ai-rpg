@@ -94,13 +94,11 @@ def record_round_end_discard(
         lines: List[str] = []
         if discarded:
             lines.append(
-                f"{format_card_names(list(discarded))}进入弃牌堆"
-                f"（弃牌堆 {discard_size} 张）。"
+                f"{format_card_names(list(discarded))}进入弃牌堆（弃牌堆 {discard_size} 张）。"
             )
         if retained:
             lines.append(
-                f"{format_card_names(list(retained))}保留到下回合，"
-                "抽牌时会先回到手牌。"
+                f"{format_card_names(list(retained))}保留到下回合，抽牌时会先回到手牌。"
             )
         lines.append("手牌已清空。")
         record_pile_change(

@@ -141,8 +141,7 @@ class AssembleDungeonDeckSystem(ReactiveProcessor):
         ]
 
         logger.info(
-            f"[AssembleDungeonDeckSystem] 开始: dungeon={dungeon_name}, "
-            f"actors={len(combat_actors)}"
+            f"[AssembleDungeonDeckSystem] 开始: dungeon={dungeon_name}, actors={len(combat_actors)}"
         )
 
         # 预取一次手牌原型索引，供所有并发 agent_loop 共享（list_card_prototypes 返回缓存）
@@ -163,15 +162,13 @@ class AssembleDungeonDeckSystem(ReactiveProcessor):
             outcomes = await batch_run_boolean_tasks(tasks)
             succeeded = sum(1 for ok in outcomes if ok)
             logger.info(
-                f"[AssembleDungeonDeckSystem] 牌库组建完成: "
-                f"{succeeded}/{len(combat_actors)} 个角色使用原型牌库"
+                f"[AssembleDungeonDeckSystem] 牌库组建完成: {succeeded}/{len(combat_actors)} 个角色使用原型牌库"
             )
 
         # 写盘最终 Dungeon JSON（含已填充的牌库）
         dungeon_path.write_text(dungeon.model_dump_json(indent=4), encoding="utf-8")
         logger.info(
-            f"[AssembleDungeonDeckSystem] Dungeon 已保存: {dungeon_path}\n"
-            f"  rooms ({len(dungeon.rooms)}): "
+            f"[AssembleDungeonDeckSystem] Dungeon 已保存: {dungeon_path}\n  rooms ({len(dungeon.rooms)}): "
             + ", ".join(
                 f"{room.stage.name}({room.stage.actors[0].name if room.stage.actors else 'no actor'})"
                 for room in dungeon.rooms
@@ -235,8 +232,7 @@ class AssembleDungeonDeckSystem(ReactiveProcessor):
             candidate = materialize_candidate(prototype_id, actor.name)
             if candidate is None:
                 logger.error(
-                    f"[AssembleDungeonDeckSystem] {actor.name} 物化原型 "
-                    f"{prototype_id!r} 失败，回退默认"
+                    f"[AssembleDungeonDeckSystem] {actor.name} 物化原型 {prototype_id!r} 失败，回退默认"
                 )
                 return make_default_deck_cards(actor.name), True
             candidates.append(candidate)
@@ -250,8 +246,7 @@ class AssembleDungeonDeckSystem(ReactiveProcessor):
         )
         if not outcome.ok or outcome.designed != DECK_SIZE:
             logger.warning(
-                f"[AssembleDungeonDeckSystem] {actor.name} 设计 "
-                f"{outcome.designed}/{DECK_SIZE} 未全部完成，回退默认"
+                f"[AssembleDungeonDeckSystem] {actor.name} 设计 {outcome.designed}/{DECK_SIZE} 未全部完成，回退默认"
             )
             return make_default_deck_cards(actor.name), True
 

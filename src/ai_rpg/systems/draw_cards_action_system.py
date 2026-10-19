@@ -190,8 +190,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
             new_hand = retained + drawn
 
             logger.debug(
-                f"[{entity.name}] retain 牌 {len(retained)} 张 + 新抽 {len(drawn)} 张"
-                f"（目标 {draw_target_count} 张）：{[c.name for c in drawn]} → 手牌共 {len(new_hand)} 张"
+                f"[{entity.name}] retain 牌 {len(retained)} 张 + 新抽 {len(drawn)} 张（目标 {draw_target_count} 张）：{[c.name for c in drawn]} → 手牌共 {len(new_hand)} 张"
             )
             entity.replace(HandComponent, entity.name, new_hand)
 

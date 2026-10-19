@@ -106,8 +106,7 @@ class Entity:
         # Handle components with fields
         if len(args) != len(field_names):
             raise ValueError(
-                f"Component {comp_type.__name__} expects {len(field_names)} "
-                f"arguments ({field_names}), got {len(args)}"
+                f"Component {comp_type.__name__} expects {len(field_names)} arguments ({field_names}), got {len(args)}"
             )
         kwargs = dict(zip(field_names, args))
         return comp_type(**kwargs)

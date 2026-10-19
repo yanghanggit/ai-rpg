@@ -20,6 +20,7 @@ def create_dungeon_combat_room_pipeline(
     from ..systems.autonomous_arbitration_system import (
         AutonomousArbitrationSystem,
     )
+    from ..systems.card_operation_system import CardOperationSystem
     from ..systems.combat_init_actor_system import CombatInitActorSystem
     from ..systems.combat_init_stage_system import CombatInitStageSystem
     from ..systems.combat_loot_system import CombatLootSystem
@@ -119,6 +120,9 @@ def create_dungeon_combat_room_pipeline(
 
     # 仲裁系统：出牌（消耗品已物化为普通手牌，随出牌一同结算）
     processors.add(PlayCardsArbitrationSystem(dbg_game))
+
+    # 卡牌运转系统：出牌结算完毕后，由牌的主人自己让这张牌在牌堆里继续运转（复制 / 移动 / 改写）
+    processors.add(CardOperationSystem(dbg_game))
 
     # 场景神器仲裁系统：在出牌/消耗品仲裁之后，由当前场景（stage）结算其携带的神器修正规则
     processors.add(ArtifactPostArbitrationSystem(dbg_game))

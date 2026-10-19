@@ -29,7 +29,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from ..deepseek import ToolDefinition, ToolFunction, agent_loop
 from ..models import (
-    AFFIX_FIELDS,
+    DESIGNABLE_AFFIX_FIELDS,
     Card,
     ChatMessage,
     NormalizedStrList,
@@ -98,10 +98,7 @@ class CardDesign(BaseModel):
 
 #######################################################################################################################################
 _SUBMIT_CARD_DESCRIPTION: Final[str] = (
-    "提交一张卡的设计（name / description + 可选数值微调 + 词缀）。每张卡各调用一次，用编号（#N）定位。"
-    "词缀只能作用于 HP（伤害 / 反伤 / 吸血 / 治疗）或经 transferable 牌施加持续状态；"
-    "不得写格挡、抽弃牌、能量、改布尔标志，只能引用内建数值（本卡 damage/block/hit_count、"
-    "目标与自身 HP/最大HP/总格挡）；提交到未开放槽或格式不合法会被丢弃。"
+    "提交一张卡的设计（name / description + 可选数值微调 + 词缀）。每张卡各调用一次，用编号（#N）定位。词缀只能作用于 HP（伤害 / 反伤 / 吸血 / 治疗）或经 transferable 牌施加持续状态；不得写格挡、抽弃牌、能量、改布尔标志，只能引用内建数值（本卡 damage/block/hit_count、目标与自身 HP/最大HP/总格挡）；提交到未开放槽或格式不合法会被丢弃。"
 )
 
 # submit_card 的基础字段；调用方可经 build_submit_card_tool 追加领域字段（如装备 speed）。
@@ -198,8 +195,7 @@ FINISH_CARDS_TOOL = ToolDefinition(
     function=ToolFunction(
         name="finish_cards",
         description=(
-            "全部卡均已通过 submit_card 成功提交后调用，结束本次设计；"
-            "若仍有未提交或被拒的卡，调用会返回错误并提示缺哪几张。"
+            "全部卡均已通过 submit_card 成功提交后调用，结束本次设计；若仍有未提交或被拒的卡，调用会返回错误并提示缺哪几张。"
         ),
         parameters={"type": "object", "properties": {}},
     )
@@ -242,8 +238,7 @@ def build_select_cards_tool(size: int) -> ToolDefinition:
         function=ToolFunction(
             name="select_cards",
             description=(
-                f"一次性提交恰好 {size} 个原型 id（同一原型可重复），确定选型；"
-                "随后进入逐张设计。"
+                f"一次性提交恰好 {size} 个原型 id（同一原型可重复），确定选型；随后进入逐张设计。"
             ),
             parameters={
                 "type": "object",
@@ -301,14 +296,9 @@ def format_candidate(candidate: Candidate, index: int) -> str:
     原型的占位词缀也不再单列——变量池与方向已含在 design 的【设计】里。
     """
     card = candidate.card
-    designable = [field for field in AFFIX_FIELDS if getattr(card, field)]
+    designable = [field for field in DESIGNABLE_AFFIX_FIELDS if getattr(card, field)]
     slots = "、".join(designable) if designable else "无（仅设计 name/description）"
-    return (
-        f"- #{index}\n"
-        f"  原型: {candidate.archetype} / {candidate.archetype_subtype} — {candidate.summary}\n"
-        f"  可设计槽: {slots}\n"
-        f"  设计: {candidate.design}"
-    )
+    return f"- #{index}\n  原型: {candidate.archetype} / {candidate.archetype_subtype} — {candidate.summary}\n  可设计槽: {slots}\n  设计: {candidate.design}"
 
 
 #######################################################################################################################################
@@ -380,7 +370,7 @@ def _handle_submit_card(
     }
 
     problems: List[str] = []
-    for field in AFFIX_FIELDS:
+    for field in DESIGNABLE_AFFIX_FIELDS:
 
         #   获取提交的词缀列表并进行标准化
         items = normalize_str_list(submitted_map.get(field) or [])
@@ -440,8 +430,7 @@ def _handle_finish_cards(edits: List[CardDesign], cards: List[Card]) -> str:
     ]
     if missing:
         raise ValueError(
-            f"还有 {len(missing)} 张卡未成功提交（{'、'.join(missing)}）；"
-            "请修正后重新调用 submit_card，全部完成后再 finish_cards。"
+            f"还有 {len(missing)} 张卡未成功提交（{'、'.join(missing)}）；请修正后重新调用 submit_card，全部完成后再 finish_cards。"
         )
     return "已结束本次设计。"
 
@@ -475,10 +464,7 @@ def _handle_list_card_prototypes(index: List[CardPrototypeIndexEntry]) -> str:
 def _handle_get_card_prototype(valid_ids: Set[str], prototype_id: str) -> str:
     """处理 get_card_prototype：按 id 返回完整原型（含 card 全字段）。"""
     if prototype_id not in valid_ids:
-        return (
-            f"错误：未知原型 id {prototype_id!r}。"
-            "可用 id 请通过 list_card_prototypes 查询。"
-        )
+        return f"错误：未知原型 id {prototype_id!r}。可用 id 请通过 list_card_prototypes 查询。"
     try:
         proto = get_card_prototype(prototype_id)
     except ValueError as e:
@@ -506,15 +492,11 @@ def _handle_select_cards(
 ) -> str:
     """处理 select_cards：校验数量与 id 合法性，不合法则返回错误让 agent 修正重提。"""
     if len(prototype_ids) != size:
-        return (
-            f"错误：需恰好 {size} 个 prototype_id，实际 {len(prototype_ids)}。"
-            "请修正后重新调用 select_cards。"
-        )
+        return f"错误：需恰好 {size} 个 prototype_id，实际 {len(prototype_ids)}。请修正后重新调用 select_cards。"
     unknown = [pid for pid in prototype_ids if pid not in valid_ids]
     if unknown:
         return (
-            f"错误：未知原型 id {unknown}。"
-            "可用 id 请通过 list_card_prototypes 查询。"
+            f"错误：未知原型 id {unknown}。可用 id 请通过 list_card_prototypes 查询。"
         )
     selection.prototype_ids = list(prototype_ids)
     logger.info(f"[card_design] select_cards: {selection.prototype_ids}")
@@ -572,7 +554,7 @@ def apply_designs(
         count, affix_notes = apply_affix_design(
             owner,
             card,
-            {field: getattr(edit, field) for field in AFFIX_FIELDS},
+            {field: getattr(edit, field) for field in DESIGNABLE_AFFIX_FIELDS},
         )
 
         # 累计应用的词缀数量和记录告警信息
@@ -646,8 +628,7 @@ async def run_card_design_session(
 
     # 输出设计总结信息
     logger.info(
-        f"[card_design] {name}: 设计 {applied}/{len(candidates)} 张，"
-        f"词缀 {affixes} 条（agent_loop 成功={ok}）"
+        f"[card_design] {name}: 设计 {applied}/{len(candidates)} 张，词缀 {affixes} 条（agent_loop 成功={ok}）"
     )
     return DesignOutcome(
         ok=ok, designed=applied, total=len(candidates), affixes=affixes

@@ -105,9 +105,7 @@ class EnvironmentInitializationSystem(ExecuteProcessor):
         for chat_client, error in zip(chat_clients, errors):
             if error is not None:
                 logger.warning(
-                    f"EnvironmentInitializationSystem: 环境叙事请求失败 "
-                    f"name={chat_client.label} kind={error.kind} "
-                    f"status={error.status_code} retryable={error.retryable}"
+                    f"EnvironmentInitializationSystem: 环境叙事请求失败 name={chat_client.label} kind={error.kind} status={error.status_code} retryable={error.retryable}"
                 )
                 failed_names.append(chat_client.label)
                 continue
@@ -118,9 +116,7 @@ class EnvironmentInitializationSystem(ExecuteProcessor):
         # 一次汇总，交代哪些场景未生成及其后续处置
         if failed_names:
             logger.warning(
-                f"EnvironmentInitializationSystem: {len(failed_names)}/{len(chat_clients)}"
-                f" 个场景环境叙事未生成（{'、'.join(failed_names)}）；"
-                "它们将继续缺少 EnvironmentComponent，待后续有观察者的管线轮次自动补齐"
+                f"EnvironmentInitializationSystem: {len(failed_names)}/{len(chat_clients)} 个场景环境叙事未生成（{'、'.join(failed_names)}）；它们将继续缺少 EnvironmentComponent，待后续有观察者的管线轮次自动补齐"
             )
 
     #######################################################################################################################################

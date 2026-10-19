@@ -241,8 +241,7 @@ class CombatLootSystem(ExecuteProcessor):
             response = _MonsterLootResponse.model_validate_json(json_str)
         except Exception as e:
             logger.error(
-                f"[CombatLootSystem] 解析 {client.label} 掉落响应失败: {e}\n"
-                f"原始内容:\n{client.response_content}"
+                f"[CombatLootSystem] 解析 {client.label} 掉落响应失败: {e}\n原始内容:\n{client.response_content}"
             )
             return items
 

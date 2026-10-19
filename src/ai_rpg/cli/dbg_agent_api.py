@@ -241,9 +241,7 @@ def main(
     server_config.auth_token = token
     log_file = _setup_logger()
     logger.info(
-        f"命令={ctx.invoked_subcommand} 目标={server_config.base_url} "
-        f"TLS校验={server_config.verify} 鉴权={'bearer' if token else 'none'} "
-        f"日志={log_file}"
+        f"命令={ctx.invoked_subcommand} 目标={server_config.base_url} TLS校验={server_config.verify} 鉴权={'bearer' if token else 'none'} 日志={log_file}"
     )
 
 

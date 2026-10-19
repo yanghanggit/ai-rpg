@@ -71,8 +71,7 @@ class AssembleDungeonSystem(ReactiveProcessor):
         draft_path.write_text(draft.model_dump_json(indent=4), encoding="utf-8")
 
         logger.info(
-            f"[AssembleDungeonSystem] 完成并保存: {dungeon_path} "
-            f"({len(dungeon.rooms)} rooms)，草稿: {draft_path}"
+            f"[AssembleDungeonSystem] 完成并保存: {dungeon_path} ({len(dungeon.rooms)} rooms)，草稿: {draft_path}"
         )
 
     ####################################################################################################################################
@@ -123,9 +122,7 @@ class AssembleDungeonSystem(ReactiveProcessor):
                 stage.actors = []
                 rooms.append(OpeningRoom(stage=stage))
                 logger.info(
-                    f"[AssembleDungeonSystem] Room {i}/{len(draft.rooms)} 构建完成:\n"
-                    f"  type:   opening\n"
-                    f"  stage:  {stage.name}"
+                    f"[AssembleDungeonSystem] Room {i}/{len(draft.rooms)} 构建完成:\n  type:   opening\n  stage:  {stage.name}"
                 )
             elif room_draft.room_type == "combat":
                 actors = []
@@ -148,10 +145,8 @@ class AssembleDungeonSystem(ReactiveProcessor):
                 stage.actors = actors
                 rooms.append(CombatRoom(stage=stage))
                 logger.info(
-                    f"[AssembleDungeonSystem] Room {i}/{len(draft.rooms)} 构建完成:\n"
-                    f"  type:   combat\n"
-                    f"  stage:  {stage.name}\n"
-                    f"  actors ({len(actors)}): " + ", ".join(a.name for a in actors)
+                    f"[AssembleDungeonSystem] Room {i}/{len(draft.rooms)} 构建完成:\n  type:   combat\n  stage:  {stage.name}\n  actors ({len(actors)}): "
+                    + ", ".join(a.name for a in actors)
                 )
 
         # 组装 Dungeon 实体

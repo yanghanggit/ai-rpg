@@ -139,11 +139,7 @@ class _LoopSpanTracker:
 def _build_terminal_nudge(terminal_tools: List[ToolDefinition]) -> str:
     """构建「未调用终止工具即停止」时的纠偏提示。"""
     names = "、".join(t.function.name for t in terminal_tools)
-    return (
-        f"你尚未调用要求的终止工具（{names}）就结束了回复。"
-        "请勿以普通文本直接作答，必须通过工具调用提交最终结果；"
-        "如仍需读取或写入数据，请先完成相应工具调用，最后再调用终止工具提交。"
-    )
+    return f"你尚未调用要求的终止工具（{names}）就结束了回复。请勿以普通文本直接作答，必须通过工具调用提交最终结果；如仍需读取或写入数据，请先完成相应工具调用，最后再调用终止工具提交。"
 
 
 #######################################################################################################################################
@@ -262,8 +258,7 @@ async def agent_loop(
 
                 # 注入纠偏提示，提示 LLM 必须调用终止工具
                 logger.warning(
-                    f"[agent_loop:{name}] LLM 未调用终止工具即 stop，"
-                    f"注入纠偏提示重试（第 {nudge_count}/{max_terminal_nudges} 次）"
+                    f"[agent_loop:{name}] LLM 未调用终止工具即 stop，注入纠偏提示重试（第 {nudge_count}/{max_terminal_nudges} 次）"
                 )
 
                 # 将纠偏提示添加到历史记录中，供 LLM 在下一轮使用
@@ -317,8 +312,7 @@ async def agent_loop(
                     except Exception as e:
 
                         logger.error(
-                            f"[agent_loop:{name}] 工具 {tc.function.name!r} 执行失败: {e}\n"
-                            f"  raw arguments: {tc.function.arguments!r}"
+                            f"[agent_loop:{name}] 工具 {tc.function.name!r} 执行失败: {e}\n  raw arguments: {tc.function.arguments!r}"
                         )
                         result = f"错误：工具执行失败 {e}"
 

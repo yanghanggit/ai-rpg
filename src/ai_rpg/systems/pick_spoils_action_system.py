@@ -23,11 +23,7 @@ from ..utils import prompt_builder
 @prompt_builder
 def _build_pick_spoils_message(card: Card, deck_size: int) -> str:
     """生成「领取了什么」的自我状态说明（只写给本人，不广播）。"""
-    return (
-        f"# 你收下了战利品\n"
-        f"你从战利品中取走了「{card.name}」：{card.description}\n"
-        f"它已加入你的牌库（当前共 {deck_size} 张）。"
-    )
+    return f"# 你收下了战利品\n你从战利品中取走了「{card.name}」：{card.description}\n它已加入你的牌库（当前共 {deck_size} 张）。"
 
 
 #######################################################################################################################################
@@ -81,10 +77,9 @@ class PickSpoilsActionSystem(ReactiveProcessor):
             remaining_cards = [
                 c for c in spoils_comp.candidate_cards if c is not action.card
             ]
-            assert len(remaining_cards) == len(spoils_comp.candidate_cards) - 1, (
-                f"{entity.name} 的 Spoils 待领取队列中找不到所选卡"
-                f"「{action.card.name}」"
-            )
+            assert (
+                len(remaining_cards) == len(spoils_comp.candidate_cards) - 1
+            ), f"{entity.name} 的 Spoils 待领取队列中找不到所选卡「{action.card.name}」"
             claimed_cards = [*spoils_comp.claimed_cards, action.card]
 
             # 追加领取的卡（保留其 uuid / source）
@@ -105,7 +100,5 @@ class PickSpoilsActionSystem(ReactiveProcessor):
             )
 
             logger.info(
-                f"[PickSpoilsActionSystem] {entity.name} 已从 Spoils 领取"
-                f"「{action.card.name}」加入牌库（当前 {len(deck_comp.cards)} 张），"
-                f"Spoils 待领取 {len(remaining_cards)} 张 / 已领取 {len(claimed_cards)} 张"
+                f"[PickSpoilsActionSystem] {entity.name} 已从 Spoils 领取「{action.card.name}」加入牌库（当前 {len(deck_comp.cards)} 张），Spoils 待领取 {len(remaining_cards)} 张 / 已领取 {len(claimed_cards)} 张"
             )

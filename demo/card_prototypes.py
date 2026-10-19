@@ -28,6 +28,7 @@ from demo.card_skeletons import (
     CONSUMABLE_SPREAD_SKELETON,
     DEADLINE_SKELETON,
     DOT_SKELETON,
+    ENGINE_COPY_SKELETON,
     FINISHER_SKELETON,
     FLEETING_SKELETON,
     GEAR_CONTAGION_SKELETON,
@@ -248,6 +249,22 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
 【字段】playable=False：不可出牌，进入手牌即视为召唤成功、作为持有状态；retain 使其跨回合常驻。on_autonomous_affixes：持有者每次 pass turn（在回合结束词缀之后）由所在场景结算一次；与回合结束词缀的根本区别是效果目标为场上任意存活角色（敌人/友方/持有者），由词缀文本写明目标如何选取；其造成的伤害算命中，会触发被命中者的受击词缀。
 【设计】召唤兽 / 图腾 / 光环 / 持续诅咒：卡牌作为自主主体影响全场。取一个（或组合）内建数值写成具体自主词缀（如对一名随机敌人造成本卡 damage 的伤害）。该机制能力较强（近似「小神器」），宜克制。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
             keywords=("on_autonomous_affixes", "retain", "autonomous"),
+        ),
+    ),
+    # 手牌 / 运转端 / 运转（自增殖）
+    CardPrototype(
+        skeleton=ENGINE_COPY_SKELETON,
+        meta=CardPrototypeMeta(
+            prototype_id="proto.engine_copy",
+            card_type="手牌",
+            archetype="运转端",
+            archetype_subtype="运转（自增殖）",
+            name="运转·增殖",
+            summary="打出后由持有者自己结算：在弃牌堆里再造一张本卡的复制体。",
+            design="""【骨架】SINGLE；cost=1、damage=2、hit_count=1、block=0；engine_affixes 已写死一条（运转槽不参与设计）。
+【字段】engine_affixes：运转词缀（类别由槽位决定，词缀名照常写风味名）。时机在**出牌结算完毕之后**（伤害已算、牌已归堆），由**持有者本人**结算：他拿到工具去操作自己的容器——复制一张牌到某个容器、移动一张牌、改写一张牌的字段；单次结算最多新造一张牌，容器容量上限为牌库张数的两倍。运转词缀不造成伤害、不改变 HP，改变的是这张牌之后在牌堆里如何存在；文本只写规则，不写故事与心理。
+【设计】本原型只有一个方向：增殖——打出后多出一张自己，代价是费用与手牌位置。运转槽当前不对设计开放，因此你只设计 name 与 description；描述要贴合角色意象，不写数值、不复述机制名。""",
+            keywords=("engine_affixes", "运转"),
         ),
     ),
     # 手牌 / 攻击端 / 铺垫性攻击支持

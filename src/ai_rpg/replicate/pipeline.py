@@ -37,9 +37,7 @@ def _truncate(text: str, limit: int = _PROMPT_LOG_LIMIT) -> str:
 def _log_prediction_failure(prediction: Any, model_ref: str) -> None:
     """把失败 prediction 的溯源信息写入 logger（id / status / error / logs / metrics）。"""
     logger.error(
-        f"❌ Replicate 预测失败: model={model_ref} "
-        f"prediction_id={prediction.id} status={prediction.status} "
-        f"error={prediction.error!r}"
+        f"❌ Replicate 预测失败: model={model_ref} prediction_id={prediction.id} status={prediction.status} error={prediction.error!r}"
     )
     if prediction.logs:
         logger.error(f"   预测日志:\n{prediction.logs}")
@@ -68,8 +66,7 @@ async def generate_image(model_ref: str, model_input: Dict[str, Any]) -> str:
     - 其他异常（如网络超时）：输出异常类型与消息。
     """
     logger.info(
-        f"🎬 Replicate 开始生成: model={model_ref}, "
-        f"prompt={_truncate(str(model_input.get('prompt') or ''))!r}"
+        f"🎬 Replicate 开始生成: model={model_ref}, prompt={_truncate(str(model_input.get('prompt') or ''))!r}"
     )
 
     start_time = time.time()
@@ -80,13 +77,12 @@ async def generate_image(model_ref: str, model_input: Dict[str, Any]) -> str:
         raise
     except ReplicateError as exc:
         logger.error(
-            f"❌ Replicate API 错误: model={model_ref} "
-            f"title={exc.title!r} status={exc.status} detail={exc.detail!r}"
+            f"❌ Replicate API 错误: model={model_ref} title={exc.title!r} status={exc.status} detail={exc.detail!r}"
         )
         raise
     except Exception as exc:
         logger.error(
-            f"❌ Replicate 调用异常: model={model_ref} " f"{type(exc).__name__}: {exc}"
+            f"❌ Replicate 调用异常: model={model_ref} {type(exc).__name__}: {exc}"
         )
         raise
 
@@ -116,8 +112,7 @@ async def download_image(image_url: str, save_path: str) -> str:
                 content = await response.read()
     except Exception as exc:
         logger.error(
-            f"❌ 图片下载失败: url={image_url} -> {save_path} "
-            f"{type(exc).__name__}: {exc}"
+            f"❌ 图片下载失败: url={image_url} -> {save_path} {type(exc).__name__}: {exc}"
         )
         raise
 

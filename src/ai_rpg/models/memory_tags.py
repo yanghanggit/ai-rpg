@@ -65,7 +65,6 @@ MEMORY_TAGS: Final[FrozenSet[str]] = frozenset(
 def assert_known_memory_tags(message: BaseModel) -> None:
     """校验消息上的结构化标记都在 `MEMORY_TAGS` 里，防止拼错后静默失去审计信息。"""
     unknown = set(message.model_extra or {}) - MEMORY_TAGS
-    assert not unknown, (
-        f"{type(message).__name__} 使用了未登记的记忆标记 {sorted(unknown)}；"
-        "请在 models/memory_tags.py 登记后再使用"
-    )
+    assert (
+        not unknown
+    ), f"{type(message).__name__} 使用了未登记的记忆标记 {sorted(unknown)}；请在 models/memory_tags.py 登记后再使用"

@@ -168,9 +168,13 @@ src = [".", "src", "tests"]
 # F811: 重复定义
 # E401: 多个导入在一行
 # I001: import排序
-select = ["F401", "F402", "F403", "F811", "E401", "I001"]
+# ISC: 隐式字符串拼接（相邻字面量自动粘成一个字符串，容易把两条规则 / 两句话写成一条）
+select = ["F401", "F402", "F403", "F811", "E401", "I001", "ISC"]
 ignore = []
-fixable = ["F401", "F402", "F403", "F811", "E401", "I001"]
+fixable = ["F401", "F402", "F403", "F811", "E401", "I001", "ISC"]
+# ISC002 / ISC004（跨行 / 集合内的隐式拼接）目前只在预览通道提供；
+# 跨行的括号拼接 ruff 尚未覆盖，由 tests/unit/test_no_implicit_string_concat.py 兜底。
+preview = true
 
 [tool.ruff.lint.per-file-ignores]
 # __init__.py 通过 star import 做再导出，F401/F403 在此文件属预期

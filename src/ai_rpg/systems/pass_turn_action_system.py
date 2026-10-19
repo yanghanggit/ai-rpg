@@ -77,10 +77,9 @@ class PassTurnActionSystem(ReactiveProcessor):
         pass_turn_action = entity.get(PassTurnAction)
         logger.debug(f"  [{pass_turn_action.name}] 选择过牌（跳过出牌机会）")
 
-        assert entity.name == get_current_turn_actor(self._game, last_round), (
-            f"PassTurnActionSystem: 过牌角色 {entity.name} 不是当前 turn 的行动者！"
-            f" current_turn_actor={get_current_turn_actor(self._game, last_round)}"
-        )
+        assert entity.name == get_current_turn_actor(
+            self._game, last_round
+        ), f"PassTurnActionSystem: 过牌角色 {entity.name} 不是当前 turn 的行动者！ current_turn_actor={get_current_turn_actor(self._game, last_round)}"
 
         # 消耗过牌角色的剩余全部行动能量（若有）；completed_actors 仅按 pass turn 决策次数追加一次，
         # 与 energy 是否耗尽无关——是否轮到下一角色完全由 completed_actors 决定（见 get_current_turn_actor）
@@ -100,8 +99,7 @@ class PassTurnActionSystem(ReactiveProcessor):
 
         # 输出当前回合状态日志
         logger.debug(
-            f"  completed_actors: {last_round.completed_actors} / "
-            f"current_turn_actor_name={last_round.current_actor}"
+            f"  completed_actors: {last_round.completed_actors} / current_turn_actor_name={last_round.current_actor}"
         )
 
         # 广播过牌通知给场景内所有角色（含过牌者本人），仅排除场景实体

@@ -41,9 +41,7 @@ GEAR_SPEED_PROPERTY: Final[Dict[str, Any]] = {
     "minimum": GEAR_SPEED_MIN,
     "maximum": GEAR_SPEED_MAX,
     "description": (
-        "装备级被动速度修正，可正可负：决定战斗回合行动顺序，数值越大越先出手。"
-        "轻捷灵便取正值、沉重笨拙取负值，把握不准取 0。装备的伤害/格挡由卡牌承载，"
-        "speed 是唯一的装备级被动。"
+        "装备级被动速度修正，可正可负：决定战斗回合行动顺序，数值越大越先出手。轻捷灵便取正值、沉重笨拙取负值，把握不准取 0。装备的伤害/格挡由卡牌承载，speed 是唯一的装备级被动。"
     ),
 }
 
@@ -165,8 +163,7 @@ class CraftGearItemActionSystem(ReactiveProcessor):
         candidate = materialize_candidate(selection.selected[0], "")
         if candidate is None:
             logger.error(
-                f"[CraftGearItemActionSystem] 物化原型 "
-                f"{selection.selected[0]!r} 失败，中止"
+                f"[CraftGearItemActionSystem] 物化原型 {selection.selected[0]!r} 失败，中止"
             )
             return
 
@@ -191,8 +188,7 @@ class CraftGearItemActionSystem(ReactiveProcessor):
         )
         if not outcome.ok or outcome.designed != 1:
             logger.error(
-                f"[CraftGearItemActionSystem] 设计未完成"
-                f"（{outcome.designed}/1），中止"
+                f"[CraftGearItemActionSystem] 设计未完成（{outcome.designed}/1），中止"
             )
             return
 
@@ -212,8 +208,7 @@ class CraftGearItemActionSystem(ReactiveProcessor):
         self._update_storage(storage_entity, action.material_names, new_item)
 
         logger.info(
-            f"[CraftGearItemActionSystem] 合成完成: {new_item.name} "
-            f"speed={speed} cards={new_item.cards}"
+            f"[CraftGearItemActionSystem] 合成完成: {new_item.name} speed={speed} cards={new_item.cards}"
         )
 
     ####################################################################################################################################

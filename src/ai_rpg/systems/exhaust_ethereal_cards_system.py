@@ -74,8 +74,7 @@ class ExhaustEtherealCardsSystem(ReactiveProcessor):
                 change="exhaust_ethereal",
                 title="虚无牌消散",
                 lines=[
-                    f"回合结束时仍在手牌的 {format_card_names(ethereal_cards)}"
-                    "消散了，进入消耗堆（本场不再回来）。",
+                    f"回合结束时仍在手牌的 {format_card_names(ethereal_cards)}消散了，进入消耗堆（本场不再回来）。",
                     f"手牌 {len(hand_comp.cards)} 张，消耗堆 {len(exhaust_pile.cards)} 张。",
                 ],
                 deltas={
@@ -85,7 +84,5 @@ class ExhaustEtherealCardsSystem(ReactiveProcessor):
             )
 
             logger.debug(
-                f"  [{entity.name}] pass turn 自动消耗 {len(ethereal_cards)} 张虚无牌："
-                f"{[c.name for c in ethereal_cards]}"
-                f"（ExhaustPile 累计 {len(exhaust_pile.cards)} 张）"
+                f"  [{entity.name}] pass turn 自动消耗 {len(ethereal_cards)} 张虚无牌：{[c.name for c in ethereal_cards]}（ExhaustPile 累计 {len(exhaust_pile.cards)} 张）"
             )

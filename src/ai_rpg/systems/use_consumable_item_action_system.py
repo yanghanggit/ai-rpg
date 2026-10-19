@@ -35,10 +35,7 @@ def _build_consumable_notice(
 ) -> str:
     """生成消耗品物化广播通知。"""
     cards_str = "、".join(card_names)
-    return (
-        f"【第 {round_number} 回合 · 消耗品行动】\n"
-        f"「{actor_name}」使用了消耗品「{item_name}」，生成手牌「{cards_str}」。"
-    )
+    return f"【第 {round_number} 回合 · 消耗品行动】\n「{actor_name}」使用了消耗品「{item_name}」，生成手牌「{cards_str}」。"
 
 
 #######################################################################################################################################
@@ -101,8 +98,7 @@ class UseConsumableItemActionSystem(ReactiveProcessor):
         )
         if removed_item is None:
             logger.warning(
-                f"UseConsumableItemActionSystem: [{entity.name}] 队伍背包中未找到 "
-                f"'{item.name}'，跳过本次使用（不物化）"
+                f"UseConsumableItemActionSystem: [{entity.name}] 队伍背包中未找到 '{item.name}'，跳过本次使用（不物化）"
             )
             return
         assert isinstance(
@@ -125,8 +121,7 @@ class UseConsumableItemActionSystem(ReactiveProcessor):
         if latest_round is not None:
             latest_round.record(
                 RoundEntryKind.CONSUMABLE,
-                f"[{entity.name} 使用 {item.name} ×{removed_item.count}] "
-                f"生成手牌「{'、'.join(card_names)}」",
+                f"[{entity.name} 使用 {item.name} ×{removed_item.count}] 生成手牌「{'、'.join(card_names)}」",
                 "；".join(card.description for card in cards),
             )
 

@@ -24,10 +24,7 @@ def _print_card(card: Card, claimed: bool) -> None:
     mark = "（已领取）" if claimed else ""
     print(f"- {card.name}{mark}")
     print(
-        f"    字段: damage={card.damage} hit_count={card.hit_count} block={card.block} "
-        f"cost={card.cost} target={card.target_type.value} "
-        f"retain={card.retain} exhaust={card.exhaust} ethereal={card.ethereal} "
-        f"transferable={card.transferable}"
+        f"    字段: damage={card.damage} hit_count={card.hit_count} block={card.block} cost={card.cost} target={card.target_type.value} retain={card.retain} exhaust={card.exhaust} ethereal={card.ethereal} transferable={card.transferable}"
     )
     print(f"    叙事: {card.description}")
     has_affix = False
@@ -83,8 +80,7 @@ def main(snapshot: str, actor: str, show_db: bool) -> None:
         print("\n=== 当前库中卡牌原型 ===")
         for row in list_card_prototype_index(include_basic=True):
             print(
-                f"  {row['prototype_id']:<18} "
-                f"[{row['card_type']}/{row['archetype']}] {row['name']}"
+                f"  {row['prototype_id']:<18} [{row['card_type']}/{row['archetype']}] {row['name']}"
             )
 
 

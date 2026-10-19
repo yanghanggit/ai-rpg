@@ -51,8 +51,7 @@ CONSUMABLE_CARD_PROPERTIES: Final[Dict[str, Any]] = {
         "minimum": CONSUMABLE_DAMAGE_MIN,
         "maximum": CONSUMABLE_DAMAGE_MAX,
         "description": (
-            f"单段伤害（{CONSUMABLE_DAMAGE_MIN}..{CONSUMABLE_DAMAGE_MAX}）；"
-            "总伤害由 damage × hit_count 决定。"
+            f"单段伤害（{CONSUMABLE_DAMAGE_MIN}..{CONSUMABLE_DAMAGE_MAX}）；总伤害由 damage × hit_count 决定。"
         ),
     },
     "hit_count": {
@@ -180,8 +179,7 @@ class CraftConsumableItemActionSystem(ReactiveProcessor):
         candidate = materialize_candidate(selection.selected[0], entity.name)
         if candidate is None:
             logger.error(
-                f"[CraftConsumableItemActionSystem] 物化原型 "
-                f"{selection.selected[0]!r} 失败，中止"
+                f"[CraftConsumableItemActionSystem] 物化原型 {selection.selected[0]!r} 失败，中止"
             )
             return
 
@@ -196,8 +194,7 @@ class CraftConsumableItemActionSystem(ReactiveProcessor):
         )
         if not outcome.ok or outcome.designed != 1:
             logger.error(
-                f"[CraftConsumableItemActionSystem] 设计未完成"
-                f"（{outcome.designed}/1），中止"
+                f"[CraftConsumableItemActionSystem] 设计未完成（{outcome.designed}/1），中止"
             )
             return
 
@@ -222,8 +219,7 @@ class CraftConsumableItemActionSystem(ReactiveProcessor):
         self._update_storage(storage_entity, action.material_names, new_item)
 
         logger.info(
-            f"[CraftConsumableItemActionSystem] 合成完成: {new_item.name} "
-            f"cards={new_item.cards}"
+            f"[CraftConsumableItemActionSystem] 合成完成: {new_item.name} cards={new_item.cards}"
         )
 
     ####################################################################################################################################

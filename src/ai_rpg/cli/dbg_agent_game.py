@@ -214,8 +214,7 @@ def stages(snapshot: str) -> None:
     "--actors",
     multiple=True,
     required=True,
-    help="本轮需要真正触发行动规划的角色全名，可重复使用（如 --actors 角色.A --actors 角色.B）。"
-    "调用前建议先用 stages --snapshot PATH 查询当前场景内的角色名单。",
+    help="本轮需要真正触发行动规划的角色全名，可重复使用（如 --actors 角色.A --actors 角色.B）。调用前建议先用 stages --snapshot PATH 查询当前场景内的角色名单。",
 )
 def advance(snapshot: str, actors: Tuple[str, ...]) -> None:
     """推进一轮家园剧情，仅为 --actors 指定角色激活行动规划并归档。"""

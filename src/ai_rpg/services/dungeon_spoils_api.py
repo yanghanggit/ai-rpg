@@ -96,8 +96,7 @@ async def dungeon_spoils_pick_card(
     """
 
     logger.info(
-        f"/api/dungeon/spoils/pick_card/v1/: user={payload.user_name} "
-        f"actor={payload.actor_name} card={payload.card_name}"
+        f"/api/dungeon/spoils/pick_card/v1/: user={payload.user_name} actor={payload.actor_name} card={payload.card_name}"
     )
 
     current_room = game_server.get_room(payload.user_name)

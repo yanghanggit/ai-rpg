@@ -55,8 +55,7 @@ class CombatPileTeardownSystem(ExecuteProcessor):
             inventory.items.extend(equipped.items)
             entity.remove(EquippedGearComponent)
             logger.debug(
-                f"CombatPileTeardownSystem: {entity.name} 的 "
-                f"{len(equipped.items)} 件装备已归还玩家背包"
+                f"CombatPileTeardownSystem: {entity.name} 的 {len(equipped.items)} 件装备已归还玩家背包"
             )
 
     ####################################################################################################################################
@@ -121,9 +120,7 @@ class CombatPileTeardownSystem(ExecuteProcessor):
                     change="pile_teardown",
                     title="战斗结束 · 牌堆复原",
                     lines=[
-                        f"抽牌堆 {draw_count} 张、保留队列 {retained_count} 张、"
-                        f"弃牌堆 {discard_count} 张、消耗堆 {exhaust_count} 张的"
-                        f"临时副本已丢弃（共 {total} 张）。",
+                        f"抽牌堆 {draw_count} 张、保留队列 {retained_count} 张、弃牌堆 {discard_count} 张、消耗堆 {exhaust_count} 张的临时副本已丢弃（共 {total} 张）。",
                         f"你的牌库恢复为 {len(deck_comp.cards)} 张原始卡牌。",
                     ],
                     deltas={
@@ -135,6 +132,5 @@ class CombatPileTeardownSystem(ExecuteProcessor):
                 )
 
             logger.debug(
-                f"[{entity.name}] 战斗子堆已清理（丢弃 {total} 张副本）"
-                f"，DeckComponent 原始牌库保留 {len(deck_comp.cards)} 张"
+                f"[{entity.name}] 战斗子堆已清理（丢弃 {total} 张副本），DeckComponent 原始牌库保留 {len(deck_comp.cards)} 张"
             )

@@ -41,10 +41,7 @@ def setup_dungeon(dbg_game: DBGGame, dungeon_name: str) -> Tuple[bool, str]:
 
     # 守护：当前游戏世界中已有副本正在进行，不允许重新 setup
     if dbg_game._world.dungeon.current_room_index >= 0:
-        error_msg = (
-            f"setup_dungeon 失败: 当前副本 {dbg_game._world.dungeon.name!r} 正在进行中 "
-            f"(current_room_index={dbg_game._world.dungeon.current_room_index})，请先退出"
-        )
+        error_msg = f"setup_dungeon 失败: 当前副本 {dbg_game._world.dungeon.name!r} 正在进行中 (current_room_index={dbg_game._world.dungeon.current_room_index})，请先退出"
         logger.error(error_msg)
         return False, error_msg
 

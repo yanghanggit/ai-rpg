@@ -34,10 +34,7 @@ def _build_gear_notice(
 ) -> str:
     """生成装备转化广播通知。"""
     cards_str = "、".join(card_names)
-    return (
-        f"【第 {round_number} 回合 · 装备行动】\n"
-        f"「{actor_name}」将「{item_name}」转化为手牌「{cards_str}」。"
-    )
+    return f"【第 {round_number} 回合 · 装备行动】\n「{actor_name}」将「{item_name}」转化为手牌「{cards_str}」。"
 
 
 #######################################################################################################################################
@@ -110,8 +107,7 @@ class EquipGearItemActionSystem(ReactiveProcessor):
         hand_comp = entity.get(HandComponent)
         hand_comp.cards.extend(cards)
         logger.debug(
-            f"EquipGearItemActionSystem: [{entity.name}] 将 '{item.name}' 转化为手牌 "
-            f"'{'、'.join(card_names)}'"
+            f"EquipGearItemActionSystem: [{entity.name}] 将 '{item.name}' 转化为手牌 '{'、'.join(card_names)}'"
         )
 
         # 记录本回合装备使用结果

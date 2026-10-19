@@ -376,10 +376,7 @@ def activate_use_consumable(
         return False, msg
 
     if not current_actor_entity.has(HandComponent):
-        msg = (
-            f"使用消耗品失败：当前行动角色 {current_actor_name} "
-            "缺少手牌组件（HandComponent）"
-        )
+        msg = f"使用消耗品失败：当前行动角色 {current_actor_name} 缺少手牌组件（HandComponent）"
         logger.error(msg)
         return False, msg
 
@@ -392,10 +389,7 @@ def activate_use_consumable(
     inventory_comp = player_entity.get(InventoryComponent)
     selected_item = next((i for i in inventory_comp.items if i.name == item_name), None)
     if selected_item is None:
-        msg = (
-            f"玩家背包中找不到消耗品 '{item_name}'，"
-            f"当前背包: {[i.name for i in inventory_comp.items]}"
-        )
+        msg = f"玩家背包中找不到消耗品 '{item_name}'，当前背包: {[i.name for i in inventory_comp.items]}"
         logger.error(msg)
         return False, msg
 
@@ -407,8 +401,7 @@ def activate_use_consumable(
 
     # 目标由后续出牌步骤（PlayCardsAction）决定，使用消耗品本身不解析目标。
     logger.debug(
-        f"为当前行动者 {current_actor_entity.name} 激活消耗品使用，"
-        f"物品: {selected_item.name}"
+        f"为当前行动者 {current_actor_entity.name} 激活消耗品使用，物品: {selected_item.name}"
     )
 
     # 将使用消耗品的动作挂在当前行动者实体上。
@@ -490,10 +483,7 @@ def activate_equip_gear(
     inventory_comp = player_entity.get(InventoryComponent)
     selected_item = next((i for i in inventory_comp.items if i.name == item_name), None)
     if selected_item is None:
-        msg = (
-            f"玩家背包中找不到装备 '{item_name}'，"
-            f"当前背包: {[i.name for i in inventory_comp.items]}"
-        )
+        msg = f"玩家背包中找不到装备 '{item_name}'，当前背包: {[i.name for i in inventory_comp.items]}"
         logger.error(msg)
         return False, msg
 
@@ -590,7 +580,6 @@ def collect_loot(
     player_entity.remove(LootComponent)
 
     logger.info(
-        f"[collect_loot] 收取战利品 {len(loot_items)} 件，"
-        f"背包现有 {len(new_inventory)} 件道具"
+        f"[collect_loot] 收取战利品 {len(loot_items)} 件，背包现有 {len(new_inventory)} 件道具"
     )
     return True, f"成功收取 {len(loot_items)} 件战利品到背包"

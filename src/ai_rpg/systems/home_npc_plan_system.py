@@ -84,8 +84,7 @@ def _build_submit_action_plan_tool(
                             "trans_stage",
                         ],
                         "description": (
-                            "本轮主动行动类型；none=仅内心独白；"
-                            "speak/whisper/announce 三选一；trans_stage 与前三者互斥"
+                            "本轮主动行动类型；none=仅内心独白；speak/whisper/announce 三选一；trans_stage 与前三者互斥"
                         ),
                     },
                     "target_messages": {

@@ -72,8 +72,7 @@ class DiscardCardsActionSystem(ReactiveProcessor):
                     title="出牌结算 · 弃牌",
                     lines=[
                         f"「{played_card.name}」离开手牌进入弃牌堆。",
-                        f"手牌 {len(hand_comp.cards)} 张，"
-                        f"弃牌堆 {len(discard_pile.cards)} 张。",
+                        f"手牌 {len(hand_comp.cards)} 张，弃牌堆 {len(discard_pile.cards)} 张。",
                     ],
                     deltas={
                         PILE_HAND: len(hand_comp.cards) - before_count,
@@ -82,7 +81,5 @@ class DiscardCardsActionSystem(ReactiveProcessor):
                 )
 
             logger.debug(
-                f"  [{entity.name}] 手牌 {before_count} → {len(hand_comp.cards)}，"
-                f"DiscardPile 累计 {len(discard_pile.cards)} 张"
-                f"（牌：{played_card.name}，source={played_card.source!r}）"
+                f"  [{entity.name}] 手牌 {before_count} → {len(hand_comp.cards)}，DiscardPile 累计 {len(discard_pile.cards)} 张（牌：{played_card.name}，source={played_card.source!r}）"
             )

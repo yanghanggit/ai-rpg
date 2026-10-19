@@ -49,6 +49,5 @@ class CombatRoundCompletionSystem(ExecuteProcessor):
         if all_passed:
             latest_round.is_completed = True
             logger.info(
-                f"回合完成：所有存活角色均已 pass turn，is_completed = True"
-                f"（action_order={latest_round.action_order}）"
+                f"回合完成：所有存活角色均已 pass turn，is_completed = True（action_order={latest_round.action_order}）"
             )

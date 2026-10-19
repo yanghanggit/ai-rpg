@@ -121,8 +121,7 @@ async def execute_retreat_task(
             await store_game_async(rpg_game)
 
         logger.info(
-            f"✅ 撤退任务完成: job_id={job_id}, user={user_name}, "
-            f"战斗已标记为失败。请调用 /api/dungeon/exit/v1/ 返回家园。"
+            f"✅ 撤退任务完成: job_id={job_id}, user={user_name}, 战斗已标记为失败。请调用 /api/dungeon/exit/v1/ 返回家园。"
         )
 
     except Exception as e:

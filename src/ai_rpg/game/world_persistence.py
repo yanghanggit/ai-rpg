@@ -157,10 +157,9 @@ def _assert_memory_tags_registered(agent_name: str, agent_memory: AgentMemory) -
     """校验该 agent 全部记忆消息上的结构化标记都已登记（存档前的兜底闸门）。"""
     for index, message in enumerate(agent_memory.messages):
         unknown = set(message.model_extra or {}) - MEMORY_TAGS
-        assert not unknown, (
-            f"存档中止：{agent_name} 第 {index} 条 {type(message).__name__} "
-            f"使用了未登记的记忆标记 {sorted(unknown)}；请在 models/memory_tags.py 登记"
-        )
+        assert (
+            not unknown
+        ), f"存档中止：{agent_name} 第 {index} 条 {type(message).__name__} 使用了未登记的记忆标记 {sorted(unknown)}；请在 models/memory_tags.py 登记"
 
 
 ###############################################################################################################################################

@@ -355,7 +355,6 @@ def assert_no_residual_combat_state(dbg_game: DBGGame) -> None:
         )
     ).entities
 
-    assert not residual_entities, (
-        "检测到残留战斗临时组件，pipeline 理应已清理完毕: "
-        f"{[entity.name for entity in residual_entities]}"
-    )
+    assert (
+        not residual_entities
+    ), f"检测到残留战斗临时组件，pipeline 理应已清理完毕: {[entity.name for entity in residual_entities]}"

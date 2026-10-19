@@ -95,6 +95,29 @@ REGEN_SKELETON: Final[Card] = Card(
 )
 
 
+# ── 运转端骨架 ──────────────────────────────────────────────
+
+ENGINE_COPY_SKELETON: Final[Card] = Card(
+    name="运转·增殖",
+    description="",
+    on_play_affixes=[],
+    on_hit_affixes=[],
+    on_turn_end_affixes=[],
+    on_autonomous_affixes=[],
+    engine_affixes=["[增殖]:打出后，在弃牌堆里再造一张这张牌自己的复制体"],
+    playable=True,
+    exhaust=False,
+    retain=False,
+    ethereal=False,
+    transferable=False,
+    cost=1,
+    damage=2,
+    hit_count=1,
+    block=0,
+    target_type=TargetType.SINGLE,
+)
+
+
 # ── 攻击端骨架 ──────────────────────────────────────────────
 
 BURST_SKELETON: Final[Card] = Card(

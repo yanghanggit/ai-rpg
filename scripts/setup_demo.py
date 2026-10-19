@@ -150,13 +150,7 @@ def _render_system_message_markdown(
 
     # 首行用一级标题，满足 markdownlint 默认的 MD041；前后各留一个空行（MD031）；
     # 文件以单个换行结尾（MD047）。
-    return (
-        f"# {kind}: {name}\n\n"
-        f"<!-- scope: {scope} -->\n\n"
-        f"{fence}text\n"
-        f"{message}\n"
-        f"{fence}\n"
-    )
+    return f"# {kind}: {name}\n\n<!-- scope: {scope} -->\n\n{fence}text\n{message}\n{fence}\n"
 
 
 ########################################################################################################
@@ -329,8 +323,7 @@ def _setup_card_prototypes() -> None:
             tier=proto.meta.tier,
         )
         logger.info(
-            f"📥 卡牌原型已入库: {proto.meta.prototype_id}"
-            f"（{proto.meta.card_type}/{proto.meta.archetype}/{proto.meta.archetype_subtype}）"
+            f"📥 卡牌原型已入库: {proto.meta.prototype_id}（{proto.meta.card_type}/{proto.meta.archetype}/{proto.meta.archetype_subtype}）"
         )
 
     logger.success(f"✅ 卡牌原型初始化完成（{len(CARD_PROTOTYPES)} 个）")

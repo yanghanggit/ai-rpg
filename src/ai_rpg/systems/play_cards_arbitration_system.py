@@ -58,11 +58,7 @@ def _build_spread_sections(card: Card, targets: List[str]) -> str:
         return ""
 
     hit_lines = "\n".join(f"  第{i + 1}击 → {t}" for i, t in enumerate(targets))
-    return (
-        f"\n## 命中分配（系统预先随机确定，共 {card.hit_count} 击）\n\n"
-        f"{hit_lines}\n\n"
-        f"对每个被命中的不重复目标调用一次 {RESOLVE_DAMAGE_TOOL.function.name}，`hits` 填该目标在上表中的出现次数。"
-    )
+    return f"\n## 命中分配（系统预先随机确定，共 {card.hit_count} 击）\n\n{hit_lines}\n\n对每个被命中的不重复目标调用一次 {RESOLVE_DAMAGE_TOOL.function.name}，`hits` 填该目标在上表中的出现次数。"
 
 
 @prompt_builder
@@ -75,11 +71,7 @@ def _build_round_action_info_lines(
     order_text = " → ".join(action_order) if action_order else "无"
     completed_text = "、".join(completed_actors) if completed_actors else "无"
     current_text = current_actor if current_actor else "无"
-    return (
-        f"- 行动顺序：{order_text}\n"
-        f"- 已完成行动者：{completed_text}\n"
-        f"- 当前行动者：{current_text}"
-    )
+    return f"- 行动顺序：{order_text}\n- 已完成行动者：{completed_text}\n- 当前行动者：{current_text}"
 
 
 @prompt_builder

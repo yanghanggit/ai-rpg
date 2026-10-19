@@ -101,8 +101,7 @@ class RPGAgentMemory:
         assert_known_memory_tags(ai_message)
         if ai_message.content == "":
             logger.warning(
-                f"add_ai_message: {entity.name} 的 AI 消息正文为空"
-                f"（tool_calls={bool(ai_message.additional_kwargs.get('tool_calls'))}），仍写入记忆"
+                f"add_ai_message: {entity.name} 的 AI 消息正文为空（tool_calls={bool(ai_message.additional_kwargs.get('tool_calls'))}），仍写入记忆"
             )
         # 最后添加到记忆中。
         agent_memory = self.get_agent_memory(entity)
@@ -158,9 +157,7 @@ class RPGAgentMemory:
         agent_memory.context_usage_ratio = 0.0
 
         logger.info(
-            f"[reset_agent_memory] ⚠️ 危险操作：已重制 {entity.name!r} 的 agent memory，"
-            f"丢弃 {removed_count} 条旧消息，写入 {len(new_messages)} 条新消息"
-            f"（保留首条 system prompt）"
+            f"[reset_agent_memory] ⚠️ 危险操作：已重制 {entity.name!r} 的 agent memory，丢弃 {removed_count} 条旧消息，写入 {len(new_messages)} 条新消息（保留首条 system prompt）"
         )
 
     ###############################################################################################################################################
@@ -299,8 +296,7 @@ class RPGAgentMemory:
         if dump_attr is not None and len(new_list) > 0:
             setattr(new_list[-1], dump_attr, _dump_messages(replaced, dump_attr))
         logger.debug(
-            f"replace_span: {entity.name} 用 {len(new_list)} 条替换 "
-            f"[{start_index}:{end_index}) 的 {len(replaced)} 条消息"
+            f"replace_span: {entity.name} 用 {len(new_list)} 条替换 [{start_index}:{end_index}) 的 {len(replaced)} 条消息"
             + (f"（dump→{dump_attr}）" if attach_dump else "")
         )
         return replaced

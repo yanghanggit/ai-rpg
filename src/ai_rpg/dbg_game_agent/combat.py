@@ -116,10 +116,7 @@ async def play_cards_specified_game(
 
         # 我方角色必须显式指定手牌；怪物才走 AI 决策，可省略 --card。
         if not card:
-            message = (
-                f"角色 {actor} 不是怪物，必须用 --card 指定要打出的手牌；"
-                f"仅怪物可省略 --card（由 AI 决策出牌或过牌）"
-            )
+            message = f"角色 {actor} 不是怪物，必须用 --card 指定要打出的手牌；仅怪物可省略 --card（由 AI 决策出牌或过牌）"
             logger.error(f"play-cards-specified 失败: {message}")
             return terminal_game
 

@@ -81,13 +81,11 @@ class ConsumableItem(Item):
         for card in self.cards:
             if card.cost != 0:
                 raise ValueError(
-                    f"消耗品「{self.name}」的卡牌「{card.name}」cost 必须为 0"
-                    f"（当前 {card.cost}）。"
+                    f"消耗品「{self.name}」的卡牌「{card.name}」cost 必须为 0（当前 {card.cost}）。"
                 )
             if not card.exhaust:
                 raise ValueError(
-                    f"消耗品「{self.name}」的卡牌「{card.name}」必须 exhaust=True"
-                    "（一次性）。"
+                    f"消耗品「{self.name}」的卡牌「{card.name}」必须 exhaust=True（一次性）。"
                 )
         return self
 

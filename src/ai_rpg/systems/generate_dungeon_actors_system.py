@@ -114,10 +114,7 @@ def _handle_record_dungeon_actor(
     )
     result.actors.append(record)
     logger.info(
-        f"[GenerateDungeonActorsSystem] record_dungeon_actor 执行:\n"
-        f"  actor_name: {actor_name}\n"
-        f"  room_name:  {room_name}\n"
-        f"  累计: {len(result.actors)} 个"
+        f"[GenerateDungeonActorsSystem] record_dungeon_actor 执行:\n  actor_name: {actor_name}\n  room_name:  {room_name}\n  累计: {len(result.actors)} 个"
     )
     # 返回结构化 JSON 文本，作为 ToolMessage 进入 agent memory，供后续步骤的 LLM 记忆使用
     return record.model_dump_json(ensure_ascii=False)
@@ -198,8 +195,7 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
 
         if not result.actors:
             logger.error(
-                "[GenerateDungeonActorsSystem] LLM 已 stop "
-                "但未调用 record_dungeon_actor，中止"
+                "[GenerateDungeonActorsSystem] LLM 已 stop 但未调用 record_dungeon_actor，中止"
             )
             return
 
@@ -210,14 +206,12 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
         for record in result.actors:
             if record.room_name not in room_name_set:
                 logger.error(
-                    f"[GenerateDungeonActorsSystem] actor '{record.actor_name}' "
-                    f"归属未知房间 '{record.room_name}'，中止"
+                    f"[GenerateDungeonActorsSystem] actor '{record.actor_name}' 归属未知房间 '{record.room_name}'，中止"
                 )
                 return
             if record.room_name not in combat_name_set:
                 logger.error(
-                    f"[GenerateDungeonActorsSystem] actor '{record.actor_name}' "
-                    f"归属 opening 房间 '{record.room_name}'，中止"
+                    f"[GenerateDungeonActorsSystem] actor '{record.actor_name}' 归属 opening 房间 '{record.room_name}'，中止"
                 )
                 return
             actors_by_room.setdefault(record.room_name, []).append(record)
@@ -226,15 +220,12 @@ class GenerateDungeonActorsSystem(ReactiveProcessor):
             actual = len(actors_by_room.get(room.room_name, []))
             if actual != room.actor_count:
                 logger.error(
-                    f"[GenerateDungeonActorsSystem] combat 房间 '{room.room_name}' "
-                    f"期望 {room.actor_count} 个怪物，实际 {actual} 个，中止"
+                    f"[GenerateDungeonActorsSystem] combat 房间 '{room.room_name}' 期望 {room.actor_count} 个怪物，实际 {actual} 个，中止"
                 )
                 return
 
         draft.actors = result.actors
         logger.info(
-            f"[GenerateDungeonActorsSystem] 完成:\n"
-            f"  dungeon_name: {dungeon_name}\n"
-            f"  actors ({len(draft.actors)}): "
+            f"[GenerateDungeonActorsSystem] 完成:\n  dungeon_name: {dungeon_name}\n  actors ({len(draft.actors)}): "
             + ", ".join(a.actor_name for a in draft.actors)
         )

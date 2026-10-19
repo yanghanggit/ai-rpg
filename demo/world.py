@@ -52,6 +52,7 @@ from .card_skeletons import (
     CONSUMABLE_AOE_SKELETON,
     CONSUMABLE_SINGLE_SKELETON,
     CONSUMABLE_SPREAD_SKELETON,
+    ENGINE_COPY_SKELETON,
     GEAR_DEFENSE_SKELETON,
     GEAR_OFFENSE_SKELETON,
     HEAL_SKELETON,
@@ -264,6 +265,20 @@ def _make_summon_card(
     card.description = description
     card.damage = damage
     card.on_autonomous_affixes = on_autonomous_affixes or []
+    card.source = owner
+    return card
+
+
+def _make_hidden_blade_card(owner: str) -> Card:
+    """暗器牌（飞刀）：打出后由持有者自己结算「在弃牌堆再造一张复制体」（种子数据，非 agent 生成）。
+
+    运转词缀槽不对设计 agent 开放，因此规则随骨架写死；这里只补 name / description，
+    词缀本身只写机制、不写叙事（叙事归 description）。
+    """
+    card = _copy_skeleton(ENGINE_COPY_SKELETON)
+    card.name = "余刃"
+    card.description = "刀离手的那一瞬最轻，轻得像什么都没发生过。等你再抬手，指间又是一柄——他不记得自己做过什么多余的动作，只是袖口始终比看上去更沉一点。"
+    card.engine_affixes = ["[余刃]:打出后，在弃牌堆里再造一张这张牌自己的复制体"]
     card.source = owner
     return card
 
@@ -676,6 +691,8 @@ def create_badluck() -> Actor:
                 # 2 张基础防御
                 _make_defense_card(actor.name),
                 _make_defense_card(actor.name),
+                # 1 张暗器（余刃）：打出后由本人结算「在弃牌堆再造一张自己」——飞刀出手了，袖里还有下一柄
+                _make_hidden_blade_card(actor.name),
                 # 1 张召唤（好运气先生）：抓到即成召唤、retain 常驻，每回合自主扑咬一名敌人
                 _make_summon_card(
                     actor.name,

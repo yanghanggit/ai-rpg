@@ -156,8 +156,7 @@ class TransferCardsActionSystem(ReactiveProcessor):
                 # 同样按其命中次数把副本留在其手牌。
                 if target_name == play_cards_action.name:
                     logger.debug(
-                        f"transfer_card: 自传递，复制 {count} 份「{card.name}」"
-                        f"回 {target_name} 手牌"
+                        f"transfer_card: 自传递，复制 {count} 份「{card.name}」回 {target_name} 手牌"
                     )
 
                 # 一击一份：每次命中各 copy 一份（新 uuid）；副本落地即失去传递性。
@@ -169,9 +168,7 @@ class TransferCardsActionSystem(ReactiveProcessor):
                     copied.transferable = False
                     target_hand.cards.append(copied)
                 logger.debug(
-                    f"transfer_card: 「{card.name}」已 copy {count} 份到 "
-                    f"{target_name} 的手牌（source={copied.source!r}，"
-                    f"末份 uuid={copied.uuid}，transferable={copied.transferable}）"
+                    f"transfer_card: 「{card.name}」已 copy {count} 份到 {target_name} 的手牌（source={copied.source!r}，末份 uuid={copied.uuid}，transferable={copied.transferable}）"
                 )
 
                 # 副本已落地就必须告知持有者，否则目标（如怪物）下一回合会在决策提示词的

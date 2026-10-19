@@ -131,8 +131,7 @@ class CraftCostumeItemActionSystem(ReactiveProcessor):
         self._update_storage(storage_entity, action.material_names, new_item)
 
         logger.info(
-            f"[CraftCostumeItemActionSystem] 制作完成: {new_item.name} "
-            f"description={new_item.description[:30]}..."
+            f"[CraftCostumeItemActionSystem] 制作完成: {new_item.name} description={new_item.description[:30]}..."
         )
 
     ####################################################################################################################################

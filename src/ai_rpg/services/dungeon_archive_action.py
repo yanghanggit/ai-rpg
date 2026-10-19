@@ -82,23 +82,14 @@ def _notify_world_director(
 
     notification = HumanMessage(
         content=(
-            f"# 世界变化通知\n"
-            f"\n"
-            f"副本「{dungeon.name}」已结束。\n"
-            f"设定（profile）：{dungeon.profile or '（无）'}\n"
-            f"\n"
-            f"副本导演归档总结：\n"
-            f"{summary}\n"
-            f"\n"
-            f"请据此思考：这次副本的结束让世界状态发生了怎样的变化？后续走向应如何推进与演变？"
+            f"# 世界变化通知\n\n副本「{dungeon.name}」已结束。\n设定（profile）：{dungeon.profile or '（无）'}\n\n副本导演归档总结：\n{summary}\n\n请据此思考：这次副本的结束让世界状态发生了怎样的变化？后续走向应如何推进与演变？"
         ),
         dungeon_world_archive=dungeon.name,
     )
 
     dbg_game.add_human_message(world_director_entity, notification)
     logger.info(
-        f"[archive_dungeon] 已向世界导演 {world_director_entity.name!r} "
-        f"发送世界变化通知（副本：{dungeon.name!r}）"
+        f"[archive_dungeon] 已向世界导演 {world_director_entity.name!r} 发送世界变化通知（副本：{dungeon.name!r}）"
     )
     return world_director_entity
 
@@ -173,16 +164,7 @@ def _build_dungeon_start_prompt(
 ) -> str:
     """构建副本导演的副本开局记录提示词。"""
 
-    return (
-        f"# 副本开始\n"
-        f"\n"
-        f"副本「{dungeon.name}」启动。设定（profile）：{dungeon.profile or '（无）'}\n"
-        f"\n"
-        f"{_build_room_sequence_block(dungeon)}\n"
-        f"\n"
-        f"## 首个房间详情\n"
-        f"{_build_room_setting_block(room)}"
-    )
+    return f"# 副本开始\n\n副本「{dungeon.name}」启动。设定（profile）：{dungeon.profile or '（无）'}\n\n{_build_room_sequence_block(dungeon)}\n\n## 首个房间详情\n{_build_room_setting_block(room)}"
 
 
 ###################################################################################################################################################################
@@ -190,12 +172,7 @@ def _build_dungeon_start_prompt(
 def _build_archive_summary_prompt(dungeon: Dungeon) -> str:
     """构建副本导演的副本总结归档提示词。"""
 
-    return (
-        f"# 任务：基于你已积累的记忆，总结并压缩本次副本「{dungeon.name}」的全部经历。\n"
-        f"\n"
-        f"站在你（副本导演）亲历本次副本的第一人称视角，输出一段连贯的中文总结正文。"
-        f"整段不分段不空行，纯文本输出。"
-    )
+    return f"# 任务：基于你已积累的记忆，总结并压缩本次副本「{dungeon.name}」的全部经历。\n\n站在你（副本导演）亲历本次副本的第一人称视角，输出一段连贯的中文总结正文。整段不分段不空行，纯文本输出。"
 
 
 ###################################################################################################################################################################
@@ -360,8 +337,7 @@ async def archive_dungeon(
 
     except Exception as e:
         logger.error(
-            f"[archive_dungeon] 副本 {dungeon.name!r} 归档失败: "
-            f"{type(e).__name__}: {e}"
+            f"[archive_dungeon] 副本 {dungeon.name!r} 归档失败: {type(e).__name__}: {e}"
         )
     finally:
 

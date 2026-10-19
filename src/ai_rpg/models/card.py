@@ -31,6 +31,9 @@ class Card(BaseModel):
     on_autonomous_affixes: NormalizedStrList = (
         []
     )  # 自主运行词缀（多值）：持有者每次 pass turn（在 on_turn_end 结算之后）由所在场景结算一次；效果目标为场上任意存活角色，由词缀文本决定；无则 []
+    engine_affixes: NormalizedStrList = (
+        []
+    )  # 运转词缀（多值）：本卡被打出、场景结算完毕后，由持有者自己结算——在牌堆里复制 / 移动 / 改写卡牌，改的是牌的生命周期而非 HP；类别由槽位本身决定，词缀名照常写风味名；无则 []
     playable: bool = True  # 是否可出牌；False 时系统阻止出牌操作
     exhaust: bool = False  # 出牌后永久归入 ExhaustPile，不进入 DiscardPile 循环
     retain: bool = (
@@ -51,27 +54,37 @@ class Card(BaseModel):
     uuid: str = Field(default_factory=lambda: str(uuid4()))  # 全局唯一标识符
 
     @model_validator(mode="after")
+    def _reject_multiline_affixes(self) -> "Card":
+        """一条词缀必须是单行：多值列表用「多个元素」表达多条规则，不是用换行塞进一个元素。"""
+        for field in AFFIX_FIELDS:
+            for affix in getattr(self, field):
+                assert (
+                    "\n" not in affix
+                ), f"Card「{self.name}」的 {field} 里有换行：一条词缀只写一行的单条规则，多条规则请拆成多个列表元素"
+        return self
+
+    @model_validator(mode="after")
     def _warn_flag_conflicts(self) -> "Card":
         """报警（不拦截）：检测布尔标志的互斥/死组合，仅记录告警日志。"""
         if self.retain and self.ethereal:
             logger.warning(
-                f"Card「{self.name}」同时开启 retain 与 ethereal：二者互斥，"
-                f"pass turn 时 ethereal 会先于回合末 retain 生效，retain 永不触发。"
+                f"Card「{self.name}」同时开启 retain 与 ethereal：二者互斥，pass turn 时 ethereal 会先于回合末 retain 生效，retain 永不触发。"
             )
         if self.ethereal and self.on_autonomous_affixes:
             logger.warning(
-                f"Card「{self.name}」同时开启 ethereal 与 on_autonomous_affixes："
-                f"ethereal 会在自主运行阶段之前把牌移入 ExhaustPile，自主词缀永不触发。"
+                f"Card「{self.name}」同时开启 ethereal 与 on_autonomous_affixes：ethereal 会在自主运行阶段之前把牌移入 ExhaustPile，自主词缀永不触发。"
             )
         if not self.playable and self.transferable:
             logger.warning(
-                f"Card「{self.name}」playable=false 但 transferable=true："
-                f"牌不可出，transferable 永不触发，属无效组合。"
+                f"Card「{self.name}」playable=false 但 transferable=true：牌不可出，transferable 永不触发，属无效组合。"
             )
         if not self.playable and self.exhaust:
             logger.warning(
-                f"Card「{self.name}」playable=false 但 exhaust=true："
-                f"牌不可出，exhaust 永不触发，属无效组合。"
+                f"Card「{self.name}」playable=false 但 exhaust=true：牌不可出，exhaust 永不触发，属无效组合。"
+            )
+        if not self.playable and self.engine_affixes:
+            logger.warning(
+                f"Card「{self.name}」playable=false 但带运转词缀：牌不可出，运转词缀永不触发，属无效组合。"
             )
         return self
 
@@ -81,6 +94,16 @@ class Card(BaseModel):
 
 #######################################################################################################################################
 AFFIX_FIELDS: Final[Tuple[str, ...]] = (
+    "on_play_affixes",
+    "on_hit_affixes",
+    "on_turn_end_affixes",
+    "on_autonomous_affixes",
+    "engine_affixes",
+)
+
+# 允许 agent 设计（生成契约）的槽位：运转词缀暂未开放给生成侧，
+# 先由预置牌跑通「打出 → 牌堆运转」的流程，再决定是否让 LLM 设计它。
+DESIGNABLE_AFFIX_FIELDS: Final[Tuple[str, ...]] = (
     "on_play_affixes",
     "on_hit_affixes",
     "on_turn_end_affixes",
@@ -123,6 +146,11 @@ def validate_affix_slot(
     if affix_field not in AFFIX_FIELDS:
         return AffixValidationResult(False, f"未知词缀时机 {affix_field!r}")
 
+    if affix_field == "engine_affixes" and not card.playable:
+        return AffixValidationResult(
+            False, "不可出牌（playable=false）的牌不会被结算，运转词缀永不触发"
+        )
+
     if affix_field == "on_play_affixes" and not card.playable:
         return AffixValidationResult(
             False, "不可出牌（playable=false）的牌不应有即时词缀"
@@ -131,8 +159,7 @@ def validate_affix_slot(
     if affix_field == "on_autonomous_affixes" and card.ethereal:
         return AffixValidationResult(
             False,
-            "虚无牌（ethereal=true）会在自主运行阶段之前被移入 ExhaustPile，"
-            "自主词缀永不触发，属无效组合",
+            "虚无牌（ethereal=true）会在自主运行阶段之前被移入 ExhaustPile，自主词缀永不触发，属无效组合",
         )
 
     split = _split_affix(affix)
@@ -161,7 +188,7 @@ def apply_affix_design(
     applied = 0
     notes: List[str] = []
 
-    for affix_field in AFFIX_FIELDS:
+    for affix_field in DESIGNABLE_AFFIX_FIELDS:
         if not getattr(card, affix_field):
             if submitted.get(affix_field):
                 notes.append(f"{affix_field}: 原型该槽无引导，忽略设计提交")
@@ -181,8 +208,7 @@ def apply_affix_design(
             setattr(card, affix_field, [])
             detail = "；".join(f"{affix!r}（{reason}）" for affix, reason in invalid)
             notes.append(
-                f"{affix_field}: 不合法，整槽置空"
-                f"（{entity_name} 卡「{card.name}」）— {detail}"
+                f"{affix_field}: 不合法，整槽置空（{entity_name} 卡「{card.name}」）— {detail}"
             )
         else:
             setattr(card, affix_field, cleaned)

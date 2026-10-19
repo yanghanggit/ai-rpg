@@ -25,8 +25,7 @@ def _build_record_dungeon_rooms_tool(dungeon_room_count: int) -> ToolDefinition:
         function=ToolFunction(
             name="record_dungeon_rooms",
             description=(
-                f"记录副本全部 {dungeon_room_count} 个房间：首个为开场（opening），"
-                f"其余 {combat_room_count} 个为战斗房间（combat）。"
+                f"记录副本全部 {dungeon_room_count} 个房间：首个为开场（opening），其余 {combat_room_count} 个为战斗房间（combat）。"
             ),
             parameters={
                 "type": "object",
@@ -46,8 +45,7 @@ def _build_record_dungeon_rooms_tool(dungeon_room_count: int) -> ToolDefinition:
                                     "type": "string",
                                     "enum": ["opening", "combat"],
                                     "description": (
-                                        "房间类型：'opening' = 开场房间（无战斗，纯场景氛围描写），"
-                                        "'combat' = 战斗房间。第一个房间必须为 'opening'，其余必须为 'combat'"
+                                        "房间类型：'opening' = 开场房间（无战斗，纯场景氛围描写），'combat' = 战斗房间。第一个房间必须为 'opening'，其余必须为 'combat'"
                                     ),
                                 },
                                 "room_name": {
@@ -125,16 +123,10 @@ def _handle_record_dungeon_rooms(
     result.rooms = room_items
     for i, room in enumerate(room_items, start=1):
         logger.info(
-            f"[GenerateDungeonRoomsSystem] Room {i}/{len(room_items)}:\n"
-            f"  room_type:    {room.room_type}\n"
-            f"  room_name:    {room.room_name}\n"
-            f"  actor_count:  {room.actor_count}\n"
-            f"  profile:      {room.profile}"
+            f"[GenerateDungeonRoomsSystem] Room {i}/{len(room_items)}:\n  room_type:    {room.room_type}\n  room_name:    {room.room_name}\n  actor_count:  {room.actor_count}\n  profile:      {room.profile}"
         )
     logger.info(
-        f"[GenerateDungeonRoomsSystem] record_dungeon_rooms 执行:\n"
-        f"  dungeon_name: {dungeon_name}\n"
-        f"  room_count:   {len(room_items)}"
+        f"[GenerateDungeonRoomsSystem] record_dungeon_rooms 执行:\n  dungeon_name: {dungeon_name}\n  room_count:   {len(room_items)}"
     )
     # 返回结构化 JSON 文本，作为 ToolMessage 进入 agent memory，供后续步骤的 LLM 记忆使用
     return result.model_dump_json(ensure_ascii=False)
@@ -178,8 +170,7 @@ class GenerateDungeonRoomsSystem(ReactiveProcessor):
         dungeon_room_count = draft.room_count
 
         logger.info(
-            f"[GenerateDungeonRoomsSystem] 开始: dungeon={dungeon_name}, "
-            f"room_count={dungeon_room_count}"
+            f"[GenerateDungeonRoomsSystem] 开始: dungeon={dungeon_name}, room_count={dungeon_room_count}"
         )
 
         result = _RoomsResult()
@@ -207,8 +198,7 @@ class GenerateDungeonRoomsSystem(ReactiveProcessor):
 
         if result.dungeon_name is None or result.rooms is None:
             logger.error(
-                "[GenerateDungeonRoomsSystem] LLM 已 stop "
-                "但未调用 record_dungeon_rooms，中止"
+                "[GenerateDungeonRoomsSystem] LLM 已 stop 但未调用 record_dungeon_rooms，中止"
             )
             return
 
@@ -217,27 +207,24 @@ class GenerateDungeonRoomsSystem(ReactiveProcessor):
         # 校验房间数量与类型顺序：总数必须匹配，第 1 个 opening，其余 combat
         if len(rooms) != dungeon_room_count:
             logger.error(
-                f"[GenerateDungeonRoomsSystem] 房间数量不符：期望 {dungeon_room_count}，"
-                f"实际 {len(rooms)}，中止"
+                f"[GenerateDungeonRoomsSystem] 房间数量不符：期望 {dungeon_room_count}，实际 {len(rooms)}，中止"
             )
             return
         if rooms and rooms[0].room_type != "opening":
             logger.error(
-                f"[GenerateDungeonRoomsSystem] 第一个房间 room_type 必须为 'opening'，"
-                f"实际为 '{rooms[0].room_type}'，中止"
+                f"[GenerateDungeonRoomsSystem] 第一个房间 room_type 必须为 'opening'，实际为 '{rooms[0].room_type}'，中止"
             )
             return
         for i, room in enumerate(rooms[1:], start=2):
             if room.room_type != "combat":
                 logger.error(
-                    f"[GenerateDungeonRoomsSystem] 第 {i} 个房间 room_type 必须为 'combat'，"
-                    f"实际为 '{room.room_type}'，中止"
+                    f"[GenerateDungeonRoomsSystem] 第 {i} 个房间 room_type 必须为 'combat'，实际为 '{room.room_type}'，中止"
                 )
                 return
 
         logger.info(
-            f"[GenerateDungeonRoomsSystem] 完成:\n"
-            f"  rooms ({len(rooms)}): " + ", ".join(r.room_name for r in rooms)
+            f"[GenerateDungeonRoomsSystem] 完成:\n  rooms ({len(rooms)}): "
+            + ", ".join(r.room_name for r in rooms)
         )
 
         draft.rooms = rooms

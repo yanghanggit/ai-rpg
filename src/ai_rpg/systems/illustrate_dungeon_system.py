@@ -78,9 +78,7 @@ def _build_record_image_prompts_tool(room_targets: List[str]) -> ToolDefinition:
         function=ToolFunction(
             name="record_image_prompts",
             description=(
-                f"一次性提交全部 {total} 张插图的最终文生图提示词："
-                f'1 张副本封面（target="cover"）与 {len(room_targets)} 张房间插图'
-                f"（target 为对应场景全名）。每条含正向提示词与负面提示词。"
+                f'一次性提交全部 {total} 张插图的最终文生图提示词：1 张副本封面（target="cover"）与 {len(room_targets)} 张房间插图（target 为对应场景全名）。每条含正向提示词与负面提示词。'
             ),
             parameters={
                 "type": "object",
@@ -96,8 +94,7 @@ def _build_record_image_prompts_tool(room_targets: List[str]) -> ToolDefinition:
                                     "type": "string",
                                     "enum": [AssetKey.COVER] + room_targets,
                                     "description": (
-                                        '"cover" 为副本封面；其余为房间对应的场景全名，'
-                                        "每个 target 恰好出现一次"
+                                        '"cover" 为副本封面；其余为房间对应的场景全名，每个 target 恰好出现一次'
                                     ),
                                 },
                                 "prompt": {
@@ -130,25 +127,17 @@ def _handle_record_image_prompts(
     unexpected = [target for target in got if target not in expected_targets]
     duplicated = sorted({target for target in got if got.count(target) > 1})
     if missing or unexpected or duplicated:
-        return (
-            f"错误：target 集合与要求不符。缺失={missing}，多余={unexpected}，"
-            f"重复={duplicated}。必须恰好覆盖：{expected_targets}"
-        )
+        return f"错误：target 集合与要求不符。缺失={missing}，多余={unexpected}，重复={duplicated}。必须恰好覆盖：{expected_targets}"
 
     # 内容合法性校验：拒绝空值、占位符与过短提示词，避免把垃圾提示词送进图像模型
     invalid = [item.target for item in items if _is_invalid_prompt(item.prompt)]
     if invalid:
-        return (
-            f"错误：以下 target 的 prompt 为空、占位符或过短：{invalid}。"
-            "必须为每个 target 写出完整、具体、可独立送进图像模型的中文正向提示词，"
-            "请修正后重新调用 record_image_prompts。"
-        )
+        return f"错误：以下 target 的 prompt 为空、占位符或过短：{invalid}。必须为每个 target 写出完整、具体、可独立送进图像模型的中文正向提示词，请修正后重新调用 record_image_prompts。"
 
     result.images = items
     for item in items:
         logger.info(
-            f"[IllustrateDungeonSystem] record_image_prompts: "
-            f"target={item.target!r}, prompt={item.prompt!r}"
+            f"[IllustrateDungeonSystem] record_image_prompts: target={item.target!r}, prompt={item.prompt!r}"
         )
     return result.model_dump_json(ensure_ascii=False)
 
@@ -167,8 +156,7 @@ def _build_image_prompts_prompt(
     ]
     for index, room in enumerate(rooms, start=1):
         sections.append(
-            f'### 房间 {index}：{room.stage.name}（target="{room.stage.name}"）\n'
-            f"- 场景设定：{room.stage.profile}"
+            f'### 房间 {index}：{room.stage.name}（target="{room.stage.name}"）\n- 场景设定：{room.stage.profile}'
         )
 
     scenes = "\n\n".join(sections)
@@ -237,8 +225,7 @@ class IllustrateDungeonSystem(ReactiveProcessor):
             )
         except Exception as e:
             logger.error(
-                f"[IllustrateDungeonSystem] 解析 Dungeon 失败: {e}\n"
-                f"路径: {dungeon_path}"
+                f"[IllustrateDungeonSystem] 解析 Dungeon 失败: {e}\n路径: {dungeon_path}"
             )
             return
 
@@ -248,8 +235,7 @@ class IllustrateDungeonSystem(ReactiveProcessor):
         ).entities.copy()
         if len(prompt_entities) != 1:
             logger.error(
-                f"[IllustrateDungeonSystem] 插图提示词实体数量异常: "
-                f"{len(prompt_entities)}，跳过插图生成"
+                f"[IllustrateDungeonSystem] 插图提示词实体数量异常: {len(prompt_entities)}，跳过插图生成"
             )
             return
 
@@ -260,7 +246,7 @@ class IllustrateDungeonSystem(ReactiveProcessor):
         prompts = await self._compose_prompts(prompt_entity, dungeon)
         if prompts is None:
             logger.warning(
-                f"[IllustrateDungeonSystem]提示词编排失败，跳过插图: " f"{dungeon.name}"
+                f"[IllustrateDungeonSystem]提示词编排失败，跳过插图: {dungeon.name}"
             )
             return
 
@@ -278,8 +264,7 @@ class IllustrateDungeonSystem(ReactiveProcessor):
         if cover_meta is not None:
             dungeon.assets[AssetKey.COVER] = str(cover_meta.meta_path)
             logger.info(
-                f"[IllustrateDungeonSystem]封面图片生成完成: "
-                f"{cover_meta.local_path}"
+                f"[IllustrateDungeonSystem]封面图片生成完成: {cover_meta.local_path}"
             )
         else:
             logger.warning(f"[IllustrateDungeonSystem]封面图片生成失败: {dungeon.name}")
@@ -289,12 +274,11 @@ class IllustrateDungeonSystem(ReactiveProcessor):
             if meta is not None:
                 room.stage.assets[AssetKey.ILLUSTRATION] = str(meta.meta_path)
                 logger.info(
-                    f"[IllustrateDungeonSystem]房间插图生成完成: "
-                    f"{room.stage.name} -> {meta.local_path}"
+                    f"[IllustrateDungeonSystem]房间插图生成完成: {room.stage.name} -> {meta.local_path}"
                 )
             else:
                 logger.warning(
-                    f"[IllustrateDungeonSystem]房间插图生成失败: " f"{room.stage.name}"
+                    f"[IllustrateDungeonSystem]房间插图生成失败: {room.stage.name}"
                 )
 
         # 将更新后的 dungeon（含 assets 地址）重新保存到磁盘
@@ -344,15 +328,13 @@ class IllustrateDungeonSystem(ReactiveProcessor):
 
         if not ok:
             logger.error(
-                f"[IllustrateDungeonSystem] 提示词编排 agent_loop 失败: "
-                f"{dungeon.name}"
+                f"[IllustrateDungeonSystem] 提示词编排 agent_loop 失败: {dungeon.name}"
             )
             return None
 
         if len(result.images) != len(expected_targets):
             logger.error(
-                f"[IllustrateDungeonSystem] 提示词数量不符："
-                f"期望 {len(expected_targets)}，实际 {len(result.images)}"
+                f"[IllustrateDungeonSystem] 提示词数量不符：期望 {len(expected_targets)}，实际 {len(result.images)}"
             )
             return None
 

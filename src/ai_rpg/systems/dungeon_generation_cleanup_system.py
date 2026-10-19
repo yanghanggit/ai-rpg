@@ -31,6 +31,5 @@ class DungeonGenerationCleanupSystem(ExecuteProcessor):
         generation_entity = next(iter(entities))
         self._game.reset_agent_memory(generation_entity)
         logger.info(
-            f"[DungeonGenerationCleanupSystem] 已清空中间过程数据并重置记忆: "
-            f"{generation_entity.name}"
+            f"[DungeonGenerationCleanupSystem] 已清空中间过程数据并重置记忆: {generation_entity.name}"
         )

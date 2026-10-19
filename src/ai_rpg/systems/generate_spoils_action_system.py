@@ -78,8 +78,7 @@ class GenerateSpoilsActionSystem(ReactiveProcessor):
             candidates = self._materialize_candidates(entity, index)
             if not candidates:
                 logger.error(
-                    f"[GenerateSpoilsActionSystem] {entity.name} 候选物化失败，"
-                    f"整批中止，未写入任何 SpoilsComponent（客户端可重试）"
+                    f"[GenerateSpoilsActionSystem] {entity.name} 候选物化失败，整批中止，未写入任何 SpoilsComponent（客户端可重试）"
                 )
                 return
             materialized.append((entity, candidates))
@@ -125,16 +124,14 @@ class GenerateSpoilsActionSystem(ReactiveProcessor):
                     change="spoils_generate",
                     title="待领取的奖励",
                     lines=[
-                        f"待领取队列现有 {len(spoils_cards)} 张："
-                        f"{format_card_names(spoils_cards)}",
+                        f"待领取队列现有 {len(spoils_cards)} 张：{format_card_names(spoils_cards)}",
                         "挑一张收下，它会进入你的牌库。",
                     ],
                     deltas={PILE_SPOILS: len(spoils_cards) - spoils_before},
                 )
 
             logger.info(
-                f"[GenerateSpoilsActionSystem] {entity.name}: 候选卡 {len(candidates)} 张"
-                f"（agent_loop 成功={ok}）"
+                f"[GenerateSpoilsActionSystem] {entity.name}: 候选卡 {len(candidates)} 张（agent_loop 成功={ok}）"
             )
 
     ####################################################################################################################################

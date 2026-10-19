@@ -86,10 +86,7 @@ def compute_damage(
     per_hit = max(0, effective_damage - effective_block)
     total = per_hit * hits
     new_hp = max(0, min(int(old_hp) - total, int(max_hp)))
-    expr = (
-        f"{base_damage}×{_fmt_mult(damage_mult)}{MINUS}{block}×{_fmt_mult(block_mult)}"
-        f"=每击{per_hit} ×{hits}击={total}"
-    )
+    expr = f"{base_damage}×{_fmt_mult(damage_mult)}{MINUS}{block}×{_fmt_mult(block_mult)}=每击{per_hit} ×{hits}击={total}"
     return DamageResult(
         hits=hits, per_hit=per_hit, total=total, new_hp=new_hp, expr=expr
     )
@@ -230,26 +227,20 @@ def get_entity_stats(
         hit_cards = collect_hand_cards_with(entity, "on_hit_affixes")
         if hit_cards:
             cards_str = "\n".join(
-                f"    - {c.name}（source={c.source or '未知'}, description={c.description}, "
-                f"cost={c.cost}, damage={c.damage}, hit_count={c.hit_count}, "
-                f"单牌 block={c.block}, 受击词缀={c.on_hit_affixes}）"
+                f"    - {c.name}（source={c.source or '未知'}, description={c.description}, cost={c.cost}, damage={c.damage}, hit_count={c.hit_count}, 单牌 block={c.block}, 受击词缀={c.on_hit_affixes}）"
                 for c in hit_cards
             )
         else:
             cards_str = "    - 无"
         lines.append(
-            "- 受击卡牌（仅列出带受击词缀的卡牌，不是完整手牌；下面每张卡的 `单牌 block` "
-            "只是它自己那张牌的格挡值，**不是**上面的总格挡）："
+            "- 受击卡牌（仅列出带受击词缀的卡牌，不是完整手牌；下面每张卡的 `单牌 block` 只是它自己那张牌的格挡值，**不是**上面的总格挡）："
         )
         lines.append(cards_str)
     return "\n".join(lines)
 
 
 def _target_guard_error(entity_name: str, require_entity: str) -> str:
-    return (
-        f"错误：本时机目标恒为 {require_entity}，不能结算 {entity_name}。"
-        f"请对 {require_entity} 重新调用。"
-    )
+    return f"错误：本时机目标恒为 {require_entity}，不能结算 {entity_name}。请对 {require_entity} 重新调用。"
 
 
 def resolve_damage(
@@ -286,10 +277,7 @@ def resolve_damage(
         block_mult=float(block_mult),
     )
     note = f"（{rationale}）" if rationale else ""
-    segment = (
-        f"[{actor_label}→{entity_name}: {result.expr}{note}]"
-        f" HP:{entity_name} {old_hp}→{result.new_hp}"
-    )
+    segment = f"[{actor_label}→{entity_name}: {result.expr}{note}] HP:{entity_name} {old_hp}→{result.new_hp}"
     return record_segment(ctx, entity_name, result.new_hp, segment)
 
 
@@ -324,10 +312,7 @@ def resolve_effect(
         heal_mult=float(heal_mult),
     )
     note = f"（{rationale}）" if rationale else ""
-    segment = (
-        f"[{entity_name}: {result.expr}{note}]"
-        f" HP:{entity_name} {old_hp}→{result.new_hp}"
-    )
+    segment = f"[{entity_name}: {result.expr}{note}] HP:{entity_name} {old_hp}→{result.new_hp}"
     return record_segment(ctx, entity_name, result.new_hp, segment)
 
 
@@ -459,6 +444,7 @@ class RoundKind(StrEnum):
     TURN_END = "turn_end"
     AUTONOMOUS = "autonomous"
     ARTIFACT = "artifact"
+    CARD_OPERATION = "card_operation"
 
 
 _ROUND_ENTRY_KIND: Dict[RoundKind, RoundEntryKind] = {
@@ -466,6 +452,7 @@ _ROUND_ENTRY_KIND: Dict[RoundKind, RoundEntryKind] = {
     RoundKind.TURN_END: RoundEntryKind.CARDS,
     RoundKind.AUTONOMOUS: RoundEntryKind.AUTONOMOUS,
     RoundKind.ARTIFACT: RoundEntryKind.ARTIFACT,
+    RoundKind.CARD_OPERATION: RoundEntryKind.CARDS,
 }
 
 _EMPTY_COMBAT_LOG: Dict[RoundKind, str] = {
@@ -473,6 +460,7 @@ _EMPTY_COMBAT_LOG: Dict[RoundKind, str] = {
     RoundKind.TURN_END: "本次回合结束无 HP 变化",
     RoundKind.AUTONOMOUS: "本次自主运行无 HP 变化",
     RoundKind.ARTIFACT: "本次神器仲裁未产生效果",
+    RoundKind.CARD_OPERATION: "本次运转结算未改动牌堆",
 }
 
 
@@ -740,8 +728,7 @@ def make_resolve_effect_tool(description: str) -> ToolDefinition:
 # submit_arbitration 的 combat_log 字段描述默认值：出牌 / 回合结束仲裁由系统生成，传空即可。
 # 神器仲裁的 combat_log 由 LLM 写效果说明，故允许通过 combat_log_desc 覆盖该字段描述。
 _SUBMIT_COMBAT_LOG_DESC: str = (
-    "战斗数据日志；本仲裁由系统据 resolve_damage / resolve_effect 的调用自动生成，"
-    "此处传空字符串即可。"
+    "战斗数据日志；本仲裁由系统据 resolve_damage / resolve_effect 的调用自动生成，此处传空字符串即可。"
 )
 
 
@@ -766,17 +753,13 @@ def make_submit_arbitration_tool(
                     "narrative": {
                         "type": "string",
                         "description": (
-                            "60-120 字第三人称外部视角的纯感官演出：以本次结算对象的意象（卡牌/神器 description）"
-                            "为素材延展，不写数字 / 术语 / 内心，不引入其与词缀之外的机制；"
-                            "若效果改变了某人或物的状态，须体现这一改变。"
+                            "60-120 字第三人称外部视角的纯感官演出：以本次结算对象的意象（卡牌/神器 description）为素材延展，不写数字 / 术语 / 内心，不引入其与词缀之外的机制；若效果改变了某人或物的状态，须体现这一改变。"
                         ),
                     },
                     "summary": {
                         "type": "string",
                         "description": (
-                            "本次仲裁的压缩总结（将整段替换本次完整工具轨迹、作为长期记忆）：谁对谁、"
-                            "造成或恢复多少（沿用系统回显的「旧→新」，不得改写）、谁被击倒、有无未结算项；"
-                            "自然语言、紧凑自包含，数值须与数据日志一致，便于未来判断「累计伤害到 X」一类条件。"
+                            "本次仲裁的压缩总结（将整段替换本次完整工具轨迹、作为长期记忆）：谁对谁、造成或恢复多少（沿用系统回显的「旧→新」，不得改写）、谁被击倒、有无未结算项；自然语言、紧凑自包含，数值须与数据日志一致，便于未来判断「累计伤害到 X」一类条件。"
                         ),
                     },
                     "unsettled_affixes": {

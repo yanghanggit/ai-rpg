@@ -32,10 +32,7 @@ from .dungeon_spoils_actions import clear_party_spoils
 @prompt_builder
 def _build_dungeon_enter_message(dungeon_name: str, stage_name: str) -> str:
     """生成进入副本第一关的传送提示消息。"""
-    return (
-        f"# 进入副本：{dungeon_name}，开始关卡场景：{stage_name}\n"
-        f"（关于「副本」及进出副本的具体设定，见你的「游戏设定」与「全局规则」。）"
-    )
+    return f"# 进入副本：{dungeon_name}，开始关卡场景：{stage_name}\n（关于「副本」及进出副本的具体设定，见你的「游戏设定」与「全局规则」。）"
 
 
 ###################################################################################################################################################################
@@ -65,10 +62,7 @@ def enter_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, str]:
     # 已经进入过副本（current_room_index 应仍为 -1）
     assert dungeon.current_room_index == -1, f"enter_dungeon 失败: {dungeon.name} "
     if dungeon.current_room_index >= 0:
-        error_msg = (
-            f"enter_dungeon 失败: {dungeon.name} "
-            f"current_room_index={dungeon.current_room_index}，期望值为 -1（已 setup 未进入）"
-        )
+        error_msg = f"enter_dungeon 失败: {dungeon.name} current_room_index={dungeon.current_room_index}，期望值为 -1（已 setup 未进入）"
         logger.error(error_msg)
         return False, error_msg
 
@@ -113,8 +107,7 @@ def enter_dungeon(dbg_game: DBGGame, dungeon: Dungeon) -> Tuple[bool, str]:
             party_member_entities.add(member_entity)
             logger.info(f"按名单将 {member_name} 加入队伍")
     logger.info(
-        f"最终队伍成员 ({len(party_member_entities)}): "
-        f"{[e.name for e in party_member_entities]}"
+        f"最终队伍成员 ({len(party_member_entities)}): {[e.name for e in party_member_entities]}"
     )
     for party_member in party_member_entities:
         party_member.replace(PartyMemberComponent, party_member.name)

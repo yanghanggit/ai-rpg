@@ -63,10 +63,9 @@ class FillDrawPileSystem(ReactiveProcessor):
         draw_pile = entity.get(DrawPileComponent)
         assert draw_pile is not None, f"[{entity.name}] 缺失 DrawPileComponent"
 
-        assert deck_comp.cards, (
-            f"[{entity.name}] DeckComponent 为空：参战角色必须有可用牌库，"
-            "空牌库属于数据损坏，不做降级"
-        )
+        assert (
+            deck_comp.cards
+        ), f"[{entity.name}] DeckComponent 为空：参战角色必须有可用牌库，空牌库属于数据损坏，不做降级"
 
         cards = deck_comp.cards.copy()
         random.shuffle(cards)
@@ -104,6 +103,5 @@ class FillDrawPileSystem(ReactiveProcessor):
         )
 
         logger.debug(
-            f"[{entity.name}] FillDrawPile: {len(adjusted_cards)} 张牌已洗牌"
-            f"并叠加角色属性后填入 DrawPile"
+            f"[{entity.name}] FillDrawPile: {len(adjusted_cards)} 张牌已洗牌并叠加角色属性后填入 DrawPile"
         )

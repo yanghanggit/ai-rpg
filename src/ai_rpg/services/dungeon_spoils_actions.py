@@ -192,10 +192,7 @@ def activate_pick_spoils_card(
         (c for c in pool_comp.candidate_cards if c.name == card_name), None
     )
     if selected_card is None:
-        error_msg = (
-            f"角色 {actor_name} 的 Spoils 中找不到卡牌 '{card_name}'，"
-            f"当前待领取: {[c.name for c in pool_comp.candidate_cards]}"
-        )
+        error_msg = f"角色 {actor_name} 的 Spoils 中找不到卡牌 '{card_name}'，当前待领取: {[c.name for c in pool_comp.candidate_cards]}"
         logger.error(error_msg)
         return False, error_msg
 

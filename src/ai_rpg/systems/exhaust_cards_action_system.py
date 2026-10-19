@@ -88,8 +88,7 @@ class ExhaustCardsActionSystem(ReactiveProcessor):
                     deltas={PILE_DISCARD: -1, PILE_EXHAUST: 1},
                 )
                 logger.debug(
-                    f"  [{entity.name}] 消耗牌 [{played_card.name}] 已从 DiscardPile 移入 ExhaustPile"
-                    f"（ExhaustPile 累计 {len(exhaust_pile.cards)} 张）"
+                    f"  [{entity.name}] 消耗牌 [{played_card.name}] 已从 DiscardPile 移入 ExhaustPile（ExhaustPile 累计 {len(exhaust_pile.cards)} 张）"
                 )
             else:
                 # DiscardCardsActionSystem 对所有出牌必定写入 DiscardPile，此分支为防御性日志

@@ -62,14 +62,12 @@ def _assert_deck_sources(actor_name: str, deck_comp: Optional[DeckComponent]) ->
     """
     assert deck_comp is not None, f"{actor_name} 缺少 DeckComponent"
     for card in deck_comp.cards:
-        assert card.source.strip(), (
-            f"{actor_name} 的卡「{card.name}」缺少 source："
-            f"牌库中每张卡都必须显式设置 source（见 demo/world.py）"
-        )
-        assert card.source == actor_name, (
-            f"{actor_name} 的卡「{card.name}」source={card.source!r} 与持有者不符："
-            f"持久牌库中的卡 source 必须等于持有者名"
-        )
+        assert (
+            card.source.strip()
+        ), f"{actor_name} 的卡「{card.name}」缺少 source：牌库中每张卡都必须显式设置 source（见 demo/world.py）"
+        assert (
+            card.source == actor_name
+        ), f"{actor_name} 的卡「{card.name}」source={card.source!r} 与持有者不符：持久牌库中的卡 source 必须等于持有者名"
 
 
 #################################################################################################################################################

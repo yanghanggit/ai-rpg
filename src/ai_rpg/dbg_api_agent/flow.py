@@ -64,8 +64,7 @@ def suggest_actions(status: Dict[str, Any]) -> List[str]:
                 for entry in spoils.get("by_actor", []):
                     for card in entry.get("candidate_cards", []):
                         actions.append(
-                            f"spoils pick-card --actor {entry['actor']} "
-                            f"--card {card.get('name')}"
+                            f"spoils pick-card --actor {entry['actor']} --card {card.get('name')}"
                         )
                 actions.append("dungeon advance-stage")
             actions.append("spoils remove")
@@ -102,13 +101,11 @@ def suggest_actions(status: Dict[str, Any]) -> List[str]:
                                 else " --target <entity>"
                             )
                             actions.append(
-                                f"combat play-cards --actor {current_actor} "
-                                f"--card {card.get('name')}{target}"
+                                f"combat play-cards --actor {current_actor} --card {card.get('name')}{target}"
                             )
                     else:
                         actions.append(
-                            f"combat play-cards --actor {current_actor} "
-                            f"--card <card> [--target <entity>]"
+                            f"combat play-cards --actor {current_actor} --card <card> [--target <entity>]"
                         )
                     actions.append(f"combat pass-turn --actor {current_actor}")
                     actions.append("combat use-consumable --item <item>")

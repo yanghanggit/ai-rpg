@@ -52,9 +52,7 @@ def _handle_record_dungeon_profile(
     result.dungeon_profile = profile
     result.dungeon_room_count = DUNGEON_ROOM_COUNT
     logger.info(
-        f"[GenerateDungeonProfileSystem] record_dungeon_profile 执行:\n"
-        f"  dungeon_name: {name}\n"
-        f"  dungeon_room_count: {DUNGEON_ROOM_COUNT}（结构常量）"
+        f"[GenerateDungeonProfileSystem] record_dungeon_profile 执行:\n  dungeon_name: {name}\n  dungeon_room_count: {DUNGEON_ROOM_COUNT}（结构常量）"
     )
     return result.model_dump_json(ensure_ascii=False)
 
@@ -145,20 +143,16 @@ class GenerateDungeonProfileSystem(ReactiveProcessor):
             or result.dungeon_room_count is None
         ):
             logger.error(
-                "[GenerateDungeonProfileSystem] LLM 已 stop "
-                "但未调用 record_dungeon_profile，中止"
+                "[GenerateDungeonProfileSystem] LLM 已 stop 但未调用 record_dungeon_profile，中止"
             )
             return
 
         logger.info(
-            f"[GenerateDungeonProfileSystem] 完成:\n"
-            f"  dungeon_name: {result.dungeon_name}\n"
-            f"  dungeon_profile: {result.dungeon_profile}"
+            f"[GenerateDungeonProfileSystem] 完成:\n  dungeon_name: {result.dungeon_name}\n  dungeon_profile: {result.dungeon_profile}"
         )
         draft.dungeon_name = result.dungeon_name
         draft.profile = result.dungeon_profile
         draft.room_count = result.dungeon_room_count
         logger.info(
-            f"[GenerateDungeonProfileSystem] 已写入设定: "
-            f"dungeon={result.dungeon_name}, room_count={result.dungeon_room_count}"
+            f"[GenerateDungeonProfileSystem] 已写入设定: dungeon={result.dungeon_name}, room_count={result.dungeon_room_count}"
         )

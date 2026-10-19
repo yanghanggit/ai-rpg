@@ -49,11 +49,9 @@ def resolve_appearance_synthesis_entity(game: DBGGame) -> Entity:
     entities = game.get_group(
         Matcher(all_of=[AppearanceSynthesisComponent])
     ).entities.copy()
-    assert len(entities) == 1, (
-        f"外观合成世界实体数量异常: {len(entities)}"
-        "（应为 1 个 AppearanceSynthesisComponent 世界实体）。"
-        "蓝图缺少该实体时请刷新：python -m scripts.setup_demo"
-    )
+    assert (
+        len(entities) == 1
+    ), f"外观合成世界实体数量异常: {len(entities)}（应为 1 个 AppearanceSynthesisComponent 世界实体）。蓝图缺少该实体时请刷新：python -m scripts.setup_demo"
     return next(iter(entities))
 
 

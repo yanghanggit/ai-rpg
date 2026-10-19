@@ -428,8 +428,7 @@ async def dungeon_combat_use_consumable(
     """副本战斗使用消耗品接口"""
 
     logger.info(
-        f"/api/dungeon/combat/use_consumable/v1/: user={payload.user_name} "
-        f"item={payload.item_name}"
+        f"/api/dungeon/combat/use_consumable/v1/: user={payload.user_name} item={payload.item_name}"
     )
 
     current_room = game_server.get_room(payload.user_name)
@@ -502,8 +501,7 @@ async def dungeon_combat_equip_gear(
     """
 
     logger.info(
-        f"/api/dungeon/combat/equip_gear/v1/: user={payload.user_name} "
-        f"item={payload.item_name}"
+        f"/api/dungeon/combat/equip_gear/v1/: user={payload.user_name} item={payload.item_name}"
     )
 
     current_room = game_server.get_room(payload.user_name)

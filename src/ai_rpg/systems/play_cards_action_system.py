@@ -95,8 +95,7 @@ class PlayCardsActionSystem(ReactiveProcessor):
             # 计算端拦截：不可出牌的卡（playable=False）不进入出牌流程，防止 LLM 决策误选
             if not play_cards_action.card.playable:
                 logger.error(
-                    f"PlayCardsActionSystem: 卡牌 '{play_cards_action.card.name}' "
-                    f"不可出牌（playable=False），拦截出牌"
+                    f"PlayCardsActionSystem: 卡牌 '{play_cards_action.card.name}' 不可出牌（playable=False），拦截出牌"
                 )
                 # 将拦截原因写入出牌者上下文，让 LLM 下次决策时理解
                 self._game.add_human_message(
@@ -113,16 +112,13 @@ class PlayCardsActionSystem(ReactiveProcessor):
                 continue
 
             logger.debug(
-                f"  [{play_cards_action.name}] 出牌 → 卡牌: {play_cards_action.card.name}"
-                f" | damage={play_cards_action.card.damage}"
-                f" | 目标: {play_cards_action.targets}"
+                f"  [{play_cards_action.name}] 出牌 → 卡牌: {play_cards_action.card.name} | damage={play_cards_action.card.damage} | 目标: {play_cards_action.targets}"
             )
 
             # 写一个assert 要求 entity.name 必须是当前回合的行动者
-            assert entity.name == get_current_turn_actor(self._game, last_round), (
-                f"PlayCardsActionSystem: 出牌角色 {entity.name} 不是当前 turn 的行动者！"
-                f" current_turn_actor={get_current_turn_actor(self._game, last_round)}"
-            )
+            assert entity.name == get_current_turn_actor(
+                self._game, last_round
+            ), f"PlayCardsActionSystem: 出牌角色 {entity.name} 不是当前 turn 的行动者！ current_turn_actor={get_current_turn_actor(self._game, last_round)}"
 
             # 每出一张牌消耗卡牌费用对应的 energy 点数（出牌本身不视为"完成行动"，
             # 仅 pass turn 才会写入 completed_actors 并真正交出行动权，见 PassTurnActionSystem；

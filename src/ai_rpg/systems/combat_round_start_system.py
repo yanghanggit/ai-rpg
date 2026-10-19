@@ -1,6 +1,4 @@
-"""
-战斗回合开始系统
-"""
+"""战斗回合开始系统：按有效速度确定行动顺序，开启一个新回合。"""
 
 import random
 from enum import StrEnum, unique

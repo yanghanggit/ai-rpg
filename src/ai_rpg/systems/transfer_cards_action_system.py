@@ -1,4 +1,4 @@
-"""可传递卡牌转移系统模块。"""
+"""传递卡牌系统：按命中分配投递副本，只传一跳、落地即失去传递性。"""
 
 import json
 from typing import Dict, Final, List, Tuple, final

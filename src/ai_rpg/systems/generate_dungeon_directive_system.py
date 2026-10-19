@@ -1,4 +1,4 @@
-"""副本生成指令系统（世界导演在副本生成时执行）"""
+"""副本生成指令系统：世界导演先给出本次副本的创作方向。"""
 
 from typing import Dict, Final, List, final, override
 

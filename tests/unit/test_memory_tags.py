@@ -110,10 +110,12 @@ def test_structured_tag_values_have_expected_shape() -> None:
     """结构化标记的值有约定形态：调用方与消费者都依赖它，不能被随手改坏。"""
     import json
 
-    from ai_rpg.models import Card, PlayCardsAction, TargetType
-    from ai_rpg.systems.card_common import (
-        build_play_card_record_tag,
-        build_received_card_tag,
+    from ai_rpg.models import Card, TargetType
+    from ai_rpg.systems.card_common import build_received_card_tag
+    from ai_rpg.systems.combat_decision_common import (
+        ACTION_PLAY,
+        build_combat_decision_record,
+        build_combat_decision_tag,
     )
 
     card = Card(
@@ -126,21 +128,31 @@ def test_structured_tag_values_have_expected_shape() -> None:
         target_type=TargetType.SINGLE,
         source="角色.无名",
     )
-    action = PlayCardsAction(name="角色.无名", card=card, targets=["怪物.渡口野狗"])
+    decision = json.loads(
+        build_combat_decision_tag(
+            2,
+            ACTION_PLAY,
+            card_name=card.name,
+            targets=["怪物.渡口野狗"],
+            reason="压血线",
+            forced=False,
+        )
+    )
+    assert set(decision) == {"round", "action", "card", "targets", "reason", "forced"}
+    assert decision["targets"] == ["怪物.渡口野狗"]
 
-    play_record = json.loads(build_play_card_record_tag(action))
-    assert set(play_record) == {
-        "name",
-        "uuid",
-        "source",
-        "cost",
-        "damage",
-        "hit_count",
-        "block",
-        "target_type",
-        "targets",
-    }
-    assert play_record["targets"] == ["怪物.渡口野狗"]
+    # 正文形状：做了什么 + 目标 + 原因
+    text = build_combat_decision_record(
+        2,
+        ACTION_PLAY,
+        card_name=card.name,
+        targets=["怪物.渡口野狗", "怪物.渡口野狗"],
+        reason="压血线",
+    )
+    assert text.splitlines()[0] == "# 第 2 回合 · 你的行动"
+    assert "你打出了「攻击」" in text
+    assert "目标：怪物.渡口野狗 ×2" in text  # SPREAD 重复命中压成 ×N
+    assert "原因：压血线" in text
 
     received = json.loads(build_received_card_tag(card))
     assert set(received) == {

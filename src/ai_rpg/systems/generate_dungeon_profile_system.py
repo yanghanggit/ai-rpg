@@ -1,4 +1,4 @@
-"""副本设定生成系统"""
+"""副本设定生成系统：产出副本名称与整体设定。"""
 
 from functools import partial
 from typing import Dict, Final, List, Optional, final, override

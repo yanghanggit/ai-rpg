@@ -1,4 +1,4 @@
-"""过牌动作系统模块。"""
+"""过牌系统：交出行动权并清空剩余能量，是回合推进的唯一依据。"""
 
 from typing import Dict, Final, List, final
 

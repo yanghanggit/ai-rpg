@@ -1,7 +1,7 @@
 """广播「自我回显」规则的单测。
 
 规则（写在 `RPGGame.broadcast_to_stage` 的 docstring 里）：
-- 行动类广播：发起者另有更精确的自我记录时排除发起者（出牌有 `play_card_record`）；
+- 行动类广播：发起者另有更精确的自我记录时排除发起者（出牌有 `combat_decision` 决策记录）；
 - 观察类广播：发起者对该事件没有其他记录时保留（过牌等）。
 
 这里把两个代表性系统各钉一条，规则变动时会立刻失败。
@@ -73,7 +73,7 @@ def _make_stage(context: Context) -> Entity:
 
 
 async def test_play_cards_broadcast_excludes_actor(context: Context) -> None:
-    """出牌是行动类广播：出牌者已有 `play_card_record`，广播必须排除他本人。"""
+    """出牌是行动类广播：出牌者已有决策记录，广播必须排除他本人。"""
     from ai_rpg.systems.play_cards_action_system import PlayCardsActionSystem
 
     card = _make_card()
@@ -88,15 +88,8 @@ async def test_play_cards_broadcast_excludes_actor(context: Context) -> None:
     ):
         await PlayCardsActionSystem(game).react([actor])
 
-    # 自己的记录：play_card_record 标记
-    play_records = [
-        call.kwargs["human_message"]
-        for call in game.add_human_message.call_args_list
-        if call.kwargs["entity"] is actor
-    ]
-    assert len(play_records) == 1
-    assert play_records[0].play_card_record
-
+    # 出牌事实不再由本系统写（已折进 `combat_decision` 决策记录，见 PartyPrePlaySystem），
+    # 因此这里只断言广播口径。
     # 广播：排除出牌者与场景实体
     broadcast_kwargs = game.broadcast_to_stage.call_args.kwargs
     assert broadcast_kwargs["exclude_entities"] == {actor, stage}

@@ -1,4 +1,4 @@
-"""工坊制作时装系统模块。"""
+"""工坊制作时装系统：由世界实体生成时装（不含卡牌），产物进储物箱。"""
 
 from typing import Dict, Final, List, Optional, final
 

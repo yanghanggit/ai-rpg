@@ -1,3 +1,5 @@
+"""玩家行动审计系统：玩家发言类动作先送世界实体审核，未通过则动作被撤下。"""
+
 from typing import Dict, Final, List, final, override
 
 from loguru import logger

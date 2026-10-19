@@ -1,4 +1,4 @@
-"""死亡处理系统模块。"""
+"""死亡处理系统：HP 归零即标记死亡；若死者是当前行动者则重算回合指针。"""
 
 from typing import Final, final, override
 

@@ -1,15 +1,7 @@
-"""工坊合成装备系统模块。
+"""工坊合成装备系统模块：两阶段（选型 + 设计）驱动装备工坊 agent 产出一件装备。
 
-以两阶段（选型 + 设计）驱动装备工坊 agent，产出一件装备（装备级 `speed` 被动 +
-一张内置卡牌）：
-
-1. 选型：用 `card_common` 引擎的共用选型能力，从装备原型库挑选恰好 1 个骨架；
-2. 设计：由 `card_common` 引擎把选中原型物化为候选卡，交给工坊 agent 完成
-   name / description / 数值 / 词缀设计，并通过 `submit_card` 的扩展字段给出装备级 speed。
-
-两阶段都以工坊世界实体自身的 SystemMessage 作为**唯一且临时**的上下文
-（`agent_loop` 结束后即丢弃，不写回持久记忆）。卡牌骨架（flags / target_type）由原型给定；
-装备的伤害/格挡走卡牌通道，speed 是唯一的装备级被动。
+装备级被动只有 `speed`，其余效果走卡牌通道；两阶段都以工坊自身的 system message 作为
+唯一且临时上下文，结束后不写回持久记忆。
 """
 
 from typing import Any, Dict, Final, List, final

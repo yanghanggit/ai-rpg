@@ -1,4 +1,4 @@
-"""撤退动作系统模块"""
+"""撤退系统：结算为失败（成员标记死亡），随后由战斗结果流程收尾。"""
 
 from typing import Dict, List, final, override
 

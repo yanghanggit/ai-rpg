@@ -1,3 +1,5 @@
+"""公告动作系统：把公告广播到所在场景，并注明公告来源。"""
+
 from typing import Dict, Final, List, final, override
 
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor

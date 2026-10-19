@@ -1,4 +1,4 @@
-"""副本房间生成系统"""
+"""副本房间生成系统：产出房间序列与各房间的场景描述。"""
 
 from functools import partial
 from typing import Any, Dict, Final, List, Optional, final, override

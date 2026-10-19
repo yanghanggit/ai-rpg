@@ -1,4 +1,6 @@
-from typing import Dict, Final, List, final, override
+"""怪物出牌决策系统：怪物自己选牌选目标，决策过程只留「做了什么 + 原因」。"""
+
+from typing import Dict, Final, List, Optional, final, override
 
 from loguru import logger
 from pydantic import BaseModel
@@ -12,6 +14,7 @@ from ..game.dbg_combat_processor import (
     resolve_targets,
 )
 from ..game.dbg_game import DBGGame
+from ..game.rpg_agent_memory import REPLACED_MESSAGES_ATTR
 from ..models import (
     Card,
     CharacterStats,
@@ -26,6 +29,13 @@ from ..models import (
     render_labeled_str_list,
 )
 from ..utils import extract_json, prompt_builder
+from .combat_decision_common import (
+    ACTION_PASS,
+    ACTION_PLAY,
+    REASON_MISSING,
+    build_combat_decision_record,
+    build_combat_decision_tag,
+)
 
 
 #######################################################################################################################################
@@ -36,6 +46,7 @@ class _MonsterDecisionResponse(BaseModel):
     pass_turn: bool = False
     card_name: str = ""
     targets: List[str] = []
+    reason: str = ""  # 为什么这样打（或为什么过牌）
 
 
 #######################################################################################################################################
@@ -251,6 +262,7 @@ def _build_monster_decision_prompt(
 - 「存活对手」的「总格挡」为该对手手牌 block 之和（持有即生效），「手牌 N 张」为其当前手牌总数；「向你亮出的手牌」为带受击词缀的牌或来源你的牌——带受击词缀的牌会在你命中该对手时触发，可据此权衡命中收益与反噬风险。
 - SINGLE 填恰好 1 个目标；ALL/SPREAD 填恰好 1 个阵营锚点，系统自动展开为对应阵营的存活角色。
 - 若没有可执行的牌，返回 pass_turn=true，card_name/targets 可省略。
+- reason（必填）：一句话说明**为什么这样打 / 为什么过牌**（40 字以内，给出你自己的判断依据即可）。
 
 ## 输出 JSON
 
@@ -258,9 +270,47 @@ def _build_monster_decision_prompt(
 {{
   "pass_turn": false,
   "card_name": "选择的手牌名（可出：{card_names_hint}）",
-  "targets": ["目标全名列表；目标为自身时可为 []]"
+  "targets": ["目标全名列表；目标为自身时可为 []]"],
+  "reason": "为什么这样打 / 为什么过牌（一句话）"
 }}
 ```"""
+
+
+#######################################################################################################################################
+@final
+class _DecisionOutcome:
+    """一次决策的收敛结果：打哪张 / 打谁；``card is None`` 即过牌。"""
+
+    def __init__(
+        self,
+        *,
+        card: Optional[Card] = None,
+        intended_card: Optional[Card] = None,
+        targets: Optional[List[str]] = None,
+        reason: str = "",
+        forced_cause: str = "",
+    ) -> None:
+        # card：实际打出的牌（None = 过牌）；intended_card：被拦下时「本想打哪张」
+        self.card = card
+        self.intended_card = intended_card or card
+        self.targets: List[str] = targets or []
+        self.reason = reason
+        self.forced_cause = forced_cause
+
+    @property
+    def card_name(self) -> str:
+        """被系统拦下时也要写进记录（说明「本想打哪张」）。"""
+        return self.intended_card.name if self.intended_card is not None else ""
+
+    @property
+    def forced(self) -> bool:
+        """过牌并非出自模型本意（被系统拦下或决策不可用）。"""
+        return bool(self.forced_cause)
+
+    @property
+    def effective_reason(self) -> str:
+        """记录里的原因：模型没给就写占位句，不空着。"""
+        return self.reason or REASON_MISSING
 
 
 #######################################################################################################################################
@@ -373,18 +423,65 @@ class MonsterPrePlaySystem(ReactiveProcessor):
 
     ####################################################################################################################################
     def _process_monster_decision(self, client: DeepSeekClient) -> None:
-        """解析 LLM 决策响应，替换怪物的 PlayCardsAction。"""
+        """解析决策回包，落一条决策记录，再替换成 PlayCardsAction / PassTurnAction。
+
+        记忆形状：先按「环境+任务提示词 → 模型回包」写入（审计可查），随后整段替换成
+        一条人类可读的决策记录（做了什么 + 原因）；原文通过 `replaced_messages` 留在存档。
+        """
 
         entity = self._game.get_entity_by_name(client.label)
         assert entity is not None, f"MonsterPrePlaySystem: 无法找到实体 {client.label}"
 
-        # 检查 LLM 是否返回了有效的 AI 消息，如果没有则记录错误并执行过牌
+        current_round_number = len(
+            self._game.current_dungeon_combat_room.combat.rounds or []
+        )
+
+        # 先记录原始决策过程（被替换的原文通过 dump_attr 留在存档里）
+        start_index = len(self._game.get_agent_memory(entity).messages)
+        self._game.add_human_message(
+            entity=entity,
+            human_message=HumanMessage(
+                content=client.input_message,
+                draw_cards_round_number=current_round_number,
+            ),
+        )
+        if client.response_ai_message is not None:
+            self._game.add_ai_message(entity, client.response_ai_message)
+
+        outcome = self._decide(entity, client)
+        self._write_decision_record(
+            entity,
+            start_index=start_index,
+            round_number=current_round_number,
+            outcome=outcome,
+        )
+
+        # 落库：出牌或过牌
+        if outcome.card is None:
+            entity.replace(PassTurnAction, entity.name)
+            logger.debug(
+                f"MonsterPrePlaySystem: [{entity.name}] 决策过牌"
+                f"（{outcome.forced_cause or '主动跳过本次出牌机会'}）"
+            )
+            return
+
+        entity.replace(PlayCardsAction, entity.name, outcome.card, outcome.targets)
+        logger.debug(
+            f"MonsterPrePlaySystem: [{entity.name}] 决策出牌 "
+            f"'{outcome.card.name}'，目标：{outcome.targets}"
+        )
+
+    ####################################################################################################################################
+    def _decide(self, entity: Entity, client: DeepSeekClient) -> "_DecisionOutcome":
+        """把回包翻译成「打哪张、打谁」；任何异常都收敛成带原因的过牌。"""
+
+        reason = ""
+
         if client.response_ai_message is None:
             logger.error(
                 f"MonsterPrePlaySystem: [{entity.name}] LLM 返回空响应，执行过牌"
             )
-            entity.replace(PassTurnAction, entity.name)
-            return
+            return _DecisionOutcome(forced_cause="决策没有返回任何内容", reason=reason)
 
         try:
             decision = _MonsterDecisionResponse.model_validate_json(
@@ -395,72 +492,55 @@ class MonsterPrePlaySystem(ReactiveProcessor):
             logger.error(
                 f"MonsterPrePlaySystem: [{entity.name}] 解析 LLM 响应失败，执行过牌。Exception: {e}"
             )
-            entity.replace(PassTurnAction, entity.name)
-            return
+            return _DecisionOutcome(forced_cause="决策内容无法解析", reason=reason)
 
-        # 写对话历史（写入与请求一致的完整 prompt，保证记忆与实际请求不错位）
-        current_round_number = len(
-            self._game.current_dungeon_combat_room.combat.rounds or []
-        )
-        self._game.add_human_message(
-            entity=entity,
-            human_message=HumanMessage(
-                content=client.input_message,
-                draw_cards_round_number=current_round_number,
-            ),
-        )
+        reason = decision.reason.strip()
 
-        # 写入 LLM 原文响应
-        self._game.add_ai_message(entity, client.response_ai_message)
-
-        # 根据 LLM 决策替换 PlayCardsAction 或 PassTurnAction
         if decision.pass_turn:
-            entity.replace(PassTurnAction, entity.name)
-            logger.debug(
-                f"MonsterPrePlaySystem: [{entity.name}] 决策过牌（跳过本次出牌机会）"
-            )
-            return
+            return _DecisionOutcome(reason=reason)
 
         hand_comp = entity.get(HandComponent)
         assert hand_comp is not None, "MonsterPrePlaySystem: HandComponent 不能为空"
 
-        # 根据 LLM 决策的 card_name 查找手牌
         selected_card = next(
-            (c for c in hand_comp.cards if c.name == decision.card_name),
-            None,
+            (c for c in hand_comp.cards if c.name == decision.card_name), None
         )
         if selected_card is None:
             logger.error(
                 f"MonsterPrePlaySystem: [{entity.name}] LLM 返回的卡牌名 '{decision.card_name}' "
                 f"不在手牌中：{[c.name for c in hand_comp.cards]}，执行过牌"
             )
-            entity.replace(PassTurnAction, entity.name)
-            return
+            return _DecisionOutcome(
+                forced_cause=f"「{decision.card_name}」不在你的手牌中",
+                reason=reason,
+            )
 
-        # 兜底校验：能量不足以支付所选卡牌费用 → 写入警告提醒（写入怪物 agent memory）+ 强制过牌，
-        # 防止下游 play_cards_action_system 的 consume_energy 因能量不足触发 AssertionError。
+        # 兜底校验：不可出 / 能量不足都按过牌处理，绝不让错误决策进入结算
+        if not selected_card.playable:
+            logger.error(
+                f"MonsterPrePlaySystem: [{entity.name}] 决策选出不可出牌的 "
+                f"'{selected_card.name}'，强制过牌"
+            )
+            return _DecisionOutcome(
+                intended_card=selected_card,
+                forced_cause="这张牌不可出牌",
+                reason=reason,
+            )
+
         energy = get_energy(entity)
         if energy < selected_card.cost:
             logger.warning(
                 f"MonsterPrePlaySystem: [{entity.name}] 决策出牌 '{selected_card.name}' "
                 f"能量不足（费用 {selected_card.cost} > 剩余 {energy}），强制过牌"
             )
-            self._game.add_human_message(
-                entity=entity,
-                human_message=HumanMessage(
-                    content=(
-                        f"# 出牌决策无效提醒\n"
-                        f"你选择了「{selected_card.name}」（费用 {selected_card.cost}），"
-                        f"但当前剩余能量仅 {energy} 点，不足以支付费用，本次已强制跳过出牌。"
-                        f"下次当剩余能量不足以支付任何牌时，请直接返回 pass_turn=true。"
-                    ),
-                    forced_pass_turn=selected_card.name,
+            return _DecisionOutcome(
+                intended_card=selected_card,
+                forced_cause=(
+                    f"当前剩余能量 {energy} 点不足以支付费用 {selected_card.cost}"
                 ),
+                reason=reason,
             )
-            entity.replace(PassTurnAction, entity.name)
-            return
 
-        # 根据 target_type 解析出牌目标（与玩家出牌走同一套 resolve_targets 逻辑，避免重复实现；SELF 卡牌无需目标名）
         valid_targets, resolve_err = resolve_targets(
             selected_card.target_type,
             selected_card.hit_count,
@@ -472,18 +552,59 @@ class MonsterPrePlaySystem(ReactiveProcessor):
             logger.warning(
                 f"MonsterPrePlaySystem: [{entity.name}] 目标解析失败：{resolve_err}，执行过牌"
             )
-            entity.replace(PassTurnAction, entity.name)
-            return
+            return _DecisionOutcome(
+                intended_card=selected_card,
+                forced_cause=f"目标无法确认（{resolve_err}）",
+                reason=reason,
+            )
 
-        # 替换 PlayCardsAction，填入真实卡牌和目标
-        entity.replace(
-            PlayCardsAction,
-            entity.name,
-            selected_card,
-            valid_targets,
+        return _DecisionOutcome(
+            card=selected_card, targets=valid_targets, reason=reason
         )
-        logger.debug(
-            f"MonsterPrePlaySystem: [{entity.name}] 决策出牌 '{selected_card.name}'，目标：{valid_targets}"
+
+    ####################################################################################################################################
+    def _write_decision_record(
+        self,
+        entity: Entity,
+        *,
+        start_index: int,
+        round_number: int,
+        outcome: "_DecisionOutcome",
+    ) -> None:
+        """把「原始决策过程」整段替换为一条决策记录（做了什么 + 原因）。"""
+        messages = self._game.get_agent_memory(entity).messages
+        if outcome.card is None:
+            action = ACTION_PASS
+            card_name = outcome.card_name
+        else:
+            action = ACTION_PLAY
+            card_name = outcome.card.name
+
+        self._game.replace_span(
+            entity,
+            start_index,
+            len(messages),
+            [
+                HumanMessage(
+                    content=build_combat_decision_record(
+                        round_number,
+                        action,
+                        card_name=card_name,
+                        targets=outcome.targets,
+                        reason=outcome.effective_reason,
+                        forced_cause=outcome.forced_cause,
+                    ),
+                    combat_decision=build_combat_decision_tag(
+                        round_number,
+                        action,
+                        card_name=card_name,
+                        targets=outcome.targets,
+                        reason=outcome.effective_reason,
+                        forced=outcome.forced,
+                    ),
+                )
+            ],
+            dump_attr=REPLACED_MESSAGES_ATTR,
         )
 
     ####################################################################################################################################

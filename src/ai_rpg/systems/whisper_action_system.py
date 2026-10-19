@@ -1,3 +1,5 @@
+"""耳语动作系统：只通知发言者与目标双方，其余角色不知情。"""
+
 from typing import Dict, List, final, override
 
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor

@@ -1,4 +1,4 @@
-"""Pipeline 末端收尾系统，记录角色分布并同步实体状态到 world 模型。"""
+"""Pipeline 收尾：记录角色分布并把实体状态同步回世界模型。"""
 
 import json
 from typing import Dict, Final, List, final, override

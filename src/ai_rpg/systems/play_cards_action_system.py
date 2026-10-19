@@ -1,4 +1,4 @@
-"""出牌动作系统模块。"""
+"""出牌系统：消耗能量、拦截不可出牌、广播行动预告，效果结算交给仲裁。"""
 
 from typing import Dict, Final, List, final
 
@@ -19,32 +19,6 @@ from ..models import (
     PlayCardsAction,
 )
 from ..utils import prompt_builder
-from .card_common import build_play_card_record_tag
-
-
-#######################################################################################################################################
-@prompt_builder
-def _build_play_card_record_prompt(
-    play_cards_action: PlayCardsAction,
-    round_number: int,
-) -> str:
-    """生成出牌记录消息，注入角色的对话历史，帮助 LLM 感知本回合出牌情况。"""
-    card = play_cards_action.card
-    targets_str = (
-        "、".join(play_cards_action.targets) if play_cards_action.targets else "无目标"
-    )
-    lines = [
-        f"【第 {round_number} 回合 · 出牌】",
-        f"你使用了卡牌「{card.name}」。",
-        f"目标：{targets_str}",
-    ]
-    stats_parts = []
-    if card.damage > 0:
-        hit_info = f"（{card.hit_count} 段）" if card.hit_count > 1 else ""
-        stats_parts.append(f"造成伤害 {card.damage}{hit_info}")
-    if stats_parts:
-        lines.append(f"卡牌效果：{'，'.join(stats_parts)}。")
-    return "\n".join(lines)
 
 
 #######################################################################################################################################
@@ -159,19 +133,7 @@ class PlayCardsActionSystem(ReactiveProcessor):
                 f"  completed_actors: {last_round.completed_actors} / current_turn_actor_name={last_round.current_actor}"
             )
 
-            # 为出牌角色注入本回合出牌记录，作为其对话历史的一部分
-            self._game.add_human_message(
-                entity=entity,
-                human_message=HumanMessage(
-                    content=_build_play_card_record_prompt(
-                        play_cards_action=play_cards_action,
-                        round_number=len(current_rounds),
-                    ),
-                    play_card_record=build_play_card_record_tag(play_cards_action),
-                ),
-            )
-
-            # 行动类广播：出牌者已有上面那条更精确的 `play_card_record`，故排除自己；
+            # 行动类广播：出牌者已有决策记录（`combat_decision`）作为更精确的自我记录，故排除自己；
             # 其余人（含场景外？不，仅本场景）在仲裁结算前先感知到出牌事件
             stage_entity = self._game.resolve_stage_entity(entity)
             assert (

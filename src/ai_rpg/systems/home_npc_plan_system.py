@@ -1,4 +1,4 @@
-"""家园 NPC 自主行动规划系统。"""
+"""家园 NPC 规划系统：工具调用式规划，最终落成行动组件。"""
 
 import asyncio
 from functools import partial

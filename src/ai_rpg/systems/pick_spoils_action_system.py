@@ -1,4 +1,4 @@
-"""从 Spoils 领取奖励系统：当前仅实现卡牌子操作（从待领取队列出队、加入牌库并记入已领取队列）。"""
+"""领取奖励系统：当前只支持卡牌，从待领取队列取出并加入牌库。"""
 
 from typing import Dict, Final, List, final, override
 

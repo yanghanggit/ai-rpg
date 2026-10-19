@@ -20,7 +20,7 @@ MEMORY_TAGS: Final[FrozenSet[str]] = frozenset(
         "agent_event",  # 事件类型（speak / trans_stage / combat_arbitration / none …）
         "broadcast_stage",  # 广播所属场景；私发不带此标记
         # ---- 战斗 ----
-        "play_card_record",  # 出牌记录（出牌者本人）
+        "combat_decision",  # 战斗决策记录：做了什么 + 原因（出牌事实折在正文里）
         "draw_cards_round_number",  # 怪物出牌决策请求：抽牌时刻的回合号
         "combat_initialization",  # 战斗初始化（演员侧与场景侧同一事件同一标记）
         "combat_outcome",  # 战斗胜负通知（值 = 场景名，按各阵营视角生成文本）
@@ -28,7 +28,6 @@ MEMORY_TAGS: Final[FrozenSet[str]] = frozenset(
         "combat_loot_items",  # 玩家获得的战利品清单
         "received_card",  # 传递副本落地的卡牌摘要（接收方）
         "transfer_outcome",  # 传递结果摘要：牌名 + 每个接收方份数（给出方）
-        "forced_pass_turn",  # 决策无效被强制过牌
         "unplayable_card",  # 不可出牌的卡被拦截
         "death_notification",  # HP 归零通知
         "stats_update",  # HP / 属性变化通知

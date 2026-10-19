@@ -1,4 +1,4 @@
-"""副本生成流程尾部清理系统。"""
+"""副本生成收尾系统：无论成败清空中间产物并重置生成实体的记忆。"""
 
 from typing import Final, final, override
 

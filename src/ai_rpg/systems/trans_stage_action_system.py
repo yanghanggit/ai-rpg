@@ -1,4 +1,4 @@
-"""场景转换动作系统模块。"""
+"""场景移动系统：仅允许在家园场景之间移动，非法目标写入错误提示。"""
 
 from typing import Dict, List, final, override
 

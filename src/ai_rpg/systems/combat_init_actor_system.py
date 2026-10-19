@@ -1,4 +1,4 @@
-"""战斗初始化系统（角色侧）：战斗触发后，为参战角色初始化临时牌堆、注入战场环境。"""
+"""战斗初始化（角色侧）：为参战角色建立临时牌堆并注入战场环境，无 LLM 调用。"""
 
 from dataclasses import dataclass
 from typing import Final, List, Set, final, override

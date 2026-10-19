@@ -1,4 +1,4 @@
-"""战斗结果判定前系统：位于 CombatOutcomeSystem 之前的位置性处理器。"""
+"""战斗结果判定前的占位处理器，用于固定管线位置。"""
 
 from typing import Final, final, override
 

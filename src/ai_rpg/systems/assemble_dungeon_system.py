@@ -1,4 +1,4 @@
-"""副本组装系统"""
+"""副本组装系统：把生成阶段的中间产物落成副本、房间与场景实体，产物写入磁盘。"""
 
 from typing import Dict, Final, List, Set, final, override
 

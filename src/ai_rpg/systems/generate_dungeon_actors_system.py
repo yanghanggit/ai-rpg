@@ -1,4 +1,4 @@
-"""副本怪物生成系统"""
+"""副本怪物生成系统：按房间约束生成怪物及其预置牌库成员。"""
 
 from functools import partial
 from typing import Dict, Final, List, final, override

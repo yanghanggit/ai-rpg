@@ -1,4 +1,4 @@
-"""每帧结束时清理所有动作组件，防止动作跨帧残留。"""
+"""每帧清理动作组件，避免动作跨帧残留。"""
 
 from typing import Final, FrozenSet, Mapping, Type, final, override
 

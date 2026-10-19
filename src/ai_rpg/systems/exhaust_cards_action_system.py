@@ -1,4 +1,4 @@
-"""消耗牌处理系统模块。"""
+"""消耗牌处理系统：出牌后进入消耗堆，本场战斗不再回收。"""
 
 from typing import Dict, Final, List, final
 

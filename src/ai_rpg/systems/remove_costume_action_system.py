@@ -1,4 +1,4 @@
-"""脱下时装动作系统模块。"""
+"""脱衣系统：恢复基础体型外观并广播变化。"""
 
 from typing import Dict, Final, List, final, override
 

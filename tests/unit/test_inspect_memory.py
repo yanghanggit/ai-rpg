@@ -195,3 +195,17 @@ class TestFormatPiles:
         lines = _format_piles({"RoundStatsComponent": {"energy": 2}})
 
         assert "energy=2" in "\n".join(lines)
+
+    def test_filter_skips_agents_without_match(self, tmp_path: Path) -> None:
+        """过滤模式下没有命中的 agent 完全不打印（不留空标题）。"""
+        _write_memory(
+            tmp_path, "角色.无名", [_message("human", "带标记", broadcast_stage="x")]
+        )
+        _write_memory(tmp_path, "世界.导演", [_message("human", "无关消息")])
+
+        result = CliRunner().invoke(
+            main, ["--snapshot", str(tmp_path), "--tag", "broadcast_stage"]
+        )
+
+        assert "角色.无名" in result.output
+        assert "世界.导演" not in result.output

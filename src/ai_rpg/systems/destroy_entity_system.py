@@ -1,4 +1,4 @@
-"""销毁所有持有 DestroyComponent 的实体，每帧执行一次。"""
+"""销毁持有 DestroyComponent 的实体，每帧执行一次。"""
 
 from typing import final, override
 

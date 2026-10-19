@@ -1,4 +1,4 @@
-"""穿上时装动作系统模块。"""
+"""穿衣系统：换上时装后立即重合成外观并广播变化。"""
 
 from typing import Dict, Final, List, final, override
 

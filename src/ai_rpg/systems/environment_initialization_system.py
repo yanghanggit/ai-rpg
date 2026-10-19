@@ -1,3 +1,5 @@
+"""场景环境初始化系统：由场景自身生成环境叙事，写入 `EnvironmentComponent` 与场景记忆。"""
+
 from typing import Dict, Final, List, final
 
 from loguru import logger

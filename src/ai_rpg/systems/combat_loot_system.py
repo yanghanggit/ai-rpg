@@ -1,4 +1,4 @@
-"""战斗掉落系统。"""
+"""战斗掉落系统：怪物各自推断掉落，结果汇总进玩家的战利品。"""
 
 from typing import Final, List, final
 

@@ -1,6 +1,4 @@
-"""
-卡牌抽取系统模块
-"""
+"""抽牌系统：回合的唯一入口——先开新回合，再全员从抽牌堆补满手牌。"""
 
 import random
 from typing import Dict, Final, List, final, override

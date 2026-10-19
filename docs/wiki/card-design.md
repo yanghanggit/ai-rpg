@@ -9,7 +9,7 @@
 为避免同一事实出现两处、日后还要裁决谁权威，本文**不复述**以下内容，只给原则与指向：
 
 - 字段语义（每个字段是什么）→ [卡牌数据模型（Card）](card.md)
-- 词缀格式与约束（怎样写才合法）→ 见下文「生成契约」（`card_common` 引擎的 `submit_card` 工具 schema）
+- 词缀格式与约束（怎样写才合法）→ 见下文「生成契约」（`submit_card` 工具的 schema）
 - 具体组合范例（原型长什么样）→ `demo/card_skeletons.py`（骨架）与 `demo/card_prototypes.py`（原型类型 + 含教学元数据的注册表）
 - 三端归类 → [三端化思维（Combat Ports）](combat-ports.md)
 
@@ -71,13 +71,13 @@
 
 ---
 
-## 生成契约（`card_common` 引擎）
+## 生成契约
 
-所有「让 agent 造一张卡」的路径共用同一套契约（`systems/card_common.py`），不再各自注入全局规范。同一文件也承载「卡牌 → 审计用精简 JSON」的两个记忆标记构造器（出牌记录 / 传递副本），两者是同一类事实的两种视角，字段口径集中一处：
+所有「让 agent 造一张卡」的路径共用同一套契约，不再各自注入全局规范：
 
-- **选型**（`run_card_selection_session`）：agent 用 `list_card_prototypes` / `get_card_prototype` 浏览原型库，再用 `select_cards` 一次性提交恰好 N 个原型 id。
-- **设计**（`run_card_design_session`）：引擎把选中原型物化为候选卡（换新 `uuid`、回填 `source`），agent 用 `submit_card`（按 `#N` 定位）逐卡提交 `name` / `description` / 可选数值微调 / 词缀，再 `finish_cards` 收尾。
-- **词缀硬边界随工具契约下发**：只写 `HP`（伤害 / 反伤 / 吸血 / 治疗）或经 `transferable` 牌施加持续状态，不得写格挡 / 抽弃牌 / 能量 / 布尔标志，只能引用内建数值；每个槽**至多一条**词缀。`validate_affix_slot` 仍只守格式硬不变量，落地时不合法的槽整槽置空。
+- **选型**：agent 用 `list_card_prototypes` / `get_card_prototype` 浏览原型库，再用 `select_cards` 一次性提交恰好 N 个原型 id。
+- **设计**：引擎把选中原型物化为候选卡（换新 `uuid`、回填 `source`），agent 用 `submit_card`（按 `#N` 定位）逐卡提交 `name` / `description` / 可选数值微调 / 词缀，再 `finish_cards` 收尾。
+- **词缀硬边界随工具契约下发**：只写 `HP`（伤害 / 反伤 / 吸血 / 治疗）或经 `transferable` 牌施加持续状态，不得写格挡 / 抽弃牌 / 能量 / 布尔标志，只能引用内建数值；每个槽**至多一条**词缀。格式校验仍只守硬不变量，落地时不合法的槽整槽置空。
 - **每个原型往哪个方向设计**由该原型的 `design` 字段（`【骨架】【字段】【设计】`）给出——这是唯一的「设计引导」来源。
 - **计算端持有 `uuid`**：LLM 只看编号 `#N`，`uuid` 由引擎回填，避免内部标识泄漏进提示词。
 
@@ -85,10 +85,10 @@
 
 | 路径 | 选型 | 设计 |
 | --- | --- | --- |
-| 候选奖励（spoils） | 系统随机抽 N 个原型 | `run_card_design_session` |
-| 怪物牌库（deck） | `run_card_selection_session(size=5)` | 同上 |
-| 消耗品工坊 | `run_card_selection_session(size=1)` | 同上（带材料上下文）|
-| 装备工坊 | `run_card_selection_session(size=1)` | 同上（带材料上下文 + `speed` 扩展字段）|
+| 候选奖励（spoils） | 系统随机抽 N 个原型 | 设计会话 |
+| 怪物牌库（deck） | 选 5 个骨架 | 同上 |
+| 消耗品工坊 | 选 1 个骨架 | 同上（带材料上下文）|
+| 装备工坊 | 选 1 个骨架 | 同上（带材料上下文 + `speed` 扩展字段）|
 
 ---
 

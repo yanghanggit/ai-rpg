@@ -1,4 +1,4 @@
-"""弃牌处理系统模块。"""
+"""弃牌处理系统：回合结束时非保留手牌进弃牌堆。"""
 
 from typing import Dict, Final, List, final
 

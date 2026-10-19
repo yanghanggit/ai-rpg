@@ -1,4 +1,4 @@
-"""上下文压缩系统。"""
+"""上下文压缩系统：占比超阈值的 agent 把整段记忆压成一条摘要。"""
 
 from typing import Final, List, final
 

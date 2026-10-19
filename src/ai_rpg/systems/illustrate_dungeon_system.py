@@ -1,4 +1,4 @@
-"""副本插图生成系统。"""
+"""副本插图系统：把风格与场景描述合成为插图提示词并归档。"""
 
 from functools import partial
 from typing import Any, Dict, Final, List, Optional, Sequence, final, override

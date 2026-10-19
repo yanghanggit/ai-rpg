@@ -1,6 +1,4 @@
-"""
-战斗堆拆除系统模块
-"""
+"""战斗堆拆除系统：清空三堆战斗副本并移除临时组件，原始牌库完整保留。"""
 
 from typing import Final, final, override
 

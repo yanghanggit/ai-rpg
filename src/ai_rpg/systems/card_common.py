@@ -1,22 +1,10 @@
-"""卡牌公共层：单点维护「卡牌设计」（生成契约与会话）与「卡牌记忆标记」（审计摘要）。
+"""卡牌公共层：卡牌设计引擎与卡牌记忆标记的单点实现。
 
-两条职责的共用点只有一个：它们都以 `Card` 为中心，且被多个 system 复用——
-设计侧被战利品 / 装备工坊 / 消耗品工坊 / 怪物牌库共用，记忆侧被出牌与传递共用。
-差异部分留在各自 system 文件中，本模块只放必须同构的部分，避免契约与字段口径漂移。
+设计侧被战利品 / 装备工坊 / 消耗品工坊 / 怪物牌库共用（选型、设计契约、落地），
+记忆侧被出牌与传递共用（卡牌 → 审计用精简 JSON）。差异留在各自 system 文件中，
+本模块只放必须同构的部分，避免契约与字段口径漂移。
 
-设计侧（原 `card_design`）：
-- 设计契约：`submit_card` / `finish_cards` 两个工具；
-- 提示词：`format_candidate` / `build_card_design_prompt`；
-- 提交校验与落地：`apply_designs`（名称 / 描述 / 数值 / 词缀写回候选卡）；
-- 一次完整设计会话：`run_card_design_session`（内部 agent_loop + 上述装配）。
-
-记忆侧：
-- `build_play_card_record_tag`（出牌记录：卡牌事实 + 目标列表）；
-- `build_received_card_tag`（传递副本：卡牌事实）。
-两者都是「`Card` → 审计用精简 JSON」，不存整张卡（`description` 与词缀在记忆正文里已有）。
-
-`uuid` 全程由计算端持有：LLM 只用编号 `#N` 定位，`CardDesign.uuid` 由 `apply_designs`
-从解析到的候选卡回填。
+``uuid`` 由计算端持有：LLM 只用编号定位，回填由本模块完成。
 """
 
 import json
@@ -45,7 +33,6 @@ from ..models import (
     Card,
     ChatMessage,
     NormalizedStrList,
-    PlayCardsAction,
     apply_affix_design,
     apply_numeric_design,
     normalize_str_list,
@@ -743,25 +730,6 @@ def _card_audit_fields(card: Card) -> Dict[str, Any]:
         "block": card.block,
         "target_type": card.target_type.value,
     }
-
-
-#######################################################################################################################################
-# 出牌记录：卡牌事实 + 本次解析出的目标列表
-#######################################################################################################################################
-def build_play_card_record_tag(play_cards_action: PlayCardsAction) -> str:
-    """生成 `play_card_record` 标记值。"""
-    return json.dumps(
-        {
-            **_card_audit_fields(play_cards_action.card),
-            **_targets_field(play_cards_action),
-        },
-        ensure_ascii=False,
-    )
-
-
-def _targets_field(play_cards_action: PlayCardsAction) -> Dict[str, List[str]]:
-    """本次出牌解析出的目标列表（按命中展开，可含重复）。"""
-    return {"targets": list(play_cards_action.targets)}
 
 
 #######################################################################################################################################

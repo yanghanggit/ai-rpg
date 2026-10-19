@@ -1,4 +1,4 @@
-"""副本开场初始化系统（角色侧）：为开场场景内的队伍成员注入场景环境信息（无 LLM，按消息标记幂等）。"""
+"""开场初始化（角色侧）：为队伍注入开场场景感知，按消息标记幂等。"""
 
 from dataclasses import dataclass
 from typing import Final, List, Set, final, override

@@ -1,4 +1,4 @@
-"""战斗回合完成判定系统"""
+"""战斗回合完成判定系统：存活角色全部交出行动权即结束本回合。"""
 
 from typing import Final, final, override
 

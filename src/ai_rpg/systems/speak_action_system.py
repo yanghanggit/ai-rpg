@@ -1,3 +1,5 @@
+"""说话动作系统：把发言广播给场景内其他角色（含场景实体）。"""
+
 from typing import Dict, List, final, override
 
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor

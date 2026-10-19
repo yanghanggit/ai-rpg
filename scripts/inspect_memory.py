@@ -119,8 +119,9 @@ def _print_messages(
     width: int,
     keyword: str,
     tag: str,
-) -> None:
-    """打印记忆消息：序号、类型、结构化标记名、正文。"""
+) -> int:
+    """打印记忆消息：序号、类型、结构化标记名、正文。返回实际打印条数。"""
+    printed = 0
     for index, row in enumerate(rows):
         if index < start:
             continue
@@ -133,10 +134,12 @@ def _print_messages(
         if tag and tag not in row:
             continue
         extras = _extras(row)
+        printed += 1
         print(f"[{index:03d}] {role:<12} extra={extras}")
         for line in content.splitlines():
             if line.strip():
                 print(f"      {_short(line, width)}")
+    return printed
 
 
 def _pile_changes(
@@ -192,14 +195,29 @@ def _report(
             print(f"{agent}: 无变化")
         return
 
-    print(f"\n=== 记忆 · {agent} ===")
-    if prev is not None:
-        print(f"消息条数: {len(rows)}（相对上一快照 {len(rows) - len(prev_rows):+d}）")
-    else:
-        print(f"消息条数: {len(rows)}")
-    if reset_notice:
-        print(reset_notice)
-    _print_messages(rows, start=baseline, width=width, keyword=keyword, tag=tag)
+    filtering = bool(keyword or tag)
+    header_printed = False
+    if not filtering:
+        header_printed = True
+        print(f"\n=== 记忆 · {agent} ===")
+        if prev is not None:
+            print(
+                f"消息条数: {len(rows)}（相对上一快照 {len(rows) - len(prev_rows):+d}）"
+            )
+        else:
+            print(f"消息条数: {len(rows)}")
+        if reset_notice:
+            print(reset_notice)
+
+    printed = _print_messages(
+        rows, start=baseline, width=width, keyword=keyword, tag=tag
+    )
+    if filtering:
+        if printed == 0:
+            # 过滤模式：该 agent 没有命中就不打印任何东西（也不打印空标题/空牌堆）
+            return
+        if not header_printed:
+            print(f"\n=== 记忆 · {agent} ===")
 
     if entity is None:
         print(f"\n（无实体文件：{snapshot / 'entities' / f'{agent}.json'}）")

@@ -3,6 +3,7 @@
 from typing import Any, Dict, cast
 from unittest.mock import MagicMock
 
+import ai_rpg.game.dbg_combat_processor as combat_processor
 from ai_rpg.entitas.entity import Entity
 from ai_rpg.game.dbg_combat_processor import resolve_targets
 from ai_rpg.game.dbg_game import DBGGame
@@ -179,8 +180,29 @@ class TestResolveTargetsSpread:
         assert err == ""
         assert len(targets) == 5
         assert set(targets) <= {"怪物A", "怪物B"}
-        # hit_count(5) > 敌方数量(2)，保证每人至少命中一次
-        assert set(targets) == {"怪物A", "怪物B"}
+
+    def test_spread_is_pure_random_without_top_up(self, monkeypatch: Any) -> None:
+        """命中分配就是纯随机结果：不做「每人至少一次」的补足，也不重排顺序。"""
+        game = _make_game()
+        _make_stage(game, "stage1")
+        hero = _make_ally(game, "hero", "stage1")
+        _make_monster(game, "怪物A", "stage1")
+        _make_monster(game, "怪物B", "stage1")
+
+        class _FixedRandom:
+            """每次命中都落在同一名角色身上。"""
+
+            @staticmethod
+            def choices(population: Any, k: int) -> Any:
+                return [population[0]] * k
+
+        monkeypatch.setattr(combat_processor, "random", _FixedRandom)
+        targets, err = resolve_targets(TargetType.SPREAD, 5, hero, ["怪物A"], game)
+
+        assert err == ""
+        assert len(targets) == 5
+        # 5 击全落在同一人：不做保底，另一名角色一次都没中
+        assert len(set(targets)) == 1
 
     def test_spread_anchor_self_can_include_actor(self) -> None:
         game = _make_game()
@@ -223,7 +245,6 @@ class TestSpreadHitListFeedsTransfer:
         targets, err = resolve_targets(TargetType.SPREAD, 5, hero, ["怪物A"], game)
         assert err == ""
         assert len(targets) == 5  # 击数即列表长度
-        assert set(targets) == {"怪物A", "怪物B"}  # 超出人数时每人至少一次
 
         actors = {"hero": hero, "怪物A": monster_a, "怪物B": monster_b}
         mock_game = _make_transfer_game(actors)
@@ -233,11 +254,12 @@ class TestSpreadHitListFeedsTransfer:
 
         await TransferCardsActionSystem(mock_game).react([hero])
 
-        # 副本总数 = 击数；每名角色收到的份数 = 它在命中分配里出现的次数。
+        # 副本总数 = 击数；每名角色收到的份数 = 它在命中分配里出现的次数（可为 0）。
         copied_a = len(monster_a.get(HandComponent).cards)
         copied_b = len(monster_b.get(HandComponent).cards)
+        assert copied_a == targets.count("怪物A")
+        assert copied_b == targets.count("怪物B")
         assert copied_a + copied_b == 5
-        assert copied_a >= 1 and copied_b >= 1
         assert hero.get(HandComponent).cards == []  # 本体已离开源手牌
 
     async def test_spread_with_single_target_stacks_all_copies(self) -> None:

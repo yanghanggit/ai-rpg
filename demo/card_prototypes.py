@@ -123,7 +123,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             name="散射清场",
             summary="多段散射，不精确扩散。",
             design="""【骨架】target_type=SPREAD（散射：以目标为锚点散射其所在阵营）；cost=2、damage=1、hit_count=4、block=0。
-【字段】SPREAD 的 hit_count 超出阵营人数时每名角色至少一次、多余随机分配；否则纯随机。
+【字段】SPREAD 的每一次命中独立随机落到阵营存活角色上：可重复命中同一人，也可能有人一次都没中（不做「每人至少一次」保底）。
 【设计】多段随机扩散的清场原型。可微调 cost/damage/hit_count/block；无词缀槽，只需设计 name/description。""",
             keywords=("spread", "hit_count"),
         ),
@@ -387,6 +387,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             summary="出牌把确定性格挡副本分发给队友。",
             design="""【骨架】SINGLE；cost=1、damage=0、hit_count=1、block=3、transferable=True。
 【字段】transferable：出牌后副本进入目标手牌、落地即 transferable=False（只传一跳、不可再转手），副本携带确定性的 block=3，持有期计入目标总防御。
+【叠加】若同时改为 SPREAD（骨架不禁止，需自行判断是否值得），命中按纯随机分配、每次命中发一份副本：同一目标被命中 k 次即得 k 份，持有期 block 合计 k×3，且每份都要付 cost 才能打出——属高方差高代价组合，定价时按此对待。
 【设计】格挡支援：用确定性 block 而非词缀承载支援，与「支援分发」的区别即在此。可微调 cost/block；无词缀槽，只需设计 name/description。""",
             keywords=("transferable", "block"),
         ),

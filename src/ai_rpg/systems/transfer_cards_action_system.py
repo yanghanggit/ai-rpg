@@ -1,5 +1,6 @@
 """可传递卡牌转移系统模块。"""
 
+import json
 from typing import Dict, Final, List, Tuple, final
 from uuid import uuid4
 
@@ -17,6 +18,24 @@ from ..models import (
     PlayCardsAction,
 )
 from ..utils import prompt_builder
+
+
+#######################################################################################################################################
+def _build_received_card_tag(card: Card) -> str:
+    """生成 `received_card` 标记值：只留审计需要的字段，避免整张卡 JSON 挤爆记忆行。"""
+    return json.dumps(
+        {
+            "name": card.name,
+            "uuid": card.uuid,
+            "source": card.source,
+            "cost": card.cost,
+            "damage": card.damage,
+            "hit_count": card.hit_count,
+            "block": card.block,
+            "target_type": card.target_type.value,
+        },
+        ensure_ascii=False,
+    )
 
 
 #######################################################################################################################################
@@ -176,7 +195,7 @@ class TransferCardsActionSystem(ReactiveProcessor):
                             self_transfer=target_name == play_cards_action.name,
                             count=count,
                         ),
-                        received_card=copied.model_dump_json(),
+                        received_card=_build_received_card_tag(copied),
                     ),
                 )
 

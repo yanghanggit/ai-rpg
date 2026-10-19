@@ -269,19 +269,9 @@ def resolve_targets(
             if not camp_members:
                 return [], "SPREAD：锚点所在阵营当前无存活角色"
 
-            # 如果命中数量大于阵营存活角色数量，需要进行重复抽取以满足命中数量
-            if hit_count > len(camp_members):
-
-                # 先将阵营中所有存活角色加入目标列表，再随机补足剩余命中数量
-                spread_targets = list(camp_members) + random.choices(
-                    camp_members, k=hit_count - len(camp_members)
-                )
-
-                # 将目标列表打乱顺序，保证随机性
-                random.shuffle(spread_targets)
-            else:
-                # 如果命中数量不超过阵营存活角色数量，直接随机抽取命中数量的目标
-                spread_targets = random.choices(camp_members, k=hit_count)
+            # 每次命中独立随机落到阵营存活角色之一：可重复、可有人一次都没中，
+            # 不做「每人至少一次」的保底（命中分配就是击数的直接随机结果）。
+            spread_targets = random.choices(camp_members, k=hit_count)
 
             # 返回最终的 SPREAD 类型目标列表
             return [e.name for e in spread_targets], ""

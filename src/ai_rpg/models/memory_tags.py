@@ -26,6 +26,7 @@ MEMORY_TAGS: Final[FrozenSet[str]] = frozenset(
         "combat_outcome",  # 战斗胜负通知（值 = 场景名，按各阵营视角生成文本）
         "combat_loot_reasoning",  # 怪物掉落推理请求原文
         "combat_loot_items",  # 玩家获得的战利品清单
+        "received_card",  # 传递副本落地的卡牌摘要（接收方）
         "forced_pass_turn",  # 决策无效被强制过牌
         "unplayable_card",  # 不可出牌的卡被拦截
         "death_notification",  # HP 归零通知
@@ -53,6 +54,7 @@ MEMORY_TAGS: Final[FrozenSet[str]] = frozenset(
         "keep_on_compact",  # 压缩时保留
         "replaced_messages",  # 被替换掉的整段消息
         "removed_messages_content",  # 压缩前的原始历史
+        "context_compaction",  # 阈值压缩生成的摘要消息
         "context_usage_ratio",  # 上下文占比（随最近一次 LLM 调用同步）
     }
 )

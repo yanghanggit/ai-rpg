@@ -6,7 +6,7 @@
 
 副本生成与工坊合成共享同一架构原则：**机制与内容彻底分离**。整个管道的 prompt 模板不包含任何世界观相关的故事内容——副本主题、生态底色、场景氛围、生物特征全部通过系统消息注入。换一套战役设定与角色规范，管道代码无需任何修改。
 
-副本的**结构**（房间数、每房间怪物数、必有 1 个开场房间）由代码常量固定，不交给 LLM 决定；数值写进「世界.副本生成系统」的系统提示词，各步的工具 schema 据此构建（见下文「结构常量」）。
+副本的**结构**（房间数、每房间怪物数、必有 1 个开场房间）由代码常量固定，不交给 LLM 决定；数值作为**任务提示词的输入数据**下发到对应步骤——Step 2 拿到房间总数与开场 / 战斗拆分，Step 3 拿到每个战斗房间的怪物数——工具 schema 的 `minItems` / `maxItems` / `enum` 据此构建。副本生成实体的 system prompt **不含任何数量**，容器与执行侧由此解耦（见下文「结构常量」）。
 
 → 参见：[工坊合成管道（Craft Pipeline）](craft-pipeline.md)
 
@@ -26,11 +26,11 @@
 
 ## 分步分工与设计意图
 
-**Step 0 — 世界导演指令**（`GenerateDungeonDirectiveSystem`）。世界导演推理一条创作指令，写入 `DungeonDraft.directive`。
+**Step 0 — 世界导演指令**（`GenerateDungeonDirectiveSystem`）。世界导演推理一条创作指令，写入 `DungeonDraft.directive`。执行方实体名（携带 `GenerateDungeonAction` 的那个世界实体）由引擎注入任务提示词，世界导演的 system prompt 不写死任何实体名——实体改名不会让 prompt 静默失效。
 
-**Step 1 — 副本设定生成**（`GenerateDungeonProfileSystem`）。单次 `agent_loop`（调用 `record_dungeon_profile`）锁定副本名称与整体设定（`profile`）。房间总数不再由 LLM 决定：handler 直接回填结构常量 `DUNGEON_ROOM_COUNT`。设定刻意回避角色身份与评价性词汇，只呈现感官与情境细节。
+**Step 1 — 副本设定生成**（`GenerateDungeonProfileSystem`）。单次 `agent_loop`（调用 `record_dungeon_profile`）锁定副本名称与整体设定（`profile`）。房间总数当前不由 LLM 决定：handler 直接回填默认值 `DEFAULT_DUNGEON_ROOM_COUNT`（未来由房间组合规划决定）。设定刻意回避角色身份与评价性词汇，只呈现感官与情境细节。
 
-**Step 2 — 房间设计**（`GenerateDungeonRoomsSystem`）。在同一 agent 记忆内一次性生成全部房间：首房间强制为开场（`room_type = "opening"`），纯氛围描写；其余为战斗房间（`room_type = "combat"`）。每个战斗房间的 `actor_count` 也由 handler 按常量 `MONSTERS_PER_COMBAT_ROOM` 确定性赋值，不由 LLM 填写。产物写入 `DungeonDraft.rooms`。
+**Step 2 — 房间设计**（`GenerateDungeonRoomsSystem`）。在同一 agent 记忆内一次性生成全部房间：前 `DEFAULT_OPENING_ROOM_COUNT` 个强制为开场（`room_type = "opening"`），纯氛围描写；其余为战斗房间（`room_type = "combat"`）。开场 / 战斗拆分与每个战斗房间的 `actor_count` 当前都取默认值（`DEFAULT_MONSTERS_PER_COMBAT_ROOM`）；提示词与工具 schema 的开场数同样取自 `DEFAULT_OPENING_ROOM_COUNT`，不用「总数减一」推断。产物写入 `DungeonDraft.rooms`。
 
 **Step 3 — 怪物生成**（`GenerateDungeonActorsSystem`）。单次 `agent_loop`：LLM 可在一个 response 内并行、也可分多次调用 `record_dungeon_actor`（每次创建一个怪物），每个怪物用 `room_name` 显式声明归属房间。handler 累积，代码严格校验「归属合法」且「每个 combat 房间数量 == 固定值」。产物写入 `DungeonDraft.actors`。
 
@@ -42,18 +42,18 @@
 
 ---
 
-## 结构常量（单一事实来源）
+## 结构默认值
 
-`models/dungeon_draft.py` 定义副本结构常量，并由 `demo/world.py` 的 `create_dungeon_generation` 写进世界系统提示词：
+`models/dungeon_draft.py` 定义副本结构的**默认值**（不是不变量）：未来由 LLM 按自身的创作原则与判断决定房间组合，开场房间默认且通常恒为 1，战斗房间数与每房间怪物数可变化，代码只负责保底与校验边界。它们在运行时由各步的任务提示词与工具 schema 消费；`demo/world.py` 不引用这些默认值：
 
-| 常量 | 含义 |
+| 默认值 | 含义 |
 | --- | --- |
-| `OPENING_ROOM_COUNT` | 开场房间数（无战斗，纯门口氛围） |
-| `COMBAT_ROOM_COUNT` | 战斗房间数 |
-| `MONSTERS_PER_COMBAT_ROOM` | 每个战斗房间的怪物数 |
-| `DUNGEON_ROOM_COUNT` | 副本房间总数 = 开场 + 战斗 |
+| `DEFAULT_OPENING_ROOM_COUNT` | 默认开场房间数（无战斗，纯门口氛围） |
+| `DEFAULT_COMBAT_ROOM_COUNT` | 默认战斗房间数 |
+| `DEFAULT_MONSTERS_PER_COMBAT_ROOM` | 默认每个战斗房间的怪物数 |
+| `DEFAULT_DUNGEON_ROOM_COUNT` | 默认副本房间总数 = 开场 + 战斗 |
 
-改结构只需改这些常量并重新刷蓝图（`python -m scripts.setup_demo`）。
+改默认值只需改这些常量——数量不进 blueprint，因此无需重刷蓝图（`python -m scripts.setup_demo`）；只有同时改了 `demo/` 文案才需要刷新。
 
 ---
 
@@ -86,7 +86,7 @@
 | --- | --- |
 | 首房间强制为 opening 房间 | 副本开场需要叙事铺垫，与战斗房间职责分离 |
 | `room_type` 显式声明房间类型 | 避免以 `actor_count` 等间接字段推断类型，扩展新房间类型只需加 Literal 值 |
-| 房间总数与每房间怪物数由常量固定 | 结构可控、便于测试与调试；世界系统提示词明文写出，工具 schema 据此构建 |
+| 房间总数与每房间怪物数有默认常量保底 | 当前结构可控、便于测试与调试；未来交给房间组合规划，数量作为任务提示词输入下发，工具 schema 据此构建，system prompt 不含数量 |
 | Step 2 一次性生成全部房间 | 房间间的递进关系需要同一记忆 |
 | Step 3 单 agent_loop 多次工具调用 | 一个 response 可并行发多个 `record_dungeon_actor`，每次调用原子清晰，无需并发编排 |
 | agent memory 添加式传递 | 后续步骤 LLM 继承前序创作，保持叙事连贯 |

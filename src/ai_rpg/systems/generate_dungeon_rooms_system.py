@@ -10,23 +10,30 @@ from ..deepseek import agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..llm import ToolDefinition, ToolFunction
-from ..models import MONSTERS_PER_COMBAT_ROOM, DungeonRoomDraft, GenerateDungeonAction
+from ..models import (
+    DEFAULT_MONSTERS_PER_COMBAT_ROOM,
+    DEFAULT_OPENING_ROOM_COUNT,
+    DungeonRoomDraft,
+    GenerateDungeonAction,
+)
 from ..utils import prompt_builder
 
 
 ####################################################################################################################################
-def _build_record_dungeon_rooms_tool(dungeon_room_count: int) -> ToolDefinition:
+def _build_record_dungeon_rooms_tool(
+    dungeon_room_count: int, opening_room_count: int
+) -> ToolDefinition:
     """动态构建 record_dungeon_rooms 工具定义。
 
-    副本共 dungeon_room_count 个房间：首个为开场（opening），
-    其余 dungeon_room_count - 1 个为战斗房间（combat）。
+    副本共 dungeon_room_count 个房间：前 opening_room_count 个为开场（opening），
+    其余为战斗房间（combat）。开场房间数取自结构常量，不由「总数减一」推断。
     """
-    combat_room_count = dungeon_room_count - 1
+    combat_room_count = dungeon_room_count - opening_room_count
     return ToolDefinition(
         function=ToolFunction(
             name="record_dungeon_rooms",
             description=(
-                f"记录副本全部 {dungeon_room_count} 个房间：首个为开场（opening），其余 {combat_room_count} 个为战斗房间（combat）。"
+                f"记录副本全部 {dungeon_room_count} 个房间：前 {opening_room_count} 个为开场（opening），其余 {combat_room_count} 个为战斗房间（combat）。"
             ),
             parameters={
                 "type": "object",
@@ -46,7 +53,7 @@ def _build_record_dungeon_rooms_tool(dungeon_room_count: int) -> ToolDefinition:
                                     "type": "string",
                                     "enum": ["opening", "combat"],
                                     "description": (
-                                        "房间类型：'opening' = 开场房间（无战斗，纯场景氛围描写），'combat' = 战斗房间。第一个房间必须为 'opening'，其余必须为 'combat'"
+                                        f"房间类型：'opening' = 开场房间（无战斗，纯场景氛围描写），'combat' = 战斗房间。前 {opening_room_count} 个房间必须为 'opening'，其余必须为 'combat'"
                                     ),
                                 },
                                 "room_name": {
@@ -75,11 +82,14 @@ def _build_record_dungeon_rooms_tool(dungeon_room_count: int) -> ToolDefinition:
 ####################################################################################################################################
 @prompt_builder
 def _build_dungeon_rooms_prompt(
-    dungeon_name: str, profile: str, dungeon_room_count: int
+    dungeon_name: str,
+    profile: str,
+    dungeon_room_count: int,
+    opening_room_count: int,
 ) -> str:
-    """构建副本房间生成的 LLM 提示词。"""
+    """构建副本房间生成的 LLM 提示词（房间总数与开场 / 战斗拆分作为输入数据下发）。"""
 
-    combat_room_count = dungeon_room_count - 1
+    combat_room_count = dungeon_room_count - opening_room_count
     return f"""# 任务：为副本创作 {dungeon_room_count} 个房间
 
 ## 副本信息
@@ -89,11 +99,11 @@ def _build_dungeon_rooms_prompt(
 
 共计 {dungeon_room_count} 个房间，房间类型与顺序必须严格遵守：
 
-- **第 1 个房间**：开场房间（room_type = "opening"），无战斗。
-  描写副本门口的外部氛围——玩家站在副本门口的第一印象。
+- **开场房间（room_type = "opening"）**：共 {opening_room_count} 个，位于序列最前，
+  无战斗。描写副本门口的外部氛围——玩家站在副本门口的第一印象。
   不涉及任何怪物，纯粹的场景氛围铺垫。
 
-- **第 2 ~ {dungeon_room_count} 个房间**：战斗房间（room_type = "combat"），共 {combat_room_count} 个，
+- **战斗房间（room_type = "combat"）**：共 {combat_room_count} 个，紧随开场房间之后，
   从入口区域逐步深入到副本最深处。
 
 工作流程：调用 record_dungeon_rooms 写入全部房间数据，确认无误后结束本次对话。"""
@@ -115,9 +125,9 @@ def _handle_record_dungeon_rooms(
     room_items: List[DungeonRoomDraft] = []
     for r in rooms:
         room = DungeonRoomDraft(**r)
-        # 怪物数量为结构常量，不由 LLM 决定：opening 房间为 0，combat 房间固定
+        # 怪物数量当前取默认值填充，不由 LLM 填写；未来由房间组合规划决定，代码只负责保底与边界。
         room.actor_count = (
-            0 if room.room_type == "opening" else MONSTERS_PER_COMBAT_ROOM
+            0 if room.room_type == "opening" else DEFAULT_MONSTERS_PER_COMBAT_ROOM
         )
         room_items.append(room)
     result.dungeon_name = dungeon_name
@@ -169,13 +179,16 @@ class GenerateDungeonRoomsSystem(ReactiveProcessor):
         dungeon_name = draft.dungeon_name
         dungeon_profile = draft.profile
         dungeon_room_count = draft.room_count
+        opening_room_count = DEFAULT_OPENING_ROOM_COUNT
 
         logger.info(
-            f"[GenerateDungeonRoomsSystem] 开始: dungeon={dungeon_name}, room_count={dungeon_room_count}"
+            f"[GenerateDungeonRoomsSystem] 开始: dungeon={dungeon_name}, room_count={dungeon_room_count}, opening_room_count={opening_room_count}"
         )
 
         result = _RoomsResult()
-        rooms_tool = _build_record_dungeon_rooms_tool(dungeon_room_count)
+        rooms_tool = _build_record_dungeon_rooms_tool(
+            dungeon_room_count, opening_room_count
+        )
 
         success = await agent_loop(
             name=entity.name,
@@ -183,6 +196,7 @@ class GenerateDungeonRoomsSystem(ReactiveProcessor):
                 dungeon_name=dungeon_name,
                 profile=dungeon_profile,
                 dungeon_room_count=dungeon_room_count,
+                opening_room_count=opening_room_count,
             ),
             # 直接传入实体的持久化 agent memory：agent_loop 原地追加
             messages=self._game.get_agent_memory(entity).messages,

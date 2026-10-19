@@ -10,7 +10,7 @@ from ..deepseek import agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
 from ..llm import ToolDefinition, ToolFunction
-from ..models import DUNGEON_ROOM_COUNT, GenerateDungeonAction
+from ..models import DEFAULT_DUNGEON_ROOM_COUNT, GenerateDungeonAction
 from ..utils import prompt_builder
 
 RECORD_DUNGEON_PROFILE_TOOL: Final[ToolDefinition] = ToolDefinition(
@@ -51,9 +51,9 @@ def _handle_record_dungeon_profile(
     """处理 record_dungeon_profile 工具调用。"""
     result.dungeon_name = name
     result.dungeon_profile = profile
-    result.dungeon_room_count = DUNGEON_ROOM_COUNT
+    result.dungeon_room_count = DEFAULT_DUNGEON_ROOM_COUNT
     logger.info(
-        f"[GenerateDungeonProfileSystem] record_dungeon_profile 执行:\n  dungeon_name: {name}\n  dungeon_room_count: {DUNGEON_ROOM_COUNT}（结构常量）"
+        f"[GenerateDungeonProfileSystem] record_dungeon_profile 执行:\n  dungeon_name: {name}\n  dungeon_room_count: {DEFAULT_DUNGEON_ROOM_COUNT}（默认结构，未来由房间组合规划决定）"
     )
     return result.model_dump_json(ensure_ascii=False)
 

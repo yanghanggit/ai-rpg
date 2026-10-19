@@ -76,7 +76,7 @@ def _build_gear_design_context(materials: List[MaterialItem]) -> str:
 
 ## 装备约束
 
-- 为「装备工坊」制作一件奇幻世界的装备；`name` 采用「装备.XXXX」命名格式，`description` 说明外观、手感或穿戴感受（30-60 字），不出现数值与机制词。
+- 为「装备工坊」制作一件装备；`name` 采用「装备.XXXX」命名格式，`description` 说明外观、手感或穿戴感受（30-60 字），不出现数值与机制词。
 - 卡牌骨架（flags / target_type）由所选原型给定，不要改动；数值与词缀在原型开放的槽位内设计。
 - 词缀须贴合本次投入材料。"""
 

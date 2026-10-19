@@ -3,14 +3,12 @@
 整合演示世界的全局设定、副本、蓝图与各世界实体工厂函数。
 """
 
-from typing import Dict, Final, List, Optional
+import re
+from typing import Dict, Final, Iterator, List, Optional, Tuple
 from uuid import uuid4
 
 from ai_rpg.entitas import dump_components
 from ai_rpg.models import (
-    COMBAT_ROOM_COUNT,
-    DUNGEON_ROOM_COUNT,
-    MONSTERS_PER_COMBAT_ROOM,
     Actor,
     ActorType,
     AppearanceSynthesisComponent,
@@ -207,6 +205,10 @@ KNOWLEDGE_BASE: Final[Dict[str, List[str]]] = {
 }
 
 
+# 故事层 prompt 里对世界实体的引用（只用于检出悬空引用，不参与任何路由）
+_WORLD_ENTITY_REF_PATTERN: Final[re.Pattern[str]] = re.compile(r"世界\.\w+")
+
+
 def _copy_skeleton(card: Card) -> Card:
     """复制卡牌原型并重新生成 uuid（原型 uuid 是共享常量，副本必须各自唯一）。"""
     copied = card.model_copy(deep=True)
@@ -373,7 +375,7 @@ def _make_consumable_card(
     hit_count: Optional[int] = None,
     on_play_affixes: Optional[List[str]] = None,
 ) -> Card:
-    """消耗品内置卡牌：骨架固定 0 费/一次性（见 consume 模型校验），本阶段只做伤害。"""
+    """消耗品内置卡牌：骨架固定 0 费/一次性（`cost=0` / `exhaust=True`，由 ConsumableItem 校验强制），本阶段只做伤害。"""
     card = _copy_skeleton(skeleton)
     card.name = name
     card.description = description
@@ -718,6 +720,34 @@ def create_badluck() -> Actor:
 
 
 #######################################################################################################################
+def _iter_prompt_messages(blueprint: Blueprint) -> Iterator[Tuple[str, str]]:
+    """遍历蓝图里所有实体的 (实体名, system_message)。"""
+    for stage in blueprint.stages:
+        yield stage.name, stage.system_message
+        for actor in stage.actors:
+            yield actor.name, actor.system_message
+    for world in blueprint.world_entities:
+        yield world.name, world.system_message
+
+
+def _assert_no_dangling_world_refs(blueprint: Blueprint) -> None:
+    """prompt 中出现的「世界.X」必须是蓝图里真实存在的世界实体。
+
+    世界实体名只用于系统路由；写在故事层 prompt 里一旦改名不会有任何报错，
+    prompt 只是悄悄指向一个不存在的实体。校验放在蓝图出厂处，setup 时直接失败。
+    """
+    known = {world.name for world in blueprint.world_entities}
+    dangling = [
+        f"{entity_name} → {ref}"
+        for entity_name, message in _iter_prompt_messages(blueprint)
+        for ref in _WORLD_ENTITY_REF_PATTERN.findall(message)
+        if ref not in known
+    ]
+    assert (
+        not dangling
+    ), "prompt 引用了不存在的世界实体（改名后会静默失效）：" + "；".join(dangling)
+
+
 def create_demo_blueprint(game_name: str) -> Blueprint:
     """创建演示游戏世界 Blueprint 实例。"""
 
@@ -732,7 +762,7 @@ def create_demo_blueprint(game_name: str) -> Blueprint:
     # 将角色放入佣兵公会，确保玩家从入口进入时能看到所有主要角色
     stage_guild_hall.actors = [actor_badluck, actor_nameless]
 
-    return Blueprint(
+    blueprint = Blueprint(
         name=game_name,
         player_actor=actor_nameless.name,
         campaign_setting=CAMPAIGN_SETTING,
@@ -755,6 +785,11 @@ def create_demo_blueprint(game_name: str) -> Blueprint:
             create_storage(),
         ],
     )
+
+    # 出厂闸门：prompt 里的悬空实体引用不放行
+    _assert_no_dangling_world_refs(blueprint)
+
+    return blueprint
 
 
 ###############################################################################################################################
@@ -798,26 +833,17 @@ def create_dungeon_generation() -> World:
 - 禁止解释"为什么"——不说明起因，不引用任何全局宏观概念
 - 禁止出现「世界导演」等全局宏观概念词——场景自身不具备该视角
 
-## 副本结构规范
-
-副本结构固定，不得增减：
-
-- 共 {DUNGEON_ROOM_COUNT} 个房间：第 1 个为开场房间（opening，无战斗，仅门口氛围铺垫），其余 {COMBAT_ROOM_COUNT} 个为战斗房间（combat）。
-- 每个战斗房间固定 {MONSTERS_PER_COMBAT_ROOM} 个怪物。
-
 ## 场景层次规范
 
 房间自入口向最深处呈递进式展开：
 - 开场房间：副本门口的外部氛围，环境尚完整，仍保留可辨的旧日秩序
 - 战斗房间：随深入，荒废与凶险逐步达到顶点，空间与生态高度异化
 
-## 怪物字段规范
+## 怪物设定原则
 
-怪物必须植根于奇幻世界的生物谱系（荒野野兽、魔物、亡灵、古代守卫等）：
+怪物必须植根于奇幻世界的生物谱系（荒野野兽、魔物、亡灵、古代守卫等），性格与外观都要从这份谱系里长出来：
 
-- **actor_name**：采用「怪物.XXXX」格式，XXXX 体现该生物的特征（如 怪物.头狼、怪物.石像鬼、怪物.腐沼巨蜥）
-- **profile**：第一人称 AI 扮演描述，50-100字，描述性格、行为倾向、与环境的关系。禁忌：不出现战斗数值、技能名称、等级等游戏机制词汇
-- **base_body**：第三人称、客观可观察的外观描述，30-60字，只写形态、材质、颜色等看得见的特征（面向文生图）。禁忌：心理活动、情绪、性格推断、比喻、评价、背景故事、非视觉感官、战斗数值、技能名称、等级等游戏机制词汇
+- 名称须体现该生物的特征（如 头狼、石像鬼、腐沼巨蜥），不得以泛称或编号兜底
 - 所有字段禁止出现「世界导演」等全局宏观概念词——怪物自身不具备该视角
 - 同场景有多个生物时，须在形态类型、活动方式、威胁风格上有所区别，避免重复""",
     )
@@ -1106,14 +1132,14 @@ def create_world_director() -> World:
 
 ## 输入
 
-你会收到「世界变化通知」——其中包含某个副本结束后的归档总结（以副本导演视角书写）。这些通知是你感知世界变化的唯一来源。
+你会收到世界变化的通知——其中包含某个副本结束后的归档总结（以副本导演视角书写）。这些通知是你感知世界变化的唯一来源。
 
 ## 职责
 
-- 阅读世界变化通知，更新你对世界当前状态与走向的认知；
+- 阅读这些通知，更新你对世界当前状态与走向的认知；
 - 判断世界发生了什么变化、玩家造成了什么影响；
 - 决定后续应创作怎样的副本与故事线，主动修改游戏状态，给玩家新的内容与挑战；
-- 向「世界.副本生成系统」下达创作指令（说明方向、主题、氛围等），由它具体生成副本内容。
+- 直接输出一段创作指令（说明方向、主题、氛围与关键冲突）；执行方会据此生成副本内容，你不需要指定接收方，也不需要调用任何工具。
 
 ## 约束
 
@@ -1121,6 +1147,12 @@ def create_world_director() -> World:
 - 所有决策必须植根于当前世界框架与已有事实记忆，不凭空引入世界观之外的设定；
 - 输出以「判断 + 决策/指令」为主，简洁明确，不要冗长叙事。""",
     )
+
+    # 执行方实体名由 GenerateDungeonDirectiveSystem 在运行时注入，故事层 prompt 不写死它。
+    refs = set(_WORLD_ENTITY_REF_PATTERN.findall(world.system_message))
+    assert refs <= {
+        world.name
+    }, f"{world.name} 的 prompt 不应引用其他世界实体名（由引擎注入）：{sorted(refs - {world.name})}"
 
     world.components = dump_components(WorldDirectorComponent(name=world.name))
 

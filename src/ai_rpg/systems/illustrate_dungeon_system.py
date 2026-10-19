@@ -153,7 +153,7 @@ def _build_image_prompts_prompt(
     total = len(rooms) + 1
     sections: List[str] = [
         '### 封面（target="cover"）',
-        "- 依据：上面的副本整体设定，呈现副本的整体空间与氛围（纯环境）。",
+        "- 依据：上面的副本整体设定，呈现副本的整体空间与氛围。",
     ]
     for index, room in enumerate(rooms, start=1):
         sections.append(
@@ -163,7 +163,7 @@ def _build_image_prompts_prompt(
     scenes = "\n\n".join(sections)
     return f"""# 任务：为副本「{dungeon_name}」编排全部插图的文生图提示词
 
-本次共需出图 {total} 张：1 张副本封面与 {len(rooms)} 张房间插图。所有插图一律为纯环境画面，只描绘场景本身，不得出现任何人物、动物、怪物或其他生物（包括其剪影与残影）。请依据你的视觉方向与提示词写作要求，分别为每一张图写一条正向提示词与一条负面提示词。
+本次共需出图 {total} 张：1 张副本封面与 {len(rooms)} 张房间插图。请依据你的视觉方向与提示词写作要求，分别为每一张图写一条正向提示词与一条负面提示词。
 
 ## 副本整体设定
 

@@ -42,6 +42,8 @@ from .types import ChatCompletionRequest, ChatCompletionResult
 ############################################################################################################
 # chat dump 存储目录（项目根目录下）；首次 dump 时创建
 CHAT_DUMP_DIR: Path = Path(".chat_dumps")
+CHAT_DUMP_DIR.mkdir(parents=True, exist_ok=True)
+assert CHAT_DUMP_DIR.exists(), f"找不到目录: {CHAT_DUMP_DIR}"
 
 _SEP = "-" * 86
 

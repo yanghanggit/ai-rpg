@@ -5,12 +5,20 @@ from typing import Final, List, Literal, final
 from pydantic import BaseModel
 
 ####################################################################################################################################
-# 副本结构（单一事实来源）：当前为便于测试与调试采用最小规模。
-# 这些数值会写进「世界.副本生成系统」的系统提示词；改后须重新刷蓝图（python -m scripts.setup_demo）。
-OPENING_ROOM_COUNT: Final[int] = 1  # 开场房间数：无战斗，纯门口氛围铺垫
-COMBAT_ROOM_COUNT: Final[int] = 1  # 战斗房间数
-MONSTERS_PER_COMBAT_ROOM: Final[int] = 1  # 每个战斗房间的怪物数
-DUNGEON_ROOM_COUNT: Final[int] = OPENING_ROOM_COUNT + COMBAT_ROOM_COUNT  # 副本房间总数
+# 副本结构的「默认值」——不是不变量。
+#
+# 未来由 LLM 按自身的创作原则与判断决定房间组合，代码只负责给出默认值与合法边界：
+# - 开场房间默认且通常恒为 1（无战斗，纯门口氛围铺垫）；
+# - 战斗房间数与每个战斗房间的怪物数可能变化。
+#
+# 这些默认值只用于运行时构造任务提示词与工具 schema，不写进 demo 的系统提示词，
+# 因此调整无需重刷蓝图（python -m scripts.setup_demo）。
+DEFAULT_OPENING_ROOM_COUNT: Final[int] = 1  # 默认开场房间数：无战斗，纯门口氛围铺垫
+DEFAULT_COMBAT_ROOM_COUNT: Final[int] = 1  # 默认战斗房间数
+DEFAULT_MONSTERS_PER_COMBAT_ROOM: Final[int] = 1  # 默认每个战斗房间的怪物数
+DEFAULT_DUNGEON_ROOM_COUNT: Final[int] = (
+    DEFAULT_OPENING_ROOM_COUNT + DEFAULT_COMBAT_ROOM_COUNT
+)  # 默认副本房间总数
 
 
 ####################################################################################################################################
@@ -49,6 +57,8 @@ class DungeonDraft(BaseModel):
     directive: str = ""  # 世界导演的副本创作指令
     dungeon_name: str = ""
     profile: str = ""
-    room_count: int = DUNGEON_ROOM_COUNT  # 副本房间总数（含 1 个开场房间）
+    room_count: int = (
+        DEFAULT_DUNGEON_ROOM_COUNT  # 副本房间总数（未规划结构时取默认值，包含开场房间）
+    )
     rooms: List[DungeonRoomDraft] = []
     actors: List[DungeonActorDraft] = []

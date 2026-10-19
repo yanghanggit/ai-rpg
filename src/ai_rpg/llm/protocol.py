@@ -18,7 +18,6 @@
 
 刻意**不**写进协议的内容（provider 私有，写进去就等于把所有实现绑死在 DeepSeek 上）：
 `MODEL_FLASH` / `MODEL_PRO` / `CONTEXT_WINDOW_TOKENS` / `get_api_key` / `get_balance` / URL 常量。
-若业务确实需要「按名字选模型 / 查上下文长度」，用可选的 `ModelCatalog` 表达。
 
 实现注意事项
 ------------
@@ -33,7 +32,7 @@
 
 from __future__ import annotations
 
-from typing import List, Optional, Protocol, Sequence
+from typing import Optional, Protocol, Sequence
 
 import httpx
 
@@ -171,32 +170,4 @@ class ChatClientFactory(Protocol):
         ...
 
 
-############################################################################################################
-class ModelCatalog(Protocol):
-    """可选的「模型目录」能力（provider 私有信息的通用出口）。
-
-    不并入 `ChatClientProtocol`：DeepSeek 的 `MODEL_FLASH` / `CONTEXT_WINDOW_TOKENS`
-    是 provider 私有事实，绑进主协议会让所有实现被迫编造同名常量。
-    需要选型/预算的场景单独依赖本协议即可。
-    """
-
-    @property
-    def default_model(self) -> str:
-        """未显式指定模型时使用的默认模型 ID。"""
-        ...
-
-    def list_models(self) -> List[str]:
-        """列出该 provider 当前可用的模型 ID；查询失败时返回空列表。"""
-        ...
-
-    def context_window(self, model: str) -> int:
-        """给定模型的上下文长度上限（输入 + 输出 token 总数）。"""
-        ...
-
-
-__all__ = [
-    "ChatClientFactory",
-    "ChatClientProtocol",
-    "ChatResponseProtocol",
-    "ModelCatalog",
-]
+__all__ = ["ChatClientFactory", "ChatClientProtocol", "ChatResponseProtocol"]

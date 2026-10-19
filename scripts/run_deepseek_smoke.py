@@ -10,8 +10,8 @@ from ai_rpg.deepseek import (
     ToolDefinition,
     ToolFunction,
     agent_loop,
-    batch_chat,
 )
+from ai_rpg.llm import batch_chat
 from ai_rpg.models import (
     AIMessage,
     ChatMessage,

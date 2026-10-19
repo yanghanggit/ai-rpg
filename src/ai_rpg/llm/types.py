@@ -6,7 +6,7 @@
 依赖方向：`ai_rpg.llm` 是被依赖方，本模块**不得** import `ai_rpg.deepseek`。
 """
 
-from typing import Any, Dict, Final, Literal
+from typing import Any, Dict, Literal
 
 from pydantic import BaseModel
 
@@ -60,17 +60,7 @@ class Usage(BaseModel):
     reasoning_tokens: int = 0  # 思考过程消耗的 token 数；非思考模式响应中不返回该字段
 
 
-############################################################################################################
-# finish_reason 的常见取值，仅作说明用：provider 可能返回约定外的字符串，
-# 因此协议里统一按 `str` 声明，避免过度收紧。
-FINISH_REASON_STOP: Final[str] = "stop"
-FINISH_REASON_TOOL_CALLS: Final[str] = "tool_calls"
-FINISH_REASON_LENGTH: Final[str] = "length"
-
 __all__ = [
-    "FINISH_REASON_LENGTH",
-    "FINISH_REASON_STOP",
-    "FINISH_REASON_TOOL_CALLS",
     "ReasoningEffort",
     "ToolCall",
     "ToolChoice",

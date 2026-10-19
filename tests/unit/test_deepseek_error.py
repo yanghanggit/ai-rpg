@@ -15,8 +15,8 @@ import httpx
 import pytest
 
 from ai_rpg.deepseek import DeepSeekError
-from ai_rpg.deepseek.batch import batch_chat
 from ai_rpg.deepseek.client import DeepSeekClient
+from ai_rpg.llm.batch import batch_chat
 
 
 #######################################################################################################################################

@@ -18,12 +18,7 @@ from .agent_loop import (
 )
 from .batch import batch_chat
 from .errors import ChatError, ErrorKind
-from .protocol import (
-    ChatClientFactory,
-    ChatClientProtocol,
-    ChatResponseProtocol,
-    ModelCatalog,
-)
+from .protocol import ChatClientFactory, ChatClientProtocol, ChatResponseProtocol
 from .types import (
     ReasoningEffort,
     ToolCall,
@@ -43,7 +38,6 @@ __all__ = [
     "ErrorKind",
     "LOOP_END_ATTR",
     "LOOP_ID_ATTR",
-    "ModelCatalog",
     "ReasoningEffort",
     "ToolCall",
     "ToolChoice",

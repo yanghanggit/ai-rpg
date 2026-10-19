@@ -17,8 +17,10 @@ from typing import (
 
 from loguru import logger
 
+from ..llm.protocol import ChatClientProtocol
+from ..llm.types import ToolDefinition
 from ..models import ChatMessage, HumanMessage, ToolMessage
-from .client import DeepSeekClient, ToolDefinition
+from .client import DeepSeekClient
 
 #######################################################################################################################################
 # loop 边界标记约定：起点 HumanMessage 携带 loop_id，本次 loop 追加的最后一条消息携带 loop_id_end。
@@ -32,13 +34,13 @@ LOOP_END_ATTR: Final[str] = "loop_id_end"
 class AgentLoopRound:
     """agent_loop 单轮的产物快照。
 
-    - client: 本轮用于通讯的 DeepSeekClient，可读取 finish_reason / tool_calls /
-      usage / error 等「响应侧」信息。注意其 messages 是共享 history 的引用，
-      并非本轮快照；历史增量请看 ``appended``。
+    - client: 本轮用于通讯的 client（按 ``ChatClientProtocol`` 标注），可读取
+      finish_reason / tool_calls / usage / error 等「响应侧」信息。注意其
+      messages 是共享 history 的引用，并非本轮快照；历史增量请看 ``appended``。
     - appended: 本轮向 history 追加的消息引用列表（按追加顺序）。
     """
 
-    client: DeepSeekClient
+    client: ChatClientProtocol
     appended: List[ChatMessage]
 
 
@@ -96,7 +98,7 @@ class _LoopSpanTracker:
         self._history.append(HumanMessage(content=content, **extras))
 
     ###################################################################################################################################
-    def record_round(self, client: DeepSeekClient, round_start: int) -> None:
+    def record_round(self, client: ChatClientProtocol, round_start: int) -> None:
         """记录本轮：client 快照 + 本轮追加进 history 的消息引用。"""
         self.rounds.append(
             AgentLoopRound(client=client, appended=list(self._history[round_start:]))

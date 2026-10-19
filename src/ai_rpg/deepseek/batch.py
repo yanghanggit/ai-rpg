@@ -5,18 +5,18 @@
 
 import asyncio
 import time
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 import httpx
 from loguru import logger
 
-from .client import DeepSeekClient
+from ..llm.protocol import ChatClientProtocol
 from .errors import DeepSeekError
 
 
 ############################################################################################################
 async def batch_chat(
-    clients: List[DeepSeekClient],
+    clients: Sequence[ChatClientProtocol],
     *,
     max_concurrency: int = 2,
 ) -> List[Optional[DeepSeekError]]:
@@ -31,6 +31,10 @@ async def batch_chat(
     返回与 ``clients`` 按 index 对齐的失败列表：成功项为 None，失败项为
     对应的 DeepSeekError（与各 client 的 ``.error`` 为同一对象）。通讯层
     不做重试，是否重试由业务层据 ``DeepSeekError.retryable`` 决定。
+
+    入参类型是 ``ChatClientProtocol`` 而非具体实现，且声明为 ``Sequence``：批量通讯只
+    依赖协议的 ``label`` / ``error`` / ``chat()``，换成任何 provider 都不用改这里；
+    ``Sequence`` 是协变的，因此 ``list[DeepSeekClient]`` 可直接传入。
     """
     if not clients:
         return []
@@ -43,7 +47,7 @@ async def batch_chat(
     async with httpx.AsyncClient() as shared_client:
         semaphore = asyncio.Semaphore(max_concurrency)
 
-        async def _guarded(client: DeepSeekClient) -> None:
+        async def _guarded(client: ChatClientProtocol) -> None:
             """拿不到许可证就在这里排队，保证任意时刻至多 max_concurrency 个请求在飞。"""
             async with semaphore:
                 await client.chat(client=shared_client)

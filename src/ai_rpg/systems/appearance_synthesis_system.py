@@ -9,9 +9,10 @@ from typing import Final, List, final, override
 
 from loguru import logger
 
-from ..deepseek import DeepSeekClient, batch_chat
+from ..deepseek import batch_chat
 from ..entitas import ExecuteProcessor, Matcher
 from ..game.dbg_game import DBGGame
+from ..llm import ChatClientProtocol
 from ..models import (
     ActorComponent,
     AppearanceComponent,
@@ -55,7 +56,7 @@ class AppearanceSynthesisSystem(ExecuteProcessor):
 
         world_entity = resolve_appearance_synthesis_entity(self._game)
 
-        chat_clients: List[DeepSeekClient] = [
+        chat_clients: List[ChatClientProtocol] = [
             build_appearance_synthesis_client(self._game, world_entity, entity)
             for entity in targets
         ]
@@ -66,8 +67,11 @@ class AppearanceSynthesisSystem(ExecuteProcessor):
             self._apply_result(client)
 
     #######################################################################################################################################
-    def _apply_result(self, client: DeepSeekClient) -> None:
-        """写回外观，并给本人补一条自我状态说明（不广播）。"""
+    def _apply_result(self, client: ChatClientProtocol) -> None:
+        """写回外观，并给本人补一条自我状态说明（不广播）。
+
+        入参按协议标注：只需 label / response_ai_message / response_content。
+        """
         if client.response_ai_message is None:
             logger.warning(f"AppearanceSynthesisSystem: {client.label} 未返回消息")
             return

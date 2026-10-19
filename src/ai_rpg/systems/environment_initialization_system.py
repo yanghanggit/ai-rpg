@@ -10,6 +10,7 @@ from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.dbg_combat_processor import get_alive_actors_in_stage
 from ..game.dbg_game import DBGGame
 from ..game.rpg_actor_appearances import get_actor_appearances_in_stage
+from ..llm import ChatClientProtocol
 from ..models import (
     EnvironmentComponent,
     HomeComponent,
@@ -89,7 +90,7 @@ class EnvironmentInitializationSystem(ExecuteProcessor):
             return
 
         # 构建每个待生成场景的请求客户端
-        chat_clients: List[DeepSeekClient] = [
+        chat_clients: List[ChatClientProtocol] = [
             self._build_client(stage_entity) for stage_entity in observed_stage_entities
         ]
 
@@ -156,9 +157,13 @@ class EnvironmentInitializationSystem(ExecuteProcessor):
     #######################################################################################################################################
     def _process_environment_response(
         self,
-        chat_client: DeepSeekClient,
+        chat_client: ChatClientProtocol,
     ) -> bool:
-        """解析 AI 响应，更新 EnvironmentComponent 并存入对话历史。"""
+        """解析 AI 响应，更新 EnvironmentComponent 并存入对话历史。
+
+        入参按协议标注：只需 label / response_ai_message / response_content，
+        与具体 provider 无关。
+        """
 
         # 如果 AI 响应为空，则记录警告并返回 False。
         if chat_client.response_ai_message is None:

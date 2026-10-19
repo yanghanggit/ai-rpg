@@ -15,6 +15,7 @@ from ..game.dbg_combat_processor import (
 )
 from ..game.dbg_game import DBGGame
 from ..game.rpg_agent_memory import REPLACED_MESSAGES_ATTR
+from ..llm import ChatClientProtocol
 from ..models import (
     Card,
     CharacterStats,
@@ -348,11 +349,10 @@ class MonsterPrePlaySystem(ReactiveProcessor):
 
         logger.debug(f"MonsterPrePlaySystem: 为 {len(entities)} 个怪物进行出牌决策推理")
 
-        # 为每个怪物创建推理 DeepSeekClient
-        chat_clients: List[DeepSeekClient] = []
-        for entity in entities:
-            client = self._create_monster_decision_client(entity)
-            chat_clients.append(client)
+        # 为每个怪物创建推理 client（构造仍绑定 DeepSeek，使用侧只看协议）
+        chat_clients: List[ChatClientProtocol] = [
+            self._create_monster_decision_client(entity) for entity in entities
+        ]
 
         if not chat_clients:
             logger.warning("MonsterPrePlaySystem: 没有可推理的怪物实体，跳过")
@@ -417,7 +417,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         )
 
     ####################################################################################################################################
-    def _process_monster_decision(self, client: DeepSeekClient) -> None:
+    def _process_monster_decision(self, client: ChatClientProtocol) -> None:
         """解析决策回包，落一条决策记录，再替换成 PlayCardsAction / PassTurnAction。
 
         记忆形状：先按「环境+任务提示词 → 模型回包」写入（审计可查），随后整段替换成
@@ -465,7 +465,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         )
 
     ####################################################################################################################################
-    def _decide(self, entity: Entity, client: DeepSeekClient) -> "_DecisionOutcome":
+    def _decide(self, entity: Entity, client: ChatClientProtocol) -> "_DecisionOutcome":
         """把回包翻译成「打哪张、打谁」；任何异常都收敛成带原因的过牌。"""
 
         reason = ""

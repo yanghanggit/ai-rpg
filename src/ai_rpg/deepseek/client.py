@@ -31,13 +31,23 @@ import httpx
 import requests
 from dotenv import load_dotenv
 from loguru import logger
-from pydantic import BaseModel
 
+from ..llm.types import ToolCall, ToolDefinition, ToolFunction, Usage
 from ..models import AIMessage, ChatMessage, ToolMessage
 from . import chat_dump
 from .errors import DeepSeekError, ErrorKind
 
 load_dotenv()
+
+# provider 无关的数据类型从 `ai_rpg.llm.types` 统一导入后在本模块再导出：
+# 既有调用点（`from ai_rpg.deepseek.client import ToolCall`）无需改动。
+__all__ = [
+    "DeepSeekClient",
+    "ToolCall",
+    "ToolDefinition",
+    "ToolFunction",
+    "Usage",
+]
 
 ############################################################################################################
 _DEEPSEEK_API_URL: Final[str] = "https://api.deepseek.com/chat/completions"
@@ -54,55 +64,15 @@ _ROLE_MAP: Final[Dict[str, str]] = {
 
 
 ############################################################################################################
-class ToolFunction(BaseModel):
-    """工具函数参数的 JSON Schema 描述（对应 DeepSeek/OpenAI tools[].function）"""
-
-    name: str  # 工具名称，应与业务逻辑函数名一致
-    description: str  # 面向 LLM 的工具功能说明
-    parameters: Dict[str, Any]  # 参数的 JSON Schema（object 类型）
-
-
-############################################################################################################
-class ToolDefinition(BaseModel):
-    """单个工具定义，对应 DeepSeek/OpenAI tools 数组的一个元素"""
-
-    type: Literal["function"] = "function"  # 固定为 "function"
-    function: ToolFunction  # 函数描述内容
-
-
-############################################################################################################
-class ToolCall(BaseModel):
-    """LLM 返回的单次工具调用指令（finish_reason == \"tool_calls\" 时存在）"""
-
-    class Function(BaseModel):
-        name: str  # 被调用的工具名称
-        arguments: str  # JSON 序列化的参数字符串
-
-    id: str  # 本次调用的唯一 ID，需在 ToolMessage 中回传
-    type: str = "function"  # 固定为 "function"
-    function: Function  # 函数调用信息
-
-
-############################################################################################################
-class Usage(BaseModel):
-    """响应中的 token 用量统计（对应 DeepSeek/OpenAI usage 字段）"""
-
-    prompt_tokens: int  # 本次请求上下文（输入）消耗的 token 数
-    completion_tokens: int  # 本次生成（输出）消耗的 token 数
-    total_tokens: int  # 输入 + 输出的 token 总数
-    prompt_cache_hit_tokens: int  # 命中 KVCache 的输入 token 数
-    prompt_cache_miss_tokens: int  # 未命中 KVCache 的输入 token 数
-    reasoning_tokens: int = 0  # 思考过程消耗的 token 数；非思考模式响应中不返回该字段
-
-
-############################################################################################################
 @final
 class DeepSeekClient:
     """直连 DeepSeek 平台的聊天客户端
 
     直接调用 https://api.deepseek.com/chat/completions，
     支持 deepseek-chat 和 deepseek-reasoner 两个模型。
-    公共接口与 ChatClient 保持一致。
+
+    本类不显式继承 `ai_rpg.llm.protocol.ChatClientProtocol`，靠结构匹配满足协议；
+    一致性由 tests/unit/test_llm_protocol.py 静态断言 + 调用点类型注解共同保证。
     """
 
     # DeepSeek 模型名称
@@ -195,7 +165,7 @@ class DeepSeekClient:
         label: str,
         input_message: str,
         messages: Sequence[ChatMessage],
-        model: str = MODEL_FLASH,
+        model: Optional[str] = None,
         thinking: bool = False,
         timeout: Optional[int] = None,
         temperature: Optional[float] = None,
@@ -214,7 +184,11 @@ class DeepSeekClient:
         self._label: Final[str] = label
         self._input_message: Final[str] = input_message
         self._messages: Final[Sequence[ChatMessage]] = messages
-        self._model: Final[str] = model
+        # model 放宽成 Optional[str]：`ChatClientFactory` 协议与 provider 无关，
+        # 默认值不能写死 DeepSeek 的模型名，故用 None 表示「取 provider 默认模型」。
+        self._model: Final[str] = (
+            model if model is not None else DeepSeekClient.MODEL_FLASH
+        )
         self._thinking: Final[bool] = thinking
         self._timeout: Final[int] = timeout if timeout is not None else 30
         self._tools: Final[List[ToolDefinition]] = _tools

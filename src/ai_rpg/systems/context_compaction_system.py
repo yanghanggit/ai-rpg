@@ -8,6 +8,7 @@ from overrides import override
 from ..deepseek import DeepSeekClient, batch_chat
 from ..entitas import ExecuteProcessor
 from ..game.dbg_game import DBGGame
+from ..llm import ChatClientProtocol
 from ..models import HumanMessage, get_buffer_string
 from .context_compaction_prompt_builders import build_compaction_prompt
 
@@ -38,7 +39,7 @@ class ContextCompactionSystem(ExecuteProcessor):
             return
 
         # 为每个超阈值 agent 创建压缩客户端（messages 传入当前完整记忆）
-        chat_clients: List[DeepSeekClient] = [
+        chat_clients: List[ChatClientProtocol] = [
             DeepSeekClient(
                 label=memory.name,
                 input_message=build_compaction_prompt(),

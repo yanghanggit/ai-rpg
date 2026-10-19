@@ -12,6 +12,7 @@ from overrides import override
 from ..deepseek import DeepSeekClient, batch_chat
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
+from ..llm import ChatClientProtocol
 from ..models import CompactContextAction, HumanMessage, get_buffer_string
 from .context_compaction_prompt_builders import build_compaction_prompt
 
@@ -39,7 +40,7 @@ class CompactContextActionSystem(ReactiveProcessor):
     @override
     async def react(self, entities: List[Entity]) -> None:
         # 仅保留存在可压缩内容（除首条 system 外还有消息）的实体
-        chat_clients: List[DeepSeekClient] = []
+        chat_clients: List[ChatClientProtocol] = []
         for entity in entities:
             memory = self._game.get_agent_memory(entity)
             if len(memory.messages) <= 1:

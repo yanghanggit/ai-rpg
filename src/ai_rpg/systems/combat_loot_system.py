@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from ..deepseek import DeepSeekClient, batch_chat
 from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.dbg_game import DBGGame
+from ..llm import ChatClientProtocol
 from ..models import (
     AnyItem,
     AppearanceComponent,
@@ -185,7 +186,7 @@ class CombatLootSystem(ExecuteProcessor):
             )
 
     #######################################################################################################################################
-    def _record_loot_memory(self, monster: Entity, client: DeepSeekClient) -> None:
+    def _record_loot_memory(self, monster: Entity, client: ChatClientProtocol) -> None:
         """把掉落推理写回怪物记忆（human = 请求原文，ai = 回包原文）。
 
         怪物在战斗中所有以自己为主体的 LLM 推理（出牌决策 / 掉落）均留痕，
@@ -228,8 +229,11 @@ class CombatLootSystem(ExecuteProcessor):
         )
 
     #######################################################################################################################################
-    def _parse_loot_item(self, client: DeepSeekClient) -> List[AnyItem]:
-        """解析单头怪物的 LLM 响应，返回基础掉落与部位破坏额外掉落。"""
+    def _parse_loot_item(self, client: ChatClientProtocol) -> List[AnyItem]:
+        """解析单头怪物的 LLM 响应，返回基础掉落与部位破坏额外掉落。
+
+        入参按协议标注：只需 label / response_content。
+        """
         items: List[AnyItem] = []
 
         if not client.response_content:

@@ -36,7 +36,7 @@
 
 **Step 4 — 实体组装**（`AssembleDungeonSystem`）。零 LLM 调用，纯确定性映射。根据 `room_type` 分发：`"opening"` → `OpeningRoom`，`"combat"` → `CombatRoom`（含 Stage + Actor）。产物 `Dungeon` 写入 `.dungeons/<name>.json`，同时把 `DungeonDraft` 落一份到 `.dungeons_drafts/<name>.json` 便于回溯。
 
-**Step 5 — 牌库组建**（`AssembleDungeonDeckSystem`）。为每个战斗房间的怪物组建初始牌库：怪物先从手牌原型库选 5 个骨架（`select_cards`），再由卡牌设计引擎设计（见[卡牌设计指南（Card Design）](card-design.md) 的「生成契约」）。两阶段都以怪物自己的 system prompt 作为**唯一且临时**的上下文；失败回退默认牌单。完成后重写 `.dungeons/<name>.json`。
+**Step 5 — 牌库组建**（`AssembleDungeonDeckSystem`）。为每个战斗房间的怪物组建初始牌库：怪物先从手牌原型库选 5 个骨架（`select_cards`），再由卡牌设计引擎设计（见[卡牌设计指南（Card Design）](card-design.md) 的「生成契约」）。两阶段都走 `card_common` 的 actor 上下文入口：宿主是世界实体「世界.卡牌设计」，上下文 = 它的 `role_rules`（system）+ 怪物自己的 system prompt（任务数据块），会话不留痕；失败回退默认牌单。完成后重写 `.dungeons/<name>.json`。
 
 **Step 6 — 场景插画**（`IllustrateDungeonSystem`）。加载磁盘上的 `Dungeon`，交给「世界.插图提示词」世界实体（`IllustrationComponent`）作为 agent，依据各场景设定与生物外观一次性编排封面 + 各房间的文生图提示词（工具 `record_image_prompts`）。引擎只负责传递事实与调用 replicate 批量出图，画风、构图与负面词全部由该实体的 system prompt 承载（故事层）。生成失败项保持 `None`，不阻塞主流程。
 

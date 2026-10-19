@@ -76,8 +76,14 @@ async def test_spoils_fill_notifies_owner(
     )
     monkeypatch.setattr(
         spoils_module,
-        "run_card_design_session",
-        lambda **kwargs: _noop(),
+        "read_actor_system_prompt",
+        lambda game, actor_entity: "角色.无名 的设定",
+    )
+    # 设计会话交给卡牌设计世界实体（此处只验证入队与告知，不跑真实会话）
+    monkeypatch.setattr(
+        spoils_module,
+        "design_cards_for_actor",
+        lambda *args, **kwargs: _noop(),
     )
     monkeypatch.setattr(
         spoils_module,

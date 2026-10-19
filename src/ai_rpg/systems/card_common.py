@@ -4,6 +4,10 @@
 记忆侧被出牌与传递共用（卡牌 → 审计用精简 JSON）。差异留在各自 system 文件中，
 本模块只放必须同构的部分，避免契约与字段口径漂移。
 
+其中「为某个 actor 造牌」的两条路径（战利品 / 怪物牌库）统一走本模块的
+actor 上下文入口：宿主是世界实体「世界.卡牌设计」，system prompt 取它自己的，
+目标 actor 的 system prompt 作为任务提示词里的数据块注入，会话结束不留痕。
+
 ``uuid`` 由计算端持有：LLM 只用编号定位，回填由本模块完成。
 """
 
@@ -28,12 +32,16 @@ from loguru import logger
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..deepseek import agent_loop
+from ..entitas import Entity, Matcher
+from ..game.dbg_game import DBGGame
 from ..llm import ToolDefinition, ToolFunction
 from ..models import (
     DESIGNABLE_AFFIX_FIELDS,
     Card,
+    CardDesignComponent,
     ChatMessage,
     NormalizedStrList,
+    SystemMessage,
     apply_affix_design,
     apply_numeric_design,
     normalize_str_list,
@@ -265,7 +273,6 @@ def materialize_candidate(prototype_id: str, source: str) -> Optional[Candidate]
     原型 uuid 是共享常量，必须换新；`source` 回填持有者名（牌库 / 奖励入口不变量）。
     """
     try:
-
         # 获取原型并解析为 Card 对象
         proto = get_card_prototype(prototype_id)
 
@@ -319,7 +326,7 @@ def build_card_design_prompt(candidates: List[Candidate], context: str = "") -> 
     context_block = f"{context.strip()}\n\n" if context.strip() else ""
     return f"""# 任务：为下列原型生成卡牌
 
-{context_block}依据你的角色设定，为每个原型设计 `name`、`description`，并在开放槽位内补充词缀。卡牌是任意一种能被解释成战斗资源的存在，不必是动作。
+{context_block}依据你的设定与上面给出的上下文，为每个原型设计 `name`、`description`，并在开放槽位内补充词缀。卡牌是任意一种能被解释成战斗资源的存在，不必是动作。
 
 ## 原型
 
@@ -372,14 +379,12 @@ def _handle_submit_card(
 
     problems: List[str] = []
     for field in DESIGNABLE_AFFIX_FIELDS:
-
         #   获取提交的词缀列表并进行标准化
         items = normalize_str_list(submitted_map.get(field) or [])
 
         #   如果该槽位在原型中不可设计，则跳过校验
         if not getattr(card, field):
             if items:
-
                 #   如果提交了不可设计的词缀，则记录问题
                 problems.append(f"{field} 不可设计（原型该槽无引导），请勿提交")
             continue
@@ -533,7 +538,6 @@ def apply_designs(
     notes: List[str] = []
 
     for edit in edits:
-
         # 根据提交的设计定位候选卡，若找不到则记录告警并跳过
         card = by_uuid.get(edit.uuid)
         if card is None:
@@ -577,6 +581,7 @@ async def run_card_design_session(
     extra_properties: Optional[Dict[str, Any]] = None,
     extra_required: Optional[List[str]] = None,
     on_design: Optional[Callable[[CardDesign], None]] = None,
+    mutate_messages: bool = True,
 ) -> DesignOutcome:
     """跑一次卡牌设计会话：agent 逐卡 `submit_card`，计算端把设计写回候选卡。
 
@@ -584,7 +589,8 @@ async def run_card_design_session(
     即便会话中途报错，已提交的设计仍会落地。`context` 为可选任务前言（如投入材料）。
     `extra_properties` / `extra_required` 给 submit_card 追加领域字段并声明其必填
     （如装备 speed，存入 `model_extra`）；`on_design` 在落地后对每条设计回调，
-    供调用方读取扩展字段。
+    供调用方读取扩展字段。`mutate_messages=False` 时在 `messages` 的浅拷贝上跑，
+    用于保证「会话不写入调用方的记忆」。
     """
     edits: List[CardDesign] = []
     cards = [c.card for c in candidates]
@@ -597,7 +603,6 @@ async def run_card_design_session(
     }
 
     try:
-
         # 运行 agent_loop 进行卡牌设计会话
         result = await agent_loop(
             name=name,
@@ -607,6 +612,7 @@ async def run_card_design_session(
             handlers=handlers,
             terminal_tools=[FINISH_CARDS_TOOL],
             max_rounds=max_rounds,
+            mutate_messages=mutate_messages,
         )
 
         # 判断 agent_loop 是否成功返回结果
@@ -645,6 +651,7 @@ async def run_card_selection_session(
     size: int,
     prompt: str,
     max_rounds: int = 12,
+    mutate_messages: bool = True,
 ) -> SelectionOutcome:
     """跑一次选型会话：agent 浏览原型库并用 `select_cards` 提交恰好 `size` 个 id。
 
@@ -681,6 +688,7 @@ async def run_card_selection_session(
             },
             max_rounds=max_rounds,
             terminal_tools=[select_tool],
+            mutate_messages=mutate_messages,
         )
         ok = bool(result)
     except Exception as e:
@@ -692,6 +700,116 @@ async def run_card_selection_session(
         f"[card_design] {name}: 选型 {len(selected)}/{size}（agent_loop 成功={ok}）"
     )
     return SelectionOutcome(ok=ok, selected=selected, total=size)
+
+
+#######################################################################################################################################
+# Actor 上下文的会话入口：以世界实体「世界.卡牌设计」为唯一宿主
+#
+# 怪物牌库（选型 + 设计）与战利品（设计）都走这里，口径统一：
+# - system prompt 取世界实体自己的（设计契约，故事层）；
+# - 目标 actor 的 system prompt（`agent_memory.messages[0]`）作为任务提示词里的数据块注入；
+# - 会话跑在临时列表上（mutate_messages=False），结束即弃——actor 记忆不留痕，
+#   它只从牌堆变更记录里知道「有候选 / 领了一张」，不知道牌是怎么设计出来的。
+#
+# 工坊（装备 / 消耗品）不走这条路：它们的上下文是工坊世界实体自己，不需要 actor 人设。
+#######################################################################################################################################
+# 请求 label 的分隔符：`世界.卡牌设计|角色.名`（与「世界.外观合成|角色.名」同构）
+_ACTOR_LABEL_SEPARATOR: Final[str] = "|"
+
+
+#######################################################################################################################################
+def resolve_card_design_entity(game: DBGGame) -> Entity:
+    """定位唯一的「卡牌设计」世界实体（蓝图必须提供，缺失即数据错误）。"""
+    entities = game.get_group(Matcher(all_of=[CardDesignComponent])).entities.copy()
+    assert (
+        len(entities) == 1
+    ), f"卡牌设计世界实体数量异常: {len(entities)}（应为 1 个 CardDesignComponent 世界实体）。蓝图缺少该实体时请刷新：python -m scripts.setup_demo"
+    return next(iter(entities))
+
+
+#######################################################################################################################################
+def read_actor_system_prompt(game: DBGGame, actor_entity: Entity) -> str:
+    """读目标 actor 的 system prompt（`agent_memory.messages[0]`，由 add_system_message 写入）。"""
+    messages = game.get_agent_memory(actor_entity).messages
+    assert messages and isinstance(
+        messages[0], SystemMessage
+    ), f"{actor_entity.name} 缺少首条 SystemMessage（add_system_message 未执行）"
+    return messages[0].content
+
+
+#######################################################################################################################################
+def _actor_session_context(game: DBGGame, actor_name: str) -> Tuple[str, SystemMessage]:
+    """取 (会话 label, 世界实体的 system prompt)；世界实体与 label 只解析一次。"""
+    world_entity = resolve_card_design_entity(game)
+    messages = game.get_agent_memory(world_entity).messages
+    assert messages and isinstance(
+        messages[0], SystemMessage
+    ), f"{world_entity.name} 缺少首条 SystemMessage"
+    return f"{world_entity.name}{_ACTOR_LABEL_SEPARATOR}{actor_name}", SystemMessage(
+        content=messages[0].content
+    )
+
+
+#######################################################################################################################################
+def _actor_prompt_block(actor_system_prompt: str) -> str:
+    """把目标 actor 的 system prompt 渲染成任务提示词里的数据块。"""
+    return f"## 你要为之设计的角色\n\n{actor_system_prompt.strip()}\n"
+
+
+#######################################################################################################################################
+async def select_prototypes_for_actor(
+    game: DBGGame,
+    *,
+    actor_name: str,
+    actor_system_prompt: str,
+    index: List[CardPrototypeIndexEntry],
+    size: int,
+    prompt: str,
+    max_rounds: int = 12,
+) -> SelectionOutcome:
+    """为目标 actor 选型：上下文 = 世界契约（system）+ 该 actor 的设定（任务数据块）。"""
+    label, system_message = _actor_session_context(game, actor_name)
+    return await run_card_selection_session(
+        label,
+        index,
+        [system_message],
+        size=size,
+        prompt=_actor_prompt_block(actor_system_prompt) + "\n" + prompt,
+        max_rounds=max_rounds,
+        mutate_messages=False,
+    )
+
+
+#######################################################################################################################################
+async def design_cards_for_actor(
+    game: DBGGame,
+    *,
+    actor_name: str,
+    actor_system_prompt: str,
+    candidates: List[Candidate],
+    context: str = "",
+    extra_properties: Optional[Dict[str, object]] = None,
+    extra_required: Optional[List[str]] = None,
+    on_design: Optional[Callable[[CardDesign], None]] = None,
+    max_rounds: int = 16,
+) -> DesignOutcome:
+    """为目标 actor 设计候选卡：上下文口径同选型，会话结束不留痕。"""
+    label, system_message = _actor_session_context(game, actor_name)
+    session_context = _actor_prompt_block(actor_system_prompt)
+    if context.strip():
+        session_context += "\n" + context.strip() + "\n"
+
+    return await run_card_design_session(
+        label,
+        candidates,
+        [system_message],
+        max_rounds=max_rounds,
+        context=session_context,
+        extra_properties=extra_properties,
+        extra_required=extra_required,
+        on_design=on_design,
+        mutate_messages=False,
+    )
 
 
 #######################################################################################################################################

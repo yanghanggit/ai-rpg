@@ -14,6 +14,7 @@ from ai_rpg.models import (
     AppearanceSynthesisComponent,
     Blueprint,
     Card,
+    CardDesignComponent,
     CharacterStats,
     CombatRoom,
     ConsumableItem,
@@ -780,6 +781,7 @@ def create_demo_blueprint(game_name: str) -> Blueprint:
             create_gear_workshop(),
             create_consumable_workshop(),
             create_costume_workshop(),
+            create_card_design(),
             create_dungeon_director(),
             create_world_director(),
             create_storage(),
@@ -1074,6 +1076,36 @@ def create_costume_workshop() -> World:
     )
 
     world.components = dump_components(CostumeWorkshopComponent(name=world.name))
+
+    return world
+
+
+###############################################################################################################################
+def create_card_design() -> World:
+    """创建卡牌设计器世界（为某个角色选型 + 设计卡牌，会话不留痕）。"""
+
+    world = create_world(
+        name="世界.卡牌设计",
+        campaign_setting=CAMPAIGN_SETTING,
+        system_rules=SYSTEM_RULES_FINAL,
+        role_rules="""## 卡牌设计者职责
+
+你是这个世界的卡牌设计者：把原型骨架落成真正属于某个角色的战斗资源。你不参与叙事，也不与角色对话——每次任务都会给出该角色的完整设定与若干待设计的原型，你据此决定它们叫什么、带着什么意象与效果。
+
+## 取材边界
+
+- 一切设计都从该角色自己的设定里长出来：历史、性格、禁忌、最爱、体型、技艺、典故。同一个原型落到不同角色手里，应当成为两张不同的牌。
+- 卡牌可以是任意一种能被解释成战斗资源的存在——兵器、姿态、习惯、执念、旧物、被唤来的活物；不必是动作，但必须能被这个角色持有。
+- 只写这个世界里可能存在的东西，不引入世界之外的器物、概念与专名。
+
+## 气质
+
+- 名称简短具体，能被这个角色自然地说出口，避免编号与泛称。
+- 同一批牌之间要有区分：不重复同一意象、同一语气、同一种威胁方式。
+- 效果要像这个角色会做的事，而不是一件通用道具的功能。""",
+    )
+
+    world.components = dump_components(CardDesignComponent(name=world.name))
 
     return world
 

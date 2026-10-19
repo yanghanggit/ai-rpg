@@ -31,7 +31,6 @@ from ..models import (
     Dungeon,
     DungeonDraft,
     GenerateDungeonAction,
-    SystemMessage,
 )
 from ..paths import DUNGEONS_DIR
 from ..pgsql import (
@@ -42,9 +41,9 @@ from ..pgsql import (
 from ..utils import batch_run_boolean_tasks, prompt_builder
 from .card_common import (
     Candidate,
+    design_cards_for_actor,
     materialize_candidate,
-    run_card_design_session,
-    run_card_selection_session,
+    select_prototypes_for_actor,
 )
 
 
@@ -74,13 +73,13 @@ DECK_SIZE: Final[int] = 5  # 每副牌库固定 5 张
 ####################################################################################################################################
 @prompt_builder
 def _build_deck_select_prompt() -> str:
-    """选型阶段提示词：只负责挑原型，具体设计交给 card_common 引擎。
+    """选型阶段提示词：只负责挑原型，具体设计交给卡牌设计世界实体。
 
-    不重述身份：调用方传入的 SystemMessage 已由 entity_factory 编译出「# 名称 + 你扮演角色」。
+    不重述身份：目标 actor 的 system prompt 由 card_common 的 actor 上下文入口作为数据块注入。
     """
     return f"""# 任务：为你自己组建初始牌库（恰好 {DECK_SIZE} 张）
 
-依据你的角色设定（见系统提示），从手牌原型库挑选恰好 {DECK_SIZE} 张组成初始牌库，使它们成为属于「你自己」的战斗资源，可重复选同一原型。先 `list_card_prototypes` 纵览，再对候选 `get_card_prototype` 精读，最后 `select_cards` 一次性提交恰好 {DECK_SIZE} 个 prototype_id。"""
+依据上面给出的角色设定，从手牌原型库挑选恰好 {DECK_SIZE} 张组成初始牌库，使它们成为属于「你自己」的战斗资源，可重复选同一原型。先 `list_card_prototypes` 纵览，再对候选 `get_card_prototype` 精读，最后 `select_cards` 一次性提交恰好 {DECK_SIZE} 个 prototype_id。"""
 
 
 ####################################################################################################################################
@@ -201,9 +200,10 @@ class AssembleDungeonDeckSystem(ReactiveProcessor):
     async def _build_cards(
         self, actor: Actor, index: List[CardPrototypeIndexEntry]
     ) -> Tuple[List[Card], bool]:
-        """两阶段组建：怪物自选原型 → card_common 引擎设计；返回 (牌列表, 是否回退)。
+        """两阶段组建：怪物自选原型 → 卡牌设计世界实体设计；返回 (牌列表, 是否回退)。
 
-        两阶段都以怪物自己的 system prompt 作为唯一且临时的上下文。
+        两阶段都用「世界.卡牌设计」作为宿主，上下文 = 世界契约（system）+ 怪物自己的
+        system prompt（任务数据块），会话结束不留痕。
         """
         if not index:
             logger.warning(
@@ -211,11 +211,12 @@ class AssembleDungeonDeckSystem(ReactiveProcessor):
             )
             return make_default_deck_cards(actor.name), True
 
-        # 阶段一：选型。怪物自己的 system prompt 作为唯一上下文，结束后丢弃。
-        selection = await run_card_selection_session(
-            actor.name,
-            index,
-            [SystemMessage(content=actor.system_message)],
+        # 阶段一：选型。上下文口径见 card_common 的 actor 上下文入口，结束后丢弃。
+        selection = await select_prototypes_for_actor(
+            self._game,
+            actor_name=actor.name,
+            actor_system_prompt=actor.system_message,
+            index=index,
             size=DECK_SIZE,
             prompt=_build_deck_select_prompt(),
             max_rounds=12,
@@ -237,11 +238,12 @@ class AssembleDungeonDeckSystem(ReactiveProcessor):
                 return make_default_deck_cards(actor.name), True
             candidates.append(candidate)
 
-        # 阶段二：设计。同样以怪物自己的 system prompt 作为唯一临时上下文。
-        outcome = await run_card_design_session(
-            actor.name,
-            candidates,
-            [SystemMessage(content=actor.system_message)],
+        # 阶段二：设计。上下文口径同选型。
+        outcome = await design_cards_for_actor(
+            self._game,
+            actor_name=actor.name,
+            actor_system_prompt=actor.system_message,
+            candidates=candidates,
             max_rounds=16,
         )
         if not outcome.ok or outcome.designed != DECK_SIZE:

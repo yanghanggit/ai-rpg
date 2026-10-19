@@ -22,8 +22,9 @@ from ..pgsql import CardPrototypeIndexEntry, list_card_prototype_index
 from ..utils import batch_run_boolean_tasks
 from .card_common import (
     Candidate,
+    design_cards_for_actor,
     materialize_candidate,
-    run_card_design_session,
+    read_actor_system_prompt,
 )
 from .card_pile_common import PILE_SPOILS, format_card_names, record_pile_change
 
@@ -83,14 +84,17 @@ class GenerateSpoilsActionSystem(ReactiveProcessor):
                 return
             materialized.append((entity, candidates))
 
-        # 第二步：并发跑卡牌设计会话（LLM 设计失败不阻断发奖，只影响设计）
+        # 第二步：并发跑卡牌设计会话（LLM 设计失败不阻断发奖，只影响设计）。
+        # 上下文 = 卡牌设计世界实体的契约 + 该角色自己的 system prompt；会话不写入角色记忆，
+        # 因此在战利品阶段，角色除「pick」之外并不知道这些卡是怎么来的。
         tasks: List[Tuple[str, Coroutine[Any, Any, Any]]] = [
             (
                 entity.name,
-                run_card_design_session(
-                    name=entity.name,
+                design_cards_for_actor(
+                    self._game,
+                    actor_name=entity.name,
+                    actor_system_prompt=read_actor_system_prompt(self._game, entity),
                     candidates=candidates,
-                    messages=self._game.get_agent_memory(entity).messages,
                     max_rounds=6,
                 ),
             )

@@ -6,6 +6,7 @@
 2. `agent_loop` 等直写路径绕过 `add_*` 校验，由**存档前的兜底闸门**拦住未登记标记。
 """
 
+import json
 from pathlib import Path
 from typing import Any, cast
 
@@ -18,6 +19,11 @@ from ai_rpg.models import (
     AgentMemory,
     AppearanceComponent,
     Card,
+    CharacterStats,
+    CharacterStatsComponent,
+    DiscardPileComponent,
+    DrawCardsAction,
+    DrawPileComponent,
     HandComponent,
     HumanMessage,
     MonsterComponent,
@@ -26,6 +32,7 @@ from ai_rpg.models import (
     Round,
     TargetType,
 )
+from ai_rpg.systems.draw_cards_action_system import DrawCardsActionSystem
 from ai_rpg.systems.transfer_cards_action_system import TransferCardsActionSystem
 
 
@@ -178,4 +185,55 @@ def test_agent_memory_direct_write_is_checked_at_save(
     with pytest.raises(AssertionError, match="未登记的记忆标记"):
         world_persistence.save_world(
             world, sample_game._player_session, tmp_path, tmp_path / "snap"
+        )
+
+
+#######################################################################################################
+class TestPileChangeWritesRealMemory:
+    """牌堆变更只写给容器主人：真实 DBGGame 上跑抽牌，检查正文与标记。"""
+
+    async def test_draw_writes_self_only_pile_change(
+        self, sample_game: Any, tmp_path: Path
+    ) -> None:
+        game = sample_game
+        _arm_combat(game)
+        actor = _make_actor(game, "角色.无名")
+        actor.add(
+            CharacterStatsComponent,
+            actor.name,
+            CharacterStats(hp=10, max_hp=10),
+        )
+        actor.add(DrawPileComponent, actor.name, [], [])
+        actor.add(DiscardPileComponent, actor.name, [])
+        actor.remove(HandComponent)
+        actor.get(DrawPileComponent).cards.extend(
+            _make_card(name=f"抽到的{index}") for index in range(5)
+        )
+        actor.add(DrawCardsAction, actor.name)
+
+        await DrawCardsActionSystem(game).react([actor])
+
+        # 手牌被填满，抽牌堆按 3 张扣减
+        assert len(actor.get(HandComponent).cards) == 3
+        assert len(actor.get(DrawPileComponent).cards) == 2
+
+        messages = [
+            m
+            for m in game.get_agent_memory(actor).messages
+            if getattr(m, "card_pile_change", None) is not None
+        ]
+        assert len(messages) == 1
+        content = messages[0].content
+        assert content.splitlines()[0] == "# 第 1 回合 · 抽牌"
+        assert "新抽 3 张" in content
+        # 零变动的容器不进标记
+        assert json.loads(messages[0].card_pile_change) == {
+            "change": "draw_cards",
+            "deltas": {"draw_pile": -3, "hand": 3},
+        }
+
+        # 标记能过存档闸门
+        save_dir = tmp_path / "snap"
+        assert world_persistence.save_world(
+            game._world, game._player_session, tmp_path, save_dir
         )

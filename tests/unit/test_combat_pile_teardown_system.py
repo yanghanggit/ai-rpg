@@ -1,5 +1,6 @@
 """CombatPileTeardownSystem 单元测试。"""
 
+import json
 from unittest.mock import MagicMock
 
 import pytest
@@ -188,6 +189,15 @@ class TestCombatPileTeardownSystemPileRemoval:
         deck = entity.get(DeckComponent)
         assert len(deck.cards) == 0  # 原始牌库初始为空，战斗副本不应写回
 
+        # 子堆整体消失也要告诉主人：临时副本丢弃、原始牌库还在
+        message = mock_game.add_human_message.call_args.kwargs["human_message"]
+        assert "# 战斗结束 · 牌堆复原" in message.content
+        assert "临时副本已丢弃（共 2 张）" in message.content
+        assert json.loads(message.card_pile_change) == {
+            "change": "pile_teardown",
+            "deltas": {"draw_pile": -1, "discard_pile": -1},
+        }
+
     @pytest.mark.asyncio
     async def test_multiple_entities_all_piles_removed(
         self, context: Context, mock_game: MagicMock, system: CombatPileTeardownSystem
@@ -204,3 +214,6 @@ class TestCombatPileTeardownSystemPileRemoval:
             assert not entity.has(DiscardPileComponent)
             assert not entity.has(ExhaustPileComponent)
             assert entity.has(DeckComponent)
+
+        # 空子堆不写记忆（没有净变动就没有记录）
+        mock_game.add_human_message.assert_not_called()

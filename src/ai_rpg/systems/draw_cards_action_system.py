@@ -1,7 +1,7 @@
 """抽牌系统：回合的唯一入口——先开新回合，再全员从抽牌堆补满手牌。"""
 
 import random
-from typing import Dict, Final, List, final, override
+from typing import Dict, Final, List, Tuple, final, override
 
 from loguru import logger
 
@@ -17,6 +17,14 @@ from ..models import (
     DrawPileComponent,
     HandComponent,
     PartyMemberComponent,
+)
+from .card_pile_common import (
+    PILE_DISCARD,
+    PILE_DRAW,
+    PILE_HAND,
+    PILE_RETAINED,
+    format_card_names,
+    record_pile_change,
 )
 
 
@@ -52,8 +60,8 @@ class DrawCardsActionSystem(ReactiveProcessor):
         )
 
     ####################################################################################################################################
-    def _draw_from_pile(self, entity: Entity, n: int) -> List[Card]:
-        """从 DrawPile 抽取 n 张牌（FIFO）。"""
+    def _draw_from_pile(self, entity: Entity, n: int) -> Tuple[List[Card], int]:
+        """从 DrawPile 抽取 n 张牌（FIFO）；返回抽到的牌与途中洗回的弃牌张数。"""
 
         draw_pile = entity.get(DrawPileComponent)
         discard_pile = entity.get(DiscardPileComponent)
@@ -62,6 +70,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
         ), "DrawPileComponent 或 DiscardPileComponent 不存在"
 
         drawn: List[Card] = []
+        reshuffled = 0
         while len(drawn) < n:
 
             if draw_pile.cards:
@@ -73,6 +82,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
                 # DrawPile 耗尽：将 DiscardPile 洗牌补入
                 random.shuffle(discard_pile.cards)
+                reshuffled += len(discard_pile.cards)
                 draw_pile.cards.extend(discard_pile.cards)
                 discard_pile.cards.clear()
                 logger.debug(
@@ -82,7 +92,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 logger.warning(f"[{entity.name}] DrawPile 与 DiscardPile 均空")
                 break
 
-        return drawn
+        return drawn, reshuffled
 
     ####################################################################################################################################
     def _take_retained_cards(self, entity: Entity) -> List[Card]:
@@ -93,6 +103,44 @@ class DrawCardsActionSystem(ReactiveProcessor):
         retained = list(draw_pile.retained_cards)
         draw_pile.retained_cards.clear()
         return retained
+
+    ####################################################################################################################################
+    def _record_draw(
+        self,
+        entity: Entity,
+        *,
+        round_number: int,
+        retained: List[Card],
+        drawn: List[Card],
+        reshuffled: int,
+        deltas: Dict[str, int],
+        hand_size: int,
+        draw_size: int,
+        discard_size: int,
+    ) -> None:
+        """抽牌是私有动作：只把这次容器变化告诉主人。"""
+        lines: List[str] = []
+        if reshuffled:
+            lines.append(f"抽牌堆耗尽，弃牌堆 {reshuffled} 张洗回抽牌堆后继续抽。")
+        if retained:
+            lines.append(
+                f"保留牌 {len(retained)} 张回到手牌：{format_card_names(retained)}"
+            )
+        if drawn:
+            lines.append(f"新抽 {len(drawn)} 张：{format_card_names(drawn)}")
+        else:
+            lines.append("牌堆已空，这次没有抽到牌。")
+        lines.append(
+            f"手牌 {hand_size} 张（抽牌堆 {draw_size} / 弃牌堆 {discard_size}）。"
+        )
+        record_pile_change(
+            self._game,
+            entity,
+            change="draw_cards",
+            title=f"第 {round_number} 回合 · 抽牌",
+            lines=lines,
+            deltas=deltas,
+        )
 
     ####################################################################################################################################
     def _draw_target_count(self, entity: Entity) -> int:
@@ -124,6 +172,11 @@ class DrawCardsActionSystem(ReactiveProcessor):
         # retain 牌不占用名额，只是原样留在手牌，新抽牌照常尽量抓满目标张数。
         for entity in entities:
 
+            draw_pile = entity.get(DrawPileComponent)
+            discard_pile = entity.get(DiscardPileComponent)
+            draw_before = len(draw_pile.cards)
+            discard_before = len(discard_pile.cards)
+
             # 本次尝试抓取的目标张数
             draw_target_count = self._draw_target_count(entity)
 
@@ -131,7 +184,7 @@ class DrawCardsActionSystem(ReactiveProcessor):
             retained = self._take_retained_cards(entity)
 
             # 在 retain 牌之外，尽量抓满目标张数（牌堆不足则有多少抓多少）
-            drawn = self._draw_from_pile(entity, draw_target_count)
+            drawn, reshuffled = self._draw_from_pile(entity, draw_target_count)
 
             # 合并 retain 牌与新抽牌为新的手牌（总数可超过目标张数）
             new_hand = retained + drawn
@@ -141,6 +194,23 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 f"（目标 {draw_target_count} 张）：{[c.name for c in drawn]} → 手牌共 {len(new_hand)} 张"
             )
             entity.replace(HandComponent, entity.name, new_hand)
+
+            self._record_draw(
+                entity,
+                round_number=len(self._game.current_dungeon_combat_room.combat.rounds),
+                retained=retained,
+                drawn=drawn,
+                reshuffled=reshuffled,
+                deltas={
+                    PILE_DRAW: len(draw_pile.cards) - draw_before,
+                    PILE_DISCARD: len(discard_pile.cards) - discard_before,
+                    PILE_RETAINED: -len(retained),
+                    PILE_HAND: len(new_hand),
+                },
+                hand_size=len(new_hand),
+                draw_size=len(draw_pile.cards),
+                discard_size=len(discard_pile.cards),
+            )
 
         # 标记本回合 DRAW 阶段已完成
         last_round.draw_completed = True

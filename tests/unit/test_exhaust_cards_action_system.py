@@ -1,5 +1,6 @@
 """ExhaustCardsActionSystem 单元测试。"""
 
+import json
 from unittest.mock import MagicMock
 
 import pytest
@@ -90,9 +91,10 @@ class TestExhaustCardsActionSystemSkip:
 
         await system.react([entity])
 
-        # 两个 pile 均不应变化
+        # 两个 pile 均不应变化，也不写记忆
         assert len(entity.get(DiscardPileComponent).cards) == 1
         assert len(entity.get(ExhaustPileComponent).cards) == 0
+        mock_game.add_human_message.assert_not_called()
 
 
 class TestExhaustCardsActionSystemExhaustTrue:
@@ -114,6 +116,15 @@ class TestExhaustCardsActionSystemExhaustTrue:
 
         assert card not in entity.get(DiscardPileComponent).cards
         assert card in entity.get(ExhaustPileComponent).cards
+
+        # 容器变了就给主人留一条说明（只写给本人）
+        message = mock_game.add_human_message.call_args.kwargs["human_message"]
+        assert "# 卡牌被消耗" in message.content
+        assert "本场战斗不会再回到牌库" in message.content
+        assert json.loads(message.card_pile_change) == {
+            "change": "exhaust_card",
+            "deltas": {"discard_pile": -1, "exhaust_pile": 1},
+        }
 
     @pytest.mark.asyncio
     async def test_exhaust_pile_accumulates(

@@ -13,6 +13,12 @@ from ..models import (
     HandComponent,
     PassTurnAction,
 )
+from .card_pile_common import (
+    PILE_EXHAUST,
+    PILE_HAND,
+    format_card_names,
+    record_pile_change,
+)
 
 
 #######################################################################################################################################
@@ -60,6 +66,23 @@ class ExhaustEtherealCardsSystem(ReactiveProcessor):
             # 将手牌中所有虚无牌移入 ExhaustPile
             hand_comp.cards = [c for c in hand_comp.cards if not c.ethereal]
             exhaust_pile.cards.extend(ethereal_cards)
+
+            # 虚无牌在回合末自行消散：主人必须知道哪些牌没了、去了哪里
+            record_pile_change(
+                self._game,
+                entity,
+                change="exhaust_ethereal",
+                title="虚无牌消散",
+                lines=[
+                    f"回合结束时仍在手牌的 {format_card_names(ethereal_cards)}"
+                    "消散了，进入消耗堆（本场不再回来）。",
+                    f"手牌 {len(hand_comp.cards)} 张，消耗堆 {len(exhaust_pile.cards)} 张。",
+                ],
+                deltas={
+                    PILE_HAND: -len(ethereal_cards),
+                    PILE_EXHAUST: len(ethereal_cards),
+                },
+            )
 
             logger.debug(
                 f"  [{entity.name}] pass turn 自动消耗 {len(ethereal_cards)} 张虚无牌："

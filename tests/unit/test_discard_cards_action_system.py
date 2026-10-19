@@ -1,5 +1,6 @@
 """DiscardCardsActionSystem 单元测试。"""
 
+import json
 from unittest.mock import MagicMock
 
 import pytest
@@ -128,6 +129,36 @@ class TestDiscardCardsActionSystemOwnCard:
         await system.react([entity])
 
         assert card in entity.get(DiscardPileComponent).cards
+
+        # 事实层：哪张牌进了弃牌堆，只写给本人
+        message = mock_game.add_human_message.call_args.kwargs["human_message"]
+        assert "# 出牌结算 · 弃牌" in message.content
+        assert "「斩击」离开手牌进入弃牌堆" in message.content
+        assert json.loads(message.card_pile_change) == {
+            "change": "play_to_discard",
+            "deltas": {"hand": -1, "discard_pile": 1},
+        }
+
+
+class TestDiscardCardsActionSystemExhaustCard:
+    """消耗牌：照常移入弃牌堆（数据留给消耗系统处理），但不在弃牌堆这条上写记录。"""
+
+    @pytest.mark.asyncio
+    async def test_exhaust_card_moves_without_discard_record(
+        self,
+        context: Context,
+        mock_game: MagicMock,
+        system: DiscardCardsActionSystem,
+    ) -> None:
+        entity = _make_entity(context, "英雄")
+        card = _make_card("终焉之击", source="英雄", exhaust=True)
+        entity.get(HandComponent).cards.append(card)
+        entity.add(PlayCardsAction, "英雄", card, [])
+
+        await system.react([entity])
+
+        assert card in entity.get(DiscardPileComponent).cards
+        mock_game.add_human_message.assert_not_called()
 
 
 class TestDiscardCardsActionSystemForeignCard:

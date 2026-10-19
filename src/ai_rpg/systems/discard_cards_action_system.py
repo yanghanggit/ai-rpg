@@ -13,6 +13,7 @@ from ..models import (
     HandComponent,
     PlayCardsAction,
 )
+from .card_pile_common import PILE_DISCARD, PILE_HAND, record_pile_change
 
 
 #######################################################################################################################################
@@ -59,6 +60,26 @@ class DiscardCardsActionSystem(ReactiveProcessor):
             hand_comp.cards = [c for c in hand_comp.cards if c is not played_card]
 
             discard_pile.cards.append(played_card)
+
+            # 出牌是决策，牌现在躺在哪是事实：事实由本系统记录。
+            # 消耗牌的去向由 ExhaustCardsActionSystem 记录（它随后把这张牌移走），
+            # 这里也跟着写会变成「先进弃牌堆、再进消耗堆」的自相矛盾记录。
+            if not played_card.exhaust:
+                record_pile_change(
+                    self._game,
+                    entity,
+                    change="play_to_discard",
+                    title="出牌结算 · 弃牌",
+                    lines=[
+                        f"「{played_card.name}」离开手牌进入弃牌堆。",
+                        f"手牌 {len(hand_comp.cards)} 张，"
+                        f"弃牌堆 {len(discard_pile.cards)} 张。",
+                    ],
+                    deltas={
+                        PILE_HAND: len(hand_comp.cards) - before_count,
+                        PILE_DISCARD: 1,
+                    },
+                )
 
             logger.debug(
                 f"  [{entity.name}] 手牌 {before_count} → {len(hand_comp.cards)}，"

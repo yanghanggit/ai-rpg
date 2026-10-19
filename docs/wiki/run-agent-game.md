@@ -80,7 +80,7 @@ AI 代理无需感知内部游戏对象，只需根据当前存档的模式选�
 
 记忆条目除正文外可带结构化标记，用于区分“谁写入的、属于哪一类”；词表以 `models/memory_tags.py` 为唯一来源，此处不复制。两道闸门：写入时校验，以及存档落盘前对全部记忆兜底校验（覆盖工具循环直写路径）——未登记的标记直接失败，不会静默丢失。查询时按标记过滤看「哪一类记录」，按关键词过滤看「正文里提到了什么」；广播类消息带事件类型与广播场景，私发只带事件类型，据此区分「全场景广播」与「只写给我」。
 
-牌堆之间的**静默流转**（抽牌、出牌归堆、回合末清手牌、retain 归还、虚无牌消耗、战斗结束拆除子堆）不写 LLM 记忆，`.chat_dumps` 因此看不到它们；要回答「这次动作为谁写了记忆」「哪条堆变了多少」，必须两侧一起对账：`memories/{agent}.jsonl`（记忆）与 `entities/{agent}.json`（`Deck` / `DrawPile`（含 `retained_cards`）/ `Hand` / `Discard` / `Exhaust` / `Spoils`）。`scripts/inspect_memory.py` 就是这两个目录的只读视图，不依赖游戏运行时（纯 stdlib，不需要 `.env`）。
+牌堆之间的流转（抽牌、回合末清手牌与 retain 归还、消耗、虚无消散、洗牌、子堆拆除）会对**容器主人**各写一条说明（见[卡牌数据模型（Card）](card.md) 的「牌堆变更对谁可见」），`.chat_dumps` 里能看到；要回答「这次动作为谁写了记忆」「哪条堆变了多少」，仍建议两侧一起对账：`memories/{agent}.jsonl`（记忆）与 `entities/{agent}.json`（`Deck` / `DrawPile`（含 `retained_cards`）/ `Hand` / `Discard` / `Exhaust` / `Spoils`）。`scripts/inspect_memory.py` 就是这两个目录的只读视图，不依赖游戏运行时（纯 stdlib，不需要 `.env`）。
 
 ```bash
 # 单个 agent：完整记忆 + 当前各堆内容

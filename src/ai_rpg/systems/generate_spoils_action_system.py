@@ -25,6 +25,7 @@ from .card_common import (
     materialize_candidate,
     run_card_design_session,
 )
+from .card_pile_common import PILE_SPOILS, format_card_names, record_pile_change
 
 #######################################################################################################################################
 SPOILS_CARD_COUNT: Final[int] = 3  # 候选卡数量（3 选 1），未来可调
@@ -108,9 +109,29 @@ class GenerateSpoilsActionSystem(ReactiveProcessor):
 
         # 第三步：装入 Spoils（replace 覆盖旧内容；claimed_cards 为空队列）
         for (entity, candidates), ok in zip(materialized, outcomes):
-            entity.replace(
-                SpoilsComponent, entity.name, [c.card for c in candidates], []
+            spoils_before = (
+                len(entity.get(SpoilsComponent).candidate_cards)
+                if entity.has(SpoilsComponent)
+                else 0
             )
+            spoils_cards = [c.card for c in candidates]
+            entity.replace(SpoilsComponent, entity.name, spoils_cards, [])
+
+            # 待领取队列变了：让主人知道现在有哪些牌可以领
+            if len(spoils_cards) != spoils_before:
+                record_pile_change(
+                    self._game,
+                    entity,
+                    change="spoils_generate",
+                    title="待领取的奖励",
+                    lines=[
+                        f"待领取队列现有 {len(spoils_cards)} 张："
+                        f"{format_card_names(spoils_cards)}",
+                        "挑一张收下，它会进入你的牌库。",
+                    ],
+                    deltas={PILE_SPOILS: len(spoils_cards) - spoils_before},
+                )
+
             logger.info(
                 f"[GenerateSpoilsActionSystem] {entity.name}: 候选卡 {len(candidates)} 张"
                 f"（agent_loop 成功={ok}）"

@@ -1,5 +1,6 @@
 """ExhaustEtherealCardsSystem 单元测试。"""
 
+import json
 from unittest.mock import MagicMock
 
 import pytest
@@ -90,6 +91,7 @@ class TestExhaustEtherealCardsSystemSkip:
         await system.react([entity])
 
         assert card in entity.get(HandComponent).cards
+        mock_game.add_human_message.assert_not_called()
         assert len(entity.get(ExhaustPileComponent).cards) == 0
 
 
@@ -111,6 +113,14 @@ class TestExhaustEtherealCardsSystemEtherealTrue:
 
         assert card not in entity.get(HandComponent).cards
         assert card in entity.get(ExhaustPileComponent).cards
+
+        message = mock_game.add_human_message.call_args.kwargs["human_message"]
+        assert "# 虚无牌消散" in message.content
+        assert "「虚无斩」" in message.content
+        assert json.loads(message.card_pile_change) == {
+            "change": "exhaust_ethereal",
+            "deltas": {"hand": -1, "exhaust_pile": 1},
+        }
 
     @pytest.mark.asyncio
     async def test_exhaust_pile_accumulates(

@@ -7,6 +7,7 @@ from loguru import logger
 from ..entitas import ExecuteProcessor
 from ..game.dbg_combat_processor import clear_round_state
 from ..game.dbg_game import DBGGame
+from .card_pile_common import record_round_end_discard
 
 
 ###############################################################################################################################################
@@ -38,4 +39,4 @@ class CombatRoundCleanupSystem(ExecuteProcessor):
             return
 
         logger.debug("清除旧回合手牌状态")
-        clear_round_state(self._game)
+        record_round_end_discard(self._game, clear_round_state(self._game))

@@ -13,6 +13,7 @@ from ..models import (
     ExhaustPileComponent,
     PlayCardsAction,
 )
+from .card_pile_common import PILE_DISCARD, PILE_EXHAUST, record_pile_change
 
 
 #######################################################################################################################################
@@ -73,6 +74,19 @@ class ExhaustCardsActionSystem(ReactiveProcessor):
                     c for c in discard_pile.cards if c.uuid != played_card.uuid
                 ]
                 exhaust_pile.cards.append(card_to_exhaust)
+
+                # 消耗是持久后果（本场不再回来），且不出现在任何其他记录里
+                record_pile_change(
+                    self._game,
+                    entity,
+                    change="exhaust_card",
+                    title="卡牌被消耗",
+                    lines=[
+                        f"「{played_card.name}」进入消耗堆：本场战斗不会再回到牌库。",
+                        f"消耗堆 {len(exhaust_pile.cards)} 张。",
+                    ],
+                    deltas={PILE_DISCARD: -1, PILE_EXHAUST: 1},
+                )
                 logger.debug(
                     f"  [{entity.name}] 消耗牌 [{played_card.name}] 已从 DiscardPile 移入 ExhaustPile"
                     f"（ExhaustPile 累计 {len(exhaust_pile.cards)} 张）"

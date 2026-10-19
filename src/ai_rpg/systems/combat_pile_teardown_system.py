@@ -15,6 +15,13 @@ from ..models import (
     ExhaustPileComponent,
     InventoryComponent,
 )
+from .card_pile_common import (
+    PILE_DISCARD,
+    PILE_DRAW,
+    PILE_EXHAUST,
+    PILE_RETAINED,
+    record_pile_change,
+)
 
 
 #######################################################################################################################################
@@ -87,12 +94,11 @@ class CombatPileTeardownSystem(ExecuteProcessor):
             discard_pile = entity.get(DiscardPileComponent)
             exhaust_pile = entity.get(ExhaustPileComponent)
 
-            total = (
-                len(draw_pile.cards)
-                + len(draw_pile.retained_cards)
-                + len(discard_pile.cards)
-                + len(exhaust_pile.cards)
-            )
+            draw_count = len(draw_pile.cards)
+            retained_count = len(draw_pile.retained_cards)
+            discard_count = len(discard_pile.cards)
+            exhaust_count = len(exhaust_pile.cards)
+            total = draw_count + retained_count + discard_count + exhaust_count
 
             # 清空三个战斗子堆（含 DrawPile 的 retain 保留队列；副本直接丢弃，原始牌在 DeckComponent 中完整保留）
             draw_pile.cards.clear()
@@ -106,6 +112,28 @@ class CombatPileTeardownSystem(ExecuteProcessor):
             entity.remove(ExhaustPileComponent)
 
             deck_comp = entity.get(DeckComponent)
+
+            # 战斗子堆整个消失：告诉主人临时副本已丢弃、原始牌库还在
+            if total:
+                record_pile_change(
+                    self._game,
+                    entity,
+                    change="pile_teardown",
+                    title="战斗结束 · 牌堆复原",
+                    lines=[
+                        f"抽牌堆 {draw_count} 张、保留队列 {retained_count} 张、"
+                        f"弃牌堆 {discard_count} 张、消耗堆 {exhaust_count} 张的"
+                        f"临时副本已丢弃（共 {total} 张）。",
+                        f"你的牌库恢复为 {len(deck_comp.cards)} 张原始卡牌。",
+                    ],
+                    deltas={
+                        PILE_DRAW: -draw_count,
+                        PILE_RETAINED: -retained_count,
+                        PILE_DISCARD: -discard_count,
+                        PILE_EXHAUST: -exhaust_count,
+                    },
+                )
+
             logger.debug(
                 f"[{entity.name}] 战斗子堆已清理（丢弃 {total} 张副本）"
                 f"，DeckComponent 原始牌库保留 {len(deck_comp.cards)} 张"

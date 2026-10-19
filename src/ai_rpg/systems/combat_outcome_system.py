@@ -18,6 +18,7 @@ from ..models import (
     PartyMemberComponent,
 )
 from ..utils import prompt_builder
+from .card_pile_common import record_round_end_discard
 
 
 ########################################################################################################################################################################
@@ -62,7 +63,7 @@ class CombatOutcomeSystem(ExecuteProcessor):
         self._game.current_dungeon_combat_room.combat.complete_combat(combat_result)
 
         # 根据判定结果清理回合状态并广播战斗结果
-        clear_round_state(self._game)
+        record_round_end_discard(self._game, clear_round_state(self._game))
 
         # 广播战斗结果给队伍成员
         self._notify_combat_result(combat_result)

@@ -46,6 +46,7 @@ MEMORY_TAGS: Final[FrozenSet[str]] = frozenset(
         "home_plan",  # 家园行动计划问答
         # ---- 物品与状态 ----
         "spoils_pick",  # 从战利品中领取卡牌（值 = 卡牌名）
+        "card_pile_change",  # 牌堆变更说明（值 = {change, deltas}，只写给容器主人）
         "appearance_update",  # 外观自我状态说明（值 = "self"）
         "invalid_target",  # 交互目标不存在
         # ---- 记忆自身维护 ----

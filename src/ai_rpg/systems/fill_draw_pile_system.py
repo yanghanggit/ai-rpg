@@ -19,6 +19,7 @@ from ..models import (
     FillDrawPileAction,
     apply_stats_to_card,
 )
+from .card_pile_common import PILE_DRAW, record_pile_change
 
 
 #######################################################################################################################################
@@ -85,7 +86,22 @@ class FillDrawPileSystem(ReactiveProcessor):
 
             adjusted_cards.append(copied)
 
+        deck_size = len(deck_comp.cards)
+        draw_before = len(draw_pile.cards)
         draw_pile.cards = adjusted_cards
+
+        # 抽牌堆被重建：把「牌库 → 抽牌堆」的搬家告诉主人
+        record_pile_change(
+            self._game,
+            entity,
+            change="fill_draw_pile",
+            title="牌库已洗入抽牌堆",
+            lines=[
+                f"牌库 {deck_size} 张洗牌后进入抽牌堆（你的属性已叠加到副本上）。",
+                f"抽牌堆 {len(adjusted_cards)} 张，牌库 {deck_size} 张。",
+            ],
+            deltas={PILE_DRAW: len(adjusted_cards) - draw_before},
+        )
 
         logger.debug(
             f"[{entity.name}] FillDrawPile: {len(adjusted_cards)} 张牌已洗牌"

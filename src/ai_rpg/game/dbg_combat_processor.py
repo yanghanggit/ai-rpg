@@ -8,6 +8,7 @@ from loguru import logger
 from ..entitas import Entity, Matcher
 from ..models import (
     ActorComponent,
+    Card,
     CharacterStats,
     CharacterStatsComponent,
     DeathComponent,
@@ -282,8 +283,13 @@ def resolve_targets(
 
 
 #######################################################################################################################################
-def clear_round_state(game: DBGGame) -> None:
-    """清除所有角色实体的每回合可变状态（手牌归入弃牌堆 + 回合动态属性）。"""
+def clear_round_state(game: DBGGame) -> List[Tuple[Entity, List[Card], List[Card]]]:
+    """清除所有角色实体的每回合可变状态（手牌归入弃牌堆 + 回合动态属性）。
+
+    返回每张手牌的去向 `(entity, 进弃牌堆, 进保留队列)`，供调用方写牌堆变更记忆。
+    """
+
+    settlements: List[Tuple[Entity, List[Card], List[Card]]] = []
 
     # 清除所有角色实体的手牌组件（STS 标准：回合末未出牌进弃牌堆）
     for entity in game.get_group(
@@ -292,6 +298,8 @@ def clear_round_state(game: DBGGame) -> None:
 
         hand_comp = entity.get(HandComponent)
         discard_pile_comp = entity.get(DiscardPileComponent)
+        discard_cards: List[Card] = []
+        retain_cards: List[Card] = []
 
         if hand_comp.cards:
 
@@ -318,6 +326,8 @@ def clear_round_state(game: DBGGame) -> None:
         else:
             logger.debug(f"clear hands: {entity.name}")
 
+        settlements.append((entity, discard_cards, retain_cards))
+
         # 无论是否有手牌，回合末统一移除 HandComponent
         entity.remove(HandComponent)
 
@@ -325,6 +335,8 @@ def clear_round_state(game: DBGGame) -> None:
     for entity in game.get_group(Matcher(RoundStatsComponent)).entities.copy():
         logger.debug(f"clear round stats: {entity.name}")
         entity.remove(RoundStatsComponent)
+
+    return settlements
 
 
 ###################################################################################################################################################################

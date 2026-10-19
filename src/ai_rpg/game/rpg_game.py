@@ -94,19 +94,29 @@ class RPGGame(BaseGame, RPGAgentMemory, RPGEntityManager, RPGGamePipelineManager
         agent_event: AnyAgentEvent,
         exclude_entities: Set[Entity] = set(),
     ) -> None:
-        """向场景中的所有存活角色和场景实体广播事件"""
+        """向场景内所有角色与场景实体广播事件。
+
+        actor 与 stage 不可分离，找不到场景是数据损坏，故断言而非降级。
+        消息除内容外盖两个标记，供记忆审计区分“广播”与“私有说明”：
+        `agent_event`（事件类型）、`broadcast_stage`（广播所属场景）。
+        """
         stage_entity = self.resolve_stage_entity(entity)
-        assert stage_entity is not None, "stage is None, actor无所在场景是有问题的"
-        if stage_entity is None:
-            return
+        assert stage_entity is not None, f"{entity.name} 无所在场景，无法广播"
 
-        need_broadcast_entities = self.get_actors_in_stage(stage_entity)
-        need_broadcast_entities.add(stage_entity)
+        targets = (self.get_actors_in_stage(stage_entity) | {stage_entity}) - (
+            exclude_entities
+        )
+        for target in targets:
+            self.add_human_message(
+                target,
+                HumanMessage(
+                    content=agent_event.message,
+                    agent_event=agent_event.type,
+                    broadcast_stage=stage_entity.name,
+                ),
+            )
 
-        if len(exclude_entities) > 0:
-            need_broadcast_entities = need_broadcast_entities - exclude_entities
-
-        self.notify_entities(need_broadcast_entities, agent_event)
+        self._player_session.add_agent_event(agent_event=agent_event)
 
     ###############################################################################################################################################
     def notify_entities(
@@ -114,13 +124,16 @@ class RPGGame(BaseGame, RPGAgentMemory, RPGEntityManager, RPGGamePipelineManager
         entities: Set[Entity],
         agent_event: AnyAgentEvent,
     ) -> None:
-        """向指定实体集合发送通知，并同步到玩家客户端"""
+        """向指定实体私发事件消息（只盖 `agent_event`，不盖广播范围），并同步到玩家客户端。"""
 
-        # 正常的添加记忆。
         for entity in entities:
-
-            # 向实体添加人类消息，表示它接收到的事件内容。
-            self.add_human_message(entity, HumanMessage(content=agent_event.message))
+            self.add_human_message(
+                entity,
+                HumanMessage(
+                    content=agent_event.message,
+                    agent_event=agent_event.type,
+                ),
+            )
 
         # 最后都要发给客户端。
         self._player_session.add_agent_event(agent_event=agent_event)

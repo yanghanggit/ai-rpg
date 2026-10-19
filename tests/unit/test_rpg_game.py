@@ -22,6 +22,7 @@ from ai_rpg.models import (
     HumanMessage,
     IdentityComponent,
     NoneEvent,
+    SpeakEvent,
     StageComponent,
     SystemMessage,
 )
@@ -226,6 +227,16 @@ class TestNotifyEntities:
         game.notify_entities({actor}, _agent_event("event1"))
         assert len(game._player_session.session_messages) == before + 1
 
+    def test_notify_stamps_event_type_without_broadcast_stage(
+        self, game: Any, actor: Entity
+    ) -> None:
+        """私发消息只盖 agent_event 标记，不盖 broadcast_stage（不是全场景广播）。"""
+        game.notify_entities({actor}, _agent_event("private note"))
+
+        message = game.get_agent_memory(actor).messages[-1]
+        assert message.agent_event == "none"
+        assert not hasattr(message, "broadcast_stage")
+
     def test_notify_empty_set_still_sends_to_player(self, game: Any) -> None:
         """实体集合为空时，玩家仍收到事件（session_messages 增加）。"""
         before = len(game._player_session.session_messages)
@@ -282,6 +293,25 @@ class TestBroadcastToStage:
 
         assert game.get_agent_memory(stage).messages[-1].content == "empty stage msg"
         assert len(game.get_agent_memory(unrelated_actor).messages) == 0
+
+    def test_broadcast_stamps_event_type_and_stage(self, game: Any) -> None:
+        """广播消息盖两个标记：agent_event（事件类型）与 broadcast_stage（广播范围）。"""
+        stage = _make_stage(game, "Stage_4")
+        actor = _make_actor(game, "NPC_6", "Stage_4")
+        event = SpeakEvent(
+            message="喊了一声",
+            actor="NPC_6",
+            stage="Stage_4",
+            target="NPC_6",
+            content="喊了一声",
+        )
+
+        game.broadcast_to_stage(actor, event)
+
+        for entity in (stage, actor):
+            message = game.get_agent_memory(entity).messages[-1]
+            assert message.agent_event == "speak"
+            assert message.broadcast_stage == "Stage_4"
 
     def test_broadcast_asserts_on_entity_without_stage(self, game: Any) -> None:
         """传入没有 StageComponent 也没有 ActorComponent 的实体触发 AssertionError。"""

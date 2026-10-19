@@ -13,7 +13,6 @@ from typing import Dict, List, Optional, Sequence
 from loguru import logger
 from pydantic import BaseModel, Field
 
-from ..deepseek import LOOP_END_ATTR, LOOP_ID_ATTR, ToolDefinition, ToolFunction
 from ..entitas import Entity
 from ..game.dbg_combat_processor import (
     compute_character_hand_block,
@@ -22,6 +21,7 @@ from ..game.dbg_combat_processor import (
 )
 from ..game.dbg_game import DBGGame
 from ..game.rpg_agent_memory import KEEP_ON_COMPACT_ATTR, REPLACED_MESSAGES_ATTR
+from ..llm import LOOP_END_ATTR, LOOP_ID_ATTR, ToolDefinition, ToolFunction
 from ..models import (
     Card,
     ChatMessage,

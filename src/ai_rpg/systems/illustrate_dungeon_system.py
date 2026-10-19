@@ -6,9 +6,10 @@ from typing import Any, Dict, Final, List, Optional, Sequence, final, override
 from loguru import logger
 from pydantic import BaseModel
 
-from ..deepseek import ToolDefinition, ToolFunction, agent_loop
+from ..deepseek import agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
+from ..llm import ToolDefinition, ToolFunction
 from ..models import (
     AssetKey,
     ChatMessage,

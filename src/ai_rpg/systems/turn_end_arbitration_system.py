@@ -6,12 +6,10 @@ from typing import Dict, Final, List, final
 from loguru import logger
 from overrides import override
 
-from ..deepseek import (
-    ToolDefinition,
-    agent_loop,
-)
+from ..deepseek import agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
+from ..llm import ToolDefinition
 from ..models import (
     Card,
     PassTurnAction,

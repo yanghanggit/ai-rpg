@@ -5,7 +5,7 @@ from typing import Dict, Final, List, Optional, final, override
 from loguru import logger
 from pydantic import BaseModel
 
-from ..deepseek import DeepSeekClient, batch_chat
+from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_combat_processor import (
     compute_character_stats,
@@ -15,7 +15,7 @@ from ..game.dbg_combat_processor import (
 )
 from ..game.dbg_game import DBGGame
 from ..game.rpg_agent_memory import REPLACED_MESSAGES_ATTR
-from ..llm import ChatClientProtocol
+from ..llm import ChatClientProtocol, batch_chat
 from ..models import (
     Card,
     CharacterStats,

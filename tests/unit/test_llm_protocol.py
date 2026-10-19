@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import ast
+import importlib
 import inspect
 from pathlib import Path
 from typing import TYPE_CHECKING, List
@@ -75,6 +76,7 @@ def test_protocol_members_are_declared() -> None:
         "context_usage_ratio",
         "input_message",
         "messages",
+        "dump",
         "chat",
     ):
         assert expected in members, f"ChatClientProtocol 缺少成员: {expected}"
@@ -220,3 +222,63 @@ def test_factory_signature_matches_client_init() -> None:
         ), f"参数 {name} 的默认值不一致"
     for name in ("label", "input_message", "messages"):
         assert call_params[name].kind is inspect.Parameter.POSITIONAL_OR_KEYWORD
+
+
+############################################################################################################
+# 绑定层：`ai_rpg.deepseek.agent_loop` 是「抽象循环 + DeepSeek」的组合点
+############################################################################################################
+def test_deepseek_agent_loop_binding_mirrors_llm_signature() -> None:
+    """绑定层与抽象层的签名必须逐字一致。
+
+    绑定层为了保住「参数被 mypy 检查」和「DeepSeekClient 可被 patch」两点，
+    显式重复了参数表；一旦抽象层改参数而绑定层没跟上，这个测试会先失败。
+    """
+    from ai_rpg.deepseek.agent_loop import agent_loop as bound
+    from ai_rpg.llm.agent_loop import agent_loop as abstraction
+
+    base_params = {
+        name: param
+        for name, param in inspect.signature(abstraction).parameters.items()
+        if name != "create_client"
+    }
+    bound_params = inspect.signature(bound).parameters
+
+    assert list(bound_params) == list(base_params), "参数名/顺序不一致"
+    for name, param in base_params.items():
+        assert bound_params[name].kind is param.kind, f"{name}: 参数种类不一致"
+        assert bound_params[name].default == param.default, f"{name}: 默认值不一致"
+        assert bound_params[name].annotation == param.annotation, f"{name}: 注解不一致"
+
+
+############################################################################################################
+def test_deepseek_agent_loop_binding_looks_up_client_at_call_time() -> None:
+    """绑定层必须在调用时查模块全局，测试才能 patch 掉 `DeepSeekClient`。
+
+    （若写成 `functools.partial(_agent_loop, create_client=DeepSeekClient)`，
+    patch 会失效并真的发 HTTP。）
+    """
+    # 注意不能用 `import ai_rpg.deepseek.agent_loop as binding`：
+    # `deepseek/__init__.py` 里的 `agent_loop` 函数会遮蔽同名子模块属性。
+    binding = importlib.import_module("ai_rpg.deepseek.agent_loop")
+    assert getattr(binding, "DeepSeekClient") is DeepSeekClient
+
+    module_file = getattr(binding, "__file__", None)
+    assert module_file is not None
+    tree = ast.parse(Path(module_file).read_text(encoding="utf-8"))
+
+    # 禁止用 partial 预绑定工厂（那样类对象会被 import 时捕获）。
+    partial_calls = [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call)
+        and (
+            (isinstance(node.func, ast.Attribute) and node.func.attr == "partial")
+            or (isinstance(node.func, ast.Name) and node.func.id == "partial")
+        )
+    ]
+    assert not partial_calls, "绑定层不能用 functools.partial 预绑定 create_client"
+
+    # 必须真的把 DeepSeekClient 作为 create_client 传下去。
+    assert "create_client=DeepSeekClient" in Path(module_file).read_text(
+        encoding="utf-8"
+    )

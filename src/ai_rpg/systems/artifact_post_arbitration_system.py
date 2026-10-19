@@ -6,11 +6,7 @@ from typing import Dict, Final, List, Tuple, final
 from loguru import logger
 from overrides import override
 
-from ..deepseek import (
-    ToolDefinition,
-    ToolFunction,
-    agent_loop,
-)
+from ..deepseek import agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_combat_processor import (
     compute_character_stats,
@@ -19,6 +15,7 @@ from ..game.dbg_combat_processor import (
     get_alive_party_members_in_stage,
 )
 from ..game.dbg_game import DBGGame
+from ..llm import ToolDefinition, ToolFunction
 from ..models import (
     Artifact,
     ArtifactPhase,

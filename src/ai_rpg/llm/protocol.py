@@ -120,6 +120,16 @@ class ChatClientProtocol(ChatResponseProtocol, Protocol):
         """本次请求随行的历史消息（只读）。"""
         ...
 
+    @property
+    def dump(self) -> bool:
+        """本次请求成功后是否把完整对话落盘到 `.chat_dumps/`（调试旁路）。
+
+        这是「实例意愿」；是否真的落盘还要通过进程级开关
+        `AI_RPG_CHAT_DUMP_ENABLED`（默认开启，见 `ai_rpg.llm.chat_dump`），
+        两者是 AND 关系。
+        """
+        ...
+
     async def chat(self, client: Optional[httpx.AsyncClient] = None) -> None:
         """发送一次聊天请求。
 
@@ -155,6 +165,7 @@ class ChatClientFactory(Protocol):
         tools: Optional[Sequence[ToolDefinition]] = None,
         tool_choice: Optional[ToolChoice] = None,
         reasoning_effort: Optional[ReasoningEffort] = None,
+        dump: bool = True,
     ) -> ChatClientProtocol:
         """按给定请求配置构造一个待发送的 client。"""
         ...

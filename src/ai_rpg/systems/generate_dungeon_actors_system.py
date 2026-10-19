@@ -6,9 +6,10 @@ from typing import Dict, Final, List, final, override
 from loguru import logger
 from pydantic import BaseModel, Field
 
-from ..deepseek import ToolDefinition, ToolFunction, agent_loop
+from ..deepseek import agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
+from ..llm import ToolDefinition, ToolFunction
 from ..models import (
     DungeonActorDraft,
     DungeonRoomDraft,

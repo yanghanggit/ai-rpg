@@ -9,10 +9,9 @@ from typing import Final, List, final, override
 
 from loguru import logger
 
-from ..deepseek import batch_chat
 from ..entitas import ExecuteProcessor, Matcher
 from ..game.dbg_game import DBGGame
-from ..llm import ChatClientProtocol
+from ..llm import ChatClientProtocol, batch_chat
 from ..models import (
     ActorComponent,
     AppearanceComponent,

@@ -6,10 +6,10 @@ from loguru import logger
 from overrides import override
 from pydantic import BaseModel
 
-from ..deepseek import DeepSeekClient, batch_chat
+from ..deepseek import DeepSeekClient
 from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.dbg_game import DBGGame
-from ..llm import ChatClientProtocol
+from ..llm import ChatClientProtocol, batch_chat
 from ..models import (
     AnyItem,
     AppearanceComponent,

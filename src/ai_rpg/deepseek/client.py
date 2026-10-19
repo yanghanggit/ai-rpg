@@ -32,9 +32,9 @@ import requests
 from dotenv import load_dotenv
 from loguru import logger
 
+from ..llm import chat_dump
 from ..llm.types import ToolCall, ToolDefinition, ToolFunction, Usage
 from ..models import AIMessage, ChatMessage, ToolMessage
-from . import chat_dump
 from .errors import DeepSeekError, ErrorKind
 
 load_dotenv()
@@ -173,8 +173,15 @@ class DeepSeekClient:
         tools: Optional[Sequence[ToolDefinition]] = None,
         tool_choice: Optional[Literal["auto", "none", "required"]] = None,
         reasoning_effort: Optional[Literal["low", "high", "max"]] = None,
+        dump: bool = True,
     ) -> None:
-        """初始化 DeepSeek 直连客户端"""
+        """初始化 DeepSeek 直连客户端
+
+        ``dump`` 控制「请求成功后是否把本轮完整对话落盘到 ``.chat_dumps/``」
+        （调试旁路，默认开启）；需要静默运行（如单测 / 压测）时传 False。
+        这是实例级意愿，进程级还受环境变量 ``AI_RPG_CHAT_DUMP_ENABLED``
+        约束（AND 关系，见 ``ai_rpg.llm.chat_dump``）。
+        """
         assert label != "", "label should not be empty"
         _tools: List[ToolDefinition] = list(tools) if tools else []
         assert (
@@ -210,6 +217,7 @@ class DeepSeekClient:
         self._reasoning_effort: Final[Optional[Literal["low", "high", "max"]]] = (
             reasoning_effort
         )
+        self._dump: Final[bool] = dump
 
         # 输出
         self._response_ai_message: Optional[AIMessage] = None
@@ -234,6 +242,12 @@ class DeepSeekClient:
     def messages(self) -> Sequence[ChatMessage]:
         """本次请求随行的历史消息（只读）；调用方据此确认“带了哪些上下文”。"""
         return self._messages
+
+    ############################################################################################################
+    @property
+    def dump(self) -> bool:
+        """请求成功后是否把本轮完整对话落盘到 `.chat_dumps/`（调试旁路）。"""
+        return self._dump
 
     ################################################################################################################################################################################
     @property
@@ -546,9 +560,8 @@ class DeepSeekClient:
                 )
                 logger.info("=" * 60)
 
-            # 记录完整对话内容以供调试分析
-            if chat_dump.chat_dump_enabled:
-                chat_dump.dump_chat(self)
+            # 记录完整对话内容以供调试分析（dump=False 时 dump_chat 内部直接返回）
+            chat_dump.dump_chat(self)
 
         else:
 

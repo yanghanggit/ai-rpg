@@ -5,12 +5,12 @@ from typing import Dict, Final, List, final
 from loguru import logger
 from overrides import override
 
-from ..deepseek import DeepSeekClient, batch_chat
+from ..deepseek import DeepSeekClient
 from ..entitas import Entity, ExecuteProcessor, Matcher
 from ..game.dbg_combat_processor import get_alive_actors_in_stage
 from ..game.dbg_game import DBGGame
 from ..game.rpg_actor_appearances import get_actor_appearances_in_stage
-from ..llm import ChatClientProtocol
+from ..llm import ChatClientProtocol, batch_chat
 from ..models import (
     EnvironmentComponent,
     HomeComponent,

@@ -13,9 +13,10 @@ from uuid import uuid4
 from loguru import logger
 from overrides import override
 
-from ..deepseek import ToolDefinition, ToolFunction, agent_loop
+from ..deepseek import agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
+from ..llm import ToolDefinition, ToolFunction
 from ..models import (
     ActorComponent,
     Card,

@@ -8,6 +8,7 @@
 """
 
 import asyncio
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import httpx
@@ -62,7 +63,8 @@ def _success_payload(content: str = "hi") -> Dict[str, Any]:
 
 
 def _make_client(name: str = "测试") -> DeepSeekClient:
-    return DeepSeekClient(label=name, input_message="ping", messages=[])
+    # dump=False：本文件多数用例只验证错误模型与响应态，不应在 .chat_dumps/ 留文件
+    return DeepSeekClient(label=name, input_message="ping", messages=[], dump=False)
 
 
 #######################################################################################################################################
@@ -258,3 +260,52 @@ class TestBatchChatConcurrency:
         await batch_chat(clients, max_concurrency=1)
 
         assert tracker["max"] == 1
+
+
+#######################################################################################################################################
+# chat dump 接线：是否落盘由 client 的 dump 参数决定（没有全局开关）
+#######################################################################################################################################
+class TestChatDumpWiring:
+    @pytest.mark.asyncio
+    async def test_successful_chat_dumps_by_default(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr("ai_rpg.llm.chat_dump.CHAT_DUMP_DIR", tmp_path)
+        monkeypatch.delenv("AI_RPG_CHAT_DUMP_ENABLED", raising=False)
+        client = DeepSeekClient(label="测试.落盘", input_message="ping", messages=[])
+
+        http = _FakeHTTPClient(_FakeResponse(200, payload=_success_payload()))
+        await client.chat(client=http)  # type: ignore[arg-type]
+
+        files = list(tmp_path.glob("*.txt"))
+        assert len(files) == 1
+        assert "ping" in files[0].read_text(encoding="utf-8")
+
+    @pytest.mark.asyncio
+    async def test_successful_chat_skips_dump_when_disabled(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr("ai_rpg.llm.chat_dump.CHAT_DUMP_DIR", tmp_path)
+        client = DeepSeekClient(
+            label="测试.静默", input_message="ping", messages=[], dump=False
+        )
+
+        http = _FakeHTTPClient(_FakeResponse(200, payload=_success_payload()))
+        await client.chat(client=http)  # type: ignore[arg-type]
+
+        assert client.response_content == "hi"
+        assert list(tmp_path.glob("*.txt")) == []
+
+    @pytest.mark.asyncio
+    async def test_failed_chat_dumps_nothing(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """失败请求没有可供留痕的完整对话（与旧行为一致：只在成功后落盘）。"""
+        monkeypatch.setattr("ai_rpg.llm.chat_dump.CHAT_DUMP_DIR", tmp_path)
+        client = DeepSeekClient(label="测试.失败", input_message="ping", messages=[])
+
+        http = _FakeHTTPClient(_FakeResponse(500, text="boom"))
+        with pytest.raises(DeepSeekError):
+            await client.chat(client=http)  # type: ignore[arg-type]
+
+        assert list(tmp_path.glob("*.txt")) == []

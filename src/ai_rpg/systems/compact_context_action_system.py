@@ -9,10 +9,10 @@ from typing import Dict, Final, List, final
 from loguru import logger
 from overrides import override
 
-from ..deepseek import DeepSeekClient, batch_chat
+from ..deepseek import DeepSeekClient
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_game import DBGGame
-from ..llm import ChatClientProtocol
+from ..llm import ChatClientProtocol, batch_chat
 from ..models import CompactContextAction, HumanMessage, get_buffer_string
 from .context_compaction_prompt_builders import build_compaction_prompt
 

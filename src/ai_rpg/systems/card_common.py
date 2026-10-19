@@ -27,7 +27,8 @@ from uuid import uuid4
 from loguru import logger
 from pydantic import BaseModel, ConfigDict, Field
 
-from ..deepseek import ToolDefinition, ToolFunction, agent_loop
+from ..deepseek import agent_loop
+from ..llm import ToolDefinition, ToolFunction
 from ..models import (
     DESIGNABLE_AFFIX_FIELDS,
     Card,

@@ -56,6 +56,10 @@
 - 消耗品不单独仲裁：使用消耗品只是把它的内置卡牌物化进手牌（见 `UseConsumableItemActionSystem`），真正的效果结算与其他手牌一样，由场景实体在出牌仲裁中完成。
 - 神器仲裁由场景实体作为仲裁者执行：神器与 `Card` 同级，是场景级战斗修正规则的载体，被 `ReliquaryComponent` 携带、且 `phases` 命中 `ArtifactPhase.POST_ARBITRATION` 的神器，会在出牌仲裁后由所在场景结算；结算过程写入场景持久记忆，并通过广播使场上角色获得记忆。
 
+四种仲裁（出牌 / 回合结束 / 自主运行 / 神器）的上下文处置一致：成功则把整段推理轨迹压成一条总结写入场景记忆，未完成则原样保留轨迹并补一条失败说明、同时在回合日志记一条失败条目。这些记忆只存在于地下城场景实体上，退出副本时随场景实体（经同一出口统一销毁）一并消失。
+
+→ 参见：[上下文窗口管理（Context Window Management）](context-window-management.md)
+
 > 环境快照：`EnvironmentComponent` 仅在初始化时由 `EnvironmentInitializationSystem` 写入一次。战斗中的各仲裁者（场景/神器、持卡人）均**不读不写**该快照；它们只把「发生了什么」写入相关实体记忆，由各自后续推理依上下文维护对环境状态的认知。
 
 → 参见：[卡牌数据模型（Card）](card.md)、[消耗品系统（ConsumableItem）](consumable-item.md)、[神器（Artifact）](artifact.md)

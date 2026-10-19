@@ -14,7 +14,10 @@ from typing import Any, List, cast
 import pytest
 
 from ai_rpg.entitas.entity import Entity
-from ai_rpg.game.rpg_agent_memory import REPLACED_MESSAGES_ATTR
+from ai_rpg.game.rpg_agent_memory import (
+    KEEP_ON_COMPACT_ATTR,
+    REPLACED_MESSAGES_ATTR,
+)
 from ai_rpg.models import AIMessage, HumanMessage, SystemMessage
 
 # ---------------------------------------------------------------------------
@@ -213,7 +216,7 @@ class TestResetAgentMemory:
         assert [m.content for m in msgs[1:]] == ["replacement 1", "replacement 2"]
 
     def test_compact_agent_memory_delegates(self, game: Any, actor: Entity) -> None:
-        """compact_agent_memory is a thin wrapper over reset_agent_memory."""
+        """compact_agent_memory 以「摘要」重制记忆（无保留项时等于 reset 一条）。"""
         self._seed(game, actor)
         summary = HumanMessage(content="compressed summary")
         game.compact_agent_memory(actor, summary)
@@ -223,6 +226,24 @@ class TestResetAgentMemory:
         assert isinstance(msgs[0], SystemMessage)
         assert msgs[1] is summary
         assert game.get_agent_memory(actor).context_usage_ratio == 0.0
+
+    def test_compact_agent_memory_keeps_failure_notices(
+        self, game: Any, actor: Entity
+    ) -> None:
+        """带 KEEP_ON_COMPACT_ATTR 的失败说明必须原样保留在摘要之后。"""
+        self._seed(game, actor)
+        notice = HumanMessage(content="本次结算未完成", **{KEEP_ON_COMPACT_ATTR: True})
+        game.add_human_message(actor, notice)
+        game.add_human_message(actor, HumanMessage(content="普通消息"))
+
+        summary = HumanMessage(content="compressed summary")
+        game.compact_agent_memory(actor, summary)
+
+        msgs = game.get_agent_memory(actor).messages
+        assert isinstance(msgs[0], SystemMessage)
+        assert msgs[1] is summary
+        assert msgs[2] is notice
+        assert len(msgs) == 3
 
 
 # ---------------------------------------------------------------------------

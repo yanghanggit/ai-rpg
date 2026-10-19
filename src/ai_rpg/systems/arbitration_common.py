@@ -1,39 +1,35 @@
-"""仲裁公共层：纯计算、共享结果容器、工具 schema 工厂、handler 核心、跨仲裁 builder 与提示词段落。
+"""仲裁公共层：单点维护「多个仲裁共用同一个 stage 记忆」所要求的同构部分。
 
-三种仲裁（出牌 / 回合结束 / 神器）的同名工具跑在同一个 stage 记忆上，参数结构必须一致；
-本模块把「结构完全一致、差异仅在标签 / 描述文本」的部分收敛到一处，避免 schema 漂移：
-
-- 纯计算：``compute_damage`` / ``compute_effects``（不依赖游戏对象）；
-- ``ArbitrationKind`` 与共享提示词段落：``build_calc_rules_section`` /
-  ``build_on_hit_affix_section`` / ``build_source_section`` /
-  ``build_tool_flow_section``；
-- ``ArbitrationContext``：统一结果容器（各系统按需取用字段）；
-- ``make_*_tool``：工具 schema 工厂（字段结构 + 字段描述统一，工具级 description 由各系统传入）；
-- ``get_entity_stats`` / ``resolve_damage`` / ``resolve_effect`` / ``submit_arbitration``：
-  与同名工具一一对应的 handler 核心（各仲裁的 ``_handle_*`` 薄包装复用它们）；
-- ``pending_hp`` / ``record_segment``：通用 handler 辅助；
-- ``build_stats_update_notification`` / ``build_loop_summary_memory`` /
-  ``build_arbitration_broadcast``：跨仲裁共用的输出 builder。
-
-各仲裁的状态机（触发、实体解析、HP 落库、RoundEntryKind）与 prompt 数据段仍留在各自
-system 文件中。
+四种仲裁（出牌 / 回合结束 / 自主运行 / 神器）的同名工具跑在同一个 stage 记忆上，
+工具 schema、共享提示词段落与记忆写入方式必须一致；差异仅在标签与数据段，
+那些留在各自 system 文件中。本模块只放必须同构的部分，避免 schema 与口径漂移。
 """
 
 import math
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Sequence
 
+from loguru import logger
 from pydantic import BaseModel, Field
 
-from ..deepseek import ToolDefinition, ToolFunction
+from ..deepseek import LOOP_END_ATTR, LOOP_ID_ATTR, ToolDefinition, ToolFunction
 from ..entitas import Entity
 from ..game.dbg_combat_processor import (
     compute_character_hand_block,
     compute_character_stats,
+    set_character_hp,
 )
 from ..game.dbg_game import DBGGame
-from ..models import Card, HandComponent
+from ..game.rpg_agent_memory import KEEP_ON_COMPACT_ATTR, REPLACED_MESSAGES_ATTR
+from ..models import (
+    Card,
+    ChatMessage,
+    CombatArbitrationEvent,
+    HandComponent,
+    HumanMessage,
+    RoundEntryKind,
+)
 from ..utils import prompt_builder
 
 ###########################################################################################################################################
@@ -371,6 +367,60 @@ def build_loop_summary_memory(summary: str, combat_log: str) -> str:
     return f"{summary}\n\n## 数据日志\n{combat_log}"
 
 
+def make_loop_id(
+    messages: Sequence[ChatMessage], kind: str, round_number: int, *labels: str
+) -> str:
+    """生成一次仲裁 loop 的唯一 id：``<kind>:<round>:<labels…>#<序号>``。
+
+    序号 = 记忆中已有 loop id 的个数 + 1（同一次 loop 的起止标记只算一次）。随存档持久化，
+    因此跳进程 / 跳快照也不重号（每条命令是独立进程，进程内计数器会重号）；
+    记忆被压缩重写后会连带丢掉旧 id，序号自然重启。
+    """
+    existing = {
+        loop_id
+        for m in messages
+        if (loop_id := getattr(m, LOOP_ID_ATTR, None)) is not None
+    }
+    return f"{':'.join([kind, str(round_number), *labels])}#{len(existing) + 1}"
+
+
+@prompt_builder
+def build_aborted_loop_notice(loop_id: str, reason: str) -> str:
+    """未完成 loop 的系统说明文案。"""
+    return f"""# 本次结算未完成（loop: {loop_id}）
+
+{reason}
+
+上方过程仅作记录，其中的数值与结论均非既成事实，不得当作已发生的战斗结果引用；本次结算未落库，HP 与格挡实际未发生变化。"""
+
+
+def compress_loop_to_summary(
+    game: DBGGame,
+    entity: Entity,
+    start_index: int,
+    *,
+    summary: str,
+    combat_log: str,
+    loop_id: str,
+) -> None:
+    """把一次 agent_loop 新增的整段记忆压缩为一条「总结 + 数据日志」，并标记 loop 起止
+    （供存档记忆里按 ``loop_id`` 反查）。须在结果落库之后调用。
+    """
+    messages = game.get_agent_memory(entity).messages
+    game.replace_span(
+        entity,
+        start_index,
+        len(messages),
+        [
+            HumanMessage(
+                content=build_loop_summary_memory(summary, combat_log),
+                **{LOOP_ID_ATTR: loop_id, LOOP_END_ATTR: loop_id},
+            )
+        ],
+        dump_attr=REPLACED_MESSAGES_ATTR,
+    )
+
+
 @prompt_builder
 def build_arbitration_broadcast(
     round_number: int, title_label: str, narrative: str, combat_log: str
@@ -390,11 +440,11 @@ def build_arbitration_broadcast(
 ###########################################################################################################################################
 # 仲裁类型与共享提示词段落
 ###########################################################################################################################################
-class ArbitrationKind(StrEnum):
-    """仲裁类型。
+class PromptKind(StrEnum):
+    """共享提示词段落的语境类型。
 
-    出牌仲裁与回合结束仲裁的结算原则完全一致，仅「发起阶段」与对行动者的称谓不同；
-    本枚举用于让共享段落按类型选用正确的称谓（出牌者 / 持有者）。
+    只覆盖需要按语境选词的三类仲裁；神器仲裁没有共享段落（其提示词自成一体），
+    因此不在本枚举内——传错类型在类型检查期即暴露，不会静默用错称谓。
     """
 
     PLAY_CARDS = "play_cards"
@@ -402,10 +452,128 @@ class ArbitrationKind(StrEnum):
     AUTONOMOUS = "autonomous"
 
 
+class RoundKind(StrEnum):
+    """一次仲裁在战斗回合日志中的归类：决定回合条目标记、兜底文案与失败记录。"""
+
+    PLAY_CARDS = "play_cards"
+    TURN_END = "turn_end"
+    AUTONOMOUS = "autonomous"
+    ARTIFACT = "artifact"
+
+
+_ROUND_ENTRY_KIND: Dict[RoundKind, RoundEntryKind] = {
+    RoundKind.PLAY_CARDS: RoundEntryKind.CARDS,
+    RoundKind.TURN_END: RoundEntryKind.CARDS,
+    RoundKind.AUTONOMOUS: RoundEntryKind.AUTONOMOUS,
+    RoundKind.ARTIFACT: RoundEntryKind.ARTIFACT,
+}
+
+_EMPTY_COMBAT_LOG: Dict[RoundKind, str] = {
+    RoundKind.PLAY_CARDS: "本回合无 HP 变化",
+    RoundKind.TURN_END: "本次回合结束无 HP 变化",
+    RoundKind.AUTONOMOUS: "本次自主运行无 HP 变化",
+    RoundKind.ARTIFACT: "本次神器仲裁未产生效果",
+}
+
+
+def build_empty_combat_log(kind: RoundKind) -> str:
+    """本次结算没有产生 HP 变化时的数据日志占位。"""
+    return _EMPTY_COMBAT_LOG[kind]
+
+
+def apply_arbitration_result(
+    game: DBGGame,
+    stage_entity: Entity,
+    ctx: ArbitrationContext,
+    *,
+    kind: RoundKind,
+    title_label: str,
+    combat_log: str,
+) -> None:
+    """落库一次仲裁结果：全场景广播 + HP + 生命值通知 + 回合记录。
+
+    无失败分支；须先调用本函数、再压缩 loop 记忆。
+    """
+    assert ctx.narrative is not None, "narrative 不应为 None"
+    narrative = ctx.narrative
+
+    current_round_number = len(game.current_dungeon_combat_room.combat.rounds or [])
+    game.broadcast_to_stage(
+        entity=stage_entity,
+        agent_event=CombatArbitrationEvent(
+            message=build_arbitration_broadcast(
+                current_round_number, title_label, narrative, combat_log
+            ),
+            stage=stage_entity.name,
+            combat_log=combat_log,
+            narrative=narrative,
+        ),
+        exclude_entities={stage_entity},
+    )
+
+    for affix in ctx.unsettled_affixes:
+        logger.warning(f"[arbitration:{kind}] 无法按计算规则结算（telemetry）: {affix}")
+
+    for entity_name, hp in ctx.hp_changes.items():
+        entity = game.get_entity_by_name(entity_name)
+        assert entity is not None, f"无法找到 hp_changes 中的实体: {entity_name}"
+        old_hp = compute_character_stats(entity).hp
+        after_stats = set_character_hp(entity, int(hp))
+        logger.info(
+            f"更新 {entity_name} HP: {old_hp} → {after_stats.hp}/{after_stats.max_hp}"
+        )
+        game.add_human_message(
+            entity,
+            HumanMessage(
+                content=build_stats_update_notification(
+                    after_stats.hp, after_stats.max_hp
+                )
+            ),
+        )
+
+    latest_round = game.current_dungeon_combat_room.combat.latest_round
+    assert latest_round is not None, "latest_round 不应为 None"
+    latest_round.record(_ROUND_ENTRY_KIND[kind], combat_log, narrative)
+
+
+def record_aborted_loop(
+    game: DBGGame,
+    entity: Entity,
+    *,
+    kind: RoundKind,
+    loop_id: str,
+    reason: str,
+) -> None:
+    """把未完成的 loop 记进记忆与回合日志：过程原样保留，只补系统说明。
+
+    不回滚也不删除——失败也是上下文的一部分，且工具调用已经发生过；
+    说明里声明「未落库」，使后续阅读者不把过程当既成事实。
+    """
+    game.add_human_message(
+        entity,
+        HumanMessage(
+            content=build_aborted_loop_notice(loop_id, reason),
+            **{
+                LOOP_ID_ATTR: loop_id,
+                LOOP_END_ATTR: loop_id,
+                KEEP_ON_COMPACT_ATTR: True,
+            },
+        ),
+    )
+
+    latest_round = game.current_dungeon_combat_room.combat.latest_round
+    assert latest_round is not None, "latest_round 不应为 None"
+    latest_round.record(
+        RoundEntryKind.FAILED,
+        f"[{kind}] {loop_id} 结算未完成：{reason}",
+        "（结算未完成，本回合无变化）",
+    )
+
+
 @prompt_builder
-def build_calc_rules_section(get_entity_stats_tool: str, kind: ArbitrationKind) -> str:
+def build_calc_rules_section(get_entity_stats_tool: str, kind: PromptKind) -> str:
     """结算规则段落：说明「数值由系统算、LLM 只选 base 与系数」及系数清单。"""
-    target = "持有者" if kind is ArbitrationKind.TURN_END else "目标"
+    target = "持有者" if kind is PromptKind.TURN_END else "目标"
     return f"""## 结算规则（数值由系统计算）
 
 你只负责为每条效果选定 **base** 与**系数**，并写明依据：
@@ -440,13 +608,13 @@ def build_tool_flow_section(
     resolve_damage_tool: str,
     resolve_effect_tool: str,
     submit_tool: str,
-    kind: ArbitrationKind,
+    kind: PromptKind,
     holder_name: str = "",
 ) -> str:
     """工具使用流程段落。"""
-    if kind is ArbitrationKind.PLAY_CARDS:
+    if kind is PromptKind.PLAY_CARDS:
         read_step = f"对出牌者与每个目标调用一次 {get_entity_stats_tool}（可并发）。"
-    elif kind is ArbitrationKind.AUTONOMOUS:
+    elif kind is PromptKind.AUTONOMOUS:
         read_step = f"对持有者与每个可能受影响的目标调用一次 {get_entity_stats_tool}（可并发）。"
     else:
         read_step = f"调用 {get_entity_stats_tool} 读取持有者 {holder_name}。"

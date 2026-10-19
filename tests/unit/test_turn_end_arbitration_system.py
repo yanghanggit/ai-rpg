@@ -18,6 +18,8 @@ from ai_rpg.models import (
     HandComponent,
     HumanMessage,
     PassTurnAction,
+    RoundEntryKind,
+    SystemMessage,
     TargetType,
 )
 from ai_rpg.systems.turn_end_arbitration_system import TurnEndArbitrationSystem
@@ -57,7 +59,10 @@ def mock_game() -> MagicMock:
     stage = MagicMock()
     stage.name = "场景.测试密室"
     game.resolve_stage_entity.return_value = stage
-    game.get_agent_memory.return_value = SimpleNamespace(messages=[])
+    # 生产环境下 stage 记忆首条是 SystemMessage，loop 从索引 1 开始。
+    game.get_agent_memory.return_value = SimpleNamespace(
+        messages=[SystemMessage(content="你是本场景的仲裁者")]
+    )
     return game
 
 
@@ -147,7 +152,9 @@ class TestTurnEndArbitrationSystem:
         # 仲裁者是所在场景，不是持有者本人
         assert mock_agent_loop.await_args.kwargs["name"] == "场景.测试密室"
         # 携带唯一的 loop_id 标记
-        assert mock_agent_loop.await_args.kwargs["loop_id"] == "turn_end:1:怪物.纸人"
+        assert mock_agent_loop.await_args.kwargs["loop_id"].startswith(
+            "turn_end:1:怪物.纸人#"
+        )
         # 提示词已写死目标恒为持有者
         assert (
             "目标恒为持有者本人 怪物.纸人"
@@ -156,10 +163,15 @@ class TestTurnEndArbitrationSystem:
         mock_game.get_agent_memory.assert_called_with(
             mock_game.resolve_stage_entity.return_value
         )
-        # 未提交结果（mock 未驱动 handler）：回滚本次 loop 记忆
-        mock_game.replace_span.assert_called_once_with(
-            mock_game.resolve_stage_entity.return_value, 0, 0, []
-        )
+        # 未提交结果（mock 未驱动 handler）：不回滚，只补一条「未完成」系统说明
+        mock_game.replace_span.assert_not_called()
+        mock_game.add_human_message.assert_called_once()
+        notice = mock_game.add_human_message.call_args.args[1]
+        assert "本次结算未完成" in notice.content
+        assert "未落库" in notice.content
+
+        latest_round = mock_game.current_dungeon_combat_room.combat.latest_round
+        assert latest_round.record.call_args.args[0] == RoundEntryKind.FAILED
 
 
 class TestTurnEndLoopMemoryCompression:
@@ -199,7 +211,7 @@ class TestTurnEndLoopMemoryCompression:
         # 整段 loop 记忆被压缩为一条 HumanMessage
         assert mock_game.replace_span.call_count == 1
         _, start_index, end_index, new_messages = mock_game.replace_span.call_args.args
-        assert (start_index, end_index) == (0, 2)
+        assert (start_index, end_index) == (1, 3)
         assert (
             mock_game.replace_span.call_args.kwargs["dump_attr"]
             == REPLACED_MESSAGES_ATTR
@@ -209,5 +221,5 @@ class TestTurnEndLoopMemoryCompression:
         assert isinstance(summary, HumanMessage)
         assert "本次压缩总结" in summary.content
         assert "本次回合结束无 HP 变化" in summary.content
-        assert getattr(summary, LOOP_ID_ATTR) == "turn_end:1:怪物.纸人"
-        assert getattr(summary, LOOP_END_ATTR) == "turn_end:1:怪物.纸人"
+        assert getattr(summary, LOOP_ID_ATTR).startswith("turn_end:1:怪物.纸人#")
+        assert getattr(summary, LOOP_END_ATTR) == getattr(summary, LOOP_ID_ATTR)

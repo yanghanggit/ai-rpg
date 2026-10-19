@@ -7,8 +7,6 @@ from loguru import logger
 from overrides import override
 
 from ..deepseek import (
-    LOOP_END_ATTR,
-    LOOP_ID_ATTR,
     ToolDefinition,
     ToolFunction,
     agent_loop,
@@ -19,30 +17,27 @@ from ..game.dbg_combat_processor import (
     get_alive_actors_in_stage,
     get_alive_monsters_in_stage,
     get_alive_party_members_in_stage,
-    set_character_hp,
 )
 from ..game.dbg_game import DBGGame
-from ..game.rpg_agent_memory import REPLACED_MESSAGES_ATTR
 from ..models import (
     Artifact,
     ArtifactPhase,
-    CharacterStatsComponent,
-    CombatArbitrationEvent,
-    HumanMessage,
     PlayCardsAction,
     ReliquaryComponent,
-    RoundEntryKind,
     render_labeled_str_list,
 )
 from ..utils import prompt_builder
 from .arbitration_common import (
     ArbitrationContext,
-    build_arbitration_broadcast,
-    build_loop_summary_memory,
-    build_stats_update_notification,
+    RoundKind,
+    apply_arbitration_result,
+    build_empty_combat_log,
+    compress_loop_to_summary,
     get_entity_stats,
     make_get_entity_stats_tool,
+    make_loop_id,
     make_submit_arbitration_tool,
+    record_aborted_loop,
     submit_arbitration,
 )
 
@@ -203,15 +198,18 @@ def _handle_change_hp(
 
 
 def _compose_artifact_combat_log(ctx: ArbitrationContext) -> str:
-    """据实际 change_hp 结果渲染 HP 段（DM 只写效果说明），使日志的 HP 部分不可能与落库不符。"""
-    assert ctx.combat_log is not None, "combat_log 不应为 None"
+    """拼接日志：DM 写的效果说明 + 系统据 change_hp 结果补记的 HP 段。
+
+    DM 未写说明时只保留 HP 段（日志的有效信息不会被空壳覆盖）。
+    """
     hp_tail = " ".join(
         f"{name} {ctx.hp_initial[name]}→{ctx.hp_changes[name]}"
         for name in ctx.hp_initial
     )
-
-    # 拼接 HP 变化段，确保日志与实际落库一致
-    return f"{ctx.combat_log}；HP:{hp_tail}" if hp_tail else ctx.combat_log
+    parts = [ctx.combat_log or "", f"HP:{hp_tail}" if hp_tail else ""]
+    return "；".join(part for part in parts if part) or build_empty_combat_log(
+        RoundKind.ARTIFACT
+    )
 
 
 ###########################################################################################################################################
@@ -306,20 +304,21 @@ class ArtifactPostArbitrationSystem(ReactiveProcessor):
         # 仲裁结果容器：handler 通过 partial 绑定写入，避免闭包。
         ctx = ArbitrationContext()
 
-        # 以 stage 实体为仲裁者：直接使用其持久记忆，使 prompt / 工具轨迹 / 结果都写入其记忆。
+        # 以 stage 实体为仲裁者：直接使用其持久记忆，prompt / 工具轨迹 / 结果都写入其记忆。
         stage_memory = self._game.get_agent_memory(stage_entity)
         assert stage_memory.messages, "场景实体缺少首条 SystemMessage"
-        messages = stage_memory.messages
 
-        # 本次 loop 的身份标记；结束后据 result 的区间把整段新增记忆压缩为一条总结。
-        loop_id = f"artifact:{current_round_number}:{action_entity.name}"
-        loop_start_index = len(messages)
+        # 本次 loop 的身份标记；结束后据 loop_start_index 把整段新增记忆压缩为一条总结。
+        loop_id = make_loop_id(
+            stage_memory.messages, "artifact", current_round_number, action_entity.name
+        )
+        loop_start_index = len(stage_memory.messages)
 
         try:
             result = await agent_loop(
                 name=stage_entity.name,
                 input_message=prompt,
-                messages=messages,
+                messages=stage_memory.messages,
                 tools=[
                     GET_ENTITY_STATS_TOOL,
                     CHANGE_HP_TOOL,
@@ -345,126 +344,48 @@ class ArtifactPostArbitrationSystem(ReactiveProcessor):
             logger.error(
                 f"[ArtifactPostArbitrationSystem] {stage_entity.name} agent_loop 异常: {e}"
             )
-            # 回滚本次 loop 已追加的记忆，避免失败轨迹污染上下文。
-            self._game.replace_span(
-                stage_entity, loop_start_index, len(stage_memory.messages), []
+            record_aborted_loop(
+                self._game,
+                stage_entity,
+                kind=RoundKind.ARTIFACT,
+                loop_id=loop_id,
+                reason=f"agent_loop 异常：{e}",
             )
             return
 
-        if (
-            not result
-            or ctx.combat_log is None
-            or ctx.narrative is None
-            or ctx.summary is None
-        ):
+        if not result:
             logger.error(
                 f"[ArtifactPostArbitrationSystem] {stage_entity.name} 未正常完成（未提交结果或达到轮次上限）"
             )
-            # 回滚本次 loop 追加的记忆。
-            self._game.replace_span(
-                stage_entity, result.start_index, result.end_index, []
+            record_aborted_loop(
+                self._game,
+                stage_entity,
+                kind=RoundKind.ARTIFACT,
+                loop_id=loop_id,
+                reason="模型未在轮次上限内提交结算结果（未调用 submit_arbitration）",
             )
             return
 
-        # 成功：把本次 loop 新增的整段记忆压缩为一条「总结 + 数据日志」，并标记 loop_id。
-        combat_log = _compose_artifact_combat_log(ctx)
-        self._game.replace_span(
-            stage_entity,
-            result.start_index,
-            result.end_index,
-            [
-                HumanMessage(
-                    content=build_loop_summary_memory(ctx.summary, combat_log),
-                    **{LOOP_ID_ATTR: loop_id, LOOP_END_ATTR: loop_id},
-                )
-            ],
-            dump_attr=REPLACED_MESSAGES_ATTR,
-        )
+        # 仅类型收窄：submit 成功即已写入。
+        assert ctx.narrative is not None, "submit 成功时 narrative 必定存在"
+        assert ctx.summary is not None, "submit 成功时 summary 必定存在"
 
-        # 应用仲裁结果
-        self._apply_arbitration_result(
-            stage_entity=stage_entity,
-            ctx=ctx,
+        combat_log = _compose_artifact_combat_log(ctx)
+
+        apply_arbitration_result(
+            self._game,
+            stage_entity,
+            ctx,
+            kind=RoundKind.ARTIFACT,
+            title_label=f"{stage_entity.name} 神器仲裁",
             combat_log=combat_log,
         )
 
-    #######################################################################################################################################
-    def _apply_arbitration_result(
-        self,
-        stage_entity: Entity,
-        ctx: ArbitrationContext,
-        combat_log: str,
-    ) -> None:
-        """落库本次仲裁结果：HP / 广播 / 回合日志。"""
-
-        assert ctx.narrative is not None, "narrative 不应为 None"
-        narrative = ctx.narrative
-        hp_changes = ctx.hp_changes
-
-        # 校验 HP 变更中的实体名称（handler 已校验存在，此处兜底防御）
-        for entity_name in hp_changes:
-            if self._game.get_entity_by_name(entity_name) is None:
-                logger.error(
-                    f"ArtifactPostArbitrationSystem: hp_changes 中的实体不存在于游戏中: {entity_name}"
-                )
-                return
-
-        # 广播本次神器仲裁结果给场景内角色
-        current_round_number = len(
-            self._game.current_dungeon_combat_room.combat.rounds or []
+        compress_loop_to_summary(
+            self._game,
+            stage_entity,
+            loop_start_index,
+            summary=ctx.summary,
+            combat_log=combat_log,
+            loop_id=loop_id,
         )
-
-        # 广播仲裁结果给场景内的所有角色（除场景自身）
-        self._game.broadcast_to_stage(
-            entity=stage_entity,
-            agent_event=CombatArbitrationEvent(
-                message=build_arbitration_broadcast(
-                    current_round_number,
-                    f"{stage_entity.name} 神器仲裁",
-                    narrative,
-                    combat_log,
-                ),
-                stage=stage_entity.name,
-                combat_log=combat_log,
-                narrative=narrative,
-            ),
-            exclude_entities={stage_entity},
-        )
-
-        # 规则 telemetry：记录仲裁器无法按计算规则结算的条目
-        for affix in ctx.unsettled_affixes:
-            logger.warning(
-                f"[ArtifactPostArbitrationSystem] 规则无法按计算规则结算（telemetry）: {affix}"
-            )
-
-        # 落库每个受影响角色的最终 HP 并发送「生命值已更新」通知
-        for entity_name, hp in hp_changes.items():
-
-            # 获取当前受影响的实体并校验其存在性与组件完整性
-            entity = self._game.get_entity_by_name(entity_name)
-            assert entity is not None, f"无法找到 hp_changes 中的实体: {entity_name}"
-            assert entity.has(
-                CharacterStatsComponent
-            ), f"实体 {entity_name} 缺少 CharacterStatsComponent！"
-
-            # 记录更新前的 HP
-            old_hp = compute_character_stats(entity).hp
-            after_stats = set_character_hp(entity, int(hp))
-            logger.info(
-                f"更新 {entity_name} HP: {old_hp} → {after_stats.hp}/{after_stats.max_hp}"
-            )
-
-            # 发送「生命值已更新」通知给当前受影响的实体
-            self._game.add_human_message(
-                entity=entity,
-                human_message=HumanMessage(
-                    content=build_stats_update_notification(
-                        after_stats.hp, after_stats.max_hp
-                    )
-                ),
-            )
-
-        # 更新本回合的神器仲裁日志
-        latest_round = self._game.current_dungeon_combat_room.combat.latest_round
-        assert latest_round is not None, "latest_round 不应为 None"
-        latest_round.record(RoundEntryKind.ARTIFACT, combat_log, narrative)

@@ -20,6 +20,10 @@ MessagePredicate = Callable[[ChatMessage, int, Sequence[ChatMessage]], bool]
 # replace_span 压缩时，把被替换掉的整段 dump 到新消息的额外属性所用的约定名。
 REPLACED_MESSAGES_ATTR: Final[str] = "replaced_messages"
 
+# 带此标记的消息在记忆压缩时必须原样保留（如「本次结算未完成」的系统说明）：
+# 失败是需要长期留在上下文里的事实，不应被摘要抹平。
+KEEP_ON_COMPACT_ATTR: Final[str] = "keep_on_compact"
+
 
 #################################################################################################################################################
 def _dump_messages(
@@ -154,9 +158,11 @@ class RPGAgentMemory:
         """将 agent 记忆中除首条 system 消息外的全部消息压缩为一条摘要，并重置上下文占比。
 
         human_message 由调用方构造，content 为摘要，可附加原始历史字符串留痕。
-        本质是 reset_agent_memory 的一种用法：以单条摘要重制记忆。
+        本质是 reset_agent_memory 的一种用法：以「摘要 + 带 ``KEEP_ON_COMPACT_ATTR`` 的消息」重制记忆。
         """
-        self.reset_agent_memory(entity, [human_message])
+        messages = self.get_agent_memory(entity).messages
+        preserved = [m for m in messages[1:] if getattr(m, KEEP_ON_COMPACT_ATTR, False)]
+        self.reset_agent_memory(entity, [human_message, *preserved])
 
     ###############################################################################################################################################
     def find_marked_span(

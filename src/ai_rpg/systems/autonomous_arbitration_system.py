@@ -1,4 +1,4 @@
-"""卡牌自主运行仲裁系统模块。"""
+"""自主运行仲裁系统：由所在场景（stage）结算 pass turn 触发的自主运行词缀（目标可为场上任意角色）。"""
 
 from functools import partial
 from typing import Dict, Final, List, final
@@ -7,46 +7,40 @@ from loguru import logger
 from overrides import override
 
 from ..deepseek import (
-    LOOP_END_ATTR,
-    LOOP_ID_ATTR,
     ToolDefinition,
     agent_loop,
 )
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_combat_processor import (
-    compute_character_stats,
     get_alive_monsters_in_stage,
     get_alive_party_members_in_stage,
-    set_character_hp,
 )
 from ..game.dbg_game import DBGGame
-from ..game.rpg_agent_memory import REPLACED_MESSAGES_ATTR
 from ..models import (
     Card,
-    CharacterStatsComponent,
-    CombatArbitrationEvent,
-    HumanMessage,
     PassTurnAction,
-    RoundEntryKind,
     render_labeled_str_list,
 )
 from ..utils import prompt_builder
 from .arbitration_common import (
     ArbitrationContext,
-    ArbitrationKind,
-    build_arbitration_broadcast,
+    PromptKind,
+    RoundKind,
+    apply_arbitration_result,
     build_calc_rules_section,
-    build_loop_summary_memory,
+    build_empty_combat_log,
     build_on_hit_affix_section,
     build_source_section,
-    build_stats_update_notification,
     build_tool_flow_section,
     collect_hand_cards_with,
+    compress_loop_to_summary,
     get_entity_stats,
     make_get_entity_stats_tool,
+    make_loop_id,
     make_resolve_damage_tool,
     make_resolve_effect_tool,
     make_submit_arbitration_tool,
+    record_aborted_loop,
     resolve_damage,
     resolve_effect,
     submit_arbitration,
@@ -103,7 +97,7 @@ def _build_autonomous_arbitration_tool_prompt(
 - 队伍方：{party_names}
 - 怪物方：{monster_names}
 
-{build_calc_rules_section(GET_ENTITY_STATS_TOOL.function.name, ArbitrationKind.AUTONOMOUS)}
+{build_calc_rules_section(GET_ENTITY_STATS_TOOL.function.name, PromptKind.AUTONOMOUS)}
 
 ## 目标范围（与回合结束词缀的关键区别）
 
@@ -117,7 +111,7 @@ def _build_autonomous_arbitration_tool_prompt(
 
 {build_source_section()}
 
-{build_tool_flow_section(GET_ENTITY_STATS_TOOL.function.name, RESOLVE_DAMAGE_TOOL.function.name, RESOLVE_EFFECT_TOOL.function.name, SUBMIT_ARBITRATION_TOOL.function.name, ArbitrationKind.AUTONOMOUS, holder_name)}"""
+{build_tool_flow_section(GET_ENTITY_STATS_TOOL.function.name, RESOLVE_DAMAGE_TOOL.function.name, RESOLVE_EFFECT_TOOL.function.name, SUBMIT_ARBITRATION_TOOL.function.name, PromptKind.AUTONOMOUS, holder_name)}"""
 
 
 ###########################################################################################################################################
@@ -234,10 +228,8 @@ class AutonomousArbitrationSystem(ReactiveProcessor):
             logger.debug("AutonomousArbitrationSystem: 战斗未进行中，跳过自主运行仲裁")
             return
 
-        if not entities:
-            return
-
-        # 以 pass turn 实体定位场景；只处理本次发起 pass turn 的行动者（entities）
+        # 以 pass turn 实体定位场景；只处理本次发起 pass turn 的行动者
+        # （PassTurnActionSystem 保证每帧只有一个过牌动作实体）。
         pass_turn_entity = entities[0]
         stage_entity = self._game.resolve_stage_entity(pass_turn_entity)
         assert (
@@ -272,9 +264,17 @@ class AutonomousArbitrationSystem(ReactiveProcessor):
         )
         ctx = ArbitrationContext()
 
-        # 本次 loop 的身份标记；结束后据 result 的区间把整段新增记忆压缩为一条总结。
+        # 以 stage 实体为仲裁者：直接使用其持久记忆，prompt / 工具轨迹 / 结果都写入其记忆。
         stage_memory = self._game.get_agent_memory(stage_entity)
-        loop_id = f"autonomous:{current_round_number}:{pass_turn_entity.name}"
+        assert stage_memory.messages, "场景实体缺少首条 SystemMessage"
+
+        # 本次 loop 的身份标记；结束后据 loop_start_index 把整段新增记忆压缩为一条总结。
+        loop_id = make_loop_id(
+            stage_memory.messages,
+            "autonomous",
+            current_round_number,
+            pass_turn_entity.name,
+        )
         loop_start_index = len(stage_memory.messages)
 
         try:
@@ -314,118 +314,54 @@ class AutonomousArbitrationSystem(ReactiveProcessor):
             logger.error(
                 f"AutonomousArbitrationSystem: [{pass_turn_entity.name}] agent_loop 异常: {e}"
             )
-            # 回滚本次 loop 已追加的记忆，避免失败轨迹污染上下文。
-            self._game.replace_span(
-                stage_entity, loop_start_index, len(stage_memory.messages), []
+            record_aborted_loop(
+                self._game,
+                stage_entity,
+                kind=RoundKind.AUTONOMOUS,
+                loop_id=loop_id,
+                reason=f"agent_loop 异常：{e}",
             )
             return
 
-        if not result or ctx.narrative is None or ctx.summary is None:
+        if not result:
             logger.error(
                 f"AutonomousArbitrationSystem: [{pass_turn_entity.name}] 自主运行仲裁未正常完成，跳过落库"
             )
-            # 回滚本次 loop 追加的记忆。
-            self._game.replace_span(
-                stage_entity, result.start_index, result.end_index, []
+            record_aborted_loop(
+                self._game,
+                stage_entity,
+                kind=RoundKind.AUTONOMOUS,
+                loop_id=loop_id,
+                reason="模型未在轮次上限内提交结算结果（未调用 submit_arbitration）",
             )
             return
 
-        # 成功：把本次 loop 新增的整段记忆压缩为一条「总结 + 数据日志」，并标记 loop_id。
+        # 仅类型收窄：submit 成功即已写入。
+        assert ctx.narrative is not None, "submit 成功时 narrative 必定存在"
+        assert ctx.summary is not None, "submit 成功时 summary 必定存在"
+
         combat_log = (
-            "；".join(ctx.segments) if ctx.segments else "本次自主运行无 HP 变化"
-        )
-        self._game.replace_span(
-            stage_entity,
-            result.start_index,
-            result.end_index,
-            [
-                HumanMessage(
-                    content=build_loop_summary_memory(ctx.summary, combat_log),
-                    **{LOOP_ID_ATTR: loop_id, LOOP_END_ATTR: loop_id},
-                )
-            ],
-            dump_attr=REPLACED_MESSAGES_ATTR,
+            "；".join(ctx.segments)
+            if ctx.segments
+            else build_empty_combat_log(RoundKind.AUTONOMOUS)
         )
 
-        self._apply_arbitration_result(
+        apply_arbitration_result(
+            self._game,
             stage_entity,
-            pass_turn_entity,
             ctx,
-            combat_log,
+            kind=RoundKind.AUTONOMOUS,
+            title_label=f"{pass_turn_entity.name} 自主运行仲裁",
+            combat_log=combat_log,
         )
 
-    #######################################################################################################################################
-    def _apply_arbitration_result(
-        self,
-        stage_entity: Entity,
-        holder: Entity,
-        ctx: ArbitrationContext,
-        combat_log: str,
-    ) -> None:
-        """应用自主运行仲裁结果：更新受影响角色 HP、全场景广播、写回合记录。"""
-
-        assert ctx.narrative is not None, "narrative 不应为 None"
-        narrative = ctx.narrative
-        hp_changes = ctx.hp_changes
-
-        # 校验 HP 变更中的实体名称（handler 已校验存在，此处兜底防御）
-        for entity_name in hp_changes:
-            if self._game.get_entity_by_name(entity_name) is None:
-                logger.error(
-                    f"AutonomousArbitrationSystem: hp_changes 中的实体不存在于游戏中: {entity_name}"
-                )
-                return
-
-        # 全场景广播（与出牌 / 回合结束仲裁一致）
-        current_round_number = len(
-            self._game.current_dungeon_combat_room.combat.rounds or []
+        compress_loop_to_summary(
+            self._game,
+            stage_entity,
+            loop_start_index,
+            summary=ctx.summary,
+            combat_log=combat_log,
+            loop_id=loop_id,
         )
-        self._game.broadcast_to_stage(
-            entity=stage_entity,
-            agent_event=CombatArbitrationEvent(
-                message=build_arbitration_broadcast(
-                    current_round_number,
-                    f"{holder.name} 自主运行仲裁",
-                    narrative,
-                    combat_log,
-                ),
-                stage=stage_entity.name,
-                combat_log=combat_log,
-                narrative=narrative,
-            ),
-            exclude_entities={stage_entity},
-        )
-
-        # 词缀 telemetry：记录仲裁器无法按计算规则结算的词缀
-        for affix in ctx.unsettled_affixes:
-            logger.warning(
-                f"[AutonomousArbitrationSystem] 词缀无法按计算规则结算（telemetry）: {affix}"
-            )
-
-        # 更新每个受影响实体的 HP 状态
-        for entity_name, hp in hp_changes.items():
-            entity = self._game.get_entity_by_name(entity_name)
-            assert entity is not None, f"无法找到 hp_changes 中的实体: {entity_name}"
-            assert entity.has(
-                CharacterStatsComponent
-            ), f"实体 {entity_name} 缺少 CharacterStatsComponent！"
-
-            old_hp = compute_character_stats(entity).hp
-            after_stats = set_character_hp(entity, int(hp))
-            new_hp = after_stats.hp
-            max_hp = after_stats.max_hp
-            logger.info(f"更新 {entity_name} HP: {old_hp} → {new_hp}/{max_hp}")
-
-            self._game.add_human_message(
-                entity=entity,
-                human_message=HumanMessage(
-                    content=build_stats_update_notification(new_hp, max_hp)
-                ),
-            )
-
-        # 将本次自主运行的战斗日志和叙事内容添加到当前回合的记录中
-        latest_round = self._game.current_dungeon_combat_room.combat.latest_round
-        assert latest_round is not None, "current_rounds 不应为 None"
-        latest_round.record(RoundEntryKind.AUTONOMOUS, combat_log, narrative)
 
     #######################################################################################################################################

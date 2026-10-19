@@ -78,7 +78,8 @@ class TransStageActionSystem(ReactiveProcessor):
                 human_message=HumanMessage(
                     content=_build_stage_not_found_error(
                         entity.name, trans_stage_action.target_stage_name
-                    )
+                    ),
+                    invalid_stage=trans_stage_action.target_stage_name,
                 ),
             )
             return
@@ -99,7 +100,8 @@ class TransStageActionSystem(ReactiveProcessor):
                         entity.name,
                         trans_stage_action.target_stage_name,
                         current_stage_entity.name,
-                    )
+                    ),
+                    invalid_stage=trans_stage_action.target_stage_name,
                 ),
             )
             return

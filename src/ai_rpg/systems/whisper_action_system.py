@@ -66,7 +66,8 @@ class WhisperActionSystem(ReactiveProcessor):
                         human_message=HumanMessage(
                             content=build_invalid_target_error_message(
                                 whisper_action.name, target_name
-                            )
+                            ),
+                            invalid_target=target_name,
                         ),
                     )
                 continue

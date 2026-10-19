@@ -453,7 +453,8 @@ class MonsterPrePlaySystem(ReactiveProcessor):
                         f"你选择了「{selected_card.name}」（费用 {selected_card.cost}），"
                         f"但当前剩余能量仅 {energy} 点，不足以支付费用，本次已强制跳过出牌。"
                         f"下次当剩余能量不足以支付任何牌时，请直接返回 pass_turn=true。"
-                    )
+                    ),
+                    forced_pass_turn=selected_card.name,
                 ),
             )
             entity.replace(PassTurnAction, entity.name)

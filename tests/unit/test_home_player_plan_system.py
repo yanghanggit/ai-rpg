@@ -162,10 +162,19 @@ class TestInjectPlayerMimicMessages:
         memory.messages = []
         mock_game.get_agent_memory.return_value = memory
 
+        # 走 add_human_message / add_ai_message 落库：模拟其写入效果
+        def _add_human(_entity: object, message: object) -> None:
+            memory.messages.append(message)
+
+        mock_game.add_human_message.side_effect = _add_human
+        mock_game.add_ai_message.side_effect = _add_human
+
         system._inject_player_mimic_messages(entity)
 
         assert len(memory.messages) == 3
         human_msg, ai_msg, tool_msg = memory.messages
+
+        assert human_msg.home_plan == entity.name
 
         assert human_msg.type == "human"
         assert ai_msg.type == "ai"

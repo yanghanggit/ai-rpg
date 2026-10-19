@@ -61,7 +61,8 @@ class SpeakActionSystem(ReactiveProcessor):
                         human_message=HumanMessage(
                             content=build_invalid_target_error_message(
                                 speak_action.name, target_name
-                            )
+                            ),
+                            invalid_target=target_name,
                         ),
                     )
                 continue

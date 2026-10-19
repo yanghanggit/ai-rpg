@@ -1,5 +1,6 @@
 """出牌动作系统模块。"""
 
+import json
 from typing import Dict, Final, List, final
 
 from loguru import logger
@@ -44,6 +45,22 @@ def _build_play_card_record_prompt(
     if stats_parts:
         lines.append(f"卡牌效果：{'，'.join(stats_parts)}。")
     return "\n".join(lines)
+
+
+#######################################################################################################################################
+def _build_play_card_record_tag(play_cards_action: PlayCardsAction) -> str:
+    """生成 `play_card_record` 标记值：只留审计需要的字段，避免整张卡 JSON 挤爆记忆行。"""
+    card = play_cards_action.card
+    return json.dumps(
+        {
+            "name": card.name,
+            "uuid": card.uuid,
+            "cost": card.cost,
+            "target_type": card.target_type.value,
+            "targets": list(play_cards_action.targets),
+        },
+        ensure_ascii=False,
+    )
 
 
 #######################################################################################################################################
@@ -130,7 +147,8 @@ class PlayCardsActionSystem(ReactiveProcessor):
                         content=_build_unplayable_card_error_message(
                             play_cards_action.name,
                             play_cards_action.card.name,
-                        )
+                        ),
+                        unplayable_card=play_cards_action.card.name,
                     ),
                 )
                 entity.remove(PlayCardsAction)
@@ -165,12 +183,12 @@ class PlayCardsActionSystem(ReactiveProcessor):
                         play_cards_action=play_cards_action,
                         round_number=len(current_rounds),
                     ),
-                    play_card_record=play_cards_action.card.model_dump_json(),
+                    play_card_record=_build_play_card_record_tag(play_cards_action),
                 ),
             )
 
-            # 向场景内其他角色（排除出牌者自身与场景仲裁实体）广播简短的行动预告，
-            # 使观察者在收到仲裁结算之前已感知到出牌事件
+            # 行动类广播：出牌者已有上面那条更精确的 `play_card_record`，故排除自己；
+            # 其余人（含场景外？不，仅本场景）在仲裁结算前先感知到出牌事件
             stage_entity = self._game.resolve_stage_entity(entity)
             assert (
                 stage_entity is not None

@@ -94,7 +94,7 @@ class GenerateDungeonDirectiveSystem(ReactiveProcessor):
             # 4. 持久化导演 Q&A 到导演记忆
             self._game.add_human_message(
                 director_entity,
-                HumanMessage(content=prompt),
+                HumanMessage(content=prompt, dungeon_directive=director_entity.name),
             )
             self._game.add_ai_message(
                 director_entity,

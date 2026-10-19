@@ -180,7 +180,7 @@ class CombatLootSystem(ExecuteProcessor):
                 entity=player_entity,
                 human_message=HumanMessage(
                     content=_build_loot_message(loot_items),
-                    combat_loot=stage_entity.name,
+                    combat_loot_items=stage_entity.name,
                 ),
             )
 
@@ -195,7 +195,7 @@ class CombatLootSystem(ExecuteProcessor):
             entity=monster,
             human_message=HumanMessage(
                 content=client.input_message,
-                combat_loot=monster.name,
+                combat_loot_reasoning=monster.name,
             ),
         )
         if client.response_ai_message is None:

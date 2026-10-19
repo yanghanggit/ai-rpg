@@ -83,6 +83,7 @@ class CompactContextActionSystem(ReactiveProcessor):
                 HumanMessage(
                     content=summary,
                     removed_messages_content=removed_buffer,
+                    context_compaction=target_entity.name,
                 ),
             )
             logger.debug(

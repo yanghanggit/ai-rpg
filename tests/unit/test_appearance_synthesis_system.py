@@ -331,3 +331,10 @@ class TestExecute:
 
         mock_batch.assert_not_called()
         assert target.get(AppearanceComponent).appearance == _BASE_BODY
+
+
+class TestLabelBoundary:
+    def test_rejects_separator_in_name(self) -> None:
+        """实体名含分隔符会让回写解析崩掉，故拼装时直接断言。"""
+        with pytest.raises(AssertionError):
+            make_appearance_label("世界.外观合成", "角色|无名")

@@ -11,6 +11,7 @@ from ..models import (
     MessageSpan,
     SystemMessage,
     WorldState,
+    assert_known_memory_tags,
     find_marked_span,
     find_message,
 )
@@ -86,14 +87,23 @@ class RPGAgentMemory:
 
     ###############################################################################################################################################
     def add_human_message(self, entity: Entity, human_message: HumanMessage) -> None:
-        """添加用户消息到实体的LLM记忆"""
+        """添加用户消息到实体的LLM记忆（校验结构化标记已登记）。"""
+        assert_known_memory_tags(human_message)
         agent_memory = self.get_agent_memory(entity)
         agent_memory.messages.append(human_message)
 
     ###############################################################################################################################################
     def add_ai_message(self, entity: Entity, ai_message: AIMessage) -> None:
-        """添加AI响应消息到实体的LLM记忆"""
-        assert ai_message.content != "", "ai_message content should not be empty"
+        """添加AI响应消息到实体的LLM记忆。
+
+        content 为空是合法的（纯 tool_calls 消息），但留一条 warning：正常叙事回包不该为空。
+        """
+        assert_known_memory_tags(ai_message)
+        if ai_message.content == "":
+            logger.warning(
+                f"add_ai_message: {entity.name} 的 AI 消息正文为空"
+                f"（tool_calls={bool(ai_message.additional_kwargs.get('tool_calls'))}），仍写入记忆"
+            )
         # 最后添加到记忆中。
         agent_memory = self.get_agent_memory(entity)
         # 同步最新一次 LLM 调用的上下文占比到 AgentMemory（若消息携带该信息）

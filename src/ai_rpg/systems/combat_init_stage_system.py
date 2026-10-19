@@ -80,7 +80,8 @@ class CombatInitStageSystem(ExecuteProcessor):
                     environment=environment,
                     party_names=[e.name for e in party_members],
                     monster_names=[e.name for e in monsters],
-                )
+                ),
+                combat_initialization=current_stage_entity.name,
             ),
         )
         self._game.add_ai_message(

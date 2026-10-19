@@ -60,11 +60,11 @@ def test_find_marked_span_with_distinct_end_attr() -> None:
 def test_find_marked_span_same_attr_marks_first_and_last() -> None:
     """end_attr 缺省等于 start_attr：首尾同一属性标记。"""
     messages: list[ChatMessage] = [
-        HumanMessage(content="region-a", tag="R", note="start"),
+        HumanMessage(content="region-a", agent_event="R", broadcast_stage="start"),
         AIMessage(content="region-b"),
-        HumanMessage(content="region-c", tag="R", note="end"),
+        HumanMessage(content="region-c", agent_event="R", broadcast_stage="end"),
     ]
-    span = find_marked_span(messages, "tag", "R")
+    span = find_marked_span(messages, "agent_event", "R")
 
     assert span is not None
     assert (span.start_index, span.end_index) == (0, 2)

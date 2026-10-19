@@ -103,11 +103,14 @@ class HomePlayerPlanSystem(ReactiveProcessor):
         )
         tool_message = ToolMessage(content="行动计划已提交", tool_call_id=call_id)
 
-        # 直接追加：tool call 的 AIMessage content 为空，不能走 add_ai_message 的断言
-        memory = self._game.get_agent_memory(player_entity)
-        memory.messages.append(HumanMessage(content=prompt))
-        memory.messages.append(ai_message)
-        memory.messages.append(tool_message)
+        # 先落 human / ai 再补 tool 回执，保持 Human→AI→Tool 顺序；
+        # 纯 tool_calls 的 AI 消息正文为空，由 add_ai_message 记 warning 后照常写入。
+        self._game.add_human_message(
+            player_entity,
+            HumanMessage(content=prompt, home_plan=player_entity.name),
+        )
+        self._game.add_ai_message(player_entity, ai_message)
+        self._game.get_agent_memory(player_entity).messages.append(tool_message)
 
     #######################################################################################################################################
     def _extract_action_from_components(

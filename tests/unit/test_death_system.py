@@ -67,6 +67,9 @@ async def test_current_actor_death_advances_pointer() -> None:
 
     assert dying.has(DeathComponent)
     assert rnd.current_actor == "角色.无名"
+    # 死亡通知带结构化标记
+    death_message = game.add_human_message.call_args.args[1]
+    assert death_message.death_notification == "角色.坏运气"
 
 
 @pytest.mark.asyncio

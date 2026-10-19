@@ -91,7 +91,8 @@ def _notify_world_director(
             f"{summary}\n"
             f"\n"
             f"请据此思考：这次副本的结束让世界状态发生了怎样的变化？后续走向应如何推进与演变？"
-        )
+        ),
+        dungeon_world_archive=dungeon.name,
     )
 
     dbg_game.add_human_message(world_director_entity, notification)
@@ -276,7 +277,8 @@ def notify_dungeon_director_room_ended(
     )
 
     message = HumanMessage(
-        content=f"# 房间结束：{room.stage.name}（类型：{room.type}）\n\n{facts_block}"
+        content=f"# 房间结束：{room.stage.name}（类型：{room.type}）\n\n{facts_block}",
+        dungeon_room_archive=room.stage.name,
     )
     dbg_game.add_human_message(director_entity, message)
     logger.debug(f"[dungeon_director] 已记录房间结束：{room.stage.name!r}")

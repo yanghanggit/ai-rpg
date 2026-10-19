@@ -31,6 +31,10 @@ _LABEL_SEPARATOR: Final[str] = "|"
 
 def make_appearance_label(world_name: str, actor_name: str) -> str:
     """拼装请求 label：`世界.外观合成|角色.名`。"""
+    for part in (world_name, actor_name):
+        assert (
+            _LABEL_SEPARATOR not in part
+        ), f"实体名不能包含 label 分隔符 {_LABEL_SEPARATOR!r}（会破坏回写解析）: {part!r}"
     return f"{world_name}{_LABEL_SEPARATOR}{actor_name}"
 
 

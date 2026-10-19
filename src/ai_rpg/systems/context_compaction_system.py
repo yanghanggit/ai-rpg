@@ -71,6 +71,7 @@ class ContextCompactionSystem(ExecuteProcessor):
                 HumanMessage(
                     content=summary,
                     removed_messages_content=removed_buffer,
+                    context_compaction=entity.name,
                 ),
             )
             logger.debug(f"ContextCompactionSystem: 已压缩 {chat_client.label} 的记忆")

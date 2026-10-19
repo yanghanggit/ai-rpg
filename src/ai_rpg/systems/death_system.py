@@ -49,7 +49,11 @@ class DeathSystem(ExecuteProcessor):
             if entity_hp <= 0:
                 logger.info(f"{entity.name} 已被击败，HP={entity_hp}")
                 self._game.add_human_message(
-                    entity, HumanMessage(content=_build_death_notification())
+                    entity,
+                    HumanMessage(
+                        content=_build_death_notification(),
+                        death_notification=entity.name,
+                    ),
                 )
                 mark_dead(entity)
                 self._advance_turn_if_current(entity)

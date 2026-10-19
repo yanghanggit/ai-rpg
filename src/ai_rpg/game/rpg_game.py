@@ -99,6 +99,11 @@ class RPGGame(BaseGame, RPGAgentMemory, RPGEntityManager, RPGGamePipelineManager
         actor 与 stage 不可分离，找不到场景是数据损坏，故断言而非降级。
         消息除内容外盖两个标记，供记忆审计区分“广播”与“私有说明”：
         `agent_event`（事件类型）、`broadcast_stage`（广播所属场景）。
+
+        自我回显（exclude_entities）的统一口径：
+        - 行动类广播：发起者另有更精确的自我记录时排除发起者（如出牌有 `play_card_record`）；
+        - 观察类广播：发起者对事件**没有**其他记录时保留（过牌、装备/消耗品物化、
+          说话、外观更新、仲裁结果）——自己也是当事人，需要这条消息作为唯一凭据。
         """
         stage_entity = self.resolve_stage_entity(entity)
         assert stage_entity is not None, f"{entity.name} 无所在场景，无法广播"

@@ -78,7 +78,15 @@ AI 代理无需感知内部游戏对象，只需根据当前存档的模式选�
 
 ### 记忆与牌堆对账（`scripts/inspect_memory.py`）
 
-记忆条目除正文外还带结构化标记，`inspect_memory` 会列在 `extra=[...]` 里，用于区分“谁写入的、属于哪一类”：`agent_event` / `broadcast_stage`（广播类消息，前者是事件类型、后者是广播所属场景）、`play_card_record`、`draw_cards_round_number`、`combat_initialization`、`combat_outcome`、`combat_loot`、`spoils_pick`、`appearance_update`、`dungeon_lifecycle_*`。私发消息（`notify_entities`）只带 `agent_event`，不带 `broadcast_stage`——两者一起就能区分“全场景广播”与“只写给我”。
+记忆条目除正文外还带结构化标记，`inspect_memory` 列在 `extra=[...]` 里（也可 `--tag <标记名>` 过滤），用于区分“谁写入的、属于哪一类”。标记有集中登记表 `src/ai_rpg/models/memory_tags.py`，写入时校验——**未登记的标记会断言失败**，不会静默丢失：
+
+- 投递方式：`agent_event`（事件类型）、`broadcast_stage`（广播所属场景；私发不带此标记，据此区分全场景广播与只写给我）
+- 战斗：`play_card_record`（出牌者本人的出牌记录，值只留 `name/uuid/cost/target_type/targets`）、`draw_cards_round_number`（怪物决策请求）、`combat_initialization`（演员侧与场景侧同一标记）、`combat_outcome`、`combat_loot_reasoning`（怪物掉落推理原文）、`combat_loot_items`（玩家战利品清单）、`forced_pass_turn`、`unplayable_card`、`death_notification`、`stats_update`
+- 副本与场景：`dungeon_lifecycle_entry` / `_stage_advance` / `_completion` / `_retreat`、`dungeon_directive`、`dungeon_room_archive`、`dungeon_world_archive`、`opening_initialization`、`environment_initialization`、`invalid_stage`
+- 物品与状态：`spoils_pick`、`appearance_update`、`invalid_target`
+- 记忆自身维护：`loop_id` / `loop_id_end`、`keep_on_compact`、`replaced_messages`、`removed_messages_content`、`context_compaction`、`context_usage_ratio`
+
+广播的自我回显口径见[战斗管道](combat-pipeline.md)「角色侧 LLM 的留痕策略」。
 
 牌堆之间的**静默流转**（抽牌、出牌归堆、回合末清手牌、retain 归还、虚无牌消耗、战斗结束拆除子堆）不写 LLM 记忆，`.chat_dumps` 因此看不到它们；要回答「这次动作为谁写了记忆」「哪条堆变了多少」，必须两侧一起对账：`memories/{agent}.jsonl`（记忆）与 `entities/{agent}.json`（`Deck` / `DrawPile`（含 `retained_cards`）/ `Hand` / `Discard` / `Exhaust` / `Spoils`）。`scripts/inspect_memory.py` 就是这两个目录的只读视图，不依赖游戏运行时（纯 stdlib，不需要 `.env`）。
 

@@ -527,7 +527,8 @@ def apply_arbitration_result(
             HumanMessage(
                 content=build_stats_update_notification(
                     after_stats.hp, after_stats.max_hp
-                )
+                ),
+                stats_update=f"{old_hp}->{after_stats.hp}",
             ),
         )
 

@@ -92,7 +92,7 @@ class TestLootMemory:
         ]
         assert len(monster_calls) == 1
         kwargs = monster_calls[0].kwargs
-        assert kwargs["human_message"].combat_loot == monster.name
+        assert kwargs["human_message"].combat_loot_reasoning == monster.name
         assert "掉落" in kwargs["human_message"].content
 
         # ai：回包原文
@@ -118,7 +118,7 @@ class TestLootMemory:
         assert loot_message.content.startswith("# 你的战利品")
         assert "材料.兽骨 ×2" in loot_message.content
         assert "材料.利爪 ×1" in loot_message.content
-        assert loot_message.combat_loot == "场景.河湾芦苇丛"
+        assert loot_message.combat_loot_items == "场景.河湾芦苇丛"
 
     async def test_records_prompt_only_when_no_response(self, context: Context) -> None:
         """LLM 无回包时只记请求侧，不伪造 AI 回复（add_ai_message 会断言非空）。"""

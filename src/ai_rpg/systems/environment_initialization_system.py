@@ -184,7 +184,11 @@ class EnvironmentInitializationSystem(ExecuteProcessor):
 
         # 添加消息（写入与请求一致的完整 prompt，保证记忆与实际请求不错位）。
         self._game.add_human_message(
-            stage_entity, HumanMessage(content=chat_client.input_message)
+            stage_entity,
+            HumanMessage(
+                content=chat_client.input_message,
+                environment_initialization=stage_entity.name,
+            ),
         )
 
         # 添加消息。

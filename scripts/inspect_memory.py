@@ -18,6 +18,10 @@
 
   # 只看含关键词的消息
   uv run python -m scripts.inspect_memory --snapshot <快照> --agent 怪物.野狗 --keyword 手牌
+
+  # 只按标记过滤（如只看广播类消息 / 只有出牌记录的条目）
+  uv run python -m scripts.inspect_memory --snapshot <快照> --tag broadcast_stage
+  uv run python -m scripts.inspect_memory --snapshot <快照> --tag play_card_record
 """
 
 import json
@@ -99,14 +103,24 @@ def _format_piles(entity: Dict[str, Any]) -> List[str]:
     return lines
 
 
+def _extras(row: Dict[str, Any]) -> List[str]:
+    """消息上的结构化标记名（不含 type / role / content）。"""
+    return sorted(
+        key
+        for key in row.keys()
+        if key not in {"type", "role", "content"} and row.get(key) is not None
+    )
+
+
 def _print_messages(
     rows: List[Dict[str, Any]],
     *,
     start: int,
     width: int,
     keyword: str,
+    tag: str,
 ) -> None:
-    """打印记忆消息：序号、类型、结构化附属字段名、正文。"""
+    """打印记忆消息：序号、类型、结构化标记名、正文。"""
     for index, row in enumerate(rows):
         if index < start:
             continue
@@ -116,11 +130,9 @@ def _print_messages(
             content = json.dumps(content, ensure_ascii=False)
         if keyword and keyword not in content:
             continue
-        extras = sorted(
-            key
-            for key in row.keys()
-            if key not in {"type", "role", "content"} and row.get(key) is not None
-        )
+        if tag and tag not in row:
+            continue
+        extras = _extras(row)
         print(f"[{index:03d}] {role:<12} extra={extras}")
         for line in content.splitlines():
             if line.strip():
@@ -154,6 +166,7 @@ def _report(
     prev: Optional[Path],
     width: int,
     keyword: str,
+    tag: str,
 ) -> None:
     """打印单个 agent 的记忆与牌堆状态（给出 prev 时只展示增量）。"""
     rows = _load_jsonl(snapshot / "memories" / f"{agent}.jsonl")
@@ -175,7 +188,7 @@ def _report(
 
     # 对账模式下，没有新增记忆也没有牌堆变化就只报一行，不刷空白段。
     if prev is not None and not has_new_messages and not changes and not reset_notice:
-        if not keyword:
+        if not keyword and not tag:
             print(f"{agent}: 无变化")
         return
 
@@ -186,7 +199,7 @@ def _report(
         print(f"消息条数: {len(rows)}")
     if reset_notice:
         print(reset_notice)
-    _print_messages(rows, start=baseline, width=width, keyword=keyword)
+    _print_messages(rows, start=baseline, width=width, keyword=keyword, tag=tag)
 
     if entity is None:
         print(f"\n（无实体文件：{snapshot / 'entities' / f'{agent}.json'}）")
@@ -229,12 +242,20 @@ def _report(
 @click.option(
     "--keyword", "keyword", type=str, default="", help="只显示含该关键词的消息"
 )
+@click.option(
+    "--tag",
+    "tag",
+    type=str,
+    default="",
+    help="只显示带该结构化标记的消息（如 broadcast_stage / play_card_record）",
+)
 def main(
     snapshot: str,
     agents: Tuple[str, ...],
     prev_snapshot: Optional[str],
     width: int,
     keyword: str,
+    tag: str,
 ) -> None:
     root = Path(snapshot)
     assert root.is_dir(), f"快照目录不存在: {root}"
@@ -249,7 +270,7 @@ def main(
     assert targets, f"该快照下没有可审计的 agent: {root}"
 
     for agent in targets:
-        _report(root, agent, prev=prev, width=width, keyword=keyword)
+        _report(root, agent, prev=prev, width=width, keyword=keyword, tag=tag)
     print()
 
 

@@ -65,16 +65,16 @@ class TestAddHumanMessage:
             actor,
             HumanMessage(
                 content="planning prompt",
-                home_actor_planning="TestActor",
-                home_actor_full_prompt="full prompt text",
+                agent_event="planning",
+                broadcast_stage="full prompt text",
             ),
         )
 
         msgs = game.get_agent_memory(actor).messages
         msg = msgs[0]
         assert isinstance(msg, HumanMessage)
-        assert getattr(msg, "home_actor_planning") == "TestActor"
-        assert getattr(msg, "home_actor_full_prompt") == "full prompt text"
+        assert getattr(msg, "agent_event") == "planning"
+        assert getattr(msg, "broadcast_stage") == "full prompt text"
 
     def test_multiple_messages_preserve_order(self, game: Any, actor: Entity) -> None:
         """Multiple adds are appended in insertion order."""
@@ -114,10 +114,16 @@ class TestAddAiMessage:
         assert isinstance(msgs[0], AIMessage)
         assert msgs[0].content == "AI reply"
 
-    def test_empty_content_raises(self, game: Any, actor: Entity) -> None:
-        """Passing an AIMessage with empty content triggers AssertionError."""
+    def test_empty_content_allowed(self, game: Any, actor: Entity) -> None:
+        """纯 tool_calls 的 AI 消息正文为空是合法的（不抛断言），照常写入记忆。"""
+        game.add_ai_message(actor, AIMessage(content=""))
+
+        assert game.get_agent_memory(actor).messages[-1].content == ""
+
+    def test_unregistered_tag_raises(self, game: Any, actor: Entity) -> None:
+        """未登记的记忆标记直接失败，避免拼错后静默失去审计信息。"""
         with pytest.raises(AssertionError):
-            game.add_ai_message(actor, AIMessage(content=""))
+            game.add_human_message(actor, HumanMessage(content="x", no_such_tag=1))
 
     # def test_non_ai_message_raises(self, game: Any, actor: Entity) -> None:
     #     """Passing a non-AIMessage triggers AssertionError (isinstance guard)."""
@@ -126,11 +132,11 @@ class TestAddAiMessage:
 
     def test_kwargs_set_as_attributes(self, game: Any, actor: Entity) -> None:
         """Extra fields set on AIMessage at construction are stored."""
-        ai_msg = AIMessage(content="with tag", tag="test_tag")
+        ai_msg = AIMessage(content="with tag", agent_event="test_tag")
         game.add_ai_message(actor, ai_msg)
 
         msgs = game.get_agent_memory(actor).messages
-        assert getattr(msgs[0], "tag") == "test_tag"
+        assert getattr(msgs[0], "agent_event") == "test_tag"
 
     def test_same_message_object_is_stored(self, game: Any, actor: Entity) -> None:
         """The exact message object passed is the one stored (identity check)."""
@@ -255,7 +261,7 @@ class TestFilterMessages:
     def test_predicate_false_returns_empty(self, game: Any, actor: Entity) -> None:
         """Predicate returning False for every message returns []."""
         game.add_human_message(
-            actor, HumanMessage(content="msg", home_actor_planning="TestActor")
+            actor, HumanMessage(content="msg", agent_event="planning")
         )
         result = game.filter_messages(
             actor, predicate=lambda msg, index, messages: False
@@ -265,12 +271,12 @@ class TestFilterMessages:
     def test_matches_custom_kwarg(self, game: Any, actor: Entity) -> None:
         """Finds a message that has the specified extra field."""
         game.add_human_message(
-            actor, HumanMessage(content="planning msg", home_actor_planning="TestActor")
+            actor, HumanMessage(content="planning msg", agent_event="TestActor")
         )
         result = game.filter_messages(
             actor,
             predicate=lambda msg, index, messages: (
-                getattr(msg, "home_actor_planning", None) == "TestActor"
+                getattr(msg, "agent_event", None) == "TestActor"
             ),
         )
         assert len(result) == 1
@@ -279,12 +285,12 @@ class TestFilterMessages:
     def test_no_match_returns_empty(self, game: Any, actor: Entity) -> None:
         """Returns [] when no message matches the predicate."""
         game.add_human_message(
-            actor, HumanMessage(content="msg", home_actor_planning="TestActor")
+            actor, HumanMessage(content="msg", agent_event="planning")
         )
         result = game.filter_messages(
             actor,
             predicate=lambda msg, index, messages: (
-                getattr(msg, "home_actor_planning", None) == "NonExistent"
+                getattr(msg, "agent_event", None) == "NonExistent"
             ),
         )
         assert result == []
@@ -305,19 +311,19 @@ class TestFilterMessages:
     def test_multiple_matches(self, game: Any, actor: Entity) -> None:
         """All matching messages are returned."""
         game.add_human_message(
-            actor, HumanMessage(content="round 1", home_actor_planning="TestActor")
+            actor, HumanMessage(content="round 1", agent_event="TestActor")
         )
         game.add_human_message(
-            actor, HumanMessage(content="round 2", home_actor_planning="TestActor")
+            actor, HumanMessage(content="round 2", agent_event="TestActor")
         )
         game.add_human_message(
-            actor, HumanMessage(content="other", home_actor_planning="OtherActor")
+            actor, HumanMessage(content="other", agent_event="OtherActor")
         )
 
         result = game.filter_messages(
             actor,
             predicate=lambda msg, index, messages: (
-                getattr(msg, "home_actor_planning", None) == "TestActor"
+                getattr(msg, "agent_event", None) == "TestActor"
             ),
         )
         assert len(result) == 2
@@ -329,16 +335,16 @@ class TestFilterMessages:
     ) -> None:
         """Default reverse_order=True: most-recently-added message is first."""
         game.add_human_message(
-            actor, HumanMessage(content="older", home_actor_planning="TestActor")
+            actor, HumanMessage(content="older", agent_event="TestActor")
         )
         game.add_human_message(
-            actor, HumanMessage(content="newer", home_actor_planning="TestActor")
+            actor, HumanMessage(content="newer", agent_event="TestActor")
         )
 
         result = game.filter_messages(
             actor,
             predicate=lambda msg, index, messages: (
-                getattr(msg, "home_actor_planning", None) == "TestActor"
+                getattr(msg, "agent_event", None) == "TestActor"
             ),
             reverse_order=True,
         )
@@ -349,16 +355,16 @@ class TestFilterMessages:
     ) -> None:
         """reverse_order=False: oldest message is first."""
         game.add_human_message(
-            actor, HumanMessage(content="older", home_actor_planning="TestActor")
+            actor, HumanMessage(content="older", agent_event="TestActor")
         )
         game.add_human_message(
-            actor, HumanMessage(content="newer", home_actor_planning="TestActor")
+            actor, HumanMessage(content="newer", agent_event="TestActor")
         )
 
         result = game.filter_messages(
             actor,
             predicate=lambda msg, index, messages: (
-                getattr(msg, "home_actor_planning", None) == "TestActor"
+                getattr(msg, "agent_event", None) == "TestActor"
             ),
             reverse_order=False,
         )
@@ -370,23 +376,23 @@ class TestFilterMessages:
             actor,
             HumanMessage(
                 content="full match",
-                home_actor_planning="TestActor",
-                home_actor_full_prompt="prompt",
+                agent_event="TestActor",
+                broadcast_stage="prompt",
             ),
         )
         game.add_human_message(
             actor,
             HumanMessage(
                 content="partial only",
-                home_actor_planning="TestActor",
+                agent_event="TestActor",
             ),
         )
 
         result = game.filter_messages(
             actor,
             predicate=lambda msg, index, messages: (
-                getattr(msg, "home_actor_planning", None) == "TestActor"
-                and getattr(msg, "home_actor_full_prompt", None) == "prompt"
+                getattr(msg, "agent_event", None) == "TestActor"
+                and getattr(msg, "broadcast_stage", None) == "prompt"
             ),
         )
         assert len(result) == 1
@@ -446,7 +452,7 @@ class TestRemoveMessages:
 
     def test_not_in_memory_returns_zero(self, game: Any, actor: Entity) -> None:
         """Passing a message that was never in the memory returns 0."""
-        game.add_human_message(actor, "keep")
+        game.add_human_message(actor, HumanMessage(content="keep"))
         foreign = HumanMessage(content="not in memory")
 
         count = game.remove_messages(actor, [foreign])

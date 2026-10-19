@@ -1,6 +1,5 @@
 """出牌动作系统模块。"""
 
-import json
 from typing import Dict, Final, List, final
 
 from loguru import logger
@@ -20,6 +19,7 @@ from ..models import (
     PlayCardsAction,
 )
 from ..utils import prompt_builder
+from .card_common import build_play_card_record_tag
 
 
 #######################################################################################################################################
@@ -45,22 +45,6 @@ def _build_play_card_record_prompt(
     if stats_parts:
         lines.append(f"卡牌效果：{'，'.join(stats_parts)}。")
     return "\n".join(lines)
-
-
-#######################################################################################################################################
-def _build_play_card_record_tag(play_cards_action: PlayCardsAction) -> str:
-    """生成 `play_card_record` 标记值：只留审计需要的字段，避免整张卡 JSON 挤爆记忆行。"""
-    card = play_cards_action.card
-    return json.dumps(
-        {
-            "name": card.name,
-            "uuid": card.uuid,
-            "cost": card.cost,
-            "target_type": card.target_type.value,
-            "targets": list(play_cards_action.targets),
-        },
-        ensure_ascii=False,
-    )
 
 
 #######################################################################################################################################
@@ -183,7 +167,7 @@ class PlayCardsActionSystem(ReactiveProcessor):
                         play_cards_action=play_cards_action,
                         round_number=len(current_rounds),
                     ),
-                    play_card_record=_build_play_card_record_tag(play_cards_action),
+                    play_card_record=build_play_card_record_tag(play_cards_action),
                 ),
             )
 

@@ -111,8 +111,10 @@ def test_structured_tag_values_have_expected_shape() -> None:
     import json
 
     from ai_rpg.models import Card, PlayCardsAction, TargetType
-    from ai_rpg.systems.play_cards_action_system import _build_play_card_record_tag
-    from ai_rpg.systems.transfer_cards_action_system import _build_received_card_tag
+    from ai_rpg.systems.card_common import (
+        build_play_card_record_tag,
+        build_received_card_tag,
+    )
 
     card = Card(
         name="攻击",
@@ -126,11 +128,21 @@ def test_structured_tag_values_have_expected_shape() -> None:
     )
     action = PlayCardsAction(name="角色.无名", card=card, targets=["怪物.渡口野狗"])
 
-    play_record = json.loads(_build_play_card_record_tag(action))
-    assert set(play_record) == {"name", "uuid", "cost", "target_type", "targets"}
+    play_record = json.loads(build_play_card_record_tag(action))
+    assert set(play_record) == {
+        "name",
+        "uuid",
+        "source",
+        "cost",
+        "damage",
+        "hit_count",
+        "block",
+        "target_type",
+        "targets",
+    }
     assert play_record["targets"] == ["怪物.渡口野狗"]
 
-    received = json.loads(_build_received_card_tag(card))
+    received = json.loads(build_received_card_tag(card))
     assert set(received) == {
         "name",
         "uuid",
@@ -143,3 +155,57 @@ def test_structured_tag_values_have_expected_shape() -> None:
     }
     # 精简后的标记不带描述/词缀，避免每条记忆被整张卡撑爆
     assert "描述不该进标记" not in json.dumps(received, ensure_ascii=False)
+
+
+def test_stats_update_tag_records_hp_transition() -> None:
+    """`stats_update` 的值是「旧 HP->新 HP」，审计时不必再读正文。"""
+    from unittest.mock import MagicMock
+
+    from ai_rpg.entitas.context import Context
+    from ai_rpg.game.dbg_game import DBGGame
+    from ai_rpg.models import (
+        ActorComponent,
+        CharacterStats,
+        CharacterStatsComponent,
+        CombatArbitrationEvent,
+    )
+    from ai_rpg.systems.arbitration_common import (
+        ArbitrationContext,
+        RoundKind,
+        apply_arbitration_result,
+    )
+
+    context = Context()
+    entity = context.create_entity()
+    entity._name = "角色.无名"
+    entity.add(ActorComponent, entity._name, "场景.河湾芦苇丛")
+    entity.add(
+        CharacterStatsComponent,
+        entity._name,
+        CharacterStats(hp=10, max_hp=10),
+    )
+
+    game = MagicMock(spec=DBGGame)
+    game.current_dungeon_combat_room.combat.rounds = [MagicMock()]
+    game.current_dungeon_combat_room.combat.latest_round = MagicMock()
+    game.get_entity_by_name.side_effect = lambda name: entity
+    game.broadcast_to_stage.side_effect = lambda **kw: None
+    assert issubclass(CombatArbitrationEvent, object)
+
+    ctx = ArbitrationContext(hp_changes={"角色.无名": 7}, narrative="被撞了一下")
+    apply_arbitration_result(
+        game,
+        stage_entity=entity,
+        ctx=ctx,
+        kind=RoundKind.PLAY_CARDS,
+        title_label="测试仲裁",
+        combat_log="无",
+    )
+
+    stats_messages = [
+        call.args[1]
+        for call in game.add_human_message.call_args_list
+        if getattr(call.args[1], "stats_update", None) is not None
+    ]
+    assert len(stats_messages) == 1
+    assert stats_messages[0].stats_update == "10->7"

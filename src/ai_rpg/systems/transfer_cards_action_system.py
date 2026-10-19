@@ -18,23 +18,14 @@ from ..models import (
     PlayCardsAction,
 )
 from ..utils import prompt_builder
+from .card_common import build_received_card_tag
 
 
 #######################################################################################################################################
-def _build_received_card_tag(card: Card) -> str:
-    """生成 `received_card` 标记值：只留审计需要的字段，避免整张卡 JSON 挤爆记忆行。"""
+def _build_transfer_outcome_tag(card: Card, deliveries: List[Tuple[str, int]]) -> str:
+    """生成 `transfer_outcome` 标记值：本次传递的牌名 + 每个接收方的份数。"""
     return json.dumps(
-        {
-            "name": card.name,
-            "uuid": card.uuid,
-            "source": card.source,
-            "cost": card.cost,
-            "damage": card.damage,
-            "hit_count": card.hit_count,
-            "block": card.block,
-            "target_type": card.target_type.value,
-        },
-        ensure_ascii=False,
+        {"card": card.name, "deliveries": dict(deliveries)}, ensure_ascii=False
     )
 
 
@@ -195,7 +186,7 @@ class TransferCardsActionSystem(ReactiveProcessor):
                             self_transfer=target_name == play_cards_action.name,
                             count=count,
                         ),
-                        received_card=_build_received_card_tag(copied),
+                        received_card=build_received_card_tag(copied),
                     ),
                 )
 
@@ -210,6 +201,7 @@ class TransferCardsActionSystem(ReactiveProcessor):
                             deliveries=deliveries,
                             giver_name=play_cards_action.name,
                             round_number=round_number,
-                        )
+                        ),
+                        transfer_outcome=_build_transfer_outcome_tag(card, deliveries),
                     ),
                 )

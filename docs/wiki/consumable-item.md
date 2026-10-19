@@ -45,7 +45,7 @@
 
 ## 合成来源
 
-消耗品可由「世界.消耗品工坊」从储物箱材料合成，命名遵循「消耗品.XXXX」约定。合成走两阶段（与装备工坊一致，见[卡牌设计指南（Card Design）](card-design.md) 的「生成契约」）：先从消耗品原型库（`consumable.single` / `consumable.aoe` / `consumable.spread`）选 1 个骨架，再由 `card_design` 引擎以投入材料为上下文设计名称、描述与一张伤害卡规格；骨架固定 0 费、一次性、纯伤害（由 `ConsumableItem` 的模型校验强制）。
+消耗品可由「世界.消耗品工坊」从储物箱材料合成，命名遵循「消耗品.XXXX」约定。合成走两阶段（与装备工坊一致，见[卡牌设计指南（Card Design）](card-design.md) 的「生成契约」）：先从消耗品原型库（`consumable.single` / `consumable.aoe` / `consumable.spread`）选 1 个骨架，再由 `card_common` 引擎以投入材料为上下文设计名称、描述与一张伤害卡规格；骨架固定 0 费、一次性、纯伤害（由 `ConsumableItem` 的模型校验强制）。
 
 合成产出入库时按堆叠身份合并：仅当与库存中既有条目「同名且内置卡牌规格一致」时并入该堆叠、数量累加，否则作为新条目追加。堆叠身份取卡牌的机械字段（`damage` / `hit_count` / `block` / `cost` / `target_type` / 词缀等，**不含 `uuid` / `source` / 叙事文本**）。初始播种也可直接写入多于一件的堆叠。
 

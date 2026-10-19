@@ -122,3 +122,27 @@ def test_dump_falls_back_when_response_missing(
 
     text = list(tmp_path.glob("*.txt"))[0].read_text(encoding="utf-8")
     assert "AI:" in text
+
+
+def test_dump_filename_is_sanitized(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """label 里的分隔符与路径字符不能带进文件名（外观合成用 `世界|角色` 形式）。"""
+    monkeypatch.setattr("ai_rpg.deepseek.chat_dump.CHAT_DUMP_DIR", tmp_path)
+
+    client = DeepSeekClient(
+        label="世界.外观合成|角色.无名:测试/路径",
+        input_message="p",
+        messages=[SystemMessage(content="SYS")],
+    )
+    client._response_ai_message = AIMessage(content="外观")
+
+    dump_chat(client)
+
+    names = [p.name for p in tmp_path.glob("*.txt")]
+    assert len(names) == 1
+    assert "|" not in names[0]
+    assert ":" not in names[0]
+    assert "/" not in names[0]
+    # 中文与点号保留，便于按实体名检索
+    assert "世界.外观合成_角色.无名_测试_路径" in names[0]

@@ -4,11 +4,11 @@
 （`agent_loop` 结束后即丢弃，不写回持久记忆）：
 
 1. 选型：怪物浏览手牌原型库，用 `select_cards` 一次性提交恰好 DECK_SIZE 个 id
-   （选型逻辑由 `card_design` 引擎的共用能力提供）；
-2. 设计：由 `card_design` 引擎把选中原型物化为候选卡，交给同一怪物完成
+   （选型逻辑由 `card_common` 引擎的共用能力提供）；
+2. 设计：由 `card_common` 引擎把选中原型物化为候选卡，交给同一怪物完成
    name / description / 数值微调与词缀设计。
 
-设计契约（工具、词缀校验、落地）与选型能力统一由 `card_design` 提供；本系统只负责
+设计契约（工具、词缀校验、落地）与选型能力统一由 `card_common` 提供；本系统只负责
 「组装 + 兜底」，不再自带设计逻辑，也不再注入全局字段 / 词缀规范。
 """
 
@@ -48,7 +48,7 @@ from ..pgsql import (
     list_card_prototype_index,
 )
 from ..utils import batch_run_boolean_tasks, prompt_builder
-from .card_design import (
+from .card_common import (
     Candidate,
     materialize_candidate,
     run_card_design_session,
@@ -82,7 +82,7 @@ DECK_SIZE: Final[int] = 5  # 每副牌库固定 5 张
 ####################################################################################################################################
 @prompt_builder
 def _build_deck_select_prompt() -> str:
-    """选型阶段提示词：只负责挑原型，具体设计交给 card_design 引擎。
+    """选型阶段提示词：只负责挑原型，具体设计交给 card_common 引擎。
 
     不重述身份：调用方传入的 SystemMessage 已由 entity_factory 编译出「# 名称 + 你扮演角色」。
     """
@@ -212,7 +212,7 @@ class AssembleDungeonDeckSystem(ReactiveProcessor):
     async def _build_cards(
         self, actor: Actor, index: List[CardPrototypeIndexEntry]
     ) -> Tuple[List[Card], bool]:
-        """两阶段组建：怪物自选原型 → card_design 引擎设计；返回 (牌列表, 是否回退)。
+        """两阶段组建：怪物自选原型 → card_common 引擎设计；返回 (牌列表, 是否回退)。
 
         两阶段都以怪物自己的 system prompt 作为唯一且临时的上下文。
         """

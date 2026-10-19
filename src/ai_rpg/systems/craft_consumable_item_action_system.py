@@ -2,9 +2,9 @@
 
 以两阶段（选型 + 设计）驱动消耗品工坊 agent，产出一件携带内置伤害卡牌的消耗品：
 
-1. 选型：用 `card_design` 引擎的共用选型能力，从消耗品原型库挑选恰好 1 个骨架
+1. 选型：用 `card_common` 引擎的共用选型能力，从消耗品原型库挑选恰好 1 个骨架
    （单体 / 全体 / 散射）；
-2. 设计：由 `card_design` 引擎把选中原型物化为候选卡，交给工坊 agent 完成
+2. 设计：由 `card_common` 引擎把选中原型物化为候选卡，交给工坊 agent 完成
    name / description / 伤害 / 段数 / 词缀设计。
 
 两阶段都以工坊世界实体自身的 SystemMessage 作为**唯一且临时**的上下文
@@ -29,7 +29,7 @@ from ..models import (
 )
 from ..pgsql import list_card_prototype_index
 from ..utils import prompt_builder
-from .card_design import (
+from .card_common import (
     materialize_candidate,
     run_card_design_session,
     run_card_selection_session,

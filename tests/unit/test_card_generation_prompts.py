@@ -9,7 +9,7 @@ from ai_rpg.systems.assemble_dungeon_deck_system import (
     DECK_SIZE,
     _build_deck_select_prompt,
 )
-from ai_rpg.systems.card_design import (
+from ai_rpg.systems.card_common import (
     Candidate,
     build_card_design_prompt,
 )
@@ -70,7 +70,7 @@ def test_card_design_prompt_is_design_driven_without_global_rules() -> None:
 
 
 def test_consumable_select_prompt_has_no_global_specs() -> None:
-    # 消耗品工坊已迁移到 card_design：选型阶段不注入全局规范。
+    # 消耗品工坊已迁移到 card_common：选型阶段不注入全局规范。
     material = MaterialItem(name="材料.测试", description="一块材料", count=1)
     text = _build_consumable_select_prompt([material])
 
@@ -81,7 +81,7 @@ def test_consumable_select_prompt_has_no_global_specs() -> None:
 
 
 def test_gear_select_prompt_has_no_global_specs() -> None:
-    # 装备工坊已迁移到 card_design：选型阶段不注入全局规范。
+    # 装备工坊已迁移到 card_common：选型阶段不注入全局规范。
     material = MaterialItem(name="材料.测试", description="一块材料", count=1)
     text = _build_gear_select_prompt([material])
 

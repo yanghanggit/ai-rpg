@@ -81,7 +81,7 @@ AI 代理无需感知内部游戏对象，只需根据当前存档的模式选�
 记忆条目除正文外还带结构化标记，`inspect_memory` 列在 `extra=[...]` 里（也可 `--tag <标记名>` 过滤），用于区分“谁写入的、属于哪一类”。标记有集中登记表 `src/ai_rpg/models/memory_tags.py`，两道闸门：写入时（`add_human_message` / `add_ai_message`）校验，以及**存档落盘前**遍历全部记忆兜底校验（覆盖 `agent_loop` 等直写路径）——**未登记的标记会断言失败**，不会静默丢失：
 
 - 投递方式：`agent_event`（事件类型）、`broadcast_stage`（广播所属场景；私发不带此标记，据此区分全场景广播与只写给我）
-- 战斗：`play_card_record`（出牌者本人的出牌记录，值只留 `name/uuid/cost/target_type/targets`）、`draw_cards_round_number`（怪物决策请求）、`combat_initialization`（演员侧与场景侧同一标记）、`combat_outcome`、`combat_loot_reasoning`（怪物掉落推理原文）、`combat_loot_items`（玩家战利品清单）、`received_card`（传递副本落地的卡牌摘要：`name/uuid/source/cost/damage/hit_count/block/target_type`）、`forced_pass_turn`、`unplayable_card`、`death_notification`、`stats_update`
+- 战斗：`play_card_record`（出牌者本人的出牌记录，值只留 `name/uuid/cost/target_type/targets`）、`draw_cards_round_number`（怪物决策请求）、`combat_initialization`（演员侧与场景侧同一标记）、`combat_outcome`、`combat_loot_reasoning`（怪物掉落推理原文）、`combat_loot_items`（玩家战利品清单）、`received_card`（传递副本落地的卡牌摘要：`name/uuid/source/cost/damage/hit_count/block/target_type`）、`transfer_outcome`（给出方视角：牌名 + 每个接收方份数）、`forced_pass_turn`、`unplayable_card`、`death_notification`、`stats_update`
 - 副本与场景：`dungeon_lifecycle_entry` / `_stage_advance` / `_completion` / `_retreat`、`dungeon_directive`、`dungeon_room_archive`、`dungeon_world_archive`、`opening_initialization`、`environment_initialization`、`invalid_stage`
 - 物品与状态：`spoils_pick`、`appearance_update`、`invalid_target`
 - 记忆自身维护：`loop_id` / `loop_id_end`、`keep_on_compact`、`replaced_messages`、`removed_messages_content`、`context_compaction`、`context_usage_ratio`
@@ -89,6 +89,8 @@ AI 代理无需感知内部游戏对象，只需根据当前存档的模式选�
 广播的自我回显口径见[战斗管道](combat-pipeline.md)「角色侧 LLM 的留痕策略」。
 
 牌堆之间的**静默流转**（抽牌、出牌归堆、回合末清手牌、retain 归还、虚无牌消耗、战斗结束拆除子堆）不写 LLM 记忆，`.chat_dumps` 因此看不到它们；要回答「这次动作为谁写了记忆」「哪条堆变了多少」，必须两侧一起对账：`memories/{agent}.jsonl`（记忆）与 `entities/{agent}.json`（`Deck` / `DrawPile`（含 `retained_cards`）/ `Hand` / `Discard` / `Exhaust` / `Spoils`）。`scripts/inspect_memory.py` 就是这两个目录的只读视图，不依赖游戏运行时（纯 stdlib，不需要 `.env`）。
+
+维护脚本以 `python -m scripts.<name>` 运行；`scripts/` 与 `demo/` 一样带显式包标记（`__init__.py`），供 mypy 按 `scripts.<name>` 解析模块名。
 
 ```bash
 # 单个 agent：完整记忆 + 当前各堆内容

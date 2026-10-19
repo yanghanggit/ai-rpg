@@ -1,16 +1,22 @@
-"""卡牌设计引擎：把「原型候选」交给角色 agent 设计成具体卡牌。
+"""卡牌公共层：单点维护「卡牌设计」（生成契约与会话）与「卡牌记忆标记」（审计摘要）。
 
-与具体玩法解耦。调用方负责候选的来源与最终去向；本模块只提供设计契约与流程：
+两条职责的共用点只有一个：它们都以 `Card` 为中心，且被多个 system 复用——
+设计侧被战利品 / 装备工坊 / 消耗品工坊 / 怪物牌库共用，记忆侧被出牌与传递共用。
+差异部分留在各自 system 文件中，本模块只放必须同构的部分，避免契约与字段口径漂移。
 
+设计侧（原 `card_design`）：
 - 设计契约：`submit_card` / `finish_cards` 两个工具；
 - 提示词：`format_candidate` / `build_card_design_prompt`；
 - 提交校验与落地：`apply_designs`（名称 / 描述 / 数值 / 词缀写回候选卡）；
 - 一次完整设计会话：`run_card_design_session`（内部 agent_loop + 上述装配）。
 
+记忆侧：
+- `build_play_card_record_tag`（出牌记录：卡牌事实 + 目标列表）；
+- `build_received_card_tag`（传递副本：卡牌事实）。
+两者都是「`Card` → 审计用精简 JSON」，不存整张卡（`description` 与词缀在记忆正文里已有）。
+
 `uuid` 全程由计算端持有：LLM 只用编号 `#N` 定位，`CardDesign.uuid` 由 `apply_designs`
 从解析到的候选卡回填。
-
-当前由 `GenerateSpoilsActionSystem` 使用；后续可供地下城怪物牌库等复用。
 """
 
 import json
@@ -39,6 +45,7 @@ from ..models import (
     Card,
     ChatMessage,
     NormalizedStrList,
+    PlayCardsAction,
     apply_affix_design,
     apply_numeric_design,
     normalize_str_list,
@@ -716,3 +723,50 @@ async def run_card_selection_session(
         f"[card_design] {name}: 选型 {len(selected)}/{size}（agent_loop 成功={ok}）"
     )
     return SelectionOutcome(ok=ok, selected=selected, total=size)
+
+
+#######################################################################################################################################
+# 卡牌记忆标记：Card → 审计用精简 JSON
+#######################################################################################################################################
+#######################################################################################################################################
+# 审计字段：卡牌自身的事实（不含 description / 词缀）
+#######################################################################################################################################
+def _card_audit_fields(card: Card) -> Dict[str, Any]:
+    """卡牌的审计字段：身份 + 数值 + 目标类型。"""
+    return {
+        "name": card.name,
+        "uuid": card.uuid,
+        "source": card.source,
+        "cost": card.cost,
+        "damage": card.damage,
+        "hit_count": card.hit_count,
+        "block": card.block,
+        "target_type": card.target_type.value,
+    }
+
+
+#######################################################################################################################################
+# 出牌记录：卡牌事实 + 本次解析出的目标列表
+#######################################################################################################################################
+def build_play_card_record_tag(play_cards_action: PlayCardsAction) -> str:
+    """生成 `play_card_record` 标记值。"""
+    return json.dumps(
+        {
+            **_card_audit_fields(play_cards_action.card),
+            **_targets_field(play_cards_action),
+        },
+        ensure_ascii=False,
+    )
+
+
+def _targets_field(play_cards_action: PlayCardsAction) -> Dict[str, List[str]]:
+    """本次出牌解析出的目标列表（按命中展开，可含重复）。"""
+    return {"targets": list(play_cards_action.targets)}
+
+
+#######################################################################################################################################
+# 传递副本：只记卡牌事实（副本归属由记忆正文说明）
+#######################################################################################################################################
+def build_received_card_tag(card: Card) -> str:
+    """生成 `received_card` 标记值。"""
+    return json.dumps(_card_audit_fields(card), ensure_ascii=False)

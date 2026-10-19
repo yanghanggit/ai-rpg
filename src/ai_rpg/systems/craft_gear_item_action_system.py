@@ -3,8 +3,8 @@
 以两阶段（选型 + 设计）驱动装备工坊 agent，产出一件装备（装备级 `speed` 被动 +
 一张内置卡牌）：
 
-1. 选型：用 `card_design` 引擎的共用选型能力，从装备原型库挑选恰好 1 个骨架；
-2. 设计：由 `card_design` 引擎把选中原型物化为候选卡，交给工坊 agent 完成
+1. 选型：用 `card_common` 引擎的共用选型能力，从装备原型库挑选恰好 1 个骨架；
+2. 设计：由 `card_common` 引擎把选中原型物化为候选卡，交给工坊 agent 完成
    name / description / 数值 / 词缀设计，并通过 `submit_card` 的扩展字段给出装备级 speed。
 
 两阶段都以工坊世界实体自身的 SystemMessage 作为**唯一且临时**的上下文
@@ -30,7 +30,7 @@ from ..models import (
 )
 from ..pgsql import list_card_prototype_index
 from ..utils import prompt_builder
-from .card_design import (
+from .card_common import (
     CardDesign,
     materialize_candidate,
     run_card_design_session,

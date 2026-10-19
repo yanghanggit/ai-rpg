@@ -74,7 +74,7 @@
 
 ### 解释不了的词缀：让生成 agent 在提交前知道
 
-「这条词缀能不能被解释」必须由**生成 agent 在提交前**判断：只有它握着完整上下文（词缀槽 + 结算原语 + 想表达的效果）。事后没人能补——牌库打磨结构上禁止改属性 / 词缀，仲裁时生成 agent 早已不存在。生成契约（`card_design` 引擎的 `submit_card` 工具 schema，「结算原语」硬边界 + 范围外禁止，见[卡牌设计指南（Card Design）](card-design.md) 的「生成契约」）与 `validate_affix_slot`（只守格式硬不变量）就是这条分工。
+「这条词缀能不能被解释」必须由**生成 agent 在提交前**判断：只有它握着完整上下文（词缀槽 + 结算原语 + 想表达的效果）。事后没人能补——牌库打磨结构上禁止改属性 / 词缀，仲裁时生成 agent 早已不存在。生成契约（`card_common` 引擎的 `submit_card` 工具 schema，「结算原语」硬边界 + 范围外禁止，见[卡牌设计指南（Card Design）](card-design.md) 的「生成契约」）与 `validate_affix_slot`（只守格式硬不变量）就是这条分工。
 
 `unsettled_affixes` 是**万一漏过时的兜底**，不是交接点：
 

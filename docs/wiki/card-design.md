@@ -9,7 +9,7 @@
 为避免同一事实出现两处、日后还要裁决谁权威，本文**不复述**以下内容，只给原则与指向：
 
 - 字段语义（每个字段是什么）→ [卡牌数据模型（Card）](card.md)
-- 词缀格式与约束（怎样写才合法）→ 见下文「生成契约」（`card_design` 引擎的 `submit_card` 工具 schema）
+- 词缀格式与约束（怎样写才合法）→ 见下文「生成契约」（`card_common` 引擎的 `submit_card` 工具 schema）
 - 具体组合范例（原型长什么样）→ `demo/card_skeletons.py`（骨架）与 `demo/card_prototypes.py`（原型类型 + 含教学元数据的注册表）
 - 三端归类 → [三端化思维（Combat Ports）](combat-ports.md)
 
@@ -71,9 +71,9 @@
 
 ---
 
-## 生成契约（`card_design` 引擎）
+## 生成契约（`card_common` 引擎）
 
-所有「让 agent 造一张卡」的路径共用同一套契约（`systems/card_design.py`），不再各自注入全局规范：
+所有「让 agent 造一张卡」的路径共用同一套契约（`systems/card_common.py`），不再各自注入全局规范。同一文件也承载「卡牌 → 审计用精简 JSON」的两个记忆标记构造器（出牌记录 / 传递副本），两者是同一类事实的两种视角，字段口径集中一处：
 
 - **选型**（`run_card_selection_session`）：agent 用 `list_card_prototypes` / `get_card_prototype` 浏览原型库，再用 `select_cards` 一次性提交恰好 N 个原型 id。
 - **设计**（`run_card_design_session`）：引擎把选中原型物化为候选卡（换新 `uuid`、回填 `source`），agent 用 `submit_card`（按 `#N` 定位）逐卡提交 `name` / `description` / 可选数值微调 / 词缀，再 `finish_cards` 收尾。

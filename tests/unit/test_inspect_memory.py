@@ -164,3 +164,34 @@ class TestCli:
         result = CliRunner().invoke(main, ["--snapshot", str(tmp_path / "nope")])
 
         assert result.exit_code != 0
+
+    def test_width_truncates_long_content(self, tmp_path: Path) -> None:
+        """--width 控制每条消息正文的截断宽度。"""
+        _write_memory(tmp_path, "角色.无名", [_message("human", "很长的描述" * 20)])
+
+        result = CliRunner().invoke(
+            main, ["--snapshot", str(tmp_path), "--width", "10"]
+        )
+
+        assert "…" in result.output
+        assert "很长的描述" * 20 not in result.output
+
+
+class TestFormatPiles:
+    def test_empty_pile_is_still_printed(self) -> None:
+        """空堆也要打印（对账时能看到“归零”）。"""
+        from scripts.inspect_memory import _format_piles
+
+        lines = _format_piles(
+            {"DrawPileComponent": {"cards": [], "retained_cards": []}}
+        )
+
+        assert "DrawPileComponent.cards (0)" in "\n".join(lines)
+        assert "DrawPileComponent.retained_cards (0)" in "\n".join(lines)
+
+    def test_energy_is_rendered(self) -> None:
+        from scripts.inspect_memory import _format_piles
+
+        lines = _format_piles({"RoundStatsComponent": {"energy": 2}})
+
+        assert "energy=2" in "\n".join(lines)

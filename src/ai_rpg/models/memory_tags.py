@@ -27,6 +27,7 @@ MEMORY_TAGS: Final[FrozenSet[str]] = frozenset(
         "combat_loot_reasoning",  # 怪物掉落推理请求原文
         "combat_loot_items",  # 玩家获得的战利品清单
         "received_card",  # 传递副本落地的卡牌摘要（接收方）
+        "transfer_outcome",  # 传递结果摘要：牌名 + 每个接收方份数（给出方）
         "forced_pass_turn",  # 决策无效被强制过牌
         "unplayable_card",  # 不可出牌的卡被拦截
         "death_notification",  # HP 归零通知

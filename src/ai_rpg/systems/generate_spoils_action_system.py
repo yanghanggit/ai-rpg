@@ -1,6 +1,6 @@
 """奖励(Spoils)生成系统：从卡牌原型库随机抽取 N 个原型，交由角色 agent 设计后装入 SpoilsComponent 供后续领取。
 
-本系统只负责「候选选取 + 最终去向」：随机抽原型、物化候选，交给 `card_design`
+本系统只负责「候选选取 + 最终去向」：随机抽原型、物化候选，交给 `card_common`
 引擎完成实际设计，最后把设计好的卡写进 `SpoilsComponent`。
 """
 
@@ -20,7 +20,11 @@ from ..models import (
 )
 from ..pgsql import CardPrototypeIndexEntry, list_card_prototype_index
 from ..utils import batch_run_boolean_tasks
-from .card_design import Candidate, materialize_candidate, run_card_design_session
+from .card_common import (
+    Candidate,
+    materialize_candidate,
+    run_card_design_session,
+)
 
 #######################################################################################################################################
 SPOILS_CARD_COUNT: Final[int] = 3  # 候选卡数量（3 选 1），未来可调

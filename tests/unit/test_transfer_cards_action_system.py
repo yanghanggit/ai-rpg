@@ -5,6 +5,7 @@
 `SINGLE` / `ALL` / `SELF` 的列表里每名角色一项，故各拿一份。
 """
 
+import json
 from typing import Dict
 from unittest.mock import MagicMock
 
@@ -427,3 +428,33 @@ class TestTransferCardsActionSystem:
         await system.react([source])
 
         mock_game.add_human_message.assert_not_called()
+
+
+class TestTransferOutcomeTag:
+    """给出方的「传递结果」消息带 `transfer_outcome` 标记（牌名 + 每人份数）。"""
+
+    async def test_transfer_outcome_tag_records_deliveries(
+        self, context: Context, mock_game: MagicMock
+    ) -> None:
+        giver = _make_actor(context, "角色.无名")
+        receiver = _make_actor(context, "怪物.渡口野狗")
+        _stub_actor_lookup(mock_game, {giver.name: giver, receiver.name: receiver})
+        card = _make_card()
+        giver.get(HandComponent).cards.append(card)
+        giver.add(
+            PlayCardsAction,
+            giver.name,
+            card,
+            [receiver.name, receiver.name, receiver.name],
+        )
+
+        await TransferCardsActionSystem(mock_game).react([giver])
+
+        giver_messages = [
+            call.kwargs["human_message"]
+            for call in mock_game.add_human_message.call_args_list
+            if call.kwargs["entity"] is giver
+        ]
+        assert len(giver_messages) == 1
+        tag = json.loads(giver_messages[0].transfer_outcome)
+        assert tag == {"card": card.name, "deliveries": {receiver.name: 3}}

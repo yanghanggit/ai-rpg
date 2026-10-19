@@ -57,7 +57,7 @@
 
 「基础体型 + 时装 → 当前外观」是纯文本改写任务，不属任何角色的叙事行为，因此同样交给世界实体：「世界.外观合成」（`AppearanceSynthesisComponent`）的 `role_rules` 携带书写规则（覆盖维度 / 以基础体型为底 / 禁止项 / 输出格式），任务提示词只剩数据（`base_body` + 时装名与描述）。
 
-调用方只负责筛出待合成角色：`AppearanceSynthesisSystem`（管道起点补合成）与 `WearCostumeActionSystem`（穿装时即时合成）共用同一入口 `build_appearance_synthesis_client`，其 messages **只有该世界实体的 system prompt 一条**——不读角色记忆，也不留推理原文；结果只落在 `AppearanceComponent`。
+调用方只负责筛出待合成角色：`AppearanceSynthesisSystem`（管道起点补合成）与 `WearCostumeActionSystem`（穿装时即时合成）共用同一入口 `build_appearance_synthesis_client`，其 messages **只有该世界实体的 system prompt 一条**——不读角色记忆，也不留推理原文；结果只落在 `AppearanceComponent`。两者的共用部分（label 拼装/解析、世界实体定位、客户端构造）集中在 [`appearance_synthesis_common.py`](../../src/ai_rpg/systems/appearance_synthesis_common.py)，各 system 文件只留触发时机与结果告知，避免 label 格式与记忆隔离口径漂移。
 
 两条路径的“告知”刻意不对称：穿装是世界内发生的事件，由 `WearCostumeActionSystem` 广播「外观已更新」给全场景；管道起点的补齐属于数据修复（没有任何人记过旧外观），因此 `AppearanceSynthesisSystem` 只给本人补一条自我状态说明（`# 你的外观 …`），不广播。推理与告知由此彻底解耦。
 
@@ -78,4 +78,4 @@
 - 当前故事的扩展内容来源。→ 参见：[奇幻故事设计草稿（作品名待定）](fantasy-story-draft.md)
 - 副本概念的生成与实体化。→ 参见：[副本生成管道（Dungeon Generation Pipeline）](dungeon-generation.md)
 - 插图风格字段的消费方。→ 参见：[副本插图生成系统（Step 6）](../../src/ai_rpg/systems/illustrate_dungeon_system.py)
-- 外观合成的消费方。→ 参见：[外观合成系统](../../src/ai_rpg/systems/appearance_synthesis_system.py)
+- 外观合成的消费方。→ 参见：[外观合成公共层](../../src/ai_rpg/systems/appearance_synthesis_common.py)、[外观合成系统](../../src/ai_rpg/systems/appearance_synthesis_system.py)

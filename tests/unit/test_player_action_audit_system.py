@@ -333,22 +333,18 @@ class TestFilterPlayerActions:
         assert not player.has(SpeakAction)
 
     @pytest.mark.asyncio
-    async def test_no_content_returns_early_without_ai_call(
+    async def test_no_content_is_a_data_error(
         self,
         context: Context,
         mock_game: MagicMock,
         system: PlayerActionAuditSystem,
     ) -> None:
-        """实体无任何动作组件时应提前返回，不触发 AI 调用。"""
+        """有动作组件却提取不出内容属数据损坏，断言而非静默跳过。"""
         player = self._make_player_entity(context)
         world = self._make_audit_entity(context)
 
-        with patch(
-            "ai_rpg.systems.player_action_audit_system.DeepSeekClient"
-        ) as MockClient:
+        with pytest.raises(AssertionError, match="内容为空"):
             await system._filter_player_actions(player, world)
-
-        MockClient.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
@@ -372,22 +368,18 @@ class TestReact:
         return entity
 
     @pytest.mark.asyncio
-    async def test_no_audit_entity_logs_error_and_returns(
+    async def test_missing_audit_entity_asserts(
         self,
         context: Context,
         mock_game: MagicMock,
         system: PlayerActionAuditSystem,
     ) -> None:
-        """未找到审计系统实体时，应 log error 并直接返回，不调用 _filter_player_actions。"""
+        """审计实体缺失属数据损坏（由世界初始化建立），断言而非降级。"""
         player = self._make_player_entity(context)
         # 故意不创建 audit entity
 
-        with patch.object(
-            system, "_filter_player_actions", new_callable=AsyncMock
-        ) as mock_filter:
+        with pytest.raises(AssertionError, match="必须存在且唯一"):
             await system.react([player])
-
-        mock_filter.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_react_delegates_to_filter_player_actions(

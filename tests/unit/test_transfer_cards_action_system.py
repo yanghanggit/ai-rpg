@@ -355,7 +355,7 @@ class TestTransferCardsActionSystem:
             assert "蚀纸毒" in message.content  # 哪张牌
             assert "共 1 份" in message.content  # 几份
             assert "不可再转手" in message.content  # 落地语义
-            # 结构化附属数据：与 play_card_record 同风格，方便后续审计/压缩时定位。
+            # 结构化附属数据：每条记录带标签，方便后续审计/压缩时定位。
             assert message.received_card is not None
             assert "蚀纸毒" in message.received_card
 

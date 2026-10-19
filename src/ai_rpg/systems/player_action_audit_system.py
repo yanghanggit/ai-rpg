@@ -98,13 +98,8 @@ class PlayerActionAuditSystem(ReactiveProcessor):
             Matcher(all_of=[WorldComponent, PlayerAuditComponent])
         ).entities.copy()
 
-        # 确保存在玩家行动审计系统实体
-        if not world_entities:
-            logger.error("未找到玩家行动审计系统实体，无法进行内容审核")
-            return
-
-        # 应该只有一个玩家行动审计系统实体
-        assert len(world_entities) == 1, "存在多个玩家行动审计系统实体，数据异常"
+        # 审计实体由世界初始化建立，缺失或重复都是数据损坏，不降级
+        assert len(world_entities) == 1, "玩家行动审计系统实体必须存在且唯一"
         world_entity = next(iter(world_entities))
 
         # 单机游戏，应该只有一个玩家实体
@@ -160,12 +155,9 @@ class PlayerActionAuditSystem(ReactiveProcessor):
         self, entity: Entity, world_entity: Entity
     ) -> None:
         """审核玩家动作内容。"""
-        # 提取所有需要审核的内容
+        # 提取所有需要审核的内容（触发条件保证至少有一个动作组件）
         content = self._extract_all_action_contents(entity)
-
-        if not content:
-            logger.warning(f"实体 {entity.name} 没有需要审核的内容")
-            return
+        assert content, f"实体 {entity.name} 有待审核动作但内容为空，数据异常"
 
         # 构建审核提示词
         prompt = _build_audit_prompt(content)

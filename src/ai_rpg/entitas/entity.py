@@ -117,10 +117,26 @@ class Entity:
     def add(self, comp_type: Type[Component], *args: Any) -> None:
         """Adds a component to the entity.
 
+        .. note::
+            This is a **creation-time** API: 用于实体刚创建、尚未挂载组件的
+            阶段。实体进入运行期后应使用 :meth:`replace`（它同时覆盖「新增」
+            与「替换」两种语义），无需先 :meth:`has` 再分支。
+
+            entitas 只负责机制、不感知上层的使用策略；具体在哪些模块中允许
+            调用本方法由上层项目自行约定与约束。
+
         :param comp_type: Component type (class)
         :param *args: Component field values (optional)
         :raises EntityNotEnabled: If the entity is not enabled
         :raises AlreadyAddedComponent: If the component already exists
+        """
+        self._add(comp_type, *args)
+
+    def _add(self, comp_type: Type[Component], *args: Any) -> None:
+        """Internal primitive shared by :meth:`add` and :meth:`replace`.
+
+        上层代码不应直接调用本方法；:meth:`replace` 在组件不存在时通过它完成
+        「新增」，从而保证运行期只有一条写入路径。
         """
         self._ensure_enabled("add", comp_type)
 
@@ -161,7 +177,8 @@ class Entity:
         if self.has(comp_type):
             self._replace(comp_type, args)
         else:
-            self.add(comp_type, *args)
+            # 注意：这里调用内部原语而不是公开的 add()，运行期只保留 replace 一条入口
+            self._add(comp_type, *args)
 
     def _replace(self, comp_type: Type[Component], args: Any) -> None:
         previous_comp = self._context.store_get(self._index, comp_type)

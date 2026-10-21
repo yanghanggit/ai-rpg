@@ -101,7 +101,7 @@ class EquipGearItemActionSystem(ReactiveProcessor):
         if entity.has(EquippedGearComponent):
             entity.get(EquippedGearComponent).items.append(item)
         else:
-            entity.add(EquippedGearComponent, entity.name, [item])
+            entity.replace(EquippedGearComponent, entity.name, [item])
 
         # 将生成的多张卡牌放入当前行动者手牌
         hand_comp = entity.get(HandComponent)

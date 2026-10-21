@@ -52,8 +52,8 @@ def create_dungeon_combat_room_pipeline(
     from ..systems.exhaust_cards_action_system import ExhaustCardsActionSystem
     from ..systems.exhaust_ethereal_cards_system import ExhaustEtherealCardsSystem
     from ..systems.fill_draw_pile_system import FillDrawPileSystem
-    from ..systems.monster_pre_play_system import MonsterPrePlaySystem
-    from ..systems.party_pre_play_system import PartyPrePlaySystem
+    from ..systems.monster_combat_decision_system import MonsterCombatDecisionSystem
+    from ..systems.party_combat_decision_system import PartyCombatDecisionSystem
     from ..systems.pass_turn_action_system import PassTurnActionSystem
     from ..systems.play_cards_action_system import (
         PlayCardsActionSystem,
@@ -97,8 +97,8 @@ def create_dungeon_combat_room_pipeline(
     # 前者监听 DrawCardsAction 开启新回合，后者抓牌，顺序即因果链（先开回合，后抓牌）。
     processors.add(CombatRoundStartSystem(dbg_game, strategy=ActionOrderStrategy.SPEED))
     processors.add(DrawCardsActionSystem(dbg_game))
-    processors.add(MonsterPrePlaySystem(dbg_game))
-    processors.add(PartyPrePlaySystem(dbg_game))
+    processors.add(MonsterCombatDecisionSystem(dbg_game))
+    processors.add(PartyCombatDecisionSystem(dbg_game))
 
     # 撤退动作系统
     processors.add(RetreatActionSystem(dbg_game))

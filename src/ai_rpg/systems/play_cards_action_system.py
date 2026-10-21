@@ -19,6 +19,7 @@ from ..models import (
     PlayCardsAction,
 )
 from ..utils import prompt_builder
+from .combat_decision_common import play_blocked_cause
 
 
 #######################################################################################################################################
@@ -92,10 +93,12 @@ class PlayCardsActionSystem(ReactiveProcessor):
             # 输出出牌信息日志，包含角色名、卡牌名、卡牌属性（治疗/攻击/防御）和目标
             play_cards_action = entity.get(PlayCardsAction)
 
-            # 计算端拦截：不可出牌的卡（playable=False）不进入出牌流程，防止 LLM 决策误选
-            if not play_cards_action.card.playable:
+            # 计算端拦截：不可出牌的卡（playable=False）不进入出牌流程，防止 LLM 决策误选。
+            # 判定与措辞复用 `play_blocked_cause`：决策记录层用同一口径，记忆才不会与结算矛盾。
+            blocked_cause = play_blocked_cause(play_cards_action.card)
+            if blocked_cause:
                 logger.error(
-                    f"PlayCardsActionSystem: 卡牌 '{play_cards_action.card.name}' 不可出牌（playable=False），拦截出牌"
+                    f"PlayCardsActionSystem: 卡牌 '{play_cards_action.card.name}' 被拦下：{blocked_cause}（playable=False），拦截出牌"
                 )
                 # 将拦截原因写入出牌者上下文，让 LLM 下次决策时理解
                 self._game.add_human_message(

@@ -219,7 +219,7 @@ async def execute_play_cards_task(
             if not rpg_game.current_dungeon_combat_room.combat.is_ongoing:
                 raise ValueError("战斗未在进行中")
 
-            # 激活出牌动作（怪物由 MonsterPrePlaySystem 自动决策，玩家按指定卡牌出牌）
+            # 激活出牌动作（怪物由 MonsterCombatDecisionSystem 自动决策，玩家按指定卡牌出牌）
             actor_entity = rpg_game.get_actor_entity(actor_name)
             if actor_entity is not None and actor_entity.has(MonsterComponent):
                 success, message = activate_monster_play_trigger(rpg_game, actor_name)

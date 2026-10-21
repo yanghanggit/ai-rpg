@@ -19,7 +19,7 @@ from ai_rpg.models import (
     render_labeled_str_list,
     render_str_list,
 )
-from ai_rpg.systems.monster_pre_play_system import _format_card
+from ai_rpg.systems.monster_combat_decision_system import _format_card
 from ai_rpg.systems.play_cards_arbitration_system import (
     _build_play_cards_arbitration_prompt,
 )

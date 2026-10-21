@@ -1,4 +1,4 @@
-"""`MonsterPrePlaySystem` 单测：决策过程被替换成「做了什么 + 原因」的一条记录。
+"""`MonsterCombatDecisionSystem` 单测：决策过程被替换成「做了什么 + 原因」的一条记录。
 
 用真实 `DBGGame`（记忆写入与 `replace_span` 都是真的），只把 LLM 与场景查询打桩：
 - 推理仍按「环境+任务提示词 → 模型回包」写入，但随即被整段替换；
@@ -35,9 +35,9 @@ from ai_rpg.models import (
     TargetType,
 )
 from ai_rpg.systems.combat_decision_common import REASON_MISSING
-from ai_rpg.systems.monster_pre_play_system import MonsterPrePlaySystem
+from ai_rpg.systems.monster_combat_decision_system import MonsterCombatDecisionSystem
 
-_MODULE = "ai_rpg.systems.monster_pre_play_system"
+_MODULE = "ai_rpg.systems.monster_combat_decision_system"
 _STAGE_NAME = "场景.河湾芦苇丛"
 
 
@@ -140,7 +140,7 @@ async def _run(
         ),
     )
     mp.setattr(f"{_MODULE}.batch_complete", fake_batch)
-    await MonsterPrePlaySystem(game).react([monster])
+    await MonsterCombatDecisionSystem(game).react([monster])
     return game, monster
 
 

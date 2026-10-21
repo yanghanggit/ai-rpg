@@ -36,6 +36,7 @@ from .combat_decision_common import (
     REASON_MISSING,
     build_combat_decision_record,
     build_combat_decision_tag,
+    play_blocked_cause,
 )
 
 
@@ -311,7 +312,7 @@ class _DecisionOutcome:
 
 #######################################################################################################################################
 @final
-class MonsterPrePlaySystem(ReactiveProcessor):
+class MonsterCombatDecisionSystem(ReactiveProcessor):
     """
     怪物出牌决策系统。
     """
@@ -344,10 +345,12 @@ class MonsterPrePlaySystem(ReactiveProcessor):
 
         # 验证战斗状态
         if not self._game.current_dungeon_combat_room.combat.is_ongoing:
-            logger.debug("MonsterPrePlaySystem: 战斗未进行中，跳过决策")
+            logger.debug("MonsterCombatDecisionSystem: 战斗未进行中，跳过决策")
             return
 
-        logger.debug(f"MonsterPrePlaySystem: 为 {len(entities)} 个怪物进行出牌决策推理")
+        logger.debug(
+            f"MonsterCombatDecisionSystem: 为 {len(entities)} 个怪物进行出牌决策推理"
+        )
 
         # 为每个怪物创建推理请求（值对象，不持有状态）
         requests: List[ChatCompletionRequest] = [
@@ -355,7 +358,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         ]
 
         if not requests:
-            logger.warning("MonsterPrePlaySystem: 没有可推理的怪物实体，跳过")
+            logger.warning("MonsterCombatDecisionSystem: 没有可推理的怪物实体，跳过")
             return
 
         # 并行 LLM 推理（结果与 requests 同序）
@@ -371,9 +374,11 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         """为单个怪物实体创建出牌决策请求。"""
         assert entity.has(
             HandComponent
-        ), f"MonsterPrePlaySystem: 怪物 {entity.name} 缺少 HandComponent"
+        ), f"MonsterCombatDecisionSystem: 怪物 {entity.name} 缺少 HandComponent"
         hand_comp = entity.get(HandComponent)
-        assert hand_comp is not None, f"MonsterPrePlaySystem: HandComponent 不能为空"
+        assert (
+            hand_comp is not None
+        ), f"MonsterCombatDecisionSystem: HandComponent 不能为空"
 
         # 计算怪物的当前战斗属性
         monster_stats = compute_character_stats(entity)
@@ -425,7 +430,9 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         """
 
         entity = self._game.get_entity_by_name(result.label)
-        assert entity is not None, f"MonsterPrePlaySystem: 无法找到实体 {result.label}"
+        assert (
+            entity is not None
+        ), f"MonsterCombatDecisionSystem: 无法找到实体 {result.label}"
 
         current_round_number = len(
             self._game.current_dungeon_combat_room.combat.rounds or []
@@ -455,13 +462,13 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         if outcome.card is None:
             entity.replace(PassTurnAction, entity.name)
             logger.debug(
-                f"MonsterPrePlaySystem: [{entity.name}] 决策过牌（{outcome.forced_cause or '主动跳过本次出牌机会'}）"
+                f"MonsterCombatDecisionSystem: [{entity.name}] 决策过牌（{outcome.forced_cause or '主动跳过本次出牌机会'}）"
             )
             return
 
         entity.replace(PlayCardsAction, entity.name, outcome.card, outcome.targets)
         logger.debug(
-            f"MonsterPrePlaySystem: [{entity.name}] 决策出牌 '{outcome.card.name}'，目标：{outcome.targets}"
+            f"MonsterCombatDecisionSystem: [{entity.name}] 决策出牌 '{outcome.card.name}'，目标：{outcome.targets}"
         )
 
     ####################################################################################################################################
@@ -474,7 +481,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
 
         if result.ai_message is None:
             logger.error(
-                f"MonsterPrePlaySystem: [{entity.name}] LLM 返回空响应，执行过牌"
+                f"MonsterCombatDecisionSystem: [{entity.name}] LLM 返回空响应，执行过牌"
             )
             return _DecisionOutcome(forced_cause="决策没有返回任何内容", reason=reason)
 
@@ -485,7 +492,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         except Exception as e:
             logger.error(f"{result.content}")
             logger.error(
-                f"MonsterPrePlaySystem: [{entity.name}] 解析 LLM 响应失败，执行过牌。Exception: {e}"
+                f"MonsterCombatDecisionSystem: [{entity.name}] 解析 LLM 响应失败，执行过牌。Exception: {e}"
             )
             return _DecisionOutcome(forced_cause="决策内容无法解析", reason=reason)
 
@@ -495,14 +502,16 @@ class MonsterPrePlaySystem(ReactiveProcessor):
             return _DecisionOutcome(reason=reason)
 
         hand_comp = entity.get(HandComponent)
-        assert hand_comp is not None, "MonsterPrePlaySystem: HandComponent 不能为空"
+        assert (
+            hand_comp is not None
+        ), "MonsterCombatDecisionSystem: HandComponent 不能为空"
 
         selected_card = next(
             (c for c in hand_comp.cards if c.name == decision.card_name), None
         )
         if selected_card is None:
             logger.error(
-                f"MonsterPrePlaySystem: [{entity.name}] LLM 返回的卡牌名 '{decision.card_name}' 不在手牌中：{[c.name for c in hand_comp.cards]}，执行过牌"
+                f"MonsterCombatDecisionSystem: [{entity.name}] LLM 返回的卡牌名 '{decision.card_name}' 不在手牌中：{[c.name for c in hand_comp.cards]}，执行过牌"
             )
             return _DecisionOutcome(
                 forced_cause=f"「{decision.card_name}」不在你的手牌中",
@@ -510,20 +519,22 @@ class MonsterPrePlaySystem(ReactiveProcessor):
             )
 
         # 兜底校验：不可出 / 能量不足都按过牌处理，绝不让错误决策进入结算
-        if not selected_card.playable:
+        # （判定口径与结算层 `PlayCardsActionSystem` 共用 `play_blocked_cause`）
+        blocked_cause = play_blocked_cause(selected_card)
+        if blocked_cause:
             logger.error(
-                f"MonsterPrePlaySystem: [{entity.name}] 决策选出不可出牌的 '{selected_card.name}'，强制过牌"
+                f"MonsterCombatDecisionSystem: [{entity.name}] 决策选出不可出牌的 '{selected_card.name}'，强制过牌"
             )
             return _DecisionOutcome(
                 intended_card=selected_card,
-                forced_cause="这张牌不可出牌",
+                forced_cause=blocked_cause,
                 reason=reason,
             )
 
         energy = get_energy(entity)
         if energy < selected_card.cost:
             logger.warning(
-                f"MonsterPrePlaySystem: [{entity.name}] 决策出牌 '{selected_card.name}' 能量不足（费用 {selected_card.cost} > 剩余 {energy}），强制过牌"
+                f"MonsterCombatDecisionSystem: [{entity.name}] 决策出牌 '{selected_card.name}' 能量不足（费用 {selected_card.cost} > 剩余 {energy}），强制过牌"
             )
             return _DecisionOutcome(
                 intended_card=selected_card,
@@ -542,7 +553,7 @@ class MonsterPrePlaySystem(ReactiveProcessor):
         )
         if resolve_err:
             logger.warning(
-                f"MonsterPrePlaySystem: [{entity.name}] 目标解析失败：{resolve_err}，执行过牌"
+                f"MonsterCombatDecisionSystem: [{entity.name}] 目标解析失败：{resolve_err}，执行过牌"
             )
             return _DecisionOutcome(
                 intended_card=selected_card,

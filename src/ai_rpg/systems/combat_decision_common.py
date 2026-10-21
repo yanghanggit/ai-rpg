@@ -6,8 +6,9 @@
 """
 
 import json
-from typing import Dict, Sequence
+from typing import Dict, Final, Sequence
 
+from ..models import Card
 from ..utils import prompt_builder
 
 #######################################################################################################################################
@@ -19,6 +20,17 @@ ACTION_PASS = "pass"
 # 队伍侧没有真实动机：占位句与空 `mind` 同性质，只为让两侧记忆形状一致。
 REASON_PLACEHOLDER = "（这次行动由你自己决定，没有留下理由）"
 REASON_MISSING = "（没有给出理由）"
+
+# 出牌前的计算端拦截口径：`playable=False` 的牌不进入结算。
+# 决策记录与结算层共用同一判定与同一措辞（`party_combat_decision_system` / `play_cards_action_system` /
+# `monster_combat_decision_system`），否则会出现「记忆说打出了、结算说没打」。
+UNPLAYABLE_CAUSE: Final[str] = "这张牌不可出牌"
+
+
+#######################################################################################################################################
+def play_blocked_cause(card: Card) -> str:
+    """返回出牌前的拦截原因；空串表示放行（决策记录与结算层共用同一口径）。"""
+    return "" if card.playable else UNPLAYABLE_CAUSE
 
 
 #######################################################################################################################################
@@ -43,11 +55,15 @@ def build_combat_decision_record(
     targets: Sequence[str] = (),
     reason: str,
     forced_cause: str = "",
+    forced_outcome: str = "过牌",
 ) -> str:
     """生成决策记录正文：`第 N 回合 · 你的行动` + 做了什么（+ 目标）+ 原因。
 
-    ``forced_cause`` 非空表示「本想出牌但被系统拦下」（能量不足等），此时正文说明
+    ``forced_cause`` 非空表示「本想出牌但被系统拦下」（能量不足 / 不可出牌等），此时正文说明
     原意图与拦截原因，原因行仍用 ``reason``（模型给的理由）。
+
+    ``forced_outcome`` 是「没打出去之后实际发生了什么」，两侧不同：怪物被拦下后会真的过牌；
+    队员的牌在结算层被拦下时只是作废（不交出行动权），故传「这次出牌没有发生」。
     """
     lines = [f"# 第 {round_number} 回合 · 你的行动"]
 
@@ -55,7 +71,9 @@ def build_combat_decision_record(
         lines.append(f"你打出了「{card_name}」。")
         lines.append(f"目标：{format_targets(targets)}。")
     elif forced_cause:
-        lines.append(f"你本想打出「{card_name}」，但{forced_cause}，因此过牌。")
+        lines.append(
+            f"你本想打出「{card_name}」，但{forced_cause}，因此{forced_outcome}。"
+        )
     else:
         lines.append("你选择不出牌，直接过牌。")
 

@@ -1,4 +1,4 @@
-"""`PartyPrePlaySystem` 单测：队员的决策记录与怪物侧同构，原因用占位句。
+"""`PartyCombatDecisionSystem` 单测：队员的决策记录与怪物侧同构，原因用占位句。
 
 队员的决策来自玩家（前端指令），计算端没有决策 LLM，所以本系统只写记录、不做推理：
 形状对齐（做了什么 + 目标 + 原因），原因留占位——与 `home_player_plan_system` 用空 `mind`
@@ -26,8 +26,11 @@ from ai_rpg.models import (
     PlayCardsAction,
     TargetType,
 )
-from ai_rpg.systems.combat_decision_common import REASON_PLACEHOLDER
-from ai_rpg.systems.party_pre_play_system import PartyPrePlaySystem
+from ai_rpg.systems.combat_decision_common import (
+    REASON_PLACEHOLDER,
+    UNPLAYABLE_CAUSE,
+)
+from ai_rpg.systems.party_combat_decision_system import PartyCombatDecisionSystem
 
 
 def _make_card() -> Card:
@@ -88,7 +91,7 @@ class TestPartyDecisionRecord:
         actor.get(HandComponent).cards.append(card)
         actor.add(PlayCardsAction, actor.name, card, ["怪物.渡口野狗"])
 
-        await PartyPrePlaySystem(game).react([actor])
+        await PartyCombatDecisionSystem(game).react([actor])
 
         records = _records(game)
         assert len(records) == 1
@@ -114,12 +117,37 @@ class TestPartyDecisionRecord:
         actor = _make_actor(context, "角色.无名")
         actor.add(PassTurnAction, actor.name)
 
-        await PartyPrePlaySystem(game).react([actor])
+        await PartyCombatDecisionSystem(game).react([actor])
 
         records = _records(game)
         assert len(records) == 1
         assert "你选择不出牌，直接过牌。" in records[0].content
         assert json.loads(records[0].combat_decision)["action"] == "pass"
+
+    async def test_unplayable_card_records_blocked_play(
+        self, context: Context, game: MagicMock
+    ) -> None:
+        """结算层会拦下不可出的牌，记录必须同步：本想打、没打出去（与怪物侧同形）。"""
+        actor = _make_actor(context, "角色.无名")
+        card = _make_card().model_copy(update={"playable": False})
+        actor.get(HandComponent).cards.append(card)
+        actor.add(PlayCardsAction, actor.name, card, ["怪物.渡口野狗"])
+
+        await PartyCombatDecisionSystem(game).react([actor])
+
+        records = _records(game)
+        assert len(records) == 1
+        content = records[0].content
+        assert "你本想打出「攻击」" in content
+        assert f"但{UNPLAYABLE_CAUSE}" in content
+        assert "因此这次出牌没有发生" in content
+        assert f"原因：{REASON_PLACEHOLDER}" in content
+
+        tag: Dict[str, Any] = json.loads(records[0].combat_decision)
+        assert tag["action"] == "pass"
+        assert tag["card"] == "攻击"
+        assert tag["targets"] == []
+        assert tag["forced"] is True
 
     async def test_skips_when_combat_not_ongoing(
         self, context: Context, game: MagicMock
@@ -128,14 +156,14 @@ class TestPartyDecisionRecord:
         actor = _make_actor(context, "角色.无名")
         actor.add(PassTurnAction, actor.name)
 
-        await PartyPrePlaySystem(game).react([actor])
+        await PartyCombatDecisionSystem(game).react([actor])
 
         game.add_human_message.assert_not_called()
 
     def test_filter_requires_party_member_and_liveness(
         self, context: Context, game: MagicMock
     ) -> None:
-        system = PartyPrePlaySystem(game)
+        system = PartyCombatDecisionSystem(game)
         alive_party = _make_actor(context, "角色.无名")
         alive_party.add(PassTurnAction, alive_party.name)
         dead_party = _make_actor(context, "角色.坏运气", dead=True)
@@ -151,6 +179,6 @@ class TestPartyDecisionRecord:
         self, context: Context, game: MagicMock
     ) -> None:
         """出牌与过牌共用同一触发集合（怪物侧两种决策都会记录）。"""
-        triggers = PartyPrePlaySystem(game).get_trigger()
+        triggers = PartyCombatDecisionSystem(game).get_trigger()
         assert len(triggers) == 2
         assert set(triggers.values()) == {GroupEvent.ADDED}

@@ -161,7 +161,7 @@ class CombatLootSystem(ExecuteProcessor):
         # 并行调用 LLM 推理所有怪物掉落（结果与 requests 同序）
         results: List[ChatCompletionResult] = await batch_complete(requests)
 
-        # 逐头记账：先留痕（与 MonsterPrePlaySystem 一致，写入 prompt 与 AI 原文），再解析掉落
+        # 逐头记账：先留痕（与 MonsterCombatDecisionSystem 一致，写入 prompt 与 AI 原文），再解析掉落
         loot_items: List[AnyItem] = []
         for monster, result in zip(monsters, results):
             self._record_loot_memory(monster, result)

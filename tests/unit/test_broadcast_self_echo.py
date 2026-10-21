@@ -88,7 +88,7 @@ async def test_play_cards_broadcast_excludes_actor(context: Context) -> None:
     ):
         await PlayCardsActionSystem(game).react([actor])
 
-    # 出牌事实不再由本系统写（已折进 `combat_decision` 决策记录，见 PartyPrePlaySystem），
+    # 出牌事实不再由本系统写（已折进 `combat_decision` 决策记录，见 PartyCombatDecisionSystem），
     # 因此这里只断言广播口径。
     # 广播：排除出牌者与场景实体
     broadcast_kwargs = game.broadcast_to_stage.call_args.kwargs

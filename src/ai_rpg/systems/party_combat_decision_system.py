@@ -1,6 +1,8 @@
-"""出牌前系统（队员）：为已发生的出牌 / 过牌写一条决策记录，形状与怪物侧一致。
+"""队员出牌决策系统：为已发生的出牌 / 过牌写一条决策记录，形状与怪物侧一致。
 
 队员的决策来自玩家，计算端没有决策推理，所以只落记录不推理；原因用占位句留白。
+唯一需要与结算层对齐的是「这张牌能不能出」：判定复用 `play_blocked_cause`（`PlayCardsActionSystem`
+的同一口径），因此记录不会说「打出了」而结算说「没打」。
 """
 
 from typing import Dict, Final, List, final, override
@@ -23,12 +25,13 @@ from .combat_decision_common import (
     REASON_PLACEHOLDER,
     build_combat_decision_record,
     build_combat_decision_tag,
+    play_blocked_cause,
 )
 
 
 #######################################################################################################################################
 @final
-class PartyPrePlaySystem(ReactiveProcessor):
+class PartyCombatDecisionSystem(ReactiveProcessor):
     """为队员的出牌 / 过牌决策补一条决策记录（无推理、原因为占位句）。"""
 
     def __init__(self, game: DBGGame) -> None:
@@ -58,7 +61,7 @@ class PartyPrePlaySystem(ReactiveProcessor):
     @override
     async def react(self, entities: List[Entity]) -> None:
         if not self._game.current_dungeon_combat_room.combat.is_ongoing:
-            logger.debug("PartyPrePlaySystem: 战斗未进行中，跳过")
+            logger.debug("PartyCombatDecisionSystem: 战斗未进行中，跳过")
             return
 
         round_number = len(self._game.current_dungeon_combat_room.combat.rounds or [])
@@ -72,18 +75,35 @@ class PartyPrePlaySystem(ReactiveProcessor):
     #######################################################################################################################################
     def _record_play(self, entity: Entity, round_number: int) -> None:
         action = entity.get(PlayCardsAction)
-        card_name = action.card.name
+        card = action.card
         targets = list(action.targets)
 
-        self._write(entity, round_number, ACTION_PLAY, card_name, targets)
+        # 结算层（PlayCardsActionSystem）会拦下不可出的牌，记录必须与之一致：本想打、没打出去。
+        blocked_cause = play_blocked_cause(card)
+        if blocked_cause:
+            self._write(
+                entity,
+                round_number,
+                ACTION_PASS,
+                card.name,
+                [],
+                forced_cause=blocked_cause,
+                forced_outcome="这次出牌没有发生",
+            )
+            logger.debug(
+                f"PartyCombatDecisionSystem: [{entity.name}] 记录被拦下的出牌决策 '{card.name}'（{blocked_cause}）"
+            )
+            return
+
+        self._write(entity, round_number, ACTION_PLAY, card.name, targets)
         logger.debug(
-            f"PartyPrePlaySystem: [{entity.name}] 记录出牌决策 '{card_name}'，目标：{targets}"
+            f"PartyCombatDecisionSystem: [{entity.name}] 记录出牌决策 '{card.name}'，目标：{targets}"
         )
 
     #######################################################################################################################################
     def _record_pass(self, entity: Entity, round_number: int) -> None:
         self._write(entity, round_number, ACTION_PASS, "", [])
-        logger.debug(f"PartyPrePlaySystem: [{entity.name}] 记录过牌决策")
+        logger.debug(f"PartyCombatDecisionSystem: [{entity.name}] 记录过牌决策")
 
     #######################################################################################################################################
     def _write(
@@ -93,6 +113,9 @@ class PartyPrePlaySystem(ReactiveProcessor):
         action: str,
         card_name: str,
         targets: List[str],
+        *,
+        forced_cause: str = "",
+        forced_outcome: str = "过牌",
     ) -> None:
         """写一条与怪物侧同构的决策记录（原因为占位句）。"""
         self._game.add_human_message(
@@ -104,6 +127,8 @@ class PartyPrePlaySystem(ReactiveProcessor):
                     card_name=card_name,
                     targets=targets,
                     reason=REASON_PLACEHOLDER,
+                    forced_cause=forced_cause,
+                    forced_outcome=forced_outcome,
                 ),
                 combat_decision=build_combat_decision_tag(
                     round_number,
@@ -111,7 +136,7 @@ class PartyPrePlaySystem(ReactiveProcessor):
                     card_name=card_name,
                     targets=targets,
                     reason=REASON_PLACEHOLDER,
-                    forced=False,
+                    forced=bool(forced_cause),
                 ),
             ),
         )

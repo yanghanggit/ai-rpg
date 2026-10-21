@@ -71,26 +71,36 @@ class DrawCardsActionSystem(ReactiveProcessor):
 
         drawn: List[Card] = []
         reshuffled = 0
+        draw_cards = list(draw_pile.cards)
+        discard_cards = list(discard_pile.cards)
         while len(drawn) < n:
 
-            if draw_pile.cards:
+            if draw_cards:
 
                 # DrawPile 非空，直接抽取一张牌
-                drawn.append(draw_pile.cards.pop(0))  # FIFO
+                drawn.append(draw_cards.pop(0))  # FIFO
 
-            elif discard_pile.cards:
+            elif discard_cards:
 
                 # DrawPile 耗尽：将 DiscardPile 洗牌补入
-                random.shuffle(discard_pile.cards)
-                reshuffled += len(discard_pile.cards)
-                draw_pile.cards.extend(discard_pile.cards)
-                discard_pile.cards.clear()
+                random.shuffle(discard_cards)
+                reshuffled += len(discard_cards)
+                draw_cards.extend(discard_cards)
+                discard_cards = []
                 logger.debug(
-                    f"[{entity.name}] DrawPile 耗尽，DiscardPile {len(draw_pile.cards)} 张洗牌补入 DrawPile"
+                    f"[{entity.name}] DrawPile 耗尽，DiscardPile {len(draw_cards)} 张洗牌补入 DrawPile"
                 )
             else:
                 logger.warning(f"[{entity.name}] DrawPile 与 DiscardPile 均空")
                 break
+
+        entity.replace(
+            DrawPileComponent,
+            draw_pile.name,
+            draw_cards,
+            draw_pile.retained_cards,
+        )
+        entity.replace(DiscardPileComponent, discard_pile.name, discard_cards)
 
         return drawn, reshuffled
 
@@ -101,7 +111,12 @@ class DrawCardsActionSystem(ReactiveProcessor):
         assert draw_pile is not None
 
         retained = list(draw_pile.retained_cards)
-        draw_pile.retained_cards.clear()
+        entity.replace(
+            DrawPileComponent,
+            draw_pile.name,
+            draw_pile.cards,
+            [],
+        )
         return retained
 
     ####################################################################################################################################
@@ -194,6 +209,10 @@ class DrawCardsActionSystem(ReactiveProcessor):
             )
             entity.replace(HandComponent, entity.name, new_hand)
 
+            # replace 后必须重新 get：旧变量指向的是被替换前的组件快照
+            draw_after = len(entity.get(DrawPileComponent).cards)
+            discard_after = len(entity.get(DiscardPileComponent).cards)
+
             self._record_draw(
                 entity,
                 round_number=len(self._game.current_dungeon_combat_room.combat.rounds),
@@ -201,14 +220,14 @@ class DrawCardsActionSystem(ReactiveProcessor):
                 drawn=drawn,
                 reshuffled=reshuffled,
                 deltas={
-                    PILE_DRAW: len(draw_pile.cards) - draw_before,
-                    PILE_DISCARD: len(discard_pile.cards) - discard_before,
+                    PILE_DRAW: draw_after - draw_before,
+                    PILE_DISCARD: discard_after - discard_before,
                     PILE_RETAINED: -len(retained),
                     PILE_HAND: len(new_hand),
                 },
                 hand_size=len(new_hand),
-                draw_size=len(draw_pile.cards),
-                discard_size=len(discard_pile.cards),
+                draw_size=draw_after,
+                discard_size=discard_after,
             )
 
         # 标记本回合 DRAW 阶段已完成

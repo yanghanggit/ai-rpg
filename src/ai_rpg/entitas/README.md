@@ -2,6 +2,34 @@
 
 `ai-rpg` 使用的最小 ECS（Entity–Component–System）核心：把游戏的**数据**（组件）与**身份**（实体句柄）分离，由 `Context` 统一存储与查询，便于以线性流程编排游戏逻辑。
 
+## 核心原则：组件数据只能从 add / replace / remove 三个点被改变
+
+> **组件数据的任何变更，都必须且只能通过 `Entity` 的 `add` / `replace` / `remove` 发生。**
+> `get()` 只读；拿到组件后改字段、改列表、改嵌套对象都不算数据变更——它们不触发事件，
+> 也不会被分组 / 反应式系统观察到。
+
+- **创建期新增**：`add()`（按字段传参）；`set()` 是它的实例版（直接给已构造好的组件），同样只允许在创建期使用。
+- **运行期写入**：`replace()`，同时覆盖「新增」与「替换」两种语义。
+- **删除**：`remove()`。
+
+以下写法一律禁止（都属于绕过 `replace` 的隐式写入）：
+
+```python
+entity.get(Comp).field = value          # 字段赋值
+entity.get(Comp).items.append(x)        # 容器原地增删
+entity.get(Comp).cards[:] = []          # 切片赋值
+entity.get(Comp).stats.hp = 1           # 改嵌套模型
+random.shuffle(entity.get(Comp).cards)  # 交给原地修改的函数
+```
+
+需要改嵌套数据时，先构造新值，再整体写回：
+
+```python
+old = hero.get(Inventory)
+new_items = [item for item in old.items if item.id != target_id]
+hero.replace(Inventory, old.name, new_items)
+```
+
 ## 核心概念
 
 | 概念 | 作用 |
@@ -39,6 +67,32 @@ for entity in context.get_group(Matcher(Position)).entities:
 hero.replace(Position, 9.0, 9.0)
 hero.remove(Position)
 context.destroy_entity(hero)
+```
+
+## 组件写入模型：add / replace / remove 是唯一写入口
+
+`Entity` 把组件数据的所有变更收敛到三个方法——**只有这 3 个点能变换组件数据**，
+每一次写入都能被 `on_component_added` / `on_component_replaced` /
+`on_component_removed` 这三个事件明确观察到：
+
+- `add()`：仅用于实体创建阶段（组件尚不存在时）；
+- `replace()`：运行期**唯一**的写入方式，同时覆盖「新增」与「替换」；
+- `remove()`：移除组件。
+
+`get()` 是**只读**的：拿到组件后不要直接改它的字段，也不要改它内部持有的列表、
+字典或嵌套模型（`component.cards.append(...)`、`component.stats.hp = ...` 都属于隐式
+写入）。这类修改不经过 `replace`，不会触发事件，也不会被分组 / 反应式系统观察到。
+
+需要修改嵌套数据时，先构造新值，再整体写回：
+
+```python
+# 正确：读 → 构造新值 → replace
+old = hero.get(Inventory)
+new_items = [item for item in old.items if item.id != target_id]
+hero.replace(Inventory, old.name, new_items)
+
+# 错误：就地修改，事件系统看不到
+hero.get(Inventory).items.remove(target)
 ```
 
 处理器（可选）：

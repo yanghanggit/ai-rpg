@@ -114,7 +114,7 @@ class UseConsumableItemActionSystem(ReactiveProcessor):
 
         # 将生成的多张卡牌放入当前行动者手牌
         hand_comp = entity.get(HandComponent)
-        hand_comp.cards.extend(cards)
+        entity.replace(HandComponent, hand_comp.name, [*hand_comp.cards, *cards])
 
         # 记录本回合消耗品使用结果（与装备记录同队列）
         latest_round = self._game.current_dungeon_combat_room.combat.latest_round

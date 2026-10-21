@@ -67,7 +67,10 @@ class RemoveCostumeActionSystem(ReactiveProcessor):
         assert storage_entity.has(
             StorageComponent
         ), "全局储物箱实体缺少 StorageComponent"
-        storage_entity.get(StorageComponent).items.append(costume_item)
+        storage = storage_entity.get(StorageComponent)
+        storage_entity.replace(
+            StorageComponent, storage.name, [*storage.items, costume_item]
+        )
 
         # 重置外观为基础体型
         appearance_comp = entity.get(AppearanceComponent)

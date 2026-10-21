@@ -83,7 +83,8 @@ class PickSpoilsActionSystem(ReactiveProcessor):
             claimed_cards = [*spoils_comp.claimed_cards, action.card]
 
             # 追加领取的卡（保留其 uuid / source）
-            deck_comp.cards.append(action.card)
+            new_deck_cards = [*deck_comp.cards, action.card]
+            entity.replace(DeckComponent, deck_comp.name, new_deck_cards)
 
             # 落盘：cards 少一张、claimed 多一张
             entity.replace(SpoilsComponent, entity.name, remaining_cards, claimed_cards)
@@ -93,12 +94,12 @@ class PickSpoilsActionSystem(ReactiveProcessor):
                 entity=entity,
                 human_message=HumanMessage(
                     content=_build_pick_spoils_message(
-                        action.card, len(deck_comp.cards)
+                        action.card, len(new_deck_cards)
                     ),
                     spoils_pick=action.card.name,
                 ),
             )
 
             logger.info(
-                f"[PickSpoilsActionSystem] {entity.name} 已从 Spoils 领取「{action.card.name}」加入牌库（当前 {len(deck_comp.cards)} 张），Spoils 待领取 {len(remaining_cards)} 张 / 已领取 {len(claimed_cards)} 张"
+                f"[PickSpoilsActionSystem] {entity.name} 已从 Spoils 领取「{action.card.name}」加入牌库（当前 {len(new_deck_cards)} 张），Spoils 待领取 {len(remaining_cards)} 张 / 已领取 {len(claimed_cards)} 张"
             )

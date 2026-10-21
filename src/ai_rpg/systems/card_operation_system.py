@@ -43,6 +43,7 @@ from .card_pile_common import (
     PILE_EXHAUST,
     PILE_HAND,
     PILE_LABELS,
+    Pile,
     record_pile_change,
 )
 
@@ -71,26 +72,51 @@ WRITABLE_PILES: Final[Tuple[str, ...]] = (
 
 #########################################################################################################################################
 def _pile_cards(entity: Entity, pile: str) -> List[Card]:
-    """取某个容器里的牌列表（就地引用：写入即生效）。"""
-    if pile == PILE_HAND:
-        assert entity.has(HandComponent), f"{entity.name} 缺少 HandComponent"
-        return entity.get(HandComponent).cards
-    if pile == PILE_DRAW:
-        assert entity.has(DrawPileComponent), f"{entity.name} 缺少 DrawPileComponent"
-        return entity.get(DrawPileComponent).cards
-    if pile == PILE_DISCARD:
-        assert entity.has(
-            DiscardPileComponent
-        ), f"{entity.name} 缺少 DiscardPileComponent"
-        return entity.get(DiscardPileComponent).cards
-    if pile == PILE_EXHAUST:
-        assert entity.has(
-            ExhaustPileComponent
-        ), f"{entity.name} 缺少 ExhaustPileComponent"
-        return entity.get(ExhaustPileComponent).cards
-    assert pile == PILE_DECK, f"未知容器 {pile!r}"
-    assert entity.has(DeckComponent), f"{entity.name} 缺少 DeckComponent"
-    return entity.get(DeckComponent).cards
+    """取某个容器里的牌列表（只读快照；写入请用 `_write_pile`）。"""
+    match pile:
+        case Pile.HAND:
+            assert entity.has(HandComponent), f"{entity.name} 缺少 HandComponent"
+            return entity.get(HandComponent).cards
+        case Pile.DRAW:
+            assert entity.has(
+                DrawPileComponent
+            ), f"{entity.name} 缺少 DrawPileComponent"
+            return entity.get(DrawPileComponent).cards
+        case Pile.DISCARD:
+            assert entity.has(
+                DiscardPileComponent
+            ), f"{entity.name} 缺少 DiscardPileComponent"
+            return entity.get(DiscardPileComponent).cards
+        case Pile.EXHAUST:
+            assert entity.has(
+                ExhaustPileComponent
+            ), f"{entity.name} 缺少 ExhaustPileComponent"
+            return entity.get(ExhaustPileComponent).cards
+        case Pile.DECK:
+            assert entity.has(DeckComponent), f"{entity.name} 缺少 DeckComponent"
+            return entity.get(DeckComponent).cards
+        case _:
+            raise AssertionError(f"未知容器 {pile!r}")
+
+
+def _write_pile(entity: Entity, pile: str, cards: List[Card]) -> None:
+    """把某个容器整体写回——容器数据的唯一写入口是 `Entity.replace`。"""
+    match pile:
+        case Pile.HAND:
+            entity.replace(HandComponent, entity.name, cards)
+        case Pile.DRAW:
+            draw_pile = entity.get(DrawPileComponent)
+            entity.replace(
+                DrawPileComponent, entity.name, cards, draw_pile.retained_cards
+            )
+        case Pile.DISCARD:
+            entity.replace(DiscardPileComponent, entity.name, cards)
+        case Pile.EXHAUST:
+            entity.replace(ExhaustPileComponent, entity.name, cards)
+        case Pile.DECK:
+            entity.replace(DeckComponent, entity.name, cards)
+        case _:
+            raise AssertionError(f"未知容器 {pile!r}")
 
 
 def _pile_label(pile: str) -> str:
@@ -203,12 +229,13 @@ def _handle_copy_card(
     if description is not None:
         copied.description = description
 
-    target.append(copied)
+    new_target = [*target, copied]
+    _write_pile(entity, to_pile, new_target)
     ctx.created += 1
     ctx.actions.append(
         f"复制「{source.name}」（{_pile_label(source_pile)}）→ {_pile_label(to_pile)}「{copied.name}」"
     )
-    return f"已复制：{_pile_label(to_pile)}新增「{copied.name}」（引用 {_ref(copied)}；{_pile_label(to_pile)}现有 {len(target)} 张）"
+    return f"已复制：{_pile_label(to_pile)}新增「{copied.name}」（引用 {_ref(copied)}；{_pile_label(to_pile)}现有 {len(new_target)} 张）"
 
 
 def _handle_move_card(
@@ -226,17 +253,16 @@ def _handle_move_card(
     if source_pile == to_pile:
         return f"错误：「{card.name}」已经在{_pile_label(to_pile)}里"
 
-    _pile_cards(entity, source_pile).remove(card)
-    target = _pile_cards(entity, to_pile)
-    if at_top:
-        target.insert(0, card)
-    else:
-        target.append(card)
+    new_source = [c for c in _pile_cards(entity, source_pile) if c is not card]
+    target_cards = _pile_cards(entity, to_pile)
+    new_target = [card, *target_cards] if at_top else [*target_cards, card]
+    _write_pile(entity, source_pile, new_source)
+    _write_pile(entity, to_pile, new_target)
 
     ctx.actions.append(
         f"移动「{card.name}」：{_pile_label(source_pile)} → {_pile_label(to_pile)}"
     )
-    return f"已移动：「{card.name}」现在在{_pile_label(to_pile)}（{_pile_label(to_pile)}现有 {len(target)} 张）"
+    return f"已移动：「{card.name}」现在在{_pile_label(to_pile)}（{_pile_label(to_pile)}现有 {len(new_target)} 张）"
 
 
 def _handle_modify_card(
@@ -260,8 +286,9 @@ def _handle_modify_card(
     changed: List[str] = []
 
     before = card.model_dump()
+    updated = card.model_copy(deep=True)
     apply_numeric_design(
-        card, cost=cost, damage=damage, hit_count=hit_count, block=block
+        updated, cost=cost, damage=damage, hit_count=hit_count, block=block
     )
     for attr, value in (
         ("name", name),
@@ -273,13 +300,19 @@ def _handle_modify_card(
         ("transferable", transferable),
     ):
         if value is not None:
-            setattr(card, attr, value)
+            setattr(updated, attr, value)
 
-    for attr, value in card.model_dump().items():
+    for attr, value in updated.model_dump().items():
         if before[attr] != value:
             changed.append(f"{attr}: {before[attr]!r} → {value!r}")
 
-    assert changed, f"modify_card 没有实际改动「{card.name}」"
+    assert changed, f"modify_card 没有实际改动「{updated.name}」"
+    cards = _pile_cards(entity, pile)
+    _write_pile(
+        entity,
+        pile,
+        [updated if existing is card else existing for existing in cards],
+    )
     ctx.actions.append(
         f"改写{_pile_label(pile)}的「{card.name}」：{'；'.join(changed)}"
     )

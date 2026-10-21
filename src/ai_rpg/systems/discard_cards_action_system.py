@@ -57,9 +57,10 @@ class DiscardCardsActionSystem(ReactiveProcessor):
 
             # 用对象身份（is）移除，确保只移除本次出的那一张实例
             before_count = len(hand_comp.cards)
-            hand_comp.cards = [c for c in hand_comp.cards if c is not played_card]
-
-            discard_pile.cards.append(played_card)
+            new_hand = [c for c in hand_comp.cards if c is not played_card]
+            new_discard = [*discard_pile.cards, played_card]
+            entity.replace(HandComponent, hand_comp.name, new_hand)
+            entity.replace(DiscardPileComponent, discard_pile.name, new_discard)
 
             # 出牌是决策，牌现在躺在哪是事实：事实由本系统记录。
             # 消耗牌的去向由 ExhaustCardsActionSystem 记录（它随后把这张牌移走），
@@ -72,14 +73,14 @@ class DiscardCardsActionSystem(ReactiveProcessor):
                     title="出牌结算 · 弃牌",
                     lines=[
                         f"「{played_card.name}」离开手牌进入弃牌堆。",
-                        f"手牌 {len(hand_comp.cards)} 张，弃牌堆 {len(discard_pile.cards)} 张。",
+                        f"手牌 {len(new_hand)} 张，弃牌堆 {len(new_discard)} 张。",
                     ],
                     deltas={
-                        PILE_HAND: len(hand_comp.cards) - before_count,
+                        PILE_HAND: len(new_hand) - before_count,
                         PILE_DISCARD: 1,
                     },
                 )
 
             logger.debug(
-                f"  [{entity.name}] 手牌 {before_count} → {len(hand_comp.cards)}，DiscardPile 累计 {len(discard_pile.cards)} 张（牌：{played_card.name}，source={played_card.source!r}）"
+                f"  [{entity.name}] 手牌 {before_count} → {len(new_hand)}，DiscardPile 累计 {len(new_discard)} 张（牌：{played_card.name}，source={played_card.source!r}）"
             )

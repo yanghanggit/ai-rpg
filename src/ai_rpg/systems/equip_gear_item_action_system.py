@@ -91,21 +91,30 @@ class EquipGearItemActionSystem(ReactiveProcessor):
         assert player_entity is not None, "玩家实体不存在！"
         assert player_entity.has(InventoryComponent), "玩家实体缺少 InventoryComponent"
         inventory = player_entity.get(InventoryComponent)
-        inventory.items[:] = [
-            inventory_item
-            for inventory_item in inventory.items
-            if inventory_item is not item
-        ]
+        player_entity.replace(
+            InventoryComponent,
+            inventory.name,
+            [
+                inventory_item
+                for inventory_item in inventory.items
+                if inventory_item is not item
+            ],
+        )
 
         # 登记到当前行动者：战斗结束后由 CombatPileTeardownSystem 归还玩家背包
         if entity.has(EquippedGearComponent):
-            entity.get(EquippedGearComponent).items.append(item)
+            equipped = entity.get(EquippedGearComponent)
+            entity.replace(
+                EquippedGearComponent,
+                equipped.name,
+                [*equipped.items, item],
+            )
         else:
             entity.replace(EquippedGearComponent, entity.name, [item])
 
         # 将生成的多张卡牌放入当前行动者手牌
         hand_comp = entity.get(HandComponent)
-        hand_comp.cards.extend(cards)
+        entity.replace(HandComponent, hand_comp.name, [*hand_comp.cards, *cards])
         logger.debug(
             f"EquipGearItemActionSystem: [{entity.name}] 将 '{item.name}' 转化为手牌 '{'、'.join(card_names)}'"
         )

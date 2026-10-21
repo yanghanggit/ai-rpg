@@ -87,7 +87,12 @@ class FillDrawPileSystem(ReactiveProcessor):
 
         deck_size = len(deck_comp.cards)
         draw_before = len(draw_pile.cards)
-        draw_pile.cards = adjusted_cards
+        entity.replace(
+            DrawPileComponent,
+            draw_pile.name,
+            adjusted_cards,
+            draw_pile.retained_cards,
+        )
 
         # 抽牌堆被重建：把「牌库 → 抽牌堆」的搬家告诉主人
         record_pile_change(

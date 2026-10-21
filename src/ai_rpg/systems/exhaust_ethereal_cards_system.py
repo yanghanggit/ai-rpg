@@ -64,8 +64,10 @@ class ExhaustEtherealCardsSystem(ReactiveProcessor):
                 continue
 
             # 将手牌中所有虚无牌移入 ExhaustPile
-            hand_comp.cards = [c for c in hand_comp.cards if not c.ethereal]
-            exhaust_pile.cards.extend(ethereal_cards)
+            new_hand = [c for c in hand_comp.cards if not c.ethereal]
+            new_exhaust = [*exhaust_pile.cards, *ethereal_cards]
+            entity.replace(HandComponent, hand_comp.name, new_hand)
+            entity.replace(ExhaustPileComponent, exhaust_pile.name, new_exhaust)
 
             # 虚无牌在回合末自行消散：主人必须知道哪些牌没了、去了哪里
             record_pile_change(
@@ -75,7 +77,7 @@ class ExhaustEtherealCardsSystem(ReactiveProcessor):
                 title="虚无牌消散",
                 lines=[
                     f"回合结束时仍在手牌的 {format_card_names(ethereal_cards)}消散了，进入消耗堆（本场不再回来）。",
-                    f"手牌 {len(hand_comp.cards)} 张，消耗堆 {len(exhaust_pile.cards)} 张。",
+                    f"手牌 {len(new_hand)} 张，消耗堆 {len(new_exhaust)} 张。",
                 ],
                 deltas={
                     PILE_HAND: -len(ethereal_cards),
@@ -84,5 +86,5 @@ class ExhaustEtherealCardsSystem(ReactiveProcessor):
             )
 
             logger.debug(
-                f"  [{entity.name}] pass turn 自动消耗 {len(ethereal_cards)} 张虚无牌：{[c.name for c in ethereal_cards]}（ExhaustPile 累计 {len(exhaust_pile.cards)} 张）"
+                f"  [{entity.name}] pass turn 自动消耗 {len(ethereal_cards)} 张虚无牌：{[c.name for c in ethereal_cards]}（ExhaustPile 累计 {len(new_exhaust)} 张）"
             )

@@ -62,7 +62,11 @@ def set_character_hp(entity: Entity, hp: int) -> CharacterStats:
     stats_comp = entity.get(CharacterStatsComponent)
     max_hp = compute_character_stats(entity).max_hp
     clamped = max(0, min(hp, max_hp))
-    stats_comp.stats.hp = clamped
+    entity.replace(
+        CharacterStatsComponent,
+        stats_comp.name,
+        stats_comp.stats.model_copy(update={"hp": clamped}),
+    )
 
     return compute_character_stats(entity)
 
@@ -307,7 +311,12 @@ def clear_round_state(game: DBGGame) -> List[Tuple[Entity, List[Card], List[Card
             discard_cards = [c for c in hand_comp.cards if not c.retain]
 
             # 将非 retain 的手牌归入弃牌堆（战斗子堆均为副本，不会回流 DeckComponent）
-            discard_pile_comp.cards.extend(discard_cards)
+            new_discard_cards = [*discard_pile_comp.cards, *discard_cards]
+            entity.replace(
+                DiscardPileComponent,
+                discard_pile_comp.name,
+                new_discard_cards,
+            )
 
             # retain 牌暂存到 DrawPile 的保留队列，下回合优先取回手牌
             if retain_cards:
@@ -315,13 +324,18 @@ def clear_round_state(game: DBGGame) -> List[Tuple[Entity, List[Card], List[Card
                     DrawPileComponent
                 ), f"{entity.name} 缺少 DrawPileComponent，无法存放 retain 牌"
                 draw_pile_comp = entity.get(DrawPileComponent)
-                draw_pile_comp.retained_cards.extend(retain_cards)
+                entity.replace(
+                    DrawPileComponent,
+                    draw_pile_comp.name,
+                    draw_pile_comp.cards,
+                    [*draw_pile_comp.retained_cards, *retain_cards],
+                )
                 logger.debug(
                     f"clear hands: {entity.name} 将 {len(retain_cards)} 张 retain 牌转入 DrawPile 保留队列"
                 )
 
             logger.debug(
-                f"clear hands: {entity.name} 将 {len(discard_cards)} 张剩余手牌归入 DiscardPile，DiscardPile 累计 {len(discard_pile_comp.cards)} 张"
+                f"clear hands: {entity.name} 将 {len(discard_cards)} 张剩余手牌归入 DiscardPile，DiscardPile 累计 {len(new_discard_cards)} 张"
             )
         else:
             logger.debug(f"clear hands: {entity.name}")

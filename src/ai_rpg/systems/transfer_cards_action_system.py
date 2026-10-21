@@ -136,7 +136,11 @@ class TransferCardsActionSystem(ReactiveProcessor):
             round_number = len(self._game.current_dungeon_combat_room.combat.rounds)
 
             # 从源手牌移除本体（原卡后续由 DiscardCardsActionSystem 归入弃牌堆）。
-            source_hand.cards = [c for c in source_hand.cards if c is not card]
+            entity.replace(
+                HandComponent,
+                source_hand.name,
+                [c for c in source_hand.cards if c is not card],
+            )
 
             # 命中统计：角色 → 命中次数（dict 保持首次出现顺序），即该角色应收的副本数。
             counts: Dict[str, int] = {}
@@ -161,12 +165,14 @@ class TransferCardsActionSystem(ReactiveProcessor):
 
                 # 一击一份：每次命中各 copy 一份（新 uuid）；副本落地即失去传递性。
                 target_hand = target.get(HandComponent)
+                new_target_cards = list(target_hand.cards)
                 copied: Card = card
                 for _ in range(count):
                     copied = card.model_copy(deep=True)
                     copied.uuid = str(uuid4())
                     copied.transferable = False
-                    target_hand.cards.append(copied)
+                    new_target_cards.append(copied)
+                target.replace(HandComponent, target_hand.name, new_target_cards)
                 logger.debug(
                     f"transfer_card: 「{card.name}」已 copy {count} 份到 {target_name} 的手牌（source={copied.source!r}，末份 uuid={copied.uuid}，transferable={copied.transferable}）"
                 )

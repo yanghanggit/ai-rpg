@@ -82,7 +82,10 @@ class WearCostumeActionSystem(ReactiveProcessor):
         assert storage_entity.has(
             StorageComponent
         ), "全局储物箱实体缺少 StorageComponent"
-        storage_entity.get(StorageComponent).items.append(old_costume)
+        storage = storage_entity.get(StorageComponent)
+        storage_entity.replace(
+            StorageComponent, storage.name, [*storage.items, old_costume]
+        )
         logger.debug(
             f"角色 {entity.name} 换装：已将旧时装 {old_costume.name!r} 归还储物箱"
         )
@@ -104,9 +107,10 @@ class WearCostumeActionSystem(ReactiveProcessor):
             StorageComponent
         ), "全局储物箱实体缺少 StorageComponent"
         storage = storage_entity.get(StorageComponent)
-        storage.items[:] = [
+        new_storage_items = [
             item for item in storage.items if item.name != action.costume_item_name
         ]
+        storage_entity.replace(StorageComponent, storage.name, new_storage_items)
 
         # 挂载 WornCostumeComponent
         entity.replace(WornCostumeComponent, entity.name, costume)

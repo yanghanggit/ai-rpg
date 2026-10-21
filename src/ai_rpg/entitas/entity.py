@@ -168,6 +168,9 @@ class Entity:
     def replace(self, comp_type: Type[Component], *args: Any) -> None:
         """Replaces an existing component or adds it if it doesn't exist.
 
+        这是实体进入运行期后**唯一**的组件写入口：它同时承担「新增」与「替换」
+        语义，并触发 ``on_component_replaced`` / ``on_component_added``。
+
         :param comp_type: Component type to replace/add
         :param *args: Component field values (optional)
         :raises EntityNotEnabled: If the entity is not enabled
@@ -192,6 +195,12 @@ class Entity:
 
     def get(self, comp_type: Type[ComponentT]) -> ComponentT:
         """Retrieves a component by its type.
+
+        .. note::
+            **Read-only contract.** 返回的是存储中的组件实例，调用方不得就地修改它
+            或它内部的列表 / 字典 / 嵌套对象；修改必须通过 :meth:`replace`（或
+            :meth:`add` / :meth:`remove`）完成，否则 ``on_component_replaced`` 等
+            事件不会触发，反应式系统也观察不到变更。
 
         :param comp_type: Component type to retrieve
         :return: Component instance of the specified type
@@ -229,6 +238,10 @@ class Entity:
 
         This method allows setting a pre-created component instance,
         unlike add() which creates the component from arguments.
+
+        .. note::
+            **Creation-time only.** 与 :meth:`add` 同属创建期新增入口（`add` 的
+            实例版）；实体进入运行期后必须使用 :meth:`replace` 写入。
 
         :param comp_type: Component type (class)
         :param comp_obj: Pre-created component instance

@@ -48,15 +48,18 @@ class CombatPileTeardownSystem(ExecuteProcessor):
         assert player_entity is not None, "玩家实体不存在！"
         assert player_entity.has(InventoryComponent), "玩家实体缺少 InventoryComponent"
         inventory = player_entity.get(InventoryComponent)
+        returned_items = list(inventory.items)
 
         # 遍历所有装备实体，将其装备归还到玩家背包，并移除 EquippedGearComponent
         for entity in gear_entities:
             equipped = entity.get(EquippedGearComponent)
-            inventory.items.extend(equipped.items)
+            returned_items.extend(equipped.items)
             entity.remove(EquippedGearComponent)
             logger.debug(
                 f"CombatPileTeardownSystem: {entity.name} 的 {len(equipped.items)} 件装备已归还玩家背包"
             )
+
+        player_entity.replace(InventoryComponent, inventory.name, returned_items)
 
     ####################################################################################################################################
     @override
@@ -99,13 +102,7 @@ class CombatPileTeardownSystem(ExecuteProcessor):
             exhaust_count = len(exhaust_pile.cards)
             total = draw_count + retained_count + discard_count + exhaust_count
 
-            # 清空三个战斗子堆（含 DrawPile 的 retain 保留队列；副本直接丢弃，原始牌在 DeckComponent 中完整保留）
-            draw_pile.cards.clear()
-            draw_pile.retained_cards.clear()
-            discard_pile.cards.clear()
-            exhaust_pile.cards.clear()
-
-            # 移除战斗临时组件
+            # 战斗子堆整个丢弃：副本不再需要，直接从实体上移除（写入口只有 remove）
             entity.remove(DrawPileComponent)
             entity.remove(DiscardPileComponent)
             entity.remove(ExhaustPileComponent)

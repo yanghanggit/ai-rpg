@@ -8,6 +8,7 @@
 """
 
 import json
+from enum import StrEnum
 from typing import Dict, Final, List, Mapping, Sequence, Tuple
 
 from ..entitas import Entity
@@ -21,16 +22,29 @@ from ..models import (
     HumanMessage,
 )
 
+
 #######################################################################################################################################
 # 容器标识：审计用英文键，正文用中文名
 #######################################################################################################################################
-PILE_DECK: Final[str] = "deck"
-PILE_SPOILS: Final[str] = "spoils"
-PILE_DRAW: Final[str] = "draw_pile"
-PILE_RETAINED: Final[str] = "retained"
-PILE_HAND: Final[str] = "hand"
-PILE_DISCARD: Final[str] = "discard_pile"
-PILE_EXHAUST: Final[str] = "exhaust_pile"
+class Pile(StrEnum):
+    """牌堆 / 容器标识。值即审计用的英文键，`PILE_LABELS` 提供中文名。"""
+
+    DECK = "deck"
+    SPOILS = "spoils"
+    DRAW = "draw_pile"
+    RETAINED = "retained"
+    HAND = "hand"
+    DISCARD = "discard_pile"
+    EXHAUST = "exhaust_pile"
+
+
+PILE_DECK: Final[str] = Pile.DECK
+PILE_SPOILS: Final[str] = Pile.SPOILS
+PILE_DRAW: Final[str] = Pile.DRAW
+PILE_RETAINED: Final[str] = Pile.RETAINED
+PILE_HAND: Final[str] = Pile.HAND
+PILE_DISCARD: Final[str] = Pile.DISCARD
+PILE_EXHAUST: Final[str] = Pile.EXHAUST
 
 PILE_LABELS: Final[Dict[str, str]] = {
     PILE_DECK: "牌库",
@@ -168,24 +182,33 @@ READ_PILES_TOOL: Final[ToolDefinition] = ToolDefinition(
 #######################################################################################################################################
 def read_pile_cards(entity: Entity, pile: str) -> List[Card]:
     """取某个牌堆里的牌（只读；缺组件按空堆处理）。"""
-    if pile in (PILE_DRAW, PILE_RETAINED):
-        if not entity.has(DrawPileComponent):
+    match pile:
+        case Pile.DRAW:
+            return (
+                entity.get(DrawPileComponent).cards
+                if entity.has(DrawPileComponent)
+                else []
+            )
+        case Pile.RETAINED:
+            return (
+                entity.get(DrawPileComponent).retained_cards
+                if entity.has(DrawPileComponent)
+                else []
+            )
+        case Pile.DISCARD:
+            return (
+                entity.get(DiscardPileComponent).cards
+                if entity.has(DiscardPileComponent)
+                else []
+            )
+        case Pile.EXHAUST:
+            return (
+                entity.get(ExhaustPileComponent).cards
+                if entity.has(ExhaustPileComponent)
+                else []
+            )
+        case _:
             return []
-        draw_pile = entity.get(DrawPileComponent)
-        return draw_pile.cards if pile == PILE_DRAW else draw_pile.retained_cards
-    if pile == PILE_DISCARD:
-        return (
-            entity.get(DiscardPileComponent).cards
-            if entity.has(DiscardPileComponent)
-            else []
-        )
-    if pile == PILE_EXHAUST:
-        return (
-            entity.get(ExhaustPileComponent).cards
-            if entity.has(ExhaustPileComponent)
-            else []
-        )
-    return []
 
 
 #######################################################################################################################################

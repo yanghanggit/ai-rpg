@@ -70,10 +70,12 @@ class ExhaustCardsActionSystem(ReactiveProcessor):
             )
 
             if card_to_exhaust is not None:
-                discard_pile.cards = [
+                new_discard = [
                     c for c in discard_pile.cards if c.uuid != played_card.uuid
                 ]
-                exhaust_pile.cards.append(card_to_exhaust)
+                new_exhaust = [*exhaust_pile.cards, card_to_exhaust]
+                entity.replace(DiscardPileComponent, discard_pile.name, new_discard)
+                entity.replace(ExhaustPileComponent, exhaust_pile.name, new_exhaust)
 
                 # 消耗是持久后果（本场不再回来），且不出现在任何其他记录里
                 record_pile_change(
@@ -83,12 +85,12 @@ class ExhaustCardsActionSystem(ReactiveProcessor):
                     title="卡牌被消耗",
                     lines=[
                         f"「{played_card.name}」进入消耗堆：本场战斗不会再回到牌库。",
-                        f"消耗堆 {len(exhaust_pile.cards)} 张。",
+                        f"消耗堆 {len(new_exhaust)} 张。",
                     ],
                     deltas={PILE_DISCARD: -1, PILE_EXHAUST: 1},
                 )
                 logger.debug(
-                    f"  [{entity.name}] 消耗牌 [{played_card.name}] 已从 DiscardPile 移入 ExhaustPile（ExhaustPile 累计 {len(exhaust_pile.cards)} 张）"
+                    f"  [{entity.name}] 消耗牌 [{played_card.name}] 已从 DiscardPile 移入 ExhaustPile（ExhaustPile 累计 {len(new_exhaust)} 张）"
                 )
             else:
                 # DiscardCardsActionSystem 对所有出牌必定写入 DiscardPile，此分支为防御性日志

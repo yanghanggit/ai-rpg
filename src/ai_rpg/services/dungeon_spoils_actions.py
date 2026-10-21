@@ -24,6 +24,21 @@ from ..models import (
 
 
 ###################################################################################################################################################################
+def party_has_any_spoils(dbg_game: DBGGame) -> bool:
+    """队内是否至少有一名成员持有 `SpoilsComponent`。
+
+    用于把「生成跑完了但什么都没产出」判定为失败：设计会话出错时系统不会写入
+    `SpoilsComponent`（出错就没有结果），若不显式上报，调用方只会看到「转了一圈没东西」。
+    """
+    return any(
+        entity.has(SpoilsComponent)
+        for entity in dbg_game.get_group(
+            Matcher(all_of=[PartyMemberComponent])
+        ).entities
+    )
+
+
+###################################################################################################################################################################
 def clear_party_spoils(dbg_game: DBGGame) -> List[str]:
     """移除所有队伍成员身上的 SpoilsComponent，返回被清理的成员名（无前置校验，供房间生命周期内部调用）。"""
 

@@ -17,6 +17,7 @@ from ai_rpg.models import PlayerSession, WorldState
 from ai_rpg.services.dungeon_spoils_actions import (
     activate_generate_spoils,
     activate_pick_spoils_card,
+    party_has_any_spoils,
     remove_spoils,
 )
 
@@ -53,6 +54,12 @@ async def generate_spoils_game(
 
     # 推动房间管道处理，让 GenerateSpoilsActionSystem 响应并生成奖励
     await terminal_game._dungeon_opening_room_pipeline.process()
+
+    # 零产出：设计会话出错时不会写入 SpoilsComponent（出错就没有结果），可重试
+    if not party_has_any_spoils(terminal_game):
+        logger.warning(
+            "本次未产生任何奖励（设计会话出错或未产出候选）：可重新执行 generate-spoils"
+        )
 
     # 最后归档
     await store_game_async(terminal_game, save_dir)

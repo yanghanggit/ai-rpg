@@ -124,3 +124,36 @@ def test_generate_spoils_activates_action_in_non_combat_room(context: Context) -
 
     assert ok is True
     assert member.has(GenerateSpoilsAction)
+
+
+###################################################################################################################################################################
+def test_party_has_any_spoils_requires_component() -> None:
+    """「生成完了但零产出」可被判定：队内无 SpoilsComponent 即视为未完成。"""
+    from ai_rpg.entitas.context import Context
+    from ai_rpg.models import (
+        ActorComponent,
+        Card,
+        PartyMemberComponent,
+        SpoilsComponent,
+    )
+    from ai_rpg.services.dungeon_spoils_actions import party_has_any_spoils
+
+    context = Context()
+    game = MagicMock(spec=DBGGame)
+    game.get_group.side_effect = context.get_group
+
+    entity = context.create_entity()
+    entity._name = "角色.无名"
+    entity.add(ActorComponent, entity.name, "")
+    entity.add(PartyMemberComponent, entity.name)
+
+    assert party_has_any_spoils(game) is False
+
+    entity.add(
+        SpoilsComponent,
+        entity.name,
+        [Card(name="候选", description="")],
+        [],
+    )
+
+    assert party_has_any_spoils(game) is True

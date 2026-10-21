@@ -11,6 +11,7 @@ from ..pgsql import procrastinate_app, save_task_error
 from .dungeon_spoils_actions import (
     activate_generate_spoils,
     activate_pick_spoils_card,
+    party_has_any_spoils,
 )
 from .game_server_runtime import get_runtime_game_server
 
@@ -27,14 +28,12 @@ async def execute_generate_spoils_task(
     job_id = context.job.id
     assert job_id is not None, "运行中的任务必然有 job id"
     try:
-
         logger.info(f"🚀 奖励生成任务开始: job_id={job_id}, user={user_name}")
 
         game_server = get_runtime_game_server()
 
         # 获取房间并用每玩家锁避免并发状态竞争
         async with game_server.acquire(user_name) as room:
-
             # 验证游戏实例类型
             rpg_game = room.game
             if rpg_game is None:
@@ -52,6 +51,11 @@ async def execute_generate_spoils_task(
 
             # 推进开场房间流程，让 GenerateSpoilsActionSystem 响应并生成奖励
             await rpg_game._dungeon_opening_room_pipeline.process()
+
+            # 零产出即失败：设计会话出错时不会写入 SpoilsComponent（出错就没有结果）。
+            # 这里显式报错，外部才能区分「发奖成功」与「什么都没发」，而不是静默返回。
+            if not party_has_any_spoils(rpg_game):
+                raise ValueError("奖励生成未完成，可重试")
 
             # 存储奖励生成后的世界状态，便于调试和回放
             await store_game_async(rpg_game)
@@ -80,7 +84,6 @@ async def execute_pick_spoils_card_task(
     job_id = context.job.id
     assert job_id is not None, "运行中的任务必然有 job id"
     try:
-
         logger.info(
             f"🚀 领卡任务开始: job_id={job_id}, user={user_name}, actor={actor_name}, card={card_name}"
         )
@@ -89,7 +92,6 @@ async def execute_pick_spoils_card_task(
 
         # 获取房间并用每玩家锁避免并发状态竞争
         async with game_server.acquire(user_name) as room:
-
             # 验证游戏实例类型
             rpg_game = room.game
             if rpg_game is None:

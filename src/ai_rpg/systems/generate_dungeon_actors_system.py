@@ -1,7 +1,7 @@
 """副本怪物生成系统：按房间约束生成怪物及其预置牌库成员。"""
 
 from functools import partial
-from typing import Dict, Final, List, Mapping, final, override
+from typing import Dict, Final, List, Mapping, Tuple, final, override
 
 from loguru import logger
 from pydantic import BaseModel, Field
@@ -117,6 +117,38 @@ def _normalize_motif(motif: str) -> str:
 
 
 ####################################################################################################################################
+_MOTIF_REQUIRED_SECTIONS: Final[Tuple[str, ...]] = ("母题", "意象")
+
+
+####################################################################################################################################
+def missing_motif_sections(motif: str) -> List[str]:
+    """列出锚点里缺失的必备小节（母题 / 意象）；空锚点视为全缺。"""
+    return [
+        section for section in _MOTIF_REQUIRED_SECTIONS if f"**{section}**" not in motif
+    ]
+
+
+####################################################################################################################################
+def warn_if_motif_incomplete(actor_name: str, motif: str) -> None:
+    """艺术锚点缺失或结构不足时告警（只记日志，不改变行为）。
+
+    锚点为空不会中断生成：该怪物的牌会回退到「只用扮演设定」的设计口径。
+    这条 warning 的作用是让这种**质量降级**在日志里可见，而不是静默发生。
+    """
+    if not motif:
+        logger.warning(
+            f"[GenerateDungeonActorsSystem] {actor_name} 未产出艺术锚点（motif 为空）：该怪物的牌将只用扮演设定设计"
+        )
+        return
+
+    missing = missing_motif_sections(motif)
+    if missing:
+        logger.warning(
+            f"[GenerateDungeonActorsSystem] {actor_name} 的艺术锚点结构不完整（缺 {'、'.join(missing)} 小节）：设计取材可能退化"
+        )
+
+
+####################################################################################################################################
 def _handle_record_dungeon_actor(
     result: _ActorsResult,
     quotas: Mapping[str, int],
@@ -147,6 +179,7 @@ def _handle_record_dungeon_actor(
         motif=_normalize_motif(motif),
     )
     result.actors.append(record)
+    warn_if_motif_incomplete(actor_name, record.motif)
     logger.info(
         f"[GenerateDungeonActorsSystem] record_dungeon_actor 执行:\n  actor_name: {actor_name}\n  room_name:  {room_name}\n  累计: {len(result.actors)} 个"
     )

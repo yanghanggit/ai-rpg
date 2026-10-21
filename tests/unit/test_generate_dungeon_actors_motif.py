@@ -8,6 +8,7 @@ from ai_rpg.systems.generate_dungeon_actors_system import (
     _ActorsResult,
     _build_record_dungeon_actor_tool,
     _handle_record_dungeon_actor,
+    missing_motif_sections,
 )
 
 _ROOM = DungeonRoomDraft(
@@ -102,3 +103,10 @@ def test_handler_tolerates_missing_motif() -> None:
     )
 
     assert result.actors[0].motif == ""
+
+
+def test_missing_motif_sections_reports_gaps() -> None:
+    """只告警、不改行为：空锚点算全缺，缺哪一节就报哪一节。"""
+    assert missing_motif_sections("") == ["母题", "意象"]
+    assert missing_motif_sections("**母题**: 泥下的等待") == ["意象"]
+    assert missing_motif_sections("**母题**: 泥下的等待\n**意象**: 湿泥、干草") == []

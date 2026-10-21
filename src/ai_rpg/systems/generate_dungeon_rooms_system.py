@@ -110,6 +110,28 @@ def _build_dungeon_rooms_prompt(
 
 
 ####################################################################################################################################
+def validate_room_layout(
+    rooms: List[DungeonRoomDraft],
+    *,
+    expected_room_count: int,
+    opening_room_count: int,
+) -> str:
+    """校验房间数量与类型顺序：前 `opening_room_count` 间必须是开场，其余必须是战斗。
+
+    合法返回空串；否则返回可直接进日志的原因。抽成纯函数便于单测——
+    房间结构是「代码保底、LLM 填内容」的边界，值得被独立锁住。
+    """
+    if len(rooms) != expected_room_count:
+        return f"房间数量不符：期望 {expected_room_count}，实际 {len(rooms)}"
+
+    for index, room in enumerate(rooms, start=1):
+        expected = "opening" if index <= opening_room_count else "combat"
+        if room.room_type != expected:
+            return f"第 {index} 个房间 room_type 必须为 {expected!r}，实际为 {room.room_type!r}"
+
+    return ""
+
+
 class _RoomsResult(BaseModel):
     """record_dungeon_rooms handler 的结果容器。"""
 
@@ -239,20 +261,14 @@ class GenerateDungeonRoomsSystem(ReactiveProcessor):
 
         rooms = result.rooms
 
-        # 校验房间数量与类型顺序：总数必须匹配，第 1 个 opening，其余 combat
-        if len(rooms) != dungeon_room_count:
-            logger.error(
-                f"[GenerateDungeonRoomsSystem] 房间数量不符：期望 {dungeon_room_count}，实际 {len(rooms)}，中止"
-            )
+        layout_error = validate_room_layout(
+            rooms,
+            expected_room_count=dungeon_room_count,
+            opening_room_count=opening_room_count,
+        )
+        if layout_error:
+            logger.error(f"[GenerateDungeonRoomsSystem] {layout_error}，中止")
             return
-        # 前 opening_room_count 个必须是 opening，其余必须是 combat
-        for i, room in enumerate(rooms, start=1):
-            expected = "opening" if i <= opening_room_count else "combat"
-            if room.room_type != expected:
-                logger.error(
-                    f"[GenerateDungeonRoomsSystem] 第 {i} 个房间 room_type 必须为 {expected!r}，实际为 {room.room_type!r}，中止"
-                )
-                return
 
         logger.info(
             f"[GenerateDungeonRoomsSystem] 完成:\n  rooms ({len(rooms)}): "

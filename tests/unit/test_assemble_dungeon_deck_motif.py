@@ -4,11 +4,11 @@
 """
 
 from typing import Any, Dict, List, Tuple
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from ai_rpg.entitas import dump_components
+from ai_rpg.entitas import Context, dump_components
 from ai_rpg.game.dbg_game import DBGGame
 from ai_rpg.models import (
     Actor,
@@ -16,6 +16,8 @@ from ai_rpg.models import (
     Card,
     CharacterStats,
     DeckComponent,
+    DungeonGenerationSpec,
+    GenerateDungeonAction,
     MotifComponent,
     TargetType,
 )
@@ -194,3 +196,49 @@ async def test_assembled_deck_keeps_motif_component(
     assert ok is True
     assert DeckComponent.__name__ in actor.components
     assert actor.components[MotifComponent.__name__]["motif"] == _MOTIF
+
+
+#######################################################################################################################################
+async def test_react_reads_deck_spec_from_action(
+    system: AssembleDungeonDeckSystem, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """接线：react 从动作的规格里取牌库原型，原样交给 _run（不自己解读、不落默认）。"""
+    context = Context()
+    entity = context.create_entity()
+    entity._name = "世界.副本生成系统"
+    spec = DungeonGenerationSpec(
+        deck_prototype_ids=["proto.a", "proto.a", "proto.b", "proto.b", "proto.c"]
+    )
+    entity.add(GenerateDungeonAction, entity.name, spec)
+
+    run = AsyncMock()
+    monkeypatch.setattr(system, "_run", run)
+
+    await system.react([entity])
+
+    run.assert_awaited_once_with(deck_prototype_ids=list(spec.deck_prototype_ids))
+
+
+#######################################################################################################################################
+async def test_explicit_spec_sets_deck_size(
+    system: AssembleDungeonDeckSystem, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """显式规格的张数由规格决定：给 3 个就产出 3 张，不因默认牌库张数而回退。"""
+    spec = ["proto.a", "proto.b", "proto.c"]
+
+    monkeypatch.setattr(
+        deck_module,
+        "materialize_candidate",
+        lambda prototype_id, source: _candidate(prototype_id),
+    )
+
+    async def _fake_design(*args: Any, **kwargs: Any) -> DesignOutcome:
+        total = len(kwargs["candidates"])
+        return DesignOutcome(ok=True, designed=total, total=total, affixes=0)
+
+    monkeypatch.setattr(deck_module, "design_cards_for_actor", _fake_design)
+
+    cards, is_fallback = await system._build_cards(_actor(), [_entry("proto.x")], spec)
+
+    assert is_fallback is False
+    assert len(cards) == len(spec)

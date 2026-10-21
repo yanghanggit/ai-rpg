@@ -177,3 +177,21 @@ def test_spoils_fill_random_reports_insufficient_pool() -> None:
             fill_random=True,
             index=_INDEX,
         )
+
+
+#######################################################################################################################################
+def test_resolve_candidate_ids_without_target_takes_what_is_given() -> None:
+    """不给目标张数时「给几个就是几个」：游戏常量不构成约束。"""
+    assert resolve_candidate_ids(prototype_ids=["proto.summon"], index=_INDEX) == [
+        "proto.summon"
+    ]
+    assert resolve_candidate_ids(slot="on_autonomous_affixes", index=_INDEX) == [
+        "proto.summon"
+    ]
+
+
+def test_resolve_candidate_ids_fill_requires_target() -> None:
+    with pytest.raises(ValueError, match="需要先给出目标张数"):
+        resolve_candidate_ids(
+            prototype_ids=["proto.summon"], fill_random=True, index=_INDEX
+        )

@@ -12,7 +12,7 @@
   speak           --snapshot PATH --target NPC --content TEXT    与 NPC 对话
   switch-stage    --snapshot PATH --stage STAGE                  切换场景
   compact-context --snapshot PATH --target ENTITY               手动压缩指定实体的 LLM 记忆
-  generate-dungeon --snapshot PATH [-d ID ...] [--slot SLOT] [--keyword K] [--fill-random] [--seed N]
+  generate-dungeon --snapshot PATH [-d ID ...] [--slot SLOT] [--keyword K] [--deck-size N] [--fill-random]
                    [--rooms N] [--opening-rooms N] [--monsters-per-room N]
                                       LLM 动态生成副本（可选显式结构 / 怪物牌库规格，调测用）
   roster          --snapshot PATH                                查看队伍名单（只读）
@@ -40,7 +40,7 @@
   collect-loot    --snapshot PATH                               收战利品（胜利后）
   next-dungeon    --snapshot PATH                               下一关（仅推进，不初始化新房间）
   exit-dungeon    --snapshot PATH                               退出副本 → 家园模式（无论胜负）
-  generate-spoils --snapshot PATH [--prototype ID ...] [--slot SLOT] [--keyword K] [--fill-random] [--seed N]
+  generate-spoils --snapshot PATH [--prototype ID ...] [--slot SLOT] [--keyword K] [--count N] [--fill-random] [--seed N]
                                      生成候选奖励（默认随机；可选显式规格）
   pick-card       --snapshot PATH --actor A --card C            从 Spoils 领取一张卡加入牌库
 
@@ -48,6 +48,8 @@
   card-prototypes [--card-type 手牌] [--slot SLOT] [--keyword K]   列出原型（id / 分类 / 摘要 / 开放槽）
   design-cards    --snapshot PATH --actor A [--prototype ID ...] [--slot SLOT] [--keyword K] [--repeat N]
                                      对指定原型跑设计会话并打印结果，不写游戏状态
+  rebuild-deck    --snapshot PATH --dungeon D --actor A [--prototype ID ...] [--replace REF ...] [--size N]
+                                     重做已生成副本里某只怪物的牌库（整副重建 / 定点替换），改写 .dungeons 文件
 
 ==== 典型流程 ====
   家园：new → stages → advance(循环) / speak / switch-stage → enter-dungeon
@@ -99,6 +101,7 @@ from ai_rpg.dbg_game_agent.cards import (
     format_designed_card,
     format_prototype_line,
     load_prototype_index,
+    rebuild_deck_in_dungeon,
     resolve_candidate_ids,
     resolve_prototype_ids,
 )
@@ -146,7 +149,6 @@ from ai_rpg.dbg_game_agent.spoils import (
     pick_spoils_card_game,
     remove_spoils_game,
 )
-from ai_rpg.systems.assemble_dungeon_deck_system import DECK_SIZE
 from ai_rpg.systems.generate_spoils_action_system import SPOILS_CARD_COUNT
 
 
@@ -786,6 +788,12 @@ def collect_loot(snapshot: str) -> None:
     help="随机补足的随机种子（仅 --fill-random 生效）",
 )
 @click.option(
+    "--deck-size",
+    type=int,
+    default=None,
+    help="怪物牌库张数（不指定 = 给几个原型就是几张；--fill-random 需要它作为补足目标）",
+)
+@click.option(
     "--rooms",
     type=int,
     default=0,
@@ -808,6 +816,7 @@ def generate_dungeon_cmd(
     deck_prototype_ids: Tuple[str, ...],
     slot: str,
     keyword: str,
+    deck_size: int,
     fill_random: bool,
     seed: int,
     rooms: int,
@@ -842,7 +851,7 @@ def generate_dungeon_cmd(
     if deck_prototype_ids or slot or keyword:
         try:
             resolved = resolve_candidate_ids(
-                count=DECK_SIZE,
+                count=deck_size,
                 prototype_ids=deck_prototype_ids,
                 slot=slot,
                 keyword=keyword,
@@ -1084,6 +1093,12 @@ def opening_init(snapshot: str) -> None:
     help="指定不足候选数时，剩余随机补足（默认严格：必须凑满）",
 )
 @click.option(
+    "--count",
+    type=int,
+    default=None,
+    help="候选张数（不指定 = 给几个就是几个；--fill-random 需要它作为补足目标）",
+)
+@click.option(
     "--seed",
     type=int,
     default=None,
@@ -1094,6 +1109,7 @@ def generate_spoils(
     prototype_ids: Tuple[str, ...],
     slot: str,
     keyword: str,
+    count: int,
     fill_random: bool,
     seed: int,
 ) -> None:
@@ -1122,7 +1138,7 @@ def generate_spoils(
     if prototype_ids or slot or keyword:
         try:
             resolved = resolve_candidate_ids(
-                count=SPOILS_CARD_COUNT,
+                count=count,
                 prototype_ids=prototype_ids,
                 slot=slot,
                 keyword=keyword,
@@ -1616,6 +1632,136 @@ def design_cards(
                 click.echo("")
 
     asyncio.run(_run())
+
+
+###############################################################################################################################################
+@main.command("rebuild-deck")
+@click.option(
+    "--snapshot",
+    required=True,
+    help="存档目录路径：只借用其中的「世界.卡牌设计」宿主跑设计会话，不写该存档",
+)
+@click.option(
+    "--dungeon",
+    required=True,
+    help="已生成的副本名（.dungeons 下的文件名，如 副本.长明粮窖）",
+)
+@click.option(
+    "--actor",
+    required=True,
+    help="要重做牌库的怪物全名（先用 generate-dungeon 生成，再看副本文件或进入流程拿到名字）",
+)
+@click.option(
+    "--prototype",
+    "-p",
+    "prototype_ids",
+    multiple=True,
+    help="新的牌库原型 id（可重复）。未加 --fill-random 时必须凑满一副。",
+)
+@click.option(
+    "--slot", default=None, help="按开放槽选择原型（如 on_autonomous_affixes）"
+)
+@click.option(
+    "--keyword",
+    default=None,
+    help="按关键词选择原型（匹配 name / summary / 分类 / keywords）",
+)
+@click.option(
+    "--replace",
+    "replace_targets",
+    multiple=True,
+    help="要替换的现有卡牌：1 起序号或唯一卡名；与 --prototype 按顺序一一配对。省略 = 整副重建。",
+)
+@click.option(
+    "--size",
+    type=int,
+    default=None,
+    help="整副重建的目标张数（不指定 = 给几个原型就重建几张；--fill-random 需要它）",
+)
+@click.option(
+    "--fill-random",
+    is_flag=True,
+    help="指定不足所需张数时，剩余随机补足（默认严格：必须凑满）",
+)
+@click.option(
+    "--seed", type=int, default=None, help="随机补足的随机种子（仅 --fill-random 生效）"
+)
+def rebuild_deck(
+    snapshot: str,
+    dungeon: str,
+    actor: str,
+    prototype_ids: Tuple[str, ...],
+    replace_targets: Tuple[str, ...],
+    size: int,
+    slot: str,
+    keyword: str,
+    fill_random: bool,
+    seed: int,
+) -> None:
+    """重做已生成副本里某只怪物的牌库，并改写 `.dungeons/<副本>.json`。
+
+    两种用法：不给 --replace 时整副重建（必须恰好一副张数）；给了 --replace 时只替换
+    指定的那几张，其余原样保留。生成期的怪物名由 LLM 产出，因此精确控制只能在生成之后做。
+    只影响**下一次**进入副本，不写快照。
+    """
+
+    snapshot_path = Path(snapshot)
+    if not snapshot_path.exists():
+        raise click.BadParameter(
+            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+        )
+
+    if not (prototype_ids or slot or keyword):
+        raise click.BadParameter(
+            "至少需要 --prototype / --slot / --keyword 之一", param_hint="--prototype"
+        )
+    if replace_targets and fill_random:
+        raise click.BadParameter(
+            "定点替换按 --replace 与 --prototype 一一配对，不做随机补足",
+            param_hint="--fill-random",
+        )
+
+    try:
+        resolved = resolve_candidate_ids(
+            count=size,
+            prototype_ids=prototype_ids,
+            slot=slot,
+            keyword=keyword,
+            fill_random=fill_random,
+            seed=seed,
+        )
+    except ValueError as e:
+        raise click.BadParameter(str(e))
+
+    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
+    _setup_logger(_log_file)
+
+    world, player_session = restore_world(snapshot_path)
+
+    logger.info(f"本次运行日志文件：{_log_file}")
+    logger.info(f"读取存档：{snapshot_path}")
+    mode = f"替换 {list(replace_targets)}" if replace_targets else "整副重建"
+    logger.info(f"重做牌库：{dungeon} / {actor} · {mode} ← {resolved}")
+
+    async def _run() -> None:
+        game = await restore_game(world, player_session)
+        cards = await rebuild_deck_in_dungeon(
+            game,
+            dungeon_name=dungeon,
+            actor_name=actor,
+            prototype_ids=resolved,
+            replace=list(replace_targets),
+        )
+        click.echo(f"{dungeon} / {actor}: 牌库已改写（{len(cards)} 张）")
+        for card_index, card in enumerate(cards, 1):
+            click.echo(f"  #{card_index} {card.name}")
+        click.echo("只影响下一次进入副本；当前存档不受影响。")
+
+    try:
+        asyncio.run(_run())
+    except ValueError as e:
+        raise click.ClickException(str(e))
 
 
 ###############################################################################################################################################

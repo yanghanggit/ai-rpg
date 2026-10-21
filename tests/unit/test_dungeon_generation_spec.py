@@ -6,7 +6,7 @@
 - 正式 API 的请求模型里**没有**任何规格字段（线上无法传递）。
 """
 
-from typing import Any, List, cast
+from typing import Any, List, Literal, Tuple, cast
 from unittest.mock import MagicMock
 
 import pytest
@@ -29,6 +29,7 @@ from ai_rpg.systems.generate_dungeon_profile_system import (
 from ai_rpg.systems.generate_dungeon_rooms_system import (
     _handle_record_dungeon_rooms,
     _RoomsResult,
+    validate_room_layout,
 )
 
 
@@ -186,8 +187,15 @@ def test_assembly_gate_blocks_mismatched_actor_counts() -> None:
     draft = DungeonDraft(
         dungeon_name="副本.试作",
         rooms=[
-            DungeonRoomDraft(room_type="opening", room_name="房间.门"),
-            DungeonRoomDraft(room_type="combat", room_name="房间.廊", actor_count=1),
+            DungeonRoomDraft(
+                room_type="opening", room_name="房间.门", profile="门口景象"
+            ),
+            DungeonRoomDraft(
+                room_type="combat",
+                room_name="房间.廊",
+                profile="长廊景象",
+                actor_count=1,
+            ),
         ],
         actors=[],
     )
@@ -200,3 +208,143 @@ def test_assembly_gate_blocks_mismatched_actor_counts() -> None:
         DungeonActorDraft(room_name="房间.廊", actor_name="怪物.甲"),
     ]
     assert AssembleDungeonSystem._find_actor_count_mismatch(draft) == ""
+
+
+#######################################################################################################################################
+def _room(room_type: Literal["opening", "combat"], name: str) -> Any:
+    from ai_rpg.models import DungeonRoomDraft
+
+    return DungeonRoomDraft(room_type=room_type, room_name=name)
+
+
+def test_room_layout_accepts_opening_prefix() -> None:
+    """多开场房是合法布局：前 N 间开场、其余战斗。"""
+    rooms = [
+        _room("opening", "房间.门"),
+        _room("opening", "房间.廊"),
+        _room("combat", "房间.深处"),
+    ]
+
+    assert (
+        validate_room_layout(rooms, expected_room_count=3, opening_room_count=2) == ""
+    )
+
+
+def test_room_layout_rejects_wrong_count() -> None:
+    rooms = [_room("opening", "房间.门")]
+
+    message = validate_room_layout(rooms, expected_room_count=2, opening_room_count=1)
+
+    assert "房间数量不符" in message
+
+
+def test_room_layout_rejects_combat_before_opening_prefix() -> None:
+    """顺序不可交换：第 2 间若还是 combat，而规格要求 2 间开场，就必须拒绝。"""
+    rooms = [_room("opening", "房间.门"), _room("combat", "房间.廊")]
+
+    message = validate_room_layout(rooms, expected_room_count=2, opening_room_count=2)
+
+    assert "第 2 个房间" in message
+    assert "'opening'" in message
+
+
+def test_room_layout_rejects_trailing_opening() -> None:
+    rooms = [_room("opening", "房间.门"), _room("opening", "房间.廊")]
+
+    message = validate_room_layout(rooms, expected_room_count=2, opening_room_count=1)
+
+    assert "第 2 个房间" in message
+    assert "'combat'" in message
+
+
+#######################################################################################################################################
+async def _run_assembly_with(
+    tmp_path: Any,
+    monkeypatch: pytest.MonkeyPatch,
+    draft: Any,
+) -> Tuple[bool, MagicMock]:
+    """跑一次组装步骤，返回 (是否落盘, game)。落盘目录整体指向 tmp_path。"""
+    from ai_rpg.systems import assemble_dungeon_system as assembly_module
+
+    monkeypatch.setattr(assembly_module, "DUNGEONS_DIR", tmp_path / "dungeons")
+    monkeypatch.setattr(assembly_module, "DUNGEONS_DRAFTS_DIR", tmp_path / "drafts")
+    (tmp_path / "dungeons").mkdir()
+    (tmp_path / "drafts").mkdir()
+
+    # 组装步骤只用到世界蓝图的两段文案与中间数据；不用 spec 约束，避免私有属性被拦
+    game = MagicMock()
+    game._dungeon_draft = draft
+    game._world = MagicMock()
+    game._world.blueprint.campaign_setting = "设定"
+    game._world.blueprint.system_rules = "规则"
+    system = assembly_module.AssembleDungeonSystem(game)
+
+    await system._run()
+
+    written = any((tmp_path / "dungeons").iterdir())
+    return written, game
+
+
+async def test_assembly_gate_skips_write_on_mismatch(
+    tmp_path: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """上游失败（怪物数不符）时不落盘：不会产出「无怪物的可用副本」。"""
+    from ai_rpg.models import DungeonDraft, DungeonRoomDraft
+
+    draft = DungeonDraft(
+        dungeon_name="副本.试作",
+        profile="设定",
+        rooms=[
+            DungeonRoomDraft(
+                room_type="opening", room_name="房间.门", profile="门口景象"
+            ),
+            DungeonRoomDraft(
+                room_type="combat",
+                room_name="房间.廊",
+                profile="长廊景象",
+                actor_count=1,
+            ),
+        ],
+        actors=[],
+    )
+
+    written, _ = await _run_assembly_with(tmp_path, monkeypatch, draft)
+
+    assert written is False
+    assert list((tmp_path / "drafts").iterdir()) == []
+
+
+async def test_assembly_writes_when_counts_match(
+    tmp_path: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """闸门不能误伤正常产物：数量一致时照常落盘。"""
+    from ai_rpg.models import DungeonActorDraft, DungeonDraft, DungeonRoomDraft
+
+    draft = DungeonDraft(
+        dungeon_name="副本.试作",
+        profile="设定",
+        rooms=[
+            DungeonRoomDraft(
+                room_type="opening", room_name="房间.门", profile="门口景象"
+            ),
+            DungeonRoomDraft(
+                room_type="combat",
+                room_name="房间.廊",
+                profile="长廊景象",
+                actor_count=1,
+            ),
+        ],
+        actors=[
+            DungeonActorDraft(
+                room_name="房间.廊",
+                actor_name="怪物.甲",
+                profile="扮演设定",
+                base_body="外观",
+            )
+        ],
+    )
+
+    written, _ = await _run_assembly_with(tmp_path, monkeypatch, draft)
+
+    assert written is True
+    assert (tmp_path / "dungeons" / "副本.试作.json").exists()

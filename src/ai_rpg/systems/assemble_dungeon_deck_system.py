@@ -225,7 +225,8 @@ class AssembleDungeonDeckSystem(ReactiveProcessor):
         会话结束不留痕。
 
         `deck_prototype_ids` 非空时为**显式候选规格**（调测 / 脚本入口写入
-        `GenerateDungeonAction`）：跳过选型、按规格物化，数量必须恰好 `DECK_SIZE`。
+        `GenerateDungeonAction.spec`）：跳过选型、按规格物化，牌库张数以规格为准
+        （`DECK_SIZE` 只是「未指定规格」时默认路径的张数，不是约束）。
         """
         if not index:
             logger.warning(
@@ -236,24 +237,13 @@ class AssembleDungeonDeckSystem(ReactiveProcessor):
 
         # 阶段一：选型。有显式规格就跳过 LLM 选型，否则让怪物自己挑。
         if deck_prototype_ids:
-            if len(deck_prototype_ids) != DECK_SIZE:
-                logger.error(
-                    f"[AssembleDungeonDeckSystem] {actor.name} 显式候选规格数量异常（{len(deck_prototype_ids)} ≠ {DECK_SIZE}），回退默认"
-                )
-
-                # 显式规格数量异常，直接回退默认牌库
-                return make_default_deck_cards(actor.name), True
-
-            # 显式规格数量正确，直接使用这些原型 ID 作为选型结果
+            # 显式规格：牌库张数以规格为准，直接使用这些原型 ID 作为选型结果
             logger.info(
-                f"[AssembleDungeonDeckSystem] {actor.name} 使用显式候选规格（{DECK_SIZE} 张）: {deck_prototype_ids}"
+                f"[AssembleDungeonDeckSystem] {actor.name} 使用显式候选规格（{len(deck_prototype_ids)} 张）: {deck_prototype_ids}"
             )
-
-            # 记录选中的原型 ID 列表作为选型结果
             selected = list(deck_prototype_ids)
 
         else:
-
             # 没有显式规格，使用 LLM 让怪物自己挑选原型
             selection = await select_prototypes_for_actor(
                 self._game,
@@ -300,9 +290,9 @@ class AssembleDungeonDeckSystem(ReactiveProcessor):
         )
 
         # 检查设计阶段是否成功，若未全部完成则回退默认牌库
-        if not outcome.ok or outcome.designed != DECK_SIZE:
+        if not outcome.ok or outcome.designed != len(candidates):
             logger.warning(
-                f"[AssembleDungeonDeckSystem] {actor.name} 设计 {outcome.designed}/{DECK_SIZE} 未全部完成，回退默认"
+                f"[AssembleDungeonDeckSystem] {actor.name} 设计 {outcome.designed}/{len(candidates)} 未全部完成，回退默认"
             )
             return make_default_deck_cards(actor.name), True
 

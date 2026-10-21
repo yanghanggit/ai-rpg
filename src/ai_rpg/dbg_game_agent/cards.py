@@ -9,7 +9,11 @@
   `GenerateSpoilsAction.prototype_ids` 或 `GenerateDungeonAction.spec.deck_prototype_ids`；
   系统侧因此只需理解「显式 id 列表」这一件事；
 - `design_cards_preview`：直接对指定原型跑设计会话并读回结果，**不写游戏状态**，
-  用于迭代人设 / 艺术锚点 / 提示词（比 generate-spoils → pick-card 快得多）。
+  用于迭代人设 / 艺术锚点 / 提示词（比 generate-spoils → pick-card 快得多）；
+- `rebuild_deck_in_dungeon`：对**已生成副本**里的某只怪物重做牌库，直接改写
+  `.dungeons/<副本>.json`——生成期的怪物名是 LLM 之后才产出的，所以「按名字精确控制」
+  只能在生成之后做。两种语义：整副重建（用系统的牌库张数）与定点替换（只换指定的几张，
+  其余保留）。
 """
 
 import json
@@ -19,7 +23,15 @@ from typing import Any, Dict, List, Optional, Sequence
 from loguru import logger
 
 from ..game.dbg_game import DBGGame
-from ..models import DESIGNABLE_AFFIX_FIELDS, Card, MotifComponent
+from ..models import (
+    DESIGNABLE_AFFIX_FIELDS,
+    Actor,
+    Card,
+    DeckComponent,
+    Dungeon,
+    MotifComponent,
+)
+from ..paths import DUNGEONS_DIR
 from ..pgsql import (
     CardPrototypeIndexEntry,
     get_card_prototype,
@@ -30,6 +42,7 @@ from ..systems.card_common import (
     design_cards_for_actor,
     materialize_candidate,
     read_actor_system_prompt,
+    read_motif_from_components,
 )
 
 #######################################################################################################################################
@@ -135,7 +148,7 @@ def resolve_prototype_ids(
 #######################################################################################################################################
 def resolve_candidate_ids(
     *,
-    count: int,
+    count: Optional[int] = None,
     prototype_ids: Sequence[str] = (),
     slot: Optional[str] = None,
     keyword: Optional[str] = None,
@@ -144,9 +157,11 @@ def resolve_candidate_ids(
     card_type: str = DEFAULT_CARD_TYPE,
     index: Optional[List[CardPrototypeIndexEntry]] = None,
 ) -> List[str]:
-    """解析一批候选规格（spoils 候选 / 怪物牌库）：默认严格，`fill_random` 才随机补足。
+    """解析一批候选规格（spoils 候选 / 怪物牌库 / 定点重做）。
 
-    补足时不会重复已指定的原型，并从 `seed`（可选）派生随机源，便于复现同一次抽样。
+    `count` 是**可选的目标张数**：不给就「指定了几张就是几张」——游戏常量（如一副牌的张数）
+    只用于未指定时的默认路径，不构成约束。给了 `count` 才做严格数量校验，`fill_random`
+    时按 `count` 随机补足（不重复已选项，从 `seed` 派生随机源便于复现）。
     """
     entries = index if index is not None else load_prototype_index(card_type)
     resolved = resolve_prototype_ids(
@@ -156,6 +171,13 @@ def resolve_candidate_ids(
         card_type=card_type,
         index=entries,
     )
+
+    if count is None:
+        if fill_random:
+            raise ValueError(
+                "随机补足需要先给出目标张数（--count / --deck-size / --size）"
+            )
+        return resolved
 
     if len(resolved) > count:
         raise ValueError(
@@ -287,3 +309,156 @@ def preview_summary(runs: Sequence[Sequence[Candidate]]) -> Dict[str, Any]:
             for run in runs
         ],
     }
+
+
+#######################################################################################################################################
+def find_dungeon_actor(dungeon: Dungeon, actor_name: str) -> Actor:
+    """在副本模型里按名字找角色（含所有房间）；找不到即报错并列出可选名字。"""
+    for room in dungeon.rooms:
+        for actor in room.stage.actors:
+            if actor.name == actor_name:
+                return actor
+
+    available = [actor.name for room in dungeon.rooms for actor in room.stage.actors]
+    raise ValueError(
+        f"副本「{dungeon.name}」里没有角色 {actor_name!r}；可选：{available or '（无角色）'}"
+    )
+
+
+#######################################################################################################################################
+def _existing_deck_cards(actor: Actor) -> List[Card]:
+    """读角色当前牌库（副本模型里的组件数据）；没有牌库时返回空列表。"""
+    data = actor.components.get(DeckComponent.__name__)
+    if not isinstance(data, dict):
+        return []
+    return DeckComponent.model_validate(data).cards
+
+
+def _deck_names(cards: Sequence[Card]) -> str:
+    return "、".join(f"{index}.{card.name}" for index, card in enumerate(cards, 1))
+
+
+def resolve_replacement_indices(
+    existing: Sequence[Card], references: Sequence[str]
+) -> List[int]:
+    """把「序号或卡名」解析成现有牌库里的下标（0 起）。
+
+    序号从 1 开始、按当前牌库顺序；卡名必须唯一，重名时要求改用序号——否则「换哪一张」
+    会出现歧义。
+    """
+    indices: List[int] = []
+    for reference in references:
+        text = reference.strip()
+        if not text:
+            raise ValueError("替换目标不能为空")
+
+        if text.isdigit():
+            index = int(text) - 1
+            if not 0 <= index < len(existing):
+                raise ValueError(
+                    f"序号 {text} 超出范围：当前牌库 {len(existing)} 张（序号从 1 开始）"
+                )
+        else:
+            hits = [index for index, card in enumerate(existing) if card.name == text]
+            if not hits:
+                raise ValueError(
+                    f"当前牌库里没有「{text}」；现有：{_deck_names(existing) or '（空牌库）'}"
+                )
+            if len(hits) > 1:
+                positions = [hit + 1 for hit in hits]
+                raise ValueError(
+                    f"当前牌库有多张「{text}」（序号 {positions}），请改用序号指定"
+                )
+            index = hits[0]
+
+        if index in indices:
+            raise ValueError(f"同一张牌被指定了两次（序号 {index + 1}）")
+        indices.append(index)
+
+    return indices
+
+
+#######################################################################################################################################
+async def rebuild_deck_in_dungeon(
+    game: DBGGame,
+    *,
+    dungeon_name: str,
+    actor_name: str,
+    prototype_ids: Sequence[str],
+    replace: Sequence[str] = (),
+    max_rounds: int = 16,
+) -> List[Card]:
+    """按给定原型重做某只怪物的牌库，并改写 `.dungeons/<副本>.json`。
+
+    两种语义：
+
+    - `replace` 为空：**整副重建**，牌库张数 = 给定原型数（不限制，`DECK_SIZE` 只是默认路径的张数）；
+    - `replace` 非空：**定点替换**，`replace` 与 `prototype_ids` 按顺序一一配对，
+      每项是现有牌的 1 起序号或唯一卡名，其余牌原样保留、顺序不变。
+
+    走的是与生产完全相同的设计入口（世界契约 + 怪物扮演设定 + 艺术锚点），只是不经过
+    generate-dungeon 的选型阶段——生成期的怪物名由 LLM 产出，因此「按名字精确指定」
+    只能在生成之后进行。改写只影响**下一次**「进入副本」，对正在进行的存档无作用。
+
+    设计未全部落地时抛错且**不写文件**，避免半成品覆盖已有牌库。
+    """
+    if not prototype_ids:
+        raise ValueError("至少需要一个原型 id")
+
+    dungeon_path = DUNGEONS_DIR / f"{dungeon_name}.json"
+    if not dungeon_path.exists():
+        raise ValueError(f"副本文件不存在：{dungeon_path}")
+
+    dungeon = Dungeon.model_validate_json(dungeon_path.read_text(encoding="utf-8"))
+    actor = find_dungeon_actor(dungeon, actor_name)
+
+    existing_cards = _existing_deck_cards(actor)
+    if replace:
+        if len(replace) != len(prototype_ids):
+            raise ValueError(
+                f"替换目标（{len(replace)} 个）与原型（{len(prototype_ids)} 个）必须一一配对"
+            )
+        replacement_indices = resolve_replacement_indices(existing_cards, replace)
+    else:
+        replacement_indices = []
+
+    candidates: List[Candidate] = []
+    for prototype_id in prototype_ids:
+        candidate = materialize_candidate(prototype_id, actor_name)
+        if candidate is None:
+            raise ValueError(f"物化原型 {prototype_id!r} 失败，未改写副本文件")
+        candidates.append(candidate)
+
+    outcome = await design_cards_for_actor(
+        game,
+        actor_name=actor_name,
+        actor_system_prompt=actor.system_message,
+        candidates=candidates,
+        actor_motif=read_motif_from_components(actor.components),
+        max_rounds=max_rounds,
+    )
+    if not outcome.ok or outcome.designed != len(candidates):
+        raise ValueError(
+            f"设计未完成（{outcome.designed}/{len(candidates)}），未改写副本文件"
+        )
+
+    designed = [candidate.card for candidate in candidates]
+    if replace:
+        cards = list(existing_cards)
+        for index, card in zip(replacement_indices, designed):
+            cards[index] = card
+    else:
+        cards = designed
+
+    deck = DeckComponent(name=actor.name, cards=cards)
+    actor.components = {
+        **actor.components,
+        DeckComponent.__name__: deck.model_dump(),
+    }
+    dungeon_path.write_text(dungeon.model_dump_json(indent=4), encoding="utf-8")
+
+    detail = f"替换 {len(designed)} 张" if replace else "整副重建"
+    logger.info(
+        f"[rebuild-deck] {dungeon.name} / {actor.name}: 牌库已改写（{len(cards)} 张，{detail}）"
+    )
+    return cards

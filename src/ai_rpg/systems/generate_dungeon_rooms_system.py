@@ -119,15 +119,21 @@ class _RoomsResult(BaseModel):
 
 ####################################################################################################################################
 def _handle_record_dungeon_rooms(
-    result: _RoomsResult, dungeon_name: str, rooms: List[Any]
+    result: _RoomsResult,
+    monsters_per_combat_room: int,
+    dungeon_name: str,
+    rooms: List[Any],
 ) -> str:
-    """处理 record_dungeon_rooms 工具调用。"""
+    """处理 record_dungeon_rooms 工具调用。
+
+    `monsters_per_combat_room` 由调用方按「显式规格 → 默认值」解析后传入；
+    怪物数量不交给 LLM 填写。
+    """
     room_items: List[DungeonRoomDraft] = []
     for r in rooms:
         room = DungeonRoomDraft(**r)
-        # 怪物数量当前取默认值填充，不由 LLM 填写；未来由房间组合规划决定，代码只负责保底与边界。
         room.actor_count = (
-            0 if room.room_type == "opening" else DEFAULT_MONSTERS_PER_COMBAT_ROOM
+            0 if room.room_type == "opening" else (monsters_per_combat_room)
         )
         room_items.append(room)
     result.dungeon_name = dungeon_name
@@ -179,7 +185,19 @@ class GenerateDungeonRoomsSystem(ReactiveProcessor):
         dungeon_name = draft.dungeon_name
         dungeon_profile = draft.profile
         dungeon_room_count = draft.room_count
-        opening_room_count = DEFAULT_OPENING_ROOM_COUNT
+
+        # 开场房间数与每房间怪物数：显式规格优先，其次默认值
+        action = entity.get(GenerateDungeonAction)
+        opening_room_count = (
+            action.spec.resolved_opening_room_count()
+            if action is not None
+            else DEFAULT_OPENING_ROOM_COUNT
+        )
+        monsters_per_combat_room = (
+            action.spec.resolved_monsters_per_combat_room()
+            if action is not None
+            else DEFAULT_MONSTERS_PER_COMBAT_ROOM
+        )
 
         logger.info(
             f"[GenerateDungeonRoomsSystem] 开始: dungeon={dungeon_name}, room_count={dungeon_room_count}, opening_room_count={opening_room_count}"
@@ -202,7 +220,9 @@ class GenerateDungeonRoomsSystem(ReactiveProcessor):
             messages=self._game.get_agent_memory(entity).messages,
             tools=[rooms_tool],
             handlers={
-                rooms_tool.function.name: partial(_handle_record_dungeon_rooms, result),
+                rooms_tool.function.name: partial(
+                    _handle_record_dungeon_rooms, result, monsters_per_combat_room
+                ),
             },
             max_rounds=5,
         )
@@ -225,15 +245,12 @@ class GenerateDungeonRoomsSystem(ReactiveProcessor):
                 f"[GenerateDungeonRoomsSystem] 房间数量不符：期望 {dungeon_room_count}，实际 {len(rooms)}，中止"
             )
             return
-        if rooms and rooms[0].room_type != "opening":
-            logger.error(
-                f"[GenerateDungeonRoomsSystem] 第一个房间 room_type 必须为 'opening'，实际为 '{rooms[0].room_type}'，中止"
-            )
-            return
-        for i, room in enumerate(rooms[1:], start=2):
-            if room.room_type != "combat":
+        # 前 opening_room_count 个必须是 opening，其余必须是 combat
+        for i, room in enumerate(rooms, start=1):
+            expected = "opening" if i <= opening_room_count else "combat"
+            if room.room_type != expected:
                 logger.error(
-                    f"[GenerateDungeonRoomsSystem] 第 {i} 个房间 room_type 必须为 'combat'，实际为 '{room.room_type}'，中止"
+                    f"[GenerateDungeonRoomsSystem] 第 {i} 个房间 room_type 必须为 {expected!r}，实际为 {room.room_type!r}，中止"
                 )
                 return
 

@@ -10,8 +10,8 @@ import pytest
 from ai_rpg.dbg_game_agent import cards as cards_module
 from ai_rpg.dbg_game_agent.cards import (
     filter_entries,
+    resolve_candidate_ids,
     resolve_prototype_ids,
-    resolve_spoils_prototype_ids,
 )
 from ai_rpg.pgsql import CardPrototypeIndexEntry
 
@@ -129,14 +129,12 @@ def test_filter_entries_keeps_index_order() -> None:
 def test_spoils_strict_requires_exact_count() -> None:
     """默认严格：指定不足候选数直接报错，提示加 --fill-random。"""
     with pytest.raises(ValueError, match="--fill-random"):
-        resolve_spoils_prototype_ids(
-            count=3, prototype_ids=["proto.summon"], index=_INDEX
-        )
+        resolve_candidate_ids(count=3, prototype_ids=["proto.summon"], index=_INDEX)
 
 
 def test_spoils_rejects_more_than_count() -> None:
     with pytest.raises(ValueError, match="候选最多 3 张"):
-        resolve_spoils_prototype_ids(
+        resolve_candidate_ids(
             count=3,
             prototype_ids=[
                 "proto.summon",
@@ -150,14 +148,14 @@ def test_spoils_rejects_more_than_count() -> None:
 
 def test_spoils_fill_random_keeps_explicit_prefix_and_is_seeded() -> None:
     """--fill-random：显式 id 保留在前，剩余按 seed 确定性补足，且不重复已选项。"""
-    first = resolve_spoils_prototype_ids(
+    first = resolve_candidate_ids(
         count=3,
         prototype_ids=["proto.summon"],
         fill_random=True,
         seed=7,
         index=_INDEX,
     )
-    second = resolve_spoils_prototype_ids(
+    second = resolve_candidate_ids(
         count=3,
         prototype_ids=["proto.summon"],
         fill_random=True,
@@ -173,7 +171,7 @@ def test_spoils_fill_random_keeps_explicit_prefix_and_is_seeded() -> None:
 
 def test_spoils_fill_random_reports_insufficient_pool() -> None:
     with pytest.raises(ValueError, match="原型库不足以补足候选"):
-        resolve_spoils_prototype_ids(
+        resolve_candidate_ids(
             count=4,
             prototype_ids=["proto.summon"],
             fill_random=True,

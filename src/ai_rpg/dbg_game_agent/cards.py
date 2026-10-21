@@ -4,9 +4,10 @@
 
 - `load_prototype_index` / `filter_entries` / `prototype_slots`：先「查得见」有哪些原型、
   各自开放哪些槽，解决「想指定某个原型却不知道 id」；
-- `resolve_prototype_ids` / `resolve_spoils_prototype_ids`：把 CLI 的三种指定方式
+- `resolve_prototype_ids` / `resolve_candidate_ids`：把 CLI 的三种指定方式
   （具体 id / 槽位选择器 / 关键词）解析成**具体 id 列表**，再交给
-  `GenerateSpoilsAction.prototype_ids`；系统侧因此只需理解「显式 id 列表」这一件事；
+  `GenerateSpoilsAction.prototype_ids` 或 `GenerateDungeonAction.spec.deck_prototype_ids`；
+  系统侧因此只需理解「显式 id 列表」这一件事；
 - `design_cards_preview`：直接对指定原型跑设计会话并读回结果，**不写游戏状态**，
   用于迭代人设 / 艺术锚点 / 提示词（比 generate-spoils → pick-card 快得多）。
 """
@@ -132,7 +133,7 @@ def resolve_prototype_ids(
 
 
 #######################################################################################################################################
-def resolve_spoils_prototype_ids(
+def resolve_candidate_ids(
     *,
     count: int,
     prototype_ids: Sequence[str] = (),
@@ -143,7 +144,7 @@ def resolve_spoils_prototype_ids(
     card_type: str = DEFAULT_CARD_TYPE,
     index: Optional[List[CardPrototypeIndexEntry]] = None,
 ) -> List[str]:
-    """解析 spoils 的候选规格：默认严格（必须恰好 `count` 个），`fill_random` 才随机补足。
+    """解析一批候选规格（spoils 候选 / 怪物牌库）：默认严格，`fill_random` 才随机补足。
 
     补足时不会重复已指定的原型，并从 `seed`（可选）派生随机源，便于复现同一次抽样。
     """

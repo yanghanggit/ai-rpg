@@ -4,7 +4,7 @@ from typing import Dict, Final, List, Set, final, override
 
 from loguru import logger
 
-from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
+from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor, dump_components
 from ..game.dbg_game import DBGGame
 from ..models import (
     ActorType,
@@ -15,6 +15,7 @@ from ..models import (
     DungeonActorDraft,
     DungeonDraft,
     GenerateDungeonAction,
+    MotifComponent,
     OpeningRoom,
     StageType,
     create_actor,
@@ -61,6 +62,13 @@ class AssembleDungeonSystem(ReactiveProcessor):
 
         logger.info(f"[AssembleDungeonSystem] 开始: dungeon={draft.dungeon_name}")
 
+        # 出厂闸门：怪物数量必须与房间规格一致，否则不落盘
+        # （上游怪物生成失败时 draft.actors 会为空，若不拦截会产出「无怪物的可用副本」）
+        mismatch = self._find_actor_count_mismatch(draft)
+        if mismatch:
+            logger.error(f"[AssembleDungeonSystem] {mismatch}；中止，不写入 .dungeons")
+            return
+
         # 组装 Dungeon 实体树，并把最终产物写入 DUNGEONS_DIR
         dungeon = self._build_dungeon(draft)
         dungeon_path = DUNGEONS_DIR / f"{dungeon.name}.json"
@@ -73,6 +81,21 @@ class AssembleDungeonSystem(ReactiveProcessor):
         logger.info(
             f"[AssembleDungeonSystem] 完成并保存: {dungeon_path} ({len(dungeon.rooms)} rooms)，草稿: {draft_path}"
         )
+
+    ####################################################################################################################################
+    @staticmethod
+    def _find_actor_count_mismatch(draft: DungeonDraft) -> str:
+        """核对每个房间实际挂载的怪物数是否等于规格；一致返回空串。"""
+        counts: Dict[str, int] = {}
+        for actor_draft in draft.actors:
+            counts[actor_draft.room_name] = counts.get(actor_draft.room_name, 0) + 1
+
+        for room in draft.rooms:
+            expected = 0 if room.room_type == "opening" else room.actor_count
+            actual = counts.get(room.room_name, 0)
+            if actual != expected:
+                return f"房间 {room.room_name!r}（{room.room_type}）期望 {expected} 个怪物，实际 {actual} 个"
+        return ""
 
     ####################################################################################################################################
     @staticmethod
@@ -104,7 +127,6 @@ class AssembleDungeonSystem(ReactiveProcessor):
 
         # 组装每个 room 对应的房间
         for i, room_draft in enumerate(draft.rooms, start=1):
-
             # 处理 room_name 重复问题
             room_name = self._deduplicate_name(seen_room_names, room_draft.room_name)
 
@@ -140,6 +162,12 @@ class AssembleDungeonSystem(ReactiveProcessor):
                             campaign_setting=self._game._world.blueprint.campaign_setting,
                             system_rules=self._game._world.blueprint.system_rules,
                         )
+                        # 艺术锚点：随 profile 一同生成，供后续组建牌库时取材；空则不挂组件
+                        if actor_draft.motif.strip():
+                            actor.components = dump_components(
+                                MotifComponent(name=actor.name, motif=actor_draft.motif)
+                            )
+
                         # 牌库由 AssembleDungeonDeckSystem 后续从卡牌原型库组建并润色
                         actors.append(actor)
 

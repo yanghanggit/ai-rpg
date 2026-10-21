@@ -12,7 +12,9 @@
   speak           --snapshot PATH --target NPC --content TEXT    与 NPC 对话
   switch-stage    --snapshot PATH --stage STAGE                  切换场景
   compact-context --snapshot PATH --target ENTITY               手动压缩指定实体的 LLM 记忆
-  generate-dungeon --snapshot PATH                               LLM 动态生成副本
+  generate-dungeon --snapshot PATH [-d ID ...] [--slot SLOT] [--keyword K] [--fill-random] [--seed N]
+                   [--rooms N] [--opening-rooms N] [--monsters-per-room N]
+                                      LLM 动态生成副本（可选显式结构 / 怪物牌库规格，调测用）
   roster          --snapshot PATH                                查看队伍名单（只读）
   roster-add      --snapshot PATH --member NPC                  添加队伍成员
   roster-remove   --snapshot PATH --member NPC                  移除队伍成员
@@ -71,6 +73,10 @@ from loguru import logger
 
 from ai_rpg.dbg_game_agent.core import restore_game
 from ai_rpg.game import restore_world
+from ai_rpg.models import (
+    DungeonGenerationSpec,
+    validate_generation_spec,
+)
 from ai_rpg.paths import LOGS_DIR, WORLDS_DIR
 
 LOG_LEVEL: Final[str] = "DEBUG"
@@ -93,8 +99,8 @@ from ai_rpg.dbg_game_agent.cards import (
     format_designed_card,
     format_prototype_line,
     load_prototype_index,
+    resolve_candidate_ids,
     resolve_prototype_ids,
-    resolve_spoils_prototype_ids,
 )
 from ai_rpg.dbg_game_agent.combat import (
     collect_loot_game,
@@ -140,6 +146,7 @@ from ai_rpg.dbg_game_agent.spoils import (
     pick_spoils_card_game,
     remove_spoils_game,
 )
+from ai_rpg.systems.assemble_dungeon_deck_system import DECK_SIZE
 from ai_rpg.systems.generate_spoils_action_system import SPOILS_CARD_COUNT
 
 
@@ -750,8 +757,70 @@ def collect_loot(snapshot: str) -> None:
     required=True,
     help="存档目录路径",
 )
-def generate_dungeon_cmd(snapshot: str) -> None:
-    """LLM 动态生成副本并归档。需处于家园模式。"""
+@click.option(
+    "--deck-prototype",
+    "-d",
+    "deck_prototype_ids",
+    multiple=True,
+    help="显式指定怪物牌库的原型 id（可重复；每只怪物都按此规格组建）。未加 --fill-random 时必须凑满一副。",
+)
+@click.option(
+    "--slot",
+    default=None,
+    help="按开放槽选择原型（如 on_autonomous_affixes）",
+)
+@click.option(
+    "--keyword",
+    default=None,
+    help="按关键词选择原型（匹配 name / summary / 分类 / keywords）",
+)
+@click.option(
+    "--fill-random",
+    is_flag=True,
+    help="指定不足一副牌库时，剩余随机补足（默认严格：必须凑满）",
+)
+@click.option(
+    "--seed",
+    type=int,
+    default=None,
+    help="随机补足的随机种子（仅 --fill-random 生效）",
+)
+@click.option(
+    "--rooms",
+    type=int,
+    default=0,
+    help="副本房间总数（含开场房间）；0 = 默认结构。调测专用。",
+)
+@click.option(
+    "--opening-rooms",
+    type=int,
+    default=0,
+    help="开场房间数（须小于房间总数）；0 = 默认。调测专用。",
+)
+@click.option(
+    "--monsters-per-room",
+    type=int,
+    default=0,
+    help="每个战斗房间的怪物数；0 = 默认（1）。调测专用。",
+)
+def generate_dungeon_cmd(
+    snapshot: str,
+    deck_prototype_ids: Tuple[str, ...],
+    slot: str,
+    keyword: str,
+    fill_random: bool,
+    seed: int,
+    rooms: int,
+    opening_rooms: int,
+    monsters_per_room: int,
+) -> None:
+    """LLM 动态生成副本并归档。需处于家园模式。
+
+    不给任何规格时，怪物自己从原型库挑选牌库；给了 --deck-prototype / --slot / --keyword
+    就跳过选型，每只怪物都按规格组建。
+    `--rooms` / `--opening-rooms` / `--monsters-per-room` 直接指定副本结构，
+    用于调测（如「2 战斗房 × 2 怪」）。这些开关只存在于本 CLI，正式 API 无法传入。
+    """
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
@@ -768,11 +837,49 @@ def generate_dungeon_cmd(snapshot: str) -> None:
         WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
     )
 
+    # 显式牌库规格（可空）：默认严格，必须凑满一副
+    resolved: List[str] = []
+    if deck_prototype_ids or slot or keyword:
+        try:
+            resolved = resolve_candidate_ids(
+                count=DECK_SIZE,
+                prototype_ids=deck_prototype_ids,
+                slot=slot,
+                keyword=keyword,
+                fill_random=fill_random,
+                seed=seed,
+            )
+        except ValueError as e:
+            raise click.BadParameter(str(e))
+        click.echo(f"显式怪物牌库规格（{len(resolved)} 张）: {resolved}")
+    else:
+        click.echo("未指定牌库规格：每只怪物自行挑选原型")
+
+    # 结构规格（可空）：0 表示不覆盖，走系统默认
+    spec = DungeonGenerationSpec(
+        room_count=rooms,
+        opening_room_count=opening_rooms,
+        monsters_per_combat_room=monsters_per_room,
+        deck_prototype_ids=resolved,
+    )
+    spec_error = validate_generation_spec(spec)
+    if spec_error:
+        raise click.BadParameter(spec_error, param_hint="--rooms/--opening-rooms")
+    if rooms or opening_rooms or monsters_per_room:
+        total = spec.resolved_room_count()
+        opening = spec.resolved_opening_room_count()
+        per_room = spec.resolved_monsters_per_combat_room()
+        click.echo(
+            f"副本结构规格: 房间 {total} 个（开场 {opening} + 战斗 {total - opening} 个）、每战斗房间 {per_room} 个怪物"
+        )
+    else:
+        click.echo("未指定结构规格：使用默认房间结构")
+
     logger.info(f"本次运行日志文件：{_log_file}")
     logger.info(f"读取存档：{snapshot_path}")
     logger.info(f"本次存档目录：{_save_dir}")
 
-    asyncio.run(generate_dungeon_game(world, player_session, _save_dir))
+    asyncio.run(generate_dungeon_game(world, player_session, _save_dir, spec))
 
 
 ###############################################################################################################################################
@@ -1014,7 +1121,7 @@ def generate_spoils(
     resolved: List[str] = []
     if prototype_ids or slot or keyword:
         try:
-            resolved = resolve_spoils_prototype_ids(
+            resolved = resolve_candidate_ids(
                 count=SPOILS_CARD_COUNT,
                 prototype_ids=prototype_ids,
                 slot=slot,

@@ -28,15 +28,17 @@
 
 **Step 0 — 世界导演指令**（`GenerateDungeonDirectiveSystem`）。世界导演推理一条创作指令，写入 `DungeonDraft.directive`。执行方实体名（携带 `GenerateDungeonAction` 的那个世界实体）由引擎注入任务提示词，世界导演的 system prompt 不写死任何实体名——实体改名不会让 prompt 静默失效。
 
-**Step 1 — 副本设定生成**（`GenerateDungeonProfileSystem`）。单次 `agent_loop`（调用 `record_dungeon_profile`）锁定副本名称与整体设定（`profile`）。房间总数当前不由 LLM 决定：handler 直接回填默认值 `DEFAULT_DUNGEON_ROOM_COUNT`（未来由房间组合规划决定）。设定刻意回避角色身份与评价性词汇，只呈现感官与情境细节。
+**Step 1 — 副本设定生成**（`GenerateDungeonProfileSystem`）。单次 `agent_loop` 锁定副本名称与整体设定。**房间总数不由 LLM 决定**：调用方按「显式规格 → 默认值」解析后传入。设定刻意回避角色身份与评价性词汇，只呈现感官与情境细节。
 
-**Step 2 — 房间设计**（`GenerateDungeonRoomsSystem`）。在同一 agent 记忆内一次性生成全部房间：前 `DEFAULT_OPENING_ROOM_COUNT` 个强制为开场（`room_type = "opening"`），纯氛围描写；其余为战斗房间（`room_type = "combat"`）。开场 / 战斗拆分与每个战斗房间的 `actor_count` 当前都取默认值（`DEFAULT_MONSTERS_PER_COMBAT_ROOM`）；提示词与工具 schema 的开场数同样取自 `DEFAULT_OPENING_ROOM_COUNT`，不用「总数减一」推断。产物写入 `DungeonDraft.rooms`。
+**Step 2 — 房间设计**（`GenerateDungeonRoomsSystem`）。在同一 agent 记忆内一次性生成全部房间：前若干间强制为开场（纯氛围描写），其余为战斗房间。开场 / 战斗拆分与每个战斗房间的怪物数同样按「显式规格 → 默认值」解析，既不用「总数减一」推断，也不由 LLM 自报。产物写入 `DungeonDraft.rooms`。
 
-**Step 3 — 怪物生成**（`GenerateDungeonActorsSystem`）。单次 `agent_loop`：LLM 可在一个 response 内并行、也可分多次调用 `record_dungeon_actor`（每次创建一个怪物），每个怪物用 `room_name` 显式声明归属房间。handler 累积，代码严格校验「归属合法」且「每个 combat 房间数量 == 固定值」。产物写入 `DungeonDraft.actors`。
+**Step 3 — 怪物生成**（`GenerateDungeonActorsSystem`）。单次 `agent_loop`：LLM 可并行或分多次记录怪物，每个怪物显式声明归属房间，并同时产出扮演设定、外观与**艺术锚点**（供后续组牌取材）。归属与配额在工具层即校验：未知房间、开场房间、超配额只回错误文本、不入账，让 LLM 在同一轮内自行纠正。产物写入 `DungeonDraft.actors`。
 
-**Step 4 — 实体组装**（`AssembleDungeonSystem`）。零 LLM 调用，纯确定性映射。根据 `room_type` 分发：`"opening"` → `OpeningRoom`，`"combat"` → `CombatRoom`（含 Stage + Actor）。产物 `Dungeon` 写入 `.dungeons/<name>.json`，同时把 `DungeonDraft` 落一份到 `.dungeons_drafts/<name>.json` 便于回溯。
+**Step 4 — 实体组装**（`AssembleDungeonSystem`）。零 LLM 调用，纯确定性映射：按房间类型落成开场 / 战斗房间，怪物的艺术锚点非空时随角色数据挂载。**出厂闸门**：任一房间的实际怪物数与规格不符时不落盘——上游失败不应产出「无怪物的可用副本」。产物写入 `.dungeons/`，并留一份草稿便于回溯。
 
-**Step 5 — 牌库组建**（`AssembleDungeonDeckSystem`）。为每个战斗房间的怪物组建初始牌库：怪物先从手牌原型库选 5 个骨架（`select_cards`），再由卡牌设计引擎设计（见[卡牌设计指南（Card Design）](card-design.md) 的「生成契约」）。两阶段都走 `card_common` 的 actor 上下文入口：宿主是世界实体「世界.卡牌设计」，上下文 = 它的 `role_rules`（system）+ 怪物自己的 system prompt（任务数据块），会话不留痕；失败回退默认牌单。完成后重写 `.dungeons/<name>.json`。
+**Step 5 — 牌库组建**（`AssembleDungeonDeckSystem`）。为每个战斗房间的怪物组建初始牌库：先选原型骨架，再由卡牌设计引擎设计（见[卡牌设计指南（Card Design）](card-design.md) 的「生成契约」）。两阶段都走 `card_common` 的 actor 上下文入口，上下文为世界契约 + 怪物自己的扮演设定 + 艺术锚点；锚点取自副本中间数据而非实体（此刻怪物尚未进 ECS），会话不留痕。
+
+显式牌库规格非空时跳过选型、直接物化（数量必须恰好一副）。选型失败、规格数量不符、物化失败或设计未全部完成，都整副回退默认牌单；挂牌库时必须保留已有的艺术锚点，不得整组覆盖角色数据。
 
 **Step 6 — 场景插画**（`IllustrateDungeonSystem`）。加载磁盘上的 `Dungeon`，交给「世界.插图提示词」世界实体（`IllustrationComponent`）作为 agent，依据各场景设定与生物外观一次性编排封面 + 各房间的文生图提示词（工具 `record_image_prompts`）。引擎只负责传递事实与调用 replicate 批量出图，画风、构图与负面词全部由该实体的 system prompt 承载（故事层）。生成失败项保持 `None`，不阻塞主流程。
 
@@ -54,6 +56,8 @@
 | `DEFAULT_DUNGEON_ROOM_COUNT` | 默认副本房间总数 = 开场 + 战斗 |
 
 改默认值只需改这些常量——数量不进 blueprint，因此无需重刷蓝图（`python -m scripts.setup_demo`）；只有同时改了 `demo/` 文案才需要刷新。
+
+调测需要固定结构时不必改变量：开发 CLI 的 `generate-dungeon` 可显式给出房间数、开场房间数与每房间怪物数，各步按「显式规格 → 默认值」解析。该规格只存在于开发入口，正式 API 不暴露对应字段。
 
 ---
 
@@ -75,7 +79,7 @@
 | 模型 | 说明 |
 | --- | --- |
 | `DungeonRoomDraft` | 单个房间：`room_type` / `room_name` / `profile` / `actor_count` |
-| `DungeonActorDraft` | 单个怪物及其归属房间：`room_name` / `actor_name` / `profile` / `base_body` |
+| `DungeonActorDraft` | 单个怪物及其归属房间：`room_name` / `actor_name` / `profile` / `base_body` / `motif` |
 | `DungeonDraft` | 整条流程的内存中间数据：`directive` / `dungeon_name` / `profile` / `room_count` / `rooms` / `actors` |
 
 ---

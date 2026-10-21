@@ -46,14 +46,21 @@ class _ProfileResult(BaseModel):
 
 ####################################################################################################################################
 def _handle_record_dungeon_profile(
-    result: _ProfileResult, name: str, profile: str
+    result: _ProfileResult,
+    dungeon_room_count: int,
+    name: str,
+    profile: str,
 ) -> str:
-    """处理 record_dungeon_profile 工具调用。"""
+    """处理 record_dungeon_profile 工具调用。
+
+    `dungeon_room_count` 由调用方按「显式规格 → 默认值」解析后传入；
+    房间结构由代码决定，不交给 LLM 自报。
+    """
     result.dungeon_name = name
     result.dungeon_profile = profile
-    result.dungeon_room_count = DEFAULT_DUNGEON_ROOM_COUNT
+    result.dungeon_room_count = dungeon_room_count
     logger.info(
-        f"[GenerateDungeonProfileSystem] record_dungeon_profile 执行:\n  dungeon_name: {name}\n  dungeon_room_count: {DEFAULT_DUNGEON_ROOM_COUNT}（默认结构，未来由房间组合规划决定）"
+        f"[GenerateDungeonProfileSystem] record_dungeon_profile 执行:\n  dungeon_name: {name}\n  dungeon_room_count: {dungeon_room_count}"
     )
     return result.model_dump_json(ensure_ascii=False)
 
@@ -119,6 +126,14 @@ class GenerateDungeonProfileSystem(ReactiveProcessor):
 
         result = _ProfileResult()
 
+        # 房间总数：显式规格优先，其次默认结构（不由 LLM 决定）
+        action = entity.get(GenerateDungeonAction)
+        dungeon_room_count = (
+            action.spec.resolved_room_count()
+            if action is not None
+            else DEFAULT_DUNGEON_ROOM_COUNT
+        )
+
         success = await agent_loop(
             name=entity.name,
             input_message=_build_dungeon_profile_prompt(directive),
@@ -128,7 +143,7 @@ class GenerateDungeonProfileSystem(ReactiveProcessor):
             tools=[RECORD_DUNGEON_PROFILE_TOOL],
             handlers={
                 RECORD_DUNGEON_PROFILE_TOOL.function.name: partial(
-                    _handle_record_dungeon_profile, result
+                    _handle_record_dungeon_profile, result, dungeon_room_count
                 ),
             },
             max_rounds=5,

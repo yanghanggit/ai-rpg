@@ -21,6 +21,7 @@ from typing import (
     Dict,
     Final,
     List,
+    Mapping,
     Optional,
     Set,
     Tuple,
@@ -40,6 +41,7 @@ from ..models import (
     Card,
     CardDesignComponent,
     ChatMessage,
+    MotifComponent,
     NormalizedStrList,
     SystemMessage,
     apply_affix_design,
@@ -736,6 +738,21 @@ def read_actor_system_prompt(game: DBGGame, actor_entity: Entity) -> str:
         messages[0], SystemMessage
     ), f"{actor_entity.name} 缺少首条 SystemMessage（add_system_message 未执行）"
     return messages[0].content
+
+
+#######################################################################################################################################
+def read_motif_from_components(components: Mapping[str, Any]) -> str:
+    """从实体 / 模型的 `components` dict 读 `MotifComponent.motif`；未挂或字段缺失返回空串。
+
+    覆盖「角色还没进 ECS」的场景：副本怪物的牌库在 `create_actor_entities` 之前就组建，
+    那时 `actor` 只是 Dungeon 模型，只能从其 `components` 里取艺术锚点。
+    """
+
+    data = components.get(MotifComponent.__name__)
+    if not isinstance(data, dict):
+        return ""
+    motif = data.get("motif", "")
+    return motif if isinstance(motif, str) else ""
 
 
 #######################################################################################################################################

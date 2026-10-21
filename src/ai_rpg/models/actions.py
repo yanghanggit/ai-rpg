@@ -3,8 +3,11 @@
 from enum import StrEnum, unique
 from typing import Dict, List, Optional, final
 
+from pydantic import Field
+
 from ..entitas.components import Component
 from .card import Card
+from .dungeon_draft import DungeonGenerationSpec
 from .items import ConsumableItem, CostumeItem, GearItem, MaterialItem
 from .registry import register_action_component_type, register_component_type
 
@@ -160,9 +163,16 @@ class GenerateDungeonAction(Component):
 
     由 home_actions.activate_generate_dungeon() 在家园状态下添加到副本生成系统实体，
     驱动 dungeon_generate_pipeline 在本次 process() 内顺序跑完整个副本创建流程。
+
+    ``spec`` 为本次生成的显式结构规格（调测专用，见 `DungeonGenerationSpec`）：
+    房间数 / 开场房间数 / 每房间怪物数 / 怪物牌库原型。默认全空 = 完全走默认口径。
+    该规格只由开发入口写入，正式 API 的请求模型不暴露对应字段。
+
+    动作组件由 ``ActionCleanupSystem`` 每帧清理，不随着存档持久化，仅用于本次传递。
     """
 
     name: str
+    spec: DungeonGenerationSpec = Field(default_factory=DungeonGenerationSpec)
 
 
 ############################################################################################################

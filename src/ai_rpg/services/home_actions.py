@@ -1,6 +1,6 @@
 """家园动作辅助函数模块"""
 
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from loguru import logger
 
@@ -14,6 +14,7 @@ from ..models import (
     CraftCostumeItemAction,
     CraftGearItemAction,
     DungeonGenerationComponent,
+    DungeonGenerationSpec,
     GearWorkshopComponent,
     GenerateDungeonAction,
     HomeComponent,
@@ -31,6 +32,7 @@ from ..models import (
     WearCostumeAction,
     WorldComponent,
     append_item_with_stacking,
+    validate_generation_spec,
 )
 
 
@@ -151,7 +153,6 @@ def activate_plan_action(dbg_game: DBGGame, actor_names: List[str]) -> Tuple[boo
     # 逐一校验角色：必须存在、必须是 NPC 阵营角色（含玩家自身）、且在家园场景中。
     resolved_entities = []
     for actor_name in actor_names:
-
         actor_entity = dbg_game.get_actor_entity(actor_name)
         if actor_entity is None:
             error_detail = f"角色 {actor_name} 不存在"
@@ -216,7 +217,6 @@ def add_party_member(dbg_game: DBGGame, member_name: str) -> Tuple[bool, str]:
 
     # 检查队伍名单中是否已存在该成员
     if player_entity.has(PartyRosterComponent):
-
         # 获取玩家实体当前的队伍成员列表，以便检查是否已经存在要添加的成员。
         existing_members = list(player_entity.get(PartyRosterComponent).members)
         if member_name in existing_members:
@@ -228,7 +228,6 @@ def add_party_member(dbg_game: DBGGame, member_name: str) -> Tuple[bool, str]:
         new_members = existing_members + [member_name]
 
     else:
-
         # 如果玩家实体尚未拥有 PartyRosterComponent，则创建一个新的成员列表，包含当前要加入的成员。
         new_members = [member_name]
 
@@ -274,7 +273,6 @@ def remove_party_member(dbg_game: DBGGame, member_name: str) -> Tuple[bool, str]
     # 更新队伍名单，若移除后名单为空则移除 PartyRosterComponent
     new_members = [m for m in roster.members if m != member_name]
     if new_members:
-
         # 如果移除成员后队伍名单仍有其他成员，则更新玩家实体的 PartyRosterComponent。
         player_entity.replace(
             PartyRosterComponent,
@@ -282,7 +280,6 @@ def remove_party_member(dbg_game: DBGGame, member_name: str) -> Tuple[bool, str]
             new_members,
         )
     else:
-
         # 如果移除成员后队伍名单为空，则移除玩家实体的 PartyRosterComponent。
         player_entity.remove(PartyRosterComponent)
         logger.debug(f"队伍名单为空，移除 PartyRosterComponent")
@@ -307,10 +304,25 @@ def get_party_roster(dbg_game: DBGGame) -> List[str]:
 
 
 ###################################################################################################################################################################
-def activate_generate_dungeon(dbg_game: DBGGame) -> Tuple[bool, str]:
+def activate_generate_dungeon(
+    dbg_game: DBGGame,
+    *,
+    spec: Optional[DungeonGenerationSpec] = None,
+) -> Tuple[bool, str]:
     """
     在家园状态下激活副本创建动作。
+
+    `spec` 为本次生成的显式结构规格（**调测专用**：房间数 / 开场房间数 / 每房间怪物数 /
+    怪物牌库原型）。不传 = 完全走默认口径，与正式入口（API / 服务端任务）一致；
+    正式入口不会也不能传该参数，因此线上无法借此作弊。
     """
+
+    # 结构规格自洽性校验（调测入口可能给出矛盾值，先拦下来，不进管道）
+    generation_spec = spec or DungeonGenerationSpec()
+    spec_error = validate_generation_spec(generation_spec)
+    if spec_error:
+        logger.error(f"激活副本创建失败: {spec_error}")
+        return False, spec_error
 
     # 检查玩家是否在家园场景中，如果不在则无法创建副本。
     if not dbg_game.is_player_in_home_stage:
@@ -340,7 +352,11 @@ def activate_generate_dungeon(dbg_game: DBGGame) -> Tuple[bool, str]:
 
     # 激活副本创建动作，将 GenerateDungeonAction 添加到副本生成系统实体中。
     logger.debug(f"激活副本创建: {world_entity.name}")
-    world_entity.replace(GenerateDungeonAction, world_entity.name)
+    world_entity.replace(
+        GenerateDungeonAction,
+        world_entity.name,
+        generation_spec,
+    )
     return True, ""
 
 

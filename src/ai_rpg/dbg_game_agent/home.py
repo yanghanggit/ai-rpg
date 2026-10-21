@@ -5,13 +5,13 @@
 """
 
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from loguru import logger
 
 from ai_rpg.game.dbg_game import DBGGame
 from ai_rpg.game.dbg_store import store_game_async
-from ai_rpg.models import PlayerSession, WorldState
+from ai_rpg.models import DungeonGenerationSpec, PlayerSession, WorldState
 from ai_rpg.services.home_actions import (
     activate_generate_dungeon,
     activate_plan_action,
@@ -161,11 +161,16 @@ async def generate_dungeon_game(
     world: WorldState,
     player_session: PlayerSession,
     save_dir: Path,
+    spec: Optional[DungeonGenerationSpec] = None,
 ) -> DBGGame:
-    """激活 LLM 动态生成副本流水线并归档。需处于家园模式。"""
+    """激活 LLM 动态生成副本流水线并归档。需处于家园模式。
+
+    `spec` 为显式结构规格（房间数 / 每房间怪物数 / 怪物牌库原型），仅调测入口传入；
+    不传则完全走默认口径。
+    """
     terminal_game = await restore_game(world, player_session)
 
-    success, error_detail = activate_generate_dungeon(terminal_game)
+    success, error_detail = activate_generate_dungeon(terminal_game, spec=spec)
     if not success:
         logger.error(f"激活副本创建失败: {error_detail}")
         return terminal_game

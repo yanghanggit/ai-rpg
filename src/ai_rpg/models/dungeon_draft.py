@@ -1,6 +1,6 @@
 """副本生成流水线的中间数据模型。"""
 
-from typing import Final, List, Literal, final
+from typing import Final, List, Literal, Optional, final
 
 from pydantic import BaseModel
 
@@ -19,6 +19,54 @@ DEFAULT_MONSTERS_PER_COMBAT_ROOM: Final[int] = 1  # 默认每个战斗房间的�
 DEFAULT_DUNGEON_ROOM_COUNT: Final[int] = (
     DEFAULT_OPENING_ROOM_COUNT + DEFAULT_COMBAT_ROOM_COUNT
 )  # 默认副本房间总数
+
+
+####################################################################################################################################
+@final
+class DungeonGenerationSpec(BaseModel):
+    """一次副本生成的显式结构规格（**调测专用**）。
+
+    只由开发入口（`ai-rpg-dbg-agent-game` 的 `generate-dungeon`）写入
+    `GenerateDungeonAction.spec`；正式 API 入口（`/api/home/generate_dungeon/v1/`）的
+    请求模型不暴露任何对应字段，因此线上无法借此作弊。
+
+    每个字段取 `0` / 空表示「不覆盖，走默认口径」：
+    - `room_count`：总房间数（含开场），0 → `DEFAULT_DUNGEON_ROOM_COUNT`；
+    - `opening_room_count`：开场房间数，0 → `DEFAULT_OPENING_ROOM_COUNT`；
+    - `monsters_per_combat_room`：每个战斗房间的怪物数，0 → `DEFAULT_MONSTERS_PER_COMBAT_ROOM`；
+    - `deck_prototype_ids`：怪物牌库的显式原型 id（空 → 怪物自己选）。
+    """
+
+    room_count: int = 0
+    opening_room_count: int = 0
+    monsters_per_combat_room: int = 0
+    deck_prototype_ids: List[str] = []
+
+    def resolved_room_count(self) -> int:
+        return self.room_count or DEFAULT_DUNGEON_ROOM_COUNT
+
+    def resolved_opening_room_count(self) -> int:
+        return self.opening_room_count or DEFAULT_OPENING_ROOM_COUNT
+
+    def resolved_monsters_per_combat_room(self) -> int:
+        return self.monsters_per_combat_room or DEFAULT_MONSTERS_PER_COMBAT_ROOM
+
+
+####################################################################################################################################
+def validate_generation_spec(spec: DungeonGenerationSpec) -> Optional[str]:
+    """校验结构规格是否自洽；合法返回 None，否则返回可直接展示的错误信息。"""
+
+    if spec.room_count < 0 or spec.opening_room_count < 0:
+        return "房间数不能为负"
+    if spec.monsters_per_combat_room < 0:
+        return "每个战斗房间的怪物数不能为负"
+
+    room_count = spec.resolved_room_count()
+    opening_room_count = spec.resolved_opening_room_count()
+
+    if opening_room_count >= room_count:
+        return f"开场房间数（{opening_room_count}）必须小于总房间数（{room_count}）：至少要有 1 个战斗房间"
+    return None
 
 
 ####################################################################################################################################
@@ -43,6 +91,9 @@ class DungeonActorDraft(BaseModel):
     actor_name: str = ""
     profile: str = ""
     base_body: str = ""
+    motif: str = (
+        ""  # 艺术锚点（母题 / 意象 / 禁忌 / 命名口吻）；随 profile 一同生成，供卡牌等创作取用
+    )
 
 
 ####################################################################################################################################

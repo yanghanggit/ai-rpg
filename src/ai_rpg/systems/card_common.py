@@ -336,6 +336,7 @@ def build_card_design_prompt(candidates: List[Candidate], context: str = "") -> 
 
 - `description` 不含数值、不重述效果；`name` 简洁有辨识度。
 - **场景中立（生命周期）**：卡牌会长期留在牌库与角色身上，而当前场景终将销毁；因此 `name` / `description` / 词缀文本都不得依赖当前场景、地点、在场者、场景中的具体物件或刚发生的事，否则卡牌日后会指向一个已不存在的东西。只取材于角色的系统设定（历史/性格/禁忌/最爱/体型/技艺/典故），换到任何场景都成立。
+- **自主槽的取材**：若某张候选卡开放 `on_autonomous_affixes`，把自主主体写成角色身边的伙伴或旧物（见「艺术锚点」与角色设定里的伙伴），效果写成它自己的行为；其它槽位可以提到它，但不得让它代替角色成为效果主体。角色没有这类伙伴时，按原型 design 给出的自主意象来写。
 
 对每张卡调用一次 `submit_card` 提交其设计；全部提交后调用 `finish_cards` 结束。"""
 
@@ -757,6 +758,17 @@ def _actor_prompt_block(actor_system_prompt: str) -> str:
 
 
 #######################################################################################################################################
+def _actor_motif_block(motif: str) -> str:
+    """把角色挂载的艺术锚点（`MotifComponent.motif`）渲染成任务提示词里的数据块。
+
+    锚点描述的是「这个人」（母题 / 意象域 / 禁忌 / 命名口吻），与产物类型无关；
+    空串时调用方不注入，消费口径回退到「只用角色设定」。
+    """
+    body = motif.strip()
+    return f"## 艺术锚点\n\n以下是这个角色的取材锚点：设计时优先从这里取意象，「禁忌」不可越过。\n\n{body}\n"
+
+
+#######################################################################################################################################
 async def select_prototypes_for_actor(
     game: DBGGame,
     *,
@@ -788,14 +800,21 @@ async def design_cards_for_actor(
     actor_system_prompt: str,
     candidates: List[Candidate],
     context: str = "",
+    actor_motif: str = "",
     extra_properties: Optional[Dict[str, object]] = None,
     extra_required: Optional[List[str]] = None,
     on_design: Optional[Callable[[CardDesign], None]] = None,
     max_rounds: int = 16,
 ) -> DesignOutcome:
-    """为目标 actor 设计候选卡：上下文口径同选型，会话结束不留痕。"""
+    """为目标 actor 设计候选卡：上下文口径同选型，会话结束不留痕。
+
+    `actor_motif` 为角色挂载的艺术锚点（`MotifComponent.motif`）；非空时作为
+    「## 艺术锚点」数据块注入，空串时行为与旧口径完全一致。
+    """
     label, system_message = _actor_session_context(game, actor_name)
     session_context = _actor_prompt_block(actor_system_prompt)
+    if actor_motif.strip():
+        session_context += "\n" + _actor_motif_block(actor_motif)
     if context.strip():
         session_context += "\n" + context.strip() + "\n"
 

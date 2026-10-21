@@ -1,10 +1,10 @@
-"""`GenerateSpoilsActionSystem` 单测：待领取队列写入后给主人一条记忆。
+"""`GenerateSpoilsActionSystem` 单测：待领取队列写入后给主人一条记忆；LLM 出错不写队列。
 
-LLM 设计会话与原型库都在模块边界替换，只测「候选入队 + 谁被告知」这一段。
+LLM 设计会话与原型库都在模块边界替换，只测「候选入队 + 谁被告知」与失败语义这一段。
 """
 
 import json
-from typing import Any, List
+from typing import Any, Dict, List
 from unittest.mock import MagicMock
 
 import pytest
@@ -15,12 +15,13 @@ from ai_rpg.models import (
     ActorComponent,
     Card,
     GenerateSpoilsAction,
+    MotifComponent,
     PartyMemberComponent,
     SpoilsComponent,
     TargetType,
 )
 from ai_rpg.systems import generate_spoils_action_system as spoils_module
-from ai_rpg.systems.card_common import Candidate
+from ai_rpg.systems.card_common import Candidate, DesignOutcome
 from ai_rpg.systems.generate_spoils_action_system import GenerateSpoilsActionSystem
 
 
@@ -79,11 +80,17 @@ async def test_spoils_fill_notifies_owner(
         "read_actor_system_prompt",
         lambda game, actor_entity: "角色.无名 的设定",
     )
-    # 设计会话交给卡牌设计世界实体（此处只验证入队与告知，不跑真实会话）
+    # 设计会话在卡牌设计世界实体那边跑（此处只验证入队与告知，不跑真实会话）
     monkeypatch.setattr(
         spoils_module,
         "design_cards_for_actor",
-        lambda *args, **kwargs: _noop(),
+        lambda *args, **kwargs: _returns(
+            _outcome(
+                ok=True,
+                designed=len(kwargs["candidates"]),
+                total=len(kwargs["candidates"]),
+            )
+        ),
     )
     monkeypatch.setattr(
         spoils_module,
@@ -105,9 +112,185 @@ async def test_spoils_fill_notifies_owner(
     }
 
 
-async def _noop() -> bool:
-    return True
+async def test_spoils_injects_actor_motif(
+    context: Context, game: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """角色挂载 MotifComponent 时，其 motif 作为艺术锚点传给设计会话。"""
+    entity = context.create_entity()
+    entity._name = "角色.坏运气"
+    entity.add(ActorComponent, entity.name, "场景.河湾芦苇丛")
+    entity.add(PartyMemberComponent, entity.name)
+    entity.add(GenerateSpoilsAction, entity.name)
+    entity.add(MotifComponent, entity.name, "**母题**: 差半步的时运")
+
+    monkeypatch.setattr(
+        spoils_module, "list_card_prototype_index", lambda card_type: [{"id": 1}]
+    )
+    candidates: List[Candidate] = [_make_candidate("锋锐")]
+    monkeypatch.setattr(
+        GenerateSpoilsActionSystem,
+        "_materialize_candidates",
+        lambda self, entity, index: candidates,
+    )
+    monkeypatch.setattr(
+        spoils_module,
+        "read_actor_system_prompt",
+        lambda game, actor_entity: "角色.坏运气 的设定",
+    )
+
+    seen: Dict[str, Any] = {}
+
+    def _fake_design(*args: Any, **kwargs: Any) -> Any:
+        seen.update(kwargs)
+        return _returns(_outcome(ok=True, designed=1, total=1))
+
+    monkeypatch.setattr(spoils_module, "design_cards_for_actor", _fake_design)
+    monkeypatch.setattr(
+        spoils_module,
+        "batch_run_boolean_tasks",
+        lambda tasks: _results(tasks),
+    )
+
+    await GenerateSpoilsActionSystem(game).react([entity])
+
+    assert seen["actor_motif"] == "**母题**: 差半步的时运"
+    assert entity.has(SpoilsComponent)
+
+
+async def test_spoils_without_motif_passes_empty_string(
+    context: Context, game: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """未挂 MotifComponent 的角色传空串，口径与旧版本一致。"""
+    entity = context.create_entity()
+    entity._name = "角色.无名"
+    entity.add(ActorComponent, entity.name, "场景.河湾芦苇丛")
+    entity.add(PartyMemberComponent, entity.name)
+    entity.add(GenerateSpoilsAction, entity.name)
+
+    monkeypatch.setattr(
+        spoils_module, "list_card_prototype_index", lambda card_type: [{"id": 1}]
+    )
+    candidates: List[Candidate] = [_make_candidate("锋锐")]
+    monkeypatch.setattr(
+        GenerateSpoilsActionSystem,
+        "_materialize_candidates",
+        lambda self, entity, index: candidates,
+    )
+    monkeypatch.setattr(
+        spoils_module,
+        "read_actor_system_prompt",
+        lambda game, actor_entity: "角色.无名 的设定",
+    )
+
+    seen: Dict[str, Any] = {}
+
+    def _fake_design(*args: Any, **kwargs: Any) -> Any:
+        seen.update(kwargs)
+        return _returns(_outcome(ok=True, designed=1, total=1))
+
+    monkeypatch.setattr(spoils_module, "design_cards_for_actor", _fake_design)
+    monkeypatch.setattr(
+        spoils_module,
+        "batch_run_boolean_tasks",
+        lambda tasks: _results(tasks),
+    )
+
+    await GenerateSpoilsActionSystem(game).react([entity])
+
+    assert seen["actor_motif"] == ""
+
+
+async def test_spoils_design_failure_writes_nothing(
+    context: Context, game: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """LLM 设计未完成（ok=False 或未全部落地）时，不写 SpoilsComponent、不发记忆。"""
+    entity = context.create_entity()
+    entity._name = "角色.无名"
+    entity.add(ActorComponent, entity.name, "场景.河湾芦苇丛")
+    entity.add(PartyMemberComponent, entity.name)
+    entity.add(GenerateSpoilsAction, entity.name)
+
+    monkeypatch.setattr(
+        spoils_module, "list_card_prototype_index", lambda card_type: [{"id": 1}]
+    )
+    candidates: List[Candidate] = [_make_candidate("锋锐"), _make_candidate("坚守")]
+    monkeypatch.setattr(
+        GenerateSpoilsActionSystem,
+        "_materialize_candidates",
+        lambda self, entity, index: candidates,
+    )
+    monkeypatch.setattr(
+        spoils_module,
+        "read_actor_system_prompt",
+        lambda game, actor_entity: "角色.无名 的设定",
+    )
+    # 只落地一张卡：agent 提前结束，属「LLM 未完成」
+    monkeypatch.setattr(
+        spoils_module,
+        "design_cards_for_actor",
+        lambda *args, **kwargs: _returns(_outcome(ok=True, designed=1, total=2)),
+    )
+    monkeypatch.setattr(
+        spoils_module,
+        "batch_run_boolean_tasks",
+        lambda tasks: _results(tasks),
+    )
+
+    await GenerateSpoilsActionSystem(game).react([entity])
+
+    assert not entity.has(SpoilsComponent)
+    game.add_human_message.assert_not_called()
+
+
+async def test_spoils_agent_loop_exception_writes_nothing(
+    context: Context, game: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """agent_loop 失败（ok=False）同样不写 SpoilsComponent。"""
+    entity = context.create_entity()
+    entity._name = "角色.无名"
+    entity.add(ActorComponent, entity.name, "场景.河湾芦苇丛")
+    entity.add(PartyMemberComponent, entity.name)
+    entity.add(GenerateSpoilsAction, entity.name)
+
+    monkeypatch.setattr(
+        spoils_module, "list_card_prototype_index", lambda card_type: [{"id": 1}]
+    )
+    candidates: List[Candidate] = [_make_candidate("锋锐")]
+    monkeypatch.setattr(
+        GenerateSpoilsActionSystem,
+        "_materialize_candidates",
+        lambda self, entity, index: candidates,
+    )
+    monkeypatch.setattr(
+        spoils_module,
+        "read_actor_system_prompt",
+        lambda game, actor_entity: "角色.无名 的设定",
+    )
+    monkeypatch.setattr(
+        spoils_module,
+        "design_cards_for_actor",
+        lambda *args, **kwargs: _returns(_outcome(ok=False, designed=0, total=1)),
+    )
+    monkeypatch.setattr(
+        spoils_module,
+        "batch_run_boolean_tasks",
+        lambda tasks: _results(tasks),
+    )
+
+    await GenerateSpoilsActionSystem(game).react([entity])
+
+    assert not entity.has(SpoilsComponent)
+    game.add_human_message.assert_not_called()
+
+
+async def _returns(value: Any) -> Any:
+    """把固定返回值包成协程，模拟 `design_cards_for_actor`。"""
+    return value
+
+
+def _outcome(*, ok: bool, designed: int, total: int) -> DesignOutcome:
+    return DesignOutcome(ok=ok, designed=designed, total=total, affixes=0)
 
 
 async def _results(tasks: Any) -> List[bool]:
-    return [await coro for _, coro in tasks]
+    return [bool(await coro) for _, coro in tasks]

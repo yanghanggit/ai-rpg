@@ -2,6 +2,10 @@
 
 本系统只负责「候选选取 + 最终去向」：随机抽原型、物化候选，交给 `card_common`
 引擎完成实际设计，最后把设计好的卡写进 `SpoilsComponent`。
+
+失败语义：LLM 出错就没有结果。设计会话未把全部候选落地（agent_loop 失败 / 有卡
+未提交 / 中途异常）时，该角色本次**不写 SpoilsComponent**（也因此不发「待领取」
+记忆），绝不把带原型原名与引导词缀的半成品发给玩家；客户端可重新触发一次。
 """
 
 import random
@@ -16,6 +20,7 @@ from ..models import (
     ActorComponent,
     DeathComponent,
     GenerateSpoilsAction,
+    MotifComponent,
     SpoilsComponent,
 )
 from ..pgsql import CardPrototypeIndexEntry, list_card_prototype_index
@@ -59,7 +64,6 @@ class GenerateSpoilsActionSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     async def react(self, entities: List[Entity]) -> None:
-
         # 拉取一次原型索引（系统侧随机，不用 LLM 浏览）
         try:
             index = list_card_prototype_index(card_type="手牌")
@@ -84,20 +88,11 @@ class GenerateSpoilsActionSystem(ReactiveProcessor):
                 return
             materialized.append((entity, candidates))
 
-        # 第二步：并发跑卡牌设计会话（LLM 设计失败不阻断发奖，只影响设计）。
+        # 第二步：并发跑卡牌设计会话。
         # 上下文 = 卡牌设计世界实体的契约 + 该角色自己的 system prompt；会话不写入角色记忆，
         # 因此在战利品阶段，角色除「pick」之外并不知道这些卡是怎么来的。
-        tasks: List[Tuple[str, Coroutine[Any, Any, Any]]] = [
-            (
-                entity.name,
-                design_cards_for_actor(
-                    self._game,
-                    actor_name=entity.name,
-                    actor_system_prompt=read_actor_system_prompt(self._game, entity),
-                    candidates=candidates,
-                    max_rounds=6,
-                ),
-            )
+        tasks: List[Tuple[str, Coroutine[Any, Any, bool]]] = [
+            (entity.name, self._design_candidates(entity, candidates))
             for entity, candidates in materialized
         ]
 
@@ -110,8 +105,15 @@ class GenerateSpoilsActionSystem(ReactiveProcessor):
         )
         outcomes = await batch_run_boolean_tasks(tasks)
 
-        # 第三步：装入 Spoils（replace 覆盖旧内容；claimed_cards 为空队列）
+        # 第三步：装入 Spoils（replace 覆盖旧内容；claimed_cards 为空队列）。
+        # 设计失败的实体直接跳过：LLM 出错就没有结果，宁可不发也不发半成品。
         for (entity, candidates), ok in zip(materialized, outcomes):
+            if not ok:
+                logger.warning(
+                    f"[GenerateSpoilsActionSystem] {entity.name} 设计会话未完成，本次不写 SpoilsComponent（LLM 出错即无结果，客户端可重新触发）"
+                )
+                continue
+
             spoils_before = (
                 len(entity.get(SpoilsComponent).candidate_cards)
                 if entity.has(SpoilsComponent)
@@ -135,8 +137,29 @@ class GenerateSpoilsActionSystem(ReactiveProcessor):
                 )
 
             logger.info(
-                f"[GenerateSpoilsActionSystem] {entity.name}: 候选卡 {len(candidates)} 张（agent_loop 成功={ok}）"
+                f"[GenerateSpoilsActionSystem] {entity.name}: 候选卡 {len(candidates)} 张已设计完成"
             )
+
+    ####################################################################################################################################
+    async def _design_candidates(
+        self, entity: Entity, candidates: List[Candidate]
+    ) -> bool:
+        """为单个角色跑设计会话；仅当全部候选都落地完成才算成功。
+
+        `DesignOutcome` 可能 `ok=True` 但 `designed < total`（agent 提前结束未提交全部卡），
+        这种情况下候选仍带着原型原名与引导词缀，不能当成功发放。
+        角色挂载了 `MotifComponent` 时，其 `motif` 作为艺术锚点注入；未挂则沿用旧口径。
+        """
+        motif = entity.get(MotifComponent).motif if entity.has(MotifComponent) else ""
+        outcome = await design_cards_for_actor(
+            self._game,
+            actor_name=entity.name,
+            actor_system_prompt=read_actor_system_prompt(self._game, entity),
+            candidates=candidates,
+            actor_motif=motif,
+            max_rounds=6,
+        )
+        return bool(outcome.ok and outcome.designed == len(candidates))
 
     ####################################################################################################################################
     def _materialize_candidates(

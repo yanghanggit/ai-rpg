@@ -4,6 +4,7 @@
 
 - system prompt 来自「世界.卡牌设计」实体；
 - 目标 actor 的 system prompt 以数据块形式进入任务提示词，而不是整段记忆；
+- 角色挂载 `MotifComponent` 时，其 `motif` 作为「## 艺术锚点」数据块注入；未挂则无此块；
 - label 为 `世界.卡牌设计|角色.名`；
 - `mutate_messages=False`，且 actor 的记忆条数在调用前后不变。
 """
@@ -163,5 +164,40 @@ async def test_design_uses_world_system_and_leaves_no_trace(
     # 任务提示词里同时有 actor 设定与调用方上下文
     assert _ACTOR_PROMPT.strip() in captured["context"]
     assert "材料.铁锭" in captured["context"]
+    # 未传 actor_motif：不注入艺术锚点块，口径与旧版本一致
+    assert "## 艺术锚点" not in captured["context"]
     assert captured["mutate_messages"] is False
     assert len(game.get_agent_memory(actor_entity).messages) == actor_memory_before
+
+
+#######################################################################################################################################
+async def test_design_injects_actor_motif_block(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """`actor_motif` 非空时，作为「## 艺术锚点」块跟在角色设定之后。"""
+    game, _, _ = _make_game()
+    captured: Dict[str, Any] = {}
+
+    async def _fake_design(
+        name: str, candidates: List[Any], messages: List[Any], **kwargs: Any
+    ) -> DesignOutcome:
+        captured.update(name=name, messages=messages, **kwargs)
+        return DesignOutcome(
+            ok=True, designed=len(candidates), total=len(candidates), affixes=0
+        )
+
+    monkeypatch.setattr(card_common, "run_card_design_session", _fake_design)
+
+    await design_cards_for_actor(
+        game,
+        actor_name="角色.无名",
+        actor_system_prompt=_ACTOR_PROMPT,
+        candidates=[_make_candidate("余刃")],
+        actor_motif="**母题**: 不属于此地的旧斗篷",
+    )
+
+    context = captured["context"]
+    assert "## 艺术锚点" in context
+    assert "**母题**: 不属于此地的旧斗篷" in context
+    # 角色设定在前，艺术锚点在后
+    assert context.index("## 你要为之设计的角色") < context.index("## 艺术锚点")

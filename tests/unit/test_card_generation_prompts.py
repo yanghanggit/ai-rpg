@@ -69,6 +69,15 @@ def test_card_design_prompt_is_design_driven_without_global_rules() -> None:
     assert SPOILS_SLOT in text
 
 
+def test_card_design_prompt_has_autonomous_sourcing_rule() -> None:
+    # 自主槽的取材规则是「通用映射」：不点名任何角色与伙伴，换角色仍成立。
+    text = build_card_design_prompt([_candidate()])
+
+    assert "on_autonomous_affixes" in text
+    assert "自主槽的取材" in text
+    assert "伙伴或旧物" in text
+
+
 def test_consumable_select_prompt_has_no_global_specs() -> None:
     # 消耗品工坊已迁移到 card_common：选型阶段不注入全局规范。
     material = MaterialItem(name="材料.测试", description="一块材料", count=1)

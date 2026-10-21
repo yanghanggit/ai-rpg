@@ -1,10 +1,10 @@
-"""队员出牌决策系统：为已发生的出牌 / 过牌写一条决策记录，形状与怪物侧一致。
+"""队员出牌决策系统：把玩家已决定的出牌 / 过牌记成一条决策记录（无推理，原因留白）。
 
-队员的决策来自玩家，计算端没有决策推理，所以只落记录不推理；原因用占位句留白。
-唯一需要与结算层对齐的是「这张牌能不能出」：判定复用 `play_blocked_cause`（`PlayCardsActionSystem`
-的同一口径），因此记录不会说「打出了」而结算说「没打」。
+记录形状与 `MonsterCombatDecisionSystem` 一致，合法性判定复用 `play_blocked_cause`，
+因此记录不会与结算层的拦截结论矛盾。设计取舍见 docs/wiki/combat-pipeline.md。
 """
 
+import json
 from typing import Dict, Final, List, final, override
 
 from loguru import logger
@@ -69,8 +69,27 @@ class PartyCombatDecisionSystem(ReactiveProcessor):
         for entity in entities:
             if entity.has(PlayCardsAction):
                 self._record_play(entity, round_number)
+            elif self._played_this_round(entity, round_number):
+                # 出完牌后交出行动权是机械步骤，不是第二次决策：不写记录（与怪物侧同形）。
+                logger.debug(
+                    f"PartyCombatDecisionSystem: [{entity.name}] 本回合已出牌，交权不另记录"
+                )
             else:
                 self._record_pass(entity, round_number)
+
+    #######################################################################################################################################
+    def _played_this_round(self, entity: Entity, round_number: int) -> bool:
+        """本回合是否已出过牌（用于区分「纯过牌」与「出完牌后交权」）。"""
+        for message in reversed(self._game.get_agent_memory(entity).messages):
+            tag = getattr(message, "combat_decision", None)
+            if tag is None:
+                continue
+            decision = json.loads(tag)
+            if decision["round"] < round_number:  # 记录按时间先后：更早的回合不必再看
+                break
+            if decision["round"] == round_number and decision["action"] == ACTION_PLAY:
+                return True
+        return False
 
     #######################################################################################################################################
     def _record_play(self, entity: Entity, round_number: int) -> None:

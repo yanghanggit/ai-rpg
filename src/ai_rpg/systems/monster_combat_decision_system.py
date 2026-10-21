@@ -1,11 +1,17 @@
-"""怪物出牌决策系统：怪物自己选牌选目标，决策过程只留「做了什么 + 原因」。"""
+"""怪物出牌决策系统：用工具调用流让怪物自己选牌选目标，只留「做了什么 + 原因」。
 
+`submit_decision` 是唯一提交方式（非法提交由工具回错，模型在同一段 loop 内自纠）；
+loop 后整段过程被替换成一条决策记录（形状与 `PartyCombatDecisionSystem` 一致），
+没提交出可执行结果时兜底过牌。设计取舍见 docs/wiki/combat-pipeline.md。
+"""
+
+from functools import partial
 from typing import Dict, Final, List, Optional, final, override
 
 from loguru import logger
 from pydantic import BaseModel
 
-from ..deepseek import batch_complete
+from ..deepseek import agent_loop
 from ..entitas import Entity, GroupEvent, Matcher, ReactiveProcessor
 from ..game.dbg_combat_processor import (
     compute_character_stats,
@@ -15,7 +21,7 @@ from ..game.dbg_combat_processor import (
 )
 from ..game.dbg_game import DBGGame
 from ..game.rpg_agent_memory import REPLACED_MESSAGES_ATTR
-from ..llm import ChatCompletionRequest, ChatCompletionResult
+from ..llm import ToolDefinition, ToolFunction
 from ..models import (
     Card,
     CharacterStats,
@@ -29,26 +35,30 @@ from ..models import (
     TargetType,
     render_labeled_str_list,
 )
-from ..utils import extract_json, prompt_builder
+from ..utils import prompt_builder
+from .arbitration_common import make_loop_id
+from .card_pile_common import (
+    READ_PILES_TOOL,
+    READ_PILES_TOOL_NAME,
+    handle_read_piles,
+)
 from .combat_decision_common import (
     ACTION_PASS,
     ACTION_PLAY,
     REASON_MISSING,
     build_combat_decision_record,
     build_combat_decision_tag,
+    format_targets,
     play_blocked_cause,
 )
 
+#######################################################################################################################################
+# 单次决策 loop 的轮次上限：首轮提交 + 若干次「被工具回错后改正」的机会。
+MAX_DECISION_ROUNDS: Final[int] = 4
 
 #######################################################################################################################################
-@final
-class _MonsterDecisionResponse(BaseModel):
-    """LLM 返回的怪物出牌决策"""
-
-    pass_turn: bool = False
-    card_name: str = ""
-    targets: List[str] = []
-    reason: str = ""  # 为什么这样打（或为什么过牌）
+# 决策 loop 的 kind（拼进 loop_id，供存档记忆里反查本次决策过程）。
+LOOP_KIND: Final[str] = "monster_decision"
 
 
 #######################################################################################################################################
@@ -64,6 +74,43 @@ class _OpponentView(BaseModel):
     revealed_cards: List[Card]  # 手牌中「带受击词缀，或来源为本怪物」的卡牌
 
 
+#######################################################################################################################################
+# 「提交出牌决策」工具：本回合唯一的提交方式（terminal tool）。
+SUBMIT_DECISION_TOOL_NAME: Final[str] = "submit_decision"
+
+SUBMIT_DECISION_TOOL: Final[ToolDefinition] = ToolDefinition(
+    function=ToolFunction(
+        name=SUBMIT_DECISION_TOOL_NAME,
+        description="提交本回合的出牌决策（打出某张手牌，或过牌）。这是本回合唯一的提交方式：提交不合法时会收到错误说明，请按提示改正后重新调用；不要用普通文本作答。",
+        parameters={
+            "type": "object",
+            "properties": {
+                "pass_turn": {
+                    "type": "boolean",
+                    "description": "true=本回合不出牌（过牌）；false=打出手牌中的一张牌",
+                },
+                "card_name": {
+                    "type": "string",
+                    "description": "要打出的手牌名（pass_turn=false 时必填，须与手牌中的名字完全一致）",
+                },
+                "targets": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "目标角色全名列表（从「存活对手」中选）；目标为「自身」的牌留空",
+                },
+                "reason": {
+                    "type": "string",
+                    "description": "一句话说明为什么这样打 / 为什么过牌（40 字以内，写你自己的判断依据）",
+                },
+            },
+            "required": ["pass_turn", "reason"],
+        },
+    )
+)
+
+
+#######################################################################################################################################
+# 工具序列：`read_piles`（非终止，可任意轮调用）→ `submit_decision`（终止）。
 #######################################################################################################################################
 @prompt_builder
 def _target_label(card: Card) -> str:
@@ -83,19 +130,23 @@ def _target_label(card: Card) -> str:
 #######################################################################################################################################
 @prompt_builder
 def _format_card(card: Card) -> str:
-    """将一张手牌格式化为紧凑、信息密度高的文本（出牌决策提示词的文本片段）。"""
+    """将一张手牌格式化为紧凑文本（空词缀不渲染）。"""
     lines = [
-        f"- 【{card.name}】{card.description}",
+        (
+            f"- 【{card.name}】{card.description}"
+            if card.description
+            else f"- 【{card.name}】"
+        ),
         f"  费用{card.cost} 伤害{card.damage}×{card.hit_count}段 格挡{card.block} 目标:{_target_label(card)} {'可出' if card.playable else '不可出'}",
-        render_labeled_str_list("  即时词缀", card.on_play_affixes, indent="    "),
-        render_labeled_str_list("  受击词缀", card.on_hit_affixes, indent="    "),
-        render_labeled_str_list(
-            "  回合结束词缀", card.on_turn_end_affixes, indent="    "
-        ),
-        render_labeled_str_list(
-            "  自主运行词缀", card.on_autonomous_affixes, indent="    "
-        ),
     ]
+    for label, affixes in (
+        ("即时词缀", card.on_play_affixes),
+        ("受击词缀", card.on_hit_affixes),
+        ("回合结束词缀", card.on_turn_end_affixes),
+        ("自主运行词缀", card.on_autonomous_affixes),
+    ):
+        if affixes:
+            lines.append(render_labeled_str_list(f"  {label}", affixes, indent="    "))
 
     flags = []
     if card.exhaust:
@@ -168,6 +219,12 @@ def _affordable_playable_names(hand_cards: List[Card], energy: int) -> List[str]
 
 
 #######################################################################################################################################
+def _card_names(hand_cards: List[Card]) -> str:
+    """把一手牌压成「名（费用）、…」的清单，供工具回错时点名可选范围。"""
+    return "、".join(f"{c.name}（费用{c.cost}）" for c in hand_cards) or "无"
+
+
+#######################################################################################################################################
 @prompt_builder
 def _build_context_block(
     monster_name: str,
@@ -179,7 +236,7 @@ def _build_context_block(
     completed_actors: List[str],
 ) -> str:
     """构建出牌决策提示词共享的上下文块（状态/序列/手牌/对手）。"""
-    self_info = f"HP {stats.hp}/{stats.max_hp} | 速度 {stats.speed} | 剩余能量 {energy}（每打出一张牌需支付其「费用 cost」点能量）"
+    self_info = f"HP {stats.hp}/{stats.max_hp} | 速度 {stats.speed} | 剩余能量 {energy}（打出一张牌扣其「费用」，不足则打不出）"
     cards_lines = "\n".join(_format_card(c) for c in hand_cards)
     opponents_lines = (
         "\n".join(_format_opponent(o, monster_name) for o in opponents)
@@ -193,7 +250,7 @@ def _build_context_block(
     my_position = next(
         (i + 1 for i, name in enumerate(action_order) if name == monster_name), None
     )
-    position_text = f"第 {my_position} 位" if my_position is not None else "未知"
+    position_text = f"你在第 {my_position} 位" if my_position is not None else "轮到你"
     completed_text = "、".join(completed_actors) if completed_actors else "无"
 
     return f"""## 你的状态
@@ -202,15 +259,13 @@ def _build_context_block(
 
 ## 行动序列
 
-完整序列：{order_display}
-已行动：{completed_text}
-你的位置：{position_text}，现在轮到你
+{order_display}｜已行动：{completed_text}｜{position_text}，现在轮到你
 
 ## 手牌
 
 {cards_lines}
 
-## 存活对手
+## 存活对手（总格挡 = 该对手手牌 block 之和，持有即生效；「向你亮出的手牌」会在你命中时触发其受击词缀）
 
 {opponents_lines}"""
 
@@ -228,6 +283,7 @@ def _build_monster_decision_prompt(
     current_round_number: int,
 ) -> str:
     """生成怪物出牌决策的 LLM 提示词（完整版）。"""
+
     context = _build_context_block(
         monster_name=monster_name,
         stats=monster_stats,
@@ -237,40 +293,23 @@ def _build_monster_decision_prompt(
         action_order=action_order,
         completed_actors=completed_actors,
     )
+
     affordable_names = _affordable_playable_names(hand_cards, energy)
     if affordable_names:
         card_names_hint = "、".join(f'"{name}"' for name in affordable_names)
     else:
-        card_names_hint = "无——剩余能量不足以支付任何牌，请返回 pass_turn=true"
+        card_names_hint = "无——剩余能量不足以支付任何牌，请提交 pass_turn=true"
 
     return f"""# 第 {current_round_number} 回合 · 出牌决策
 
-请从「手牌」中选择一张打出，或跳过本回合（pass_turn=true）。只返回 JSON。
+用 `submit_decision` 打出「手牌」中的一张，或过掉本回合。
 
 {context}
 
-## 决策规则
+## 规则
 
-- 行动按序列顺序执行，排在你前面的角色已行动，其目标可能已死亡。
-- 只能打出「可出」的牌；「不可出」（playable=False）的牌只能留在手牌中，不要选择。
-- 每打出一张牌需支付其「费用 cost」点能量；你当前剩余能量为 {energy}，只能选择 cost ≤ {energy} 的牌。
-- 若所有「可出」牌的 cost 都大于剩余能量，则必须返回 pass_turn=true。
-- targets 从「存活对手」中选全名；目标为「自身」的牌可省略 targets。
-- 「存活对手」的「总格挡」为该对手手牌 block 之和（持有即生效），「手牌 N 张」为其当前手牌总数；「向你亮出的手牌」为带受击词缀的牌或来源你的牌——带受击词缀的牌会在你命中该对手时触发，可据此权衡命中收益与反噬风险。
-- SINGLE 填恰好 1 个目标；ALL/SPREAD 填恰好 1 个阵营锚点，系统自动展开为对应阵营的存活角色。
-- 若没有可执行的牌，返回 pass_turn=true，card_name/targets 可省略。
-- reason（必填）：一句话说明**为什么这样打 / 为什么过牌**（40 字以内，给出你自己的判断依据即可）。
-
-## 输出 JSON
-
-```json
-{{
-  "pass_turn": false,
-  "card_name": "选择的手牌名（可出：{card_names_hint}）",
-  "targets": ["目标全名列表；目标为自身时可为 []]"],
-  "reason": "为什么这样打 / 为什么过牌（一句话）"
-}}
-```"""
+- 目标：单个目标填 1 个全名；阵营全体 / 散射填 1 个锚点（系统自动展开）；自身可留空。
+- 本回合可出的牌（费用 ≤ {energy}）：{card_names_hint}"""
 
 
 #######################################################################################################################################
@@ -283,13 +322,15 @@ class _DecisionOutcome:
         *,
         card: Optional[Card] = None,
         intended_card: Optional[Card] = None,
+        intended_card_name: str = "",
         targets: Optional[List[str]] = None,
         reason: str = "",
         forced_cause: str = "",
     ) -> None:
-        # card：实际打出的牌（None = 过牌）；intended_card：被拦下时「本想打哪张」
+        # card：实际打出的牌（None = 过牌）；intended_card / intended_card_name：被拦下时「本想打哪张」
         self.card = card
         self.intended_card = intended_card or card
+        self.intended_card_name = intended_card_name
         self.targets: List[str] = targets or []
         self.reason = reason
         self.forced_cause = forced_cause
@@ -297,7 +338,9 @@ class _DecisionOutcome:
     @property
     def card_name(self) -> str:
         """被系统拦下时也要写进记录（说明「本想打哪张」）。"""
-        return self.intended_card.name if self.intended_card is not None else ""
+        if self.intended_card is not None:
+            return self.intended_card.name
+        return self.intended_card_name
 
     @property
     def forced(self) -> bool:
@@ -312,10 +355,83 @@ class _DecisionOutcome:
 
 #######################################################################################################################################
 @final
+class _DecisionContext:
+    """一次决策 loop 的收敛槽：工具写结论、系统读结论。
+
+    ``blocked_card`` / ``blocked_cause`` 是最近一次被工具回错的尝试，供未收敛时兜底。
+    """
+
+    def __init__(self, start_index: int) -> None:
+        self.start_index = start_index
+        self.outcome: Optional[_DecisionOutcome] = None
+        self.blocked_card: Optional[Card] = None
+        self.blocked_card_name: str = ""
+        self.blocked_cause: str = ""
+        self.loop_ok: bool = False
+
+
+#######################################################################################################################################
+def _handle_submit_decision(
+    game: DBGGame,
+    entity: Entity,
+    ctx: _DecisionContext,
+    pass_turn: bool,
+    reason: str = "",
+    card_name: str = "",
+    targets: Optional[List[str]] = None,
+) -> str:
+    """「提交出牌决策」工具：不合法的提交只回错、不落结论，让模型在同一段 loop 里改正。"""
+    reason = (reason or "").strip()
+
+    if pass_turn:
+        ctx.outcome = _DecisionOutcome(reason=reason)
+        return "已提交：本回合不出牌（过牌），立即生效。"
+
+    hand_cards = entity.get(HandComponent).cards
+    selected_card = next((c for c in hand_cards if c.name == card_name), None)
+    if selected_card is None:
+        ctx.blocked_card = None
+        ctx.blocked_card_name = card_name
+        ctx.blocked_cause = "它不在你的手牌中"
+        return f"错误：「{card_name}」不在你的手牌中。你的手牌：{_card_names(hand_cards)}。请重新选择，或提交 pass_turn=true。"
+
+    # 兜底校验：不可出 / 能量不足 / 目标无法确认都不进入结算，且原因回传给模型自纠
+    blocked_cause = play_blocked_cause(selected_card)
+    if blocked_cause:
+        ctx.blocked_card, ctx.blocked_cause = selected_card, blocked_cause
+        return f"错误：「{selected_card.name}」{blocked_cause}（playable=False），只能留在手牌中。请换一张，或提交 pass_turn=true。"
+
+    energy = get_energy(entity)
+    if energy < selected_card.cost:
+        ctx.blocked_card = selected_card
+        ctx.blocked_cause = (
+            f"当前剩余能量 {energy} 点不足以支付费用 {selected_card.cost}"
+        )
+        return f"错误：{ctx.blocked_cause}。请换一张费用 ≤ {energy} 的牌，或提交 pass_turn=true。"
+
+    valid_targets, resolve_err = resolve_targets(
+        selected_card.target_type,
+        selected_card.hit_count,
+        entity,
+        list(targets or []),
+        game,
+    )
+
+    if resolve_err:
+        ctx.blocked_card = selected_card
+        ctx.blocked_cause = f"目标无法确认（{resolve_err}）"
+        return f"错误：{ctx.blocked_cause}。请按「存活对手」中的全名重新提交，或提交 pass_turn=true。"
+
+    ctx.outcome = _DecisionOutcome(
+        card=selected_card, targets=valid_targets, reason=reason
+    )
+    return f"已提交：打出「{selected_card.name}」，目标：{format_targets(valid_targets) or '无'}。"
+
+
+#######################################################################################################################################
+@final
 class MonsterCombatDecisionSystem(ReactiveProcessor):
-    """
-    怪物出牌决策系统。
-    """
+    """怪物出牌决策系统：工具化决策，落库后整段过程压缩成一条决策记录。"""
 
     def __init__(self, game: DBGGame) -> None:
         super().__init__(game)
@@ -343,7 +459,6 @@ class MonsterCombatDecisionSystem(ReactiveProcessor):
     @override
     async def react(self, entities: List[Entity]) -> None:
 
-        # 验证战斗状态
         if not self._game.current_dungeon_combat_room.combat.is_ongoing:
             logger.debug("MonsterCombatDecisionSystem: 战斗未进行中，跳过决策")
             return
@@ -352,26 +467,59 @@ class MonsterCombatDecisionSystem(ReactiveProcessor):
             f"MonsterCombatDecisionSystem: 为 {len(entities)} 个怪物进行出牌决策推理"
         )
 
-        # 为每个怪物创建推理请求（值对象，不持有状态）
-        requests: List[ChatCompletionRequest] = [
-            self._create_monster_decision_request(entity) for entity in entities
-        ]
+        round_number = len(self._game.current_dungeon_combat_room.combat.rounds or [])
 
-        if not requests:
-            logger.warning("MonsterCombatDecisionSystem: 没有可推理的怪物实体，跳过")
-            return
-
-        # 并行 LLM 推理（结果与 requests 同序）
-        results: List[ChatCompletionResult] = await batch_complete(requests)
-
-        # 解析并替换 PlayCardsAction
-        for result in results:
-            # 解析 LLM 响应，替换 PlayCardsAction
-            self._process_monster_decision(result)
+        # 行动权由 `Round.current_actor` 唯一决定，决策天然串行：一个怪物一段 loop + 一次落库。
+        # 不并发（并发会让同一回合的多个决策互相看不见对方的结算结果），也不做批量提交。
+        for entity in entities:
+            ctx = _DecisionContext(len(self._game.get_agent_memory(entity).messages))
+            await self._run_decision(entity, ctx, round_number)
+            self._apply_decision(entity, ctx, round_number)
 
     ####################################################################################################################################
-    def _create_monster_decision_request(self, entity: Entity) -> ChatCompletionRequest:
-        """为单个怪物实体创建出牌决策请求。"""
+    async def _run_decision(
+        self, entity: Entity, ctx: _DecisionContext, round_number: int
+    ) -> None:
+        """驱动单个怪物的工具化出牌决策（原地写记忆，事后整段压缩成一条记录）。"""
+        memory = self._game.get_agent_memory(entity)
+        loop_id = make_loop_id(memory.messages, LOOP_KIND, round_number, entity.name)
+
+        try:
+
+            result = await agent_loop(
+                name=entity.name,
+                input_message=self._build_decision_prompt(entity, round_number),
+                # 原地写：工具轨迹先如实进记忆，落库阶段再整段替换成决策记录
+                messages=memory.messages,
+                tools=[READ_PILES_TOOL, SUBMIT_DECISION_TOOL],
+                handlers={
+                    READ_PILES_TOOL_NAME: partial(handle_read_piles, entity),
+                    SUBMIT_DECISION_TOOL_NAME: partial(
+                        _handle_submit_decision, self._game, entity, ctx
+                    ),
+                },
+                terminal_tools=[SUBMIT_DECISION_TOOL],
+                tool_choice="required",
+                max_rounds=MAX_DECISION_ROUNDS,
+                input_metadata={"draw_cards_round_number": round_number},
+                loop_id=loop_id,
+            )
+
+            ctx.loop_ok = bool(result)
+
+        except Exception as e:
+
+            logger.error(
+                f"MonsterCombatDecisionSystem: [{entity.name}] 决策 loop 异常: {e}"
+            )
+            ctx.loop_ok = False
+
+        # agent_loop 直接原地追加 AI 消息（绕过 add_ai_message），需手动同步最新上下文占比
+        self._game.sync_latest_context_usage_ratio(entity)
+
+    ####################################################################################################################################
+    def _build_decision_prompt(self, entity: Entity, round_number: int) -> str:
+        """为单个怪物实体构建出牌决策提示词。"""
         assert entity.has(
             HandComponent
         ), f"MonsterCombatDecisionSystem: 怪物 {entity.name} 缺少 HandComponent"
@@ -380,85 +528,53 @@ class MonsterCombatDecisionSystem(ReactiveProcessor):
             hand_comp is not None
         ), f"MonsterCombatDecisionSystem: HandComponent 不能为空"
 
-        # 计算怪物的当前战斗属性
-        monster_stats = compute_character_stats(entity)
-        energy = get_energy(entity)
-
         # 获取场上存活的队伍成员（对手），构建决策视角快照（HP / 总格挡 / 来源本怪物的受击牌）
-        alive_party_members = get_alive_party_members_in_stage(entity, self._game)
         opponents: List[_OpponentView] = [
             _build_opponent_view(actor, monster_name=entity.name)
-            for actor in alive_party_members
+            for actor in get_alive_party_members_in_stage(entity, self._game)
         ]
 
-        # 获取本回合行动顺序信息
         latest_round = self._game.current_dungeon_combat_room.combat.latest_round
         action_order: List[str] = latest_round.action_order if latest_round else []
         completed_actors: List[str] = (
             latest_round.completed_actors if latest_round else []
         )
 
-        # 获取当前回合数（用于提示信息）
-        current_round_number = len(
-            self._game.current_dungeon_combat_room.combat.rounds or []
-        )
-
-        # 构建怪物出牌决策的提示信息（Prompt）
-        prompt = _build_monster_decision_prompt(
+        return _build_monster_decision_prompt(
             monster_name=entity.name,
-            monster_stats=monster_stats,
-            energy=energy,
+            monster_stats=compute_character_stats(entity),
+            energy=get_energy(entity),
             hand_cards=hand_comp.cards,
             opponents=opponents,
             action_order=action_order,
             completed_actors=completed_actors,
-            current_round_number=current_round_number,
-        )
-
-        return ChatCompletionRequest(
-            label=entity.name,
-            input_message=prompt,
-            messages=self._game.get_agent_memory(entity).messages,
+            current_round_number=round_number,
         )
 
     ####################################################################################################################################
-    def _process_monster_decision(self, result: ChatCompletionResult) -> None:
-        """解析决策回包，落一条决策记录，再替换成 PlayCardsAction / PassTurnAction。
+    def _apply_decision(
+        self, entity: Entity, ctx: _DecisionContext, round_number: int
+    ) -> None:
+        """落库：先把整段决策过程替换成一条记录，再替换成 PlayCardsAction / PassTurnAction。"""
+        outcome = ctx.outcome
+        if outcome is None:
+            # 没在轮次上限内提交出可执行结论：按「本想打 X 但没打成」的过牌兜底
+            outcome = _DecisionOutcome(
+                intended_card=ctx.blocked_card,
+                intended_card_name=ctx.blocked_card_name,
+                forced_cause=ctx.blocked_cause or "决策没有返回可执行的结果",
+            )
+            logger.error(
+                f"MonsterCombatDecisionSystem: [{entity.name}] 决策未收敛（loop_ok={ctx.loop_ok}），兜底过牌：{outcome.forced_cause}"
+            )
 
-        记忆形状：先按「环境+任务提示词 → 模型回包」写入（审计可查），随后整段替换成
-        一条人类可读的决策记录（做了什么 + 原因）；原文通过 `replaced_messages` 留在存档。
-        """
-
-        entity = self._game.get_entity_by_name(result.label)
-        assert (
-            entity is not None
-        ), f"MonsterCombatDecisionSystem: 无法找到实体 {result.label}"
-
-        current_round_number = len(
-            self._game.current_dungeon_combat_room.combat.rounds or []
-        )
-
-        # 先记录原始决策过程（被替换的原文通过 dump_attr 留在存档里）
-        start_index = len(self._game.get_agent_memory(entity).messages)
-        self._game.add_human_message(
-            entity=entity,
-            human_message=HumanMessage(
-                content=result.request.input_message,
-                draw_cards_round_number=current_round_number,
-            ),
-        )
-        if result.ai_message is not None:
-            self._game.add_ai_message(entity, result.ai_message)
-
-        outcome = self._decide(entity, result)
         self._write_decision_record(
             entity,
-            start_index=start_index,
-            round_number=current_round_number,
+            start_index=ctx.start_index,
+            round_number=round_number,
             outcome=outcome,
         )
 
-        # 落库：出牌或过牌
         if outcome.card is None:
             entity.replace(PassTurnAction, entity.name)
             logger.debug(
@@ -472,107 +588,13 @@ class MonsterCombatDecisionSystem(ReactiveProcessor):
         )
 
     ####################################################################################################################################
-    def _decide(
-        self, entity: Entity, result: ChatCompletionResult
-    ) -> "_DecisionOutcome":
-        """把回包翻译成「打哪张、打谁」；任何异常都收敛成带原因的过牌。"""
-
-        reason = ""
-
-        if result.ai_message is None:
-            logger.error(
-                f"MonsterCombatDecisionSystem: [{entity.name}] LLM 返回空响应，执行过牌"
-            )
-            return _DecisionOutcome(forced_cause="决策没有返回任何内容", reason=reason)
-
-        try:
-            decision = _MonsterDecisionResponse.model_validate_json(
-                extract_json(result.content)
-            )
-        except Exception as e:
-            logger.error(f"{result.content}")
-            logger.error(
-                f"MonsterCombatDecisionSystem: [{entity.name}] 解析 LLM 响应失败，执行过牌。Exception: {e}"
-            )
-            return _DecisionOutcome(forced_cause="决策内容无法解析", reason=reason)
-
-        reason = decision.reason.strip()
-
-        if decision.pass_turn:
-            return _DecisionOutcome(reason=reason)
-
-        hand_comp = entity.get(HandComponent)
-        assert (
-            hand_comp is not None
-        ), "MonsterCombatDecisionSystem: HandComponent 不能为空"
-
-        selected_card = next(
-            (c for c in hand_comp.cards if c.name == decision.card_name), None
-        )
-        if selected_card is None:
-            logger.error(
-                f"MonsterCombatDecisionSystem: [{entity.name}] LLM 返回的卡牌名 '{decision.card_name}' 不在手牌中：{[c.name for c in hand_comp.cards]}，执行过牌"
-            )
-            return _DecisionOutcome(
-                forced_cause=f"「{decision.card_name}」不在你的手牌中",
-                reason=reason,
-            )
-
-        # 兜底校验：不可出 / 能量不足都按过牌处理，绝不让错误决策进入结算
-        # （判定口径与结算层 `PlayCardsActionSystem` 共用 `play_blocked_cause`）
-        blocked_cause = play_blocked_cause(selected_card)
-        if blocked_cause:
-            logger.error(
-                f"MonsterCombatDecisionSystem: [{entity.name}] 决策选出不可出牌的 '{selected_card.name}'，强制过牌"
-            )
-            return _DecisionOutcome(
-                intended_card=selected_card,
-                forced_cause=blocked_cause,
-                reason=reason,
-            )
-
-        energy = get_energy(entity)
-        if energy < selected_card.cost:
-            logger.warning(
-                f"MonsterCombatDecisionSystem: [{entity.name}] 决策出牌 '{selected_card.name}' 能量不足（费用 {selected_card.cost} > 剩余 {energy}），强制过牌"
-            )
-            return _DecisionOutcome(
-                intended_card=selected_card,
-                forced_cause=(
-                    f"当前剩余能量 {energy} 点不足以支付费用 {selected_card.cost}"
-                ),
-                reason=reason,
-            )
-
-        valid_targets, resolve_err = resolve_targets(
-            selected_card.target_type,
-            selected_card.hit_count,
-            entity,
-            decision.targets,
-            self._game,
-        )
-        if resolve_err:
-            logger.warning(
-                f"MonsterCombatDecisionSystem: [{entity.name}] 目标解析失败：{resolve_err}，执行过牌"
-            )
-            return _DecisionOutcome(
-                intended_card=selected_card,
-                forced_cause=f"目标无法确认（{resolve_err}）",
-                reason=reason,
-            )
-
-        return _DecisionOutcome(
-            card=selected_card, targets=valid_targets, reason=reason
-        )
-
-    ####################################################################################################################################
     def _write_decision_record(
         self,
         entity: Entity,
         *,
         start_index: int,
         round_number: int,
-        outcome: "_DecisionOutcome",
+        outcome: _DecisionOutcome,
     ) -> None:
         """把「原始决策过程」整段替换为一条决策记录（做了什么 + 原因）。"""
         messages = self._game.get_agent_memory(entity).messages
@@ -609,5 +631,3 @@ class MonsterCombatDecisionSystem(ReactiveProcessor):
             ],
             dump_attr=REPLACED_MESSAGES_ATTR,
         )
-
-    ####################################################################################################################################

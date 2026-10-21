@@ -20,6 +20,7 @@ from ai_rpg.models import (
     Card,
     DeathComponent,
     HandComponent,
+    HumanMessage,
     MonsterComponent,
     PartyMemberComponent,
     PassTurnAction,
@@ -27,8 +28,10 @@ from ai_rpg.models import (
     TargetType,
 )
 from ai_rpg.systems.combat_decision_common import (
+    ACTION_PLAY,
     REASON_PLACEHOLDER,
     UNPLAYABLE_CAUSE,
+    build_combat_decision_tag,
 )
 from ai_rpg.systems.party_combat_decision_system import PartyCombatDecisionSystem
 
@@ -148,6 +151,58 @@ class TestPartyDecisionRecord:
         assert tag["card"] == "攻击"
         assert tag["targets"] == []
         assert tag["forced"] is True
+
+    async def test_pass_after_play_is_not_recorded_again(
+        self, context: Context, game: MagicMock
+    ) -> None:
+        """出完牌后交出行动权是机械步骤，不是第二次决策：不再写一条「不出牌」。"""
+        actor = _make_actor(context, "角色.无名")
+        actor.add(PassTurnAction, actor.name)
+        game.get_agent_memory.return_value.messages = [
+            HumanMessage(
+                content="# 第 1 回合 · 你的行动\n你打出了「攻击」。",
+                combat_decision=build_combat_decision_tag(
+                    1,
+                    ACTION_PLAY,
+                    card_name="攻击",
+                    targets=["怪物.渡口野狗"],
+                    reason=REASON_PLACEHOLDER,
+                    forced=False,
+                ),
+            )
+        ]
+
+        await PartyCombatDecisionSystem(game).react([actor])
+
+        game.add_human_message.assert_not_called()
+
+    async def test_pass_in_a_new_round_is_still_recorded(
+        self, context: Context, game: MagicMock
+    ) -> None:
+        """上一回合出过牌不影响本回合：本回合只过牌，就是一次真的过牌决策。"""
+        game.current_dungeon_combat_room.combat.rounds = [MagicMock(), MagicMock()]
+        actor = _make_actor(context, "角色.无名")
+        actor.add(PassTurnAction, actor.name)
+        game.get_agent_memory.return_value.messages = [
+            HumanMessage(
+                content="# 第 1 回合 · 你的行动\n你打出了「攻击」。",
+                combat_decision=build_combat_decision_tag(
+                    1,
+                    ACTION_PLAY,
+                    card_name="攻击",
+                    targets=["怪物.渡口野狗"],
+                    reason=REASON_PLACEHOLDER,
+                    forced=False,
+                ),
+            )
+        ]
+
+        await PartyCombatDecisionSystem(game).react([actor])
+
+        records = _records(game)
+        assert len(records) == 1
+        assert "你选择不出牌，直接过牌。" in records[0].content
+        assert json.loads(records[0].combat_decision)["round"] == 2
 
     async def test_skips_when_combat_not_ongoing(
         self, context: Context, game: MagicMock

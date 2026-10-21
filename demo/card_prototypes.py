@@ -279,7 +279,7 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             summary="把受击易伤投递给敌人，状态由这张牌本身承载（数值方向自定）。",
             design="""【骨架】SINGLE；cost=1、damage=1、hit_count=1、block=0、transferable=True；on_hit_affixes 为引导槽。
 【字段】transferable：出牌后副本进入目标手牌并保留原 source，落地即 transferable=False（只传一跳、不可再转手）。on_hit_affixes：本卡持有者被命中时触发。
-【设计】把「破绽」投给敌人：易伤规则由这张留在对方手上的牌承载，无需独立状态存储。取一个（或组合）内建数值（本卡 damage、出牌者 damage/hit_count、持有者 HP/总格挡）写成一条受击词缀。方向必须让持有者（敌人）更吃亏——多受伤害、失去 HP、削减其格挡等；禁止写成反伤、回复、增幅等对持有者有利的效果（那是反伤原型的方向）。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
+【设计】把「破绽」投给敌人：易伤规则由这张留在对方手上的牌承载，无需独立状态存储。取一个（或组合）内建数值（本卡 damage、出牌者 damage/hit_count、持有者 HP/总格挡）写成一条受击词缀。方向必须让持有者（敌人）更吃亏——多受伤害、失去 HP 等；禁止写成反伤、回复、增幅等对持有者有利的效果（那是反伤原型的方向）。若要做「破甲」，请把本卡 `block` 微调为负值（持有期削减其总格挡），不要在词缀里写「削减格挡」。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
             keywords=("transferable", "on_hit_affixes"),
         ),
     ),
@@ -417,10 +417,10 @@ CARD_PROTOTYPES: Final[List[CardPrototype]] = [
             archetype="防御端",
             archetype_subtype="特殊防御机制",
             name="群体鼓舞",
-            summary="ALL + 己方锚点，群体即时增益（数值方向自定）。",
+            summary="ALL + 己方锚点，群体即时治疗（数值方向自定）。",
             design="""【骨架】target_type=ALL + 己方锚点；cost=1、damage=0、hit_count=1、block=1；on_play_affixes 为引导槽。
 【字段】ALL：以友方为锚点展开己方阵营、对全体结算。on_play_affixes：本卡打出时结算一次。
-【设计】群体鼓舞：打出时对全体触发一条增益。取一个（或组合）内建数值（本卡 block、目标/自身 HP/总格挡）写成具体词缀；注意格挡只读、不能写入。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
+【设计】群体鼓舞：打出时对全体友方回复 HP（治疗方向）。取一个（或组合）内建数值（本卡 block、目标/自身 HP/总格挡）写成一条具体词缀；格挡只能作为数值来源，不能作为结果——不得写「获得 / 增加 / 回复格挡」。示例：「[并肩]:使全体友方各回复等同于本卡 block 的 HP」。词缀名要贴合角色/原型意象，不要直接复述机制名。""",
             keywords=("all", "on_play_affixes"),
         ),
     ),

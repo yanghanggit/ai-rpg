@@ -17,6 +17,7 @@ from pydantic import ValidationError
 
 from ai_rpg.models import AFFIX_FIELDS, Card
 from demo.card_prototypes import CARD_PROTOTYPES
+from demo.card_skeletons import AOE_BUFF_SKELETON
 from demo.world import create_badluck, create_nameless
 
 _AFFIX_RE = re.compile(r"^\[[^\[\]]+\]\s*[:：]\s*\S")
@@ -73,6 +74,17 @@ def test_prototype_affix_is_one_single_line_slot(
     """原型骨架的占位词缀同样必须单行、格式合规（内容会在设计期被替换）。"""
     assert "\n" not in affix, f"{card_name}.{field} 词缀含换行：{affix!r}"
     assert _AFFIX_RE.match(affix), f"{card_name}.{field} 词缀格式不合规：{affix!r}"
+
+
+def test_aoe_buff_guidance_uses_block_as_heal_base_not_block_grant() -> None:
+    """群体鼓舞的引导必须把 block 当治疗基数，而不是教模型写“获得格挡”。"""
+    proto = next(p for p in CARD_PROTOTYPES if p.meta.prototype_id == "proto.aoe_buff")
+    skeleton_affix = "\n".join(AOE_BUFF_SKELETON.on_play_affixes)
+
+    assert "群体即时治疗" in proto.meta.summary
+    assert "回复 HP" in proto.meta.design
+    assert "[并肩]:使全体友方各回复等同于本卡 block 的 HP" in proto.meta.design
+    assert "不能写成获得格挡" in skeleton_affix
 
 
 def test_multiline_affix_is_rejected_by_model() -> None:

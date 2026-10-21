@@ -71,11 +71,11 @@
 
 ### 状态就是牌：没有独立状态存储
 
-系统没有 buff / 标记组件，也无法通过仲裁器写除 `HP` 以外的状态：一个角色当前的「状态」= 其手牌中承载词缀的牌。给对方施加持续状态靠 `transferable`（副本进对方手牌，保留原 `source`；副本落地即 `transferable=False`，只传一跳，持有者不能再次转手），由该牌自带的 `on_hit_affixes` / `on_turn_end_affixes` 结算；出牌仲裁的 `get_entity_stats` 会把目标手牌中带 `on_hit_affixes` 的牌一次返回，作为可读状态面。**结构性效果**（抽牌 / 弃牌 / 移牌 / 能量 / 额外行动 / 改流转 flag）不在原语范围内，属骨架字段与数据流转系统；词缀若声明这类效果或凭空标记，不会被结算，会被仲裁器记入 `unsettled_affixes` 供 telemetry。
+系统没有 buff / 标记组件，也无法通过仲裁器写除 `HP` 以外的状态：一个角色当前的「状态」= 其手牌中承载词缀的牌。给对方施加持续状态靠 `transferable`（副本进对方手牌，保留原 `source`；副本落地即 `transferable=False`，只传一跳，持有者不能再次转手），由该牌自带的 `on_hit_affixes` / `on_turn_end_affixes` 结算；出牌仲裁的 `get_entity_stats` 会把目标手牌中带 `on_hit_affixes` 的牌一次返回，作为可读状态面。**结构性效果**（授予格挡 / 抽牌 / 弃牌 / 移牌 / 能量 / 额外行动 / 改流转 flag）不在原语范围内，属骨架字段与数据流转系统；词缀若声明这类效果或凭空标记，不会被结算，会被仲裁器记入 `unsettled_affixes` 供 telemetry。`block` 只能作为 `base` 的数值来源（如「回复等同于本卡 block 的 HP」），不能作为效果结果。
 
 ### 解释不了的词缀：让生成 agent 在提交前知道
 
-「这条词缀能不能被解释」必须由**生成 agent 在提交前**判断：只有它握着完整上下文（词缀槽 + 结算原语 + 想表达的效果）。事后没人能补——牌库打磨结构上禁止改属性 / 词缀，仲裁时生成 agent 早已不存在。生成契约（`submit_card` 工具的 schema，「结算原语」硬边界 + 范围外禁止，见[卡牌设计指南（Card Design）](card-design.md) 的「生成契约」）与 格式校验（只守硬不变量）就是这条分工。
+「这条词缀能不能被解释」必须由**生成 agent 在提交前**判断：只有它握着完整上下文（词缀槽 + 结算原语 + 想表达的效果）。事后没人能补——牌库打磨结构上禁止改属性 / 词缀，仲裁时生成 agent 早已不存在。生成契约（`submit_card` 工具的 schema，「结算原语」硬边界 + 范围外禁止，见[卡牌设计指南（Card Design）](card-design.md) 的「生成契约」）与原型引导就是这条分工；代码侧只守结构性不变量（格式 / 槽位 / flag），不用正则猜语义，必要时再用独立的 LLM 审查兜底。
 
 `unsettled_affixes` 是**万一漏过时的兜底**，不是交接点：
 
@@ -107,7 +107,7 @@ LLM 只做三件事：为每条效果选定 **base**、判定**系数取值**、
 - `resolve_damage(entity, base_damage, hits, damage_mult, block_mult, rationale)` —— 出牌仲裁为每个承伤目标一次；回合结束仲裁目标恒为持有者，故对持有者一次；
 - `resolve_effect(entity, base, hits, reflect_mult, lifesteal_mult, heal_mult, rationale)` —— 出牌仲裁为每个受效角色一次；回合结束仲裁目标恒为持有者。
 
-系数的默认值分别为 伤害 1 / 格挡 1 / 反伤 0 / 吸血 0 / 治疗 0，全部由 `on_play_affixes` / `on_hit_affixes` / `on_turn_end_affixes` / `on_autonomous_affixes` / 神器 `modifiers` 的自由文本指导取值。`base` / `base_damage` 是 affix 引用的那个数值（通常取本卡 `damage` / `block` 字段，或文案明示的数字）——系统不解释字段语义，由 LLM 依文案判断它代表什么（如 `旧疤结痂` 用 `block` 当伤害基础）。伤害系数可用于语义条件上调（如「对动物属性 +50%」→ 1.5、「目标带某标记时×2」→ 2），此时 LLM 结合对手外观 / 人设等已知信息自行取值。反伤 / 吸血 / 治疗一律**按每击**（代码负责 ×hit_count），暂不支持「一次性」单发标记。
+系数的默认值分别为 伤害 1 / 格挡减伤 1 / 反伤 0 / 吸血 0 / 治疗 0，全部由 `on_play_affixes` / `on_hit_affixes` / `on_turn_end_affixes` / `on_autonomous_affixes` / 神器 `modifiers` 的自由文本指导取值。`block` 只作为 `base` 的取值来源，不是可产出的效果（没有“授予格挡”原语）。`base` / `base_damage` 是 affix 引用的那个数值（通常取本卡 `damage` / `block` 字段，或文案明示的数字）——系统不解释字段语义，由 LLM 依文案判断它代表什么（如 `旧疤结痂` 用 `block` 当伤害基础）。伤害系数可用于语义条件上调（如「对动物属性 +50%」→ 1.5、「目标带某标记时×2」→ 2），此时 LLM 结合对手外观 / 人设等已知信息自行取值。反伤 / 吸血 / 治疗一律**按每击**（代码负责 ×hit_count），暂不支持「一次性」单发标记。
 
 `resolve_effect` 在**出牌仲裁**中不限阵营与身份（名称为「受效角色」）：「治疗友方」「对任意角色施加反伤 / 吸血」都是显式路径，具体由卡牌选择决定；若一条效果引用两个不同来源（如反伤取目标 `block`、治疗取本卡 `damage`），拆成两次 `resolve_effect` 调用即可，会自然累积。**回合结束仲裁例外**：其目标恒为当前持有者本人，不得指向其他角色。
 

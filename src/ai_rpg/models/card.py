@@ -142,7 +142,14 @@ def validate_affix_slot(
     affix: str,
     card: Card,
 ) -> AffixValidationResult:
-    """校验一条 agent 设计的词缀是否满足**硬不变量**。"""
+    """校验一条 agent 设计的词缀是否满足**结构性硬不变量**。
+
+    这里只判断可判定的结构：槽位是否可用、格式是否为 `[词缀名]:描述`、
+    是否仍是占位符、以及与 playable / ethereal 等 flag 的冲突。
+
+    语义合法性（是否只用了仲裁原语、是否写了格挡 / 抽弃牌 / 能量等）**不在这里判断**：
+    那是开放语义，交给生成侧契约、原型引导与可选的 LLM 审查；代码不做关键词猜测。
+    """
     if affix_field not in AFFIX_FIELDS:
         return AffixValidationResult(False, f"未知词缀时机 {affix_field!r}")
 

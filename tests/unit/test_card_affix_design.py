@@ -37,8 +37,18 @@ def test_damage_without_damage_field_is_allowed() -> None:
     assert result.ok
 
 
-def test_block_without_block_field_is_allowed() -> None:
+def test_block_write_is_not_semantically_judged_here() -> None:
+    # validate_affix_slot 只守结构不变量；语义合法性由生成侧契约负责。
+    # 「能过格式校验」不代表该词缀可结算——这里刻意不把语义检查塞进计算端。
     result = validate_affix_slot("on_play_affixes", "[铁壁]:打出时获得格挡", _card())
+    assert result.ok
+
+
+def test_block_as_base_for_heal_is_allowed() -> None:
+    # block 作为数值来源是合法写法；语义审查不在本函数内，但这条应作为正例保留。
+    result = validate_affix_slot(
+        "on_play_affixes", "[并肩]:使全体友方各回复等同于本卡 block 的 HP", _card()
+    )
     assert result.ok
 
 

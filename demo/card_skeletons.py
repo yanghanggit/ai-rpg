@@ -430,7 +430,7 @@ AOE_BUFF_SKELETON: Final[Card] = Card(
     name="群体鼓舞",
     description="",
     on_play_affixes=[
-        "[词缀名]:打出时取一个内建数值为目标阵营全体结算（群体增益方向；候选取数——本卡 block、目标/自身 HP/总格挡）"
+        "[词缀名]:为全体友方各回复等同于本卡 block 的 HP（治疗方向；数值也可取目标/自身 HP/总格挡。格挡只能作为数值来源，不能写成获得格挡）"
     ],
     on_hit_affixes=[],
     on_turn_end_affixes=[],

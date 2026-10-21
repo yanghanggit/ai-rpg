@@ -30,98 +30,103 @@ def suggest_actions(status: Dict[str, Any]) -> List[str]:
     dungeon = status.get("dungeon") or {}
     actions: List[str] = []
 
-    if mode == "home":
-        actions.append("home advance --actor <actor>")
-        actions.append("home speak --target <actor> --content <text>")
-        actions.append("home switch-stage --stage <stage_name>")
-        actions.append("home generate-dungeon")
-        actions.append("home enter-dungeon --dungeon <dungeon_name>")
-        actions.append("dungeon-list")
-        actions.append("blueprint-list")
-        actions.append("home roster-add --member <actor>")
-        actions.append("home roster-remove --member <actor>")
-        actions.append("home item-to-inventory --item <item>")
-        actions.append("home item-to-storage --item <item>")
-        actions.append("home craft-consumable --material <m> [--material <m> ...]")
-        actions.append("home craft-gear --material <m> [--material <m> ...]")
-        actions.append("home craft-costume --material <m> [--material <m> ...]")
-        actions.append("home wear-costume --item <costume> --target <actor>")
-        actions.append("home remove-costume --target <actor>")
-        actions.append("compact --target <entity>")
+    match mode:
+        case "home":
+            actions.append("home advance --actor <actor>")
+            actions.append("home speak --target <actor> --content <text>")
+            actions.append("home switch-stage --stage <stage_name>")
+            actions.append("home generate-dungeon")
+            actions.append("home enter-dungeon --dungeon <dungeon_name>")
+            actions.append("dungeon-list")
+            actions.append("blueprint-list")
+            actions.append("home roster-add --member <actor>")
+            actions.append("home roster-remove --member <actor>")
+            actions.append("home item-to-inventory --item <item>")
+            actions.append("home item-to-storage --item <item>")
+            actions.append("home craft-consumable --material <m> [--material <m> ...]")
+            actions.append("home craft-gear --material <m> [--material <m> ...]")
+            actions.append("home craft-costume --material <m> [--material <m> ...]")
+            actions.append("home wear-costume --item <costume> --target <actor>")
+            actions.append("home remove-costume --target <actor>")
+            actions.append("compact --target <entity>")
 
-    elif mode == "dungeon":
-        room_type = dungeon.get("room_type")
-
-        if room_type == "opening":
-            spoils = dungeon.get("spoils") or {}
-            # 开场初始化管道内部按消息标记幂等；叙事缺失说明尚未初始化
-            has_narrative = bool((status.get("stage") or {}).get("narrative"))
-            if not has_narrative:
-                actions.append("opening init")
-            if not spoils.get("spoils_generated"):
-                actions.append("spoils generate")
-            else:
-                for entry in spoils.get("by_actor", []):
-                    for card in entry.get("candidate_cards", []):
-                        actions.append(
-                            f"spoils pick-card --actor {entry['actor']} --card {card.get('name')}"
-                        )
-                actions.append("dungeon advance-stage")
-            actions.append("spoils remove")
-            actions.append("dungeon exit")
-
-        elif room_type == "combat":
-            combat = status.get("combat") or {}
-            state = combat.get("state")
-
-            if state in ("NONE", "INITIALIZATION"):
-                actions.append("combat init")
-
-            elif state == "ONGOING":
-                rnd_obj = combat.get("round")
-                rnd: Dict[str, Any] = rnd_obj if isinstance(rnd_obj, dict) else {}
-                need_draw = (
-                    not rnd
-                    or not rnd.get("draw_completed")
-                    or rnd.get("is_completed")
-                    or not rnd.get("current_actor")
-                )
-                if need_draw:
-                    actions.append("combat draw-cards")
-                else:
-                    current_actor = str(rnd["current_actor"])
-                    hand = _hand_of(status, current_actor)
-                    if hand:
-                        for card in hand:
-                            if not card.get("playable", True):
-                                continue
-                            target = (
-                                ""
-                                if card.get("target_type") == "self"
-                                else " --target <entity>"
-                            )
-                            actions.append(
-                                f"combat play-cards --actor {current_actor} --card {card.get('name')}{target}"
-                            )
+        case "dungeon":
+            room_type = dungeon.get("room_type")
+            match room_type:
+                case "opening":
+                    spoils = dungeon.get("spoils") or {}
+                    # 开场初始化管道内部按消息标记幂等；叙事缺失说明尚未初始化
+                    has_narrative = bool((status.get("stage") or {}).get("narrative"))
+                    if not has_narrative:
+                        actions.append("opening init")
+                    if not spoils.get("spoils_generated"):
+                        actions.append("spoils generate")
                     else:
-                        actions.append(
-                            f"combat play-cards --actor {current_actor} --card <card> [--target <entity>]"
-                        )
-                    actions.append(f"combat pass-turn --actor {current_actor}")
-                    actions.append("combat use-consumable --item <item>")
-                    actions.append("combat equip-gear --item <item>")
-                    actions.append("combat retreat")
-
-            elif state in ("COMPLETE", "POST_COMBAT"):
-                # 只有胜利才收战利品并推进；战败只能离开副本（推进会被服务端拒）
-                if combat.get("result") == "WIN":
-                    actions.append("combat collect-loot")
-                    has_next = dungeon.get("current_room_index", -1) + 1 < dungeon.get(
-                        "room_count", 1
-                    )
-                    if has_next:
+                        for entry in spoils.get("by_actor", []):
+                            for card in entry.get("candidate_cards", []):
+                                actions.append(
+                                    f"spoils pick-card --actor {entry['actor']} --card {card.get('name')}"
+                                )
                         actions.append("dungeon advance-stage")
-                actions.append("dungeon exit")
+                    actions.append("spoils remove")
+                    actions.append("dungeon exit")
+
+                case "combat":
+                    combat = status.get("combat") or {}
+                    state = combat.get("state")
+                    match state:
+                        case "NONE" | "INITIALIZATION":
+                            actions.append("combat init")
+
+                        case "ONGOING":
+                            rnd_obj = combat.get("round")
+                            rnd: Dict[str, Any] = (
+                                rnd_obj if isinstance(rnd_obj, dict) else {}
+                            )
+                            need_draw = (
+                                not rnd
+                                or not rnd.get("draw_completed")
+                                or rnd.get("is_completed")
+                                or not rnd.get("current_actor")
+                            )
+                            if need_draw:
+                                actions.append("combat draw-cards")
+                            else:
+                                current_actor = str(rnd["current_actor"])
+                                hand = _hand_of(status, current_actor)
+                                if hand:
+                                    for card in hand:
+                                        if not card.get("playable", True):
+                                            continue
+                                        target = (
+                                            ""
+                                            if card.get("target_type") == "self"
+                                            else " --target <entity>"
+                                        )
+                                        actions.append(
+                                            f"combat play-cards --actor {current_actor} --card {card.get('name')}{target}"
+                                        )
+                                else:
+                                    actions.append(
+                                        f"combat play-cards --actor {current_actor} --card <card> [--target <entity>]"
+                                    )
+                                actions.append(
+                                    f"combat pass-turn --actor {current_actor}"
+                                )
+                                actions.append("combat use-consumable --item <item>")
+                                actions.append("combat equip-gear --item <item>")
+                                actions.append("combat retreat")
+
+                        case "COMPLETE" | "POST_COMBAT":
+                            # 只有胜利才收战利品并推进；战败只能离开副本（推进会被服务端拒）
+                            if combat.get("result") == "WIN":
+                                actions.append("combat collect-loot")
+                                has_next = dungeon.get(
+                                    "current_room_index", -1
+                                ) + 1 < dungeon.get("room_count", 1)
+                                if has_next:
+                                    actions.append("dungeon advance-stage")
+                            actions.append("dungeon exit")
 
     actions.append("status")
     return actions

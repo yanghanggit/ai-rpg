@@ -118,36 +118,38 @@ class AssembleDungeonSystem(ReactiveProcessor):
             )
 
             # 根据 room_type 创建对应的房间类型
-            if room_draft.room_type == "opening":
-                stage.actors = []
-                rooms.append(OpeningRoom(stage=stage))
-                logger.info(
-                    f"[AssembleDungeonSystem] Room {i}/{len(draft.rooms)} 构建完成:\n  type:   opening\n  stage:  {stage.name}"
-                )
-            elif room_draft.room_type == "combat":
-                actors = []
-                for actor_draft in actors_by_room.get(room_draft.room_name, []):
-                    actor = create_actor(
-                        name=self._deduplicate_name(
-                            seen_actor_names, actor_draft.actor_name
-                        ),
-                        actor_type=ActorType.MONSTER,
-                        profile=actor_draft.profile,
-                        base_body=actor_draft.base_body,
-                        character_stats=CharacterStats(),
-                        campaign_setting=self._game._world.blueprint.campaign_setting,
-                        system_rules=self._game._world.blueprint.system_rules,
+            match room_draft.room_type:
+                case "opening":
+                    stage.actors = []
+                    rooms.append(OpeningRoom(stage=stage))
+                    logger.info(
+                        f"[AssembleDungeonSystem] Room {i}/{len(draft.rooms)} 构建完成:\n  type:   opening\n  stage:  {stage.name}"
                     )
-                    # 牌库由 AssembleDungeonDeckSystem 后续从卡牌原型库组建并润色
-                    actors.append(actor)
 
-                # 将 actors 分配给 stage，并创建 CombatRoom 实体
-                stage.actors = actors
-                rooms.append(CombatRoom(stage=stage))
-                logger.info(
-                    f"[AssembleDungeonSystem] Room {i}/{len(draft.rooms)} 构建完成:\n  type:   combat\n  stage:  {stage.name}\n  actors ({len(actors)}): "
-                    + ", ".join(a.name for a in actors)
-                )
+                case "combat":
+                    actors = []
+                    for actor_draft in actors_by_room.get(room_draft.room_name, []):
+                        actor = create_actor(
+                            name=self._deduplicate_name(
+                                seen_actor_names, actor_draft.actor_name
+                            ),
+                            actor_type=ActorType.MONSTER,
+                            profile=actor_draft.profile,
+                            base_body=actor_draft.base_body,
+                            character_stats=CharacterStats(),
+                            campaign_setting=self._game._world.blueprint.campaign_setting,
+                            system_rules=self._game._world.blueprint.system_rules,
+                        )
+                        # 牌库由 AssembleDungeonDeckSystem 后续从卡牌原型库组建并润色
+                        actors.append(actor)
+
+                    # 将 actors 分配给 stage，并创建 CombatRoom 实体
+                    stage.actors = actors
+                    rooms.append(CombatRoom(stage=stage))
+                    logger.info(
+                        f"[AssembleDungeonSystem] Room {i}/{len(draft.rooms)} 构建完成:\n  type:   combat\n  stage:  {stage.name}\n  actors ({len(actors)}): "
+                        + ", ".join(a.name for a in actors)
+                    )
 
         # 组装 Dungeon 实体
         dungeon = Dungeon(

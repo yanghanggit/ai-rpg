@@ -242,15 +242,18 @@ class HomeNpcPlanSystem(ReactiveProcessor):
         has_target_messages = isinstance(result.target_messages, dict) and bool(
             result.target_messages
         )
-        if result.action_type == "speak" and has_target_messages:
-            entity.replace(SpeakAction, entity.name, result.target_messages)
-        elif result.action_type == "whisper" and has_target_messages:
-            entity.replace(WhisperAction, entity.name, result.target_messages)
-        elif result.action_type == "announce" and result.message:
-            entity.replace(AnnounceAction, entity.name, result.message)
-        elif result.action_type == "trans_stage" and result.target_stage_name:
-            entity.replace(TransStageAction, entity.name, result.target_stage_name)
-        # action_type == "none" 或 payload 缺失 → 不挂组件
+        match result.action_type:
+            case "speak" if has_target_messages:
+                entity.replace(SpeakAction, entity.name, result.target_messages)
+            case "whisper" if has_target_messages:
+                entity.replace(WhisperAction, entity.name, result.target_messages)
+            case "announce" if result.message:
+                entity.replace(AnnounceAction, entity.name, result.message)
+            case "trans_stage" if result.target_stage_name:
+                entity.replace(TransStageAction, entity.name, result.target_stage_name)
+            case _:
+                # action_type == "none" 或 payload 缺失 → 不挂组件
+                pass
 
 
 #######################################################################################################################################

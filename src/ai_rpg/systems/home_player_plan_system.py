@@ -78,12 +78,13 @@ class HomePlayerPlanSystem(ReactiveProcessor):
         )
 
         submit_args: Dict[str, Any] = {"mind": "", "action_type": action_type}
-        if action_type in ("speak", "whisper"):
-            submit_args["target_messages"] = target_messages
-        elif action_type == "announce":
-            submit_args["message"] = message
-        elif action_type == "trans_stage":
-            submit_args["target_stage_name"] = target_stage_name
+        match action_type:
+            case "speak" | "whisper":
+                submit_args["target_messages"] = target_messages
+            case "announce":
+                submit_args["message"] = message
+            case "trans_stage":
+                submit_args["target_stage_name"] = target_stage_name
 
         call_id = f"call_shadow_{uuid.uuid4().hex}"
         ai_message = AIMessage(

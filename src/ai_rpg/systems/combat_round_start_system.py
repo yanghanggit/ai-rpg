@@ -112,12 +112,15 @@ class CombatRoundStartSystem(ReactiveProcessor):
         new_round = self._start_new_round(actors_in_stage)
 
         # 快照必须在 start_new_round 之后构建，此时 RoundStatsComponent 已按新回合重置
-        if self._strategy == ActionOrderStrategy.RANDOM:
-            snapshot_entities = self._shuffled_actors_by_round(actors_in_stage)
-        elif self._strategy == ActionOrderStrategy.CREATION_ORDER:
-            snapshot_entities = self._sorted_actors_by_creation_order(actors_in_stage)
-        else:  # SPEED（默认；含未知策略回退）
-            snapshot_entities = self._sorted_actors_by_speed(actors_in_stage)
+        match self._strategy:
+            case ActionOrderStrategy.RANDOM:
+                snapshot_entities = self._shuffled_actors_by_round(actors_in_stage)
+            case ActionOrderStrategy.CREATION_ORDER:
+                snapshot_entities = self._sorted_actors_by_creation_order(
+                    actors_in_stage
+                )
+            case _:  # SPEED（默认；含未知策略回退）
+                snapshot_entities = self._sorted_actors_by_speed(actors_in_stage)
 
         new_round.action_order = [entity.name for entity in snapshot_entities]
         new_round.current_actor = (

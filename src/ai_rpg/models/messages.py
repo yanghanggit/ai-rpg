@@ -125,16 +125,17 @@ def get_buffer_string(
 
     lines: List[str] = []
     for msg in messages:
-        if isinstance(msg, HumanMessage):
-            role = human_prefix
-        elif isinstance(msg, AIMessage):
-            role = ai_prefix
-        elif isinstance(msg, SystemMessage):
-            role = system_prefix
-        elif isinstance(msg, ToolMessage):
-            role = tool_prefix
-        else:
-            raise ValueError(f"不支持的消息类型: {type(msg)}")
+        match msg:
+            case HumanMessage():
+                role = human_prefix
+            case AIMessage():
+                role = ai_prefix
+            case SystemMessage():
+                role = system_prefix
+            case ToolMessage():
+                role = tool_prefix
+            case _:
+                raise ValueError(f"不支持的消息类型: {type(msg)}")
 
         content = msg.content
 

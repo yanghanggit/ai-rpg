@@ -5,7 +5,7 @@
 
 依赖：
 - DEEPSEEK_API_KEY（真实 LLM 调用，较慢）
-- 本地 .blueprints / .dungeons 数据文件（默认用 Game1 + 副本.荒狼巢）
+- 本地 .blueprints / .dungeons 数据文件（默认用 Game1 + 副本.腐谷鼠穴）
 
 默认跳过；显式启用：
     RUN_E2E=1 pytest -m integration tests/integration/test_api_e2e_smoke.py
@@ -26,8 +26,8 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 
 GAME = "Game1"
-DUNGEON = "副本.荒狼巢"
-MONSTER = "怪物.头狼"
+DUNGEON = "副本.腐谷鼠穴"
+MONSTER = "怪物.仓底巨鼠"
 INVALID_CARD = "不存在的卡牌XYZ"
 
 pytestmark = [pytest.mark.integration, pytest.mark.slow]
@@ -196,7 +196,7 @@ def test_api_e2e_smoke(game_server_url: str) -> None:
     player_actor = data.get("player_session", {}).get("actor")
     assert player_actor, f"new game 未返回 player_session.actor: {data}"
 
-    # 3. 进入副本（setup + 传送至第一关；荒狼巢首间即战斗房间，enter 时战斗进入 INITIALIZATION）
+    # 3. 进入副本（setup + 传送至第一关；腐谷鼠穴首间即战斗房间，enter 时战斗进入 INITIALIZATION）
     code, _ = _post(
         client,
         "/api/home/enter_dungeon/v1/",

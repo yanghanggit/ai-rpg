@@ -78,7 +78,7 @@ def _setup_dungeons() -> List[Dungeon]:
     logger.info("🚀 保存演示副本...")
 
     dungeons = [
-        create_beast_lair_dungeon(),  # 荒狼巢副本
+        create_beast_lair_dungeon(),  # 腐谷鼠穴副本
         create_broken_bridge_dungeon(),  # 断桥渡口副本（开场房 + 战斗房）
     ]
 

@@ -240,9 +240,17 @@ class EquipGearItemAction(Component):
 @register_action_component_type
 @register_component_type
 class GenerateSpoilsAction(Component):
-    """触发为角色生成候选奖励（SpoilsComponent），当前生成候选卡牌。"""
+    """触发为角色生成候选奖励（SpoilsComponent），当前生成候选卡牌。
+
+    ``prototype_ids`` 为外部入口的**显式候选规格**（调测 / 脚本用）：非空时
+    ``GenerateSpoilsActionSystem`` 只物化这些原型（顺序、重复均照给），不再随机抽取。
+    空列表 = 默认随机抽取，与旧行为完全一致。
+
+    动作组件由 ``ActionCleanupSystem`` 每帧清理，不随着存档持久化，仅用于本次传递。
+    """
 
     name: str
+    prototype_ids: List[str] = []  # 显式指定的原型 id（可重复；空 = 随机抽取）
 
 
 ############################################################################################################

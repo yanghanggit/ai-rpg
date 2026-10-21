@@ -6,7 +6,7 @@
 - 清理：显式复位队伍成员的 SpoilsComponent，供房间生命周期或外部入口按需调用。
 """
 
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from loguru import logger
 
@@ -69,12 +69,17 @@ def remove_spoils(dbg_game: DBGGame) -> Tuple[bool, str]:
 ###################################################################################################################################################################
 def activate_generate_spoils(
     dbg_game: DBGGame,
+    *,
+    prototype_ids: Optional[List[str]] = None,
 ) -> Tuple[bool, str]:
     """
     为当前所在非战斗房间内的所有队伍成员激活奖励生成动作（GenerateSpoilsAction）。
 
     由外部入口（CLI / API）显式调用，随后推动 _dungeon_opening_room_pipeline.process()
     让 GenerateSpoilsActionSystem 响应并生成候选奖励（SpoilsComponent）。
+
+    `prototype_ids` 为显式候选规格（调测 / 脚本用）：非空时按此列表物化，不做随机抽取。
+    调用方应先校验数量与 id 合法性（dev 入口见 `dbg_game_agent.cards`）。
     """
 
     # 检查当前是否在玩家的副本阶段
@@ -123,6 +128,7 @@ def activate_generate_spoils(
         party_member_entity.replace(
             GenerateSpoilsAction,
             party_member_entity.name,
+            list(prototype_ids or []),
         )
         logger.debug(f"为角色 {party_member_entity.name} 添加奖励生成动作组件")
 

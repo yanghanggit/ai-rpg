@@ -1,9 +1,13 @@
 """副本奖励（Spoils）动作：生成候选 / 领卡 / 清理。
 
 与房间类型无关：仅要求当前房间**不是战斗房间**（非战斗房间通用）。
+
+``generate_spoils_game`` 可接受显式候选规格（``prototype_ids``）：调测时用来把
+“抽到哪几张”从随机里拿回来（如强制抽到带自主槽的原型），生产入口不传即保持随机。
 """
 
 from pathlib import Path
+from typing import Optional, Sequence
 
 from loguru import logger
 
@@ -24,8 +28,12 @@ async def generate_spoils_game(
     world: WorldState,
     player_session: PlayerSession,
     save_dir: Path,
+    prototype_ids: Optional[Sequence[str]] = None,
 ) -> DBGGame:
-    """为当前非战斗房间内的队伍成员生成候选奖励（Spoils）并归档。"""
+    """为当前非战斗房间内的队伍成员生成候选奖励（Spoils）并归档。
+
+    `prototype_ids` 非空时按此规格物化候选（顺序、重复照给），否则系统随机抽取。
+    """
 
     # 创建 DBGGame 实例并从快照恢复游戏状态
     terminal_game = await restore_game(world, player_session)
@@ -36,7 +44,9 @@ async def generate_spoils_game(
         return terminal_game
 
     # 外部显式激活奖励生成动作（内部含幂等守卫）
-    success, message = activate_generate_spoils(terminal_game)
+    success, message = activate_generate_spoils(
+        terminal_game, prototype_ids=list(prototype_ids or [])
+    )
     if not success:
         logger.error(f"激活奖励生成失败: {message}")
         return terminal_game

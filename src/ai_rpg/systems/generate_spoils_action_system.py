@@ -167,11 +167,45 @@ class GenerateSpoilsActionSystem(ReactiveProcessor):
         entity: Entity,
         index: List[CardPrototypeIndexEntry],
     ) -> List[Candidate]:
-        """从原型索引随机抽取并物化为独立候选（换新 uuid、回填 source、附设计说明）。"""
-        sample = random.sample(index, k=min(SPOILS_CARD_COUNT, len(index)))
+        """物化候选：有显式规格就按规格（顺序、重复照给），否则从原型索引随机抽取。
+
+        显式规格（调测 / 脚本入口写入 ``GenerateSpoilsAction.prototype_ids``）把“候选是什么”
+        从随机里拿回来；任一原型物化失败即返回空列表（整批中止），避免静默少发一张。
+        随机路径保持旧口径：个别原型解析失败只跳过，不阻断发奖。
+        """
+        action = entity.get(GenerateSpoilsAction)
+        forced = list(action.prototype_ids) if action is not None else []
+
+        if forced:
+
+            # 使用显式候选规格时，记录日志以便调试。
+            logger.info(
+                f"[GenerateSpoilsActionSystem] {entity.name} 使用显式候选规格（{len(forced)} 张）: {forced}"
+            )
+            prototype_ids = forced
+        else:
+
+            # 随机抽取原型时，记录日志以便调试。
+            prototype_ids = [
+                entry["prototype_id"]
+                for entry in random.sample(index, k=min(SPOILS_CARD_COUNT, len(index)))
+            ]
+
         candidates: List[Candidate] = []
-        for entry in sample:
-            candidate = materialize_candidate(entry["prototype_id"], entity.name)
-            if candidate is not None:
-                candidates.append(candidate)
+        for prototype_id in prototype_ids:
+            candidate = materialize_candidate(prototype_id, entity.name)
+
+            # 如果显式规格物化失败，整批中止；否则跳过该原型继续尝试下一个。
+            if candidate is None:
+                if forced:
+                    logger.error(
+                        f"[GenerateSpoilsActionSystem] {entity.name} 显式原型 {prototype_id!r} 物化失败，整批中止"
+                    )
+                    return []
+                continue
+
+            # 成功物化的候选加入列表，供后续设计使用。
+            candidates.append(candidate)
+
+        # 返回最终物化成功的候选列表，供后续设计使用。
         return candidates

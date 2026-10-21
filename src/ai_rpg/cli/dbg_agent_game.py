@@ -38,8 +38,14 @@
   collect-loot    --snapshot PATH                               收战利品（胜利后）
   next-dungeon    --snapshot PATH                               下一关（仅推进，不初始化新房间）
   exit-dungeon    --snapshot PATH                               退出副本 → 家园模式（无论胜负）
-  generate-spoils --snapshot PATH                              生成候选奖励（开场房间初始化后）
+  generate-spoils --snapshot PATH [--prototype ID ...] [--slot SLOT] [--keyword K] [--fill-random] [--seed N]
+                                     生成候选奖励（默认随机；可选显式规格）
   pick-card       --snapshot PATH --actor A --card C            从 Spoils 领取一张卡加入牌库
+
+==== 卡牌调测命令（只读 / 不落存档） ====
+  card-prototypes [--card-type 手牌] [--slot SLOT] [--keyword K]   列出原型（id / 分类 / 摘要 / 开放槽）
+  design-cards    --snapshot PATH --actor A [--prototype ID ...] [--slot SLOT] [--keyword K] [--repeat N]
+                                     对指定原型跑设计会话并打印结果，不写游戏状态
 
 ==== 典型流程 ====
   家园：new → stages → advance(循环) / speak / switch-stage → enter-dungeon
@@ -58,11 +64,12 @@ import asyncio
 import datetime
 import sys
 from pathlib import Path
-from typing import Final, Tuple
+from typing import Final, List, Tuple
 
 import click
 from loguru import logger
 
+from ai_rpg.dbg_game_agent.core import restore_game
 from ai_rpg.game import restore_world
 from ai_rpg.paths import LOGS_DIR, WORLDS_DIR
 
@@ -80,6 +87,15 @@ def _setup_logger(log_file_path: Path) -> None:
     logger.info(f"日志配置: 级别={LOG_LEVEL}, 文件路径={log_file_path}")
 
 
+from ai_rpg.dbg_game_agent.cards import (
+    design_cards_preview,
+    filter_entries,
+    format_designed_card,
+    format_prototype_line,
+    load_prototype_index,
+    resolve_prototype_ids,
+    resolve_spoils_prototype_ids,
+)
 from ai_rpg.dbg_game_agent.combat import (
     collect_loot_game,
     draw_cards_game,
@@ -124,6 +140,7 @@ from ai_rpg.dbg_game_agent.spoils import (
     pick_spoils_card_game,
     remove_spoils_game,
 )
+from ai_rpg.systems.generate_spoils_action_system import SPOILS_CARD_COUNT
 
 
 ###############################################################################################################################################
@@ -937,8 +954,46 @@ def opening_init(snapshot: str) -> None:
     required=True,
     help="存档目录路径",
 )
-def generate_spoils(snapshot: str) -> None:
-    """为当前非战斗房间内的队伍成员生成候选奖励（Spoils）并归档。"""
+@click.option(
+    "--prototype",
+    "-p",
+    "prototype_ids",
+    multiple=True,
+    help="显式指定候选原型 id（可重复，如 -p proto.summon -p proto.burst）。未加 --fill-random 时必须凑满候选数。",
+)
+@click.option(
+    "--slot",
+    default=None,
+    help="按开放槽选择候选原型（如 on_autonomous_affixes）",
+)
+@click.option(
+    "--keyword",
+    default=None,
+    help="按关键词选择候选原型（匹配 name / summary / 分类 / keywords）",
+)
+@click.option(
+    "--fill-random",
+    is_flag=True,
+    help="指定不足候选数时，剩余随机补足（默认严格：必须凑满）",
+)
+@click.option(
+    "--seed",
+    type=int,
+    default=None,
+    help="随机补足的随机种子（仅 --fill-random 生效）",
+)
+def generate_spoils(
+    snapshot: str,
+    prototype_ids: Tuple[str, ...],
+    slot: str,
+    keyword: str,
+    fill_random: bool,
+    seed: int,
+) -> None:
+    """为当前非战斗房间内的队伍成员生成候选奖励（Spoils）并归档。
+
+    不给任何规格时从原型库随机抽取；给了 --prototype / --slot / --keyword 就按规格物化。
+    """
 
     snapshot_path = Path(snapshot)
     if not snapshot_path.exists():
@@ -955,11 +1010,33 @@ def generate_spoils(snapshot: str) -> None:
         WORLDS_DIR / player_session.name / str(world.blueprint.name) / _timestamp
     )
 
+    # 显式规格（可空）：默认严格，必须凑满候选数
+    resolved: List[str] = []
+    if prototype_ids or slot or keyword:
+        try:
+            resolved = resolve_spoils_prototype_ids(
+                count=SPOILS_CARD_COUNT,
+                prototype_ids=prototype_ids,
+                slot=slot,
+                keyword=keyword,
+                fill_random=fill_random,
+                seed=seed,
+            )
+        except ValueError as e:
+            raise click.BadParameter(str(e))
+        click.echo(f"显式候选规格（{len(resolved)} 张）: {resolved}")
+    else:
+        click.echo(f"未指定候选规格：从原型库随机抽取 {SPOILS_CARD_COUNT} 张")
+
     logger.info(f"本次运行日志文件：{_log_file}")
     logger.info(f"读取存档：{snapshot_path}")
     logger.info(f"本次存档目录：{_save_dir}")
 
-    asyncio.run(generate_spoils_game(world, player_session, _save_dir))
+    asyncio.run(
+        generate_spoils_game(
+            world, player_session, _save_dir, resolved if resolved else None
+        )
+    )
 
 
 ###############################################################################################################################################
@@ -1296,6 +1373,142 @@ def craft_costume(snapshot: str, materials: Tuple[str, ...]) -> None:
     logger.info(f"本次存档目录：{_save_dir}")
 
     asyncio.run(craft_costume_game(world, player_session, list(materials), _save_dir))
+
+
+###############################################################################################################################################
+@main.command("card-prototypes")
+@click.option(
+    "--card-type",
+    default="手牌",
+    show_default=True,
+    help="原型类型（手牌 / 装备 / 消耗品）",
+)
+@click.option(
+    "--slot",
+    default=None,
+    help="只看开放该词缀槽的原型（如 on_autonomous_affixes）",
+)
+@click.option(
+    "--keyword",
+    default=None,
+    help="关键词过滤（匹配 name / summary / 分类 / keywords）",
+)
+def card_prototypes(card_type: str, slot: str, keyword: str) -> None:
+    """列出卡牌原型（只读）：id / 分类 / 摘要 / 开放槽。用于查“该指定哪个 id”。"""
+
+    index = load_prototype_index(card_type)
+    matched = (
+        filter_entries(index, slot=slot, keyword=keyword)
+        if (slot or keyword)
+        else index
+    )
+
+    if not matched:
+        click.echo(
+            f"没有匹配的原型（card_type={card_type}, slot={slot!r}, keyword={keyword!r}）"
+        )
+        return
+
+    for entry in matched:
+        click.echo(format_prototype_line(entry))
+        click.echo("")
+    click.echo(f"共 {len(matched)} 个（card_type={card_type}）")
+
+
+###############################################################################################################################################
+@main.command("design-cards")
+@click.option(
+    "--snapshot",
+    required=True,
+    help="存档目录路径（读角色的设定与艺术锚点，但不写入该存档）",
+)
+@click.option(
+    "--actor",
+    required=True,
+    help="为哪个角色设计（如 角色.坏运气）",
+)
+@click.option(
+    "--prototype",
+    "-p",
+    "prototype_ids",
+    multiple=True,
+    help="原型 id（可重复，如 -p proto.summon）",
+)
+@click.option(
+    "--slot",
+    default=None,
+    help="按开放槽选择原型（如 on_autonomous_affixes）",
+)
+@click.option(
+    "--keyword",
+    default=None,
+    help="按关键词选择原型（匹配 name / summary / 分类 / keywords）",
+)
+@click.option(
+    "--repeat",
+    type=int,
+    default=1,
+    show_default=True,
+    help="重复跑几次设计会话（观察同一批原型的多样性）",
+)
+def design_cards(
+    snapshot: str,
+    actor: str,
+    prototype_ids: Tuple[str, ...],
+    slot: str,
+    keyword: str,
+    repeat: int,
+) -> None:
+    """纯创作回路：对指定原型跑设计会话并打印结果，**不写游戏状态**。
+
+    走的是与生产完全相同的入口（世界契约 + 角色设定 + 艺术锚点），便于反复调人设 / 提示词。
+    """
+
+    snapshot_path = Path(snapshot)
+    if not snapshot_path.exists():
+        raise click.BadParameter(
+            f"存档目录不存在：{snapshot_path}", param_hint="--snapshot"
+        )
+
+    try:
+        resolved = resolve_prototype_ids(
+            prototype_ids=prototype_ids,
+            slot=slot,
+            keyword=keyword,
+        )
+    except ValueError as e:
+        raise click.BadParameter(str(e))
+
+    if not resolved:
+        raise click.BadParameter(
+            "至少需要 --prototype / --slot / --keyword 之一", param_hint="--prototype"
+        )
+
+    _timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    _log_file = LOGS_DIR / f"run_agent_game_{_timestamp}.log"
+    _setup_logger(_log_file)
+
+    world, player_session = restore_world(snapshot_path)
+
+    logger.info(f"本次运行日志文件：{_log_file}")
+    logger.info(f"读取存档：{snapshot_path}")
+    logger.info(f"设计原型：{resolved}（repeat={repeat}，不写存档）")
+
+    async def _run() -> None:
+        game = await restore_game(world, player_session)
+        runs = await design_cards_preview(
+            game,
+            actor_name=actor,
+            prototype_ids=resolved,
+            repeat=repeat,
+        )
+        for run_index, run in enumerate(runs, 1):
+            click.echo(f"===== 第 {run_index}/{len(runs)} 次（{actor}） =====")
+            for card_index, candidate in enumerate(run, 1):
+                click.echo(format_designed_card(candidate, index=card_index))
+                click.echo("")
+
+    asyncio.run(_run())
 
 
 ###############################################################################################################################################

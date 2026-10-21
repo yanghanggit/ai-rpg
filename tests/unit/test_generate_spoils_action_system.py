@@ -4,6 +4,7 @@ LLM 设计会话与原型库都在模块边界替换，只测「候选入队 + �
 """
 
 import json
+import random
 from typing import Any, Dict, List
 from unittest.mock import MagicMock
 
@@ -63,7 +64,7 @@ async def test_spoils_fill_notifies_owner(
     entity._name = "角色.无名"
     entity.add(ActorComponent, entity.name, "场景.河湾芦苇丛")
     entity.add(PartyMemberComponent, entity.name)
-    entity.add(GenerateSpoilsAction, entity.name)
+    entity.add(GenerateSpoilsAction, entity.name, [])
 
     monkeypatch.setattr(
         spoils_module, "list_card_prototype_index", lambda card_type: [{"id": 1}]
@@ -120,7 +121,7 @@ async def test_spoils_injects_actor_motif(
     entity._name = "角色.坏运气"
     entity.add(ActorComponent, entity.name, "场景.河湾芦苇丛")
     entity.add(PartyMemberComponent, entity.name)
-    entity.add(GenerateSpoilsAction, entity.name)
+    entity.add(GenerateSpoilsAction, entity.name, [])
     entity.add(MotifComponent, entity.name, "**母题**: 差半步的时运")
 
     monkeypatch.setattr(
@@ -165,7 +166,7 @@ async def test_spoils_without_motif_passes_empty_string(
     entity._name = "角色.无名"
     entity.add(ActorComponent, entity.name, "场景.河湾芦苇丛")
     entity.add(PartyMemberComponent, entity.name)
-    entity.add(GenerateSpoilsAction, entity.name)
+    entity.add(GenerateSpoilsAction, entity.name, [])
 
     monkeypatch.setattr(
         spoils_module, "list_card_prototype_index", lambda card_type: [{"id": 1}]
@@ -208,7 +209,7 @@ async def test_spoils_design_failure_writes_nothing(
     entity._name = "角色.无名"
     entity.add(ActorComponent, entity.name, "场景.河湾芦苇丛")
     entity.add(PartyMemberComponent, entity.name)
-    entity.add(GenerateSpoilsAction, entity.name)
+    entity.add(GenerateSpoilsAction, entity.name, [])
 
     monkeypatch.setattr(
         spoils_module, "list_card_prototype_index", lambda card_type: [{"id": 1}]
@@ -250,7 +251,7 @@ async def test_spoils_agent_loop_exception_writes_nothing(
     entity._name = "角色.无名"
     entity.add(ActorComponent, entity.name, "场景.河湾芦苇丛")
     entity.add(PartyMemberComponent, entity.name)
-    entity.add(GenerateSpoilsAction, entity.name)
+    entity.add(GenerateSpoilsAction, entity.name, [])
 
     monkeypatch.setattr(
         spoils_module, "list_card_prototype_index", lambda card_type: [{"id": 1}]
@@ -275,6 +276,95 @@ async def test_spoils_agent_loop_exception_writes_nothing(
         spoils_module,
         "batch_run_boolean_tasks",
         lambda tasks: _results(tasks),
+    )
+
+    await GenerateSpoilsActionSystem(game).react([entity])
+
+    assert not entity.has(SpoilsComponent)
+    game.add_human_message.assert_not_called()
+
+
+async def test_spoils_explicit_prototype_ids_bypass_random(
+    context: Context, game: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Action 带显式候选规格时，按规格物化（顺序、重复照给），不随机抽取。"""
+    entity = context.create_entity()
+    entity._name = "角色.坏运气"
+    entity.add(ActorComponent, entity.name, "场景.河湾芦苇丛")
+    entity.add(PartyMemberComponent, entity.name)
+    entity.add(
+        GenerateSpoilsAction,
+        entity.name,
+        ["proto.summon", "proto.burst", "proto.summon"],
+    )
+
+    monkeypatch.setattr(
+        spoils_module, "list_card_prototype_index", lambda card_type: [{"id": 1}]
+    )
+    monkeypatch.setattr(
+        spoils_module,
+        "design_cards_for_actor",
+        lambda *args, **kwargs: _returns(
+            _outcome(
+                ok=True,
+                designed=len(kwargs["candidates"]),
+                total=len(kwargs["candidates"]),
+            )
+        ),
+    )
+    monkeypatch.setattr(
+        spoils_module, "batch_run_boolean_tasks", lambda tasks: _results(tasks)
+    )
+    monkeypatch.setattr(
+        spoils_module,
+        "read_actor_system_prompt",
+        lambda game, actor_entity: "角色.坏运气 的设定",
+    )
+
+    # 记录物化入参；随机路径不应被走到
+    materialized_ids: List[str] = []
+
+    def _fake_materialize(prototype_id: str, source: str) -> Candidate:
+        materialized_ids.append(prototype_id)
+        return _make_candidate(f"设计后的{prototype_id}#{len(materialized_ids)}")
+
+    monkeypatch.setattr(spoils_module, "materialize_candidate", _fake_materialize)
+    monkeypatch.setattr(
+        random,
+        "sample",
+        lambda *args, **kwargs: pytest.fail("显式规格不应调用 random.sample"),
+    )
+
+    await GenerateSpoilsActionSystem(game).react([entity])
+
+    assert materialized_ids == ["proto.summon", "proto.burst", "proto.summon"]
+    spoils = entity.get(SpoilsComponent)
+    assert [c.name for c in spoils.candidate_cards] == [
+        "设计后的proto.summon#1",
+        "设计后的proto.burst#2",
+        "设计后的proto.summon#3",
+    ]
+
+
+async def test_spoils_explicit_prototype_failure_writes_nothing(
+    context: Context, game: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """显式规格里任一原型物化失败 → 整批中止，不写 SpoilsComponent（不静默少发）。"""
+    entity = context.create_entity()
+    entity._name = "角色.坏运气"
+    entity.add(ActorComponent, entity.name, "场景.河湾芦苇丛")
+    entity.add(PartyMemberComponent, entity.name)
+    entity.add(GenerateSpoilsAction, entity.name, ["proto.summon", "proto.nope"])
+
+    monkeypatch.setattr(
+        spoils_module, "list_card_prototype_index", lambda card_type: [{"id": 1}]
+    )
+    monkeypatch.setattr(
+        spoils_module,
+        "materialize_candidate",
+        lambda prototype_id, source: (
+            _make_candidate("余刃") if prototype_id == "proto.summon" else None
+        ),
     )
 
     await GenerateSpoilsActionSystem(game).react([entity])
